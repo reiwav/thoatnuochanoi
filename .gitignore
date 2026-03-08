@@ -8,3 +8,4 @@ ai_tnhn/ai-api-tnhn/*.log
 deploy/
 docker/
 *.json
+ai_tnhn/ai-api-tnhn/main

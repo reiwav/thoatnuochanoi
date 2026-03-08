@@ -16,7 +16,8 @@ const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type }) => {
         Active: true,
         // Specific for Lake/River
         Loai: '',
-        TenTramHTML: ''
+        TenTramHTML: '',
+        NguongCanhBao: ''
     });
 
     useEffect(() => {
@@ -29,7 +30,8 @@ const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type }) => {
                     Lng: station.Lng || station.lng || '',
                     Active: station.Active !== undefined ? station.Active : (station.active !== undefined ? station.active : true),
                     Loai: station.Loai || '',
-                    TenTramHTML: station.TenTramHTML || ''
+                    TenTramHTML: station.TenTramHTML || '',
+                    NguongCanhBao: station.NguongCanhBao !== undefined ? station.NguongCanhBao : ''
                 });
             } else {
                 setFormData({
@@ -39,7 +41,8 @@ const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type }) => {
                     Lng: '',
                     Active: true,
                     Loai: '',
-                    TenTramHTML: ''
+                    TenTramHTML: '',
+                    NguongCanhBao: ''
                 });
             }
         }
@@ -55,7 +58,12 @@ const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type }) => {
         // For Inundation points, backend uses name/address/lat/lng (lowercase)
         // For Rain/Lake/River, backend uses TenTram/DiaChi/Lat/Lng (TitleCase)
         // We'll normalize in the onSubmit or handle here
-        onSubmit(formData);
+        const submitData = { ...formData };
+        if (type !== 'inundation') {
+            submitData.NguongCanhBao = submitData.NguongCanhBao !== '' ? parseFloat(submitData.NguongCanhBao) : 0;
+        }
+
+        onSubmit(submitData);
     };
 
     const getTitle = () => {
@@ -115,6 +123,15 @@ const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type }) => {
                             fullWidth label="Loại" size="small"
                             value={formData.Loai}
                             onChange={(e) => handleChange('Loai', e.target.value)}
+                            sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#f8fafc' } }}
+                        />
+                    )}
+
+                    {type !== 'inundation' && (
+                        <TextField
+                            fullWidth label="Ngưỡng cảnh báo" size="small" type="number"
+                            value={formData.NguongCanhBao}
+                            onChange={(e) => handleChange('NguongCanhBao', e.target.value)}
                             sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#f8fafc' } }}
                         />
                     )}

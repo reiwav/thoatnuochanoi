@@ -20,10 +20,14 @@ func NewRainRepo(dbc *mongo.Database, name, prefix string, l logger.Logger) repo
 	return rainRepository{db.NewTable(name, prefix, dbc, l)}
 }
 
-func (p rainRepository) GetByStationID(ctx context.Context, stationID int64, limit int64) ([]*models.RainRecord, error) {
+func (p rainRepository) GetByStationID(ctx context.Context, stationID int64, limit int64, date string) ([]*models.RainRecord, error) {
 	var records []*models.RainRecord
 	opts := options.Find().SetLimit(limit).SetSort(bson.M{"timestamp": -1})
-	cursor, err := p.Collection.Find(ctx, bson.M{"station_id": stationID}, opts)
+	filter := bson.M{"station_id": stationID}
+	if date != "" {
+		filter["date"] = date
+	}
+	cursor, err := p.Collection.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -98,10 +102,14 @@ func NewLakeRepo(dbc *mongo.Database, name, prefix string, l logger.Logger) repo
 	return lakeRepository{db.NewTable(name, prefix, dbc, l)}
 }
 
-func (p lakeRepository) GetByStationID(ctx context.Context, stationID int64, limit int64) ([]*models.LakeRecord, error) {
+func (p lakeRepository) GetByStationID(ctx context.Context, stationID int64, limit int64, date string) ([]*models.LakeRecord, error) {
 	var records []*models.LakeRecord
 	opts := options.Find().SetLimit(limit).SetSort(bson.M{"timestamp": -1})
-	cursor, err := p.Collection.Find(ctx, bson.M{"station_id": stationID}, opts)
+	filter := bson.M{"station_id": stationID}
+	if date != "" {
+		filter["date"] = date
+	}
+	cursor, err := p.Collection.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -139,10 +147,14 @@ func NewRiverRepo(dbc *mongo.Database, name, prefix string, l logger.Logger) rep
 	return riverRepository{db.NewTable(name, prefix, dbc, l)}
 }
 
-func (p riverRepository) GetByStationID(ctx context.Context, stationID int64, limit int64) ([]*models.RiverRecord, error) {
+func (p riverRepository) GetByStationID(ctx context.Context, stationID int64, limit int64, date string) ([]*models.RiverRecord, error) {
 	var records []*models.RiverRecord
 	opts := options.Find().SetLimit(limit).SetSort(bson.M{"timestamp": -1})
-	cursor, err := p.Collection.Find(ctx, bson.M{"station_id": stationID}, opts)
+	filter := bson.M{"station_id": stationID}
+	if date != "" {
+		filter["date"] = date
+	}
+	cursor, err := p.Collection.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, err
 	}

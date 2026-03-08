@@ -9,9 +9,9 @@ import (
 )
 
 type Service interface {
-	GetRainDataByStation(ctx context.Context, stationID int64, limit int64) ([]*models.RainRecord, error)
-	GetLakeDataByStation(ctx context.Context, stationID int64, limit int64) ([]*models.LakeRecord, error)
-	GetRiverDataByStation(ctx context.Context, stationID int64, limit int64) ([]*models.RiverRecord, error)
+	GetRainDataByStation(ctx context.Context, stationID int64, limit int64, date string) ([]*models.RainRecord, error)
+	GetLakeDataByStation(ctx context.Context, stationID int64, limit int64, date string) ([]*models.LakeRecord, error)
+	GetRiverDataByStation(ctx context.Context, stationID int64, limit int64, date string) ([]*models.RiverRecord, error)
 	GetRainDataByDate(ctx context.Context, date string) ([]*models.RainRecord, error)
 	GetLakeDataByDate(ctx context.Context, date string) ([]*models.LakeRecord, error)
 	GetRiverDataByDate(ctx context.Context, date string) ([]*models.RiverRecord, error)
@@ -32,16 +32,16 @@ func NewService(rain repository.Rain, lake repository.Lake, river repository.Riv
 	}
 }
 
-func (s *service) GetRainDataByStation(ctx context.Context, stationID int64, limit int64) ([]*models.RainRecord, error) {
-	return s.rainRepo.GetByStationID(ctx, stationID, limit)
+func (s *service) GetRainDataByStation(ctx context.Context, stationID int64, limit int64, date string) ([]*models.RainRecord, error) {
+	return s.rainRepo.GetByStationID(ctx, stationID, limit, date)
 }
 
-func (s *service) GetLakeDataByStation(ctx context.Context, stationID int64, limit int64) ([]*models.LakeRecord, error) {
-	return s.lakeRepo.GetByStationID(ctx, stationID, limit)
+func (s *service) GetLakeDataByStation(ctx context.Context, stationID int64, limit int64, date string) ([]*models.LakeRecord, error) {
+	return s.lakeRepo.GetByStationID(ctx, stationID, limit, date)
 }
 
-func (s *service) GetRiverDataByStation(ctx context.Context, stationID int64, limit int64) ([]*models.RiverRecord, error) {
-	return s.riverRepo.GetByStationID(ctx, stationID, limit)
+func (s *service) GetRiverDataByStation(ctx context.Context, stationID int64, limit int64, date string) ([]*models.RiverRecord, error) {
+	return s.riverRepo.GetByStationID(ctx, stationID, limit, date)
 }
 
 func (s *service) GetRainDataByDate(ctx context.Context, date string) ([]*models.RainRecord, error) {

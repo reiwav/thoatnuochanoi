@@ -22,8 +22,9 @@ func NewWaterHandler(service water.Service) *WaterHandler {
 func (h *WaterHandler) GetRainHistory(c *gin.Context) {
 	stationID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 	limit, _ := strconv.ParseInt(c.DefaultQuery("limit", "100"), 10, 64)
+	date := c.Query("date")
 
-	res, err := h.service.GetRainDataByStation(c.Request.Context(), stationID, limit)
+	res, err := h.service.GetRainDataByStation(c.Request.Context(), stationID, limit, date)
 	web.AssertNil(err)
 	h.SendData(c, res)
 }
@@ -31,8 +32,9 @@ func (h *WaterHandler) GetRainHistory(c *gin.Context) {
 func (h *WaterHandler) GetLakeHistory(c *gin.Context) {
 	stationID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 	limit, _ := strconv.ParseInt(c.DefaultQuery("limit", "100"), 10, 64)
+	date := c.Query("date")
 
-	res, err := h.service.GetLakeDataByStation(c.Request.Context(), stationID, limit)
+	res, err := h.service.GetLakeDataByStation(c.Request.Context(), stationID, limit, date)
 	web.AssertNil(err)
 	h.SendData(c, res)
 }
@@ -40,8 +42,9 @@ func (h *WaterHandler) GetLakeHistory(c *gin.Context) {
 func (h *WaterHandler) GetRiverHistory(c *gin.Context) {
 	stationID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 	limit, _ := strconv.ParseInt(c.DefaultQuery("limit", "100"), 10, 64)
+	date := c.Query("date")
 
-	res, err := h.service.GetRiverDataByStation(c.Request.Context(), stationID, limit)
+	res, err := h.service.GetRiverDataByStation(c.Request.Context(), stationID, limit, date)
 	web.AssertNil(err)
 	h.SendData(c, res)
 }

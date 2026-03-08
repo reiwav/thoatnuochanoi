@@ -2,18 +2,26 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import {
     Grid, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
-    CircularProgress, Typography, FormControl, InputLabel, Select, MenuItem, Stack, Box
+    CircularProgress, Typography, FormControl, InputLabel, Select, MenuItem, Stack, Box, TextField
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import ReactApexChart from 'react-apexcharts';
 import dayjs from 'dayjs';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import 'dayjs/locale/vi';
 
 // project imports
 import MainCard from 'ui-component/cards/MainCard';
 import stationApi from 'api/station';
 
 const StationHistory = ({ type }) => {
+    const theme = useTheme();
     const [loading, setLoading] = useState(false);
     const [stations, setStations] = useState([]);
     const [selectedStation, setSelectedStation] = useState('');
+    const [selectedDate, setSelectedDate] = useState(dayjs());
     const [history, setHistory] = useState([]);
 
     const loadStations = useCallback(async () => {
@@ -43,7 +51,11 @@ const StationHistory = ({ type }) => {
                 lake: stationApi.lake,
                 river: stationApi.river
             };
-            const res = await apiMap[type].getHistory(selectedStation, { limit: 100 });
+            const params = { limit: 500 };
+            if (selectedDate) {
+                params.date = selectedDate.format('YYYY-MM-DD');
+            }
+            const res = await apiMap[type].getHistory(selectedStation, params);
             if (res.data?.status === 'success') {
                 setHistory(res.data.data || []);
             }
@@ -52,7 +64,7 @@ const StationHistory = ({ type }) => {
         } finally {
             setLoading(false);
         }
-    }, [type, selectedStation]);
+    }, [type, selectedStation, selectedDate]);
 
     useEffect(() => { loadStations(); }, [loadStations]);
     useEffect(() => { loadHistory(); }, [loadHistory]);
@@ -75,23 +87,76 @@ const StationHistory = ({ type }) => {
         }
     };
 
+    const chartOptions = {
+        chart: {
+            type: 'line',
+            height: 350,
+            toolbar: { show: false },
+            zoom: { enabled: false },
+            fontFamily: theme.typography.fontFamily
+        },
+        dataLabels: { enabled: false },
+        stroke: { curve: 'smooth', width: 3 },
+        xaxis: {
+            type: 'datetime',
+            labels: {
+                datetimeUTC: false,
+                format: 'dd/MM HH:mm'
+            }
+        },
+        yaxis: {
+            title: { text: getValueLabel() }
+        },
+        tooltip: {
+            x: { format: 'dd/MM/yyyy HH:mm' }
+        },
+        colors: [theme.palette.primary.main]
+    };
+
+    const chartSeries = [{
+        name: getValueLabel(),
+        data: [...history].reverse().map(item => ({
+            x: new Date(item.timestamp).getTime(),
+            y: item.value || 0
+        }))
+    }];
+
     return (
         <MainCard title={getTitle()}>
             <Stack spacing={3}>
-                <Box sx={{ maxWidth: 400 }}>
-                    <FormControl fullWidth size="small">
-                        <InputLabel>Chọn trạm đo</InputLabel>
-                        <Select
-                            value={selectedStation}
-                            label="Chọn trạm đo"
-                            onChange={(e) => setSelectedStation(e.target.value)}
-                        >
-                            {stations.map((s) => (
-                                <MenuItem key={s.id} value={s.id}>{s.TenTram}</MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
+                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                    <Box sx={{ minWidth: 250 }}>
+                        <FormControl fullWidth size="small">
+                            <InputLabel>Chọn trạm đo</InputLabel>
+                            <Select
+                                value={selectedStation}
+                                label="Chọn trạm đo"
+                                onChange={(e) => setSelectedStation(e.target.value)}
+                            >
+                                {stations.map((s) => (
+                                    <MenuItem key={s.id} value={s.id}>{s.TenTram}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </Box>
+                    <Box sx={{ minWidth: 200 }}>
+                        <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
+                            <DatePicker
+                                label="Chọn ngày"
+                                value={selectedDate}
+                                onChange={(newValue) => setSelectedDate(newValue)}
+                                format="DD/MM/YYYY"
+                                slotProps={{ textField: { size: 'small', fullWidth: true } }}
+                            />
+                        </LocalizationProvider>
+                    </Box>
                 </Box>
+
+                {!loading && history.length > 0 && (
+                    <Box sx={{ p: 2, bgcolor: 'background.paper', borderRadius: '12px', border: '1px solid', borderColor: 'divider' }}>
+                        <ReactApexChart options={chartOptions} series={chartSeries} type="line" height={350} />
+                    </Box>
+                )}
 
                 <TableContainer component={Paper} sx={{ border: '1px solid', borderColor: 'divider', boxShadow: 'none', borderRadius: '12px' }}>
                     <Table>

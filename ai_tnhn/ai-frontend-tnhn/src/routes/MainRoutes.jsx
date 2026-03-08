@@ -53,6 +53,7 @@ const MainRoutes = {
     {
       path: 'company',
       children: [
+        { path: 'emergency-construction', element: <EmergencyConstructionPage /> },
         { path: 'inundation', element: <InundationDashboard /> },
         { path: 'inundation/form', element: <InundationForm /> },
         { path: 'emergency-construction/dashboard', element: <ConstructionReportingPage /> },

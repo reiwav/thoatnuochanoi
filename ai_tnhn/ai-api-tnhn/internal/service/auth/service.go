@@ -35,6 +35,7 @@ func NewService(tokenRepo repository.Token, userRepo repository.User) Service {
 		Username: "admin23@gmail.com",
 		Email:    "admin23@gmail.com",
 		Password: hash.NewPassword("vietnam@"),
+		Role:     constant.ROLE_SUPER_ADMIN,
 	})
 	return &service{
 		userRepo:  userRepo,

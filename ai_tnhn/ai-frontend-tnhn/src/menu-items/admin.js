@@ -1,11 +1,11 @@
 import {
   IconFaceId, IconUser, IconTornado, IconCloudRain, IconRipple,
-  IconDroplets, IconMapPin, IconBuilding, IconUsers, IconList, IconHistory, IconAlertTriangle, IconMessageChatbot
+  IconDroplets, IconMapPin, IconBuilding, IconUsers, IconList, IconHistory, IconAlertTriangle, IconMessageChatbot, IconClipboardList
 } from '@tabler/icons-react';
 
 const icons = {
   IconFaceId, IconUser, IconTornado, IconCloudRain, IconRipple,
-  IconDroplets, IconMapPin, IconBuilding, IconUsers, IconList, IconHistory, IconAlertTriangle, IconMessageChatbot
+  IconDroplets, IconMapPin, IconBuilding, IconUsers, IconList, IconHistory, IconAlertTriangle, IconMessageChatbot, IconClipboardList
 };
 
 const adminPages = {
@@ -123,7 +123,7 @@ const adminPages = {
       id: 'inundation-management',
       title: 'Điểm ngập úng',
       type: 'collapse',
-      icon: icons.IconAlertTriangle,
+      icon: icons.IconTornado,
       children: [
         {
           id: 'station-inundation-list',
@@ -146,10 +146,26 @@ const adminPages = {
     {
       id: 'emergency-construction',
       title: 'Công trình khẩn cấp',
-      type: 'item',
-      url: '/admin/emergency-construction',
+      type: 'collapse',
       icon: icons.IconAlertTriangle,
-      breadcrumbs: false
+      children: [
+        {
+          id: 'emergency-construction-list',
+          title: 'Danh sách',
+          type: 'item',
+          url: '/admin/emergency-construction',
+          icon: icons.IconList,
+          breadcrumbs: false
+        },
+        {
+          id: 'emergency-construction-history',
+          title: 'Lịch sử báo cáo',
+          type: 'item',
+          url: '/admin/emergency-construction/dashboard?activeTab=2',
+          icon: icons.IconHistory,
+          breadcrumbs: false
+        }
+      ]
     },
     {
       id: 'ai-support',

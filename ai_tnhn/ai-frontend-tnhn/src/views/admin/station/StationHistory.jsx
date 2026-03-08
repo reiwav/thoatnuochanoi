@@ -35,7 +35,7 @@ const StationHistory = ({ type }) => {
             if (res.data?.status === 'success') {
                 const data = res.data.data.data || [];
                 setStations(data);
-                if (data.length > 0) setSelectedStation(data[0].id);
+                if (data.length > 0) setSelectedStation(data[0].Id);
             }
         } catch (err) {
             console.error('Failed to load stations:', err);
@@ -134,7 +134,9 @@ const StationHistory = ({ type }) => {
                                 onChange={(e) => setSelectedStation(e.target.value)}
                             >
                                 {stations.map((s) => (
-                                    <MenuItem key={s.id} value={s.id}>{s.TenTram}</MenuItem>
+                                    <MenuItem key={s.id} value={s.Id}>
+                                        {s.TenTram} ({s.DiaChi})
+                                    </MenuItem>
                                 ))}
                             </Select>
                         </FormControl>

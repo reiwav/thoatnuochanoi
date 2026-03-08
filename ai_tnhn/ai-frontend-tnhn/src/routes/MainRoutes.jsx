@@ -16,6 +16,8 @@ const StationHistory = Loadable(lazy(() => import('views/admin/station/StationHi
 const InundationStationHistory = Loadable(lazy(() => import('views/admin/station/InundationStationHistory')));
 const AiSupportPage = Loadable(lazy(() => import('views/admin/ai-support')));
 const EmergencyConstructionPage = Loadable(lazy(() => import('views/admin/emergency-construction')));
+const ConstructionReportingPage = Loadable(lazy(() => import('views/admin/emergency-construction/ConstructionReporting')));
+const ConstructionFormPage = Loadable(lazy(() => import('views/admin/emergency-construction/ConstructionForm')));
 
 // ==============================|| MAIN ROUTING ||============================== //
 
@@ -33,6 +35,8 @@ const MainRoutes = {
         { path: 'employee', element: <EmployeePage /> },
         { path: 'organization', element: <OrganizationPage /> },
         { path: 'emergency-construction', element: <EmergencyConstructionPage /> },
+        { path: 'emergency-construction/dashboard', element: <ConstructionReportingPage /> },
+        { path: 'emergency-construction/form', element: <ConstructionFormPage /> },
         { path: 'inundation', element: <InundationDashboard /> },
         { path: 'inundation/form', element: <InundationForm /> },
         { path: 'station/rain/list', element: <StationRainList /> },
@@ -50,7 +54,9 @@ const MainRoutes = {
       path: 'company',
       children: [
         { path: 'inundation', element: <InundationDashboard /> },
-        { path: 'inundation/form', element: <InundationForm /> }
+        { path: 'inundation/form', element: <InundationForm /> },
+        { path: 'emergency-construction/dashboard', element: <ConstructionReportingPage /> },
+        { path: 'emergency-construction/form', element: <ConstructionFormPage /> }
       ]
     }
   ]

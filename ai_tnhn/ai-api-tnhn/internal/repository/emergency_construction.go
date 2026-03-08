@@ -21,3 +21,10 @@ type EmergencyConstructionHistory interface {
 	List(ctx context.Context, filter filter.Filter) ([]*models.EmergencyConstructionHistory, int64, error)
 	ListByConstructionID(ctx context.Context, constructionID string) ([]*models.EmergencyConstructionHistory, error)
 }
+
+type EmergencyConstructionProgress interface {
+	mgo.BaseTable
+	Create(ctx context.Context, item *models.EmergencyConstructionProgress) error
+	List(ctx context.Context, filter filter.Filter) ([]*models.EmergencyConstructionProgress, int64, error)
+	ListByConstructionID(ctx context.Context, constructionID string) ([]*models.EmergencyConstructionProgress, error)
+}

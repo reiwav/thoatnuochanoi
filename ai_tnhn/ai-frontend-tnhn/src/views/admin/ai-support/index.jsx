@@ -207,6 +207,102 @@ const AiSupport = () => {
         }
     };
 
+    const handleListConstructions = async () => {
+        setLoading(true);
+        try {
+            const res = await axiosClient.get('/admin/emergency-constructions');
+            if (res.data?.status === 'success') {
+                const items = res.data.data.data;
+                let tableText = `### Danh sách Công trình khẩn\n\n`;
+
+                if (items.length === 0) {
+                    tableText += 'Không tìm thấy công trình nào.';
+                } else {
+                    tableText += '| Tên công trình | Địa điểm | Trạng thái | Thao tác |\n';
+                    tableText += '| :--- | :--- | :--- | :--- |\n';
+                    items.forEach(item => {
+                        tableText += `| ${item.name} | ${item.location} | ${item.status} | [Xem lịch sử](#emc-history-${item.id}) |\n`;
+                    });
+                }
+
+                const aiMsg = {
+                    id: Date.now(),
+                    role: 'ai',
+                    text: tableText
+                };
+                setMessages(prev => [...prev, aiMsg]);
+            }
+        } catch (error) {
+            console.error('Failed to list constructions:', error);
+            const aiMsg = {
+                id: Date.now(),
+                role: 'ai',
+                text: 'Không thể lấy danh sách công trình lúc này. Vui lòng thử lại sau.'
+            };
+            setMessages(prev => [...prev, aiMsg]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleEmcHistory = async (id) => {
+        setLoading(true);
+        try {
+            const res = await axiosClient.get(`/admin/emergency-constructions/${id}/progress`);
+            if (res.data?.status === 'success') {
+                const history = res.data.data;
+                let historyText = `### Lịch sử thi công\n\n`;
+
+                if (history.length === 0) {
+                    historyText += 'Chưa có báo cáo tiến độ nào cho công trình này.';
+                } else {
+                    history.forEach(h => {
+                        const date = new Date(h.report_date * 1000).toLocaleString('vi-VN');
+                        historyText += `**Ngày:** ${date}\n`;
+                        historyText += `**Công việc:** ${h.work_done}\n`;
+                        if (h.progress_percentage > 0) {
+                            historyText += `**Tiến độ:** ${h.progress_percentage}%\n`;
+                        }
+                        if (h.issues) {
+                            historyText += `**Khó khăn/Vướng mắc:** ${h.issues}\n`;
+                        }
+                        if (h.is_completed) {
+                            historyText += `**Trạng thái:** ✅ Đã hoàn thành\n`;
+                        } else if (h.expected_completion_date > 0) {
+                            const expDate = new Date(h.expected_completion_date * 1000).toLocaleDateString('vi-VN');
+                            historyText += `**Dự kiến xong:** ${expDate}\n`;
+                        }
+
+                        if (h.reporter_name) {
+                            historyText += `**Người báo cáo:** ${h.reporter_name} (${h.reporter_email})\n`;
+                            if (h.reporter_org_name) {
+                                historyText += `**Đơn vị:** ${h.reporter_org_name}\n`;
+                            }
+                        }
+                        historyText += `---\n`;
+                    });
+                }
+
+                const aiMsg = {
+                    id: Date.now(),
+                    role: 'ai',
+                    text: historyText
+                };
+                setMessages(prev => [...prev, aiMsg]);
+            }
+        } catch (error) {
+            console.error('Failed to fetch emc history:', error);
+            const aiMsg = {
+                id: Date.now(),
+                role: 'ai',
+                text: 'Không thể lấy lịch sử thi công này. Vui lòng thử lại sau.'
+            };
+            setMessages(prev => [...prev, aiMsg]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const formatBytes = (bytes) => {
         if (!bytes) return '0 B';
         const k = 1024;
@@ -293,7 +389,6 @@ const AiSupport = () => {
                                                                 <IconButton
                                                                     size="small"
                                                                     color="primary"
-                                                                    variant="contained"
                                                                     sx={{
                                                                         bgcolor: 'primary.light',
                                                                         '&:hover': { bgcolor: 'primary.main', color: 'white' },
@@ -313,6 +408,39 @@ const AiSupport = () => {
                                                                     <IconMail size={14} />
                                                                     <Typography variant="caption" fontWeight={700} sx={{ color: 'inherit' }}>
                                                                         Xem chi tiết
+                                                                    </Typography>
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                        </Box>
+                                                    );
+                                                }
+                                                if (props.href && props.href.startsWith('#emc-history-')) {
+                                                    const emcId = props.href.replace('#emc-history-', '');
+                                                    return (
+                                                        <Box component="span" sx={{ display: 'inline-block', my: 0.5 }}>
+                                                            <Tooltip title="Xem lịch sử báo cáo thi công">
+                                                                <IconButton
+                                                                    size="small"
+                                                                    color="warning"
+                                                                    sx={{
+                                                                        bgcolor: 'warning.light',
+                                                                        '&:hover': { bgcolor: 'warning.main', color: 'white' },
+                                                                        borderRadius: '8px',
+                                                                        fontSize: '12px',
+                                                                        px: 1.5,
+                                                                        py: 0.5,
+                                                                        height: 'auto',
+                                                                        width: 'auto',
+                                                                        gap: 0.5
+                                                                    }}
+                                                                    onClick={(e) => {
+                                                                        e?.preventDefault();
+                                                                        handleEmcHistory(emcId);
+                                                                    }}
+                                                                >
+                                                                    <IconBolt size={14} />
+                                                                    <Typography variant="caption" fontWeight={700} sx={{ color: 'inherit' }}>
+                                                                        Xem lịch sử
                                                                     </Typography>
                                                                 </IconButton>
                                                             </Tooltip>
@@ -492,6 +620,31 @@ const AiSupport = () => {
                                 </Box>
                             )}
                         </Box>
+
+                        <Divider />
+
+                        {/* Emergency Construction Stat */}
+                        <Box>
+                            <Stack direction="row" spacing={1} alignItems="center" mb={1}>
+                                <Avatar sx={{ width: 28, height: 28, bgcolor: '#fff7ed', color: '#f97316' }}>
+                                    <IconBolt size={16} />
+                                </Avatar>
+                                <Typography variant="subtitle2" fontWeight={800} color="text.secondary">CÔNG TRÌNH KHẨN</Typography>
+                            </Stack>
+                            <Box sx={{ ml: 4.5 }}>
+                                <Button
+                                    size="small"
+                                    variant="outlined"
+                                    color="warning"
+                                    onClick={handleListConstructions}
+                                    sx={{ fontSize: '10px', py: 0.5, borderRadius: '8px' }}
+                                >
+                                    Xem danh sách
+                                </Button>
+                            </Box>
+                        </Box>
+
+                        <Divider />
                     </Stack>
                 </Paper>
 

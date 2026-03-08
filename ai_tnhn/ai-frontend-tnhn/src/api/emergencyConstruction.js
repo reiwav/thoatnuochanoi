@@ -21,6 +21,12 @@ const emergencyConstructionApi = {
     },
     getGlobalHistory: (params) => {
         return axiosClient.get('/admin/emergency-constructions/history', { params });
+    },
+    createProgress: (data) => {
+        return axiosClient.post('/admin/emergency-constructions/progress', data);
+    },
+    getProgressHistory: (id) => {
+        return axiosClient.get(`/admin/emergency-constructions/${id}/progress`);
     }
 };
 

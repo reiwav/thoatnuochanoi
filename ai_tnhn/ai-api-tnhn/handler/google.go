@@ -8,6 +8,7 @@ import (
 	"ai-api-tnhn/internal/service/googleapi"
 	"ai-api-tnhn/internal/service/googledrive"
 	"ai-api-tnhn/internal/service/water"
+	"ai-api-tnhn/utils/web"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -20,24 +21,26 @@ import (
 )
 
 type GoogleHandler struct {
-	googleSvc googleapi.Service
-	geminiSvc gemini.Service
-	driveSvc  googledrive.Service
-	waterSvc  water.Service
-	emailSvc  email.Service
-	config    config.GoogleDriveConfig
-	log       logger.Logger
+	googleSvc   googleapi.Service
+	geminiSvc   gemini.Service
+	driveSvc    googledrive.Service
+	waterSvc    water.Service
+	emailSvc    email.Service
+	contextWith web.ContextWith
+	config      config.GoogleDriveConfig
+	log         logger.Logger
 }
 
-func NewGoogleHandler(googleSvc googleapi.Service, geminiSvc gemini.Service, driveSvc googledrive.Service, waterSvc water.Service, emailSvc email.Service, conf config.GoogleDriveConfig, log logger.Logger) *GoogleHandler {
+func NewGoogleHandler(googleSvc googleapi.Service, geminiSvc gemini.Service, driveSvc googledrive.Service, waterSvc water.Service, emailSvc email.Service, contextWith web.ContextWith, conf config.GoogleDriveConfig, log logger.Logger) *GoogleHandler {
 	return &GoogleHandler{
-		googleSvc: googleSvc,
-		geminiSvc: geminiSvc,
-		driveSvc:  driveSvc,
-		waterSvc:  waterSvc,
-		emailSvc:  emailSvc,
-		config:    conf,
-		log:       log,
+		googleSvc:   googleSvc,
+		geminiSvc:   geminiSvc,
+		driveSvc:    driveSvc,
+		waterSvc:    waterSvc,
+		emailSvc:    emailSvc,
+		contextWith: contextWith,
+		config:      conf,
+		log:         log,
 	}
 }
 
@@ -108,7 +111,8 @@ func (h *GoogleHandler) Chat(c *gin.Context) {
 		return
 	}
 
-	response, err := h.geminiSvc.Chat(c.Request.Context(), body.Prompt, body.History)
+	userID, _ := h.contextWith.GetUserID(c)
+	response, err := h.geminiSvc.Chat(c.Request.Context(), body.Prompt, body.History, userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

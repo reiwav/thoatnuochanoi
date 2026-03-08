@@ -22,6 +22,14 @@ const adminPages = {
       breadcrumbs: false
     },
     {
+      id: 'emergency-construction-report',
+      title: 'Công trình khẩn',
+      type: 'item',
+      url: '/admin/emergency-construction/dashboard',
+      icon: icons.IconAlertTriangle,
+      breadcrumbs: false
+    },
+    {
       id: 'organization-list',
       title: 'Tổ chức',
       type: 'item',

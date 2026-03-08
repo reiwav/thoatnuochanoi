@@ -2,6 +2,7 @@ package gemini
 
 import (
 	"ai-api-tnhn/internal/repository"
+	"ai-api-tnhn/internal/service/emergency_construction"
 	"ai-api-tnhn/internal/service/googleapi"
 	"ai-api-tnhn/internal/service/inundation"
 	querysvc "ai-api-tnhn/internal/service/query"
@@ -25,7 +26,7 @@ type ChatMessage struct {
 }
 
 type Service interface {
-	Chat(ctx context.Context, prompt string, history []ChatMessage) (string, error)
+	Chat(ctx context.Context, prompt string, history []ChatMessage, userID string) (string, error)
 }
 
 type service struct {
@@ -36,10 +37,11 @@ type service struct {
 	inuSvc         inundation.Service
 	querySvc       querysvc.Service
 	stationDataSvc stationdata.Service
+	emcSvc         emergency_construction.Service
 	aiUsageRepo    repository.AiUsage
 }
 
-func NewService(apiKey string, waterSvc water.Service, googleApiSvc googleapi.Service, inuSvc inundation.Service, querySvc querysvc.Service, stationDataSvc stationdata.Service, aiUsageRepo repository.AiUsage) (Service, error) {
+func NewService(apiKey string, waterSvc water.Service, googleApiSvc googleapi.Service, inuSvc inundation.Service, querySvc querysvc.Service, stationDataSvc stationdata.Service, emcSvc emergency_construction.Service, aiUsageRepo repository.AiUsage) (Service, error) {
 	if apiKey == "" {
 		return nil, fmt.Errorf("gemini api key is required")
 	}
@@ -56,7 +58,7 @@ func NewService(apiKey string, waterSvc water.Service, googleApiSvc googleapi.Se
 	// Set a system instruction to give the AI context
 	model.SystemInstruction = &genai.Content{
 		Parts: []genai.Part{
-			genai.Text("Bạn là trợ lý AI thông minh của Hệ thống Thoát nước Hà Nội (TNHN). Hãy trả lời câu hỏi của người dùng một cách lịch sự, chuyên nghiệp và hữu ích bằng tiếng Việt. Bạn có khả năng gọi công cụ để lấy dữ liệu. Bạn HOÀN TOÀN có thể đọc nội dung chi tiết của email (bao gồm cả đã đọc và chưa đọc) bằng công cụ read_email_by_id hoặc read_email_by_title. Khi cung cấp link tải file đính kèm email, hãy luôn prepend URL: http://localhost:8089 vào trước link. KHI LIỆT KÊ DANH SÁCH EMAIL TRONG BẢNG, hãy luôn thêm một cột 'Thao tác' và trong đó chứa một link Markdown với định dạng: [Xem chi tiết](#email-detail-[ID]) (trong đó [ID] lấy từ trường 'id' của email) để người dùng có thể nhấn vào xem nội dung chi tiết email đó thông qua API trực tiếp."),
+			genai.Text("Bạn là trợ lý AI thông minh của Hệ thống Thoát nước Hà Nội (TNHN). Hãy trả lời câu hỏi của người dùng một cách lịch sự, chuyên nghiệp và hữu ích bằng tiếng Việt. Bạn có khả năng gọi công cụ để lấy dữ liệu. Bạn HOÀN TOÀN có thể đọc nội dung chi tiết của email (bao gồm cả đã đọc và chưa đọc) bằng công cụ read_email_by_id hoặc read_email_by_title. Khi cung cấp link tải file đính kèm email, hãy luôn prepend URL: http://localhost:8089 vào trước link. KHI LIỆT KÊ DANH SÁCH EMAIL TRONG BẢNG, hãy luôn thêm một cột 'Thao tác' và trong đó chứa một link Markdown với định dạng: [Xem chi tiết](#email-detail-[ID]) (trong đó [ID] lấy từ trường 'id' của email). BẠN CŨNG CÓ THỂ báo cáo tiến độ thi công hàng ngày cho các công trình khẩn (emergency constructions) và xem lịch sử thi công của chúng. Khi báo cáo, hãy chủ động hỏi người dùng các thông tin chi tiết: công thực việc thực tế hôm nay, phần trăm hoàn thành (%), các vướng mắc hay khó khăn gặp phải, và ngày dự kiến hoàn thành nếu chưa xong."),
 		},
 	}
 
@@ -68,11 +70,12 @@ func NewService(apiKey string, waterSvc water.Service, googleApiSvc googleapi.Se
 		inuSvc:         inuSvc,
 		querySvc:       querySvc,
 		stationDataSvc: stationDataSvc,
+		emcSvc:         emcSvc,
 		aiUsageRepo:    aiUsageRepo,
 	}, nil
 }
 
-func (s *service) Chat(ctx context.Context, prompt string, history []ChatMessage) (string, error) {
+func (s *service) Chat(ctx context.Context, prompt string, history []ChatMessage, userID string) (string, error) {
 	// Define Tools
 	tools := []*genai.FunctionDeclaration{
 		{
@@ -205,6 +208,37 @@ func (s *service) Chat(ctx context.Context, prompt string, history []ChatMessage
 				Required: []string{"id"},
 			},
 		},
+		{
+			Name:        "report_emergency_work_progress",
+			Description: "Báo cáo tiến độ công việc hàng ngày cho một công trình khẩn. Bạn cần ID công trình (construction_id).",
+			Parameters: &genai.Schema{
+				Type: genai.TypeObject,
+				Properties: map[string]*genai.Schema{
+					"construction_id":          {Type: genai.TypeString, Description: "ID của công trình"},
+					"work_done":                {Type: genai.TypeString, Description: "Mô tả công việc đã làm được trong ngày"},
+					"progress_percentage":      {Type: genai.TypeInteger, Description: "Phần trăm hoàn thành của công trình (0-100)"},
+					"issues":                   {Type: genai.TypeString, Description: "Các vướng mắc, khó khăn gặp phải (nếu có)"},
+					"is_completed":             {Type: genai.TypeBoolean, Description: "Công trình đã hoàn thành chưa?"},
+					"expected_completion_date": {Type: genai.TypeString, Description: "Ngày dự kiến hoàn thành nếu chưa xong (YYYY-MM-DD)"},
+				},
+				Required: []string{"construction_id", "work_done"},
+			},
+		},
+		{
+			Name:        "get_emergency_work_history",
+			Description: "Lấy lịch sử báo cáo tiến độ thi công của một công trình khẩn theo ID.",
+			Parameters: &genai.Schema{
+				Type: genai.TypeObject,
+				Properties: map[string]*genai.Schema{
+					"construction_id": {Type: genai.TypeString, Description: "ID của công trình"},
+				},
+				Required: []string{"construction_id"},
+			},
+		},
+		{
+			Name:        "get_emergency_constructions",
+			Description: "Lấy danh sách tất cả các công trình khẩn đang có trong hệ thống.",
+		},
 	}
 
 	s.model.Tools = []*genai.Tool{{FunctionDeclarations: tools}}
@@ -303,6 +337,39 @@ func (s *service) Chat(ctx context.Context, prompt string, history []ChatMessage
 			case "read_email_by_id":
 				id, _ := call.Args["id"].(float64)
 				result, err = s.googleApiSvc.ReadEmailByID(ctx, uint32(id))
+			case "report_emergency_work_progress":
+				constructionID, _ := call.Args["construction_id"].(string)
+				workDone, _ := call.Args["work_done"].(string)
+				progressPercentage, _ := call.Args["progress_percentage"].(float64)
+				issues, _ := call.Args["issues"].(string)
+				isCompleted, _ := call.Args["is_completed"].(bool)
+				expectedDateStr, _ := call.Args["expected_completion_date"].(string)
+
+				var expectedDate int64
+				if expectedDateStr != "" {
+					t, err := time.Parse("2006-01-02", expectedDateStr)
+					if err == nil {
+						expectedDate = t.Unix()
+					}
+				}
+
+				progress := &models.EmergencyConstructionProgress{
+					ConstructionID:         constructionID,
+					ReportDate:             time.Now().Unix(),
+					WorkDone:               workDone,
+					ProgressPercentage:     int(progressPercentage),
+					Issues:                 issues,
+					IsCompleted:            isCompleted,
+					ExpectedCompletionDate: expectedDate,
+					ReportedBy:             userID,
+				}
+				err = s.emcSvc.ReportProgress(ctx, progress)
+				result = map[string]string{"status": "success", "message": "Báo cáo tiến độ thành công"}
+			case "get_emergency_work_history":
+				constructionID, _ := call.Args["construction_id"].(string)
+				result, err = s.emcSvc.GetProgressHistory(ctx, constructionID)
+			case "get_emergency_constructions":
+				result, _, err = s.emcSvc.List(ctx, nil)
 			default:
 				err = fmt.Errorf("unknown tool: %s", call.Name)
 			}

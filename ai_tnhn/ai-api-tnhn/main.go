@@ -49,6 +49,7 @@ func main() {
 	aiUsageRepo := query.NewAiUsageRepo(db.DB, "ai_usage_records", "aiu", log)
 	emConstructionRepo := query.NewEmergencyConstructionRepository(db.DB, "emergency_constructions", "emc", log)
 	emConstructionHistoryRepo := query.NewEmergencyConstructionHistoryRepository(db.DB, "emergency_construction_histories", "emch", log)
+	emConstructionProgressRepo := query.NewEmergencyConstructionProgressRepository(db.DB, "emergency_construction_progress", "emcp", log)
 
 	rainStationRepo := query.NewRainStationRepo(db.DB, "rain_stations", "rst", log)
 	lakeStationRepo := query.NewLakeStationRepo(db.DB, "lake_stations", "lst", log)
@@ -78,11 +79,11 @@ func main() {
 	if googleApiService != nil {
 		googleApiService.SetEmailService(emailService)
 	}
-	emConstructionService := emergency_construction.NewService(emConstructionRepo, emConstructionHistoryRepo)
+	emConstructionService := emergency_construction.NewService(emConstructionRepo, emConstructionHistoryRepo, emConstructionProgressRepo, userRepo, orgRepo)
 	queryService := querysvc.NewService(db.DB)
 	queryHandler := handler.NewQueryHandler(queryService)
 	stationDataService := stationdata.NewService(stationService, waterService)
-	geminiService, err := gemini.NewService(confg.GeminiAPIKey, waterService, googleApiService, inuService, queryService, stationDataService, aiUsageRepo)
+	geminiService, err := gemini.NewService(confg.GeminiAPIKey, waterService, googleApiService, inuService, queryService, stationDataService, emConstructionService, aiUsageRepo)
 	if err != nil {
 		log.GetLogger().Errorf("Failed to initialize Gemini service: %v", err)
 	} else {
@@ -136,7 +137,7 @@ func main() {
 	inuHandler := handler.NewInundationHandler(inuService, authService, contextWith)
 	waterHandler := handler.NewWaterHandler(waterService)
 	emConstructionHandler := handler.NewEmergencyConstructionHandler(emConstructionService)
-	googleHandler := handler.NewGoogleHandler(googleApiService, geminiService, driveService, waterService, emailService, confg.GoogleDriveConfig, log)
+	googleHandler := handler.NewGoogleHandler(googleApiService, geminiService, driveService, waterService, emailService, contextWith, confg.GoogleDriveConfig, log)
 	mid := middleware.NewMiddleware(confg, tokenRepo, contextWith, log)
 	handlers := router.HandlerFuncs{
 		Logger:                         log,

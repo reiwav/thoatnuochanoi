@@ -1,0 +1,78 @@
+package config
+
+import (
+	"time"
+
+	"github.com/caarlos0/env/v6"
+)
+
+type Config struct {
+	Mode string `ENV:"EV_SV_MODE" `
+	Port string `ENV:"EV_SV_PORT" `
+	DB
+	TelegramConfig
+	LoggerConfig
+	JWTConfig
+	GoogleDriveConfig
+	EmailConfig
+	OAuthConfig
+	GeminiConfig
+}
+
+type OAuthConfig struct {
+	ClientID     string `env:"GOOGLE_OAUTH_CLIENT_ID" `
+	ClientSecret string `env:"GOOGLE_OAUTH_CLIENT_SECRET" `
+	CallbackURL  string `env:"GOOGLE_OAUTH_CALLBACK_URL" `
+	FrontendURL  string `env:"FRONTEND_URL" `
+}
+
+type GoogleDriveConfig struct {
+	Credentials          string `env:"GOOGLE_CREDENTIALS" `
+	GoogleRefreshToken   string `env:"GOOGLE_REFRESH_TOKEN" `
+	RootFolderID         string `env:"GOOGLE_DRIVE_ROOT_FOLDER_ID" `
+	TemplateDocID        string `env:"GOOGLE_DRIVE_TEMPLATE_DOC_ID" `
+	WorkspaceName        string `env:"GOOGLE_DRIVE_WORKSPACE_NAME" `
+	AppsScriptWebhookURL string `env:"APPS_SCRIPT_WEBHOOK_URL" `
+}
+
+type GeminiConfig struct {
+	GeminiAPIKey string `env:"GEMINI_API_KEY" `
+}
+
+type LoggerConfig struct {
+	LogDir  string `env:"LOG_DIR" `
+	LogFile string `env:"LOG_FILE" `
+}
+
+type TelegramConfig struct {
+	TeleToken  string `env:"TELEGRAM_TOKEN" `
+	TeleChatID string `env:"TELEGRAM_CHAT_ID"`
+}
+
+type DB struct {
+	DBName         string        `env:"EV_DB_NAME" `
+	DBUser         string        `env:"EV_DB_USER" `
+	DBPass         string        `env:"EV_DB_PASS" `
+	Path           string        `env:"EV_DB_PATH" `
+	MaxPoolSize    uint64        `env:"EV_DB_MAX_POOL_SIZE"`
+	MinPoolSize    uint64        `env:"EV_DB_MIN_POOL_SIZE"`
+	ConnectTimeout time.Duration `env:"EV_DB_CONNECTION_TIMEOUT"`
+}
+
+type JWTConfig struct {
+	SecretKey   string `env:"JWT_SECRET_KEY" `
+	ExpiryHours int    `env:"JWT_EXPIRY_HOURS" `
+}
+
+func LoadEnv() Config {
+	var config Config
+	_ = env.Parse(&config)
+	return config
+}
+
+type EmailConfig struct {
+	IMAPServer string `env:"EMAIL_IMAP_SERVER" `
+	User       string `env:"EMAIL_USER" `
+	Password   string `env:"EMAIL_PASSWORD" `
+	FromFilter string `env:"EMAIL_FROM_FILTER" `
+}

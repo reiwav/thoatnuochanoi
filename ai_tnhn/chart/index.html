@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hanoi Rainfall Chart</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.1/dist/chartjs-adapter-moment.min.js"></script>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background: #f4f7f6; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .controls { display: flex; gap: 10px; margin-bottom: 20px; align-items: flex-end; }
+        .control-group { display: flex; flex-direction: column; gap: 5px; }
+        button { padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        canvas { width: 100% !important; height: 500px !important; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Rainfall Data Visualization</h1>
+        <div class="controls">
+            <div class="control-group">
+                <label>Station ID</label>
+                <input type="number" id="stationId" value="9">
+            </div>
+            <div class="control-group">
+                <label>Start Date</label>
+                <input type="date" id="startDate" value="2025-07-09">
+            </div>
+            <div class="control-group">
+                <label>End Date</label>
+                <input type="date" id="endDate" value="2025-07-09">
+            </div>
+            <button onclick="loadData()">Load Chart</button>
+        </div>
+        <canvas id="rainChart"></canvas>
+    </div>
+
+    <script>
+        let myChart;
+
+        async function loadData() {
+            const stationId = document.getElementById('stationId').value;
+            const start = document.getElementById('startDate').value;
+            const end = document.getElementById('endDate').value;
+
+            const resp = await fetch(`/api/rain?station_id=${stationId}&start=${start}&end=${end}`);
+            const data = await resp.json();
+
+            if (myChart) myChart.destroy();
+
+            const ctx = document.getElementById('rainChart').getContext('2d');
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: `Rainfall (mm) - Station ${stationId}`,
+                        data: data.map(r => ({ x: r.timestamp, y: r.value })),
+                        borderColor: '#007bff',
+                        backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                        fill: true,
+                        tension: 0.1,
+                        pointRadius: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: { unit: 'hour', displayFormats: { hour: 'HH:mm' } },
+                            title: { display: true, text: 'Time' }
+                        },
+                        y: {
+                            title: { display: true, text: 'Rainfall (mm)' },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initial load
+        loadData();
+    </script>
+</body>
+</html>

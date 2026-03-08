@@ -13,6 +13,10 @@ import { toast } from 'react-hot-toast';
 import emergencyConstructionApi from 'api/emergencyConstruction';
 import authApi from 'api/auth';
 import MainCard from 'ui-component/cards/MainCard';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import 'dayjs/locale/vi';
 
 const ConstructionReporting = () => {
     const theme = useTheme();
@@ -28,6 +32,8 @@ const ConstructionReporting = () => {
     const [historyLoading, setHistoryLoading] = useState(false);
     const [constructions, setConstructions] = useState([]);
     const [history, setHistory] = useState([]);
+    const [historyDateFilter, setHistoryDateFilter] = useState(null);
+    const [historyConstructionFilter, setHistoryConstructionFilter] = useState('');
     const [userOrgId, setUserOrgId] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -160,16 +166,44 @@ const ConstructionReporting = () => {
 
     // --- Tab 2: Global History ---
     if (activeTab === 2) {
+        let filteredHistory = history;
+        if (historyDateFilter) {
+            const startOfDay = historyDateFilter.startOf('day').unix();
+            const endOfDay = historyDateFilter.endOf('day').unix();
+            filteredHistory = filteredHistory.filter(h => h.report_date >= startOfDay && h.report_date <= endOfDay);
+        }
+        if (historyConstructionFilter) {
+            filteredHistory = filteredHistory.filter(h => h.construction_id === historyConstructionFilter);
+        }
+
         return (
             <Box sx={{ px: 2, pt: 2, pb: 6 }}>
                 <Typography variant="h5" sx={{ fontWeight: 800, mb: 3 }}>Lịch sử báo cáo công trình</Typography>
+
+                <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+                    <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
+                        <DatePicker
+                            label="Chọn ngày báo cáo" value={historyDateFilter} onChange={(v) => setHistoryDateFilter(v)}
+                            format="DD/MM/YYYY" slotProps={{ textField: { size: 'small', sx: { minWidth: 200 } } }}
+                        />
+                    </LocalizationProvider>
+                    <TextField
+                        select label="Chọn công trình" size="small" value={historyConstructionFilter}
+                        onChange={(e) => setHistoryConstructionFilter(e.target.value)} sx={{ minWidth: 250 }}
+                        SelectProps={{ native: true }}
+                    >
+                        <option value="">Tất cả công trình</option>
+                        {constructions.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </TextField>
+                </Box>
+
                 {historyLoading ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>
-                ) : history.length === 0 ? (
+                ) : filteredHistory.length === 0 ? (
                     <Typography color="textSecondary" align="center" sx={{ py: 4, fontStyle: 'italic' }}>Chưa có báo cáo nào được ghi nhận.</Typography>
                 ) : (
                     <List sx={{ p: 0 }}>
-                        {history.map((h, idx) => (
+                        {filteredHistory.map((h, idx) => (
                             <Card key={idx} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '12px', mb: 2 }}>
                                 <CardContent sx={{ p: '16px !important' }}>
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>

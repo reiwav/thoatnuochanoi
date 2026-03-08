@@ -17,6 +17,8 @@ func (h HandlerFuncs) GoogleRoutes(api *gin.RouterGroup, mid middleware.Middlewa
 		google.GET("/inundation-summary", h.GoogleInundationSummaryHandler)
 		google.POST("/chat", h.GoogleChatHandler)
 		google.GET("/email/:id", h.GoogleEmailDetailHandler)
+		google.GET("/emails/recent", h.GoogleRecentEmailsHandler)
+		google.GET("/emails/unread", h.GoogleUnreadEmailsHandler)
 		google.POST("/quick-report", h.GenerateQuickReportHandler)
 	}
 }

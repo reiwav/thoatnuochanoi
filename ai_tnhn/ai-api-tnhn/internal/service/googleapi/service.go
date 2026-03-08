@@ -100,6 +100,8 @@ type Service interface {
 	GetRainSummary(ctx context.Context) (*RainSummaryData, error)
 	GetWaterSummary(ctx context.Context) (*WaterSummaryData, error)
 	GetInundationSummary(ctx context.Context) (*InundationSummaryData, error)
+	GetRecentEmails(ctx context.Context, limit int) ([]email.EmailInfo, error)
+	GetUnreadEmails(ctx context.Context, limit int) ([]email.EmailInfo, error)
 	ReadEmailByTitle(ctx context.Context, title string) (*email.EmailDetail, error)
 	ReadEmailByID(ctx context.Context, id uint32) (*email.EmailDetail, error)
 	SetEmailService(svc email.Service)
@@ -454,6 +456,20 @@ func (s *service) GetInundationSummary(ctx context.Context) (*InundationSummaryD
 		ActivePoints:  len(ongoing),
 		OngoingPoints: ongoing,
 	}, nil
+}
+
+func (s *service) GetRecentEmails(ctx context.Context, limit int) ([]email.EmailInfo, error) {
+	if s.emailSvc == nil {
+		return nil, fmt.Errorf("email service not initialized")
+	}
+	return s.emailSvc.GetRecentEmails(ctx, limit)
+}
+
+func (s *service) GetUnreadEmails(ctx context.Context, limit int) ([]email.EmailInfo, error) {
+	if s.emailSvc == nil {
+		return nil, fmt.Errorf("email service not initialized")
+	}
+	return s.emailSvc.GetUnreadEmails(ctx, limit)
 }
 
 func (s *service) ReadEmailByTitle(ctx context.Context, title string) (*email.EmailDetail, error) {

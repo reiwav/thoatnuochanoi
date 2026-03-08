@@ -141,6 +141,32 @@ func (h *GoogleHandler) GetEmailDetail(c *gin.Context) {
 	})
 }
 
+func (h *GoogleHandler) GetRecentEmails(c *gin.Context) {
+	emails, err := h.googleSvc.GetRecentEmails(c.Request.Context(), 10)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": "success",
+		"data":   emails,
+	})
+}
+
+func (h *GoogleHandler) GetUnreadEmails(c *gin.Context) {
+	emails, err := h.googleSvc.GetUnreadEmails(c.Request.Context(), 10)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": "success",
+		"data":   emails,
+	})
+}
+
 // GenerateQuickReport handles the request to generate a quick report via Apps Script
 func (h *GoogleHandler) GenerateQuickReport(c *gin.Context) {
 	if h.driveSvc == nil {

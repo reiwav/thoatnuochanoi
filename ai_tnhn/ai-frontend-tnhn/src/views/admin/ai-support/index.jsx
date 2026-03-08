@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
     Box, Typography, TextField, IconButton, Paper, Stack,
-    Avatar, CircularProgress, Divider, LinearProgress, Tooltip
+    Avatar, CircularProgress, Divider, LinearProgress, Tooltip, Button
 } from '@mui/material';
 import {
     IconSend, IconRobot, IconUser, IconMail, IconDatabase,
@@ -150,6 +150,8 @@ const AiSupport = () => {
                     text: `### ${detail.subject}\n**Từ:** ${detail.from}\n**Ngày:** ${detail.date}\n\n${detail.body}${attachmentsText}`
                 };
                 setMessages(prev => [...prev, aiMsg]);
+                // Refresh stats to update unread count
+                fetchStats();
             }
         } catch (error) {
             console.error('Failed to fetch email detail:', error);
@@ -157,6 +159,47 @@ const AiSupport = () => {
                 id: Date.now(),
                 role: 'ai',
                 text: 'Không thể lấy thông tin chi tiết email này. Vui lòng thử lại sau.'
+            };
+            setMessages(prev => [...prev, aiMsg]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleListEmails = async (type) => {
+        setLoading(true);
+        const label = type === 'recent' ? '10 email gần đây' : '10 email mới nhất';
+        const url = type === 'recent' ? '/admin/google/emails/recent' : '/admin/google/emails/unread';
+
+        try {
+            const res = await axiosClient.get(url);
+            if (res.data?.status === 'success') {
+                const emails = res.data.data;
+                let tableText = `### Danh sách ${label}\n\n`;
+
+                if (emails.length === 0) {
+                    tableText += 'Không tìm thấy email nào.';
+                } else {
+                    tableText += '| Người gửi | Tiêu đề | Thời gian | Thao tác |\n';
+                    tableText += '| :--- | :--- | :--- | :--- |\n';
+                    emails.forEach(m => {
+                        tableText += `| ${m.from} | ${m.subject} | ${m.date} | [Xem chi tiết](#email-detail-${m.id}) |\n`;
+                    });
+                }
+
+                const aiMsg = {
+                    id: Date.now(),
+                    role: 'ai',
+                    text: tableText
+                };
+                setMessages(prev => [...prev, aiMsg]);
+            }
+        } catch (error) {
+            console.error('Failed to list emails:', error);
+            const aiMsg = {
+                id: Date.now(),
+                role: 'ai',
+                text: 'Không thể lấy danh sách email lúc này. Vui lòng thử lại sau.'
             };
             setMessages(prev => [...prev, aiMsg]);
         } finally {
@@ -368,29 +411,26 @@ const AiSupport = () => {
                                     <Typography variant="h4" fontWeight={800} color="error.main" sx={{ mb: 1 }}>
                                         {stats.unread_emails} <Typography component="span" variant="body2" fontWeight={600} color="text.secondary">mới</Typography>
                                     </Typography>
-                                    {stats.unread_emails_list && stats.unread_emails_list.length > 0 && (
-                                        <Stack spacing={0.5} sx={{ mt: 1 }}>
-                                            {stats.unread_emails_list.map((mail, idx) => (
-                                                <Typography
-                                                    key={idx}
-                                                    variant="caption"
-                                                    display="block"
-                                                    sx={{
-                                                        fontSize: '11px',
-                                                        color: 'text.secondary',
-                                                        whiteSpace: 'nowrap',
-                                                        overflow: 'hidden',
-                                                        textOverflow: 'ellipsis',
-                                                        cursor: 'pointer',
-                                                        '&:hover': { color: 'primary.main', textDecoration: 'underline' }
-                                                    }}
-                                                    onClick={() => handleEmailDetail(mail.id)}
-                                                >
-                                                    • {mail.subject}
-                                                </Typography>
-                                            ))}
-                                        </Stack>
-                                    )}
+
+                                    <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
+                                        <Button
+                                            size="small"
+                                            variant="outlined"
+                                            onClick={() => handleListEmails('recent')}
+                                            sx={{ fontSize: '10px', py: 0.5, borderRadius: '8px' }}
+                                        >
+                                            Email gần đây
+                                        </Button>
+                                        <Button
+                                            size="small"
+                                            variant="contained"
+                                            disabled={stats.unread_emails === 0}
+                                            onClick={() => handleListEmails('unread')}
+                                            sx={{ fontSize: '10px', py: 0.5, borderRadius: '8px', boxShadow: 'none' }}
+                                        >
+                                            Email mới
+                                        </Button>
+                                    </Stack>
                                 </Box>
                             )}
                         </Box>

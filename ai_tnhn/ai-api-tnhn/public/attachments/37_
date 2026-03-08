@@ -1,0 +1,10 @@
+Reporting-MTA: dns; googlemail.com
+Arrival-Date: Sat, 07 Mar 2026 05:10:34 -0800 (PST)
+X-Original-Message-ID: <CAFa9P1OxpmYxSnWtig3+45T5ji0vor2jDXOkS5_kZ4fPWuShHw@mail.gmail.com>
+
+Final-Recipient: rfc822; workspace-thoatnuochanoi@gen-lang-client-0018780629.iam.gserviceaccount.com
+Action: failed
+Status: 5.1.2
+Diagnostic-Code: smtp; DNS Error: DNS type 'mx' lookup of gen-lang-client-0018780629.iam.gserviceaccount.com responded with code NXDOMAIN
+ Domain name not found: gen-lang-client-0018780629.iam.gserviceaccount.com For more information, go to https://support.google.com/mail/?p=BadRcptDomain
+Last-Attempt-Date: Sat, 07 Mar 2026 05:10:34 -0800 (PST)

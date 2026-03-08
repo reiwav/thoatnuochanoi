@@ -43,6 +43,7 @@ type Service interface {
 	GetLatestRainWarning(ctx context.Context) (string, error)
 	GetUnreadCount(ctx context.Context) (int, error)
 	GetRecentEmails(ctx context.Context, limit int) ([]EmailInfo, error)
+	GetUnreadEmails(ctx context.Context, limit int) ([]EmailInfo, error)
 	ReadEmailByTitle(ctx context.Context, title string) (*EmailDetail, error)
 	ReadEmailByID(ctx context.Context, id uint32) (*EmailDetail, error)
 }
@@ -320,6 +321,83 @@ func (s *service) GetRecentEmails(ctx context.Context, limit int) ([]EmailInfo, 
 	return results, nil
 }
 
+func (s *service) GetUnreadEmails(ctx context.Context, limit int) ([]EmailInfo, error) {
+	// 1. Connect
+	c, err := client.DialTLS(s.conf.IMAPServer, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect: %w", err)
+	}
+	defer c.Logout()
+
+	// 2. Login
+	cleanPassword := strings.ReplaceAll(s.conf.Password, " ", "")
+	if err := c.Login(s.conf.User, cleanPassword); err != nil {
+		return nil, fmt.Errorf("failed to login: %w", err)
+	}
+
+	// 3. Select INBOX
+	mbox, err := c.Select("INBOX", true)
+	if err != nil {
+		return nil, fmt.Errorf("failed to select: %w", err)
+	}
+
+	if mbox.Messages == 0 {
+		return []EmailInfo{}, nil
+	}
+
+	// 4. Search for UNSEEN
+	criteria := imap.NewSearchCriteria()
+	criteria.WithoutFlags = []string{imap.SeenFlag}
+	ids, err := c.Search(criteria)
+	if err != nil {
+		return nil, fmt.Errorf("failed to search: %w", err)
+	}
+
+	if len(ids) == 0 {
+		return []EmailInfo{}, nil
+	}
+
+	// 5. Take the last 'limit'
+	if len(ids) > limit {
+		ids = ids[len(ids)-limit:]
+	}
+
+	seqset := new(imap.SeqSet)
+	for _, id := range ids {
+		seqset.AddNum(id)
+	}
+
+	// Fetch envelopes
+	items := []imap.FetchItem{imap.FetchEnvelope}
+	messages := make(chan *imap.Message, len(ids))
+	done := make(chan error, 1)
+	go func() {
+		done <- c.Fetch(seqset, items, messages)
+	}()
+
+	var results []EmailInfo
+	for msg := range messages {
+		results = append(results, EmailInfo{
+			ID:        msg.SeqNum,
+			Subject:   msg.Envelope.Subject,
+			From:      msg.Envelope.From[0].PersonalName,
+			Date:      msg.Envelope.Date.Format("15:04 02/01"),
+			DetailAPI: fmt.Sprintf("/api/admin/google/email/%d", msg.SeqNum),
+		})
+	}
+
+	if err := <-done; err != nil {
+		return nil, fmt.Errorf("failed to fetch details: %w", err)
+	}
+
+	// Reverse to get newest first
+	for i, j := 0, len(results)-1; i < j; i, j = i+1, j-1 {
+		results[i], results[j] = results[j], results[i]
+	}
+
+	return results, nil
+}
+
 func (s *service) ReadEmailByTitle(ctx context.Context, title string) (*EmailDetail, error) {
 	// 1. Connect
 	c, err := client.DialTLS(s.conf.IMAPServer, nil)
@@ -462,8 +540,8 @@ func (s *service) ReadEmailByID(ctx context.Context, id uint32) (*EmailDetail, e
 		return nil, fmt.Errorf("failed to login to IMAP: %w", err)
 	}
 
-	// 3. Select INBOX
-	_, err = c.Select("INBOX", true)
+	// 3. Select INBOX (Read-Write to allow marking as seen)
+	_, err = c.Select("INBOX", false)
 	if err != nil {
 		return nil, fmt.Errorf("failed to select INBOX: %w", err)
 	}
@@ -487,6 +565,11 @@ func (s *service) ReadEmailByID(ctx context.Context, id uint32) (*EmailDetail, e
 	}
 	if err := <-done; err != nil {
 		return nil, fmt.Errorf("failed to fetch email: %w", err)
+	}
+
+	// Mark as read
+	if err := c.Store(seqset, imap.FormatFlagsOp(imap.AddFlags, true), []interface{}{imap.SeenFlag}, nil); err != nil {
+		fmt.Printf("Warning: failed to mark email %d as read: %v\n", id, err)
 	}
 
 	r := msg.GetBody(&section)

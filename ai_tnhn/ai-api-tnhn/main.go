@@ -154,6 +154,8 @@ func main() {
 		GoogleInundationSummaryHandler: googleHandler.GetInundationSummary,
 		GoogleChatHandler:              googleHandler.Chat,
 		GoogleEmailDetailHandler:       googleHandler.GetEmailDetail,
+		GoogleRecentEmailsHandler:      googleHandler.GetRecentEmails,
+		GoogleUnreadEmailsHandler:      googleHandler.GetUnreadEmails,
 		GenerateQuickReportHandler:     googleHandler.GenerateQuickReport,
 		GetRainDataByDate:              waterHandler.GetRainDataByDate,
 		DatabaseQueryHandler:           queryHandler.Query,

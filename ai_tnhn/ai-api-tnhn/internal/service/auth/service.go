@@ -2,11 +2,14 @@ package auth
 
 import (
 	"ai-api-tnhn/constant"
+	"ai-api-tnhn/internal/base/mgo/filter"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/repository"
 	"ai-api-tnhn/utils/hash"
 	"ai-api-tnhn/utils/web"
 	"context"
+	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -152,8 +155,14 @@ func (t service) ChangePassword(ctx context.Context, tokenID string, input Chang
 }
 
 func (t service) OAuthLogin(ctx context.Context, email string) (*models.Token, error) {
+	fmt.Println("======= email ========: ", email)
+	users, total, err := t.userRepo.List(ctx, filter.NewBasicFilter())
+	b, _ := json.Marshal(users)
+	fmt.Println("======= users ========: ", string(b))
+	fmt.Println("======= total ========: ", total)
+	fmt.Println("======= err ========: ", err)
 	var u *models.User
-	err := t.userRepo.R_SelectOne(ctx, bson.M{"email": email}, &u)
+	err = t.userRepo.R_SelectOne(ctx, bson.M{"email": email}, &u)
 	if err != nil {
 		return nil, web.BadRequest("Employee not found with email: " + email)
 	}

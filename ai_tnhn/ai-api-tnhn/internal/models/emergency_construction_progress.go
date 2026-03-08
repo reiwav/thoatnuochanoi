@@ -23,4 +23,5 @@ type EmergencyConstructionProgress struct {
 	ReporterName           string         `bson:"reporter_name" json:"reporter_name"`
 	ReporterEmail          string         `bson:"reporter_email" json:"reporter_email"`
 	ReporterOrgName        string         `bson:"reporter_org_name" json:"reporter_org_name"`
+	ConstructionName       string         `bson:"-" json:"construction_name"`
 }

@@ -123,9 +123,7 @@ func (s *service) ListHistory(ctx context.Context, f filter.Filter) ([]*models.E
 	// Try resolving construction name (Not perfectly optimized but will work)
 	for _, item := range items {
 		if cons, err := s.repo.GetByID(ctx, item.ConstructionID); err == nil && cons != nil {
-			// Actually ConstructionName doesn't exist on Progress. We might not need it
-			// if the frontend doesn't strictly break. Wait, frontend uses h.construction_name
-			// We can leave it as is, or we'd need to add ConstructionName to EmergencyConstructionProgress struct
+			item.ConstructionName = cons.Name
 		}
 	}
 	return items, total, nil
@@ -170,5 +168,13 @@ func (s *service) ReportProgress(ctx context.Context, progress *models.Emergency
 }
 
 func (s *service) GetProgressHistory(ctx context.Context, constructionID string) ([]*models.EmergencyConstructionProgress, error) {
-	return s.progressRepo.ListByConstructionID(ctx, constructionID)
+	items, err := s.progressRepo.ListByConstructionID(ctx, constructionID)
+	if err == nil {
+		if cons, errCons := s.repo.GetByID(ctx, constructionID); errCons == nil && cons != nil {
+			for _, item := range items {
+				item.ConstructionName = cons.Name
+			}
+		}
+	}
+	return items, err
 }

@@ -3,9 +3,13 @@ package router
 import (
 	"ai-api-tnhn/handler"
 	"ai-api-tnhn/router/middleware"
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 )
 
@@ -26,6 +30,22 @@ func (h HandlerFuncs) Create(mid middleware.Middleware, orgHandler *handler.Orga
 		}),
 	)
 	r.SetTrustedProxies(nil)
+	r.Use(func(c *gin.Context) {
+		// Nếu request không phải API và không tìm thấy file vật lý
+		if !strings.HasPrefix(c.Request.URL.Path, "/api") {
+			path := filepath.Join("./frontend_dist", c.Request.URL.Path)
+			_, err := os.Stat(path)
+			if os.IsNotExist(err) {
+				c.File("./frontend_dist/index.html")
+				c.Abort()
+				return
+			}
+		}
+		c.Next()
+	})
+	// Serve static web default frontend_dist
+	r.Use(static.Serve("/", static.LocalFile("./frontend_dist", false)))
+
 	r.Static("/public", "./public")
 	api := r.Group("/api")
 	authGroup := api.Group("/auth")
@@ -53,6 +73,10 @@ func (h HandlerFuncs) Create(mid middleware.Middleware, orgHandler *handler.Orga
 	h.EmergencyConstructionRoutes(apiAdmin, mid, emConstructionHandler)
 
 	apiAdmin.POST("/database/query", mid.MidBasicType(), h.DatabaseQueryHandler)
+
+	r.NoRoute(func(c *gin.Context) {
+		c.File("./frontend_dist/index.html")
+	})
 
 	return r
 }

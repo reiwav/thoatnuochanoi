@@ -33,10 +33,10 @@ export default function Login() {
                 </Box>
                 <Stack sx={{ alignItems: 'center', justifyContent: 'center', gap: 1 }}>
                   <Typography variant={downMD ? 'h3' : 'h2'} sx={{ color: 'secondary.main' }}>
-                    Trang quản trị FACE AI
+                    Thoát nước Hà Nội
                   </Typography>
                   <Typography variant="caption" sx={{ fontSize: '16px', textAlign: { xs: 'center', md: 'inherit' } }}>
-                    Xử lý nhận diện và đẩy dữ liệu khuôn mặt
+                    Hệ thống tích hợp AI thông minh
                   </Typography>
                 </Stack>
                 <Box sx={{ width: 1 }}>

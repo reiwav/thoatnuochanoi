@@ -3,6 +3,7 @@ ai_tnhn/ai-api-tnhn/config/env.go
 ai_tnhn/ai-api-tnhn/config/gen-lang-client-0018780629-a6ac17cdfc0a.json
 ai_tnhn/ai-api-tnhn/logs/
 ai_tnhn/ai-api-tnhn/*.log
+ai_tnhn/ai-api-tnhn/cmd/up_to_server/
 
 # deployment output
 deploy/

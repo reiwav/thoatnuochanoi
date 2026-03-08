@@ -1,6 +1,7 @@
 package gemini
 
 import (
+	"ai-api-tnhn/internal/base/mgo/filter"
 	"ai-api-tnhn/internal/repository"
 	"ai-api-tnhn/internal/service/emergency_construction"
 	"ai-api-tnhn/internal/service/googleapi"
@@ -17,6 +18,7 @@ import (
 	"ai-api-tnhn/internal/models"
 
 	"github.com/google/generative-ai-go/genai"
+	"go.mongodb.org/mongo-driver/bson"
 	"google.golang.org/api/option"
 )
 
@@ -58,7 +60,7 @@ func NewService(apiKey string, waterSvc water.Service, googleApiSvc googleapi.Se
 	// Set a system instruction to give the AI context
 	model.SystemInstruction = &genai.Content{
 		Parts: []genai.Part{
-			genai.Text("Bạn là trợ lý AI thông minh của Hệ thống Thoát nước Hà Nội (TNHN). Hãy trả lời câu hỏi của người dùng một cách lịch sự, chuyên nghiệp và hữu ích bằng tiếng Việt. Bạn có khả năng gọi công cụ để lấy dữ liệu. Bạn HOÀN TOÀN có thể đọc nội dung chi tiết của email (bao gồm cả đã đọc và chưa đọc) bằng công cụ read_email_by_id hoặc read_email_by_title. Khi cung cấp link tải file đính kèm email, hãy luôn prepend URL: http://localhost:8089 vào trước link. KHI LIỆT KÊ DANH SÁCH EMAIL TRONG BẢNG, hãy luôn thêm một cột 'Thao tác' và trong đó chứa một link Markdown với định dạng: [Xem chi tiết](#email-detail-[ID]) (trong đó [ID] lấy từ trường 'id' của email). BẠN CŨNG CÓ THỂ báo cáo tiến độ thi công hàng ngày cho các công trình khẩn (emergency constructions) và xem lịch sử thi công của chúng. Khi báo cáo, hãy chủ động hỏi người dùng các thông tin chi tiết: công thực việc thực tế hôm nay, phần trăm hoàn thành (%), các vướng mắc hay khó khăn gặp phải, và ngày dự kiến hoàn thành nếu chưa xong."),
+			genai.Text("Bạn là trợ lý AI thông minh của Hệ thống Thoát nước Hà Nội (TNHN). Hãy trả lời câu hỏi của người dùng một cách lịch sự, chuyên nghiệp và hữu ích bằng tiếng Việt. Bạn có khả năng gọi công cụ để lấy dữ liệu. Bạn HOÀN TOÀN có thể đọc nội dung chi tiết của email (bao gồm cả đã đọc và chưa đọc) bằng công cụ read_email_by_id hoặc read_email_by_title. Khi cung cấp link tải file đính kèm email, hãy luôn prepend URL: http://localhost:8089 vào trước link. KHI LIỆT KÊ DANH SÁCH EMAIL TRONG BẢNG, hãy luôn thêm một cột 'Thao tác' và trong đó chứa một link Markdown với định dạng: [Xem chi tiết](#email-detail-[ID]) (trong đó [ID] lấy từ trường 'id' của email). BẠN CŨNG CÓ THỂ báo cáo tiến độ thi công hàng ngày cho các công trình khẩn (emergency constructions) và xem lịch sử thi công của chúng. Khi báo cáo, hãy chủ động hỏi người dùng các thông tin chi tiết: công thực việc thực tế hôm nay, phần trăm hoàn thành (%), các vướng mắc hay khó khăn gặp phải, và ngày dự kiến hoàn thành nếu chưa xong. Khi người dùng hỏi về tình hình công trình hiện tại hoặc báo cáo hôm nay/hôm qua, hãy sử dụng song song 'get_emergency_constructions' để lấy danh sách điểm và 'get_recent_emergency_reports' để lấy các báo cáo tiến độ mới nhất."),
 		},
 	}
 
@@ -239,6 +241,17 @@ func (s *service) Chat(ctx context.Context, prompt string, history []ChatMessage
 			Name:        "get_emergency_constructions",
 			Description: "Lấy danh sách tất cả các công trình khẩn đang có trong hệ thống.",
 		},
+		{
+			Name:        "get_recent_emergency_reports",
+			Description: "Lấy danh sách các báo cáo tiến độ gần đây của tất cả các công trình khẩn. Hỗ trợ lọc theo ngày.",
+			Parameters: &genai.Schema{
+				Type: genai.TypeObject,
+				Properties: map[string]*genai.Schema{
+					"start_date": {Type: genai.TypeString, Description: "Ngày bắt đầu (YYYY-MM-DD), mặc định là hôm kia nếu để trống"},
+					"end_date":   {Type: genai.TypeString, Description: "Ngày kết thúc (YYYY-MM-DD), mặc định là hôm nay nếu để trống"},
+				},
+			},
+		},
 	}
 
 	s.model.Tools = []*genai.Tool{{FunctionDeclarations: tools}}
@@ -369,7 +382,36 @@ func (s *service) Chat(ctx context.Context, prompt string, history []ChatMessage
 				constructionID, _ := call.Args["construction_id"].(string)
 				result, err = s.emcSvc.GetProgressHistory(ctx, constructionID)
 			case "get_emergency_constructions":
-				result, _, err = s.emcSvc.List(ctx, nil)
+				result, _, err = s.emcSvc.List(ctx, filter.NewPaginationFilter())
+			case "get_recent_emergency_reports":
+				startDateStr, _ := call.Args["start_date"].(string)
+				endDateStr, _ := call.Args["end_date"].(string)
+
+				f := filter.NewPaginationFilter()
+				f.PerPage = 200 // Get more reports for AI context
+
+				// Default to last 3 days if not specified
+				start := time.Now().AddDate(0, 0, -2)
+				start = time.Date(start.Year(), start.Month(), start.Day(), 0, 0, 0, 0, time.Local)
+				end := time.Now()
+				end = time.Date(end.Year(), end.Month(), end.Day(), 23, 59, 59, 0, time.Local)
+
+				if startDateStr != "" {
+					if t, e := time.Parse("2006-01-02", startDateStr); e == nil {
+						start = time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local)
+					}
+				}
+				if endDateStr != "" {
+					if t, e := time.Parse("2006-01-02", endDateStr); e == nil {
+						end = time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 0, time.Local)
+					}
+				}
+
+				f.AddWhere("report_date", "report_date", bson.M{
+					"$gte": start.Unix(),
+					"$lte": end.Unix(),
+				})
+				result, _, err = s.emcSvc.ListHistory(ctx, f)
 			default:
 				err = fmt.Errorf("unknown tool: %s", call.Name)
 			}

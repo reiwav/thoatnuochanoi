@@ -16,6 +16,7 @@ func (h HandlerFuncs) GoogleRoutes(api *gin.RouterGroup, mid middleware.Middlewa
 		google.GET("/water-summary", h.GoogleWaterSummaryHandler)
 		google.GET("/inundation-summary", h.GoogleInundationSummaryHandler)
 		google.POST("/chat", h.GoogleChatHandler)
+		google.GET("/email/:id", h.GoogleEmailDetailHandler)
 		google.POST("/quick-report", h.GenerateQuickReportHandler)
 	}
 }

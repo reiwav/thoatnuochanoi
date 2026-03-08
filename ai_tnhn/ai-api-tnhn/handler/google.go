@@ -120,6 +120,27 @@ func (h *GoogleHandler) Chat(c *gin.Context) {
 	})
 }
 
+func (h *GoogleHandler) GetEmailDetail(c *gin.Context) {
+	idStr := c.Param("id")
+	var id uint32
+	_, err := fmt.Sscanf(idStr, "%d", &id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID email không hợp lệ"})
+		return
+	}
+
+	detail, err := h.googleSvc.ReadEmailByID(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": "success",
+		"data":   detail,
+	})
+}
+
 // GenerateQuickReport handles the request to generate a quick report via Apps Script
 func (h *GoogleHandler) GenerateQuickReport(c *gin.Context) {
 	if h.driveSvc == nil {

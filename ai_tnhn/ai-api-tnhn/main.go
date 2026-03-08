@@ -75,6 +75,9 @@ func main() {
 	stationService := station.NewService(rainStationRepo, lakeStationRepo, riverStationRepo)
 	inuService := inundation.NewService(inuRepo, inuUpdateRepo, inuPointRepo, orgRepo, driveService)
 	googleApiService, _ := googleapi.NewService(confg.GoogleDriveConfig, confg.OAuthConfig, aiUsageRepo, inuService)
+	if googleApiService != nil {
+		googleApiService.SetEmailService(emailService)
+	}
 	emConstructionService := emergency_construction.NewService(emConstructionRepo, emConstructionHistoryRepo)
 	queryService := querysvc.NewService(db.DB)
 	queryHandler := handler.NewQueryHandler(queryService)
@@ -150,6 +153,7 @@ func main() {
 		GoogleWaterSummaryHandler:      googleHandler.GetWaterSummary,
 		GoogleInundationSummaryHandler: googleHandler.GetInundationSummary,
 		GoogleChatHandler:              googleHandler.Chat,
+		GoogleEmailDetailHandler:       googleHandler.GetEmailDetail,
 		GenerateQuickReportHandler:     googleHandler.GenerateQuickReport,
 		GetRainDataByDate:              waterHandler.GetRainDataByDate,
 		DatabaseQueryHandler:           queryHandler.Query,

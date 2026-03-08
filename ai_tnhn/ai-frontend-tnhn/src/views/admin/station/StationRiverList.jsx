@@ -63,14 +63,7 @@ const StationRiverList = () => {
 
     const handleSubmit = async (values) => {
         try {
-            const payload = {
-                TenTram: values.TenTram,
-                DiaChi: values.DiaChi,
-                Lat: values.Lat,
-                Lng: values.Lng,
-                Active: values.Active,
-                Loai: values.Loai
-            };
+            const payload = { ...values };
             const res = editingStation
                 ? await stationApi.river.update(editingStation.id, payload)
                 : await stationApi.river.create(payload);
@@ -117,6 +110,7 @@ const StationRiverList = () => {
                             <TableCell sx={{ fontWeight: 700 }}>Loại</TableCell>
                             <TableCell sx={{ fontWeight: 700 }}>Địa chỉ</TableCell>
                             <TableCell sx={{ fontWeight: 700 }}>Tọa độ (Lat, Lng)</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }}>Ngưỡng (m)</TableCell>
                             <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>
                             <TableCell align="right" sx={{ fontWeight: 700 }}>Thao tác</TableCell>
                         </TableRow>
@@ -133,6 +127,7 @@ const StationRiverList = () => {
                                     <TableCell>{row.Loai}</TableCell>
                                     <TableCell>{row.DiaChi}</TableCell>
                                     <TableCell>{row.Lat}, {row.Lng}</TableCell>
+                                    <TableCell>{row.NguongCanhBao || '-'}</TableCell>
                                     <TableCell>
                                         <Chip label={row.Active ? 'Hoạt động' : 'Ngừng hoạt động'}
                                             color={row.Active ? 'success' : 'default'} size="small" variant="outlined" />

@@ -26,6 +26,7 @@ func (h HandlerFuncs) Create(mid middleware.Middleware, orgHandler *handler.Orga
 		}),
 	)
 	r.SetTrustedProxies(nil)
+	r.Static("/public", "./public")
 	api := r.Group("/api")
 	authGroup := api.Group("/auth")
 	{

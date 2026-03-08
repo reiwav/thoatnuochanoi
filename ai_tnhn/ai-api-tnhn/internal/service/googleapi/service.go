@@ -12,6 +12,7 @@ import (
 	"sort"
 	"time"
 
+	"ai-api-tnhn/internal/service/email"
 	"ai-api-tnhn/internal/service/inundation"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -39,10 +40,11 @@ type AiUsageStats struct {
 }
 
 type GoogleStatus struct {
-	UnreadEmails    int64        `json:"unread_emails"`
-	UnreadEmailsStr string       `json:"unread_emails_str"`
-	DriveQuota      DriveQuota   `json:"drive_quota"`
-	AiUsage         AiUsageStats `json:"ai_usage"`
+	UnreadEmails     int64             `json:"unread_emails"`
+	UnreadEmailsStr  string            `json:"unread_emails_str"`
+	UnreadEmailsList []email.EmailInfo `json:"unread_emails_list,omitempty"`
+	DriveQuota       DriveQuota        `json:"drive_quota"`
+	AiUsage          AiUsageStats      `json:"ai_usage"`
 }
 
 type RainStationStat struct {
@@ -98,6 +100,9 @@ type Service interface {
 	GetRainSummary(ctx context.Context) (*RainSummaryData, error)
 	GetWaterSummary(ctx context.Context) (*WaterSummaryData, error)
 	GetInundationSummary(ctx context.Context) (*InundationSummaryData, error)
+	ReadEmailByTitle(ctx context.Context, title string) (*email.EmailDetail, error)
+	ReadEmailByID(ctx context.Context, id uint32) (*email.EmailDetail, error)
+	SetEmailService(svc email.Service)
 }
 
 type service struct {
@@ -105,6 +110,7 @@ type service struct {
 	gmailSvc    *gmail.Service
 	aiUsageRepo repository.AiUsage
 	inuSvc      inundation.Service
+	emailSvc    email.Service
 }
 
 func NewService(conf config.GoogleDriveConfig, oauthConf config.OAuthConfig, aiUsageRepo repository.AiUsage, inuSvc inundation.Service) (Service, error) {
@@ -163,16 +169,29 @@ func NewService(conf config.GoogleDriveConfig, oauthConf config.OAuthConfig, aiU
 	}, nil
 }
 
+func (s *service) SetEmailService(svc email.Service) {
+	s.emailSvc = svc
+}
+
 func (s *service) GetStatus(ctx context.Context) (*GoogleStatus, error) {
 	status := &GoogleStatus{}
 
-	// 1. Get Gmail unread count
-	msgs, err := s.gmailSvc.Users.Messages.List("me").Q("is:unread").Do()
-	if err == nil {
-		status.UnreadEmails = msgs.ResultSizeEstimate
-		status.UnreadEmailsStr = number.Format(msgs.ResultSizeEstimate)
-	} else {
-		fmt.Printf("Warning: failed to fetch unread emails: %v\n", err)
+	// 1. Get IMAP unread count
+	if s.emailSvc != nil {
+		count, err := s.emailSvc.GetUnreadCount(ctx)
+		if err == nil {
+			status.UnreadEmails = int64(count)
+			status.UnreadEmailsStr = number.Format(int64(count))
+
+			if count > 0 {
+				list, err := s.emailSvc.GetRecentEmails(ctx, 20)
+				if err == nil {
+					status.UnreadEmailsList = list
+				}
+			}
+		} else {
+			fmt.Printf("Warning: failed to fetch unread emails via IMAP: %v\n", err)
+		}
 	}
 
 	// 2. Get Drive quota
@@ -435,4 +454,18 @@ func (s *service) GetInundationSummary(ctx context.Context) (*InundationSummaryD
 		ActivePoints:  len(ongoing),
 		OngoingPoints: ongoing,
 	}, nil
+}
+
+func (s *service) ReadEmailByTitle(ctx context.Context, title string) (*email.EmailDetail, error) {
+	if s.emailSvc == nil {
+		return nil, fmt.Errorf("email service not initialized")
+	}
+	return s.emailSvc.ReadEmailByTitle(ctx, title)
+}
+
+func (s *service) ReadEmailByID(ctx context.Context, id uint32) (*email.EmailDetail, error) {
+	if s.emailSvc == nil {
+		return nil, fmt.Errorf("email service not initialized")
+	}
+	return s.emailSvc.ReadEmailByID(ctx, id)
 }

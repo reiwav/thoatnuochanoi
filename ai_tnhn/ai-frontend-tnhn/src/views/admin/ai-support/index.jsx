@@ -8,6 +8,8 @@ import {
     IconLayoutSidebarLeftCollapse, IconRefresh, IconBolt
 } from '@tabler/icons-react';
 import axiosClient from 'api/axiosClient';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const AiSupport = () => {
     const [messages, setMessages] = useState([
@@ -47,22 +49,23 @@ const AiSupport = () => {
         }
     }, [messages]);
 
-    const handleSend = async () => {
-        if (!input.trim()) return;
+    const handleSend = async (directText = null) => {
+        const textToSend = directText || input;
+        if (!textToSend.trim()) return;
 
-        const userMsg = { id: Date.now(), role: 'user', text: input };
+        const userMsg = { id: Date.now(), role: 'user', text: textToSend };
         const history = messages.map(m => ({
             role: m.role === 'ai' ? 'model' : 'user',
             content: m.text
         }));
 
         setMessages(prev => [...prev, userMsg]);
-        setInput('');
+        if (!directText) setInput('');
         setLoading(true);
 
         try {
             const res = await axiosClient.post('/admin/google/chat', {
-                prompt: input,
+                prompt: textToSend,
                 history: history
             });
             const aiMsg = {
@@ -85,8 +88,7 @@ const AiSupport = () => {
     };
 
     const handleSendQuestion = (text) => {
-        setInput(text);
-        setTimeout(() => handleSend(), 0);
+        handleSend(text);
     };
 
     const handleRainSummary = async () => {
@@ -97,10 +99,26 @@ const AiSupport = () => {
 
         try {
             const res = await axiosClient.get('/admin/google/rain-summary');
+            const data = res.data?.data;
+            let displayText = '';
+
+            if (typeof data === 'string') {
+                displayText = data;
+            } else if (data && typeof data === 'object') {
+                if (data.rainy_stations === 0) {
+                    displayText = 'Hiện tại ghi nhận không có mưa tại tất cả các trạm.';
+                } else {
+                    displayText = `Tình hình mưa hiện tại:\n- Tổng số trạm: ${data.total_stations}\n- Số trạm đang có mưa: ${data.rainy_stations}\n- Trạm mưa lớn nhất: ${data.max_rain_station?.name} (${data.max_rain_station?.total_rain}mm)\n\nChi tiết một số trạm mưa lớn:\n` +
+                        data.measurements.slice(0, 5).map(m => `- ${m.name}: ${m.total_rain}mm (Bắt đầu từ ${m.start_time})`).join('\n');
+                }
+            } else {
+                displayText = 'Không thể lấy thông tin lượng mưa lúc này.';
+            }
+
             const aiMsg = {
                 id: Date.now() + 1,
                 role: 'ai',
-                text: res.data?.data || 'Không thể lấy thông tin lượng mưa lúc này.'
+                text: displayText
             };
             setMessages(prev => [...prev, aiMsg]);
         } catch (error) {
@@ -108,6 +126,37 @@ const AiSupport = () => {
                 id: Date.now() + 1,
                 role: 'ai',
                 text: 'Có lỗi xảy ra khi truy vấn dữ liệu mưa. Vui lòng thử lại sau.'
+            };
+            setMessages(prev => [...prev, aiMsg]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleEmailDetail = async (emailId) => {
+        setLoading(true);
+        try {
+            const res = await axiosClient.get(`/admin/google/email/${emailId}`);
+            if (res.data?.status === 'success') {
+                const detail = res.data.data;
+                let attachmentsText = '';
+                if (detail.attachments && detail.attachments.length > 0) {
+                    attachmentsText = '\n\n**File đính kèm:**\n' + detail.attachments.map(a => `- [${a.filename}](http://localhost:8089${a.url})`).join('\n');
+                }
+
+                const aiMsg = {
+                    id: Date.now(),
+                    role: 'ai',
+                    text: `### ${detail.subject}\n**Từ:** ${detail.from}\n**Ngày:** ${detail.date}\n\n${detail.body}${attachmentsText}`
+                };
+                setMessages(prev => [...prev, aiMsg]);
+            }
+        } catch (error) {
+            console.error('Failed to fetch email detail:', error);
+            const aiMsg = {
+                id: Date.now(),
+                role: 'ai',
+                text: 'Không thể lấy thông tin chi tiết email này. Vui lòng thử lại sau.'
             };
             setMessages(prev => [...prev, aiMsg]);
         } finally {
@@ -167,14 +216,73 @@ const AiSupport = () => {
                                 boxShadow: 'none',
                                 border: msg.role === 'ai' ? '1px solid #e2e8f0' : 'none'
                             }}>
-                                <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
-                                    {msg.text.split(/(https?:\/\/[^\s]+)/g).map((part, i) => {
-                                        if (part.match(/https?:\/\/[^\s]+/)) {
-                                            return <a key={i} href={part} target="_blank" rel="noopener noreferrer" style={{ color: msg.role === 'user' ? 'white' : '#2563eb', textDecoration: 'underline' }}>{part}</a>;
-                                        }
-                                        return part;
-                                    })}
-                                </Typography>
+                                <Box sx={{
+                                    '& p': { m: 0, '&:not(:last-child)': { mb: 1.5 } },
+                                    '& a': { color: msg.role === 'user' ? 'white' : 'primary.main', textDecoration: 'underline' },
+                                    '& table': {
+                                        width: '100%',
+                                        borderCollapse: 'collapse',
+                                        my: 1.5,
+                                        fontSize: '13px',
+                                        border: '1px solid',
+                                        borderColor: msg.role === 'user' ? 'rgba(255,255,255,0.2)' : 'divider'
+                                    },
+                                    '& th, & td': {
+                                        p: 1,
+                                        border: '1px solid',
+                                        borderColor: msg.role === 'user' ? 'rgba(255,255,255,0.2)' : 'divider',
+                                        textAlign: 'left'
+                                    },
+                                    '& th': { bgcolor: msg.role === 'user' ? 'rgba(255,255,255,0.1)' : '#f1f5f9', fontWeight: 700 },
+                                    '& ul, & ol': { pl: 2, my: 1 },
+                                    '& li': { mb: 0.5 }
+                                }}>
+                                    <ReactMarkdown
+                                        remarkPlugins={[remarkGfm]}
+                                        transformUri={uri => uri}
+                                        components={{
+                                            a: ({ node, ...props }) => {
+                                                if (props.href && props.href.startsWith('#email-detail-')) {
+                                                    const emailId = props.href.replace('#email-detail-', '');
+                                                    return (
+                                                        <Box component="span" sx={{ display: 'inline-block', my: 0.5 }}>
+                                                            <Tooltip title="Đọc nội dung chi tiết email này">
+                                                                <IconButton
+                                                                    size="small"
+                                                                    color="primary"
+                                                                    variant="contained"
+                                                                    sx={{
+                                                                        bgcolor: 'primary.light',
+                                                                        '&:hover': { bgcolor: 'primary.main', color: 'white' },
+                                                                        borderRadius: '8px',
+                                                                        fontSize: '12px',
+                                                                        px: 1.5,
+                                                                        py: 0.5,
+                                                                        height: 'auto',
+                                                                        width: 'auto',
+                                                                        gap: 0.5
+                                                                    }}
+                                                                    onClick={(e) => {
+                                                                        e?.preventDefault();
+                                                                        handleEmailDetail(emailId);
+                                                                    }}
+                                                                >
+                                                                    <IconMail size={14} />
+                                                                    <Typography variant="caption" fontWeight={700} sx={{ color: 'inherit' }}>
+                                                                        Xem chi tiết
+                                                                    </Typography>
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                        </Box>
+                                                    );
+                                                }
+                                                return <a {...props} target="_blank" rel="noopener noreferrer" style={{ color: '#1B5E20', fontWeight: 600 }} />;
+                                            }
+                                        }}
+                                    >
+                                        {typeof msg.text === 'string' ? msg.text : JSON.stringify(msg.text)}
+                                    </ReactMarkdown>
+                                </Box>
                             </Paper>
                         </Box>
                     ))}
@@ -256,9 +364,34 @@ const AiSupport = () => {
                                 <Typography variant="subtitle2" fontWeight={800} color="text.secondary">GMAIL</Typography>
                             </Stack>
                             {statsLoading ? <LinearProgress sx={{ height: 2, borderRadius: 1 }} /> : (
-                                <Typography variant="h4" fontWeight={800} color="error.main" sx={{ ml: 4.5 }}>
-                                    {stats.unread_emails} <Typography component="span" variant="body2" fontWeight={600} color="text.secondary">mới</Typography>
-                                </Typography>
+                                <Box sx={{ ml: 4.5 }}>
+                                    <Typography variant="h4" fontWeight={800} color="error.main" sx={{ mb: 1 }}>
+                                        {stats.unread_emails} <Typography component="span" variant="body2" fontWeight={600} color="text.secondary">mới</Typography>
+                                    </Typography>
+                                    {stats.unread_emails_list && stats.unread_emails_list.length > 0 && (
+                                        <Stack spacing={0.5} sx={{ mt: 1 }}>
+                                            {stats.unread_emails_list.map((mail, idx) => (
+                                                <Typography
+                                                    key={idx}
+                                                    variant="caption"
+                                                    display="block"
+                                                    sx={{
+                                                        fontSize: '11px',
+                                                        color: 'text.secondary',
+                                                        whiteSpace: 'nowrap',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        cursor: 'pointer',
+                                                        '&:hover': { color: 'primary.main', textDecoration: 'underline' }
+                                                    }}
+                                                    onClick={() => handleEmailDetail(mail.id)}
+                                                >
+                                                    • {mail.subject}
+                                                </Typography>
+                                            ))}
+                                        </Stack>
+                                    )}
+                                </Box>
                             )}
                         </Box>
 

@@ -63,13 +63,7 @@ const StationRainList = () => {
 
     const handleSubmit = async (values) => {
         try {
-            const payload = {
-                TenTram: values.TenTram,
-                DiaChi: values.DiaChi,
-                Lat: values.Lat,
-                Lng: values.Lng,
-                Active: values.Active
-            };
+            const payload = { ...values };
             const res = editingStation
                 ? await stationApi.rain.update(editingStation.id, payload)
                 : await stationApi.rain.create(payload);
@@ -115,6 +109,7 @@ const StationRainList = () => {
                             <TableCell sx={{ fontWeight: 700 }}>Tên trạm</TableCell>
                             <TableCell sx={{ fontWeight: 700 }}>Địa chỉ</TableCell>
                             <TableCell sx={{ fontWeight: 700 }}>Tọa độ (Lat, Lng)</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }}>Ngưỡng (mm)</TableCell>
                             <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>
                             <TableCell align="right" sx={{ fontWeight: 700 }}>Thao tác</TableCell>
                         </TableRow>
@@ -130,6 +125,7 @@ const StationRainList = () => {
                                     <TableCell sx={{ fontWeight: 600 }}>{row.TenTram}</TableCell>
                                     <TableCell>{row.DiaChi}</TableCell>
                                     <TableCell>{row.Lat}, {row.Lng}</TableCell>
+                                    <TableCell>{row.NguongCanhBao || '-'}</TableCell>
                                     <TableCell>
                                         <Chip label={row.Active ? 'Hoạt động' : 'Ngừng hoạt động'}
                                             color={row.Active ? 'success' : 'default'} size="small" variant="outlined" />

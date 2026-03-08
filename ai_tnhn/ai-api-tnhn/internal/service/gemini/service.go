@@ -56,7 +56,7 @@ func NewService(apiKey string, waterSvc water.Service, googleApiSvc googleapi.Se
 	// Set a system instruction to give the AI context
 	model.SystemInstruction = &genai.Content{
 		Parts: []genai.Part{
-			genai.Text("Bạn là trợ lý AI thông minh của Hệ thống Thoát nước Hà Nội (TNHN). Hãy trả lời câu hỏi của người dùng một cách lịch sự, chuyên nghiệp và hữu ích bằng tiếng Việt. Nếu người dùng hỏi về hệ thống, hãy trả lời dựa trên kiến thức về thoát nước và hạ tầng đô thị. Bạn có khả năng tự động gọi các công cụ để lấy dữ liệu thực tế: lượng mưa, mực nước hồ/sông, trạng thái email/bộ nhớ, và các báo cáo ngập lụt."),
+			genai.Text("Bạn là trợ lý AI thông minh của Hệ thống Thoát nước Hà Nội (TNHN). Hãy trả lời câu hỏi của người dùng một cách lịch sự, chuyên nghiệp và hữu ích bằng tiếng Việt. Bạn có khả năng gọi công cụ để lấy dữ liệu. Bạn HOÀN TOÀN có thể đọc nội dung chi tiết của email (bao gồm cả đã đọc và chưa đọc) bằng công cụ read_email_by_id hoặc read_email_by_title. Khi cung cấp link tải file đính kèm email, hãy luôn prepend URL: http://localhost:8089 vào trước link. KHI LIỆT KÊ DANH SÁCH EMAIL TRONG BẢNG, hãy luôn thêm một cột 'Thao tác' và trong đó chứa một link Markdown với định dạng: [Xem chi tiết](#email-detail-[ID]) (trong đó [ID] lấy từ trường 'id' của email) để người dùng có thể nhấn vào xem nội dung chi tiết email đó thông qua API trực tiếp."),
 		},
 	}
 
@@ -77,7 +77,7 @@ func (s *service) Chat(ctx context.Context, prompt string, history []ChatMessage
 	tools := []*genai.FunctionDeclaration{
 		{
 			Name:        "get_google_status",
-			Description: "Kiểm tra số lượng email chưa đọc và dung lượng bộ nhớ Google Drive.",
+			Description: "Lấy trạng thái hệ thống: số email và danh sách 20 email gần nhất (kèm ID và link API chi tiết), dung lượng Drive và thống kê sử dụng AI.",
 		},
 		{
 			Name:        "get_live_rain_summary",
@@ -183,6 +183,28 @@ func (s *service) Chat(ctx context.Context, prompt string, history []ChatMessage
 				Required: []string{"collection"},
 			},
 		},
+		{
+			Name:        "read_email_by_title",
+			Description: "Tìm và đọc chi tiết một email (đã đọc hoặc chưa đọc) dựa trên tiêu đề trong số các email gần nhất. Trả về nội dung email và các link tải file đính kèm nếu có.",
+			Parameters: &genai.Schema{
+				Type: genai.TypeObject,
+				Properties: map[string]*genai.Schema{
+					"title": {Type: genai.TypeString, Description: "Tiêu đề email cần tìm (fuzzy search)"},
+				},
+				Required: []string{"title"},
+			},
+		},
+		{
+			Name:        "read_email_by_id",
+			Description: "Đọc chi tiết một email dựa trên ID duy nhất. Dùng khi người dùng nhấn nút 'Xem chi tiết' từ bảng danh sách.",
+			Parameters: &genai.Schema{
+				Type: genai.TypeObject,
+				Properties: map[string]*genai.Schema{
+					"id": {Type: genai.TypeInteger, Description: "ID duy nhất của email (SeqNum)"},
+				},
+				Required: []string{"id"},
+			},
+		},
 	}
 
 	s.model.Tools = []*genai.Tool{{FunctionDeclarations: tools}}
@@ -275,6 +297,12 @@ func (s *service) Chat(ctx context.Context, prompt string, history []ChatMessage
 				coll, _ := call.Args["collection"].(string)
 				filter, _ := call.Args["filter"].(map[string]interface{})
 				result, err = s.querySvc.Query(ctx, coll, filter, 0)
+			case "read_email_by_title":
+				title, _ := call.Args["title"].(string)
+				result, err = s.googleApiSvc.ReadEmailByTitle(ctx, title)
+			case "read_email_by_id":
+				id, _ := call.Args["id"].(float64)
+				result, err = s.googleApiSvc.ReadEmailByID(ctx, uint32(id))
 			default:
 				err = fmt.Errorf("unknown tool: %s", call.Name)
 			}

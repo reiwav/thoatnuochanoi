@@ -293,7 +293,7 @@ export default function MainLayout() {
           </Box>
         </MainContentStyled>
       )}
-      {!showMobileAppLayout && <Customization />}
+      {/* {!showMobileAppLayout && <Customization />} */}
     </Box>
   );
 }

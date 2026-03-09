@@ -54,12 +54,12 @@ export default function Header({ userInfo, userRole }) {
       </Box>
 
       {/* header search */}
-      <SearchSection />
+      {/* <SearchSection /> */}
       <Box sx={{ flexGrow: 1 }} />
       <Box sx={{ flexGrow: 1 }} />
 
       {/* notification */}
-      <NotificationSection />
+      {/* <NotificationSection /> */}
 
       {/* profile */}
       <ProfileSection userInfo={userInfo} />

@@ -157,7 +157,7 @@ export default function ProfileSection({ userInfo }) {
                       }}
                     >
                       <Divider />
-                      <Card sx={{ bgcolor: 'primary.light', my: 2 }}>
+                      {/* <Card sx={{ bgcolor: 'primary.light', my: 2 }}>
                         <CardContent>
                           <Stack sx={{ gap: 3 }}>
                             <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
@@ -170,7 +170,7 @@ export default function ProfileSection({ userInfo }) {
                             </Stack>
                           </Stack>
                         </CardContent>
-                      </Card>
+                      </Card> */}
                       <Divider />
                       <List
                         component="nav"

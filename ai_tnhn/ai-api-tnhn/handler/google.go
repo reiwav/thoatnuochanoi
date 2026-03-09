@@ -14,6 +14,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -235,9 +237,10 @@ func (h *GoogleHandler) GenerateQuickReport(c *gin.Context) {
 	}
 
 	// Prepare Payload slices
-	lakeData := []map[string]string{}
-	riverData := []map[string]string{}
-	rainData := []map[string]string{}
+	lakeDataRaw := []map[string]interface{}{}
+	riverDataRaw := []map[string]interface{}{}
+	phuongDataRaw := []map[string]interface{}{}
+	xaDataRaw := []map[string]interface{}{}
 
 	for _, d := range waterResp.Content.Data {
 		tid, _ := d["TramId"].(string)
@@ -248,15 +251,16 @@ func (h *GoogleHandler) GenerateQuickReport(c *gin.Context) {
 			continue
 		}
 
-		item := map[string]string{
+		item := map[string]interface{}{
 			"tram":    name,
 			"mucnuoc": fmt.Sprintf("%.2fm", val/100.0),
+			"val":     val,
 		}
 
 		if loai == 2 {
-			lakeData = append(lakeData, item)
+			lakeDataRaw = append(lakeDataRaw, item)
 		} else {
-			riverData = append(riverData, item)
+			riverDataRaw = append(riverDataRaw, item)
 		}
 	}
 
@@ -272,16 +276,81 @@ func (h *GoogleHandler) GenerateQuickReport(c *gin.Context) {
 		if name == "" {
 			continue
 		}
-		rainData = append(rainData, map[string]string{
+
+		item := map[string]interface{}{
 			"name":  name,
 			"value": fmt.Sprintf("%.1f", val),
+			"val":   val,
+		}
+
+		// Categorize based on name: default to Phường if not Xã
+		if strings.Contains(name, "Xã") || strings.Contains(name, "xã") {
+			xaDataRaw = append(xaDataRaw, item)
+		} else {
+			phuongDataRaw = append(phuongDataRaw, item)
+		}
+	}
+
+	// Sort and Limit
+	sort.Slice(lakeDataRaw, func(i, j int) bool {
+		return lakeDataRaw[i]["val"].(float64) > lakeDataRaw[j]["val"].(float64)
+	})
+	if len(lakeDataRaw) > 5 {
+		lakeDataRaw = lakeDataRaw[:5]
+	}
+
+	sort.Slice(riverDataRaw, func(i, j int) bool {
+		return riverDataRaw[i]["val"].(float64) > riverDataRaw[j]["val"].(float64)
+	})
+	if len(riverDataRaw) > 5 {
+		riverDataRaw = riverDataRaw[:5]
+	}
+
+	sort.Slice(phuongDataRaw, func(i, j int) bool {
+		return phuongDataRaw[i]["val"].(float64) > phuongDataRaw[j]["val"].(float64)
+	})
+	if len(phuongDataRaw) > 10 {
+		phuongDataRaw = phuongDataRaw[:10]
+	}
+
+	sort.Slice(xaDataRaw, func(i, j int) bool {
+		return xaDataRaw[i]["val"].(float64) > xaDataRaw[j]["val"].(float64)
+	})
+	if len(xaDataRaw) > 10 {
+		xaDataRaw = xaDataRaw[:10]
+	}
+
+	// Convert back to requested slices of maps
+	lakeData := []map[string]string{}
+	for _, item := range lakeDataRaw {
+		lakeData = append(lakeData, map[string]string{
+			"tram":    item["tram"].(string),
+			"mucnuoc": item["mucnuoc"].(string),
+		})
+	}
+	riverData := []map[string]string{}
+	for _, item := range riverDataRaw {
+		riverData = append(riverData, map[string]string{
+			"tram":    item["tram"].(string),
+			"mucnuoc": item["mucnuoc"].(string),
+		})
+	}
+	phuongData := []map[string]string{}
+	for _, item := range phuongDataRaw {
+		phuongData = append(phuongData, map[string]string{
+			"name":  item["name"].(string),
+			"value": item["value"].(string),
+		})
+	}
+	xaData := []map[string]string{}
+	for _, item := range xaDataRaw {
+		xaData = append(xaData, map[string]string{
+			"name":  item["name"].(string),
+			"value": item["value"].(string),
 		})
 	}
 
-	h.log.GetLogger().Infof(" [QuickReport] Live Rain Data: %d stations found", len(rainData))
-	if len(rainData) > 0 {
-		h.log.GetLogger().Infof(" [QuickReport] First station: %v = %s mm", rainData[0]["name"], rainData[0]["value"])
-	}
+	h.log.GetLogger().Infof(" [QuickReport] Data stats: %d Phường (top 10), %d Xã (top 10), %d Lakes (top 5), %d Rivers (top 5)", len(phuongData), len(xaData), len(lakeData), len(riverData))
 
 	// 1.5 Fetch Rain Warning from Email
 	warningText := "Không có cảnh báo mưa mới nhất."
@@ -301,9 +370,10 @@ func (h *GoogleHandler) GenerateQuickReport(c *gin.Context) {
 		"month":        month,
 		"year":         year,
 		"hour":         hourFull,
-		"rainData":     rainData,
-		"riverData":    riverData,
+		"phuongData":   phuongData,
+		"xaData":       xaData,
 		"lakeData":     lakeData,
+		"riverData":    riverData,
 		"warning_rain": warningText,
 	}
 

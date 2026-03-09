@@ -117,13 +117,29 @@ const StationRainSummary = () => {
     };
 
     const tableData = getTableData();
+    const rainingCount = tableData.filter(d => d.isRaining).length;
+    const notRainingCount = tableData.length - rainingCount;
 
     return (
         <Box sx={{ width: '100%', bgcolor: '#4fc3f7', minHeight: '100vh', p: 3 }}>
-            <Box sx={{ mb: 4, textAlign: 'center' }}>
-                <Typography variant="h2" sx={{ color: 'white', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, textShadow: '1px 1px 2px rgba(0,0,0,0.2)' }}>
+            <Box sx={{ mb: 4, display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, bgcolor: '#4caf50', px: 3, py: 1.5, borderRadius: 3, boxShadow: '0 4px 8px rgba(0,0,0,0.2)' }}>
+                    <Box sx={{ width: 14, height: 14, borderRadius: '50%', bgcolor: 'white' }} />
+                    <Typography variant="h4" sx={{ color: 'white', fontWeight: 700, margin: 0, lineHeight: 1 }}>
+                        Đang mưa: {rainingCount}
+                    </Typography>
+                </Box>
+
+                <Typography variant="h2" sx={{ color: 'white', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, textShadow: '1px 1px 2px rgba(0,0,0,0.2)', textAlign: 'center', flexGrow: 1 }}>
                     TRẠM ĐO LƯỢNG MƯA TỰ ĐỘNG
                 </Typography>
+
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, bgcolor: 'rgba(255,255,255,0.4)', px: 3, py: 1.5, borderRadius: 3, boxShadow: '0 4px 8px rgba(0,0,0,0.1)' }}>
+                    <Box sx={{ width: 14, height: 14, borderRadius: '50%', bgcolor: '#616161' }} />
+                    <Typography variant="h4" sx={{ color: '#333', fontWeight: 700, margin: 0, lineHeight: 1 }}>
+                        Không mưa: {notRainingCount}
+                    </Typography>
+                </Box>
             </Box>
 
             {loading && tableData.length === 0 ? (
@@ -137,10 +153,10 @@ const StationRainSummary = () => {
             ) : (
                 <Grid container spacing={3} alignItems="stretch">
                     {tableData.map((row) => (
-                        <Grid item xs={12} sm={6} md={4} lg={4} xl={4} key={row.id}>
+                        <Grid item xs={12} sm={6} md={3} lg={3} xl={3} key={row.id}>
                             <Card sx={{
                                 display: 'flex', flexDirection: 'column',
-                                height: '100%', minWidth: 0, width: '300px',
+                                height: '100%', minWidth: 0, width: `220px`,
                                 borderRadius: '4px',
                                 boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
                                 transition: 'transform 0.2s',
@@ -149,7 +165,7 @@ const StationRainSummary = () => {
                                     boxShadow: '0 6px 12px rgba(0,0,0,0.15)',
                                 }
                             }}>
-                                <CardContent sx={{ textAlign: 'center', p: '24px !important', flexGrow: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+                                <CardContent sx={{ textAlign: 'center', p: '16px !important', flexGrow: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
                                     <Typography variant="h4" sx={{ color: '#2196f3', fontWeight: 700, mb: 1, textTransform: 'uppercase', wordBreak: 'break-word' }}>
                                         TRẠM {row.name}
                                     </Typography>

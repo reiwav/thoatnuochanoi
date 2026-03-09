@@ -1,11 +1,13 @@
 import {
-  IconFaceId, IconUser, IconTornado, IconCloudRain, IconRipple,
-  IconDroplets, IconMapPin, IconBuilding, IconUsers, IconList, IconHistory, IconAlertTriangle, IconMessageChatbot, IconClipboardList
+  IconFaceId, IconUser, IconCloudRain, IconRipple, IconTable, IconChartBar,
+  IconDroplets, IconMapPin, IconBuilding, IconUsers, IconList, IconHistory, IconAlertTriangle, IconMessageChatbot, IconClipboardList,
+  IconDoor, IconEngine, IconMap
 } from '@tabler/icons-react';
 
 const icons = {
-  IconFaceId, IconUser, IconTornado, IconCloudRain, IconRipple,
-  IconDroplets, IconMapPin, IconBuilding, IconUsers, IconList, IconHistory, IconAlertTriangle, IconMessageChatbot, IconClipboardList
+  IconFaceId, IconUser, IconCloudRain, IconRipple, IconTable, IconChartBar,
+  IconDroplets, IconMapPin, IconBuilding, IconUsers, IconList, IconHistory, IconAlertTriangle, IconMessageChatbot, IconClipboardList,
+  IconDoor, IconEngine, IconMap
 };
 
 const adminPages = {
@@ -34,7 +36,23 @@ const adminPages = {
           title: 'Bảng mưa',
           type: 'item',
           url: '/admin/station/rain/summary',
-          icon: icons.IconList,
+          icon: icons.IconTable,
+          breadcrumbs: false
+        },
+        {
+          id: 'station-rain-compare',
+          title: 'So sánh mưa',
+          type: 'item',
+          url: '/admin/station/rain/compare',
+          icon: icons.IconChartBar,
+          breadcrumbs: false
+        },
+        {
+          id: 'station-rain-history',
+          title: 'Lịch sử',
+          type: 'item',
+          url: '/admin/station/rain/history',
+          icon: icons.IconHistory,
           breadcrumbs: false
         },
         {
@@ -45,14 +63,7 @@ const adminPages = {
           icon: icons.IconList,
           breadcrumbs: false
         },
-        {
-          id: 'station-rain-history',
-          title: 'Lịch sử',
-          type: 'item',
-          url: '/admin/station/rain/history',
-          icon: icons.IconHistory,
-          breadcrumbs: false
-        }
+
       ]
     },
     {
@@ -188,6 +199,33 @@ const adminPages = {
           breadcrumbs: false
         }
       ]
+    },
+    {
+      id: 'cua-pai',
+      title: 'Cửa phai (ĐPT)',
+      type: 'item',
+      url: '/admin/cua-pai',
+      icon: icons.IconDoor,
+      breadcrumbs: false,
+      roles: ['super_admin']
+    },
+    {
+      id: 'tram-bo',
+      title: 'Trạm bơm (ĐPT)',
+      type: 'item',
+      url: '/admin/tram-bo',
+      icon: icons.IconEngine,
+      breadcrumbs: false,
+      roles: ['super_admin']
+    },
+    {
+      id: 'sa-hinh-ngap',
+      title: 'Sa hình ngập (ĐPT)',
+      type: 'item',
+      url: '/admin/sa-hinh-ngap',
+      icon: icons.IconMap,
+      breadcrumbs: false,
+      roles: ['super_admin']
     },
     {
       id: 'employee-list',

@@ -31,7 +31,7 @@ const StationRainSummary = () => {
 
     useEffect(() => {
         loadData();
-        const interval = setInterval(loadData, 5 * 60 * 1000);
+        const interval = setInterval(loadData, 6 * 1000); // 6 seconds
         return () => clearInterval(interval);
     }, []);
 
@@ -123,9 +123,9 @@ const StationRainSummary = () => {
     return (
         <Box sx={{ width: '100%', bgcolor: '#4fc3f7', minHeight: '100vh', p: 3 }}>
             <Box sx={{ mb: 4, display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, bgcolor: '#4caf50', px: 3, py: 1.5, borderRadius: 3, boxShadow: '0 4px 8px rgba(0,0,0,0.2)' }}>
-                    <Box sx={{ width: 14, height: 14, borderRadius: '50%', bgcolor: 'white' }} />
-                    <Typography variant="h4" sx={{ color: 'white', fontWeight: 700, margin: 0, lineHeight: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, bgcolor: '#4caf50', px: 4, py: 2, borderRadius: 4, boxShadow: '0 4px 8px rgba(0,0,0,0.2)' }}>
+                    <Box sx={{ width: 16, height: 16, borderRadius: '50%', bgcolor: 'white' }} />
+                    <Typography variant="h3" sx={{ color: 'white', fontWeight: 700, margin: 0, lineHeight: 1 }}>
                         Đang mưa: {rainingCount}
                     </Typography>
                 </Box>
@@ -134,9 +134,9 @@ const StationRainSummary = () => {
                     TRẠM ĐO LƯỢNG MƯA TỰ ĐỘNG
                 </Typography>
 
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, bgcolor: 'rgba(255,255,255,0.4)', px: 3, py: 1.5, borderRadius: 3, boxShadow: '0 4px 8px rgba(0,0,0,0.1)' }}>
-                    <Box sx={{ width: 14, height: 14, borderRadius: '50%', bgcolor: '#616161' }} />
-                    <Typography variant="h4" sx={{ color: '#333', fontWeight: 700, margin: 0, lineHeight: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, bgcolor: '#f5f5f5', px: 4, py: 2, borderRadius: 4, boxShadow: '0 4px 8px rgba(0,0,0,0.1)' }}>
+                    <Box sx={{ width: 16, height: 16, borderRadius: '50%', bgcolor: '#9e9e9e' }} />
+                    <Typography variant="h3" sx={{ color: '#424242', fontWeight: 700, margin: 0, lineHeight: 1 }}>
                         Không mưa: {notRainingCount}
                     </Typography>
                 </Box>
@@ -167,7 +167,7 @@ const StationRainSummary = () => {
                             }}>
                                 <CardContent sx={{ textAlign: 'center', p: '16px !important', flexGrow: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
                                     <Typography variant="h4" sx={{ color: '#2196f3', fontWeight: 700, mb: 1, textTransform: 'uppercase', wordBreak: 'break-word' }}>
-                                        TRẠM {row.name}
+                                        {row.name}
                                     </Typography>
 
                                     <Typography variant="body2" sx={{ color: 'text.primary', mb: 2, wordBreak: 'break-word' }}>
@@ -175,7 +175,7 @@ const StationRainSummary = () => {
                                     </Typography>
 
                                     <Stack direction="row" justifyContent="center" alignItems="center" spacing={1} sx={{ mb: 3 }}>
-                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>Hiện tại</Typography>
+
                                         <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: row.isRaining ? '#4caf50' : '#757575' }} />
                                         <Typography variant="body2" sx={{ fontWeight: 600 }}>
                                             {row.isRaining ? 'Đang mưa' : 'Không mưa'}
@@ -194,13 +194,10 @@ const StationRainSummary = () => {
                                         <Typography variant="h2" sx={{ color: row.isRaining ? '#f44336' : '#008842ff', fontWeight: 800, fontSize: '2.5rem', lineHeight: 1 }}>
                                             {row.rainSession.toFixed(1)}
                                         </Typography>
-                                        <Typography variant="h6" sx={{ color: row.isRaining ? '#f44336' : '#008407ff', fontWeight: 700, ml: 0.5 }}>
-                                            mm
-                                        </Typography>
                                     </Box>
 
                                     <Typography variant="body2" sx={{ fontWeight: 600, mb: 1.5, fontSize: '0.8rem' }}>
-                                        Bắt đầu: {row.startTime} <br /> Nhận cuối: {row.currentTime}
+                                        Bắt đầu: {row.startTime} <br /> Kết thúc: {row.currentTime}
                                     </Typography>
 
 

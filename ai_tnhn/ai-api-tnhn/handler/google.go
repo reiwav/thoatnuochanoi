@@ -352,7 +352,62 @@ func (h *GoogleHandler) GenerateQuickReport(c *gin.Context) {
 
 	h.log.GetLogger().Infof(" [QuickReport] Data stats: %d Phường (top 10), %d Xã (top 10), %d Lakes (top 5), %d Rivers (top 5)", len(phuongData), len(xaData), len(lakeData), len(riverData))
 
-	// 1.5 Fetch Rain Warning from Email
+	// 1.4 Fetch latest email for noi_dung
+	noiDung := "Báo cáo tình hình mưa" // Default
+	if h.emailSvc != nil {
+		emails, err := h.emailSvc.GetRecentEmails(ctx, 1)
+		if err == nil && len(emails) > 0 {
+			noiDung = emails[0].Subject
+		}
+	}
+
+	// 1.5 Calculate time_mua
+	timeMua := ""
+	var minStart, maxEnd time.Time
+	parseTime := func(s string) time.Time {
+		if s == "" {
+			return time.Time{}
+		}
+		layouts := []string{
+			"02/01/2006 15:04:05",
+			"02/01/2006 15:04",
+			"2006-01-02 15:04:05",
+			"2006-01-02 15:04",
+			time.RFC3339,
+			"2006-01-02T15:04:05",
+		}
+		for _, layout := range layouts {
+			t, err := time.ParseInLocation(layout, s, time.Local)
+			if err == nil {
+				return t
+			}
+		}
+		return time.Time{}
+	}
+
+	for _, d := range rainResp.Content.Data {
+		lmht, _ := d["LuongMua_HT"].(float64)
+		if lmht > 0 {
+			tbdStr, _ := d["ThoiGian_BD"].(string)
+			thtStr, _ := d["ThoiGian_HT"].(string)
+
+			tbd := parseTime(tbdStr)
+			tht := parseTime(thtStr)
+
+			if !tbd.IsZero() && (minStart.IsZero() || tbd.Before(minStart)) {
+				minStart = tbd
+			}
+			if !tht.IsZero() && (maxEnd.IsZero() || tht.After(maxEnd)) {
+				maxEnd = tht
+			}
+		}
+	}
+
+	if !minStart.IsZero() && !maxEnd.IsZero() {
+		timeMua = fmt.Sprintf("%s đến %s", minStart.Format("15h04'"), maxEnd.Format("15h04'"))
+	}
+
+	// 1.6 Fetch Rain Warning from Email
 	warningText := "Không có cảnh báo mưa mới nhất."
 	if h.emailSvc != nil {
 		h.log.GetLogger().Info(">>> Fetching latest rain warning from email...")
@@ -375,8 +430,10 @@ func (h *GoogleHandler) GenerateQuickReport(c *gin.Context) {
 		"lakeData":     lakeData,
 		"riverData":    riverData,
 		"warning_rain": warningText,
+		"noi_dung":     noiDung,
+		"time_mua":     timeMua,
 	}
-
+	fmt.Println("==========================", timeMua)
 	// 3. Upload Template and naming
 	targetFilename := fmt.Sprintf("Báo cáo mưa ngày %s-%s-%s thời điểm %s.docx", day, month, year, hourSimple)
 	localTemplate := filepath.Join("doc", "Báo cáo mưa ngày {dd}-{mm}-{yyyy} thời điểm {hh}.docx")

@@ -30,6 +30,14 @@ const adminPages = {
       roles: ['super_admin'],
       children: [
         {
+          id: 'station-rain-summary',
+          title: 'Bảng mưa',
+          type: 'item',
+          url: '/admin/station/rain/summary',
+          icon: icons.IconList,
+          breadcrumbs: false
+        },
+        {
           id: 'station-rain-list',
           title: 'Danh sách',
           type: 'item',
@@ -54,7 +62,7 @@ const adminPages = {
       url: '/admin/inundation',
       icon: icons.IconTornado,
       breadcrumbs: false,
-      roles: ['super_admin', 'employee']
+      roles: ['employee']
     },
     {
       id: 'inundation-management',
@@ -64,12 +72,12 @@ const adminPages = {
       roles: ['super_admin'],
       children: [
         {
-          id: 'station-inundation-list',
-          title: 'Danh sách',
+          id: 'inundation',
+          title: 'Điểm ngập lụt',
           type: 'item',
-          url: '/admin/station/inundation/list',
-          icon: icons.IconList,
-          breadcrumbs: false
+          url: '/admin/inundation',
+          icon: icons.IconTornado,
+          breadcrumbs: false,
         },
         {
           id: 'station-inundation-history',
@@ -78,7 +86,14 @@ const adminPages = {
           url: '/admin/station/inundation/history',
           icon: icons.IconHistory,
           breadcrumbs: false
-        }
+        }, {
+          id: 'station-inundation-list',
+          title: 'Danh sách',
+          type: 'item',
+          url: '/admin/station/inundation/list',
+          icon: icons.IconList,
+          breadcrumbs: false
+        },
       ]
     },
     {
@@ -88,61 +103,66 @@ const adminPages = {
       url: '/admin/emergency-construction/dashboard',
       icon: icons.IconAlertTriangle,
       breadcrumbs: false,
-      roles: ['super_admin', 'employee']
+      roles: ['employee']
     },
-
-
-
     {
       id: 'river-management',
-      title: 'Mực nước sông',
+      title: 'Mực nước',
       type: 'collapse',
       icon: icons.IconRipple,
       roles: ['super_admin'],
       children: [
         {
-          id: 'station-river-list',
-          title: 'Danh sách',
-          type: 'item',
-          url: '/admin/station/river/list',
-          icon: icons.IconList,
-          breadcrumbs: false
+          id: 'lake-management',
+          title: 'Mực nước hồ',
+          type: 'collapse',
+          icon: icons.IconDroplets,
+          roles: ['super_admin'],
+          children: [
+            {
+              id: 'station-lake-list',
+              title: 'Danh sách',
+              type: 'item',
+              url: '/admin/station/lake/list',
+              icon: icons.IconList,
+              breadcrumbs: false
+            },
+            {
+              id: 'station-lake-history',
+              title: 'Lịch sử',
+              type: 'item',
+              url: '/admin/station/lake/history',
+              icon: icons.IconHistory,
+              breadcrumbs: false
+            }
+          ]
         },
         {
-          id: 'station-river-history',
-          title: 'Lịch sử',
-          type: 'item',
-          url: '/admin/station/river/history',
-          icon: icons.IconHistory,
-          breadcrumbs: false
+          id: 'river-management',
+          title: 'Mực nước sông',
+          type: 'collapse',
+          icon: icons.IconDroplets,
+          roles: ['super_admin'],
+          children: [{
+            id: 'station-river-list',
+            title: 'Danh sách',
+            type: 'item',
+            url: '/admin/station/river/list',
+            icon: icons.IconList,
+            breadcrumbs: false
+          },
+          {
+            id: 'station-river-history',
+            title: 'Lịch sử',
+            type: 'item',
+            url: '/admin/station/river/history',
+            icon: icons.IconHistory,
+            breadcrumbs: false
+          }]
         }
       ]
     },
-    {
-      id: 'lake-management',
-      title: 'Mực nước hồ',
-      type: 'collapse',
-      icon: icons.IconDroplets,
-      roles: ['super_admin'],
-      children: [
-        {
-          id: 'station-lake-list',
-          title: 'Danh sách',
-          type: 'item',
-          url: '/admin/station/lake/list',
-          icon: icons.IconList,
-          breadcrumbs: false
-        },
-        {
-          id: 'station-lake-history',
-          title: 'Lịch sử',
-          type: 'item',
-          url: '/admin/station/lake/history',
-          icon: icons.IconHistory,
-          breadcrumbs: false
-        }
-      ]
-    },
+
 
     {
       id: 'emergency-construction',
@@ -180,7 +200,7 @@ const adminPages = {
     },
     {
       id: 'organization-list',
-      title: 'Phân quyền Tổ chức',
+      title: 'Phân quyền (ĐPT)',
       type: 'item',
       url: '/admin/organization',
       icon: icons.IconBuilding,

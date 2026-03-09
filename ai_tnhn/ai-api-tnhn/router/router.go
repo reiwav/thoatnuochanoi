@@ -14,7 +14,7 @@ import (
 )
 
 // Create handlers
-func (h HandlerFuncs) Create(mid middleware.Middleware, orgHandler *handler.OrganizationHandler, empHandler *handler.EmployeeHandler, stationHandler *handler.StationHandler, inuHandler *handler.InundationHandler, waterHandler *handler.WaterHandler, googleHandler *handler.GoogleHandler, queryHandler *handler.QueryHandler, emConstructionHandler *handler.EmergencyConstructionHandler) *gin.Engine {
+func (h HandlerFuncs) Create(mid middleware.Middleware, orgHandler *handler.OrganizationHandler, empHandler *handler.EmployeeHandler, stationHandler *handler.StationHandler, inuHandler *handler.InundationHandler, waterHandler *handler.WaterHandler, googleHandler *handler.GoogleHandler, queryHandler *handler.QueryHandler, emConstructionHandler *handler.EmergencyConstructionHandler, weatherHandler *handler.WeatherHandler) *gin.Engine {
 	r := gin.Default()
 	// ... (cors omitted for brevity in replace_file_content if I were using it, but I'll include enough context)
 	r.Use(
@@ -71,6 +71,7 @@ func (h HandlerFuncs) Create(mid middleware.Middleware, orgHandler *handler.Orga
 	h.InundationRoutes(api, mid, inuHandler)
 	h.GoogleRoutes(apiAdmin, mid, googleHandler)
 	h.EmergencyConstructionRoutes(apiAdmin, mid, emConstructionHandler)
+	h.WeatherRoutes(apiAdmin, mid, weatherHandler)
 
 	apiAdmin.POST("/database/query", mid.MidBasicType(), h.DatabaseQueryHandler)
 

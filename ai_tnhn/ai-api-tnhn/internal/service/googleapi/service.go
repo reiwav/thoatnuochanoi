@@ -5,15 +5,13 @@ import (
 	"ai-api-tnhn/internal/repository"
 	"ai-api-tnhn/utils/number"
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"sort"
 	"time"
 
 	"ai-api-tnhn/internal/service/email"
 	"ai-api-tnhn/internal/service/inundation"
+	"ai-api-tnhn/internal/service/weather"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"golang.org/x/oauth2"
@@ -113,9 +111,10 @@ type service struct {
 	aiUsageRepo repository.AiUsage
 	inuSvc      inundation.Service
 	emailSvc    email.Service
+	weatherSvc  weather.Service
 }
 
-func NewService(conf config.GoogleDriveConfig, oauthConf config.OAuthConfig, aiUsageRepo repository.AiUsage, inuSvc inundation.Service) (Service, error) {
+func NewService(conf config.GoogleDriveConfig, oauthConf config.OAuthConfig, aiUsageRepo repository.AiUsage, inuSvc inundation.Service, weatherSvc weather.Service) (Service, error) {
 	ctx := context.Background()
 	var driveSvc *drive.Service
 	var gmailSvc *gmail.Service
@@ -168,6 +167,7 @@ func NewService(conf config.GoogleDriveConfig, oauthConf config.OAuthConfig, aiU
 		gmailSvc:    gmailSvc,
 		aiUsageRepo: aiUsageRepo,
 		inuSvc:      inuSvc,
+		weatherSvc:  weatherSvc,
 	}, nil
 }
 
@@ -251,50 +251,23 @@ func (s *service) GetStatus(ctx context.Context) (*GoogleStatus, error) {
 	return status, nil
 }
 
-type RainDataResponse struct {
-	Code    int `json:"Code"`
-	Content struct {
-		Tram []struct {
-			Id        int    `json:"Id"`
-			TenTram   string `json:"TenTram"`
-			TenPhuong string `json:"TenPhuong"`
-		} `json:"tram"`
-		Data []struct {
-			TramId      int     `json:"TramId"`
-			LuongMua_BD float64 `json:"LuongMua_BD"`
-			ThoiGian_BD string  `json:"ThoiGian_BD"`
-			LuongMua_HT float64 `json:"LuongMua_HT"`
-			ThoiGian_HT string  `json:"ThoiGian_HT"`
-		} `json:"data"`
-	} `json:"Content"`
-}
-
 func (s *service) GetRainSummary(ctx context.Context) (*RainSummaryData, error) {
-	url := "https://noibo.thoatnuochanoi.vn/api/thuytri/getallrain?id=3a1a672f-c56f-4752-b86c-455e30427b87"
-	fmt.Printf(" [GoogleAPI] Calling Rain API: %s\n", url)
-	resp, err := http.Get(url)
+	rainData, err := s.weatherSvc.GetRawRainData(ctx)
 	if err != nil {
 		fmt.Printf(" [GoogleAPI] Rain API Error: %v\n", err)
 		return nil, err
 	}
-	defer resp.Body.Close()
-
-	// Read body to log it
-	bodyBytes, _ := io.ReadAll(resp.Body)
-	limit := 500
-	if len(bodyBytes) < limit {
-		limit = len(bodyBytes)
-	}
-	fmt.Printf(" [GoogleAPI] Raw Response (first 500 chars): %s\n", string(bodyBytes[:limit]))
-
-	var rainData RainDataResponse
-	if err := json.Unmarshal(bodyBytes, &rainData); err != nil {
-		return nil, err
-	}
-
 	stationMap := make(map[int]string)
 	for _, t := range rainData.Content.Tram {
-		stationMap[t.Id] = t.TenTram
+		// handle id which might be float64 or string
+		var id int
+		if v, ok := t.Id.(float64); ok {
+			id = int(v)
+		} else if v, ok := t.Id.(string); ok {
+			fmt.Sscanf(v, "%d", &id)
+		}
+
+		stationMap[id] = t.TenTram
 	}
 
 	fmt.Printf(" [GoogleAPI] Rain Data Count: %d, Stations Count: %d\n", len(rainData.Content.Data), len(rainData.Content.Tram))
@@ -302,6 +275,13 @@ func (s *service) GetRainSummary(ctx context.Context) (*RainSummaryData, error) 
 	var measurements []RainStationStat
 	for _, d := range rainData.Content.Data {
 		if d.LuongMua_HT > 0 {
+			var id int
+			if v, ok := d.TramId.(float64); ok {
+				id = int(v)
+			} else if v, ok := d.TramId.(string); ok {
+				fmt.Sscanf(v, "%d", &id)
+			}
+
 			// Extract time (usually T format)
 			tBD := d.ThoiGian_BD
 			if len(tBD) > 16 {
@@ -314,7 +294,7 @@ func (s *service) GetRainSummary(ctx context.Context) (*RainSummaryData, error) 
 			}
 
 			measurements = append(measurements, RainStationStat{
-				Name:        stationMap[d.TramId],
+				Name:        stationMap[id],
 				TotalRain:   d.LuongMua_HT,
 				SessionRain: sessionRain,
 				StartTime:   tBD,
@@ -342,37 +322,10 @@ func (s *service) GetRainSummary(ctx context.Context) (*RainSummaryData, error) 
 	}, nil
 }
 
-type WaterDataResponse struct {
-	Code    int `json:"Code"`
-	Content struct {
-		Tram []struct {
-			Id          string `json:"Id"`
-			TenTram     string `json:"TenTram"`
-			TenTramHTML string `json:"TenTramHTML"`
-			Loai        string `json:"Loai"` // "1" for River, "2" for Lake
-		} `json:"tram"`
-		Data []struct {
-			TramId       string  `json:"TramId"`
-			ThuongLuu_HT float64 `json:"ThuongLuu_HT"`
-			ThoiGian_HT  string  `json:"ThoiGian_HT"`
-			Loai         int     `json:"Loai"`
-		} `json:"data"`
-	} `json:"Content"`
-}
-
 func (s *service) GetWaterSummary(ctx context.Context) (*WaterSummaryData, error) {
-	url := "https://noibo.thoatnuochanoi.vn/api/thuytri/getallmucnuoc?id=3a1a672f-c56f-4752-b86c-455e30427b87"
-	fmt.Printf(" [GoogleAPI] Calling Water API: %s\n", url)
-	resp, err := http.Get(url)
+	waterData, err := s.weatherSvc.GetRawWaterData(ctx)
 	if err != nil {
 		fmt.Printf(" [GoogleAPI] Water API Error: %v\n", err)
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	bodyBytes, _ := io.ReadAll(resp.Body)
-	var waterData WaterDataResponse
-	if err := json.Unmarshal(bodyBytes, &waterData); err != nil {
 		return nil, err
 	}
 

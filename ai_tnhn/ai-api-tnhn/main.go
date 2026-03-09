@@ -22,6 +22,7 @@ import (
 	"ai-api-tnhn/internal/service/telegram"
 	"ai-api-tnhn/internal/service/token"
 	"ai-api-tnhn/internal/service/water"
+	"ai-api-tnhn/internal/service/weather"
 	"ai-api-tnhn/router"
 	"ai-api-tnhn/router/middleware"
 	"ai-api-tnhn/utils/web"
@@ -75,7 +76,8 @@ func main() {
 	emailService := email.NewService(confg.EmailConfig)
 	stationService := station.NewService(rainStationRepo, lakeStationRepo, riverStationRepo)
 	inuService := inundation.NewService(inuRepo, inuUpdateRepo, inuPointRepo, orgRepo, driveService)
-	googleApiService, _ := googleapi.NewService(confg.GoogleDriveConfig, confg.OAuthConfig, aiUsageRepo, inuService)
+	weatherService := weather.NewService()
+	googleApiService, _ := googleapi.NewService(confg.GoogleDriveConfig, confg.OAuthConfig, aiUsageRepo, inuService, weatherService)
 	if googleApiService != nil {
 		googleApiService.SetEmailService(emailService)
 	}
@@ -137,6 +139,7 @@ func main() {
 	inuHandler := handler.NewInundationHandler(inuService, authService, contextWith)
 	waterHandler := handler.NewWaterHandler(waterService)
 	emConstructionHandler := handler.NewEmergencyConstructionHandler(emConstructionService)
+	weatherHandler := handler.NewWeatherHandler(weatherService)
 	googleHandler := handler.NewGoogleHandler(googleApiService, geminiService, driveService, waterService, emailService, contextWith, confg.GoogleDriveConfig, log)
 	mid := middleware.NewMiddleware(confg, tokenRepo, contextWith, log)
 	handlers := router.HandlerFuncs{
@@ -162,6 +165,6 @@ func main() {
 		DatabaseQueryHandler:           queryHandler.Query,
 	}
 
-	r := handlers.Create(mid, orgHandler, empHandler, stationHandler, inuHandler, waterHandler, googleHandler, queryHandler, emConstructionHandler)
+	r := handlers.Create(mid, orgHandler, empHandler, stationHandler, inuHandler, waterHandler, googleHandler, queryHandler, emConstructionHandler, weatherHandler)
 	r.Run(confg.Port)
 }

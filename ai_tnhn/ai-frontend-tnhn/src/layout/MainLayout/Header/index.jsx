@@ -17,9 +17,9 @@ import { IconMenu2 } from '@tabler/icons-react';
 
 // ==============================|| MAIN NAVBAR / HEADER ||============================== //
 
-export default function Header({ userInfo }) {
+export default function Header({ userInfo, userRole }) {
   const theme = useTheme();
-  const downMD = useMediaQuery(theme.breakpoints.down('md'));
+  const downSM = useMediaQuery(theme.breakpoints.down('sm'));
 
   const { menuMaster } = useGetMenuMaster();
   const drawerOpen = menuMaster.isDashboardDrawerOpened;
@@ -27,28 +27,30 @@ export default function Header({ userInfo }) {
   return (
     <>
       {/* logo & toggler button */}
-      <Box sx={{ width: downMD ? 'auto' : 228, display: 'flex' }}>
-        <Box component="span" sx={{ display: { xs: 'none', md: 'block' }, flexGrow: 1 }}>
+      <Box sx={{ width: downSM ? 'auto' : 228, display: 'flex' }}>
+        <Box component="span" sx={{ display: { xs: 'none', sm: 'block' }, flexGrow: 1 }}>
           <LogoSection />
         </Box>
-        <Avatar
-          variant="rounded"
-          sx={{
-            ...theme.typography.commonAvatar,
-            ...theme.typography.mediumAvatar,
-            overflow: 'hidden',
-            transition: 'all .2s ease-in-out',
-            color: theme.vars.palette.secondary.dark,
-            background: theme.vars.palette.secondary.light,
-            '&:hover': {
-              color: theme.vars.palette.secondary.light,
-              background: theme.vars.palette.secondary.dark
-            }
-          }}
-          onClick={() => handlerDrawerOpen(!drawerOpen)}
-        >
-          <IconMenu2 stroke={1.5} size="20px" />
-        </Avatar>
+        {!downSM ? null : (
+          <Avatar
+            variant="rounded"
+            sx={{
+              ...theme.typography.commonAvatar,
+              ...theme.typography.mediumAvatar,
+              overflow: 'hidden',
+              transition: 'all .2s ease-in-out',
+              color: theme.vars.palette.secondary.dark,
+              background: theme.vars.palette.secondary.light,
+              '&:hover': {
+                color: theme.vars.palette.secondary.light,
+                background: theme.vars.palette.secondary.dark
+              }
+            }}
+            onClick={() => handlerDrawerOpen(!drawerOpen)}
+          >
+            <IconMenu2 stroke={1.5} size="20px" />
+          </Avatar>
+        )}
       </Box>
 
       {/* header search */}

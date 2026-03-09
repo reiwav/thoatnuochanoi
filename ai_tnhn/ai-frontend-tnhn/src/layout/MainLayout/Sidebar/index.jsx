@@ -21,7 +21,7 @@ import { handlerDrawerOpen, useGetMenuMaster } from 'api/menu';
 // ==============================|| SIDEBAR DRAWER ||============================== //
 
 function Sidebar() {
-  const downMD = useMediaQuery((theme) => theme.breakpoints.down('md'));
+  const downSM = useMediaQuery((theme) => theme.breakpoints.down('sm'));
 
   const { menuMaster } = useGetMenuMaster();
   const drawerOpen = menuMaster.isDashboardDrawerOpened;
@@ -54,7 +54,7 @@ function Sidebar() {
 
     return (
       <>
-        {downMD ? (
+        {downSM ? (
           <Box sx={drawerSX}>
             <MenuList />
             {drawerOpen && drawerContent}
@@ -67,20 +67,20 @@ function Sidebar() {
         )}
       </>
     );
-  }, [downMD, drawerOpen]);
+  }, [downSM, drawerOpen]);
 
   return (
-    <Box component="nav" sx={{ flexShrink: { md: 0 }, width: { xs: 'auto', md: drawerWidth } }} aria-label="mailbox folders">
-      {downMD || (miniDrawer && drawerOpen) ? (
+    <Box component="nav" sx={{ flexShrink: { sm: 0 }, width: { xs: 'auto', sm: drawerWidth } }} aria-label="mailbox folders">
+      {downSM || (miniDrawer && drawerOpen) ? (
         <Drawer
-          variant={downMD ? 'temporary' : 'persistent'}
+          variant={downSM ? 'temporary' : 'persistent'}
           anchor="left"
           open={drawerOpen}
           onClose={() => handlerDrawerOpen(!drawerOpen)}
           slotProps={{
             paper: {
               sx: {
-                mt: downMD ? 0 : 11,
+                mt: downSM ? 0 : 11,
                 zIndex: 1099,
                 width: drawerWidth,
                 bgcolor: 'background.default',
@@ -92,7 +92,7 @@ function Sidebar() {
           ModalProps={{ keepMounted: true }}
           color="inherit"
         >
-          {downMD && logo}
+          {downSM && logo}
           {drawer}
         </Drawer>
       ) : (

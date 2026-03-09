@@ -25,7 +25,7 @@ const MainContentStyled = styled('main', {
       easing: theme.transitions.easing.sharp,
       duration: theme.transitions.duration.shorter + 200
     }),
-    [theme.breakpoints.up('md')]: {
+    [theme.breakpoints.up('sm')]: {
       marginLeft: -(drawerWidth - 72),
       width: `calc(100% - ${drawerWidth}px)`,
       marginTop: 88
@@ -39,11 +39,11 @@ const MainContentStyled = styled('main', {
     marginLeft: 0,
     marginTop: 88,
     width: `calc(100% - ${drawerWidth}px)`,
-    [theme.breakpoints.up('md')]: {
+    [theme.breakpoints.up('sm')]: {
       marginTop: 88
     }
   }),
-  [theme.breakpoints.down('md')]: {
+  [theme.breakpoints.down('sm')]: {
     marginLeft: 20,
     padding: 16,
     marginTop: 88,

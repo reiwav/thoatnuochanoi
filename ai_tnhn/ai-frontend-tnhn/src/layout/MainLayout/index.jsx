@@ -36,7 +36,7 @@ export default function MainLayout() {
   const theme = useTheme();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const downMD = useMediaQuery(theme.breakpoints.down('md'));
+  const downSM = useMediaQuery(theme.breakpoints.down('sm'));
   const { pathname } = useLocation();
 
   const [isChecking, setIsChecking] = useState(true);
@@ -129,12 +129,19 @@ export default function MainLayout() {
   const isAiSupportPath = pathname === '/admin/ai-support';
   const showMobileAppLayout = isEmployee && (isInundationPath || isConstructionPath);
 
-  // Auto-collapse sidebar on AI Support page
+  // Auto-collapse sidebar on AI Support page (only for mobile)
   useEffect(() => {
-    if (isAiSupportPath) {
+    if (isAiSupportPath && downSM) {
       handlerDrawerOpen(false);
     }
-  }, [isAiSupportPath]);
+  }, [isAiSupportPath, downSM]);
+
+  // Always open sidebar on desktop/tablet
+  useEffect(() => {
+    if (!downSM && !drawerOpen) {
+      handlerDrawerOpen(true);
+    }
+  }, [drawerOpen, downSM]);
 
   const handleTopTabChange = (event, newValue) => {
     if (newValue === 0) {
@@ -165,7 +172,7 @@ export default function MainLayout() {
       {!showMobileAppLayout && (
         <AppBar enableColorOnDark position="fixed" color="inherit" elevation={0} sx={{ bgcolor: 'background.default' }}>
           <Toolbar sx={{ p: 2 }}>
-            <Header userInfo={userInfo} />
+            <Header userInfo={userInfo} userRole={userRole} />
           </Toolbar>
         </AppBar>
       )}

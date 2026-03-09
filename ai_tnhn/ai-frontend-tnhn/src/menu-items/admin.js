@@ -14,40 +14,13 @@ const adminPages = {
   type: 'group',
   children: [
     {
-      id: 'inundation-report',
-      title: 'Trực ngập lụt',
+      id: 'ai-support',
+      title: 'HSDC AI',
       type: 'item',
-      url: '/admin/inundation',
-      icon: icons.IconTornado,
-      breadcrumbs: false,
-      roles: ['super_admin', 'employee']
-    },
-    {
-      id: 'emergency-construction-report',
-      title: 'Công trình khẩn',
-      type: 'item',
-      url: '/admin/emergency-construction/dashboard',
-      icon: icons.IconAlertTriangle,
-      breadcrumbs: false,
-      roles: ['super_admin', 'employee']
-    },
-    {
-      id: 'organization-list',
-      title: 'Tổ chức',
-      type: 'item',
-      url: '/admin/organization',
-      icon: icons.IconBuilding,
+      url: '/admin/ai-support',
+      icon: icons.IconMessageChatbot,
       breadcrumbs: false,
       roles: ['super_admin']
-    },
-    {
-      id: 'employee-list',
-      title: 'Tài khoản',
-      type: 'item',
-      url: '/admin/employee',
-      icon: icons.IconUsers,
-      breadcrumbs: false,
-      roles: ['super_admin', 'admin_org']
     },
     {
       id: 'rain-management',
@@ -74,6 +47,52 @@ const adminPages = {
         }
       ]
     },
+    {
+      id: 'inundation-report',
+      title: 'Điểm ngập lụt',
+      type: 'item',
+      url: '/admin/inundation',
+      icon: icons.IconTornado,
+      breadcrumbs: false,
+      roles: ['super_admin', 'employee']
+    },
+    {
+      id: 'inundation-management',
+      title: 'Điểm ngập úng',
+      type: 'collapse',
+      icon: icons.IconTornado,
+      roles: ['super_admin'],
+      children: [
+        {
+          id: 'station-inundation-list',
+          title: 'Danh sách',
+          type: 'item',
+          url: '/admin/station/inundation/list',
+          icon: icons.IconList,
+          breadcrumbs: false
+        },
+        {
+          id: 'station-inundation-history',
+          title: 'Lịch sử',
+          type: 'item',
+          url: '/admin/station/inundation/history',
+          icon: icons.IconHistory,
+          breadcrumbs: false
+        }
+      ]
+    },
+    {
+      id: 'emergency-construction-report',
+      title: 'Công trình khẩn',
+      type: 'item',
+      url: '/admin/emergency-construction/dashboard',
+      icon: icons.IconAlertTriangle,
+      breadcrumbs: false,
+      roles: ['super_admin', 'employee']
+    },
+
+
+
     {
       id: 'river-management',
       title: 'Mực nước sông',
@@ -124,34 +143,10 @@ const adminPages = {
         }
       ]
     },
-    {
-      id: 'inundation-management',
-      title: 'Điểm ngập úng',
-      type: 'collapse',
-      icon: icons.IconTornado,
-      roles: ['super_admin'],
-      children: [
-        {
-          id: 'station-inundation-list',
-          title: 'Danh sách',
-          type: 'item',
-          url: '/admin/station/inundation/list',
-          icon: icons.IconList,
-          breadcrumbs: false
-        },
-        {
-          id: 'station-inundation-history',
-          title: 'Lịch sử',
-          type: 'item',
-          url: '/admin/station/inundation/history',
-          icon: icons.IconHistory,
-          breadcrumbs: false
-        }
-      ]
-    },
+
     {
       id: 'emergency-construction',
-      title: 'Công trình khẩn cấp',
+      title: 'Công trình khẩn cấp (ĐPT)',
       type: 'collapse',
       icon: icons.IconAlertTriangle,
       roles: ['super_admin'],
@@ -175,14 +170,23 @@ const adminPages = {
       ]
     },
     {
-      id: 'ai-support',
-      title: 'Hỗ trợ AI',
+      id: 'employee-list',
+      title: 'Tài khoản',
       type: 'item',
-      url: '/admin/ai-support',
-      icon: icons.IconMessageChatbot,
+      url: '/admin/employee',
+      icon: icons.IconUsers,
+      breadcrumbs: false,
+      roles: ['super_admin', 'admin_org']
+    },
+    {
+      id: 'organization-list',
+      title: 'Phân quyền Tổ chức',
+      type: 'item',
+      url: '/admin/organization',
+      icon: icons.IconBuilding,
       breadcrumbs: false,
       roles: ['super_admin']
-    }
+    },
   ]
 };
 

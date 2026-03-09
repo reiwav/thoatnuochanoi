@@ -72,6 +72,7 @@ func (h HandlerFuncs) Create(mid middleware.Middleware, orgHandler *handler.Orga
 	h.GoogleRoutes(apiAdmin, mid, googleHandler)
 	h.EmergencyConstructionRoutes(apiAdmin, mid, emConstructionHandler)
 	h.WeatherRoutes(apiAdmin, mid, weatherHandler)
+	apiAdmin.GET("/weather/rain/compare", mid.MidBasicType(), weatherHandler.GetComparisonReport)
 
 	apiAdmin.POST("/database/query", mid.MidBasicType(), h.DatabaseQueryHandler)
 

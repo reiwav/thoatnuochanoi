@@ -12,6 +12,7 @@ func (h *HandlerFuncs) WeatherRoutes(api *gin.RouterGroup, mid middleware.Middle
 	weatherGroup.Use(mid.MidBasicType()) // Or equivalent auth middleware used by admin group
 	{
 		weatherGroup.GET("/rain", weatherHandler.GetRainSummary)
+		weatherGroup.GET("/rain/history", weatherHandler.GetHistoricalRain)
 		weatherGroup.GET("/water", weatherHandler.GetWaterSummary)
 	}
 }

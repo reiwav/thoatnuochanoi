@@ -34,7 +34,7 @@ func ensureCollections(ctx context.Context, db *mongo.Database) error {
 		exist[c] = true
 	}
 
-	collections := []string{}
+	collections := []string{"historical_rain_records"}
 
 	for _, c := range collections {
 		if !exist[c] {

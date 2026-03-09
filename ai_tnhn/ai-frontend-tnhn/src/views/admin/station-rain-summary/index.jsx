@@ -100,8 +100,8 @@ const StationRainSummary = () => {
             return {
                 id: tid,
                 stt: index + 1,
-                name: station.TenTram,
-                address: station.TenPhuong,
+                name: station.TenPhuong,
+                address: station.DiaChi,
                 startTimeRaw: startTime,
                 currentTimeRaw: currentTime,
                 startTime: formatDateTime(startTime),

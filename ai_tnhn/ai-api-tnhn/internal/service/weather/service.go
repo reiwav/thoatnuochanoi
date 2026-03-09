@@ -1,11 +1,14 @@
 package weather
 
 import (
+	"ai-api-tnhn/internal/repository"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 type RainDataResponse struct {
@@ -15,6 +18,13 @@ type RainDataResponse struct {
 			Id        interface{} `json:"Id"` // Can be float64 or string from external API
 			TenTram   string      `json:"TenTram"`
 			TenPhuong string      `json:"TenPhuong"`
+			DiaChi    string      `json:"DiaChi"`
+			Lat       string      `json:"Lat"`
+			Lng       string      `json:"Lng"`
+			ThuTu     int         `json:"ThuTu"`
+			ManHinh   int         `json:"ManHinh"`
+			PhuongId  int         `json:"PhuongId"`
+			Active    bool        `json:"Active"`
 		} `json:"tram"`
 		Data []struct {
 			TramId      interface{} `json:"TramId"` // Can be float64 or string
@@ -44,15 +54,21 @@ type WaterDataResponse struct {
 	} `json:"Content"`
 }
 
+type HistoricalRainData map[string]map[string]float64
+
 type Service interface {
 	GetRawRainData(ctx context.Context) (*RainDataResponse, error)
 	GetRawWaterData(ctx context.Context) (*WaterDataResponse, error)
+	GetHistoricalRainData(ctx context.Context) (HistoricalRainData, error)
+	GetComparisonData(ctx context.Context, year1, year2 int) (interface{}, error)
 }
 
-type service struct{}
+type service struct {
+	histRepo repository.HistoricalRain
+}
 
-func NewService() Service {
-	return &service{}
+func NewService(histRepo repository.HistoricalRain) Service {
+	return &service{histRepo: histRepo}
 }
 
 func (s *service) GetRawRainData(ctx context.Context) (*RainDataResponse, error) {
@@ -95,4 +111,69 @@ func (s *service) GetRawWaterData(ctx context.Context) (*WaterDataResponse, erro
 	}
 
 	return &waterData, nil
+}
+
+func (s *service) GetHistoricalRainData(ctx context.Context) (HistoricalRainData, error) {
+	records, err := s.histRepo.FindAll(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch historical rain data from DB: %w", err)
+	}
+
+	results := make(HistoricalRainData)
+	for _, r := range records {
+		if _, ok := results[r.Station]; !ok {
+			results[r.Station] = make(map[string]float64)
+		}
+		results[r.Station][r.Date] = r.Rainfall
+	}
+
+	return results, nil
+}
+
+func (s *service) GetComparisonData(ctx context.Context, year1, year2 int) (interface{}, error) {
+	totals, err := s.histRepo.GetMonthlyTotals(ctx, []int{year1, year2})
+	if err != nil {
+		return nil, err
+	}
+
+	// Structure: map[year]map[month]map[station]total
+	data := make(map[int]map[int]map[string]float64)
+	data[year1] = make(map[int]map[string]float64)
+	data[year2] = make(map[int]map[string]float64)
+
+	stations := make(map[string]bool)
+
+	for _, t := range totals {
+		stations[t.Station] = true
+		if _, ok := data[t.Year][t.Month]; !ok {
+			data[t.Year][t.Month] = make(map[string]float64)
+		}
+		data[t.Year][t.Month][t.Station] = t.Total
+	}
+
+	// Also calculate annual totals
+	annualTotals := make(map[int]map[string]float64)
+	annualTotals[year1] = make(map[string]float64)
+	annualTotals[year2] = make(map[string]float64)
+
+	for y, months := range data {
+		for _, stMap := range months {
+			for st, val := range stMap {
+				annualTotals[y][st] += val
+			}
+		}
+	}
+
+	stationList := []string{}
+	for s := range stations {
+		stationList = append(stationList, s)
+	}
+
+	return gin.H{
+		"year1":        year1,
+		"year2":        year2,
+		"data":         data,
+		"annualTotals": annualTotals,
+		"stations":     stationList,
+	}, nil
 }

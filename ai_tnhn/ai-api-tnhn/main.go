@@ -55,6 +55,7 @@ func main() {
 	rainStationRepo := query.NewRainStationRepo(db.DB, "rain_stations", "rst", log)
 	lakeStationRepo := query.NewLakeStationRepo(db.DB, "lake_stations", "lst", log)
 	riverStationRepo := query.NewRiverStationRepo(db.DB, "river_stations", "rvst", log)
+	historicalRainRepo := query.NewHistoricalRainRepo(db.DB, "historical_rain_records", "hrr", log)
 
 	index.InitMongoSchema(context.Background(), db.DB)
 
@@ -76,7 +77,7 @@ func main() {
 	emailService := email.NewService(confg.EmailConfig)
 	stationService := station.NewService(rainStationRepo, lakeStationRepo, riverStationRepo)
 	inuService := inundation.NewService(inuRepo, inuUpdateRepo, inuPointRepo, orgRepo, driveService)
-	weatherService := weather.NewService()
+	weatherService := weather.NewService(historicalRainRepo)
 	googleApiService, _ := googleapi.NewService(confg.GoogleDriveConfig, confg.OAuthConfig, aiUsageRepo, inuService, weatherService)
 	if googleApiService != nil {
 		googleApiService.SetEmailService(emailService)

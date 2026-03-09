@@ -10,7 +10,7 @@ func TestGetRawRainData_Real(t *testing.T) {
 		t.Skip("skipping integration test in short mode")
 	}
 
-	svc := NewService()
+	svc := NewService(nil)
 	ctx := context.Background()
 
 	t.Log("Attempting to fetch raw rain data from real API...")
@@ -35,7 +35,7 @@ func TestGetRawWaterData_Real(t *testing.T) {
 		t.Skip("skipping integration test in short mode")
 	}
 
-	svc := NewService()
+	svc := NewService(nil)
 	ctx := context.Background()
 
 	t.Log("Attempting to fetch raw water data from real API...")

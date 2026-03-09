@@ -1,4 +1,5 @@
 import { lazy } from 'react';
+import { Outlet } from 'react-router-dom';
 
 // project imports
 import MainLayout from 'layout/MainLayout';
@@ -10,6 +11,7 @@ const InundationForm = Loadable(lazy(() => import('views/admin/inundation/Inunda
 const InundationDashboard = Loadable(lazy(() => import('views/admin/inundation/InundationDashboard')));
 const StationRainList = Loadable(lazy(() => import('views/admin/station/StationRainList')));
 const StationRainSummary = Loadable(lazy(() => import('views/admin/station-rain-summary')));
+const StationRainCompare = Loadable(lazy(() => import('views/admin/station-rain-compare')));
 const StationRiverList = Loadable(lazy(() => import('views/admin/station/StationRiverList')));
 const StationLakeList = Loadable(lazy(() => import('views/admin/station/StationLakeList')));
 const StationInundationList = Loadable(lazy(() => import('views/admin/station/StationInundationList')));
@@ -32,6 +34,7 @@ const MainRoutes = {
     },
     {
       path: 'admin',
+      element: <Outlet />,
       children: [
         { path: 'employee', element: <EmployeePage /> },
         { path: 'organization', element: <OrganizationPage /> },
@@ -41,6 +44,7 @@ const MainRoutes = {
         { path: 'inundation', element: <InundationDashboard /> },
         { path: 'inundation/form', element: <InundationForm /> },
         { path: 'station/rain/summary', element: <StationRainSummary /> },
+        { path: 'station/rain/compare', element: <StationRainCompare /> },
         { path: 'station/rain/list', element: <StationRainList /> },
         { path: 'station/rain/history', element: <StationHistory type="rain" /> },
         { path: 'station/river/list', element: <StationRiverList /> },
@@ -54,12 +58,15 @@ const MainRoutes = {
     },
     {
       path: 'company',
+      element: <Outlet />,
       children: [
         { path: 'emergency-construction', element: <EmergencyConstructionPage /> },
         { path: 'inundation', element: <InundationDashboard /> },
         { path: 'inundation/form', element: <InundationForm /> },
         { path: 'emergency-construction/dashboard', element: <ConstructionReportingPage /> },
-        { path: 'emergency-construction/form', element: <ConstructionFormPage /> }
+        { path: 'emergency-construction/form', element: <ConstructionFormPage /> },
+        { path: 'station/rain/summary', element: <StationRainSummary /> },
+        { path: 'station/rain/compare', element: <StationRainCompare /> }
       ]
     }
   ]

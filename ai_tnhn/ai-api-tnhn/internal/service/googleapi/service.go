@@ -50,6 +50,10 @@ type RainStationStat struct {
 	TotalRain   float64 `json:"total_rain"`
 	SessionRain float64 `json:"session_rain"`
 	StartTime   string  `json:"start_time"`
+	// TenPhuong   string  `json:"ten_phuong"`
+	// DiaChi      string  `json:"dia_chi"`
+	// ThuTu       int     `json:"thu_tu"`
+	// PhuongId    int     `json:"phuong_id"`
 }
 
 type RainSummaryData struct {

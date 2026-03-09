@@ -352,15 +352,15 @@ func (h *GoogleHandler) GenerateQuickReport(c *gin.Context) {
 
 	h.log.GetLogger().Infof(" [QuickReport] Data stats: %d Phường (top 10), %d Xã (top 10), %d Lakes (top 5), %d Rivers (top 5)", len(phuongData), len(xaData), len(lakeData), len(riverData))
 
-	// 1.4 Fetch latest email for noi_dung
+	// 1.4 Fetch latest email content (Page 1 of PDF) for noi_dung
 	noiDung := "Báo cáo tình hình mưa" // Default
 	if h.emailSvc != nil {
-		emails, err := h.emailSvc.GetRecentEmails(ctx, 1)
-		if err == nil && len(emails) > 0 {
-			noiDung = emails[0].Subject
+		content, err := h.emailSvc.GetLatestEmailAttachmentPage1(ctx)
+		if err == nil && content != "" {
+			noiDung = content
 		}
 	}
-
+	fmt.Println("============ noiDung", noiDung)
 	// 1.5 Calculate time_mua
 	timeMua := ""
 	var minStart, maxEnd time.Time

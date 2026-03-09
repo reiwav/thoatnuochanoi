@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/emersion/go-imap"
@@ -46,6 +47,8 @@ type Service interface {
 	GetUnreadEmails(ctx context.Context, limit int) ([]EmailInfo, error)
 	ReadEmailByTitle(ctx context.Context, title string) (*EmailDetail, error)
 	ReadEmailByID(ctx context.Context, id uint32) (*EmailDetail, error)
+	GetLatestEmailByFilter(ctx context.Context) (*EmailInfo, error)
+	GetLatestEmailAttachmentPage1(ctx context.Context) (string, error)
 }
 
 type service struct {
@@ -140,7 +143,7 @@ func (s *service) GetLatestRainWarning(ctx context.Context) (string, error) {
 			filename, _ := h.Filename()
 			lowerName := strings.ToLower(filename)
 			if strings.HasSuffix(lowerName, ".pdf") {
-				return s.extractTextFromPDF(p.Body)
+				return s.extractTextFromPDF(p.Body, 0) // 0 means all pages
 			}
 			if strings.HasSuffix(lowerName, ".docx") {
 				return s.extractTextFromDocx(p.Body)
@@ -154,7 +157,7 @@ func (s *service) GetLatestRainWarning(ctx context.Context) (string, error) {
 	return "No PDF attachment found in the latest email", nil
 }
 
-func (s *service) extractTextFromPDF(r io.Reader) (string, error) {
+func (s *service) extractTextFromPDF(r io.Reader, pageLimit int) (string, error) {
 	// Read entire content to memory because pdf.NewReader needs io.ReaderAt and size
 	content, err := io.ReadAll(r)
 	if err != nil {
@@ -168,7 +171,12 @@ func (s *service) extractTextFromPDF(r io.Reader) (string, error) {
 	}
 
 	var buf bytes.Buffer
-	for i := 1; i <= pdfReader.NumPage(); i++ {
+	numPages := pdfReader.NumPage()
+	if pageLimit > 0 && numPages > pageLimit {
+		numPages = pageLimit
+	}
+
+	for i := 1; i <= numPages; i++ {
 		p := pdfReader.Page(i)
 		if p.V.IsNull() {
 			continue
@@ -180,7 +188,36 @@ func (s *service) extractTextFromPDF(r io.Reader) (string, error) {
 		buf.WriteString(text)
 	}
 
-	return buf.String(), nil
+	return s.cleanExtractedText(buf.String()), nil
+}
+
+func (s *service) cleanExtractedText(text string) string {
+	// 1. Replace multiple newlines with a single newline or space
+	re := regexp.MustCompile(`\n+`)
+	text = re.ReplaceAllString(text, " ")
+
+	// 2. Replace multiple spaces with a single space
+	re = regexp.MustCompile(`\s+`)
+	text = re.ReplaceAllString(text, " ")
+
+	// 3. Trim whitespace
+	text = strings.TrimSpace(text)
+
+	// 4. Extract section from "1. Hiện trạng" to before "2."
+	startKey := "1. Hiện trạng"
+	endKey := "2."
+
+	idxStart := strings.Index(text, startKey)
+	if idxStart != -1 {
+		segment := text[idxStart:]
+		idxEnd := strings.Index(segment[len(startKey):], endKey)
+		if idxEnd != -1 {
+			return strings.TrimSpace(segment[:len(startKey)+idxEnd])
+		}
+		return strings.TrimSpace(segment)
+	}
+
+	return text
 }
 
 func (s *service) extractTextFromDocx(r io.Reader) (string, error) {
@@ -617,4 +654,164 @@ func (s *service) ReadEmailByID(ctx context.Context, id uint32) (*EmailDetail, e
 	}
 
 	return detail, nil
+}
+
+func (s *service) GetLatestEmailByFilter(ctx context.Context) (*EmailInfo, error) {
+	// 1. Connect to IMAP server
+	c, err := client.DialTLS(s.conf.IMAPServer, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to IMAP: %w", err)
+	}
+	defer c.Logout()
+
+	// 2. Login
+	cleanPassword := strings.ReplaceAll(s.conf.Password, " ", "")
+	if err := c.Login(s.conf.User, cleanPassword); err != nil {
+		return nil, fmt.Errorf("failed to login to IMAP: %w", err)
+	}
+
+	// 3. Select INBOX
+	_, err = c.Select("INBOX", true)
+	if err != nil {
+		return nil, fmt.Errorf("failed to select INBOX: %w", err)
+	}
+
+	// 4. Search for emails from the specified sender
+	criteria := imap.NewSearchCriteria()
+	criteria.Header.Set("From", s.conf.FromFilter)
+	ids, err := c.Search(criteria)
+	if err != nil {
+		return nil, fmt.Errorf("failed to search emails: %w", err)
+	}
+
+	if len(ids) == 0 {
+		return nil, fmt.Errorf("no emails found from %s", s.conf.FromFilter)
+	}
+
+	// 5. Get the latest email ID
+	latestID := ids[len(ids)-1]
+	seqset := new(imap.SeqSet)
+	seqset.AddNum(latestID)
+
+	// Fetch envelope
+	items := []imap.FetchItem{imap.FetchEnvelope}
+	messages := make(chan *imap.Message, 1)
+	done := make(chan error, 1)
+	go func() {
+		done <- c.Fetch(seqset, items, messages)
+	}()
+
+	msg := <-messages
+	if msg == nil {
+		return nil, fmt.Errorf("message not found")
+	}
+	if err := <-done; err != nil {
+		return nil, fmt.Errorf("failed to fetch message: %w", err)
+	}
+
+	return &EmailInfo{
+		ID:        msg.SeqNum,
+		Subject:   msg.Envelope.Subject,
+		From:      msg.Envelope.From[0].PersonalName,
+		Date:      msg.Envelope.Date.Format("15:04 02/01"),
+		DetailAPI: fmt.Sprintf("/api/admin/google/email/%d", msg.SeqNum),
+	}, nil
+}
+
+func (s *service) GetLatestEmailAttachmentPage1(ctx context.Context) (string, error) {
+	// 1. Connect to IMAP server
+	c, err := client.DialTLS(s.conf.IMAPServer, nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to connect to IMAP: %w", err)
+	}
+	defer c.Logout()
+
+	// 2. Login
+	cleanPassword := strings.ReplaceAll(s.conf.Password, " ", "")
+	if err := c.Login(s.conf.User, cleanPassword); err != nil {
+		return "", fmt.Errorf("failed to login to IMAP: %w", err)
+	}
+
+	// 3. Select INBOX
+	mbox, err := c.Select("INBOX", true)
+	if err != nil {
+		return "", fmt.Errorf("failed to select INBOX: %w", err)
+	}
+
+	if mbox.Messages == 0 {
+		return "No emails found in INBOX", nil
+	}
+
+	// 4. Search for emails from the specified sender
+	criteria := imap.NewSearchCriteria()
+	criteria.Header.Set("From", s.conf.FromFilter)
+	ids, err := c.Search(criteria)
+	if err != nil {
+		return "", fmt.Errorf("failed to search emails: %w", err)
+	}
+
+	if len(ids) == 0 {
+		return "No emails found from " + s.conf.FromFilter, nil
+	}
+
+	// 5. Get the latest email ID
+	latestID := ids[len(ids)-1]
+	seqset := new(imap.SeqSet)
+	seqset.AddNum(latestID)
+
+	// Fetch the message body
+	var section imap.BodySectionName
+	items := []imap.FetchItem{section.FetchItem()}
+
+	messages := make(chan *imap.Message, 1)
+	done := make(chan error, 1)
+	go func() {
+		done <- c.Fetch(seqset, items, messages)
+	}()
+
+	msg := <-messages
+	if msg == nil {
+		return "Message not found", nil
+	}
+	if err := <-done; err != nil {
+		return "", fmt.Errorf("failed to fetch message: %w", err)
+	}
+
+	r := msg.GetBody(&section)
+	if r == nil {
+		return "Message body not found", nil
+	}
+
+	// 6. Parse message and find PDF attachment
+	mr, err := mail.CreateReader(r)
+	if err != nil {
+		return "", fmt.Errorf("failed to create mail reader: %w", err)
+	}
+
+	for {
+		p, err := mr.NextPart()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return "", fmt.Errorf("failed to read next part: %w", err)
+		}
+
+		switch h := p.Header.(type) {
+		case *mail.AttachmentHeader:
+			filename, _ := h.Filename()
+			lowerName := strings.ToLower(filename)
+			if strings.HasSuffix(lowerName, ".pdf") {
+				return s.extractTextFromPDF(p.Body, 1) // LIMIT to PAGE 1
+			}
+			if strings.HasSuffix(lowerName, ".docx") {
+				return s.extractTextFromDocx(p.Body)
+			}
+			if strings.HasSuffix(lowerName, ".xlsx") {
+				return s.extractTextFromXlsx(p.Body)
+			}
+		}
+	}
+
+	return "No attachment found in the latest email", nil
 }

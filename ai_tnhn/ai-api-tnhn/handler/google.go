@@ -353,12 +353,57 @@ func (h *GoogleHandler) GenerateQuickReport(c *gin.Context) {
 	h.log.GetLogger().Infof(" [QuickReport] Data stats: %d Phường (top 10), %d Xã (top 10), %d Lakes (top 5), %d Rivers (top 5)", len(phuongData), len(xaData), len(lakeData), len(riverData))
 
 	// 1.4 Fetch latest email content (Page 1 of PDF) for noi_dung
-	noiDung := "Báo cáo tình hình mưa" // Default
+	extractedContent := ""
 	if h.emailSvc != nil {
 		content, err := h.emailSvc.GetLatestEmailAttachmentPage1(ctx)
 		if err == nil && content != "" {
-			noiDung = content
+			extractedContent = content
 		}
+	}
+
+	// 1.4.1 Calculate rainy points using the summary service (which handles the 5-min freshness logic)
+	rainyPoints := 0
+	rainSummary, err := h.googleSvc.GetRainSummary(ctx)
+	if err == nil && rainSummary != nil {
+		rainyPoints = rainSummary.RainyStations
+	}
+
+	// 1.4.2 Use Gemini to generate professional content for noi_dung
+	noiDung := "Báo cáo tình hình mưa" // Default
+	if h.geminiSvc != nil && extractedContent != "" {
+		prompt := fmt.Sprintf(`hãy phân tích và thay thế nội dung mẫu này [Do ảnh hưởng của do ảnh hưởng của vùng mây đối lưu (lấy thông tin trên bản tin cảnh báo của khí tượng thuỷ văn đồng bằng bắc bộ email hoặc website) địa bàn Thành phố có Mưa nhỏ rải rác trên diện rộng (nếu mưa trên nhiều điểm tại bảng thì nó sẽ tự động ghi là mưa rải rác diện rộng, nếu ít thì nó ghi mưa vùng….., tự nó phân bổ)] theo đúng logic sau:
+
+Dữ liệu đầu vào:
+
+Số lượng điểm đang có mưa: %d
+
+
+
+Nguồn dữ liệu (Nguyên nhân): [%s]
+
+
+
+Quy tắc phân loại hình thái mưa:
+
+Nếu số điểm < 5: Ghi là "Mưa vùng".
+
+Nếu số điểm từ 5 đến 10: Ghi là "Mưa rải rác trên diện rộng".
+
+Nếu số điểm > 10: Ghi là "Mưa trên diện rộng".
+
+
+
+Yêu cầu trình bày:
+
+Kết hợp nguyên nhân từ nguồn dữ liệu để viết thành một câu hoàn chỉnh, chuyên nghiệp về lý do và kết qủa mưa của các khu vực của HÀ Nội
+`, rainyPoints, extractedContent)
+
+		aiResult, err := h.geminiSvc.Chat(ctx, prompt, nil, "system_report")
+		if err == nil && aiResult != "" {
+			noiDung = aiResult
+		}
+	} else if extractedContent != "" {
+		noiDung = extractedContent
 	}
 	fmt.Println("============ noiDung", noiDung)
 	// 1.5 Calculate time_mua
@@ -407,31 +452,18 @@ func (h *GoogleHandler) GenerateQuickReport(c *gin.Context) {
 		timeMua = fmt.Sprintf("%s đến %s", minStart.Format("15h04'"), maxEnd.Format("15h04'"))
 	}
 
-	// 1.6 Fetch Rain Warning from Email
-	warningText := "Không có cảnh báo mưa mới nhất."
-	if h.emailSvc != nil {
-		h.log.GetLogger().Info(">>> Fetching latest rain warning from email...")
-		warning, err := h.emailSvc.GetLatestRainWarning(ctx)
-		if err != nil {
-			h.log.GetLogger().Warnf("Failed to fetch rain warning: %v", err)
-		} else if warning != "" {
-			warningText = warning
-		}
-	}
-
 	// 2. Construct Payload
 	payload := map[string]interface{}{
-		"day":          day,
-		"month":        month,
-		"year":         year,
-		"hour":         hourFull,
-		"phuongData":   phuongData,
-		"xaData":       xaData,
-		"lakeData":     lakeData,
-		"riverData":    riverData,
-		"warning_rain": warningText,
-		"noi_dung":     noiDung,
-		"time_mua":     timeMua,
+		"day":        day,
+		"month":      month,
+		"year":       year,
+		"hour":       hourFull,
+		"phuongData": phuongData,
+		"xaData":     xaData,
+		"lakeData":   lakeData,
+		"riverData":  riverData,
+		"noi_dung":   noiDung,
+		"time_mua":   timeMua,
 	}
 	fmt.Println("==========================", timeMua)
 	// 3. Upload Template and naming

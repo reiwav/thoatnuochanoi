@@ -11,6 +11,7 @@ const InundationForm = Loadable(lazy(() => import('views/admin/inundation/Inunda
 const InundationDashboard = Loadable(lazy(() => import('views/admin/inundation/InundationDashboard')));
 const StationRainList = Loadable(lazy(() => import('views/admin/station/StationRainList')));
 const StationRainSummary = Loadable(lazy(() => import('views/admin/station-rain-summary')));
+const StationWaterSummary = Loadable(lazy(() => import('views/admin/station-water-summary')));
 const StationRainCompare = Loadable(lazy(() => import('views/admin/station-rain-compare')));
 const StationRiverList = Loadable(lazy(() => import('views/admin/station/StationRiverList')));
 const StationLakeList = Loadable(lazy(() => import('views/admin/station/StationLakeList')));
@@ -30,7 +31,7 @@ const MainRoutes = {
   children: [
     {
       path: '/',
-      element: <InundationDashboard />
+      element: <AiSupportPage />
     },
     {
       path: 'admin',
@@ -44,6 +45,7 @@ const MainRoutes = {
         { path: 'inundation', element: <InundationDashboard /> },
         { path: 'inundation/form', element: <InundationForm /> },
         { path: 'station/rain/summary', element: <StationRainSummary /> },
+        { path: 'station/water/summary', element: <StationWaterSummary /> },
         { path: 'station/rain/compare', element: <StationRainCompare /> },
         { path: 'station/rain/list', element: <StationRainList /> },
         { path: 'station/rain/history', element: <StationHistory type="rain" /> },
@@ -66,6 +68,7 @@ const MainRoutes = {
         { path: 'emergency-construction/dashboard', element: <ConstructionReportingPage /> },
         { path: 'emergency-construction/form', element: <ConstructionFormPage /> },
         { path: 'station/rain/summary', element: <StationRainSummary /> },
+        { path: 'station/water/summary', element: <StationWaterSummary /> },
         { path: 'station/rain/compare', element: <StationRainCompare /> }
       ]
     }

@@ -124,6 +124,14 @@ const adminPages = {
       roles: ['super_admin'],
       children: [
         {
+          id: 'station-water-summary',
+          title: 'Bảng sông hồ',
+          type: 'item',
+          url: '/admin/station/water/summary',
+          icon: icons.IconList,
+          breadcrumbs: false
+        },
+        {
           id: 'lake-management',
           title: 'Mực nước hồ',
           type: 'collapse',

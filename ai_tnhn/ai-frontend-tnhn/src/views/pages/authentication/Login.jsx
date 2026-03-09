@@ -32,10 +32,10 @@ export default function Login() {
                   </Link>
                 </Box>
                 <Stack sx={{ alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-                  <Typography variant={downMD ? 'h3' : 'h2'} sx={{ color: 'secondary.main' }}>
+                  <Typography variant={downMD ? 'h1' : 'h2'} sx={{ color: 'secondary.main', textAlign: 'center' }}>
                     Thoát nước Hà Nội
                   </Typography>
-                  <Typography variant="caption" sx={{ fontSize: '16px', textAlign: { xs: 'center', md: 'inherit' } }}>
+                  <Typography variant="caption" sx={{ fontSize: downMD ? '20px' : '16px', textAlign: { xs: 'center', md: 'inherit' } }}>
                     Hệ thống tích hợp AI thông minh
                   </Typography>
                 </Stack>

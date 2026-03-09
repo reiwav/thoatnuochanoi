@@ -19,7 +19,8 @@ const adminPages = {
       type: 'item',
       url: '/admin/inundation',
       icon: icons.IconTornado,
-      breadcrumbs: false
+      breadcrumbs: false,
+      roles: ['super_admin', 'employee']
     },
     {
       id: 'emergency-construction-report',
@@ -27,7 +28,8 @@ const adminPages = {
       type: 'item',
       url: '/admin/emergency-construction/dashboard',
       icon: icons.IconAlertTriangle,
-      breadcrumbs: false
+      breadcrumbs: false,
+      roles: ['super_admin', 'employee']
     },
     {
       id: 'organization-list',
@@ -52,6 +54,7 @@ const adminPages = {
       title: 'Lượng mưa',
       type: 'collapse',
       icon: icons.IconCloudRain,
+      roles: ['super_admin'],
       children: [
         {
           id: 'station-rain-list',
@@ -76,6 +79,7 @@ const adminPages = {
       title: 'Mực nước sông',
       type: 'collapse',
       icon: icons.IconRipple,
+      roles: ['super_admin'],
       children: [
         {
           id: 'station-river-list',
@@ -100,6 +104,7 @@ const adminPages = {
       title: 'Mực nước hồ',
       type: 'collapse',
       icon: icons.IconDroplets,
+      roles: ['super_admin'],
       children: [
         {
           id: 'station-lake-list',
@@ -124,6 +129,7 @@ const adminPages = {
       title: 'Điểm ngập úng',
       type: 'collapse',
       icon: icons.IconTornado,
+      roles: ['super_admin'],
       children: [
         {
           id: 'station-inundation-list',
@@ -148,6 +154,7 @@ const adminPages = {
       title: 'Công trình khẩn cấp',
       type: 'collapse',
       icon: icons.IconAlertTriangle,
+      roles: ['super_admin'],
       children: [
         {
           id: 'emergency-construction-list',
@@ -173,7 +180,8 @@ const adminPages = {
       type: 'item',
       url: '/admin/ai-support',
       icon: icons.IconMessageChatbot,
-      breadcrumbs: false
+      breadcrumbs: false,
+      roles: ['super_admin']
     }
   ]
 };

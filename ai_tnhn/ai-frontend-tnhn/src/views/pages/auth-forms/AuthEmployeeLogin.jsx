@@ -79,7 +79,7 @@ export default function AuthEmployeeLogin() {
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
             <CustomFormControl fullWidth>
-                <InputLabel htmlFor="outlined-adornment-email-login">Email / Username Nhân viên</InputLabel>
+                <InputLabel htmlFor="outlined-adornment-email-login" sx={{ fontSize: { xs: '1rem', md: '0.875rem' } }}>Email / Username Nhân viên</InputLabel>
                 <OutlinedInput
                     id="outlined-adornment-email-login"
                     type="email"
@@ -87,11 +87,12 @@ export default function AuthEmployeeLogin() {
                     value={values.email}
                     onChange={handleChange}
                     label="Email / Username Nhân viên"
+                    sx={{ fontSize: { xs: '1rem', md: '0.875rem' } }}
                 />
             </CustomFormControl>
 
             <CustomFormControl fullWidth sx={{ mt: 2 }}>
-                <InputLabel htmlFor="outlined-adornment-password-login">Mật khẩu</InputLabel>
+                <InputLabel htmlFor="outlined-adornment-password-login" sx={{ fontSize: { xs: '1rem', md: '0.875rem' } }}>Mật khẩu</InputLabel>
                 <OutlinedInput
                     id="outlined-adornment-password-login"
                     type={showPassword ? 'text' : 'password'}
@@ -106,6 +107,7 @@ export default function AuthEmployeeLogin() {
                         </InputAdornment>
                     }
                     label="Mật khẩu"
+                    sx={{ fontSize: { xs: '1rem', md: '0.875rem' } }}
                 />
             </CustomFormControl>
 
@@ -117,7 +119,7 @@ export default function AuthEmployeeLogin() {
                         size="large"
                         type="submit"
                         variant="contained"
-                        sx={{ borderRadius: '12px' }}
+                        sx={{ borderRadius: '12px', fontSize: { xs: '1rem', md: '0.9375rem' }, py: { xs: 1.5, md: 1 } }}
                     >
                         Đăng nhập Check-in
                     </Button>
@@ -130,18 +132,18 @@ export default function AuthEmployeeLogin() {
                         fullWidth
                         size="large"
                         variant="outlined"
-                        sx={{ borderRadius: '12px' }}
+                        sx={{ borderRadius: '12px', fontSize: { xs: '1rem', md: '0.9375rem' }, py: { xs: 1.5, md: 1 } }}
                         onClick={() => {
                             window.location.href = `${import.meta.env.VITE_APP_API_URL}/api/auth/google/login`;
                         }}
-                        startIcon={<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="google" width={18} height={18} />}
+                        startIcon={<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="google" width={20} height={20} />}
                     >
                         Đăng nhập bằng Google
                     </Button>
                 </AnimateButton>
             </Box>
             <Box sx={{ mt: 2, textAlign: 'center' }}>
-                <Typography variant="caption" color="textSecondary">
+                <Typography variant="body2" color="textSecondary" sx={{ fontSize: { xs: '0.875rem', md: '0.75rem' } }}>
                     Dành riêng cho nhân viên thực hiện check-in tại sự kiện
                 </Typography>
             </Box>

@@ -79,7 +79,7 @@ const StationInundationList = () => {
             title="Quản lý điểm ngập úng"
             secondary={
                 <AnimateButton>
-                    <Button variant="contained" color="secondary" startIcon={<IconPlus size={18} />} onClick={handleOpenCreate}>
+                    <Button variant="contained" color="secondary" startIcon={<IconPlus size={20} />} onClick={handleOpenCreate} sx={{ fontWeight: 700, fontSize: '1rem', px: 2, py: 1 }}>
                         Thêm điểm mới
                     </Button>
                 </AnimateButton>
@@ -89,11 +89,11 @@ const StationInundationList = () => {
                 <Table>
                     <TableHead sx={{ bgcolor: 'grey.50' }}>
                         <TableRow>
-                            <TableCell sx={{ fontWeight: 700 }}>Tên điểm</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }}>Địa chỉ</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }}>Tọa độ (Lat, Lng)</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>
-                            <TableCell align="right" sx={{ fontWeight: 700 }}>Thao tác</TableCell>
+                            <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Tên điểm</TableCell>
+                            <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Địa chỉ</TableCell>
+                            <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Tọa độ</TableCell>
+                            <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Trạng thái</TableCell>
+                            <TableCell align="right" sx={{ fontWeight: 800, fontSize: '1rem' }}>Thao tác</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -104,12 +104,12 @@ const StationInundationList = () => {
                         ) : (
                             points.map((row) => (
                                 <TableRow key={row.id} hover>
-                                    <TableCell sx={{ fontWeight: 600 }}>{row.name}</TableCell>
-                                    <TableCell>{row.address}</TableCell>
-                                    <TableCell>{row.lat}, {row.lng}</TableCell>
+                                    <TableCell sx={{ fontWeight: 800, fontSize: '1.05rem', color: 'primary.dark' }}>{row.name}</TableCell>
+                                    <TableCell sx={{ fontSize: '0.95rem' }}>{row.address}</TableCell>
+                                    <TableCell sx={{ fontSize: '0.85rem' }}>{row.lat}, {row.lng}</TableCell>
                                     <TableCell>
-                                        <Chip label={row.active ? 'Hoạt động' : 'Ngừng hoạt động'}
-                                            color={row.active ? 'success' : 'default'} size="small" variant="outlined" />
+                                        <Chip label={row.active ? 'Hoạt động' : 'Ngừng'}
+                                            color={row.active ? 'success' : 'default'} size="small" variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem', height: 24 }} />
                                     </TableCell>
                                     <TableCell align="right">
                                         <Tooltip title="Chỉnh sửa">

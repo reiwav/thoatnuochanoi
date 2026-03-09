@@ -54,16 +54,17 @@ const InundationStationHistory = () => {
     return (
         <MainCard title="Lịch sử ngập lụt tại điểm">
             <Stack spacing={3}>
-                <Box sx={{ maxWidth: 400 }}>
-                    <FormControl fullWidth size="small">
-                        <InputLabel>Chọn điểm ngập</InputLabel>
+                <Box sx={{ maxWidth: '100%' }}>
+                    <FormControl fullWidth>
+                        <InputLabel sx={{ fontSize: '1rem', fontWeight: 600 }}>Chọn điểm ngập</InputLabel>
                         <Select
                             value={selectedPoint}
                             label="Chọn điểm ngập"
                             onChange={(e) => setSelectedPoint(e.target.value)}
+                            sx={{ fontSize: '1rem' }}
                         >
                             {points.map((p) => (
-                                <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>
+                                <MenuItem key={p.id} value={p.id} sx={{ fontSize: '1rem', py: 1.5 }}>{p.name}</MenuItem>
                             ))}
                         </Select>
                     </FormControl>
@@ -73,11 +74,11 @@ const InundationStationHistory = () => {
                     <Table>
                         <TableHead sx={{ bgcolor: 'grey.50' }}>
                             <TableRow>
-                                <TableCell sx={{ fontWeight: 700 }}>Thời gian bắt đầu</TableCell>
-                                <TableCell sx={{ fontWeight: 700 }}>Thời gian kết thúc</TableCell>
-                                <TableCell sx={{ fontWeight: 700 }}>Độ sâu (mm)</TableCell>
-                                <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>
-                                <TableCell sx={{ fontWeight: 700 }}>Người báo cáo</TableCell>
+                                <TableCell sx={{ fontWeight: 800, fontSize: '0.95rem' }}>Bắt đầu</TableCell>
+                                <TableCell sx={{ fontWeight: 800, fontSize: '0.95rem' }}>Kết thúc</TableCell>
+                                <TableCell sx={{ fontWeight: 800, fontSize: '0.95rem' }}>Độ sâu</TableCell>
+                                <TableCell sx={{ fontWeight: 800, fontSize: '0.95rem' }}>Trạng thái</TableCell>
+                                <TableCell sx={{ fontWeight: 800, fontSize: '0.95rem' }}>Người báo</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -88,19 +89,22 @@ const InundationStationHistory = () => {
                             ) : (
                                 history.map((row) => (
                                     <TableRow key={row.id} hover>
-                                        <TableCell>{dayjs.unix(row.start_time).format('DD/MM/YYYY HH:mm')}</TableCell>
-                                        <TableCell>
-                                            {row.end_time ? dayjs.unix(row.end_time).format('DD/MM/YYYY HH:mm') : '-'}
-                                        </TableCell>
-                                        <TableCell sx={{ fontWeight: 600 }}>{row.depth}</TableCell>
-                                        <TableCell>
-                                            <Chip
-                                                label={row.status === 'active' ? 'Đang ngập' : 'Đã rút'}
-                                                color={row.status === 'active' ? 'error' : 'success'}
-                                                size="small"
-                                            />
-                                        </TableCell>
-                                        <TableCell>{row.user_email}</TableCell>
+                                        <TableRow key={row.id} hover>
+                                            <TableCell sx={{ fontSize: '0.95rem' }}>{dayjs.unix(row.start_time).format('DD/MM HH:mm')}</TableCell>
+                                            <TableCell sx={{ fontSize: '0.95rem' }}>
+                                                {row.end_time ? dayjs.unix(row.end_time).format('DD/MM HH:mm') : '-'}
+                                            </TableCell>
+                                            <TableCell sx={{ fontWeight: 800, fontSize: '1.05rem', color: 'error.main' }}>{row.depth}</TableCell>
+                                            <TableCell>
+                                                <Chip
+                                                    label={row.status === 'active' ? 'Đang ngập' : 'Đã rút'}
+                                                    color={row.status === 'active' ? 'error' : 'success'}
+                                                    size="small"
+                                                    sx={{ fontWeight: 800, fontSize: '0.8rem', height: 24 }}
+                                                />
+                                            </TableCell>
+                                            <TableCell sx={{ fontSize: '0.9rem' }}>{row.user_email?.split('@')[0]}</TableCell>
+                                        </TableRow>
                                     </TableRow>
                                 ))
                             )}

@@ -120,16 +120,20 @@ const ConstructionForm = () => {
 
     const renderForm = () => (
         <Box sx={{ p: { xs: 2, md: 3 } }}>
-            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }}>Mô tả chung công việc trong ngày <span style={{ color: 'red' }}>*</span></Typography>
+            <Typography variant="h6" sx={{ mb: 1.5, fontWeight: 700 }}>Mô tả chung công việc trong ngày <span style={{ color: 'red' }}>*</span></Typography>
             <TextField
                 fullWidth multiline rows={3} placeholder="Mô tả chi tiết công việc..."
                 value={workDone} onChange={(e) => setWorkDone(e.target.value)}
-                sx={{ mb: 3 }}
+                sx={{
+                    mb: 3,
+                    '& .MuiInputBase-input': { fontSize: '1.05rem', lineHeight: 1.5 },
+                    '& .MuiOutlinedInput-root': { borderRadius: 2 }
+                }}
             />
 
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Các đầu việc chi tiết</Typography>
-                <Button size="small" variant="outlined" startIcon={<IconPlus size={16} />} onClick={() => setTasks([...tasks, { name: '', percentage: 0 }])} sx={{ borderRadius: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6" sx={{ fontWeight: 700 }}>Các đầu việc chi tiết</Typography>
+                <Button size="medium" variant="outlined" startIcon={<IconPlus size={18} />} onClick={() => setTasks([...tasks, { name: '', percentage: 0 }])} sx={{ borderRadius: 2, fontWeight: 700 }}>
                     Thêm đầu việc
                 </Button>
             </Box>
@@ -138,15 +142,16 @@ const ConstructionForm = () => {
                 <Card key={index} variant="outlined" sx={{ mb: 2, p: 2, borderRadius: 2, bgcolor: 'grey.50' }}>
                     <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
                         <TextField
-                            fullWidth size="small" placeholder={`Tên đầu việc ${index + 1}...`}
+                            fullWidth placeholder={`Tên đầu việc ${index + 1}...`}
                             value={task.name} onChange={(e) => { const newTasks = [...tasks]; newTasks[index].name = e.target.value; setTasks(newTasks); }}
+                            sx={{ '& .MuiInputBase-input': { fontSize: '1rem', fontWeight: 600 } }}
                         />
-                        <IconButton color="error" size="small" onClick={() => { const newTasks = [...tasks]; newTasks.splice(index, 1); setTasks(newTasks); }}>
-                            <IconTrash size={20} />
+                        <IconButton color="error" size="medium" onClick={() => { const newTasks = [...tasks]; newTasks.splice(index, 1); setTasks(newTasks); }}>
+                            <IconTrash size={22} />
                         </IconButton>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>Tiến độ ({task.percentage}%)</Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 700 }}>Tiến độ ({task.percentage}%)</Typography>
                         <Box sx={{ width: '60%' }}>
                             <Slider
                                 value={task.percentage} onChange={(e, val) => { const newTasks = [...tasks]; newTasks[index].percentage = val; setTasks(newTasks); }}
@@ -169,19 +174,27 @@ const ConstructionForm = () => {
                 sx={{ mb: 3 }}
             />
 
-            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }}>Vướng mắc, khó khăn (nếu có)</Typography>
+            <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>Vướng mắc, khó khăn (nếu có)</Typography>
             <TextField
                 fullWidth multiline rows={2} placeholder="Nhập khó khăn..."
                 value={issues} onChange={(e) => setIssues(e.target.value)}
-                sx={{ mb: 3 }}
+                sx={{
+                    mb: 4,
+                    '& .MuiInputBase-input': { fontSize: '1rem' }
+                }}
             />
 
-            <Box sx={{ mb: 3 }}>
-                <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }}>Ngày dự kiến hoàn thành <span style={{ color: 'red' }}>*</span></Typography>
+            <Box sx={{ mb: 4 }}>
+                <Typography variant="h6" sx={{ mb: 1.5, fontWeight: 700 }}>Ngày dự kiến hoàn thành <span style={{ color: 'red' }}>*</span></Typography>
                 <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
                     <DatePicker
                         value={expectedDate} onChange={(newDate) => setExpectedDate(newDate)}
-                        format="DD/MM/YYYY" slotProps={{ textField: { fullWidth: true, size: 'small' } }}
+                        format="DD/MM/YYYY" slotProps={{
+                            textField: {
+                                fullWidth: true,
+                                sx: { '& .MuiInputBase-input': { fontSize: '1.1rem', fontWeight: 600 } }
+                            }
+                        }}
                     />
                 </LocalizationProvider>
             </Box>
@@ -207,18 +220,18 @@ const ConstructionForm = () => {
                     {history.map((h, idx) => (
                         <Card key={idx} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '12px', mb: 2 }}>
                             <CardContent sx={{ p: '16px !important' }}>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                                    <Typography variant="caption" fontWeight={700} color="primary">{new Date(h.report_date * 1000).toLocaleString('vi-VN')}</Typography>
-                                    <Typography variant="h6" fontWeight={800} color="secondary.main">{h.progress_percentage}%</Typography>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5 }}>
+                                    <Typography variant="body1" fontWeight={700} color="primary">{new Date(h.report_date * 1000).toLocaleString('vi-VN')}</Typography>
+                                    <Typography variant="h4" fontWeight={900} color="secondary.main">{h.progress_percentage}%</Typography>
                                 </Box>
-                                {h.work_done && <Typography variant="body2" sx={{ mb: 1.5, lineHeight: 1.5 }}>{h.work_done}</Typography>}
+                                {h.work_done && <Typography variant="body1" sx={{ mb: 2, lineHeight: 1.6, fontWeight: 500 }}>{h.work_done}</Typography>}
 
                                 {h.tasks && h.tasks.length > 0 && (
-                                    <Box sx={{ mb: 1.5 }}>
+                                    <Box sx={{ mb: 2 }}>
                                         {h.tasks.map((t, tidx) => (
-                                            <Box key={tidx} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5, p: 1, bgcolor: 'primary.lighter', borderRadius: 1 }}>
-                                                <Typography variant="caption" sx={{ fontWeight: 600, color: 'primary.dark' }}>• {t.name}</Typography>
-                                                <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main' }}>{t.percentage}%</Typography>
+                                            <Box key={tidx} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1, p: 1.5, bgcolor: 'primary.lighter', borderRadius: 2 }}>
+                                                <Typography variant="body1" sx={{ fontWeight: 700, color: 'primary.dark' }}>• {t.name}</Typography>
+                                                <Typography variant="h6" sx={{ fontWeight: 900, color: 'primary.main' }}>{t.percentage}%</Typography>
                                             </Box>
                                         ))}
                                     </Box>
@@ -226,8 +239,8 @@ const ConstructionForm = () => {
 
                                 {h.issues && (
                                     <Box sx={{ p: 1, bgcolor: 'error.lighter', borderRadius: 1.5, mb: 1.5 }}>
-                                        <Typography variant="caption" color="error.dark" display="block" fontWeight={700}>Vướng mắc:</Typography>
-                                        <Typography variant="caption" color="error.dark">{h.issues}</Typography>
+                                        <Typography variant="body2" color="error.dark" display="block" fontWeight={700}>Vướng mắc:</Typography>
+                                        <Typography variant="body2" color="error.dark">{h.issues}</Typography>
                                     </Box>
                                 )}
                                 <Divider sx={{ mb: 1.5 }} />
@@ -236,8 +249,8 @@ const ConstructionForm = () => {
                                         <Typography variant="caption" fontWeight={700}>{h.reporter_name?.charAt(0)}</Typography>
                                     </Box>
                                     <Box>
-                                        <Typography variant="caption" display="block" fontWeight={700}>{h.reporter_name}</Typography>
-                                        <Typography variant="caption" color="textSecondary">{h.reporter_email}</Typography>
+                                        <Typography variant="body2" display="block" fontWeight={700}>{h.reporter_name}</Typography>
+                                        <Typography variant="body2" color="textSecondary">{h.reporter_email}</Typography>
                                     </Box>
                                 </Box>
                             </CardContent>
@@ -252,13 +265,13 @@ const ConstructionForm = () => {
         <Box sx={{ display: 'flex', flexDirection: 'column', height: isMobile ? 'calc(100vh - 56px)' : 'auto' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', px: 2, py: 1.5, borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
                 <IconButton onClick={() => navigate(-1)} sx={{ mr: 1, ml: -1 }}><IconChevronLeft /></IconButton>
-                <Typography variant="h5" sx={{ fontWeight: 800, flex: 1 }} noWrap>{constructionName}</Typography>
+                <Typography variant="h4" sx={{ fontWeight: 800, flex: 1 }} noWrap>{constructionName}</Typography>
             </Box>
 
             <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
                 <Tabs value={tabValue} onChange={handleTabChange} variant="fullWidth">
-                    <Tab icon={<IconClipboardCheck size={20} />} iconPosition="start" label="Báo cáo" />
-                    <Tab icon={<IconHistory size={20} />} iconPosition="start" label="Lịch sử chi tiết" />
+                    <Tab icon={<IconClipboardCheck size={20} />} iconPosition="start" label="Báo cáo" sx={{ fontSize: '0.95rem', fontWeight: 700 }} />
+                    <Tab icon={<IconHistory size={20} />} iconPosition="start" label="Lịch sử chi tiết" sx={{ fontSize: '0.95rem', fontWeight: 700 }} />
                 </Tabs>
             </Box>
 

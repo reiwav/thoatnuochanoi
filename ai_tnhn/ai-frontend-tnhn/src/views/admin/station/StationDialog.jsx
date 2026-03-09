@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'; // v2 - for cache busting
 import {
     Dialog, DialogTitle, DialogContent, DialogActions,
     TextField, Button, Grid, IconButton, Stack, FormControlLabel, Switch,
-    FormControl, InputLabel, Select, MenuItem
+    FormControl, InputLabel, Select, MenuItem, Typography
 } from '@mui/material';
 import { IconX } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
@@ -79,60 +79,59 @@ const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type }) => {
 
     return (
         <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-            <DialogTitle sx={{ fontWeight: 800, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                {getTitle()}
-                <IconButton onClick={onClose} size="small"><IconX size={20} /></IconButton>
+            <DialogTitle sx={{ variant: 'h3', fontWeight: 900, display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2, pt: 2, pb: 1 }}>
+                <Typography variant="h3" sx={{ fontWeight: 900 }}>{getTitle()}</Typography>
+                <IconButton onClick={onClose} size="small"><IconX size={24} /></IconButton>
             </DialogTitle>
-            <DialogContent dividers>
-                <Stack spacing={3} sx={{ mt: 1 }}>
+            <DialogContent dividers sx={{ p: 2 }}>
+                <Stack spacing={2.5} sx={{
+                    mt: 1,
+                    '& .MuiInputLabel-root': { fontSize: '1rem', fontWeight: 600 },
+                    '& .MuiInputBase-input': { fontSize: '1rem' },
+                    '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#f8fafc' }
+                }}>
                     <TextField
-                        fullWidth label="Tên trạm / Điểm" required size="small"
+                        fullWidth label="Tên trạm / Điểm" required
                         value={formData.TenTram}
                         onChange={(e) => handleChange('TenTram', e.target.value)}
-                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#f8fafc' } }}
                     />
 
                     <TextField
-                        fullWidth label="Địa chỉ" size="small"
+                        fullWidth label="Địa chỉ"
                         value={formData.DiaChi}
                         onChange={(e) => handleChange('DiaChi', e.target.value)}
-                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#f8fafc' } }}
                     />
 
                     <Grid container spacing={2}>
                         <Grid item xs={12} sm={6}>
                             <TextField
-                                fullWidth label="Vĩ độ (Lat)" size="small"
+                                fullWidth label="Vĩ độ (Lat)"
                                 value={formData.Lat}
                                 onChange={(e) => handleChange('Lat', e.target.value)}
-                                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#f8fafc' } }}
                             />
                         </Grid>
                         <Grid item xs={12} sm={6}>
                             <TextField
-                                fullWidth label="Kinh độ (Lng)" size="small"
+                                fullWidth label="Kinh độ (Lng)"
                                 value={formData.Lng}
                                 onChange={(e) => handleChange('Lng', e.target.value)}
-                                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#f8fafc' } }}
                             />
                         </Grid>
                     </Grid>
 
                     {(type === 'lake' || type === 'river') && (
                         <TextField
-                            fullWidth label="Loại" size="small"
+                            fullWidth label="Loại"
                             value={formData.Loai}
                             onChange={(e) => handleChange('Loai', e.target.value)}
-                            sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#f8fafc' } }}
                         />
                     )}
 
                     {type !== 'inundation' && (
                         <TextField
-                            fullWidth label="Ngưỡng cảnh báo" size="small" type="number"
+                            fullWidth label="Ngưỡng cảnh báo" type="number"
                             value={formData.NguongCanhBao}
                             onChange={(e) => handleChange('NguongCanhBao', e.target.value)}
-                            sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#f8fafc' } }}
                         />
                     )}
 
@@ -144,13 +143,13 @@ const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type }) => {
                                 color="primary"
                             />
                         }
-                        label="Trạng thái hoạt động"
+                        label={<Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Trạng thái hoạt động</Typography>}
                     />
                 </Stack>
             </DialogContent>
-            <DialogActions sx={{ p: 2 }}>
-                <Button onClick={onClose} color="inherit">Hủy</Button>
-                <Button variant="contained" onClick={handleSave} color="primary">
+            <DialogActions sx={{ p: 2, bgcolor: 'grey.50' }}>
+                <Button onClick={onClose} color="inherit" sx={{ fontWeight: 700, fontSize: '1rem' }}>Hủy</Button>
+                <Button variant="contained" onClick={handleSave} color="primary" sx={{ px: 3, fontWeight: 700, fontSize: '1rem', borderRadius: 2 }}>
                     {isEdit ? 'Cập nhật' : 'Thêm mới'}
                 </Button>
             </DialogActions>

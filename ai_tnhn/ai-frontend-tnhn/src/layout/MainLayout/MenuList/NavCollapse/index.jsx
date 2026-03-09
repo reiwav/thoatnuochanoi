@@ -23,6 +23,7 @@ import Transitions from 'ui-component/extended/Transitions';
 import { useGetMenuMaster } from 'api/menu';
 import useConfig from 'hooks/useConfig';
 import useMenuCollapse from 'hooks/useMenuCollapse';
+import useMediaQuery from '@mui/material/useMediaQuery';
 
 // assets
 import { IconChevronDown, IconChevronRight, IconChevronUp } from '@tabler/icons-react';
@@ -30,6 +31,7 @@ import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 
 export default function NavCollapse({ menu, level, parentId }) {
   const theme = useTheme();
+  const downMD = useMediaQuery(theme.breakpoints.down('md'));
   const ref = useRef(null);
 
   const {
@@ -114,8 +116,9 @@ export default function NavCollapse({ menu, level, parentId }) {
   const isSelected = selected === menu.id;
 
   const Icon = menu.icon;
+  const menuIconSize = downMD ? '28px' : (drawerOpen ? '20px' : '24px');
   const menuIcon = menu.icon ? (
-    <Icon strokeWidth={1.5} size={drawerOpen ? '20px' : '24px'} />
+    <Icon strokeWidth={1.5} size={menuIconSize} />
   ) : (
     <FiberManualRecordIcon
       sx={{
@@ -155,22 +158,22 @@ export default function NavCollapse({ menu, level, parentId }) {
         <Activity mode={menuIcon ? 'visible' : 'hidden'}>
           <ListItemIcon
             sx={{
-              minWidth: level === 1 ? 36 : 18,
+              minWidth: level === 1 ? (downMD ? 44 : 36) : 18,
               color: isSelected ? 'secondary.main' : 'text.primary',
               ...(!drawerOpen &&
                 level === 1 && {
-                  borderRadius: `${borderRadius}px`,
-                  width: 46,
-                  height: 46,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  '&:hover': { bgcolor: 'secondary.light' },
+                borderRadius: `${borderRadius}px`,
+                width: 46,
+                height: 46,
+                alignItems: 'center',
+                justifyContent: 'center',
+                '&:hover': { bgcolor: 'secondary.light' },
 
-                  ...((isSelected || anchorEl) && {
-                    bgcolor: 'secondary.light',
-                    '&:hover': { bgcolor: 'secondary.light' }
-                  })
+                ...((isSelected || anchorEl) && {
+                  bgcolor: 'secondary.light',
+                  '&:hover': { bgcolor: 'secondary.light' }
                 })
+              })
             }}
           >
             {menuIcon}
@@ -183,12 +186,12 @@ export default function NavCollapse({ menu, level, parentId }) {
                 <Typography
                   ref={ref}
                   noWrap
-                  variant={isSelected || anchorEl ? 'h5' : 'body1'}
+                  variant={isSelected || anchorEl ? 'h5' : (downMD ? 'h4' : 'body1')}
                   sx={{
                     color: 'inherit',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    width: 120
+                    width: downMD ? 160 : 120
                   }}
                 >
                   {menu.title}

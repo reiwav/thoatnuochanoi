@@ -20,7 +20,7 @@ mkdir -p "$DEPLOY_DIR"
 # 1. Build the Go API for Linux
 echo "Building API for Linux (amd64)..."
 cd "$BASE_DIR/ai_tnhn/ai-api-tnhn"
-GOOS=linux GOARCH=amd64 go build -o "$DEPLOY_DIR/api_linux_amd64" main.go
+GOOS=linux GOARCH=amd64 go build -o "$DEPLOY_DIR/thoatnuochanoi_amd64" main.go
 echo "API build complete."
 
 # 2. Build the Frontend

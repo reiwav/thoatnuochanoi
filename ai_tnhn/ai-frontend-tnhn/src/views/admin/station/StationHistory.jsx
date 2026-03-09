@@ -125,30 +125,36 @@ const StationHistory = ({ type }) => {
         <MainCard title={getTitle()}>
             <Stack spacing={3}>
                 <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                    <Box sx={{ minWidth: 250 }}>
-                        <FormControl fullWidth size="small">
-                            <InputLabel>Chọn trạm đo</InputLabel>
+                    <Box sx={{ minWidth: 250, flexGrow: 1 }}>
+                        <FormControl fullWidth>
+                            <InputLabel sx={{ fontSize: '1rem', fontWeight: 600 }}>Chọn trạm đo</InputLabel>
                             <Select
                                 value={selectedStation}
                                 label="Chọn trạm đo"
                                 onChange={(e) => setSelectedStation(e.target.value)}
+                                sx={{ fontSize: '1rem' }}
                             >
                                 {stations.map((s) => (
-                                    <MenuItem key={s.id} value={s.Id}>
+                                    <MenuItem key={s.id} value={s.Id} sx={{ fontSize: '1rem', py: 1.5 }}>
                                         {s.TenTram} ({s.DiaChi})
                                     </MenuItem>
                                 ))}
                             </Select>
                         </FormControl>
                     </Box>
-                    <Box sx={{ minWidth: 200 }}>
+                    <Box sx={{ minWidth: 200, flexGrow: 1 }}>
                         <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
                             <DatePicker
                                 label="Chọn ngày"
                                 value={selectedDate}
                                 onChange={(newValue) => setSelectedDate(newValue)}
                                 format="DD/MM/YYYY"
-                                slotProps={{ textField: { size: 'small', fullWidth: true } }}
+                                slotProps={{
+                                    textField: {
+                                        fullWidth: true,
+                                        sx: { '& .MuiInputBase-input': { fontSize: '1rem', fontWeight: 600 } }
+                                    }
+                                }}
                             />
                         </LocalizationProvider>
                     </Box>
@@ -164,9 +170,9 @@ const StationHistory = ({ type }) => {
                     <Table>
                         <TableHead sx={{ bgcolor: 'grey.50' }}>
                             <TableRow>
-                                <TableCell sx={{ fontWeight: 700 }}>Thời gian</TableCell>
-                                <TableCell sx={{ fontWeight: 700 }}>Ngày</TableCell>
-                                <TableCell sx={{ fontWeight: 700 }}>{getValueLabel()}</TableCell>
+                                <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Thời gian</TableCell>
+                                <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Ngày</TableCell>
+                                <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>{getValueLabel()}</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -177,9 +183,9 @@ const StationHistory = ({ type }) => {
                             ) : (
                                 history.map((row, index) => (
                                     <TableRow key={index} hover>
-                                        <TableCell>{dayjs(row.timestamp).format('HH:mm:ss')}</TableCell>
-                                        <TableCell>{dayjs(row.timestamp).format('DD/MM/YYYY')}</TableCell>
-                                        <TableCell sx={{ fontWeight: 600, color: 'primary.main' }}>{row.value}</TableCell>
+                                        <TableCell sx={{ fontSize: '1rem' }}>{dayjs(row.timestamp).format('HH:mm:ss')}</TableCell>
+                                        <TableCell sx={{ fontSize: '1rem' }}>{dayjs(row.timestamp).format('DD/MM/YYYY')}</TableCell>
+                                        <TableCell sx={{ fontWeight: 800, color: 'primary.main', fontSize: '1.1rem' }}>{row.value}</TableCell>
                                     </TableRow>
                                 ))
                             )}

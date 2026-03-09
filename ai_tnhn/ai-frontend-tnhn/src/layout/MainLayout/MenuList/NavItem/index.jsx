@@ -54,8 +54,9 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
   }, []);
 
   const Icon = item?.icon;
+  const menuIconSize = downMD ? '32px' : (drawerOpen ? '20px' : '24px');
   const itemIcon = item?.icon ? (
-    <Icon stroke={1.5} size={drawerOpen ? '20px' : '24px'} style={{ ...(isParents && { fontSize: 20, stroke: '1.5' }) }} />
+    <Icon stroke={1.5} size={menuIconSize} style={{ ...(isParents && { fontSize: 20, stroke: '1.5' }) }} />
   ) : (
     <FiberManualRecordIcon sx={{ width: isSelected ? 8 : 6, height: isSelected ? 8 : 6 }} fontSize={level > 0 ? 'inherit' : 'medium'} />
   );
@@ -102,7 +103,7 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
         <ButtonBase aria-label="theme-icon" sx={{ borderRadius: `${borderRadius}px` }} disableRipple={drawerOpen}>
           <ListItemIcon
             sx={{
-              minWidth: level === 1 ? 36 : 18,
+              minWidth: level === 1 ? (downMD ? 56 : 36) : 18,
               color: isSelected ? 'secondary.main' : 'text.primary',
               ...(!drawerOpen &&
                 level === 1 && {
@@ -130,11 +131,11 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
                 <Typography
                   ref={ref}
                   noWrap
-                  variant={isSelected ? 'h5' : 'body1'}
+                  variant={downMD ? 'h3' : (isSelected ? 'h5' : 'body1')}
                   sx={{
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    width: 102,
+                    width: downMD ? 200 : 102,
                     color: 'inherit'
                   }}
                 >

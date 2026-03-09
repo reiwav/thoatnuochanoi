@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
     Box, Typography, TextField, IconButton, Paper, Stack,
-    Avatar, CircularProgress, Divider, LinearProgress, Tooltip, Button
+    Avatar, CircularProgress, Divider, LinearProgress, Tooltip, Button,
+    useMediaQuery, SwipeableDrawer
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import {
     IconSend, IconRobot, IconUser, IconMail, IconDatabase,
-    IconLayoutSidebarLeftCollapse, IconRefresh, IconBolt
+    IconLayoutSidebarLeftCollapse, IconRefresh, IconBolt,
+    IconLayoutSidebarRightExpand, IconLayoutSidebarRightCollapse
 } from '@tabler/icons-react';
 import axiosClient from 'api/axiosClient';
 import ReactMarkdown from 'react-markdown';
@@ -24,6 +27,9 @@ const AiSupport = () => {
     });
     const [statsLoading, setStatsLoading] = useState(true);
     const scrollRef = useRef(null);
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+    const [showStats, setShowStats] = useState(false);
 
     const fetchStats = async () => {
         setStatsLoading(true);
@@ -316,18 +322,29 @@ const AiSupport = () => {
         : 0;
 
     return (
-        <Box sx={{ height: 'calc(100vh - 140px)', display: 'flex', gap: 3 }}>
+        <Box sx={{ height: 'calc(100vh - 140px)', display: 'flex', gap: isMobile ? 0 : 3, position: 'relative' }}>
             {/* Main Chat Area */}
             <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', bgcolor: 'background.paper', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.04)' }}>
                 {/* Chat Header */}
-                <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Avatar sx={{ bgcolor: 'primary.main', width: 40, height: 40 }}>
-                        <IconRobot size={24} />
-                    </Avatar>
-                    <Box>
-                        <Typography variant="h4" fontWeight={800}>Hỗ trợ AI</Typography>
-                        <Typography variant="caption" color="text.secondary">Trợ lý ảo thông minh TNHN</Typography>
+                <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Avatar sx={{ bgcolor: 'primary.main', width: 40, height: 40 }}>
+                            <IconRobot size={24} />
+                        </Avatar>
+                        <Box>
+                            <Typography variant="h4" fontWeight={800}>Hỗ trợ AI</Typography>
+                            <Typography variant="caption" color="text.secondary">Trợ lý ảo thông minh TNHN</Typography>
+                        </Box>
                     </Box>
+                    <Tooltip title={showStats ? "Ẩn trạng thái" : "Xem trạng thái hệ thống"}>
+                        <IconButton
+                            onClick={() => setShowStats(!showStats)}
+                            color={showStats ? "primary" : "default"}
+                            sx={{ bgcolor: showStats ? 'primary.light' : 'transparent' }}
+                        >
+                            {showStats ? <IconLayoutSidebarRightCollapse size={22} /> : <IconLayoutSidebarRightExpand size={22} />}
+                        </IconButton>
+                    </Tooltip>
                 </Box>
 
                 {/* Messages List */}
@@ -515,214 +532,244 @@ const AiSupport = () => {
                 </Box>
             </Box>
 
-            {/* Stats Sidebar */}
-            <Box sx={{ width: 320, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Paper sx={{ p: 1.5, borderRadius: '20px', boxShadow: '0 2px 12px rgba(0,0,0,0.04)', border: '1px solid #e2e8f0' }}>
-                    <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-                        <Typography variant="h5" fontWeight={800}>Trạng thái hệ thống</Typography>
-                        <IconButton size="small" onClick={fetchStats} disabled={statsLoading}>
-                            <IconRefresh size={18} />
-                        </IconButton>
-                    </Stack>
+            {/* Stats Sidebar/Drawer */}
+            {isMobile ? (
+                <SwipeableDrawer
+                    anchor="right"
+                    open={showStats}
+                    onClose={() => setShowStats(false)}
+                    onOpen={() => setShowStats(true)}
+                    PaperProps={{
+                        sx: { width: '85%', maxWidth: 360, p: 2, borderRadius: '20px 0 0 20px' }
+                    }}
+                >
+                    <StatsContent stats={stats} statsLoading={statsLoading} fetchStats={fetchStats} formatBytes={formatBytes} quotaPercentage={quotaPercentage} handleListEmails={handleListEmails} handleListConstructions={handleListConstructions} setMessages={setMessages} setLoading={setLoading} />
+                </SwipeableDrawer>
+            ) : (
+                showStats && (
+                    <Box sx={{ width: 320, display: 'flex', flexDirection: 'column', gap: 2, animation: 'slideIn 0.3s ease' }}>
+                        <StatsContent stats={stats} statsLoading={statsLoading} fetchStats={fetchStats} formatBytes={formatBytes} quotaPercentage={quotaPercentage} handleListEmails={handleListEmails} handleListConstructions={handleListConstructions} setMessages={setMessages} setLoading={setLoading} />
+                    </Box>
+                )
+            )}
 
-                    <Stack spacing={2.5}>
-                        {/* Email Stat */}
-                        <Box>
-                            <Stack direction="row" spacing={1} alignItems="center" mb={1}>
-                                <Avatar sx={{ width: 28, height: 28, bgcolor: '#fee2e2', color: '#ef4444' }}>
-                                    <IconMail size={16} />
-                                </Avatar>
-                                <Typography variant="subtitle2" fontWeight={800} color="text.secondary">GMAIL</Typography>
-                            </Stack>
-                            {statsLoading ? <LinearProgress sx={{ height: 2, borderRadius: 1 }} /> : (
-                                <Box sx={{ ml: 4.5 }}>
-                                    <Typography variant="h4" fontWeight={800} color="error.main" sx={{ mb: 1 }}>
-                                        {stats.unread_emails} <Typography component="span" variant="body2" fontWeight={600} color="text.secondary">mới</Typography>
-                                    </Typography>
-
-                                    <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
-                                        <Button
-                                            size="small"
-                                            variant="outlined"
-                                            onClick={() => handleListEmails('recent')}
-                                            sx={{ fontSize: '10px', py: 0.5, borderRadius: '8px' }}
-                                        >
-                                            Email gần đây
-                                        </Button>
-                                        <Button
-                                            size="small"
-                                            variant="contained"
-                                            disabled={stats.unread_emails === 0}
-                                            onClick={() => handleListEmails('unread')}
-                                            sx={{ fontSize: '10px', py: 0.5, borderRadius: '8px', boxShadow: 'none' }}
-                                        >
-                                            Email mới
-                                        </Button>
-                                    </Stack>
-                                </Box>
-                            )}
-                        </Box>
-
-                        <Divider />
-
-                        {/* Storage Stat */}
-                        <Box>
-                            <Stack direction="row" spacing={1} alignItems="center" mb={1}>
-                                <Avatar sx={{ width: 28, height: 28, bgcolor: '#e0f2fe', color: '#0369a1' }}>
-                                    <IconDatabase size={16} />
-                                </Avatar>
-                                <Typography variant="subtitle2" fontWeight={800} color="text.secondary">GOOGLE DRIVE</Typography>
-                            </Stack>
-                            {statsLoading ? <LinearProgress sx={{ height: 2, borderRadius: 1 }} /> : (
-                                <Box sx={{ ml: 4.5 }}>
-                                    <Stack direction="row" justifyContent="space-between" mb={1}>
-                                        <Typography variant="body2" fontWeight={800}>{quotaPercentage}% đã dùng</Typography>
-                                        <Typography variant="caption" fontWeight={600} color="text.secondary">{formatBytes(stats.drive_quota.usage)}/{formatBytes(stats.drive_quota.limit)}</Typography>
-                                    </Stack>
-                                    <LinearProgress
-                                        variant="determinate"
-                                        value={quotaPercentage}
-                                        sx={{ height: 10, borderRadius: 5, bgcolor: '#f1f5f9', '& .MuiLinearProgress-bar': { borderRadius: 5 } }}
-                                    />
-                                </Box>
-                            )}
-                        </Box>
-
-                        <Divider />
-
-                        {/* AI Usage Stat */}
-                        <Box>
-                            <Stack direction="row" spacing={1} alignItems="center" mb={1}>
-                                <Avatar sx={{ width: 28, height: 28, bgcolor: '#fef3c7', color: '#d97706' }}>
-                                    <IconBolt size={16} />
-                                </Avatar>
-                                <Typography variant="subtitle2" fontWeight={800} color="text.secondary">LƯU LƯỢNG AI</Typography>
-                            </Stack>
-                            {statsLoading ? <LinearProgress sx={{ height: 2, borderRadius: 1 }} /> : (
-                                <Box sx={{ ml: 4.5 }}>
-                                    <Typography variant="h4" fontWeight={800} color="warning.dark" sx={{ mb: 1 }}>
-                                        {stats.ai_usage.total_tokens?.toLocaleString()} <Typography component="span" variant="body2" fontWeight={600} color="text.secondary">tokens</Typography>
-                                    </Typography>
-                                    <Stack spacing={1}>
-                                        <Stack direction="row" justifyContent="space-between">
-                                            <Typography variant="body2" color="text.secondary" fontWeight={600}>Chi phí dự tính:</Typography>
-                                            <Typography variant="body2" fontWeight={800} color="success.main">
-                                                ${stats.ai_usage.total_cost_usd?.toFixed(4)}
-                                            </Typography>
-                                        </Stack>
-                                        <Stack direction="row" justifyContent="space-between">
-                                            <Typography variant="body2" color="text.secondary" fontWeight={600}>Số lượt truy vấn:</Typography>
-                                            <Typography variant="body2" fontWeight={800}>
-                                                {stats.ai_usage.request_count}
-                                            </Typography>
-                                        </Stack>
-                                    </Stack>
-                                </Box>
-                            )}
-                        </Box>
-
-                        <Divider />
-
-                        {/* Emergency Construction Stat */}
-                        <Box>
-                            <Stack direction="row" spacing={1} alignItems="center" mb={1}>
-                                <Avatar sx={{ width: 28, height: 28, bgcolor: '#fff7ed', color: '#f97316' }}>
-                                    <IconBolt size={16} />
-                                </Avatar>
-                                <Typography variant="subtitle2" fontWeight={800} color="text.secondary">CÔNG TRÌNH KHẨN</Typography>
-                            </Stack>
-                            <Box sx={{ ml: 4.5 }}>
-                                <Button
-                                    size="small"
-                                    variant="outlined"
-                                    color="warning"
-                                    onClick={handleListConstructions}
-                                    sx={{ fontSize: '10px', py: 0.5, borderRadius: '8px' }}
-                                >
-                                    Xem danh sách
-                                </Button>
-                            </Box>
-                        </Box>
-
-                        <Divider />
-                    </Stack>
-                </Paper>
-
-                <Paper sx={{ p: 2, borderRadius: '20px', boxShadow: '0 2px 12px rgba(0,0,0,0.04)', border: '1px solid #e2e8f0' }}>
-                    <Typography variant="subtitle2" fontWeight={800} mb={2}>Tiện ích báo cáo</Typography>
-                    <Stack spacing={1.5}>
-                        <Box
-                            onClick={() => {
-                                // Add user message
-                                const text = 'Tạo báo cáo nhanh';
-                                const userMsg = { id: Date.now(), role: 'user', text };
-                                setMessages(prev => [...prev, userMsg]);
-                                setLoading(true);
-
-                                axiosClient.post('/admin/google/quick-report', { data: {} })
-                                    .then(res => {
-                                        const data = res.data?.data;
-                                        const reportUrl = data?.report_url || data?.report_link;
-                                        const msgText = reportUrl
-                                            ? `Đã tạo xong báo cáo nhanh! Bạn có thể xem và tải về tại đây:\n${reportUrl}`
-                                            : 'Đã gửi yêu cầu tạo báo cáo nhanh thành công, nhưng không nhận được đường dẫn trả về.';
-
-                                        const aiMsg = {
-                                            id: Date.now() + 1,
-                                            role: 'ai',
-                                            text: msgText
-                                        };
-                                        setMessages(prev => [...prev, aiMsg]);
-                                    })
-                                    .catch(err => {
-                                        const aiMsg = {
-                                            id: Date.now() + 1,
-                                            role: 'ai',
-                                            text: 'Có lỗi xảy ra khi tạo báo cáo nhanh. Vui lòng thử lại sau.'
-                                        };
-                                        setMessages(prev => [...prev, aiMsg]);
-                                    })
-                                    .finally(() => setLoading(false));
-                            }}
-                            sx={{
-                                p: 1.5, borderRadius: '12px', cursor: 'pointer',
-                                bgcolor: 'primary.light', border: '1px solid', borderColor: 'primary.200',
-                                color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1.5,
-                                transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.main', color: 'white' }
-                            }}
-                        >
-                            <Box sx={{ width: 32, height: 32, borderRadius: '8px', bgcolor: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <IconBolt size={20} />
-                            </Box>
-                            <Typography variant="body2" fontWeight={700}>Báo cáo nhanh</Typography>
-                        </Box>
-
-                        <Box
-                            onClick={() => {
-                                const aiMsg = {
-                                    id: Date.now(),
-                                    role: 'ai',
-                                    text: 'Tính năng báo cáo tổng hợp đang được phát triển.'
-                                };
-                                setMessages(prev => [...prev, aiMsg]);
-                            }}
-                            sx={{
-                                p: 1.5, borderRadius: '12px', cursor: 'pointer',
-                                bgcolor: '#f8fafc', border: '1px solid', borderColor: '#e2e8f0',
-                                color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1.5,
-                                transition: 'all 0.2s', '&:hover': { bgcolor: '#f1f5f9' }
-                            }}
-                        >
-                            <Box sx={{ width: 32, height: 32, borderRadius: '8px', bgcolor: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-                                <IconDatabase size={20} color="#64748b" />
-                            </Box>
-                            <Typography variant="body2" fontWeight={700}>Báo cáo tổng hợp</Typography>
-                        </Box>
-                    </Stack>
-                </Paper>
-            </Box>
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                @keyframes slideIn {
+                    from { transform: translateX(20px); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+            `}} />
         </Box>
     );
 };
+
+const StatsContent = ({ stats, statsLoading, fetchStats, formatBytes, quotaPercentage, handleListEmails, handleListConstructions, setMessages, setLoading }) => (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Paper sx={{ p: 1.5, borderRadius: '20px', boxShadow: '0 2px 12px rgba(0,0,0,0.04)', border: '1px solid #e2e8f0' }}>
+            <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+                <Typography variant="h5" fontWeight={800}>Trạng thái hệ thống</Typography>
+                <IconButton size="small" onClick={fetchStats} disabled={statsLoading}>
+                    <IconRefresh size={18} />
+                </IconButton>
+            </Stack>
+
+            <Stack spacing={2.5}>
+                {/* Email Stat */}
+                <Box>
+                    <Stack direction="row" spacing={1} alignItems="center" mb={1}>
+                        <Avatar sx={{ width: 28, height: 28, bgcolor: '#fee2e2', color: '#ef4444' }}>
+                            <IconMail size={16} />
+                        </Avatar>
+                        <Typography variant="subtitle2" fontWeight={800} color="text.secondary">GMAIL</Typography>
+                    </Stack>
+                    {statsLoading ? <LinearProgress sx={{ height: 2, borderRadius: 1 }} /> : (
+                        <Box sx={{ ml: 4.5 }}>
+                            <Typography variant="h4" fontWeight={800} color="error.main" sx={{ mb: 1 }}>
+                                {stats.unread_emails} <Typography component="span" variant="body2" fontWeight={600} color="text.secondary">mới</Typography>
+                            </Typography>
+
+                            <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
+                                <Button
+                                    size="small"
+                                    variant="outlined"
+                                    onClick={() => handleListEmails('recent')}
+                                    sx={{ fontSize: '10px', py: 0.5, borderRadius: '8px' }}
+                                >
+                                    Email gần đây
+                                </Button>
+                                <Button
+                                    size="small"
+                                    variant="contained"
+                                    disabled={stats.unread_emails === 0}
+                                    onClick={() => handleListEmails('unread')}
+                                    sx={{ fontSize: '10px', py: 0.5, borderRadius: '8px', boxShadow: 'none' }}
+                                >
+                                    Email mới
+                                </Button>
+                            </Stack>
+                        </Box>
+                    )}
+                </Box>
+
+                <Divider />
+
+                {/* Storage Stat */}
+                <Box>
+                    <Stack direction="row" spacing={1} alignItems="center" mb={1}>
+                        <Avatar sx={{ width: 28, height: 28, bgcolor: '#e0f2fe', color: '#0369a1' }}>
+                            <IconDatabase size={16} />
+                        </Avatar>
+                        <Typography variant="subtitle2" fontWeight={800} color="text.secondary">GOOGLE DRIVE</Typography>
+                    </Stack>
+                    {statsLoading ? <LinearProgress sx={{ height: 2, borderRadius: 1 }} /> : (
+                        <Box sx={{ ml: 4.5 }}>
+                            <Stack direction="row" justifyContent="space-between" mb={1}>
+                                <Typography variant="body2" fontWeight={800}>{quotaPercentage}% đã dùng</Typography>
+                                <Typography variant="caption" fontWeight={600} color="text.secondary">{formatBytes(stats.drive_quota.usage)}/{formatBytes(stats.drive_quota.limit)}</Typography>
+                            </Stack>
+                            <LinearProgress
+                                variant="determinate"
+                                value={quotaPercentage}
+                                sx={{ height: 10, borderRadius: 5, bgcolor: '#f1f5f9', '& .MuiLinearProgress-bar': { borderRadius: 5 } }}
+                            />
+                        </Box>
+                    )}
+                </Box>
+
+                <Divider />
+
+                {/* AI Usage Stat */}
+                <Box>
+                    <Stack direction="row" spacing={1} alignItems="center" mb={1}>
+                        <Avatar sx={{ width: 28, height: 28, bgcolor: '#fef3c7', color: '#d97706' }}>
+                            <IconBolt size={16} />
+                        </Avatar>
+                        <Typography variant="subtitle2" fontWeight={800} color="text.secondary">LƯU LƯỢNG AI</Typography>
+                    </Stack>
+                    {statsLoading ? <LinearProgress sx={{ height: 2, borderRadius: 1 }} /> : (
+                        <Box sx={{ ml: 4.5 }}>
+                            <Typography variant="h4" fontWeight={800} color="warning.dark" sx={{ mb: 1 }}>
+                                {stats.ai_usage.total_tokens?.toLocaleString()} <Typography component="span" variant="body2" fontWeight={600} color="text.secondary">tokens</Typography>
+                            </Typography>
+                            <Stack spacing={1}>
+                                <Stack direction="row" justifyContent="space-between">
+                                    <Typography variant="body2" color="text.secondary" fontWeight={600}>Chi phí dự tính:</Typography>
+                                    <Typography variant="body2" fontWeight={800} color="success.main">
+                                        ${stats.ai_usage.total_cost_usd?.toFixed(4)}
+                                    </Typography>
+                                </Stack>
+                                <Stack direction="row" justifyContent="space-between">
+                                    <Typography variant="body2" color="text.secondary" fontWeight={600}>Số lượt truy vấn:</Typography>
+                                    <Typography variant="body2" fontWeight={800}>
+                                        {stats.ai_usage.request_count}
+                                    </Typography>
+                                </Stack>
+                            </Stack>
+                        </Box>
+                    )}
+                </Box>
+
+                <Divider />
+
+                {/* Emergency Construction Stat */}
+                <Box>
+                    <Stack direction="row" spacing={1} alignItems="center" mb={1}>
+                        <Avatar sx={{ width: 28, height: 28, bgcolor: '#fff7ed', color: '#f97316' }}>
+                            <IconBolt size={16} />
+                        </Avatar>
+                        <Typography variant="subtitle2" fontWeight={800} color="text.secondary">CÔNG TRÌNH KHẨN</Typography>
+                    </Stack>
+                    <Box sx={{ ml: 4.5 }}>
+                        <Button
+                            size="small"
+                            variant="outlined"
+                            color="warning"
+                            onClick={handleListConstructions}
+                            sx={{ fontSize: '10px', py: 0.5, borderRadius: '8px' }}
+                        >
+                            Xem danh sách
+                        </Button>
+                    </Box>
+                </Box>
+
+                <Divider />
+            </Stack>
+        </Paper>
+
+        <Paper sx={{ p: 2, borderRadius: '20px', boxShadow: '0 2px 12px rgba(0,0,0,0.04)', border: '1px solid #e2e8f0' }}>
+            <Typography variant="subtitle2" fontWeight={800} mb={2}>Tiện ích báo cáo</Typography>
+            <Stack spacing={1.5}>
+                <Box
+                    onClick={() => {
+                        // Add user message
+                        const text = 'Tạo báo cáo nhanh';
+                        const userMsg = { id: Date.now(), role: 'user', text };
+                        setMessages(prev => [...prev, userMsg]);
+                        setLoading(true);
+
+                        axiosClient.post('/admin/google/quick-report', { data: {} })
+                            .then(res => {
+                                const data = res.data?.data;
+                                const reportUrl = data?.report_url || data?.report_link;
+                                const msgText = reportUrl
+                                    ? `Đã tạo xong báo cáo nhanh! Bạn có thể xem và tải về tại đây:\n${reportUrl}`
+                                    : 'Đã gửi yêu cầu tạo báo cáo nhanh thành công, nhưng không nhận được đường dẫn trả về.';
+
+                                const aiMsg = {
+                                    id: Date.now() + 1,
+                                    role: 'ai',
+                                    text: msgText
+                                };
+                                setMessages(prev => [...prev, aiMsg]);
+                            })
+                            .catch(err => {
+                                const aiMsg = {
+                                    id: Date.now() + 1,
+                                    role: 'ai',
+                                    text: 'Có lỗi xảy ra khi tạo báo cáo nhanh. Vui lòng thử lại sau.'
+                                };
+                                setMessages(prev => [...prev, aiMsg]);
+                            })
+                            .finally(() => setLoading(false));
+                    }}
+                    sx={{
+                        p: 1.5, borderRadius: '12px', cursor: 'pointer',
+                        bgcolor: 'primary.light', border: '1px solid', borderColor: 'primary.200',
+                        color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1.5,
+                        transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.main', color: 'white' }
+                    }}
+                >
+                    <Box sx={{ width: 32, height: 32, borderRadius: '8px', bgcolor: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <IconBolt size={20} />
+                    </Box>
+                    <Typography variant="body2" fontWeight={700}>Báo cáo nhanh</Typography>
+                </Box>
+
+                <Box
+                    onClick={() => {
+                        const aiMsg = {
+                            id: Date.now(),
+                            role: 'ai',
+                            text: 'Tính năng báo cáo tổng hợp đang được phát triển.'
+                        };
+                        setMessages(prev => [...prev, aiMsg]);
+                    }}
+                    sx={{
+                        p: 1.5, borderRadius: '12px', cursor: 'pointer',
+                        bgcolor: '#f8fafc', border: '1px solid', borderColor: '#e2e8f0',
+                        color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1.5,
+                        transition: 'all 0.2s', '&:hover': { bgcolor: '#f1f5f9' }
+                    }}
+                >
+                    <Box sx={{ width: 32, height: 32, borderRadius: '8px', bgcolor: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                        <IconDatabase size={20} color="#64748b" />
+                    </Box>
+                    <Typography variant="body2" fontWeight={700}>Báo cáo tổng hợp</Typography>
+                </Box>
+            </Stack>
+        </Paper>
+    </Box>
+);
 
 export default AiSupport;

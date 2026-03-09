@@ -99,7 +99,7 @@ const InundationForm = () => {
                         }}
                     >
                         {t.icon}
-                        <Typography sx={{ fontSize: '0.85rem', fontWeight: 'inherit', color: 'inherit', lineHeight: 1 }}>{t.label}</Typography>
+                        <Typography sx={{ fontSize: '1rem', fontWeight: 'inherit', color: 'inherit', lineHeight: 1 }}>{t.label}</Typography>
                     </Box>
                 ))}
             </Box>
@@ -132,7 +132,7 @@ const InundationForm = () => {
                     <IconButton size="small" onClick={() => navigate('/admin/inundation')}>
                         <IconArrowLeft size={20} />
                     </IconButton>
-                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                    <Typography variant="h5" sx={{ fontWeight: 700 }}>
                         {tab === 0 ? (selectedReport ? 'Cập nhật tình hình' : 'Báo cáo ngập') : 'Chi tiết & Lịch sử'}
                     </Typography>
                 </Box>

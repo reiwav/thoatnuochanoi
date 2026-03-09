@@ -148,7 +148,11 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
     };
 
     return (
-        <Stack spacing={2}>
+        <Stack spacing={2} sx={{
+            '& .MuiInputLabel-root': { fontSize: '1rem' },
+            '& .MuiInputBase-input': { fontSize: '1rem' },
+            '& .MuiFormHelperText-root': { fontSize: '0.875rem' },
+        }}>
             <TextField
                 fullWidth label="Tên tuyến đường / Vị trí" name="street_name"
                 value={values.street_name} onChange={handleChange} required
@@ -162,7 +166,7 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
             {selectedReport && (
                 <FormControlLabel
                     control={<Checkbox checked={resolveOnUpdate} onChange={(e) => setResolveOnUpdate(e.target.checked)} color="error" />}
-                    label={<Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'error.main' }}>Đã hết ngập (Kết thúc đợt này)</Typography>}
+                    label={<Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'error.main' }}>Đã hết ngập (Kết thúc đợt này)</Typography>}
                     sx={{ mt: -1, mb: 1 }}
                 />
             )}
@@ -199,12 +203,12 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
             />
 
             <Box>
-                <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1, display: 'block' }}>Ảnh hiện trường</Typography>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1, display: 'block' }}>Ảnh hiện trường</Typography>
                 <Box>
                     <Box component="label" sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5, border: '2px dashed', borderColor: 'divider', borderRadius: 2, p: 2, cursor: 'pointer', bgcolor: 'grey.50', transition: 'all .2s', '&:hover': { borderColor: 'secondary.main', bgcolor: 'secondary.lighter' } }}>
                         <input type="file" hidden multiple accept="image/*" onChange={handleImageChange} />
-                        <IconCloudUpload size={22} color={theme.palette.secondary.main} />
-                        <Typography variant="caption" color="text.secondary">Chọn ảnh</Typography>
+                        <IconCloudUpload size={26} color={theme.palette.secondary.main} />
+                        <Typography variant="body2" color="text.secondary">Chọn ảnh</Typography>
                     </Box>
                     {previews.length > 0 && (
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1.5 }}>

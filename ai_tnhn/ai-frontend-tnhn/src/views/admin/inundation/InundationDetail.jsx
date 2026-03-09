@@ -61,38 +61,38 @@ const InundationDetail = ({ selectedReport, loadingReport }) => {
             <Paper sx={{ mb: 3, p: 2, bgcolor: 'secondary.lighter', borderRadius: 3, boxShadow: 'none', border: '1px solid', borderColor: 'secondary.light' }}>
                 <Stack spacing={1}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Typography variant="h5" color="secondary.dark" sx={{ fontWeight: 900 }}>{selectedReport.street_name}</Typography>
+                        <Typography variant="h4" color="secondary.dark" sx={{ fontWeight: 900 }}>{selectedReport.street_name}</Typography>
                         <Chip
                             label={selectedReport.status === 'active' ? 'Đang diễn biến' : 'Đã kết thúc'}
                             color={selectedReport.status === 'active' ? 'error' : 'success'}
-                            size="small" sx={{ fontWeight: 800, height: 20, fontSize: '0.65rem' }}
+                            size="small" sx={{ fontWeight: 800, height: 24, fontSize: '0.82rem' }}
                         />
                     </Box>
 
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-                        <Typography variant="caption" color="textSecondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <IconClock size={14} /> {new Date(selectedReport.start_time * 1000).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}
+                        <Typography variant="body2" color="textSecondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <IconClock size={15} /> {new Date(selectedReport.start_time * 1000).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}
                         </Typography>
                         <Box sx={{ display: 'flex', gap: 1.5 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3 }}>
-                                <IconRuler size={12} color={theme.palette.text.secondary} />
-                                <Typography variant="caption" sx={{ fontWeight: 700 }}>{selectedReport.length || '0'}</Typography>
+                                <IconRuler size={14} color={theme.palette.text.secondary} />
+                                <Typography variant="body2" sx={{ fontWeight: 700 }}>{selectedReport.length || '0'}</Typography>
                             </Box>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3 }}>
-                                <IconRuler size={12} color={theme.palette.text.secondary} />
-                                <Typography variant="caption" sx={{ fontWeight: 700 }}>{selectedReport.width || '0'}</Typography>
+                                <IconRuler size={14} color={theme.palette.text.secondary} />
+                                <Typography variant="body2" sx={{ fontWeight: 700 }}>{selectedReport.width || '0'}</Typography>
                             </Box>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3 }}>
-                                <IconRuler size={12} color={theme.palette.text.secondary} />
-                                <Typography variant="caption" color="error.main" sx={{ fontWeight: 800 }}>{selectedReport.depth || '0'}</Typography>
+                                <IconRuler size={14} color={theme.palette.text.secondary} />
+                                <Typography variant="body2" color="error.main" sx={{ fontWeight: 800 }}>{selectedReport.depth || '0'}</Typography>
                             </Box>
                         </Box>
                     </Box>
                 </Stack>
             </Paper>
 
-            <Typography variant="subtitle1" sx={{ mb: 2, px: 0.5, fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
-                Lịch sử cập nhật <Chip label={timelineData.length} size="small" sx={{ height: 18, fontSize: '0.6rem', fontWeight: 900 }} />
+            <Typography variant="h4" sx={{ mb: 2, px: 0.5, fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
+                Lịch sử cập nhật <Chip label={timelineData.length} size="small" sx={{ height: 24, fontSize: '0.82rem', fontWeight: 900 }} />
             </Typography>
 
             <Box sx={{ px: 1 }}>
@@ -122,26 +122,26 @@ const InundationDetail = ({ selectedReport, loadingReport }) => {
 
                         <Box sx={{ pb: 3, flex: 1 }}>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>{item.title}</Typography>
-                                <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600 }}>
+                                <Typography variant="h6" sx={{ fontWeight: 800 }}>{item.title}</Typography>
+                                <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 600 }}>
                                     {new Date(item.ts * 1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                                 </Typography>
                             </Box>
-                            <Typography variant="body2" color="textSecondary" sx={{ mb: 1.5 }}>{item.desc}</Typography>
+                            <Typography variant="body1" color="textSecondary" sx={{ mb: 1.5 }}>{item.desc}</Typography>
 
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
                                 {(item.depth || item.length || item.width) && (
-                                    <Box sx={{ px: 1, py: 0.4, bgcolor: 'grey.50', borderRadius: 100, border: '1px solid', borderColor: 'grey.200', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                        <IconRuler size={10} color={theme.palette.text.secondary} />
-                                        <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 700, fontSize: '0.65rem' }}>
+                                    <Box sx={{ px: 1.2, py: 0.5, bgcolor: 'grey.50', borderRadius: 100, border: '1px solid', borderColor: 'grey.200', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                        <IconRuler size={14} color={theme.palette.text.secondary} />
+                                        <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 700, fontSize: '0.9rem' }}>
                                             {item.length || '0'} x {item.width || '0'} x {item.depth || '0'}
                                         </Typography>
                                     </Box>
                                 )}
                                 {item.user && (
-                                    <Box sx={{ px: 1, py: 0.4, bgcolor: 'secondary.lighter', borderRadius: 100, border: '1px solid', borderColor: 'secondary.light', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                        <IconUser size={10} color={theme.palette.secondary.main} />
-                                        <Typography variant="caption" sx={{ color: 'secondary.dark', fontWeight: 700, fontSize: '0.65rem' }}>
+                                    <Box sx={{ px: 1.2, py: 0.5, bgcolor: 'secondary.lighter', borderRadius: 100, border: '1px solid', borderColor: 'secondary.light', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                        <IconUser size={14} color={theme.palette.secondary.main} />
+                                        <Typography variant="caption" sx={{ color: 'secondary.dark', fontWeight: 700, fontSize: '0.9rem' }}>
                                             {item.user.split('@')[0]}
                                         </Typography>
                                     </Box>

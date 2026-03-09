@@ -82,7 +82,7 @@ const StationRainList = () => {
             title="Quản lý trạm đo mưa"
             secondary={
                 <AnimateButton>
-                    <Button variant="contained" color="secondary" startIcon={<IconPlus size={18} />} onClick={handleOpenCreate}>
+                    <Button variant="contained" color="secondary" startIcon={<IconPlus size={20} />} onClick={handleOpenCreate} sx={{ fontWeight: 700, fontSize: '1rem', px: 2, py: 1 }}>
                         Thêm trạm mới
                     </Button>
                 </AnimateButton>
@@ -92,11 +92,15 @@ const StationRainList = () => {
                 <Grid item xs={12} sm={6}>
                     <TextField fullWidth label="Tìm theo tên trạm" value={filterInputs.search}
                         onChange={(e) => setFilterInputs({ ...filterInputs, search: e.target.value })}
-                        size="small" sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }} />
+                        sx={{
+                            '& .MuiInputLabel-root': { fontSize: '1rem', fontWeight: 600 },
+                            '& .MuiInputBase-input': { fontSize: '1rem' },
+                            '& .MuiOutlinedInput-root': { borderRadius: '12px' }
+                        }} />
                 </Grid>
                 <Grid item xs={12} sm={3}>
-                    <Button fullWidth variant="contained" color="primary" startIcon={<IconSearch size={20} />}
-                        onClick={handleSearch} sx={{ borderRadius: '10px' }}>
+                    <Button fullWidth variant="contained" color="primary" startIcon={<IconSearch size={22} />}
+                        onClick={handleSearch} sx={{ borderRadius: '10px', fontWeight: 700, fontSize: '1rem', py: 1 }}>
                         Tìm kiếm
                     </Button>
                 </Grid>
@@ -106,12 +110,12 @@ const StationRainList = () => {
                 <Table>
                     <TableHead sx={{ bgcolor: 'grey.50' }}>
                         <TableRow>
-                            <TableCell sx={{ fontWeight: 700 }}>Tên trạm</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }}>Địa chỉ</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }}>Tọa độ (Lat, Lng)</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }}>Ngưỡng (mm)</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>
-                            <TableCell align="right" sx={{ fontWeight: 700 }}>Thao tác</TableCell>
+                            <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Tên trạm</TableCell>
+                            <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Địa chỉ</TableCell>
+                            <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Tọa độ</TableCell>
+                            <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Ngưỡng</TableCell>
+                            <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Trạng thái</TableCell>
+                            <TableCell align="right" sx={{ fontWeight: 800, fontSize: '1rem' }}>Thao tác</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -122,13 +126,13 @@ const StationRainList = () => {
                         ) : (
                             stations.map((row) => (
                                 <TableRow key={row.id} hover>
-                                    <TableCell sx={{ fontWeight: 600 }}>{row.TenTram}</TableCell>
-                                    <TableCell>{row.DiaChi}</TableCell>
-                                    <TableCell>{row.Lat}, {row.Lng}</TableCell>
-                                    <TableCell>{row.NguongCanhBao || '-'}</TableCell>
+                                    <TableCell sx={{ fontWeight: 800, fontSize: '1.05rem', color: 'primary.dark' }}>{row.TenTram}</TableCell>
+                                    <TableCell sx={{ fontSize: '0.95rem' }}>{row.DiaChi}</TableCell>
+                                    <TableCell sx={{ fontSize: '0.85rem' }}>{row.Lat}, {row.Lng}</TableCell>
+                                    <TableCell sx={{ fontSize: '1rem', fontWeight: 700 }}>{row.NguongCanhBao || '-'}</TableCell>
                                     <TableCell>
-                                        <Chip label={row.Active ? 'Hoạt động' : 'Ngừng hoạt động'}
-                                            color={row.Active ? 'success' : 'default'} size="small" variant="outlined" />
+                                        <Chip label={row.Active ? 'Hoạt động' : 'Ngừng'}
+                                            color={row.Active ? 'success' : 'default'} size="small" variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem', height: 24 }} />
                                     </TableCell>
                                     <TableCell align="right">
                                         <Tooltip title="Chỉnh sửa">

@@ -26,10 +26,10 @@ export default function EmployeeLogin() {
                                     <Logo />
                                 </Box>
                                 <Stack sx={{ alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-                                    <Typography variant={downMD ? 'h3' : 'h2'} sx={{ color: 'primary.main', fontWeight: 700 }}>
+                                    <Typography variant={downMD ? 'h2' : 'h1'} sx={{ color: 'primary.main', fontWeight: 700 }}>
                                         Hệ thống Check-in
                                     </Typography>
-                                    <Typography variant="body1" sx={{ color: 'text.secondary', textAlign: 'center' }}>
+                                    <Typography variant="body1" sx={{ color: 'text.secondary', textAlign: 'center', fontSize: { xs: '1rem', md: '1.125rem' } }}>
                                         Vui lòng đăng nhập để thực hiện nhiệm vụ
                                     </Typography>
                                 </Stack>

@@ -105,9 +105,11 @@ export default function MainLayout() {
   const userRole = userInfo?.role || localStorage.getItem('role') || 'employee';
   const basePath = userRole === 'employee' ? '/company' : '/admin';
 
+  const isEmployee = userRole === 'employee';
+
   // Fetch active flood count for badge
   useEffect(() => {
-    if (!downMD) return;
+    if (!isEmployee) return;
     const fetchCount = async () => {
       try {
         const res = await inundationApi.listReports();
@@ -120,12 +122,12 @@ export default function MainLayout() {
     fetchCount();
     const interval = setInterval(fetchCount, 60000); // refresh every minute
     return () => clearInterval(interval);
-  }, [downMD]);
+  }, [isEmployee]);
 
   const isConstructionPath = pathname.includes('/emergency-construction');
   const isInundationPath = pathname === '/' || pathname.startsWith('/admin/inundation') || pathname.startsWith('/company/inundation');
   const isAiSupportPath = pathname === '/admin/ai-support';
-  const showMobileAppLayout = downMD && (isInundationPath || isConstructionPath);
+  const showMobileAppLayout = isEmployee && (isInundationPath || isConstructionPath);
 
   // Auto-collapse sidebar on AI Support page
   useEffect(() => {
@@ -188,8 +190,8 @@ export default function MainLayout() {
               indicatorColor="primary"
               textColor="primary"
             >
-              <Tab label="Trực ngập lụt" sx={{ fontWeight: 700 }} />
-              <Tab label="Công trình khẩn" sx={{ fontWeight: 700 }} />
+              <Tab label="Trực ngập lụt" sx={{ fontWeight: 700, fontSize: '0.95rem' }} />
+              <Tab label="Công trình khẩn" sx={{ fontWeight: 700, fontSize: '0.95rem' }} />
             </Tabs>
           </Paper>
 
@@ -223,15 +225,15 @@ export default function MainLayout() {
                   else if (val === 3) navigate(`${basePath}/emergency-construction/dashboard?activeTab=3`);
                 }}
                 sx={{
-                  height: 64,
+                  height: 72,
                   '& .MuiBottomNavigationAction-root': { py: 1 },
-                  '& .MuiBottomNavigationAction-label': { fontWeight: 700, fontSize: '0.65rem', mt: 0.3 }
+                  '& .MuiBottomNavigationAction-label': { fontWeight: 700, fontSize: '0.85rem', mt: 0.3 }
                 }}
               >
-                <BottomNavigationAction label="Tổng quan" icon={<DashboardIcon sx={{ fontSize: '1.25rem' }} />} />
-                <BottomNavigationAction label="Chưa xong" icon={<EngineeringIcon sx={{ fontSize: '1.25rem' }} />} />
-                <BottomNavigationAction label="Lịch sử" icon={<HistoryIcon sx={{ fontSize: '1.25rem' }} />} />
-                <BottomNavigationAction label="Tài khoản" icon={<PersonIcon sx={{ fontSize: '1.25rem' }} />} />
+                <BottomNavigationAction label="Tổng quan" icon={<DashboardIcon sx={{ fontSize: '1.6rem' }} />} />
+                <BottomNavigationAction label="Chưa xong" icon={<EngineeringIcon sx={{ fontSize: '1.6rem' }} />} />
+                <BottomNavigationAction label="Lịch sử" icon={<HistoryIcon sx={{ fontSize: '1.6rem' }} />} />
+                <BottomNavigationAction label="Tài khoản" icon={<PersonIcon sx={{ fontSize: '1.6rem' }} />} />
               </BottomNavigation>
             ) : (
               <BottomNavigation
@@ -255,22 +257,22 @@ export default function MainLayout() {
                   else if (val === 3) navigate(`${basePath}/inundation?activeTab=3`);
                 }}
                 sx={{
-                  height: 64,
+                  height: 72,
                   '& .MuiBottomNavigationAction-root': { py: 1 },
-                  '& .MuiBottomNavigationAction-label': { fontWeight: 700, fontSize: '0.65rem', mt: 0.3 }
+                  '& .MuiBottomNavigationAction-label': { fontWeight: 700, fontSize: '0.85rem', mt: 0.3 }
                 }}
               >
-                <BottomNavigationAction label="Tổng quan" icon={<DashboardIcon sx={{ fontSize: '1.25rem' }} />} />
+                <BottomNavigationAction label="Tổng quan" icon={<DashboardIcon sx={{ fontSize: '1.6rem' }} />} />
                 <BottomNavigationAction
                   label="Đang ngập"
                   icon={
                     <Badge badgeContent={activeFloodCount} color="error" max={99}>
-                      <WarningIcon sx={{ fontSize: '1.25rem' }} />
+                      <WarningIcon sx={{ fontSize: '1.6rem' }} />
                     </Badge>
                   }
                 />
-                <BottomNavigationAction label="Lịch sử" icon={<HistoryIcon sx={{ fontSize: '1.25rem' }} />} />
-                <BottomNavigationAction label="Tài khoản" icon={<PersonIcon sx={{ fontSize: '1.25rem' }} />} />
+                <BottomNavigationAction label="Lịch sử" icon={<HistoryIcon sx={{ fontSize: '1.6rem' }} />} />
+                <BottomNavigationAction label="Tài khoản" icon={<PersonIcon sx={{ fontSize: '1.6rem' }} />} />
               </BottomNavigation>
             )}
           </Paper>

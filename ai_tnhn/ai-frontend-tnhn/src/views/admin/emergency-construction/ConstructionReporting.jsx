@@ -141,23 +141,23 @@ const ConstructionReporting = () => {
     if (activeTab === 3) {
         return (
             <Box sx={{ px: 2, pt: 4, textAlign: 'center' }}>
-                <Avatar sx={{ width: 80, height: 80, mx: 'auto', mb: 2, bgcolor: 'primary.main' }}>
-                    <IconUser size={40} />
+                <Avatar sx={{ width: 96, height: 96, mx: 'auto', mb: 2, bgcolor: 'primary.main' }}>
+                    <IconUser size={48} />
                 </Avatar>
-                <Typography variant="h4" sx={{ fontWeight: 800, mb: 0.5 }}>Cán bộ công trình</Typography>
-                <Typography variant="body2" color="textSecondary" sx={{ mb: 4 }}>Phòng Thoát Nước Hà Nội</Typography>
+                <Typography variant="h3" sx={{ fontWeight: 800, mb: 0.5 }}>Cán bộ công trình</Typography>
+                <Typography variant="body1" color="textSecondary" sx={{ mb: 4 }}>Phòng Thoát Nước Hà Nội</Typography>
 
                 <List sx={{ bgcolor: 'background.paper', borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.05)', mb: 4 }}>
-                    <ListItem button onClick={() => toast.success('Tính năng đang phát triển')}>
-                        <ListItemIcon><IconUser size={20} color={theme.palette.primary.main} /></ListItemIcon>
-                        <ListItemText primary="Thông tin cá nhân" />
-                        <IconChevronRight size={20} style={{ color: theme.palette.text.disabled }} />
+                    <ListItem button onClick={() => toast.success('Tính năng đang phát triển')} sx={{ py: 1.5 }}>
+                        <ListItemIcon><IconUser size={26} color={theme.palette.primary.main} /></ListItemIcon>
+                        <ListItemText primary="Thông tin cá nhân" primaryTypographyProps={{ fontSize: '1.05rem', fontWeight: 600 }} />
+                        <IconChevronRight size={24} style={{ color: theme.palette.text.disabled }} />
                     </ListItem>
                     <Divider variant="middle" />
-                    <ListItem button onClick={handleLogout} sx={{ color: 'error.main' }}>
-                        <ListItemIcon><IconLogout size={20} color={theme.palette.error.main} /></ListItemIcon>
-                        <ListItemText primary="Đăng xuất" />
-                        <IconChevronRight size={20} style={{ color: theme.palette.text.disabled }} />
+                    <ListItem button onClick={handleLogout} sx={{ color: 'error.main', py: 1.5 }}>
+                        <ListItemIcon><IconLogout size={26} color={theme.palette.error.main} /></ListItemIcon>
+                        <ListItemText primary="Đăng xuất" primaryTypographyProps={{ fontSize: '1.05rem', fontWeight: 600 }} />
+                        <IconChevronRight size={24} style={{ color: theme.palette.text.disabled }} />
                     </ListItem>
                 </List>
             </Box>
@@ -319,10 +319,10 @@ const ConstructionReporting = () => {
             {/* Header */}
             {isMobile ? (
                 <Box sx={{ mb: 2 }}>
-                    <Typography variant="h5" sx={{ fontWeight: 900, color: 'primary.main', mb: 1.5 }}>Công trình khẩn</Typography>
+                    <Typography variant="h3" sx={{ fontWeight: 900, color: 'primary.main', mb: 1.5 }}>Công trình khẩn</Typography>
                     <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
-                        <Chip label={`Tất cả (${stats.total})`} size="small" variant={activeTab === 0 ? 'filled' : 'outlined'} color="primary" onClick={() => navigate(`${basePath}/emergency-construction/dashboard`)} sx={{ fontWeight: 700, height: 26, fontSize: '0.72rem', cursor: 'pointer' }} />
-                        <Chip label={`Chưa xong (${stats.ongoing})`} size="small" color="warning" variant={activeTab === 1 ? 'filled' : 'outlined'} onClick={() => navigate(`${basePath}/emergency-construction/dashboard?activeTab=1`)} sx={{ fontWeight: 700, height: 26, fontSize: '0.72rem', cursor: 'pointer' }} />
+                        <Chip label={`Tất cả (${stats.total})`} size="small" variant={activeTab === 0 ? 'filled' : 'outlined'} color="primary" onClick={() => navigate(`${basePath}/emergency-construction/dashboard`)} sx={{ fontWeight: 700, height: 34, fontSize: '1rem', cursor: 'pointer' }} />
+                        <Chip label={`Chưa xong (${stats.ongoing})`} size="small" color="warning" variant={activeTab === 1 ? 'filled' : 'outlined'} onClick={() => navigate(`${basePath}/emergency-construction/dashboard?activeTab=1`)} sx={{ fontWeight: 700, height: 34, fontSize: '1rem', cursor: 'pointer' }} />
                     </Stack>
                     <TextField
                         fullWidth size="small" placeholder="Tìm kiếm công trình..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
@@ -366,12 +366,12 @@ const ConstructionReporting = () => {
                         <Card key={row.id} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '12px', cursor: 'pointer', transition: 'all .2s', '&:hover': { borderColor: 'primary.main' } }} onClick={() => handleCardClick(row)}>
                             <CardContent sx={{ p: '16px !important' }}>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1, alignItems: 'flex-start' }}>
-                                    <Typography variant="subtitle1" fontWeight={800} sx={{ lineHeight: 1.3, pr: 1 }}>{row.name}</Typography>
+                                    <Typography variant="subtitle1" fontWeight={800} sx={{ lineHeight: 1.3, pr: 1, fontSize: '1.2rem' }}>{row.name}</Typography>
                                     {getStatusChip(row.status)}
                                 </Box>
-                                <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>📍 {row.location}</Typography>
-                                <Typography variant="caption" display="block" color="textSecondary" sx={{ mb: 2 }}>📅 Dự kiến: {new Date(row.end_date * 1000).toLocaleDateString('vi-VN')}</Typography>
-                                <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 700, display: 'flex', alignItems: 'center' }}>Chạm để báo cáo / xem lịch sử <IconChevronRight size={14} /></Typography>
+                                <Typography variant="body2" color="textSecondary" sx={{ mb: 1, fontSize: '1rem' }}>📍 {row.location}</Typography>
+                                <Typography variant="body2" display="block" color="textSecondary" sx={{ mb: 2, fontSize: '0.95rem' }}>📅 Dự kiến: {new Date(row.end_date * 1000).toLocaleDateString('vi-VN')}</Typography>
+                                <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 700, display: 'flex', alignItems: 'center', fontSize: '1rem' }}>Chạm để báo cáo / xem lịch sử <IconChevronRight size={16} /></Typography>
                             </CardContent>
                         </Card>
                     ))}

@@ -251,9 +251,9 @@ const InundationDashboard = () => {
             <Card sx={{ borderRadius: 2.5, border: '1.5px solid', borderColor: isActive && isExpanded ? 'error.main' : isActive ? 'error.light' : 'divider', boxShadow: isExpanded ? '0 4px 16px rgba(0,0,0,0.08)' : '0 1px 4px rgba(0,0,0,0.04)', transition: 'all .2s', overflow: 'hidden' }}>
                 <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 }, cursor: 'pointer' }} onClick={() => handleCardClick(point)}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 800, fontSize: '0.9rem', flex: 1 }}>{point.name}</Typography>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800, fontSize: '1.2rem', flex: 1 }}>{point.name}</Typography>
                         <Stack direction="row" spacing={0.5} alignItems="center">
-                            <Chip label={isActive ? 'Ngập' : 'Ổn định'} color={isActive ? 'error' : 'success'} size="small" sx={{ height: 18, fontSize: '0.6rem', fontWeight: 900 }} />
+                            <Chip label={isActive ? 'Ngập' : 'Ổn định'} color={isActive ? 'error' : 'success'} size="small" sx={{ height: 26, fontSize: '0.9rem', fontWeight: 900 }} />
                             {isActive && (
                                 <IconButton size="small" sx={{ p: 0.2 }}>
                                     {isExpanded ? <IconChevronUp size={16} /> : <IconChevronDown size={16} />}
@@ -263,41 +263,41 @@ const InundationDashboard = () => {
                     </Box>
 
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: isActive ? 1 : 0 }}>
-                        <IconMapPin size={12} style={{ color: theme.palette.text.disabled }} />
-                        <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.3 }}>{point.address}</Typography>
+                        <IconMapPin size={16} style={{ color: theme.palette.text.disabled }} />
+                        <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.4, fontSize: '1rem' }}>{point.address}</Typography>
                     </Box>
 
                     {isActive ? (
-                        <Box sx={{ display: 'flex', gap: 1, px: 1, py: 0.8, bgcolor: 'error.lighter', borderRadius: 1.5, flexWrap: 'wrap' }}>
-                            <Box sx={{ minWidth: 45 }}>
-                                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', fontSize: '0.55rem' }}>Dài</Typography>
-                                <Typography variant="caption" sx={{ fontWeight: 800, color: 'error.dark', fontSize: '0.75rem' }}>{report?.length || '0'}</Typography>
+                        <Box sx={{ display: 'flex', gap: 1.5, px: 1.5, py: 1.2, bgcolor: 'error.lighter', borderRadius: 1.5, flexWrap: 'wrap' }}>
+                            <Box sx={{ minWidth: 58 }}>
+                                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', fontSize: '0.88rem' }}>Dài</Typography>
+                                <Typography variant="caption" sx={{ fontWeight: 800, color: 'error.dark', fontSize: '1.1rem' }}>{report?.length || '0'}</Typography>
                             </Box>
                             <Divider orientation="vertical" flexItem />
-                            <Box sx={{ minWidth: 45 }}>
-                                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', fontSize: '0.55rem' }}>Rộng</Typography>
-                                <Typography variant="caption" sx={{ fontWeight: 800, color: 'error.dark', fontSize: '0.75rem' }}>{report?.width || '0'}</Typography>
+                            <Box sx={{ minWidth: 58 }}>
+                                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', fontSize: '0.88rem' }}>Rộng</Typography>
+                                <Typography variant="caption" sx={{ fontWeight: 800, color: 'error.dark', fontSize: '1.1rem' }}>{report?.width || '0'}</Typography>
                             </Box>
                             <Divider orientation="vertical" flexItem />
-                            <Box sx={{ minWidth: 45 }}>
-                                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', fontSize: '0.55rem' }}>Sâu</Typography>
-                                <Typography variant="caption" sx={{ fontWeight: 800, color: 'error.dark', fontSize: '0.75rem' }}>{report?.depth || '0'}</Typography>
+                            <Box sx={{ minWidth: 58 }}>
+                                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', fontSize: '0.88rem' }}>Sâu</Typography>
+                                <Typography variant="caption" sx={{ fontWeight: 800, color: 'error.dark', fontSize: '1.1rem' }}>{report?.depth || '0'}</Typography>
                             </Box>
                             <Divider orientation="vertical" flexItem />
                             <Box>
-                                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', fontSize: '0.55rem' }}>Từ lúc</Typography>
-                                <Typography variant="caption" sx={{ fontWeight: 700, color: 'error.dark', fontSize: '0.75rem' }}>{formatTime(report?.start_time)}</Typography>
+                                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', fontSize: '0.88rem' }}>Từ lúc</Typography>
+                                <Typography variant="caption" sx={{ fontWeight: 700, color: 'error.dark', fontSize: '1.1rem' }}>{formatTime(report?.start_time)}</Typography>
                             </Box>
                         </Box>
                     ) : (
-                        <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 700 }}>Chạm để báo cáo ngập →</Typography>
+                        <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 700, fontSize: '1rem' }}>Chạm để báo cáo ngập →</Typography>
                     )}
                 </CardContent>
 
                 <Collapse in={isExpanded} timeout="auto" unmountOnExit>
                     <Divider />
                     <Box sx={{ p: 1.5, bgcolor: 'grey.50' }}>
-                        <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5, fontSize: '0.65rem', display: 'block', mb: 1 }}>Cập nhật tình hình</Typography>
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5, fontSize: '0.8rem', display: 'block', mb: 1 }}>Cập nhật tình hình</Typography>
 
                         <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
                             <TextField size="small" label="Dài" value={updateLength} onChange={(e) => setUpdateLength(e.target.value)} sx={{ bgcolor: 'background.paper', borderRadius: 1.5 }} />
@@ -342,7 +342,7 @@ const InundationDashboard = () => {
                             </Button>
                             <Button size="small" variant="text" color="inherit"
                                 onClick={() => navigate(`/admin/inundation/form?tab=1&id=${report.id}&name=${encodeURIComponent(point.name)}`)}
-                                sx={{ minWidth: 0, px: 0.5, color: 'text.secondary', fontSize: '0.7rem', whiteSpace: 'nowrap' }}>
+                                sx={{ minWidth: 0, px: 0.5, color: 'text.secondary', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
                                 Chi tiết →
                             </Button>
                         </Stack>
@@ -417,23 +417,23 @@ const InundationDashboard = () => {
     if (activeTab === 3) {
         return (
             <Box sx={{ px: 2, pt: 4, textAlign: 'center' }}>
-                <Avatar sx={{ width: 80, height: 80, mx: 'auto', mb: 2, bgcolor: 'primary.main' }}>
-                    <IconUser size={40} />
+                <Avatar sx={{ width: 96, height: 96, mx: 'auto', mb: 2, bgcolor: 'primary.main' }}>
+                    <IconUser size={48} />
                 </Avatar>
-                <Typography variant="h4" sx={{ fontWeight: 800, mb: 0.5 }}>Cán bộ kỹ thuật</Typography>
-                <Typography variant="body2" color="textSecondary" sx={{ mb: 4 }}>Phòng Thoát Nước Hà Nội</Typography>
+                <Typography variant="h3" sx={{ fontWeight: 800, mb: 0.5 }}>Cán bộ kỹ thuật</Typography>
+                <Typography variant="body1" color="textSecondary" sx={{ mb: 4 }}>Phòng Thoát Nước Hà Nội</Typography>
 
                 <List sx={{ bgcolor: 'background.paper', borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.05)', mb: 4 }}>
-                    <ListItem button onClick={() => toast.success('Tính năng đang phát triển')}>
-                        <ListItemIcon><IconUser size={20} color={theme.palette.primary.main} /></ListItemIcon>
-                        <ListItemText primary="Thông tin cá nhân" />
-                        <IconChevronRight size={20} style={{ color: theme.palette.text.disabled }} />
+                    <ListItem button onClick={() => toast.success('Tính năng đang phát triển')} sx={{ py: 1.5 }}>
+                        <ListItemIcon><IconUser size={26} color={theme.palette.primary.main} /></ListItemIcon>
+                        <ListItemText primary="Thông tin cá nhân" primaryTypographyProps={{ fontSize: '1.05rem', fontWeight: 600 }} />
+                        <IconChevronRight size={24} style={{ color: theme.palette.text.disabled }} />
                     </ListItem>
                     <Divider variant="middle" />
-                    <ListItem button onClick={handleLogout} sx={{ color: 'error.main' }}>
-                        <ListItemIcon><IconLogout size={20} color={theme.palette.error.main} /></ListItemIcon>
-                        <ListItemText primary="Đăng xuất" />
-                        <IconChevronRight size={20} style={{ color: theme.palette.text.disabled }} />
+                    <ListItem button onClick={handleLogout} sx={{ color: 'error.main', py: 1.5 }}>
+                        <ListItemIcon><IconLogout size={26} color={theme.palette.error.main} /></ListItemIcon>
+                        <ListItemText primary="Đăng xuất" primaryTypographyProps={{ fontSize: '1.05rem', fontWeight: 600 }} />
+                        <IconChevronRight size={24} style={{ color: theme.palette.text.disabled }} />
                     </ListItem>
                 </List>
             </Box>
@@ -444,7 +444,7 @@ const InundationDashboard = () => {
         <Box sx={{ px: 2, pt: 2 }}>
             {/* Header */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-                <Typography variant="h5" sx={{ fontWeight: 900, color: 'primary.main' }}>Trực ngập lụt</Typography>
+                <Typography variant="h3" sx={{ fontWeight: 900, color: 'primary.main' }}>Trực ngập lụt</Typography>
                 <Badge badgeContent={stats.active} color="error" max={99}>
                     <Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: 'error.lighter', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <IconAlertTriangle size={16} color={theme.palette.error.main} />
@@ -454,8 +454,8 @@ const InundationDashboard = () => {
 
             {/* Filter chips */}
             <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
-                <Chip label={`Tất cả (${stats.total})`} size="small" variant={activeTab === 0 ? 'filled' : 'outlined'} color="primary" onClick={() => navigate(`${basePath}/inundation`)} sx={{ fontWeight: 700, height: 26, fontSize: '0.72rem', cursor: 'pointer' }} />
-                <Chip label={`Đang ngập (${stats.active})`} size="small" color="error" variant={activeTab === 1 ? 'filled' : 'outlined'} onClick={() => navigate(`${basePath}/inundation?activeTab=1`)} sx={{ fontWeight: 700, height: 26, fontSize: '0.72rem', cursor: 'pointer' }} />
+                <Chip label={`Tất cả (${stats.total})`} size="small" variant={activeTab === 0 ? 'filled' : 'outlined'} color="primary" onClick={() => navigate(`${basePath}/inundation`)} sx={{ fontWeight: 700, height: 34, fontSize: '1rem', cursor: 'pointer' }} />
+                <Chip label={`Đang ngập (${stats.active})`} size="small" color="error" variant={activeTab === 1 ? 'filled' : 'outlined'} onClick={() => navigate(`${basePath}/inundation?activeTab=1`)} sx={{ fontWeight: 700, height: 34, fontSize: '1rem', cursor: 'pointer' }} />
             </Stack>
 
             {/* Search box */}

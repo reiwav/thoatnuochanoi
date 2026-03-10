@@ -8,8 +8,8 @@ import Loadable from 'ui-component/Loadable';
 
 const EmployeePage = Loadable(lazy(() => import('views/admin/employee')));
 const OrganizationPage = Loadable(lazy(() => import('views/admin/organization')));
-const InundationForm = Loadable(lazy(() => import('views/admin/inundation/InundationForm')));
-const InundationDashboard = Loadable(lazy(() => import('views/admin/inundation/InundationDashboard')));
+const InundationForm = Loadable(lazy(() => import('views/employee/inundation/InundationForm')));
+const InundationDashboard = Loadable(lazy(() => import('views/employee/inundation/InundationDashboard')));
 const StationRainList = Loadable(lazy(() => import('views/admin/station/StationRainList')));
 const StationRainSummary = Loadable(lazy(() => import('views/admin/station-rain-summary')));
 const StationWaterSummary = Loadable(lazy(() => import('views/admin/station-water-summary')));
@@ -21,8 +21,8 @@ const StationHistory = Loadable(lazy(() => import('views/admin/station/StationHi
 const InundationStationHistory = Loadable(lazy(() => import('views/admin/station/InundationStationHistory')));
 const AiSupportPage = Loadable(lazy(() => import('views/admin/ai-support')));
 const EmergencyConstructionPage = Loadable(lazy(() => import('views/admin/emergency-construction')));
-const ConstructionReportingPage = Loadable(lazy(() => import('views/admin/emergency-construction/ConstructionReporting')));
-const ConstructionFormPage = Loadable(lazy(() => import('views/admin/emergency-construction/ConstructionForm')));
+const ConstructionReportingPage = Loadable(lazy(() => import('views/employee/emergency-construction/ConstructionReporting')));
+const ConstructionFormPage = Loadable(lazy(() => import('views/employee/emergency-construction/ConstructionForm')));
 
 // ==============================|| MAIN ROUTING ||============================== //
 

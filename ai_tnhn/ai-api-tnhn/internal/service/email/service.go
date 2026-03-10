@@ -745,6 +745,7 @@ func (s *service) GetLatestEmailAttachmentPage1(ctx context.Context) (string, er
 	// 4. Search for emails from the specified sender
 	criteria := imap.NewSearchCriteria()
 	criteria.Header.Set("From", s.conf.FromFilter)
+	criteria.Text = []string{"mưa"}
 	ids, err := c.Search(criteria)
 	if err != nil {
 		return "", fmt.Errorf("failed to search emails: %w", err)

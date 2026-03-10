@@ -62,6 +62,10 @@ export default function MainLayout() {
         const result = response.data;
         if (result.status === 'success') {
           const user = result.data;
+          // Normalize role typo
+          if (user.role === 'supper_admib' || user.role === 'supper_admin' || user.role === 'super_admib') {
+            user.role = 'super_admin';
+          }
           setUserInfo(user);
           if (user.role) localStorage.setItem('role', user.role);
           setIsChecking(false);
@@ -83,7 +87,7 @@ export default function MainLayout() {
     if (isChecking || !userInfo) return;
 
     const role = userInfo.role || localStorage.getItem('role') || 'employee';
-    const isEmployee = role === 'employee';
+    const isEmployee = role === 'employee' || role === 'technician';
     const basePath = isEmployee ? '/company' : '/admin';
 
     // If at root, redirect to respective dashboard
@@ -126,7 +130,7 @@ export default function MainLayout() {
   const isConstructionPath = pathname.includes('/emergency-construction');
   const isInundationPath = pathname === '/' || pathname.startsWith('/admin/inundation') || pathname.startsWith('/company/inundation');
   const isAiSupportPath = pathname === '/admin/ai-support';
-  const showMobileAppLayout = (isEmployee || downSM) && (isInundationPath || isConstructionPath);
+  const showMobileAppLayout = isEmployee && (isInundationPath || isConstructionPath);
 
   // Auto-collapse sidebar on AI Support page (only for mobile)
   useEffect(() => {

@@ -42,8 +42,9 @@ export default function AuthLogin() {
     const token = searchParams.get('token');
     if (token) {
       localStorage.setItem(ADMIN_TOKEN, token);
-      // Admin and TNHN go to /admin after Google OAuth
-      navigate('/admin/inundation', { replace: true });
+      // Admin and TNHN go to /admin after Google OAuth, employees to /company
+      // Let MainLayout handle specific sub-path redirect after role check
+      navigate('/', { replace: true });
     }
   }, [searchParams, navigate]);
 
@@ -69,11 +70,23 @@ export default function AuthLogin() {
 
       // 2. Kiểm tra status từ server trả về
       if (result.status === 'success') {
-        // Lưu token (trường "data" trong JSON của bạn)
-        localStorage.setItem(ADMIN_TOKEN, result.data);
-        // Store role if provided, admins go to /admin
-        if (result.role) localStorage.setItem('role', result.role);
-        navigate('/admin/inundation');
+        const tokenData = result.data;
+        // Lưu token ID
+        localStorage.setItem(ADMIN_TOKEN, tokenData.id);
+
+        // Store role
+        let role = tokenData.role || 'employee';
+        if (role === 'supper_admib' || role === 'supper_admin' || role === 'super_admib') {
+          role = 'super_admin';
+        }
+        localStorage.setItem('role', role);
+
+        // Redirect based on role
+        if (role === 'employee' || role === 'technician') {
+          navigate('/company/inundation');
+        } else {
+          navigate('/admin/inundation');
+        }
       } else {
         // Trường hợp code 200 nhưng status không phải success (nếu backend thiết kế vậy)
         setError(result.message || 'Đăng nhập không thành công');

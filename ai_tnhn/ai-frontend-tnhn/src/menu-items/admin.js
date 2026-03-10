@@ -1,13 +1,13 @@
 import {
   IconFaceId, IconUser, IconCloudRain, IconRipple, IconTable, IconChartBar,
   IconDroplets, IconMapPin, IconBuilding, IconUsers, IconList, IconHistory, IconAlertTriangle, IconMessageChatbot, IconClipboardList,
-  IconDoor, IconEngine, IconMap
+  IconDoor, IconEngine, IconMap, IconTornado
 } from '@tabler/icons-react';
 
 const icons = {
   IconFaceId, IconUser, IconCloudRain, IconRipple, IconTable, IconChartBar,
   IconDroplets, IconMapPin, IconBuilding, IconUsers, IconList, IconHistory, IconAlertTriangle, IconMessageChatbot, IconClipboardList,
-  IconDoor, IconEngine, IconMap
+  IconDoor, IconEngine, IconMap, IconTornado
 };
 
 const adminPages = {

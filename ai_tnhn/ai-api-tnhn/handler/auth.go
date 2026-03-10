@@ -61,7 +61,7 @@ func (h *AuthHandler) LoginHandler(c *gin.Context) {
 		h.SendError(c, err)
 		return
 	}
-	h.SendData(c, res.ID)
+	h.SendData(c, res)
 }
 
 func (h *AuthHandler) EmployeeLoginHandler(c *gin.Context) {
@@ -76,7 +76,7 @@ func (h *AuthHandler) EmployeeLoginHandler(c *gin.Context) {
 		h.SendError(c, err)
 		return
 	}
-	h.SendData(c, res.ID)
+	h.SendData(c, res)
 }
 
 func (h *AuthHandler) LogoutHandler(c *gin.Context) {

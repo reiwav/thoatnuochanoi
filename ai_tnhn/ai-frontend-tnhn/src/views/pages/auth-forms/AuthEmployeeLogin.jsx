@@ -62,7 +62,8 @@ export default function AuthEmployeeLogin() {
             const result = response.data;
 
             if (result.status === 'success') {
-                localStorage.setItem(ADMIN_TOKEN, result.data);
+                const tokenData = result.data;
+                localStorage.setItem(ADMIN_TOKEN, tokenData.id);
                 // Employees always go to /company
                 localStorage.setItem('role', 'employee');
                 navigate('/company/inundation');

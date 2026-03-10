@@ -9,7 +9,6 @@ import (
 	querysvc "ai-api-tnhn/internal/service/query"
 	"ai-api-tnhn/internal/service/stationdata"
 	"ai-api-tnhn/internal/service/water"
-	"ai-api-tnhn/utils/number"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -456,7 +455,7 @@ func (s *service) Chat(ctx context.Context, prompt string, history []ChatMessage
 	for _, part := range resp.Candidates[0].Content.Parts {
 		finalResult += fmt.Sprintf("%v", part)
 	}
-	return number.FormatText(finalResult), nil
+	return finalResult, nil //number.FormatText(finalResult), nil
 }
 
 func (s *service) recordUsage(ctx context.Context, usage *genai.UsageMetadata) {

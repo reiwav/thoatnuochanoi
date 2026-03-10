@@ -103,9 +103,8 @@ export default function MainLayout() {
   }, [isChecking, userInfo, pathname, navigate]);
 
   const userRole = userInfo?.role || localStorage.getItem('role') || 'employee';
-  const basePath = userRole === 'employee' ? '/company' : '/admin';
-
-  const isEmployee = userRole === 'employee';
+  const isEmployee = userRole === 'employee' || userRole === 'technician';
+  const basePath = isEmployee ? '/company' : '/admin';
 
   // Fetch active flood count for badge
   useEffect(() => {
@@ -127,7 +126,7 @@ export default function MainLayout() {
   const isConstructionPath = pathname.includes('/emergency-construction');
   const isInundationPath = pathname === '/' || pathname.startsWith('/admin/inundation') || pathname.startsWith('/company/inundation');
   const isAiSupportPath = pathname === '/admin/ai-support';
-  const showMobileAppLayout = isEmployee && (isInundationPath || isConstructionPath);
+  const showMobileAppLayout = (isEmployee || downSM) && (isInundationPath || isConstructionPath);
 
   // Auto-collapse sidebar on AI Support page (only for mobile)
   useEffect(() => {
@@ -202,7 +201,7 @@ export default function MainLayout() {
             </Tabs>
           </Paper>
 
-          <Outlet />
+          <Outlet context={{ userInfo }} />
 
           {/* Persistent Mobile Bottom Navigation */}
           <Paper
@@ -288,7 +287,7 @@ export default function MainLayout() {
         <MainContentStyled {...{ borderRadius, open: drawerOpen }}>
           <Box sx={{ p: { xs: 2, sm: 3 }, minHeight: 'calc(100vh - 128px)', display: 'flex', flexDirection: 'column' }}>
             <Breadcrumbs />
-            <Outlet />
+            <Outlet context={{ userInfo }} />
             <Footer />
           </Box>
         </MainContentStyled>

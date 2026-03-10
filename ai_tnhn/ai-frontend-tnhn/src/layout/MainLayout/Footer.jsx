@@ -8,33 +8,16 @@ import Typography from '@mui/material/Typography';
 export default function Footer() {
   return (
     <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', pt: 3, mt: 'auto' }}>
-      <Typography variant="caption">
-        &copy; Reiway Việt Nam{' '}
-        <Typography component={Link} href="https://reiway.vn" underline="hover" target="_blank" sx={{ color: 'secondary.main' }}>
-          Reiway
+      <Typography variant="caption" sx={{ fontWeight: 600 }}>
+        &copy; 2024 Bản quyền thuộc về{' '}
+        <Typography component="span" sx={{ color: 'primary.main', fontWeight: 800 }}>
+          Hanoi Sewerage and Drainage Company (HSDC)
         </Typography>
       </Typography>
-      <Stack direction="row" sx={{ gap: 1.5, alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link
-          component={RouterLink}
-          to="https://github.com/codedthemes/berry-free-react-admin-template"
-          underline="hover"
-          target="_blank"
-          variant="caption"
-          color="text.primary"
-        >
-          GitHub
-        </Link>
-        <Link
-          component={RouterLink}
-          to="https://www.figma.com/community/file/1468460364009262125/berry-free-dashboard-ui-kit"
-          underline="hover"
-          target="_blank"
-          variant="caption"
-          color="text.primary"
-        >
-          Figma UI Kit
-        </Link>
+      <Stack direction="row" sx={{ gap: 2, alignItems: 'center' }}>
+        <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 500 }}>
+          Hệ thống Quản lý Thoát nước & Ngập lụt
+        </Typography>
       </Stack>
     </Stack>
   );

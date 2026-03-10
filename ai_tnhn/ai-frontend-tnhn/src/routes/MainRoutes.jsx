@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 
 // project imports
 import MainLayout from 'layout/MainLayout';
+import ContextOutlet from 'layout/ContextOutlet';
 import Loadable from 'ui-component/Loadable';
 
 const EmployeePage = Loadable(lazy(() => import('views/admin/employee')));
@@ -35,7 +36,7 @@ const MainRoutes = {
     },
     {
       path: 'admin',
-      element: <Outlet />,
+      element: <ContextOutlet />,
       children: [
         { path: 'employee', element: <EmployeePage /> },
         { path: 'organization', element: <OrganizationPage /> },
@@ -60,7 +61,7 @@ const MainRoutes = {
     },
     {
       path: 'company',
-      element: <Outlet />,
+      element: <ContextOutlet />,
       children: [
         { path: 'emergency-construction', element: <EmergencyConstructionPage /> },
         { path: 'inundation', element: <InundationDashboard /> },

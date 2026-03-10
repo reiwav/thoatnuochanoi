@@ -361,7 +361,7 @@ func (s *service) GetWaterSummary(ctx context.Context) (*WaterSummaryData, error
 		stationMap[t.Id] = struct {
 			Name string
 			Loai string
-		}{Name: t.TenTramHTML, Loai: t.Loai}
+		}{Name: t.TenTram, Loai: t.Loai}
 	}
 
 	var lakes, rivers []WaterStationStat

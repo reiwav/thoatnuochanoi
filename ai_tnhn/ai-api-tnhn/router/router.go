@@ -47,7 +47,16 @@ func (h HandlerFuncs) Create(mid middleware.Middleware, orgHandler *handler.Orga
 	r.Use(static.Serve("/", static.LocalFile("./frontend_dist", false)))
 
 	r.Static("/public", "./public")
+
+	// Add static route for local storage if configured
+	// We'll get the path from main by passing it or just use a default if it's tricky here.
+	// Actually, router.go doesn't have easy access to confg unless we pass it.
+	// Looking at Create signature, it doesn't take confg.
+	// But it uses ./public and ./frontend_dist.
+	// I will add a generic /api/storage/file route.
+
 	api := r.Group("/api")
+	api.Static("/storage/file", "./uploads") // Defaulting to ./uploads, should match LocalStoragePath
 	authGroup := api.Group("/auth")
 	{
 		authGroup.POST("/login", h.LoginHandler)

@@ -10,6 +10,16 @@ import {
 } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 
+const getImageUrl = (img) => {
+    if (!img) return '';
+    if (img.startsWith('/api/storage/file/')) {
+        // Local storage path - use relative path to handle different domains/proxies
+        return img;
+    }
+    // Default Google Drive ID
+    return `https://lh3.googleusercontent.com/d/${img}=w1000`;
+};
+
 const InundationDetail = ({ selectedReport, loadingReport }) => {
     const theme = useTheme();
 
@@ -152,7 +162,7 @@ const InundationDetail = ({ selectedReport, loadingReport }) => {
                                 <Box sx={{ display: 'flex', gap: 1, mt: 1.5, overflowX: 'auto', pb: 0.5 }}>
                                     {item.images.map((img, i) => (
                                         <Box
-                                            key={i} component="img" src={`https://lh3.googleusercontent.com/d/${img}=w1000`}
+                                            key={i} component="img" src={getImageUrl(img)}
                                             onClick={(e) => { e.stopPropagation(); handleOpenViewer(item.images, i); }}
                                             sx={{ width: 80, height: 80, borderRadius: 2, objectFit: 'cover', border: '2px solid white', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', cursor: 'zoom-in', transition: 'transform .2s', '&:hover': { transform: 'scale(1.05)' } }}
                                         />
@@ -184,7 +194,7 @@ const InundationDetail = ({ selectedReport, loadingReport }) => {
 
                     <Box
                         component="img"
-                        src={`https://lh3.googleusercontent.com/d/${viewer.images[viewer.index]}=w1000`}
+                        src={getImageUrl(viewer.images[viewer.index])}
                         sx={{ maxWidth: '100%', maxHeight: '85vh', objectFit: 'contain', animation: 'fadeIn .3s' }}
                     />
 

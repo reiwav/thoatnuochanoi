@@ -2,6 +2,7 @@ package googledrive
 
 import (
 	"ai-api-tnhn/config"
+	"ai-api-tnhn/internal/service/storage"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -15,9 +16,9 @@ import (
 )
 
 type Service interface {
+	storage.Service
 	CreateOrgFolder(ctx context.Context, orgName string) (string, error)
 	InitOrgFolders(ctx context.Context, orgName string) (string, error)
-	UploadFile(ctx context.Context, folderID, name, mimeType string, content io.Reader, convert bool) (string, error)
 	FindOrCreateFolder(ctx context.Context, parentID, folderName string) (string, error)
 	TriggerReportGeneration(ctx context.Context, webhookURL, templateFileID, targetFolderID string, payload map[string]interface{}) (string, error)
 	CopyFile(ctx context.Context, fileID, parentID, newName string) (string, error)
@@ -137,6 +138,10 @@ func (s *service) FindOrCreateFolder(ctx context.Context, parentID, folderName s
 
 	fmt.Printf("Created Google Drive folder: %s (ID: %s) under parent: %s\n", folderName, file.Id, parentID)
 	return file.Id, nil
+}
+
+func (s *service) CreateFolder(ctx context.Context, parentID, name string) (string, error) {
+	return s.FindOrCreateFolder(ctx, parentID, name)
 }
 
 func (s *service) UploadFile(ctx context.Context, folderID, name, mimeType string, content io.Reader, convert bool) (string, error) {

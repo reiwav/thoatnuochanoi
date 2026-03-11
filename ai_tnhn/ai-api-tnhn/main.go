@@ -19,6 +19,7 @@ import (
 	querysvc "ai-api-tnhn/internal/service/query"
 	"ai-api-tnhn/internal/service/station"
 	"ai-api-tnhn/internal/service/stationdata"
+	"ai-api-tnhn/internal/service/storage"
 	"ai-api-tnhn/internal/service/telegram"
 	"ai-api-tnhn/internal/service/token"
 	"ai-api-tnhn/internal/service/water"
@@ -65,8 +66,23 @@ func main() {
 	}
 
 	driveService, _ := googledrive.NewService(confg.GoogleDriveConfig, confg.OAuthConfig)
+
+	// Storage Selection
+	var storageSvc storage.Service
+	if confg.StorageType == "local" {
+		storageSvc, _ = storage.NewLocalService(confg.LocalStoragePath)
+		log.GetLogger().Infof("Using local storage at: %s", confg.LocalStoragePath)
+	} else {
+		storageSvc = driveService
+		log.GetLogger().Info("Using Google Drive storage")
+	}
+
+	if storageSvc != nil {
+		driveService = googledrive.NewStorageWrapper(storageSvc, driveService)
+	}
+
 	if driveService != nil {
-		log.GetLogger().Info("Google Drive service initialized")
+		log.GetLogger().Info("Drive/Storage service initialized")
 	}
 
 	tokenService := token.NewService(tokenRepo)

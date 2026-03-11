@@ -13,7 +13,7 @@ import (
 
 type Service interface {
 	CreateReport(ctx context.Context, report *models.InundationReport, images []ImageContent) error
-	AddUpdate(ctx context.Context, reportID string, update models.InundationUpdate, userID string, userEmail string, images []ImageContent) error
+	AddUpdate(ctx context.Context, reportID string, update *models.InundationUpdate, userID string, userEmail string, images []ImageContent) error
 	ListReports(ctx context.Context, orgID string) ([]*models.InundationReport, int64, error)
 	GetReport(ctx context.Context, reportID string) (*models.InundationReport, error)
 	Resolve(ctx context.Context, reportID string, endTime int64) error
@@ -105,7 +105,7 @@ func (s *service) CreateReport(ctx context.Context, report *models.InundationRep
 	return s.inundationRepo.Create(ctx, report)
 }
 
-func (s *service) AddUpdate(ctx context.Context, reportID string, update models.InundationUpdate, userID string, userEmail string, images []ImageContent) error {
+func (s *service) AddUpdate(ctx context.Context, reportID string, update *models.InundationUpdate, userID string, userEmail string, images []ImageContent) error {
 	// 1. Get Report to find Org/Folder
 	report, err := s.inundationRepo.GetByID(ctx, reportID)
 	if err != nil {
@@ -155,7 +155,7 @@ func (s *service) AddUpdate(ctx context.Context, reportID string, update models.
 	}
 
 	// 3. Save update to dedicated collection
-	return s.inundationUpdateRepo.Create(ctx, &update)
+	return s.inundationUpdateRepo.Create(ctx, update)
 }
 
 func (s *service) ListReports(ctx context.Context, orgID string) ([]*models.InundationReport, int64, error) {

@@ -139,7 +139,7 @@ func (h *InundationHandler) AddUpdateSituation(c *gin.Context) {
 	}
 
 	// 3. Add Update
-	update := models.InundationUpdate{
+	update := &models.InundationUpdate{
 		Description: description,
 		Depth:       depth,
 		Length:      length,
@@ -159,7 +159,7 @@ func (h *InundationHandler) AddUpdateSituation(c *gin.Context) {
 		_ = h.service.Resolve(c.Request.Context(), reportID, 0)
 	}
 
-	h.SendData(c, true)
+	h.SendData(c, update)
 }
 
 func (h *InundationHandler) GetReport(c *gin.Context) {

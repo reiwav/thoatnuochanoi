@@ -1,31 +1,134 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-    Button, Grid, TextField, Table, TableBody,
+    Button, Stack, TextField, Table, TableBody,
     TableCell, TableContainer, TableHead, TableRow, Paper,
-    IconButton, CircularProgress, Typography, Chip, Tooltip
+    IconButton, CircularProgress, Typography, Chip, Tooltip, Box,
+    MenuItem, Collapse, useTheme, useMediaQuery, Grid
 } from '@mui/material';
-import { IconTrash, IconPlus, IconEdit } from '@tabler/icons-react';
+import { IconTrash, IconPlus, IconEdit, IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 
 // project imports
 import MainCard from 'ui-component/cards/MainCard';
 import AnimateButton from 'ui-component/extended/AnimateButton';
 import stationApi from 'api/station';
+import organizationApi from 'api/organization';
 import StationDialog from './StationDialog';
 
+const CollapsibleStationRow = ({ row, handleOpenEdit, handleDelete, isMobile }) => {
+    const [open, setOpen] = useState(false);
+    return (
+        <React.Fragment>
+            <TableRow hover sx={{ '& > *': { borderBottom: 'unset' } }}>
+                <TableCell sx={{ width: 40, p: { xs: 1, md: 2 } }}>
+                    <IconButton aria-label="expand row" size="small" onClick={() => setOpen(!open)}>
+                        {open ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />}
+                    </IconButton>
+                </TableCell>
+                <TableCell sx={{ p: { xs: 1, md: 2 } }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'primary.dark' }}>{row.name}</Typography>
+                    {isMobile && (
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: 'secondary.main', mt: 0.5 }}>
+                            {row.org_name || '-'}
+                        </Typography>
+                    )}
+                </TableCell>
+                {!isMobile && (
+                    <>
+                        <TableCell>
+                            <Typography variant="body2" sx={{ fontWeight: 700, color: 'secondary.main' }}>
+                                {row.org_name || '-'}
+                            </Typography>
+                        </TableCell>
+                        <TableCell>
+                            <Chip label={row.active ? 'Hoạt động' : 'Ngừng'}
+                                color={row.active ? 'success' : 'default'} size="small" variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem', height: 24 }} />
+                        </TableCell>
+                    </>
+                )}
+                {!isMobile && (
+                    <TableCell align="right" sx={{ p: { xs: 1, md: 2 } }}>
+                        <Tooltip title="Chỉnh sửa">
+                            <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>
+                                <IconEdit size={20} />
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Xóa">
+                            <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}>
+                                <IconTrash size={20} />
+                            </IconButton>
+                        </Tooltip>
+                    </TableCell>
+                )}
+            </TableRow>
+            <TableRow>
+                <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={isMobile ? 2 : 5}>
+                    <Collapse in={open} timeout="auto" unmountOnExit>
+                        <Box sx={{ m: { xs: 1, md: 2 }, p: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                            <Typography variant="h6" gutterBottom component="div" sx={{ fontWeight: 700, color: 'primary.main', mb: 2 }}>
+                                {row.address}
+                            </Typography>
+                            <Stack spacing={1.5}>
+                                {isMobile && (
+                                    <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
+                                        <Chip label={row.active ? 'Hoạt động' : 'Ngừng'}
+                                            color={row.active ? 'success' : 'default'} size="small" variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem', height: 24 }} />
+                                    </Stack>
+                                )}
+                                <Grid container spacing={2}>
+                                    <Grid item xs={12} sm={6}>
+                                        <Typography variant="body2" color="text.secondary">Tọa độ:</Typography>
+                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{row.lat}, {row.lng}</Typography>
+                                    </Grid>
+                                </Grid>
+                                {isMobile && (
+                                    <Box sx={{ mt: 1, textAlign: 'right', display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                                        <Button size="small" color="primary" variant="contained" startIcon={<IconEdit size={16} />} onClick={() => handleOpenEdit(row)}>Chỉnh sửa</Button>
+                                        <Button size="small" color="error" variant="outlined" startIcon={<IconTrash size={16} />} onClick={() => handleDelete(row.id)}>Xóa</Button>
+                                    </Box>
+                                )}
+                            </Stack>
+                        </Box>
+                    </Collapse>
+                </TableCell>
+            </TableRow>
+        </React.Fragment>
+    );
+};
+
 const StationInundationList = () => {
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const [loading, setLoading] = useState(false);
     const [points, setPoints] = useState([]);
+    const [organizations, setOrganizations] = useState([]);
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingPoint, setEditingPoint] = useState(null);
 
+    const [searchFilter, setSearchFilter] = useState('');
+    const [orgFilter, setOrgFilter] = useState('');
+
     const loadPoints = async () => {
         setLoading(true);
         try {
-            const res = await stationApi.inundation.getAll();
+            const params = {};
+            if (orgFilter) params.org_id = orgFilter;
+            // The backend GetPointsStatus might not support 'query' yet, 
+            // but we can filter locally or update backend if needed.
+            // For now let's assume we might update backend or just filter here.
+
+            const res = await stationApi.inundation.getAll(params);
             if (res.data?.status === 'success') {
-                setPoints(Array.isArray(res.data.data) ? res.data.data : []);
+                let data = Array.isArray(res.data.data) ? res.data.data : [];
+                if (searchFilter) {
+                    const q = searchFilter.toLowerCase();
+                    data = data.filter(p =>
+                        p.name?.toLowerCase().includes(q) ||
+                        p.address?.toLowerCase().includes(q)
+                    );
+                }
+                setPoints(data);
             } else {
                 setPoints([]);
             }
@@ -37,7 +140,24 @@ const StationInundationList = () => {
         }
     };
 
-    useEffect(() => { loadPoints(); }, []);
+    const loadOrganizations = async () => {
+        try {
+            const res = await organizationApi.getAll({ page: 1, size: 1000 });
+            if (res.data?.status === 'success') {
+                setOrganizations(res.data.data.data || []);
+            }
+        } catch (err) {
+            console.error('Lỗi tải danh sách đơn vị:', err);
+        }
+    };
+
+    useEffect(() => {
+        loadPoints();
+    }, [orgFilter, searchFilter]);
+
+    useEffect(() => {
+        loadOrganizations();
+    }, []);
 
     const handleOpenCreate = () => { setEditingPoint(null); setDialogOpen(true); };
     const handleOpenEdit = (point) => { setEditingPoint(point); setDialogOpen(true); };
@@ -59,7 +179,8 @@ const StationInundationList = () => {
                 address: values.DiaChi,
                 lat: values.Lat,
                 lng: values.Lng,
-                active: values.Active
+                active: values.Active,
+                org_id: values.org_id
             };
             const res = editingPoint
                 ? await stationApi.inundation.update(editingPoint.id, payload)
@@ -85,45 +206,60 @@ const StationInundationList = () => {
                 </AnimateButton>
             }
         >
+            <Box sx={{ mb: 3 }}>
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
+                    <TextField
+                        placeholder="Tìm tên điểm, địa chỉ..."
+                        value={searchFilter}
+                        onChange={(e) => setSearchFilter(e.target.value)}
+                        size="small"
+                        sx={{ minWidth: 250 }}
+                    />
+                    <TextField
+                        select
+                        label="Đơn vị quản lý"
+                        value={orgFilter}
+                        onChange={(e) => setOrgFilter(e.target.value)}
+                        size="small"
+                        sx={{ minWidth: 200 }}
+                    >
+                        <MenuItem value="">Tất cả đơn vị</MenuItem>
+                        {organizations.map((org) => (
+                            <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>
+                        ))}
+                    </TextField>
+                </Stack>
+            </Box>
+
             <TableContainer component={Paper} sx={{ border: '1px solid', borderColor: 'divider', boxShadow: 'none', borderRadius: '12px' }}>
-                <Table>
+                <Table sx={{ minWidth: isMobile ? 300 : 800 }}>
                     <TableHead sx={{ bgcolor: 'grey.50' }}>
                         <TableRow>
+                            <TableCell sx={{ width: 40 }} />
                             <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Tên điểm</TableCell>
-                            <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Địa chỉ</TableCell>
-                            <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Tọa độ</TableCell>
-                            <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Trạng thái</TableCell>
-                            <TableCell align="right" sx={{ fontWeight: 800, fontSize: '1rem' }}>Thao tác</TableCell>
+                            {!isMobile && (
+                                <>
+                                    <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Đơn vị quản lý</TableCell>
+                                    <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Trạng thái</TableCell>
+                                    <TableCell align="right" sx={{ fontWeight: 800, fontSize: '1rem' }}>Thao tác</TableCell>
+                                </>
+                            )}
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {loading ? (
-                            <TableRow><TableCell colSpan={5} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
+                            <TableRow><TableCell colSpan={isMobile ? 2 : 5} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
                         ) : points.length === 0 ? (
-                            <TableRow><TableCell colSpan={5} align="center" sx={{ py: 3 }}>Không tìm thấy điểm ngập</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={isMobile ? 2 : 5} align="center" sx={{ py: 3 }}>Không tìm thấy điểm ngập</TableCell></TableRow>
                         ) : (
                             points.map((row) => (
-                                <TableRow key={row.id} hover>
-                                    <TableCell sx={{ fontWeight: 800, fontSize: '1.05rem', color: 'primary.dark' }}>{row.name}</TableCell>
-                                    <TableCell sx={{ fontSize: '0.95rem' }}>{row.address}</TableCell>
-                                    <TableCell sx={{ fontSize: '0.85rem' }}>{row.lat}, {row.lng}</TableCell>
-                                    <TableCell>
-                                        <Chip label={row.active ? 'Hoạt động' : 'Ngừng'}
-                                            color={row.active ? 'success' : 'default'} size="small" variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem', height: 24 }} />
-                                    </TableCell>
-                                    <TableCell align="right">
-                                        <Tooltip title="Chỉnh sửa">
-                                            <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>
-                                                <IconEdit size={20} />
-                                            </IconButton>
-                                        </Tooltip>
-                                        <Tooltip title="Xóa">
-                                            <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}>
-                                                <IconTrash size={20} />
-                                            </IconButton>
-                                        </Tooltip>
-                                    </TableCell>
-                                </TableRow>
+                                <CollapsibleStationRow
+                                    key={row.id}
+                                    row={row}
+                                    handleOpenEdit={handleOpenEdit}
+                                    handleDelete={handleDelete}
+                                    isMobile={isMobile}
+                                />
                             ))
                         )}
                     </TableBody>
@@ -134,6 +270,7 @@ const StationInundationList = () => {
                 open={dialogOpen} onClose={() => setDialogOpen(false)}
                 onSubmit={handleSubmit} station={editingPoint} isEdit={!!editingPoint}
                 type="inundation"
+                organizations={organizations}
             />
         </MainCard>
     );

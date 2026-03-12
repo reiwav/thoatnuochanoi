@@ -67,13 +67,9 @@ const ConstructionReporting = () => {
         if (!userOrgId) return;
         setHistoryLoading(true);
         try {
-            // Ideally we need a GET /api/admin/emergency-constructions/reports/all
-            // Since we don't have it, we might need a workaround or adapt an existing API.
-            // For now, let's assume we can fetch history for all constructions mapping over them.
-            // This is a temporary limitation. In a real app we'd add a dedicated endpoint.
             const allHistory = [];
             for (const c of constructions) {
-                const res = await emergencyConstructionApi.getProgressHistory(c.id);
+                const res = await emergencyConstructionApi.getSituationHistory(c.id);
                 if (res.data?.status === 'success' && res.data.data) {
                     allHistory.push(...res.data.data.map(h => ({ ...h, construction_name: c.name })));
                 }
@@ -101,12 +97,10 @@ const ConstructionReporting = () => {
 
     const getStatusChip = (status) => {
         const config = {
-            planned: { label: 'Dự kiến', color: 'default' },
-            ongoing: { label: 'Đang thi công', color: 'warning' },
-            completed: { label: 'Hoàn thành', color: 'success' },
-            suspended: { label: 'Tạm dừng', color: 'error' }
+            ongoing: { label: 'Đang thực hiện', color: 'warning' },
+            completed: { label: 'Hoàn thành', color: 'success' }
         };
-        const s = config[status] || config.planned;
+        const s = config[status] || config.ongoing;
         return <Chip label={s.label} color={s.color} size="small" variant="outlined" sx={{ fontWeight: 600 }} />;
     };
 
@@ -114,7 +108,7 @@ const ConstructionReporting = () => {
         let result = activeTab === 1 ? constructions.filter(c => c.status !== 'completed') : constructions;
         if (searchQuery.trim()) {
             const q = searchQuery.toLowerCase();
-            result = result.filter(c => c.name?.toLowerCase().includes(q) || c.location?.toLowerCase().includes(q));
+            result = result.filter(c => c.name?.toLowerCase().includes(q) || c.description?.toLowerCase().includes(q));
         }
         return result;
     }, [constructions, activeTab, searchQuery]);
@@ -196,29 +190,15 @@ const ConstructionReporting = () => {
                                     <CardContent sx={{ p: '16px !important' }}>
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                                             <Typography variant="subtitle2" fontWeight={800} color="primary">{h.construction_name}</Typography>
-                                            <Typography variant="h6" fontWeight={800} color="secondary.main">{h.progress_percentage}%</Typography>
+                                            <Typography variant="body2" fontWeight={800} color="secondary.main">{h.command}</Typography>
                                         </Box>
-                                        <Typography variant="caption" color="textSecondary" sx={{ mb: 1.5, display: 'block' }}>
-                                            {new Date(h.report_date * 1000).toLocaleString('vi-VN')}
+                                        <Typography variant="caption" color="textSecondary" sx={{ mb: 1, display: 'block' }}>
+                                            {new Date(h.report_date * 1000).toLocaleString('vi-VN')} - {h.location}
                                         </Typography>
-                                        <Typography variant="body2" sx={{ mb: 1.5, lineHeight: 1.5 }}>{h.work_done}</Typography>
+                                        <Typography variant="body2" sx={{ mb: 0.5 }}><b>Kết luận:</b> {h.conclusion}</Typography>
+                                        <Typography variant="body2" sx={{ mb: 0.5 }}><b>Ảnh hưởng:</b> {h.impact}</Typography>
+                                        <Typography variant="body2" sx={{ mb: 1.5 }}><b>Đề xuất:</b> {h.proposal}</Typography>
 
-                                        {h.tasks && h.tasks.length > 0 && (
-                                            <Box sx={{ mb: 1.5 }}>
-                                                {h.tasks.map((t, tidx) => (
-                                                    <Box key={tidx} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5, p: 1, bgcolor: 'primary.lighter', borderRadius: 1 }}>
-                                                        <Typography variant="caption" sx={{ fontWeight: 600, color: 'primary.dark' }}>• {t.name}</Typography>
-                                                        <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main' }}>{t.percentage}%</Typography>
-                                                    </Box>
-                                                ))}
-                                            </Box>
-                                        )}
-                                        {h.issues && (
-                                            <Box sx={{ p: 1, bgcolor: 'error.lighter', borderRadius: 1.5, mb: 1.5 }}>
-                                                <Typography variant="caption" color="error.dark" display="block" fontWeight={700}>Vướng mắc:</Typography>
-                                                <Typography variant="caption" color="error.dark">{h.issues}</Typography>
-                                            </Box>
-                                        )}
                                         <Divider sx={{ mb: 1.5 }} />
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                             <Box sx={{ width: 28, height: 28, borderRadius: '50%', bgcolor: 'grey.100', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -236,9 +216,9 @@ const ConstructionReporting = () => {
                                 <TableHead sx={{ bgcolor: 'grey.50' }}>
                                     <TableRow>
                                         <TableCell sx={{ fontWeight: 800, width: '15%', py: 1.5, color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.75rem' }}>Thời gian</TableCell>
-                                        <TableCell sx={{ fontWeight: 800, width: '25%', py: 1.5, color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.75rem' }}>Công trình</TableCell>
-                                        <TableCell sx={{ fontWeight: 800, width: '35%', py: 1.5, color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.75rem' }}>Nội dung & Tiến độ</TableCell>
-                                        <TableCell sx={{ fontWeight: 800, width: '10%', py: 1.5, color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.75rem' }}>Vướng mắc</TableCell>
+                                        <TableCell sx={{ fontWeight: 800, width: '20%', py: 1.5, color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.75rem' }}>Công trình</TableCell>
+                                        <TableCell sx={{ fontWeight: 800, width: '15%', py: 1.5, color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.75rem' }}>Lệnh/Vị trí</TableCell>
+                                        <TableCell sx={{ fontWeight: 800, width: '35%', py: 1.5, color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.75rem' }}>Kết luận/Ảnh hưởng/Đề xuất</TableCell>
                                         <TableCell sx={{ fontWeight: 800, width: '15%', py: 1.5, color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.75rem' }}>Người báo cáo</TableCell>
                                     </TableRow>
                                 </TableHead>
@@ -258,30 +238,13 @@ const ConstructionReporting = () => {
                                                 <Typography variant="subtitle2" fontWeight={800} color="primary.main">{h.construction_name}</Typography>
                                             </TableCell>
                                             <TableCell sx={{ verticalAlign: 'top', py: 2 }}>
-                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                                                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>{h.work_done || 'Cập nhật tiến độ'}</Typography>
-                                                    <Chip size="small" label={`${h.progress_percentage}%`} color={h.progress_percentage === 100 ? 'success' : 'primary'} sx={{ height: 22, fontSize: '0.75rem', fontWeight: 800, minWidth: 50 }} />
-                                                </Box>
-
-                                                {h.tasks && h.tasks.length > 0 && (
-                                                    <Box sx={{ mt: 1, pl: 1.5, borderLeft: '3px solid', borderColor: 'primary.light', bgcolor: 'grey.50', p: 1, borderRadius: '0 4px 4px 0' }}>
-                                                        {h.tasks.map((t, tidx) => (
-                                                            <Box key={tidx} sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                                                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>• {t.name}</Typography>
-                                                                <Typography variant="caption" fontWeight={800} color="primary.main">{t.percentage}%</Typography>
-                                                            </Box>
-                                                        ))}
-                                                    </Box>
-                                                )}
+                                                <Typography variant="body2" fontWeight={800}>{h.command}</Typography>
+                                                <Typography variant="caption" color="textSecondary" display="block">{h.location}</Typography>
                                             </TableCell>
                                             <TableCell sx={{ verticalAlign: 'top', py: 2 }}>
-                                                {h.issues ? (
-                                                    <Tooltip title={h.issues}>
-                                                        <Box sx={{ bgcolor: 'error.lighter', p: 1, borderRadius: 1 }}>
-                                                            <Typography variant="caption" color="error.dark" fontWeight={600} sx={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{h.issues}</Typography>
-                                                        </Box>
-                                                    </Tooltip>
-                                                ) : <Typography variant="caption" color="textSecondary" fontStyle="italic">Không có</Typography>}
+                                                <Typography variant="body2" sx={{ fontWeight: 600 }}>Kết luận: {h.conclusion}</Typography>
+                                                <Typography variant="body2">Ảnh hưởng: {h.impact}</Typography>
+                                                <Typography variant="body2" fontStyle="italic">Đề xuất: {h.proposal}</Typography>
                                             </TableCell>
                                             <TableCell sx={{ verticalAlign: 'top', py: 2 }}>
                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -290,7 +253,6 @@ const ConstructionReporting = () => {
                                                     </Avatar>
                                                     <Box>
                                                         <Typography variant="body2" fontWeight={700} sx={{ color: 'text.primary' }}>{h.reporter_name}</Typography>
-                                                        <Typography variant="caption" color="textSecondary" display="block">{h.reporter_email}</Typography>
                                                     </Box>
                                                 </Box>
                                             </TableCell>
@@ -359,8 +321,7 @@ const ConstructionReporting = () => {
                                             <Typography variant="subtitle1" fontWeight={800} sx={{ lineHeight: 1.3, pr: 1, fontSize: '1.2rem' }}>{row.name}</Typography>
                                             {getStatusChip(row.status)}
                                         </Box>
-                                        <Typography variant="body2" color="textSecondary" sx={{ mb: 1, fontSize: '1rem' }}>📍 {row.location}</Typography>
-                                        <Typography variant="body2" display="block" color="textSecondary" sx={{ mb: 2, fontSize: '0.95rem' }}>📅 Dự kiến: {new Date(row.end_date * 1000).toLocaleDateString('vi-VN')}</Typography>
+                                        <Typography variant="body2" color="textSecondary" sx={{ mb: 1, fontSize: '0.95rem' }}>{row.description}</Typography>
                                         <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 700, display: 'flex', alignItems: 'center', fontSize: '1rem' }}>Chạm để báo cáo / xem lịch sử <IconChevronRight size={16} /></Typography>
                                     </CardContent>
                                 </Card>
@@ -372,8 +333,7 @@ const ConstructionReporting = () => {
                                 <TableHead sx={{ bgcolor: 'grey.50' }}>
                                     <TableRow>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', py: 2 }}>Tên công trình</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', py: 2 }}>Vị trí</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', py: 2 }}>Thời gian dự kiến</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', py: 2 }}>Mô tả</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', py: 2 }}>Trạng thái</TableCell>
                                         <TableCell align="right" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', py: 2 }}>Thao tác</TableCell>
                                     </TableRow>
@@ -385,17 +345,12 @@ const ConstructionReporting = () => {
                                                 <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'primary.dark' }}>{row.name}</Typography>
                                             </TableCell>
                                             <TableCell>
-                                                <Typography variant="body2" color="textSecondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                    📍 {row.location}
-                                                </Typography>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Chip label={new Date(row.end_date * 1000).toLocaleDateString('vi-VN')} size="small" variant="outlined" sx={{ bgcolor: 'background.paper' }} />
+                                                <Typography variant="body2" color="textSecondary">{row.description}</Typography>
                                             </TableCell>
                                             <TableCell>{getStatusChip(row.status)}</TableCell>
                                             <TableCell align="right">
                                                 <Button size="small" variant="contained" color="secondary" endIcon={<IconChevronRight size={16} />} sx={{ borderRadius: '8px', boxShadow: 'none', fontWeight: 700, px: 2, bgcolor: 'secondary.light', color: 'secondary.dark', '&:hover': { bgcolor: 'secondary.main', color: '#fff' } }}>
-                                                    Chi tiết
+                                                    Báo cáo
                                                 </Button>
                                             </TableCell>
                                         </TableRow>

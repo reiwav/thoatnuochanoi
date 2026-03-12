@@ -40,22 +40,14 @@ const ConstructionDialog = ({ open, onClose, onSubmit, item, isEdit }) => {
                 setFormData({
                     name: item.name || '',
                     description: item.description || '',
-                    location: item.location || '',
-                    start_date: item.start_date || 0,
-                    end_date: item.end_date || 0,
-                    status: item.status || 'planned',
-                    cost: item.cost || 0,
+                    status: item.status || 'ongoing',
                     org_id: item.org_id || ''
                 });
             } else {
                 setFormData({
                     name: '',
                     description: '',
-                    location: '',
-                    start_date: Math.floor(Date.now() / 1000),
-                    end_date: Math.floor(Date.now() / 1000) + 86400 * 30, // Default 30 days
-                    status: 'planned',
-                    cost: 0,
+                    status: 'ongoing',
                     org_id: ''
                 });
             }
@@ -103,56 +95,7 @@ const ConstructionDialog = ({ open, onClose, onSubmit, item, isEdit }) => {
                         sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
                     />
                     <TextField
-                        fullWidth label="Vị trí" size="small"
-                        value={formData.location}
-                        onChange={(e) => handleChange('location', e.target.value)}
-                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
-                    />
-                    <Grid container spacing={2}>
-                        <Grid item xs={6}>
-                            <TextField
-                                fullWidth label="Ngày khởi công" type="date" size="small"
-                                InputLabelProps={{ shrink: true }}
-                                value={toDateString(formData.start_date)}
-                                onChange={(e) => handleChange('start_date', fromDateString(e.target.value))}
-                                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
-                            />
-                        </Grid>
-                        <Grid item xs={6}>
-                            <TextField
-                                fullWidth label="Ngày hoàn thành dự kiến" type="date" size="small"
-                                InputLabelProps={{ shrink: true }}
-                                value={toDateString(formData.end_date)}
-                                onChange={(e) => handleChange('end_date', fromDateString(e.target.value))}
-                                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
-                            />
-                        </Grid>
-                    </Grid>
-                    <Grid container spacing={2}>
-                        <Grid item xs={6}>
-                            <TextField
-                                fullWidth select label="Trạng thái" size="small"
-                                value={formData.status}
-                                onChange={(e) => handleChange('status', e.target.value)}
-                                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
-                            >
-                                <MenuItem value="planned">Dự kiến</MenuItem>
-                                <MenuItem value="ongoing">Đang thi công</MenuItem>
-                                <MenuItem value="completed">Hoàn thành</MenuItem>
-                                <MenuItem value="suspended">Tạm dừng</MenuItem>
-                            </TextField>
-                        </Grid>
-                        <Grid item xs={6}>
-                            <TextField
-                                fullWidth label="Kinh phí (VNĐ)" type="number" size="small"
-                                value={formData.cost}
-                                onChange={(e) => handleChange('cost', parseInt(e.target.value) || 0)}
-                                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
-                            />
-                        </Grid>
-                    </Grid>
-                    <TextField
-                        fullWidth select label="Đơn vị quản lý" required size="small"
+                        fullWidth select label="Công ty quản lý" required size="small"
                         value={formData.org_id}
                         onChange={(e) => handleChange('org_id', e.target.value)}
                         sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
@@ -162,7 +105,16 @@ const ConstructionDialog = ({ open, onClose, onSubmit, item, isEdit }) => {
                         ))}
                     </TextField>
                     <TextField
-                        fullWidth label="Mô tả" size="small" multiline rows={3}
+                        fullWidth select label="Trạng thái" size="small"
+                        value={formData.status}
+                        onChange={(e) => handleChange('status', e.target.value)}
+                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
+                    >
+                        <MenuItem value="ongoing">Đang thực hiện</MenuItem>
+                        <MenuItem value="completed">Hoàn thành</MenuItem>
+                    </TextField>
+                    <TextField
+                        fullWidth label="Mô tả" size="small" multiline rows={4}
                         value={formData.description}
                         onChange={(e) => handleChange('description', e.target.value)}
                         sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}

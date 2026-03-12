@@ -51,7 +51,7 @@ func main() {
 	aiUsageRepo := query.NewAiUsageRepo(db.DB, "ai_usage_records", "aiu", log)
 	emConstructionRepo := query.NewEmergencyConstructionRepository(db.DB, "emergency_constructions", "emc", log)
 	emConstructionHistoryRepo := query.NewEmergencyConstructionHistoryRepository(db.DB, "emergency_construction_histories", "emch", log)
-	emConstructionProgressRepo := query.NewEmergencyConstructionProgressRepository(db.DB, "emergency_construction_progress", "emcp", log)
+	emConstructionSituationRepo := query.NewEmergencyConstructionSituationRepository(db.DB, "emergency_construction_situations", "emcs", log)
 
 	rainStationRepo := query.NewRainStationRepo(db.DB, "rain_stations", "rst", log)
 	lakeStationRepo := query.NewLakeStationRepo(db.DB, "lake_stations", "lst", log)
@@ -98,7 +98,7 @@ func main() {
 	if googleApiService != nil {
 		googleApiService.SetEmailService(emailService)
 	}
-	emConstructionService := emergency_construction.NewService(emConstructionRepo, emConstructionHistoryRepo, emConstructionProgressRepo, userRepo, orgRepo)
+	emConstructionService := emergency_construction.NewService(emConstructionRepo, emConstructionHistoryRepo, emConstructionSituationRepo, userRepo, orgRepo)
 	queryService := querysvc.NewService(db.DB)
 	queryHandler := handler.NewQueryHandler(queryService)
 	stationDataService := stationdata.NewService(stationService, waterService)

@@ -22,11 +22,11 @@ const emergencyConstructionApi = {
     getGlobalHistory: (params) => {
         return axiosClient.get('/admin/emergency-constructions/history', { params });
     },
-    createProgress: (data) => {
-        return axiosClient.post('/admin/emergency-constructions/progress', data);
+    createSituation: (data) => {
+        return axiosClient.post('/admin/emergency-constructions/situation', data);
     },
-    getProgressHistory: (id) => {
-        return axiosClient.get(`/admin/emergency-constructions/${id}/progress`);
+    getSituationHistory: (id) => {
+        return axiosClient.get(`/admin/emergency-constructions/${id}/situation`);
     }
 };
 

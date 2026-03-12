@@ -40,11 +40,11 @@ const ConstructionForm = () => {
     const [history, setHistory] = useState([]);
 
     // Form states
-    const [workDone, setWorkDone] = useState('');
-    const [tasks, setTasks] = useState([]);
-    const [progress, setProgress] = useState(0);
-    const [issues, setIssues] = useState('');
-    const [expectedDate, setExpectedDate] = useState(null);
+    const [command, setCommand] = useState('Lệnh 1');
+    const [location, setLocation] = useState('');
+    const [conclusion, setConclusion] = useState('');
+    const [impact, setImpact] = useState('');
+    const [proposal, setProposal] = useState('');
 
     const userRole = localStorage.getItem('role') || 'employee';
     const basePath = userRole === 'employee' ? '/company' : '/admin';
@@ -62,7 +62,7 @@ const ConstructionForm = () => {
     const loadHistory = async () => {
         setLoading(true);
         try {
-            const res = await emergencyConstructionApi.getProgressHistory(constructionId);
+            const res = await emergencyConstructionApi.getSituationHistory(constructionId);
             if (res.data?.status === 'success') {
                 const data = res.data.data || [];
                 // Sort descending by date
@@ -81,34 +81,29 @@ const ConstructionForm = () => {
     };
 
     const handleSubmit = async () => {
-        if (!workDone.trim() && tasks.length === 0) { toast.error('Vui lòng nhập nội dung công việc hoặc thêm đầu việc'); return; }
-        if (tasks.some(t => !t.name.trim())) { toast.error('Vui lòng nhập tên cho tất cả đầu việc con'); return; }
-        if (progress > 0 && !expectedDate) {
-            toast.error('Vui lòng chọn ngày dự kiến hoàn thành'); return;
-        }
+        if (!location.trim()) { toast.error('Vui lòng nhập vị trí'); return; }
 
         setLoading(true);
         try {
             const payload = {
                 construction_id: constructionId,
-                work_done: workDone,
-                tasks: tasks.map(t => ({ name: t.name, percentage: parseInt(t.percentage) || 0 })),
-                progress_percentage: progress,
-                issues: issues,
-                is_completed: false, // Legacy field, keeping false
-                expected_completion_date: expectedDate ? expectedDate.unix() : 0
+                command: command,
+                location: location,
+                conclusion: conclusion,
+                impact: impact,
+                proposal: proposal
             };
 
-            const res = await emergencyConstructionApi.createProgress(payload);
+            const res = await emergencyConstructionApi.createSituation(payload);
             if (res.data) {
-                toast.success('Báo cáo tiến độ thành công');
+                toast.success('Báo cáo tình hình thành công');
                 // Reset form
-                setWorkDone('');
-                setTasks([]);
-                setProgress(0);
-                setIssues('');
-                setExpectedDate(null);
-                // Switch to history tab to view the new report
+                setCommand('Lệnh 1');
+                setLocation('');
+                setConclusion('');
+                setImpact('');
+                setProposal('');
+                // Switch to history tab
                 setTabValue(1);
             }
         } catch (err) {
@@ -120,92 +115,58 @@ const ConstructionForm = () => {
 
     const renderForm = () => (
         <Box sx={{ p: { xs: 2, md: 3 } }}>
-            <Typography variant="h6" sx={{ mb: 1.5, fontWeight: 700 }}>Mô tả chung công việc trong ngày <span style={{ color: 'red' }}>*</span></Typography>
-            <TextField
-                fullWidth multiline rows={3} placeholder="Mô tả chi tiết công việc..."
-                value={workDone} onChange={(e) => setWorkDone(e.target.value)}
-                sx={{
-                    mb: 3,
-                    '& .MuiInputBase-input': { fontSize: '1.05rem', lineHeight: 1.5 },
-                    '& .MuiOutlinedInput-root': { borderRadius: 2 }
-                }}
-            />
+            <Stack spacing={3}>
+                <TextField
+                    fullWidth select label="Lệnh điều hành" required size="small"
+                    value={command} onChange={(e) => setCommand(e.target.value)}
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                    SelectProps={{ native: true }}
+                >
+                    {Array.from({ length: 100 }, (_, i) => `Lệnh ${i + 1}`).map(l => (
+                        <option key={l} value={l}>{l}</option>
+                    ))}
+                </TextField>
 
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6" sx={{ fontWeight: 700 }}>Các đầu việc chi tiết</Typography>
-                <Button size="medium" variant="outlined" startIcon={<IconPlus size={18} />} onClick={() => setTasks([...tasks, { name: '', percentage: 0 }])} sx={{ borderRadius: 2, fontWeight: 700 }}>
-                    Thêm đầu việc
+                <TextField
+                    fullWidth label="Vị trí" placeholder="Nhập vị trí báo cáo..." required size="small"
+                    value={location} onChange={(e) => setLocation(e.target.value)}
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                />
+
+                <TextField
+                    fullWidth label="Kết luận" placeholder="Nhập kết luận..." multiline rows={2} size="small"
+                    value={conclusion} onChange={(e) => setConclusion(e.target.value)}
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                />
+
+                <TextField
+                    fullWidth label="Ảnh hưởng" placeholder="Nhập ảnh hưởng..." multiline rows={2} size="small"
+                    value={impact} onChange={(e) => setImpact(e.target.value)}
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                />
+
+                <TextField
+                    fullWidth label="Đề xuất" placeholder="Nhập đề xuất..." multiline rows={2} size="small"
+                    value={proposal} onChange={(e) => setProposal(e.target.value)}
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                />
+
+                <Box>
+                    <Typography variant="body2" sx={{ mb: 1, fontWeight: 700 }}>Hình ảnh / Chụp ảnh</Typography>
+                    <Button variant="outlined" component="label" fullWidth sx={{ py: 2, borderStyle: 'dashed', borderRadius: 2 }}>
+                        Chọn ảnh từ thư viện hoặc Chụp ảnh
+                        <input type="file" hidden multiple accept="image/*" />
+                    </Button>
+                </Box>
+
+                <Button
+                    fullWidth variant="contained" color="primary" size="large" onClick={handleSubmit} disabled={loading}
+                    startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <IconSend size={20} />}
+                    sx={{ borderRadius: 2, fontWeight: 700, py: 1.5, mt: 2 }}
+                >
+                    Gửi Báo Cáo
                 </Button>
-            </Box>
-
-            {tasks.map((task, index) => (
-                <Card key={index} variant="outlined" sx={{ mb: 2, p: 2, borderRadius: 2, bgcolor: 'grey.50' }}>
-                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
-                        <TextField
-                            fullWidth placeholder={`Tên đầu việc ${index + 1}...`}
-                            value={task.name} onChange={(e) => { const newTasks = [...tasks]; newTasks[index].name = e.target.value; setTasks(newTasks); }}
-                            sx={{ '& .MuiInputBase-input': { fontSize: '1rem', fontWeight: 600 } }}
-                        />
-                        <IconButton color="error" size="medium" onClick={() => { const newTasks = [...tasks]; newTasks.splice(index, 1); setTasks(newTasks); }}>
-                            <IconTrash size={22} />
-                        </IconButton>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <Typography variant="body1" sx={{ fontWeight: 700 }}>Tiến độ ({task.percentage}%)</Typography>
-                        <Box sx={{ width: '60%' }}>
-                            <Slider
-                                value={task.percentage} onChange={(e, val) => { const newTasks = [...tasks]; newTasks[index].percentage = val; setTasks(newTasks); }}
-                                step={10} marks min={0} max={100} valueLabelDisplay="auto" size="small"
-                            />
-                        </Box>
-                    </Box>
-                </Card>
-            ))}
-
-            <Divider sx={{ mb: 3, mt: tasks.length > 0 ? 1 : 0 }} />
-
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Tiến độ tổng của toàn dự án (%)</Typography>
-                <Typography variant="h6" color="primary" fontWeight={800}>{progress}%</Typography>
-            </Box>
-            <Slider
-                value={progress} onChange={(e, val) => setProgress(val)}
-                valueLabelDisplay="auto" step={5} marks min={0} max={100}
-                sx={{ mb: 3 }}
-            />
-
-            <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>Vướng mắc, khó khăn (nếu có)</Typography>
-            <TextField
-                fullWidth multiline rows={2} placeholder="Nhập khó khăn..."
-                value={issues} onChange={(e) => setIssues(e.target.value)}
-                sx={{
-                    mb: 4,
-                    '& .MuiInputBase-input': { fontSize: '1rem' }
-                }}
-            />
-
-            <Box sx={{ mb: 4 }}>
-                <Typography variant="h6" sx={{ mb: 1.5, fontWeight: 700 }}>Ngày dự kiến hoàn thành <span style={{ color: 'red' }}>*</span></Typography>
-                <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
-                    <DatePicker
-                        value={expectedDate} onChange={(newDate) => setExpectedDate(newDate)}
-                        format="DD/MM/YYYY" slotProps={{
-                            textField: {
-                                fullWidth: true,
-                                sx: { '& .MuiInputBase-input': { fontSize: '1.1rem', fontWeight: 600 } }
-                            }
-                        }}
-                    />
-                </LocalizationProvider>
-            </Box>
-
-            <Button
-                fullWidth variant="contained" color="primary" size="large" onClick={handleSubmit} disabled={loading}
-                startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <IconSend size={20} />}
-                sx={{ borderRadius: 2, fontWeight: 700, py: 1.5 }}
-            >
-                Gửi Báo Cáo
-            </Button>
+            </Stack>
         </Box>
     );
 
@@ -222,27 +183,13 @@ const ConstructionForm = () => {
                             <CardContent sx={{ p: '16px !important' }}>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5 }}>
                                     <Typography variant="body1" fontWeight={700} color="primary">{new Date(h.report_date * 1000).toLocaleString('vi-VN')}</Typography>
-                                    <Typography variant="h4" fontWeight={900} color="secondary.main">{h.progress_percentage}%</Typography>
+                                    <Typography variant="subtitle1" fontWeight={900} color="secondary.main">{h.command}</Typography>
                                 </Box>
-                                {h.work_done && <Typography variant="body1" sx={{ mb: 2, lineHeight: 1.6, fontWeight: 500 }}>{h.work_done}</Typography>}
+                                <Typography variant="body2" sx={{ mb: 1, fontWeight: 700 }}>📍 {h.location}</Typography>
+                                <Typography variant="body2" sx={{ mb: 0.5 }}><b>Kết luận:</b> {h.conclusion}</Typography>
+                                <Typography variant="body2" sx={{ mb: 0.5 }}><b>Ảnh hưởng:</b> {h.impact}</Typography>
+                                <Typography variant="body2" sx={{ mb: 2, fontStyle: 'italic' }}><b>Đề xuất:</b> {h.proposal}</Typography>
 
-                                {h.tasks && h.tasks.length > 0 && (
-                                    <Box sx={{ mb: 2 }}>
-                                        {h.tasks.map((t, tidx) => (
-                                            <Box key={tidx} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1, p: 1.5, bgcolor: 'primary.lighter', borderRadius: 2 }}>
-                                                <Typography variant="body1" sx={{ fontWeight: 700, color: 'primary.dark' }}>• {t.name}</Typography>
-                                                <Typography variant="h6" sx={{ fontWeight: 900, color: 'primary.main' }}>{t.percentage}%</Typography>
-                                            </Box>
-                                        ))}
-                                    </Box>
-                                )}
-
-                                {h.issues && (
-                                    <Box sx={{ p: 1, bgcolor: 'error.lighter', borderRadius: 1.5, mb: 1.5 }}>
-                                        <Typography variant="body2" color="error.dark" display="block" fontWeight={700}>Vướng mắc:</Typography>
-                                        <Typography variant="body2" color="error.dark">{h.issues}</Typography>
-                                    </Box>
-                                )}
                                 <Divider sx={{ mb: 1.5 }} />
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                     <Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: 'grey.100', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -250,7 +197,6 @@ const ConstructionForm = () => {
                                     </Box>
                                     <Box>
                                         <Typography variant="body2" display="block" fontWeight={700}>{h.reporter_name}</Typography>
-                                        <Typography variant="body2" color="textSecondary">{h.reporter_email}</Typography>
                                     </Box>
                                 </Box>
                             </CardContent>

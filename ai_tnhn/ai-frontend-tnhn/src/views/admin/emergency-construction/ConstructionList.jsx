@@ -129,29 +129,24 @@ const ConstructionList = () => {
                     <TableHead sx={{ bgcolor: 'grey.50' }}>
                         <TableRow>
                             <TableCell sx={{ fontWeight: 700 }}>Tên công trình</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }}>Vị trí</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }}>Thời gian</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }}>Đơn vị quản lý</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }}>Mô tả</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }}>Công ty</TableCell>
                             <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>
                             <TableCell align="right" sx={{ fontWeight: 700 }}>Thao tác</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {loading ? (
-                            <TableRow><TableCell colSpan={6} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
+                            <TableRow><TableCell colSpan={5} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
                         ) : items.length === 0 ? (
-                            <TableRow><TableCell colSpan={6} align="center" sx={{ py: 3 }}>Không tìm thấy công trình</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={5} align="center" sx={{ py: 3 }}>Không tìm thấy công trình</TableCell></TableRow>
                         ) : (
                             items.map((row) => (
                                 <TableRow key={row.id} hover>
                                     <TableCell sx={{ fontWeight: 600 }}>{row.name}</TableCell>
-                                    <TableCell>{row.location}</TableCell>
-                                    <TableCell>
-                                        <Typography variant="body2">{new Date(row.start_date * 1000).toLocaleDateString('vi-VN')}</Typography>
-                                        <Typography variant="caption" color="textSecondary">Đến: {new Date(row.end_date * 1000).toLocaleDateString('vi-VN')}</Typography>
-                                    </TableCell>
+                                    <TableCell>{row.description}</TableCell>
                                     <TableCell>{orgs[row.org_id] || row.org_id}</TableCell>
-                                    <TableCell>{getStatusChip(row.status)}</TableCell>
+                                    <TableCell>{row.status === 'completed' ? <Chip label="Hoàn thành" color="success" size="small" /> : <Chip label="Đang thực hiện" color="warning" size="small" />}</TableCell>
                                     <TableCell align="right">
                                         <Tooltip title="Chỉnh sửa">
                                             <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>

@@ -99,8 +99,8 @@ func (h *EmergencyConstructionHandler) GetHistory(c *gin.Context) {
 	h.SendData(c, history)
 }
 
-func (h *EmergencyConstructionHandler) ReportProgress(c *gin.Context) {
-	var item models.EmergencyConstructionProgress
+func (h *EmergencyConstructionHandler) ReportSituation(c *gin.Context) {
+	var item models.EmergencyConstructionSituation
 	if err := c.ShouldBindJSON(&item); err != nil {
 		web.AssertNil(web.BadRequest(err.Error()))
 		return
@@ -109,14 +109,14 @@ func (h *EmergencyConstructionHandler) ReportProgress(c *gin.Context) {
 	userID := h.GetTokenFromContext(c).UserID
 	item.ReportedBy = userID
 
-	err := h.service.ReportProgress(c.Request.Context(), &item)
+	err := h.service.ReportSituation(c.Request.Context(), &item)
 	web.AssertNil(err)
 	h.SendData(c, item)
 }
 
-func (h *EmergencyConstructionHandler) GetProgressHistory(c *gin.Context) {
+func (h *EmergencyConstructionHandler) GetSituationHistory(c *gin.Context) {
 	id := c.Param("id")
-	history, err := h.service.GetProgressHistory(c.Request.Context(), id)
+	history, err := h.service.GetSituationHistory(c.Request.Context(), id)
 	web.AssertNil(err)
 	h.SendData(c, history)
 }

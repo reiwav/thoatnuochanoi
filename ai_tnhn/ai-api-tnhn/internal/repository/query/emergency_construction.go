@@ -72,28 +72,28 @@ func (r *emConstructionHistoryRepo) ListByConstructionID(ctx context.Context, co
 	return items, err
 }
 
-type emConstructionProgressRepo struct {
+type emConstructionSituationRepo struct {
 	*db.Table
 }
 
-func NewEmergencyConstructionProgressRepository(dbase *mongo.Database, collectionName string, prefix string, l logger.Logger) repository.EmergencyConstructionProgress {
-	return &emConstructionProgressRepo{
+func NewEmergencyConstructionSituationRepository(dbase *mongo.Database, collectionName string, prefix string, l logger.Logger) repository.EmergencyConstructionSituation {
+	return &emConstructionSituationRepo{
 		Table: db.NewTable(collectionName, prefix, dbase, l),
 	}
 }
 
-func (r *emConstructionProgressRepo) Create(ctx context.Context, item *models.EmergencyConstructionProgress) error {
+func (r *emConstructionSituationRepo) Create(ctx context.Context, item *models.EmergencyConstructionSituation) error {
 	return r.R_Create(ctx, item)
 }
 
-func (r *emConstructionProgressRepo) List(ctx context.Context, filter filter.Filter) ([]*models.EmergencyConstructionProgress, int64, error) {
-	var items []*models.EmergencyConstructionProgress
+func (r *emConstructionSituationRepo) List(ctx context.Context, filter filter.Filter) ([]*models.EmergencyConstructionSituation, int64, error) {
+	var items []*models.EmergencyConstructionSituation
 	total, err := r.R_SearchAndCount(ctx, filter, &items)
 	return items, total, err
 }
 
-func (r *emConstructionProgressRepo) ListByConstructionID(ctx context.Context, constructionID string) ([]*models.EmergencyConstructionProgress, error) {
-	var items []*models.EmergencyConstructionProgress
+func (r *emConstructionSituationRepo) ListByConstructionID(ctx context.Context, constructionID string) ([]*models.EmergencyConstructionSituation, error) {
+	var items []*models.EmergencyConstructionSituation
 	f := bson.M{"construction_id": constructionID}
 	err := r.R_SelectMany(ctx, f, &items)
 	return items, err

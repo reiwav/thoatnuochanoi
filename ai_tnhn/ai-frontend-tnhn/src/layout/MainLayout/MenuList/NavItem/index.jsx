@@ -54,7 +54,7 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
   }, []);
 
   const Icon = item?.icon;
-  const menuIconSize = downMD ? '32px' : (drawerOpen ? '20px' : '24px');
+  const menuIconSize = downMD ? '20px' : (drawerOpen ? '20px' : '24px');
   const itemIcon = item?.icon ? (
     <Icon stroke={1.5} size={menuIconSize} style={{ ...(isParents && { fontSize: 20, stroke: '1.5' }) }} />
   ) : (
@@ -131,7 +131,7 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
                 <Typography
                   ref={ref}
                   noWrap
-                  variant={downMD ? 'h3' : (isSelected ? 'h5' : 'body1')}
+                  variant={downMD ? (level === 1 ? 'h5' : 'body1') : (isSelected ? 'h5' : 'body1')}
                   sx={{
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',

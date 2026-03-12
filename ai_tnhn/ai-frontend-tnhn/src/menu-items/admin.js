@@ -92,7 +92,7 @@ const adminPages = {
         },
         {
           id: 'inundation-list',
-          title: '## Quản lý báo cáo',
+          title: 'Quản lý báo cáo',
           type: 'item',
           url: '/admin/inundation-list',
           icon: icons.IconList,

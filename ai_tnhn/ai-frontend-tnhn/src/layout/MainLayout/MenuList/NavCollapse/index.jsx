@@ -116,7 +116,7 @@ export default function NavCollapse({ menu, level, parentId }) {
   const isSelected = selected === menu.id;
 
   const Icon = menu.icon;
-  const menuIconSize = downMD ? '28px' : (drawerOpen ? '20px' : '24px');
+  const menuIconSize = downMD ? '20px' : (drawerOpen ? '20px' : '24px');
   const menuIcon = menu.icon ? (
     <Icon strokeWidth={1.5} size={menuIconSize} />
   ) : (
@@ -186,7 +186,7 @@ export default function NavCollapse({ menu, level, parentId }) {
                 <Typography
                   ref={ref}
                   noWrap
-                  variant={isSelected || anchorEl ? 'h5' : (downMD ? 'h4' : 'body1')}
+                  variant={isSelected || anchorEl ? 'h5' : 'body1'}
                   sx={{
                     color: 'inherit',
                     overflow: 'hidden',

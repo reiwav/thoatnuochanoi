@@ -604,7 +604,7 @@ const InundationDashboard = () => {
                     <MenuItem value="Không đi lại được">Không đi lại được</MenuItem>
                 </TextField>
             </Stack>
-            <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+            <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, '& .MuiTableCell-root': { fontSize: { xs: '1rem' } } }}>
                 <Table sx={{ minWidth: isMobile ? 300 : 800 }}>
                     <TableHead sx={{ bgcolor: 'grey.50' }}>
                         <TableRow>
@@ -823,7 +823,7 @@ const InundationDashboard = () => {
                                 </Stack>
                             )}
                         </Box>
-                        <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+                        <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, '& .MuiTableCell-root': { fontSize: { xs: '1rem' } } }}>
                             <Table sx={{ minWidth: isMobile ? 300 : 800 }}>
                                 <TableHead sx={{ bgcolor: 'grey.50' }}>
                                     <TableRow>
@@ -1006,7 +1006,7 @@ const InundationDashboard = () => {
                 sx={{ mb: 2.5, bgcolor: 'background.paper', '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
                 InputProps={{ startAdornment: <IconSearch size={18} sx={{ color: 'text.disabled', mr: 1 }} /> }}
             />
-            <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+            <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, '& .MuiTableCell-root': { fontSize: { xs: '1rem' } } }}>
                 <Table sx={{ minWidth: isMobile ? 300 : 800 }}>
                     <TableHead sx={{ bgcolor: 'grey.50' }}>
                         <TableRow>

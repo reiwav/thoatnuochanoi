@@ -4,18 +4,187 @@ import {
     Box, Typography, Table, TableBody, TableCell, TableContainer,
     TableHead, TableRow, Paper, Chip, Stack, TextField, MenuItem,
     CircularProgress, Button, InputAdornment, TablePagination, Skeleton,
-    Dialog, DialogContent, IconButton
+    Dialog, DialogContent, IconButton, Collapse, useTheme, useMediaQuery, Grid
 } from '@mui/material';
 import MainCard from 'ui-component/cards/MainCard';
-import { IconSearch, IconClock, IconAlertTriangle, IconX, IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
+import { IconSearch, IconClock, IconAlertTriangle, IconX, IconChevronLeft, IconChevronRight, IconChevronUp, IconChevronDown } from '@tabler/icons-react';
 import inundationApi from 'api/inundation';
+import organizationApi from 'api/organization';
 import { getInundationImageUrl } from 'utils/imageHelper';
 import { getTrafficStatusColor, getTrafficStatusLabel } from 'utils/trafficStatusHelper';
 import { toast } from 'react-hot-toast';
 
+const CollapsiblePointRow = ({ point, organizations, formatTime, handleOpenViewer, navigate, isMobile }) => {
+    const [open, setOpen] = useState(false);
+    return (
+        <React.Fragment>
+            <TableRow hover sx={{ '& > *': { borderBottom: 'unset' } }}>
+                <TableCell sx={{ width: 40, p: { xs: 1, md: 2 } }}>
+                    <IconButton aria-label="expand row" size="small" onClick={() => setOpen(!open)}>
+                        {open ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />}
+                    </IconButton>
+                </TableCell>
+                <TableCell sx={{ p: { xs: 1, md: 2 } }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{point.name}</Typography>
+                    {isMobile && (
+                        <Typography variant="body2" color="primary" sx={{ mt: 0.5 }}>
+                            {point.org_name || organizations.find(o => o.id === point.org_id)?.name || ''}
+                        </Typography>
+                    )}
+                </TableCell>
+                {!isMobile && (
+                    <>
+                        <TableCell><Typography variant="body2" color="primary">{point.org_name || organizations.find(o => o.id === point.org_id)?.name || ''}</Typography></TableCell>
+                        <TableCell><Chip label={point.status === 'active' ? 'Đang ngập' : 'Bình thường'} color={point.status === 'active' ? 'error' : 'success'} size="small" sx={{ fontWeight: 700 }} /></TableCell>
+                        <TableCell>{(point.active_report?.traffic_status || point.active_report?.trafficStatus) && <Chip label={getTrafficStatusLabel(point.active_report.traffic_status || point.active_report.trafficStatus)} size="small" color={getTrafficStatusColor(point.active_report.traffic_status || point.active_report.trafficStatus)} variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem' }} />}</TableCell>
+                    </>
+                )}
+                {!isMobile && (
+                    <TableCell align="right" sx={{ p: { xs: 1, md: 2 } }}>
+                        <Button size="small" variant="text" onClick={() => navigate(`/admin/inundation/form?id=${point.active_report?.id || point.last_report_id}&tab=1&readonly=true`)}>Xem chi tiết</Button>
+                    </TableCell>
+                )}
+            </TableRow>
+            <TableRow>
+                <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={isMobile ? 3 : 6}>
+                    <Collapse in={open} timeout="auto" unmountOnExit>
+                        <Box sx={{ m: { xs: 1, md: 2 }, p: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                            <Typography variant="h6" gutterBottom component="div" sx={{ fontWeight: 700, color: 'primary.main', mb: 2 }}>
+                                {point.address}
+                            </Typography>
+                            <Stack spacing={1.5}>
+                                {isMobile && (
+                                    <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
+                                        <Chip label={point.status === 'active' ? 'Đang ngập' : 'Bình thường'} color={point.status === 'active' ? 'error' : 'success'} size="small" sx={{ fontWeight: 700 }} />
+                                        {(point.active_report?.traffic_status || point.active_report?.trafficStatus) && (
+                                            <Chip label={getTrafficStatusLabel(point.active_report.traffic_status || point.active_report.trafficStatus)} size="small" color={getTrafficStatusColor(point.active_report.traffic_status || point.active_report.trafficStatus)} variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem' }} />
+                                        )}
+                                    </Stack>
+                                )}
+                                <Grid container spacing={2}>
+                                    <Grid item xs={12} sm={6}>
+                                        <Typography variant="body2" color="text.secondary">Kích thước ngập:</Typography>
+                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{point.status === 'active' ? `${point.active_report?.length || 0}m x ${point.active_report?.width || 0}m x ${point.active_report?.depth || 0}m` : '-'}</Typography>
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <Typography variant="body2" color="text.secondary">Thời gian bắt đầu:</Typography>
+                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{point.status === 'active' ? formatTime(point.active_report?.start_time) : '-'}</Typography>
+                                    </Grid>
+                                </Grid>
+                                <Box>
+                                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>Ảnh liên quan:</Typography>
+                                    {point.status === 'active' && point.active_report?.images?.length > 0 ? (
+                                        <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', pb: 1 }}>
+                                            {point.active_report.images.map((img, idx) => (
+                                                <Box key={idx} component="img" src={getInundationImageUrl(img)} onClick={(e) => { e.stopPropagation(); handleOpenViewer(point.active_report.images, idx); }} sx={{ width: 56, height: 56, borderRadius: 1.5, objectFit: 'cover', cursor: 'pointer', border: '1px solid', borderColor: 'divider', flexShrink: 0 }} />
+                                            ))}
+                                        </Stack>
+                                    ) : <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.disabled' }}>Không có ảnh</Typography>}
+                                </Box>
+                                {isMobile && (
+                                    <Box sx={{ mt: 1, textAlign: 'right' }}>
+                                        <Button size="small" variant="contained" color="primary" onClick={() => navigate(`/admin/inundation/form?id=${point.active_report?.id || point.last_report_id}&tab=1&readonly=true`)}>Xem chi tiết</Button>
+                                    </Box>
+                                )}
+                            </Stack>
+                        </Box>
+                    </Collapse>
+                </TableCell>
+            </TableRow>
+        </React.Fragment>
+    );
+};
+
+const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenViewer, navigate, isMobile }) => {
+    const [open, setOpen] = useState(false);
+    return (
+        <React.Fragment>
+            <TableRow hover sx={{ '& > *': { borderBottom: 'unset' } }}>
+                <TableCell sx={{ width: 40, p: { xs: 1, md: 2 } }}>
+                    <IconButton aria-label="expand row" size="small" onClick={() => setOpen(!open)}>
+                        {open ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />}
+                    </IconButton>
+                </TableCell>
+                <TableCell sx={{ p: { xs: 1, md: 2 } }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{report.street_name}</Typography>
+                    {isMobile && (
+                        <Typography variant="body2" color="primary" sx={{ mt: 0.5 }}>
+                            {organizations.find(o => o.id === report.org_id)?.name || report.org_id}
+                        </Typography>
+                    )}
+                </TableCell>
+                {!isMobile && (
+                    <>
+                        <TableCell><Typography variant="body2" color="primary">{organizations.find(o => o.id === report.org_id)?.name || report.org_id}</Typography></TableCell>
+                        <TableCell><Typography variant="body2">{formatTime(report.start_time)}</Typography></TableCell>
+                        <TableCell><Chip label={report.status === 'active' ? 'Đang ngập' : 'Đã kết thúc'} color={report.status === 'active' ? 'error' : 'success'} size="small" sx={{ fontWeight: 700 }} /></TableCell>
+                    </>
+                )}
+                {!isMobile && (
+                    <TableCell align="right" sx={{ p: { xs: 1, md: 2 } }}>
+                        <Button size="small" variant="text" onClick={() => navigate(`/admin/inundation/form?id=${report.id}&tab=1&readonly=true`)}>Xem chi tiết</Button>
+                    </TableCell>
+                )}
+            </TableRow>
+            <TableRow>
+                <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={isMobile ? 3 : 6}>
+                    <Collapse in={open} timeout="auto" unmountOnExit>
+                        <Box sx={{ m: { xs: 1, md: 2 }, p: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                            <Typography variant="h6" gutterBottom component="div" sx={{ fontWeight: 700, color: 'primary.main', mb: 2 }}>
+                                Chi tiết báo cáo
+                            </Typography>
+                            <Stack spacing={1.5}>
+                                {isMobile && (
+                                    <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
+                                        <Chip label={report.status === 'active' ? 'Đang ngập' : 'Đã kết thúc'} color={report.status === 'active' ? 'error' : 'success'} size="small" sx={{ fontWeight: 700 }} />
+                                        <Typography variant="body2" sx={{ mt: 0.5 }}><strong>Bắt đầu:</strong> {formatTime(report.start_time)}</Typography>
+                                    </Stack>
+                                )}
+                                <Grid container spacing={2}>
+                                    <Grid item xs={12} sm={6}>
+                                        <Typography variant="body2" color="text.secondary">Kích thước ngập:</Typography>
+                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{`${report.length || 0}m x ${report.width || 0}m x ${report.depth || 0}m`}</Typography>
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <Typography variant="body2" color="text.secondary">Giao thông:</Typography>
+                                        {report.traffic_status ? (
+                                            <Chip label={getTrafficStatusLabel(report.traffic_status)} size="small" color={getTrafficStatusColor(report.traffic_status)} variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem', mt: 0.5 }} />
+                                        ) : <Typography variant="body2" sx={{ fontWeight: 600 }}>-</Typography>}
+                                    </Grid>
+                                </Grid>
+                                <Box>
+                                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>Ảnh liên quan:</Typography>
+                                    {report.images?.length > 0 ? (
+                                        <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', pb: 1 }}>
+                                            {report.images.map((img, idx) => (
+                                                <Box key={idx} component="img" src={getInundationImageUrl(img)} onClick={(e) => { e.stopPropagation(); handleOpenViewer(report.images, idx); }} sx={{ width: 56, height: 56, borderRadius: 1.5, objectFit: 'cover', cursor: 'pointer', border: '1px solid', borderColor: 'divider', flexShrink: 0 }} />
+                                            ))}
+                                        </Stack>
+                                    ) : <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.disabled' }}>Không có ảnh</Typography>}
+                                </Box>
+                                {isMobile && (
+                                    <Box sx={{ mt: 1, textAlign: 'right' }}>
+                                        <Button size="small" variant="contained" color="primary" onClick={() => navigate(`/admin/inundation/form?id=${report.id}&tab=1&readonly=true`)}>Xem chi tiết</Button>
+                                    </Box>
+                                )}
+                            </Stack>
+                        </Box>
+                    </Collapse>
+                </TableCell>
+            </TableRow>
+        </React.Fragment>
+    );
+};
+
 const InundationAdminList = () => {
     const navigate = useNavigate();
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const [activeTab, setActiveTab] = useState(0); // 0 = Điểm trực, 1 = Lịch sử báo cáo
+
+    // Orgs
+    const [organizations, setOrganizations] = useState([]);
+    const [orgFilter, setOrgFilter] = useState('');
 
     // Points State
     const [loadingPoints, setLoadingPoints] = useState(true);
@@ -36,10 +205,23 @@ const InundationAdminList = () => {
     // Viewer
     const [viewer, setViewer] = useState({ open: false, images: [], index: 0 });
 
+    const fetchOrgs = async () => {
+        try {
+            const res = await organizationApi.getAll({ page: 1, size: 1000 });
+            if (res.data?.status === 'success') {
+                setOrganizations(res.data.data.data || []);
+            }
+        } catch (error) {
+            console.error('Failed to fetch orgs:', error);
+        }
+    };
+
     const fetchPoints = async () => {
         setLoadingPoints(true);
         try {
-            const response = await inundationApi.getPointsStatus();
+            const params = {};
+            if (orgFilter) params.org_id = orgFilter;
+            const response = await inundationApi.getPointsStatus(params);
             setPoints(response.data.data || []);
         } catch (error) {
             console.error('Failed to fetch points:', error);
@@ -54,7 +236,8 @@ const InundationAdminList = () => {
             const res = await inundationApi.listReports(historyPage, historyRowsPerPage, {
                 status: statusFilter,
                 traffic_status: trafficFilter,
-                query: searchQuery
+                query: searchQuery,
+                org_id: orgFilter
             });
             if (res.data?.status === 'success') {
                 setHistoryReports(res.data.data.data || []);
@@ -68,12 +251,16 @@ const InundationAdminList = () => {
     };
 
     useEffect(() => {
-        fetchPoints();
+        fetchOrgs();
     }, []);
 
     useEffect(() => {
+        fetchPoints();
+    }, [orgFilter]);
+
+    useEffect(() => {
         if (activeTab === 1) fetchHistory();
-    }, [activeTab, historyPage, historyRowsPerPage, statusFilter, trafficFilter, searchQuery]);
+    }, [activeTab, historyPage, historyRowsPerPage, statusFilter, trafficFilter, searchQuery, orgFilter]);
 
     const filteredPoints = useMemo(() => {
         let result = points;
@@ -148,9 +335,23 @@ const InundationAdminList = () => {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         size="small"
-                        sx={{ minWidth: 300 }}
+                        sx={{ minWidth: 250 }}
                         InputProps={{ startAdornment: <InputAdornment position="start"><IconSearch size={18} /></InputAdornment> }}
                     />
+
+                    <TextField
+                        select
+                        label="Đơn vị quản lý"
+                        value={orgFilter}
+                        onChange={(e) => { setOrgFilter(e.target.value); setHistoryPage(0); }}
+                        size="small"
+                        sx={{ minWidth: 200 }}
+                    >
+                        <MenuItem value="">Tất cả đơn vị</MenuItem>
+                        {organizations.map(org => (
+                            <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>
+                        ))}
+                    </TextField>
 
                     <TextField
                         select
@@ -187,91 +388,87 @@ const InundationAdminList = () => {
             </Box>
 
             {/* Section 1: Điểm trực */}
-            <Typography variant="h4" sx={{ mb: 2, fontWeight: 700, color: 'primary.main' }}>Danh sách điểm trực</Typography>
-            <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, mb: 4 }}>
-                <Table sx={{ minWidth: 650 }}>
-                    <TableHead sx={{ bgcolor: 'grey.50' }}>
-                        <TableRow>
-                            <TableCell sx={{ fontWeight: 700 }}>Điểm trực</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }}>Địa chỉ / Tuyến đường</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }}>Giao thông</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }}>Kích thước</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }}>Thời gian bắt đầu</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }} align="right">Thao tác</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {loadingPoints ? [1, 2, 3].map(i => <TableRow key={i}><TableCell colSpan={7}><Skeleton height={40} /></TableCell></TableRow>) :
-                            filteredPoints.length === 0 ? <TableRow><TableCell colSpan={7} align="center">Trống</TableCell></TableRow> :
-                                filteredPoints.map(point => (
-                                    <TableRow key={point.id} hover>
-                                        <TableCell><Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{point.name}</Typography></TableCell>
-                                        <TableCell><Typography variant="body2">{point.address}</Typography></TableCell>
-                                        <TableCell><Chip label={point.status === 'active' ? 'Đang ngập' : 'Bình thường'} color={point.status === 'active' ? 'error' : 'success'} size="small" sx={{ fontWeight: 700 }} /></TableCell>
-                                        <TableCell>{(point.active_report?.traffic_status || point.active_report?.trafficStatus) && <Chip label={getTrafficStatusLabel(point.active_report.traffic_status || point.active_report.trafficStatus)} size="small" color={getTrafficStatusColor(point.active_report.traffic_status || point.active_report.trafficStatus)} variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem' }} />}</TableCell>
-                                        <TableCell>{point.status === 'active' ? `${point.active_report?.length || 0}x${point.active_report?.width || 0}x${point.active_report?.depth || 0}` : '-'}</TableCell>
-                                        <TableCell>{point.status === 'active' ? formatTime(point.active_report?.start_time) : '-'}</TableCell>
-                                        <TableCell align="right">
-                                            <Button
-                                                size="small" variant="text"
-                                                onClick={() => navigate(`/admin/inundation/form?id=${point.active_report?.id || point.last_report_id}&tab=1&readonly=true`)}
-                                            // The button should always be enabled as per instruction, even if no active/last report
-                                            // disabled={!point.active_report && !point.last_report_id}
-                                            >
-                                                Xem chi tiết
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                        }
-                    </TableBody>
-                </Table>
-            </TableContainer>
+            {activeTab === 0 && (
+                <>
+                    <Typography variant="h4" sx={{ mb: 2, fontWeight: 700, color: 'primary.main' }}>Danh sách điểm trực</Typography>
+                    <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, mb: 4, '& .MuiTableCell-root': { fontSize: { xs: '1rem' } } }}>
+                        <Table sx={{ minWidth: isMobile ? 300 : 800 }}>
+                            <TableHead sx={{ bgcolor: 'grey.50' }}>
+                                <TableRow>
+                                    <TableCell sx={{ width: 40 }} />
+                                    <TableCell sx={{ fontWeight: 700 }}>Điểm trực</TableCell>
+                                    {!isMobile && (
+                                        <>
+                                            <TableCell sx={{ fontWeight: 700 }}>Đơn vị quản lý</TableCell>
+                                            <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>
+                                            <TableCell sx={{ fontWeight: 700 }}>Giao thông</TableCell>
+                                            <TableCell sx={{ fontWeight: 700 }} align="right">Thao tác</TableCell>
+                                        </>
+                                    )}
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {loadingPoints ? [1, 2, 3].map(i => <TableRow key={i}><TableCell colSpan={isMobile ? 3 : 6}><Skeleton height={40} /></TableCell></TableRow>) :
+                                    filteredPoints.length === 0 ? <TableRow><TableCell colSpan={isMobile ? 3 : 6} align="center">Trống</TableCell></TableRow> :
+                                        filteredPoints.map(point => (
+                                            <CollapsiblePointRow
+                                                key={point.id}
+                                                point={point}
+                                                organizations={organizations}
+                                                formatTime={formatTime}
+                                                handleOpenViewer={handleOpenViewer}
+                                                navigate={navigate}
+                                                isMobile={isMobile}
+                                            />
+                                        ))
+                                }
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                </>
+            )}
 
             {/* Section 2: Lịch sử báo cáo */}
-            <Typography variant="h4" sx={{ mb: 2, fontWeight: 700, color: 'primary.main' }}>Lịch sử báo cáo toàn thành phố</Typography>
-            <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
-                <Table sx={{ minWidth: 650 }}>
-                    <TableHead sx={{ bgcolor: 'grey.50' }}>
-                        <TableRow>
-                            <TableCell sx={{ fontWeight: 700 }}>Tuyến đường</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }}>Thời gian</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }}>Kích thước</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }}>Giao thông</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }}>Ảnh</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }} align="right">Thao tác</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {loadingHistory ? [1, 2, 3].map(i => <TableRow key={i}><TableCell colSpan={7}><Skeleton height={40} /></TableCell></TableRow>) :
-                            historyReports.length === 0 ? <TableRow><TableCell colSpan={7} align="center">Trống</TableCell></TableRow> :
-                                historyReports.map(report => (
-                                    <TableRow key={report.id} hover>
-                                        <TableCell><Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{report.street_name}</Typography></TableCell>
-                                        <TableCell><Typography variant="body2">{formatTime(report.start_time)}</Typography></TableCell>
-                                        <TableCell><Typography variant="body2">{report.length || 0}x{report.width || 0}x{report.depth || 0}</Typography></TableCell>
-                                        <TableCell>{report.traffic_status && <Chip label={getTrafficStatusLabel(report.traffic_status)} size="small" variant="outlined" color={getTrafficStatusColor(report.traffic_status)} sx={{ fontWeight: 700, fontSize: '0.75rem' }} />}</TableCell>
-                                        <TableCell><Chip label={report.status === 'active' ? 'Đang ngập' : 'Đã kết thúc'} color={report.status === 'active' ? 'error' : 'success'} size="small" sx={{ fontWeight: 700 }} /></TableCell>
-                                        <TableCell>
-                                            <Stack direction="row" spacing={0.5}>
-                                                {report.images?.slice(0, 3).map((img, idx) => (
-                                                    <Box key={idx} component="img" src={getInundationImageUrl(img)} onClick={() => handleOpenViewer(report.images, idx)} sx={{ width: 32, height: 32, borderRadius: 1, objectFit: 'cover', cursor: 'pointer', border: '1px solid', borderColor: 'divider' }} />
-                                                ))}
-                                                {report.images?.length > 3 && <Box sx={{ width: 32, height: 32, borderRadius: 1, bgcolor: 'grey.100', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Typography variant="caption">+{report.images.length - 3}</Typography></Box>}
-                                            </Stack>
-                                        </TableCell>
-                                        <TableCell align="right">
-                                            <Button size="small" variant="text" onClick={() => navigate(`/admin/inundation/form?id=${report.id}&tab=1&readonly=true`)}>Xem chi tiết</Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                        }
-                    </TableBody>
-                </Table>
-                <TablePagination rowsPerPageOptions={[10, 25, 50]} component="div" count={totalHistory} rowsPerPage={historyRowsPerPage} page={historyPage} onPageChange={(e, p) => setHistoryPage(p)} onRowsPerPageChange={(e) => { setHistoryRowsPerPage(parseInt(e.target.value, 10)); setHistoryPage(0); }} labelRowsPerPage="Dòng mỗi trang:" />
-            </TableContainer>
+            {activeTab === 1 && (
+                <>
+                    <Typography variant="h4" sx={{ mb: 2, fontWeight: 700, color: 'primary.main' }}>Lịch sử báo cáo toàn thành phố</Typography>
+                    <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, '& .MuiTableCell-root': { fontSize: { xs: '1rem' } } }}>
+                        <Table sx={{ minWidth: isMobile ? 300 : 800 }}>
+                            <TableHead sx={{ bgcolor: 'grey.50' }}>
+                                <TableRow>
+                                    <TableCell sx={{ width: 40 }} />
+                                    <TableCell sx={{ fontWeight: 700 }}>Tuyến đường / Điểm</TableCell>
+                                    {!isMobile && (
+                                        <>
+                                            <TableCell sx={{ fontWeight: 700 }}>Đơn vị quản lý</TableCell>
+                                            <TableCell sx={{ fontWeight: 700 }}>Thời gian</TableCell>
+                                            <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>
+                                            <TableCell sx={{ fontWeight: 700 }} align="right">Thao tác</TableCell>
+                                        </>
+                                    )}
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {loadingHistory ? [1, 2, 3].map(i => <TableRow key={i}><TableCell colSpan={isMobile ? 3 : 6}><Skeleton height={40} /></TableCell></TableRow>) :
+                                    historyReports.length === 0 ? <TableRow><TableCell colSpan={isMobile ? 3 : 6} align="center">Trống</TableCell></TableRow> :
+                                        historyReports.map(report => (
+                                            <CollapsibleHistoryRow
+                                                key={report.id}
+                                                report={report}
+                                                organizations={organizations}
+                                                formatTime={formatTime}
+                                                handleOpenViewer={handleOpenViewer}
+                                                navigate={navigate}
+                                                isMobile={isMobile}
+                                            />
+                                        ))
+                                }
+                            </TableBody>
+                        </Table>
+                        <TablePagination rowsPerPageOptions={[10, 25, 50]} component="div" count={totalHistory} rowsPerPage={historyRowsPerPage} page={historyPage} onPageChange={(e, p) => setHistoryPage(p)} onRowsPerPageChange={(e) => { setHistoryRowsPerPage(parseInt(e.target.value, 10)); setHistoryPage(0); }} labelRowsPerPage="Dòng mỗi trang:" />
+                    </TableContainer>
+                </>
+            )}
             {renderImageViewer()}
         </MainCard>
     );

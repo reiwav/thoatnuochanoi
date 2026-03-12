@@ -231,7 +231,7 @@ const StationInundationList = () => {
                 </Stack>
             </Box>
 
-            <TableContainer component={Paper} sx={{ border: '1px solid', borderColor: 'divider', boxShadow: 'none', borderRadius: '12px' }}>
+            <TableContainer component={Paper} sx={{ border: '1px solid', borderColor: 'divider', boxShadow: 'none', borderRadius: '12px', '& .MuiTableCell-root': { fontSize: { xs: '1rem' } } }}>
                 <Table sx={{ minWidth: isMobile ? 300 : 800 }}>
                     <TableHead sx={{ bgcolor: 'grey.50' }}>
                         <TableRow>

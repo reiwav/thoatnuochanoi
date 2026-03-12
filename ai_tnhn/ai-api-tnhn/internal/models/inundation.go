@@ -14,7 +14,8 @@ type InundationUpdate struct {
 	Depth           string   `bson:"depth" json:"depth"`
 	Length          string   `bson:"length" json:"length"`
 	Width           string   `bson:"width" json:"width"`
-	Images          []string `bson:"images" json:"images"` // Google Drive File IDs
+	TrafficStatus   string   `bson:"traffic_status" json:"traffic_status"`
+	Images          []string `bson:"images,omitempty" json:"images,omitempty"` // Google Drive File IDs
 }
 
 type InundationReport struct {
@@ -33,4 +34,5 @@ type InundationReport struct {
 	Images          []string           `bson:"images" json:"images"` // Initial images
 	Updates         []InundationUpdate `bson:"-" json:"updates"`
 	Status          string             `bson:"status" json:"status"` // active, resolved
+	TrafficStatus   string             `bson:"traffic_status" json:"traffic_status"`
 }

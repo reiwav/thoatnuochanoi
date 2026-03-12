@@ -9,12 +9,15 @@ import (
 	"fmt"
 	"io"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type Service interface {
 	CreateReport(ctx context.Context, report *models.InundationReport, images []ImageContent) error
 	AddUpdate(ctx context.Context, reportID string, update models.InundationUpdate, userID string, userEmail string, images []ImageContent) error
 	ListReports(ctx context.Context, orgID string) ([]*models.InundationReport, int64, error)
+	ListReportsWithFilter(ctx context.Context, orgID, status, trafficStatus, query string, page, size int) ([]*models.InundationReport, int64, error)
 	GetReport(ctx context.Context, reportID string) (*models.InundationReport, error)
 	Resolve(ctx context.Context, reportID string, endTime int64) error
 
@@ -37,6 +40,7 @@ type PointStatus struct {
 	Lng          string                   `json:"lng"`
 	Status       string                   `json:"status"` // active, normal
 	ActiveReport *models.InundationReport `json:"active_report,omitempty"`
+	LastReportID string                   `json:"last_report_id"`
 }
 
 type ImageContent struct {
@@ -154,8 +158,33 @@ func (s *service) AddUpdate(ctx context.Context, reportID string, update models.
 		update.Timestamp = time.Now().Unix()
 	}
 
-	// 3. Save update to dedicated collection
-	return s.inundationUpdateRepo.Create(ctx, &update)
+	// 3. Inherit status from main report if not provided in update
+	if update.TrafficStatus == "" {
+		update.TrafficStatus = report.TrafficStatus
+	}
+	if update.Length == "" {
+		update.Length = report.Length
+	}
+	if update.Width == "" {
+		update.Width = report.Width
+	}
+	if update.Depth == "" {
+		update.Depth = report.Depth
+	}
+
+	// 4. Save update to dedicated collection
+	err = s.inundationUpdateRepo.Create(ctx, &update)
+	if err != nil {
+		return err
+	}
+
+	// 5. Also update the main report's current status/dimensions
+	report.TrafficStatus = update.TrafficStatus
+	report.Length = update.Length
+	report.Width = update.Width
+	report.Depth = update.Depth
+
+	return s.inundationRepo.Update(ctx, report)
 }
 
 func (s *service) ListReports(ctx context.Context, orgID string) ([]*models.InundationReport, int64, error) {
@@ -164,6 +193,29 @@ func (s *service) ListReports(ctx context.Context, orgID string) ([]*models.Inun
 	if orgID != "" {
 		f.AddWhere("org_id", "org_id", orgID)
 	}
+	f.SetOrderBy("-created_at")
+	return s.inundationRepo.List(ctx, f)
+}
+
+func (s *service) ListReportsWithFilter(ctx context.Context, orgID, status, trafficStatus, query string, page, size int) ([]*models.InundationReport, int64, error) {
+	f := filter.NewPaginationFilter()
+	f.Page = int64(page + 1) // filter uses 1-based page
+	f.PerPage = int64(size)
+
+	if orgID != "" {
+		f.AddWhere("org_id", "org_id", orgID)
+	}
+	if status != "" {
+		f.AddWhere("status", "status", status)
+	}
+	if trafficStatus != "" {
+		f.AddWhere("traffic_status", "traffic_status", trafficStatus)
+	}
+	if query != "" {
+		f.AddWhere("street_name", "street_name", bson.M{"$regex": query, "$options": "i"})
+	}
+
+	f.SetOrderBy("-created_at")
 	return s.inundationRepo.List(ctx, f)
 }
 
@@ -225,6 +277,33 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string) ([]PointSta
 		}
 	}
 
+	// 3.5 Find last report ID for each point (even if resolved)
+	lastReportIDs := make(map[string]string)
+	pipeline := []bson.M{
+		{"$match": bson.M{"deleted_at": 0}},
+		{"$sort": bson.M{"start_time": -1}},
+		{"$group": bson.M{"_id": "$point_id", "last_id": bson.M{"$first": "$_id"}}},
+	}
+	if orgID != "" {
+		pipeline[0]["$match"].(bson.M)["org_id"] = orgID
+	}
+
+	var pipeRes []struct {
+		PointID string `bson:"_id"`
+		LastID  string `bson:"last_id"`
+	}
+	// We use the underlying R_Pipe from the table if available
+	if repo, ok := s.inundationRepo.(interface {
+		R_Pipe(ctx context.Context, pipeline []bson.M, res interface{}) error
+	}); ok {
+		_ = repo.R_Pipe(ctx, pipeline, &pipeRes)
+		for _, item := range pipeRes {
+			if item.PointID != "" {
+				lastReportIDs[item.PointID] = item.LastID
+			}
+		}
+	}
+
 	// 4. Build merged result
 	result := make([]PointStatus, len(points))
 	for i, p := range points {
@@ -251,6 +330,7 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string) ([]PointSta
 			Lng:          p.Lng,
 			Status:       status,
 			ActiveReport: activeReport,
+			LastReportID: lastReportIDs[p.ID],
 		}
 	}
 

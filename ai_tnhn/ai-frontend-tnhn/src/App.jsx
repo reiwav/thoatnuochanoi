@@ -14,29 +14,26 @@ import { Toaster } from 'react-hot-toast'; // Import Toaster
 
 export default function App() {
   return (
-    <ThemeCustomization>
-      <NavigationScroll>
-        <>
-          {/* Đặt Toaster ở đây để nó có thể hiển thị ở bất cứ đâu trong ứng dụng */}
-          <Toaster 
-            position="top-right" 
-            reverseOrder={false} 
-            containerStyle={{
-              // Dialog của MUI thường có z-index 1300, 
-              // đặt 9999 để chắc chắn thông báo luôn nằm trên cùng.
-              zIndex: 9999, 
-            }}
-            toastOptions={{
-              duration: 3000,
-              style: {
-                background: '#fff',
-                color: '#333',
-              },
-            }}
-          />
+    <>
+      <Toaster
+        position="top-right"
+        reverseOrder={false}
+        containerStyle={{
+          zIndex: 99999,
+        }}
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#fff',
+            color: '#333',
+          },
+        }}
+      />
+      <ThemeCustomization>
+        <NavigationScroll>
           <RouterProvider router={router} />
-        </>
-      </NavigationScroll>
-    </ThemeCustomization>
+        </NavigationScroll>
+      </ThemeCustomization>
+    </>
   );
 }

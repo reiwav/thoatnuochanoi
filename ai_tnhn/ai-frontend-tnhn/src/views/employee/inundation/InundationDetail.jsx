@@ -6,19 +6,11 @@ import {
 import { useTheme } from '@mui/material/styles';
 import {
     IconClock, IconRuler, IconPlus, IconX, IconRefresh, IconUser,
-    IconChevronLeft, IconChevronRight
+    IconChevronLeft, IconChevronRight, IconCar
 } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 
-const getImageUrl = (img) => {
-    if (!img) return '';
-    if (img.startsWith('/api/storage/file/')) {
-        // Local storage path - use relative path to handle different domains/proxies
-        return img;
-    }
-    // Default Google Drive ID
-    return `https://lh3.googleusercontent.com/d/${img}=w1000`;
-};
+import { getInundationImageUrl } from 'utils/imageHelper';
 
 const InundationDetail = ({ selectedReport, loadingReport }) => {
     const theme = useTheme();
@@ -50,6 +42,7 @@ const InundationDetail = ({ selectedReport, loadingReport }) => {
         {
             type: 'start', title: 'Bắt đầu đợt ngập', ts: selectedReport.start_time, desc: selectedReport.description || 'Ghi nhận bắt đầu',
             length: selectedReport.length, width: selectedReport.width, depth: selectedReport.depth,
+            traffic_status: selectedReport.traffic_status || selectedReport.trafficStatus,
             user: selectedReport.user_email,
             images: selectedReport.images || []
         },
@@ -61,10 +54,17 @@ const InundationDetail = ({ selectedReport, loadingReport }) => {
             length: u.length,
             width: u.width,
             depth: u.depth,
+            traffic_status: u.traffic_status || u.trafficStatus,
             user: u.user_email,
             images: u.images || []
         }))
     ].reverse();
+
+    const latest = timelineData[0] || {};
+    const latestLength = latest.length || selectedReport.length || '0';
+    const latestWidth = latest.width || selectedReport.width || '0';
+    const latestDepth = latest.depth || selectedReport.depth || '0';
+    const latestTraffic = latest.traffic_status || latest.trafficStatus || selectedReport.traffic_status || selectedReport.trafficStatus;
 
     return (
         <Box>
@@ -83,19 +83,17 @@ const InundationDetail = ({ selectedReport, loadingReport }) => {
                         <Typography variant="body2" color="textSecondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                             <IconClock size={15} /> {new Date(selectedReport.start_time * 1000).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}
                         </Typography>
-                        <Box sx={{ display: 'flex', gap: 1.5 }}>
+                        <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3 }}>
                                 <IconRuler size={14} color={theme.palette.text.secondary} />
-                                <Typography variant="body2" sx={{ fontWeight: 700 }}>{selectedReport.length || '0'}</Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 700 }}>{latestLength} x {latestWidth} x {latestDepth}</Typography>
                             </Box>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3 }}>
-                                <IconRuler size={14} color={theme.palette.text.secondary} />
-                                <Typography variant="body2" sx={{ fontWeight: 700 }}>{selectedReport.width || '0'}</Typography>
-                            </Box>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3 }}>
-                                <IconRuler size={14} color={theme.palette.text.secondary} />
-                                <Typography variant="body2" color="error.main" sx={{ fontWeight: 800 }}>{selectedReport.depth || '0'}</Typography>
-                            </Box>
+                            {latestTraffic && (
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, bgcolor: 'warning.light', px: 1, py: 0.2, borderRadius: 10 }}>
+                                    <IconCar size={14} color={theme.palette.warning.dark} />
+                                    <Typography variant="caption" sx={{ fontWeight: 700, color: 'warning.darker' }}>{latestTraffic}</Typography>
+                                </Box>
+                            )}
                         </Box>
                     </Box>
                 </Stack>
@@ -109,13 +107,9 @@ const InundationDetail = ({ selectedReport, loadingReport }) => {
                 {timelineData.map((item, idx, arr) => (
                     <Box
                         key={idx}
-                        onClick={() => handleOpenViewer(item.images)}
                         sx={{
                             display: 'flex', gap: 2, position: 'relative',
-                            cursor: item.images?.length > 0 ? 'pointer' : 'default',
-                            p: 1, mx: -1, borderRadius: 2,
-                            transition: 'background .2s',
-                            '&:hover': { bgcolor: item.images?.length > 0 ? 'grey.50' : 'transparent' }
+                            p: 1, mx: -1, borderRadius: 2
                         }}
                     >
                         {idx < arr.length - 1 && (
@@ -148,6 +142,14 @@ const InundationDetail = ({ selectedReport, loadingReport }) => {
                                         </Typography>
                                     </Box>
                                 )}
+                                {(item.traffic_status || item.trafficStatus) && (
+                                    <Box sx={{ px: 1.2, py: 0.5, bgcolor: 'warning.lighter', borderRadius: 100, border: '1px solid', borderColor: 'warning.light', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                        <IconCar size={14} color={theme.palette.warning.main} />
+                                        <Typography variant="caption" sx={{ color: 'warning.dark', fontWeight: 700, fontSize: '0.9rem' }}>
+                                            {item.traffic_status || item.trafficStatus}
+                                        </Typography>
+                                    </Box>
+                                )}
                                 {item.user && (
                                     <Box sx={{ px: 1.2, py: 0.5, bgcolor: 'secondary.lighter', borderRadius: 100, border: '1px solid', borderColor: 'secondary.light', display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                         <IconUser size={14} color={theme.palette.secondary.main} />
@@ -162,7 +164,7 @@ const InundationDetail = ({ selectedReport, loadingReport }) => {
                                 <Box sx={{ display: 'flex', gap: 1, mt: 1.5, overflowX: 'auto', pb: 0.5 }}>
                                     {item.images.map((img, i) => (
                                         <Box
-                                            key={i} component="img" src={getImageUrl(img)}
+                                            key={i} component="img" src={getInundationImageUrl(img)}
                                             onClick={(e) => { e.stopPropagation(); handleOpenViewer(item.images, i); }}
                                             sx={{ width: 80, height: 80, borderRadius: 2, objectFit: 'cover', border: '2px solid white', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', cursor: 'zoom-in', transition: 'transform .2s', '&:hover': { transform: 'scale(1.05)' } }}
                                         />
@@ -194,7 +196,7 @@ const InundationDetail = ({ selectedReport, loadingReport }) => {
 
                     <Box
                         component="img"
-                        src={getImageUrl(viewer.images[viewer.index])}
+                        src={getInundationImageUrl(viewer.images[viewer.index])}
                         sx={{ maxWidth: '100%', maxHeight: '85vh', objectFit: 'contain', animation: 'fadeIn .3s' }}
                     />
 

@@ -8,8 +8,12 @@ const inundationApi = {
             }
         });
     },
-    listReports: () => {
-        return axiosClient.get('/inundation/reports');
+    listReports: (page = 0, size = 10, filters = {}) => {
+        let url = `/inundation/reports?page=${page}&size=${size}`;
+        if (filters.status) url += `&status=${filters.status}`;
+        if (filters.traffic_status) url += `&traffic_status=${encodeURIComponent(filters.traffic_status)}`;
+        if (filters.query) url += `&query=${encodeURIComponent(filters.query)}`;
+        return axiosClient.get(url);
     },
     getReport: (id) => {
         return axiosClient.get(`/inundation/report/${id}`);

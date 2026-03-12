@@ -23,6 +23,7 @@ const AiSupportPage = Loadable(lazy(() => import('views/admin/ai-support')));
 const EmergencyConstructionPage = Loadable(lazy(() => import('views/admin/emergency-construction')));
 const ConstructionReportingPage = Loadable(lazy(() => import('views/employee/emergency-construction/ConstructionReporting')));
 const ConstructionFormPage = Loadable(lazy(() => import('views/employee/emergency-construction/ConstructionForm')));
+const InundationAdminList = Loadable(lazy(() => import('views/admin/inundation/InundationAdminList')));
 
 // ==============================|| MAIN ROUTING ||============================== //
 
@@ -44,6 +45,7 @@ const MainRoutes = {
         { path: 'emergency-construction/dashboard', element: <ConstructionReportingPage /> },
         { path: 'emergency-construction/form', element: <ConstructionFormPage /> },
         { path: 'inundation', element: <InundationDashboard /> },
+        { path: 'inundation-list', element: <InundationAdminList /> },
         { path: 'inundation/form', element: <InundationForm /> },
         { path: 'station/rain/summary', element: <StationRainSummary /> },
         { path: 'station/water/summary', element: <StationWaterSummary /> },

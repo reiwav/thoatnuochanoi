@@ -45,3 +45,7 @@ func (r *inundationRepo) UpdateStatus(ctx context.Context, id string, status str
 func (r *inundationRepo) Resolve(ctx context.Context, id string, endTime int64) error {
 	return r.R_UnsafeUpdateByID(ctx, id, bson.M{"$set": bson.M{"status": "resolved", "end_time": endTime}})
 }
+
+func (r *inundationRepo) Update(ctx context.Context, report *models.InundationReport) error {
+	return r.R_Update(ctx, report)
+}

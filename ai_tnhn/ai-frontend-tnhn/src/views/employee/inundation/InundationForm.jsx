@@ -71,8 +71,10 @@ const InundationForm = () => {
             { id: 1, label: 'Chi tiết', icon: <IconHistory size={18} /> }
         ];
 
-        // Hide "Cập nhật" tab if report is already resolved
-        const visibleTabs = selectedReport?.status === 'resolved'
+        const isReadOnly = searchParams.get('readonly') === 'true';
+
+        // Hide "Cập nhật" tab if report is already resolved or in readonly mode
+        const visibleTabs = (selectedReport?.status === 'resolved' || isReadOnly)
             ? allTabs.filter(t => t.id === 1)
             : allTabs;
 
@@ -129,7 +131,7 @@ const InundationForm = () => {
         return (
             <Box sx={{ px: 2, pt: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                    <IconButton size="small" onClick={() => navigate('/admin/inundation')}>
+                    <IconButton size="small" onClick={() => navigate(-1)}>
                         <IconArrowLeft size={20} />
                     </IconButton>
                     <Typography variant="h5" sx={{ fontWeight: 700 }}>
@@ -144,7 +146,7 @@ const InundationForm = () => {
     return (
         <MainCard
             title={selectedReport ? "Cập nhật tình hình ngập" : "Báo cáo ngập lụt"}
-            secondary={<Button variant="outlined" size="small" startIcon={<IconArrowLeft size={16} />} onClick={() => navigate('/admin/inundation')}>Quay lại</Button>}
+            secondary={<Button variant="outlined" size="small" startIcon={<IconArrowLeft size={16} />} onClick={() => navigate(-1)}>Quay lại</Button>}
         >
             <Box sx={{ maxWidth: 640, mx: 'auto' }}>{renderContent()}</Box>
         </MainCard>

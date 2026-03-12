@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import {
     Box, Button, TextField, Typography,
     Stack, IconButton, CircularProgress,
-    InputAdornment, FormControlLabel, Checkbox
+    InputAdornment, FormControlLabel, Checkbox,
+    MenuItem
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import {
     IconCloudUpload, IconX, IconSend,
-    IconMapPin, IconRuler, IconClock, IconFileText
+    IconMapPin, IconRuler, IconClock, IconFileText, IconCar
 } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 
@@ -22,6 +23,7 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
         width: '',
         depth: '',
         description: '',
+        traffic_status: 'Đi lại bình thường',
         start_time: new Date().toISOString().slice(0, 16)
     });
     const [images, setImages] = useState([]);
@@ -36,6 +38,7 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
                 width: selectedReport.width || '',
                 depth: selectedReport.depth || '',
                 description: '',
+                traffic_status: selectedReport.traffic_status || selectedReport.trafficStatus || 'Đi lại bình thường',
                 start_time: selectedReport.start_time ? new Date(selectedReport.start_time * 1000).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16)
             });
         }
@@ -44,9 +47,19 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
     const handleChange = (e) => setValues({ ...values, [e.target.name]: e.target.value });
 
     const handleImageChange = async (e) => {
-        const files = Array.from(e.target.files);
-        if (files.length > 5) {
-            toast.error('Chỉ được tải lên tối đa 5 ảnh');
+        const pickedFiles = Array.from(e.target.files);
+        console.log('Files picked:', pickedFiles.length, 'Existing:', images.length);
+        if (pickedFiles.length === 0) return;
+
+        const currentCount = images.length;
+        const newCount = pickedFiles.length;
+        const totalCount = currentCount + newCount;
+
+        if (totalCount > 10) {
+            const errorMsg = `Vượt quá giới hạn 10 ảnh (Hiện có ${currentCount}, bạn chọn thêm ${newCount})`;
+            console.error(errorMsg);
+            toast.error(errorMsg);
+            e.target.value = '';
             return;
         }
 
@@ -71,13 +84,12 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
 
                     canvas.toBlob((blob) => {
                         if (blob) {
-                            // Create a new File object from the Blob to retain the original name if possible
                             const resizedFile = new File([blob], file.name, { type: 'image/jpeg', lastModified: Date.now() });
                             resolve(resizedFile);
                         } else {
                             reject(new Error('Canvas to Blob failed'));
                         }
-                    }, 'image/jpeg', 0.8); // 80% quality JPEG
+                    }, 'image/jpeg', 0.8);
                 };
                 img.onerror = reject;
                 img.src = URL.createObjectURL(file);
@@ -85,15 +97,16 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
         };
 
         try {
-            const resizedFiles = await Promise.all(files.map(resizeImage));
-            setImages(resizedFiles);
-            setPreviews(resizedFiles.map(file => URL.createObjectURL(file)));
+            const resizedFiles = await Promise.all(pickedFiles.map(resizeImage));
+            setImages(prev => [...prev, ...resizedFiles]);
+            setPreviews(prev => [...prev, ...resizedFiles.map(file => URL.createObjectURL(file))]);
         } catch (error) {
             console.error('Error resizing images:', error);
             toast.error('Lỗi khi xử lý ảnh, vui lòng thử lại');
-            // Fallback to original files if resize somehow fails
-            setImages(files);
-            setPreviews(files.map(file => URL.createObjectURL(file)));
+            setImages(prev => [...prev, ...pickedFiles]);
+            setPreviews(prev => [...prev, ...pickedFiles.map(file => URL.createObjectURL(file))]);
+        } finally {
+            e.target.value = '';
         }
     };
     const removeImage = (i) => {
@@ -109,12 +122,13 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
             if (values.length) fd.append('length', values.length);
             if (values.width) fd.append('width', values.width);
             if (values.depth) fd.append('depth', values.depth);
+            if (values.traffic_status) fd.append('traffic_status', values.traffic_status);
             if (resolveOnUpdate) fd.append('resolve', 'true');
             images.forEach(img => fd.append('images', img));
             const res = await inundationApi.updateSituation(selectedReport.id, fd);
             if (res.data?.status === 'success') {
                 toast.success(resolveOnUpdate ? 'Đã kết thúc đợt ngập' : 'Cập nhật thành công');
-                setValues(v => ({ ...v, description: '' }));
+                setValues(v => ({ ...v, description: '', traffic_status: 'Đi lại bình thường' }));
                 setImages([]); setPreviews([]); setResolveOnUpdate(false);
                 if (onSuccess) onSuccess();
             }
@@ -133,13 +147,14 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
             if (values.width) fd.append('width', values.width);
             if (values.depth) fd.append('depth', values.depth);
             fd.append('description', values.description);
+            if (values.traffic_status) fd.append('traffic_status', values.traffic_status);
             if (pointId) fd.append('point_id', pointId);
-            fd.append('start_time', Math.floor(new Date(values.start_time).getTime() / 1000));
+            fd.append('start_time', Math.floor(Date.now() / 1000));
             images.forEach(img => fd.append('images', img));
             const res = await inundationApi.createReport(fd);
             if (res.data?.status === 'success') {
                 toast.success('Gửi báo cáo thành công');
-                setValues({ ...values, length: '', width: '', depth: '', description: '', start_time: new Date().toISOString().slice(0, 16) });
+                setValues({ ...values, length: '', width: '', depth: '', description: '', traffic_status: 'Đi lại bình thường', start_time: new Date().toISOString().slice(0, 16) });
                 setImages([]); setPreviews([]);
                 if (onSuccess) onSuccess();
             }
@@ -190,10 +205,17 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
             </Stack>
 
             <TextField
-                fullWidth label="Thời gian" name="start_time" type="datetime-local"
-                value={values.start_time} onChange={handleChange} InputLabelProps={{ shrink: true }}
-                InputProps={{ startAdornment: <InputAdornment position="start"><IconClock size={17} color={theme.palette.text.secondary} /></InputAdornment> }}
-            />
+                select
+                fullWidth label="Tình trạng giao thông" name="traffic_status"
+                value={values.traffic_status} onChange={handleChange}
+                InputProps={{
+                    startAdornment: <InputAdornment position="start"><IconCar size={17} color={theme.palette.text.secondary} /></InputAdornment>
+                }}
+            >
+                <MenuItem value="Đi lại bình thường">Đi lại bình thường</MenuItem>
+                <MenuItem value="Đi lại khó khăn">Đi lại khó khăn</MenuItem>
+                <MenuItem value="Không đi được">Không đi được</MenuItem>
+            </TextField>
 
             <TextField
                 fullWidth label="Mô tả chi tiết" name="description" multiline rows={3}

@@ -49,6 +49,7 @@ func (h *InundationHandler) CreateReport(c *gin.Context) {
 	width := c.PostForm("width")
 	pointID := c.PostForm("point_id")
 	description := c.PostForm("description")
+	trafficStatus := c.PostForm("traffic_status")
 	startTimeStr := c.PostForm("start_time")
 
 	startTime, _ := strconv.ParseInt(startTimeStr, 10, 64)
@@ -76,16 +77,17 @@ func (h *InundationHandler) CreateReport(c *gin.Context) {
 
 	// 4. Create Report
 	report := &models.InundationReport{
-		OrgID:       user.OrgID,
-		UserID:      user.ID,
-		UserEmail:   user.Email,
-		PointID:     pointID,
-		StreetName:  streetName,
-		Depth:       depth,
-		Length:      length,
-		Width:       width,
-		StartTime:   startTime,
-		Description: description,
+		OrgID:         user.OrgID,
+		UserID:        user.ID,
+		UserEmail:     user.Email,
+		PointID:       pointID,
+		StreetName:    streetName,
+		Depth:         depth,
+		Length:        length,
+		Width:         width,
+		StartTime:     startTime,
+		Description:   description,
+		TrafficStatus: trafficStatus,
 	}
 
 	err = h.service.CreateReport(c.Request.Context(), report, images)
@@ -119,6 +121,7 @@ func (h *InundationHandler) AddUpdateSituation(c *gin.Context) {
 	depth := c.PostForm("depth")
 	length := c.PostForm("length")
 	width := c.PostForm("width")
+	trafficStatus := c.PostForm("traffic_status")
 
 	// 2. Prepare images
 	var images []inundation.ImageContent
@@ -140,11 +143,12 @@ func (h *InundationHandler) AddUpdateSituation(c *gin.Context) {
 
 	// 3. Add Update
 	update := models.InundationUpdate{
-		Description: description,
-		Depth:       depth,
-		Length:      length,
-		Width:       width,
-		Timestamp:   time.Now().Unix(),
+		Description:   description,
+		Depth:         depth,
+		Length:        length,
+		Width:         width,
+		TrafficStatus: trafficStatus,
+		Timestamp:     time.Now().Unix(),
 	}
 
 	err = h.service.AddUpdate(c.Request.Context(), reportID, update, user.ID, user.Email, images)
@@ -210,8 +214,13 @@ func (h *InundationHandler) ListReports(c *gin.Context) {
 		}
 	}
 
-	// Filter by OrgID (empty means all)
-	reports, total, err := h.service.ListReports(c.Request.Context(), orgID)
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "0"))
+	size, _ := strconv.Atoi(c.DefaultQuery("size", "10"))
+	status := c.Query("status")
+	trafficStatus := c.Query("traffic_status")
+	query := c.Query("query")
+
+	reports, total, err := h.service.ListReportsWithFilter(c.Request.Context(), orgID, status, trafficStatus, query, page, size)
 	if err != nil {
 		h.SendError(c, err)
 		return

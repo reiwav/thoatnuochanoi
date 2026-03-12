@@ -91,6 +91,14 @@ const adminPages = {
           breadcrumbs: false,
         },
         {
+          id: 'inundation-list',
+          title: '## Quản lý báo cáo',
+          type: 'item',
+          url: '/admin/inundation-list',
+          icon: icons.IconList,
+          breadcrumbs: false,
+        },
+        {
           id: 'station-inundation-history',
           title: 'Lịch sử',
           type: 'item',

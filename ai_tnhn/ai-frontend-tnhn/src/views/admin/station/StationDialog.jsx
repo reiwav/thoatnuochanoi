@@ -7,13 +7,14 @@ import {
 import { IconX } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 
-const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type }) => {
+const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type, organizations = [] }) => {
     const [formData, setFormData] = useState({
         TenTram: '',
         DiaChi: '',
         Lat: '',
         Lng: '',
         Active: true,
+        org_id: '',
         // Specific for Lake/River
         Loai: '',
         TenTramHTML: '',
@@ -29,6 +30,7 @@ const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type }) => {
                     Lat: station.Lat || station.lat || '',
                     Lng: station.Lng || station.lng || '',
                     Active: station.Active !== undefined ? station.Active : (station.active !== undefined ? station.active : true),
+                    org_id: station.org_id || '',
                     Loai: station.Loai || '',
                     TenTramHTML: station.TenTramHTML || '',
                     NguongCanhBao: station.NguongCanhBao !== undefined ? station.NguongCanhBao : ''
@@ -40,6 +42,7 @@ const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type }) => {
                     Lat: '',
                     Lng: '',
                     Active: true,
+                    org_id: '',
                     Loai: '',
                     TenTramHTML: '',
                     NguongCanhBao: ''
@@ -118,6 +121,21 @@ const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type }) => {
                             />
                         </Grid>
                     </Grid>
+
+                    {type === 'inundation' && (
+                        <TextField
+                            select
+                            fullWidth
+                            label="Đơn vị quản lý"
+                            value={formData.org_id}
+                            onChange={(e) => handleChange('org_id', e.target.value)}
+                        >
+                            <MenuItem value="">Chọn đơn vị quản lý</MenuItem>
+                            {organizations.map((org) => (
+                                <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>
+                            ))}
+                        </TextField>
+                    )}
 
                     {(type === 'lake' || type === 'river') && (
                         <TextField

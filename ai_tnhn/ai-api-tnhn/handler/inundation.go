@@ -202,15 +202,15 @@ func (h *InundationHandler) ListReports(c *gin.Context) {
 		return
 	}
 
-	// If User is Super Admin or TNHN, show all
+	// If User is Super Admin or TNHN, show all (allow filtering by org_id)
 	orgID := user.OrgID
 	if user.Role == constant.ROLE_SUPER_ADMIN {
-		orgID = ""
+		orgID = c.Query("org_id")
 	} else {
 		// Fetch org to check code
 		org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
 		if err == nil && org != nil && (org.Code == "TNHN" || org.Code == "tnhn") {
-			orgID = ""
+			orgID = c.Query("org_id")
 		}
 	}
 
@@ -240,15 +240,15 @@ func (h *InundationHandler) GetPointsStatus(c *gin.Context) {
 		return
 	}
 
-	// If User is Super Admin or TNHN, show all
+	// If User is Super Admin or TNHN, show all (allow filtering by org_id)
 	orgID := user.OrgID
 	if user.Role == constant.ROLE_SUPER_ADMIN {
-		orgID = ""
+		orgID = c.Query("org_id")
 	} else {
 		// Fetch org to check code
 		org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
 		if err == nil && org != nil && (org.Code == "TNHN" || org.Code == "tnhn") {
-			orgID = ""
+			orgID = c.Query("org_id")
 		}
 	}
 
@@ -274,7 +274,20 @@ func (h *InundationHandler) CreatePoint(c *gin.Context) {
 		h.SendError(c, web.Unauthorized("Invalid user session"))
 		return
 	}
-	req.OrgID = user.OrgID
+
+	canAssignOrg := false
+	if user.Role == constant.ROLE_SUPER_ADMIN {
+		canAssignOrg = true
+	} else {
+		org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
+		if err == nil && org != nil && (org.Code == "TNHN" || org.Code == "tnhn") {
+			canAssignOrg = true
+		}
+	}
+
+	if !canAssignOrg || req.OrgID == "" {
+		req.OrgID = user.OrgID
+	}
 
 	id, err := h.service.CreatePoint(c.Request.Context(), req)
 	if err != nil {
@@ -293,7 +306,36 @@ func (h *InundationHandler) UpdatePoint(c *gin.Context) {
 		return
 	}
 
-	err := h.service.UpdatePoint(c.Request.Context(), id, req)
+	token := h.contextWith.GetToken(c.Request)
+	user, err := h.authService.GetProfile(c.Request.Context(), token)
+	if err != nil {
+		h.SendError(c, web.Unauthorized("Invalid user session"))
+		return
+	}
+
+	canAssignOrg := false
+	if user.Role == constant.ROLE_SUPER_ADMIN {
+		canAssignOrg = true
+	} else {
+		org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
+		if err == nil && org != nil && (org.Code == "TNHN" || org.Code == "tnhn") {
+			canAssignOrg = true
+		}
+	}
+
+	// Fetch current point to retain org ID if not provided, or if user is not authorized
+	currentPoint, err := h.service.GetPointByID(c.Request.Context(), id)
+	if err == nil && currentPoint != nil {
+		if !canAssignOrg {
+			req.OrgID = currentPoint.OrgID
+		} else if req.OrgID == "" {
+			req.OrgID = currentPoint.OrgID
+		}
+	} else if !canAssignOrg || req.OrgID == "" {
+		req.OrgID = user.OrgID
+	}
+
+	err = h.service.UpdatePoint(c.Request.Context(), id, req)
 	if err != nil {
 		h.SendError(c, err)
 		return

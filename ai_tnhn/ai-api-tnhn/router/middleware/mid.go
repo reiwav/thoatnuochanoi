@@ -51,6 +51,13 @@ func (m mid) MidBasicType(roles ...string) gin.HandlerFunc {
 			ctx.Abort()
 			return
 		}
+
+		// Normalize typo from database
+		if tok.Role == "supper_admib" || tok.Role == "super_admin " {
+			tok.Role = constant.ROLE_SUPER_ADMIN
+		}
+		fmt.Println("tok.Role: ", tok.Role)
+		fmt.Println("tokenID: ", tokenID)
 		if len(roles) > 0 {
 			if !contains(roles, tok.Role) {
 				err = web.Unauthorized("access token not found " + tok.Role)

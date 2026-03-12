@@ -13,6 +13,7 @@ const inundationApi = {
         if (filters.status) url += `&status=${filters.status}`;
         if (filters.traffic_status) url += `&traffic_status=${encodeURIComponent(filters.traffic_status)}`;
         if (filters.query) url += `&query=${encodeURIComponent(filters.query)}`;
+        if (filters.org_id) url += `&org_id=${filters.org_id}`;
         return axiosClient.get(url);
     },
     getReport: (id) => {
@@ -28,8 +29,8 @@ const inundationApi = {
     resolveReport: (id, data) => {
         return axiosClient.post(`/inundation/${id}/resolve`, data);
     },
-    getPointsStatus: () => {
-        return axiosClient.get('/inundation/points-status');
+    getPointsStatus: (params) => {
+        return axiosClient.get('/inundation/points-status', { params });
     },
     createPoint: (data) => {
         return axiosClient.post('/inundation/points', data);

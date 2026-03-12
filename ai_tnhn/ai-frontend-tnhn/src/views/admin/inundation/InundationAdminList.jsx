@@ -18,14 +18,14 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, handleOpenViewe
     const [open, setOpen] = useState(false);
     return (
         <React.Fragment>
-            <TableRow hover sx={{ '& > *': { borderBottom: 'unset' } }}>
+            <TableRow hover sx={{ '& .MuiTableCell-root': { borderBottom: 'none' } }}>
                 <TableCell sx={{ width: 40, p: { xs: 1, md: 2 } }}>
                     <IconButton aria-label="expand row" size="small" onClick={() => setOpen(!open)}>
                         {open ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />}
                     </IconButton>
                 </TableCell>
                 <TableCell sx={{ p: { xs: 1, md: 2 } }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{point.name}</Typography>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: { xs: '0.875rem', md: 'inherit' } }}>{point.name}</Typography>
                     {isMobile && (
                         <Typography variant="body2" color="primary" sx={{ mt: 0.5 }}>
                             {point.org_name || organizations.find(o => o.id === point.org_id)?.name || ''}
@@ -46,10 +46,10 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, handleOpenViewe
                 )}
             </TableRow>
             <TableRow>
-                <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={isMobile ? 3 : 6}>
+                <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider', paddingBottom: 0, paddingTop: 0 }} colSpan={isMobile ? 2 : 6}>
                     <Collapse in={open} timeout="auto" unmountOnExit>
                         <Box sx={{ m: { xs: 1, md: 2 }, p: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-                            <Typography variant="h6" gutterBottom component="div" sx={{ fontWeight: 700, color: 'primary.main', mb: 2 }}>
+                            <Typography variant="h6" gutterBottom component="div" sx={{ fontWeight: 700, color: 'primary.main', mb: 2, fontSize: { xs: '0.875rem', md: 'inherit' } }}>
                                 {point.address}
                             </Typography>
                             <Stack spacing={1.5}>
@@ -99,14 +99,14 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenVi
     const [open, setOpen] = useState(false);
     return (
         <React.Fragment>
-            <TableRow hover sx={{ '& > *': { borderBottom: 'unset' } }}>
+            <TableRow hover sx={{ '& .MuiTableCell-root': { borderBottom: 'none' } }}>
                 <TableCell sx={{ width: 40, p: { xs: 1, md: 2 } }}>
                     <IconButton aria-label="expand row" size="small" onClick={() => setOpen(!open)}>
                         {open ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />}
                     </IconButton>
                 </TableCell>
                 <TableCell sx={{ p: { xs: 1, md: 2 } }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{report.street_name}</Typography>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: { xs: '0.875rem', md: 'inherit' } }}>{report.street_name}</Typography>
                     {isMobile && (
                         <Typography variant="body2" color="primary" sx={{ mt: 0.5 }}>
                             {organizations.find(o => o.id === report.org_id)?.name || report.org_id}
@@ -127,10 +127,10 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenVi
                 )}
             </TableRow>
             <TableRow>
-                <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={isMobile ? 3 : 6}>
+                <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider', paddingBottom: 0, paddingTop: 0 }} colSpan={isMobile ? 2 : 6}>
                     <Collapse in={open} timeout="auto" unmountOnExit>
                         <Box sx={{ m: { xs: 1, md: 2 }, p: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-                            <Typography variant="h6" gutterBottom component="div" sx={{ fontWeight: 700, color: 'primary.main', mb: 2 }}>
+                            <Typography variant="h6" gutterBottom component="div" sx={{ fontWeight: 700, color: 'primary.main', mb: 2, fontSize: { xs: '0.875rem', md: 'inherit' } }}>
                                 Chi tiết báo cáo
                             </Typography>
                             <Stack spacing={1.5}>
@@ -329,13 +329,13 @@ const InundationAdminList = () => {
             }
         >
             <Box sx={{ mb: 3 }}>
-                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="center">
+                <Stack direction="row" spacing={2} sx={{ mb: 3 }} alignItems="center" flexWrap="wrap" useFlexGap>
                     <TextField
                         placeholder="Tìm tên đường, vị trí..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         size="small"
-                        sx={{ minWidth: 250 }}
+                        sx={{ width: { xs: '100%', sm: 250 } }}
                         InputProps={{ startAdornment: <InputAdornment position="start"><IconSearch size={18} /></InputAdornment> }}
                     />
 
@@ -345,7 +345,7 @@ const InundationAdminList = () => {
                         value={orgFilter}
                         onChange={(e) => { setOrgFilter(e.target.value); setHistoryPage(0); }}
                         size="small"
-                        sx={{ minWidth: 200 }}
+                        sx={{ width: { xs: '100%', sm: 180 } }}
                     >
                         <MenuItem value="">Tất cả đơn vị</MenuItem>
                         {organizations.map(org => (
@@ -359,7 +359,7 @@ const InundationAdminList = () => {
                         value={statusFilter}
                         onChange={(e) => { setStatusFilter(e.target.value); setHistoryPage(0); }}
                         size="small"
-                        sx={{ minWidth: 150 }}
+                        sx={{ width: { xs: '100%', sm: 150 } }}
                     >
                         <MenuItem value="">Tất cả</MenuItem>
                         <MenuItem value="active">Đang ngập</MenuItem>
@@ -372,7 +372,7 @@ const InundationAdminList = () => {
                         value={trafficFilter}
                         onChange={(e) => { setTrafficFilter(e.target.value); setHistoryPage(0); }}
                         size="small"
-                        sx={{ minWidth: 200 }}
+                        sx={{ width: { xs: '100%', sm: 180 } }}
                     >
                         <MenuItem value="">Tất cả giao thông</MenuItem>
                         <MenuItem value="Đi lại bình thường">Đi lại bình thường</MenuItem>
@@ -381,7 +381,7 @@ const InundationAdminList = () => {
                     </TextField>
 
                     <Box sx={{ flexGrow: 1 }} />
-                    <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>
+                    <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', ml: { xs: 0, sm: 'auto' } }}>
                         {activeTab === 0 ? `Hiển thị: ${filteredPoints.length} điểm` : `Tổng cộng: ${totalHistory} báo cáo`}
                     </Typography>
                 </Stack>
@@ -391,18 +391,18 @@ const InundationAdminList = () => {
             {activeTab === 0 && (
                 <>
                     <Typography variant="h4" sx={{ mb: 2, fontWeight: 700, color: 'primary.main' }}>Danh sách điểm trực</Typography>
-                    <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, mb: 4, '& .MuiTableCell-root': { fontSize: { xs: '1rem' } } }}>
+                    <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, mb: 4, '& .MuiTableCell-root': { fontSize: { xs: '0.875rem' } } }}>
                         <Table sx={{ minWidth: isMobile ? 300 : 800 }}>
                             <TableHead sx={{ bgcolor: 'grey.50' }}>
                                 <TableRow>
                                     <TableCell sx={{ width: 40 }} />
-                                    <TableCell sx={{ fontWeight: 700 }}>Điểm trực</TableCell>
+                                    <TableCell sx={{ fontWeight: 700 }}>Điểm trực ngập</TableCell>
                                     {!isMobile && (
                                         <>
-                                            <TableCell sx={{ fontWeight: 700 }}>Đơn vị quản lý</TableCell>
-                                            <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>
-                                            <TableCell sx={{ fontWeight: 700 }}>Giao thông</TableCell>
-                                            <TableCell sx={{ fontWeight: 700 }} align="right">Thao tác</TableCell>
+                                            <TableCell sx={{ fontWeight: 700, width: 250 }}>Đơn vị quản lý</TableCell>
+                                            <TableCell sx={{ fontWeight: 700 }} align="center">Trạng thái</TableCell>
+                                            <TableCell sx={{ fontWeight: 700 }} align="center">Giao thông</TableCell>
+                                            <TableCell sx={{ fontWeight: 700, width: 120 }} align="center">Thao tác</TableCell>
                                         </>
                                     )}
                                 </TableRow>
@@ -432,7 +432,7 @@ const InundationAdminList = () => {
             {activeTab === 1 && (
                 <>
                     <Typography variant="h4" sx={{ mb: 2, fontWeight: 700, color: 'primary.main' }}>Lịch sử báo cáo toàn thành phố</Typography>
-                    <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, '& .MuiTableCell-root': { fontSize: { xs: '1rem' } } }}>
+                    <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, '& .MuiTableCell-root': { fontSize: { xs: '0.875rem' } } }}>
                         <Table sx={{ minWidth: isMobile ? 300 : 800 }}>
                             <TableHead sx={{ bgcolor: 'grey.50' }}>
                                 <TableRow>

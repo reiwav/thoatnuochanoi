@@ -19,14 +19,14 @@ const CollapsibleStationRow = ({ row, handleOpenEdit, handleDelete, isMobile }) 
     const [open, setOpen] = useState(false);
     return (
         <React.Fragment>
-            <TableRow hover sx={{ '& > *': { borderBottom: 'unset' } }}>
+            <TableRow hover sx={{ '& .MuiTableCell-root': { borderBottom: 'none' } }}>
                 <TableCell sx={{ width: 40, p: { xs: 1, md: 2 } }}>
                     <IconButton aria-label="expand row" size="small" onClick={() => setOpen(!open)}>
                         {open ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />}
                     </IconButton>
                 </TableCell>
                 <TableCell sx={{ p: { xs: 1, md: 2 } }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'primary.dark' }}>{row.name}</Typography>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'primary.dark', fontSize: { xs: '0.875rem', md: 'inherit' } }}>{row.name}</Typography>
                     {isMobile && (
                         <Typography variant="body2" sx={{ fontWeight: 700, color: 'secondary.main', mt: 0.5 }}>
                             {row.org_name || '-'}
@@ -62,10 +62,10 @@ const CollapsibleStationRow = ({ row, handleOpenEdit, handleDelete, isMobile }) 
                 )}
             </TableRow>
             <TableRow>
-                <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={isMobile ? 2 : 5}>
+                <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider', paddingBottom: 0, paddingTop: 0 }} colSpan={isMobile ? 2 : 5}>
                     <Collapse in={open} timeout="auto" unmountOnExit>
                         <Box sx={{ m: { xs: 1, md: 2 }, p: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-                            <Typography variant="h6" gutterBottom component="div" sx={{ fontWeight: 700, color: 'primary.main', mb: 2 }}>
+                            <Typography variant="h6" gutterBottom component="div" sx={{ fontWeight: 700, color: 'primary.main', mb: 2, fontSize: { xs: '0.875rem', md: 'inherit' } }}>
                                 {row.address}
                             </Typography>
                             <Stack spacing={1.5}>
@@ -207,13 +207,13 @@ const StationInundationList = () => {
             }
         >
             <Box sx={{ mb: 3 }}>
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
+                <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
                     <TextField
                         placeholder="Tìm tên điểm, địa chỉ..."
                         value={searchFilter}
                         onChange={(e) => setSearchFilter(e.target.value)}
                         size="small"
-                        sx={{ minWidth: 250 }}
+                        sx={{ width: { xs: '100%', sm: 250 } }}
                     />
                     <TextField
                         select
@@ -221,7 +221,7 @@ const StationInundationList = () => {
                         value={orgFilter}
                         onChange={(e) => setOrgFilter(e.target.value)}
                         size="small"
-                        sx={{ minWidth: 200 }}
+                        sx={{ width: { xs: '100%', sm: 200 } }}
                     >
                         <MenuItem value="">Tất cả đơn vị</MenuItem>
                         {organizations.map((org) => (
@@ -231,7 +231,7 @@ const StationInundationList = () => {
                 </Stack>
             </Box>
 
-            <TableContainer component={Paper} sx={{ border: '1px solid', borderColor: 'divider', boxShadow: 'none', borderRadius: '12px', '& .MuiTableCell-root': { fontSize: { xs: '1rem' } } }}>
+            <TableContainer component={Paper} sx={{ border: '1px solid', borderColor: 'divider', boxShadow: 'none', borderRadius: '12px', '& .MuiTableCell-root': { fontSize: { xs: '0.875rem' } } }}>
                 <Table sx={{ minWidth: isMobile ? 300 : 800 }}>
                     <TableHead sx={{ bgcolor: 'grey.50' }}>
                         <TableRow>

@@ -57,14 +57,14 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
     const [open, setOpen] = useState(false);
     return (
         <React.Fragment>
-            <TableRow hover sx={{ '& > *': { borderBottom: 'unset' } }}>
+            <TableRow hover sx={{ '& .MuiTableCell-root': { borderBottom: 'none' } }}>
                 <TableCell sx={{ width: 40, p: { xs: 1, md: 2 } }}>
                     <IconButton aria-label="expand row" size="small" onClick={() => setOpen(!open)}>
                         {open ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />}
                     </IconButton>
                 </TableCell>
                 <TableCell sx={{ p: { xs: 1, md: 2 } }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: { xs: '0.875rem', md: 'inherit' } }}>
                         {point.name}
                     </Typography>
                     {isMobile && (
@@ -122,10 +122,10 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                 )}
             </TableRow>
             <TableRow>
-                <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={isMobile ? 3 : 6}>
+                <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider', paddingBottom: 0, paddingTop: 0 }} colSpan={isMobile ? 2 : 6}>
                     <Collapse in={open} timeout="auto" unmountOnExit>
                         <Box sx={{ m: { xs: 1, md: 2 }, p: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-                            <Typography variant="h6" gutterBottom component="div" sx={{ fontWeight: 700, color: 'primary.main', mb: 2 }}>
+                            <Typography variant="h6" gutterBottom component="div" sx={{ fontWeight: 700, color: 'primary.main', mb: 2, fontSize: { xs: '0.875rem', md: 'inherit' } }}>
                                 {point.address}
                             </Typography>
                             <Stack spacing={1.5}>
@@ -238,14 +238,14 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenVi
     const [open, setOpen] = useState(false);
     return (
         <React.Fragment>
-            <TableRow hover sx={{ '& > *': { borderBottom: 'unset' } }}>
+            <TableRow hover sx={{ '& .MuiTableCell-root': { borderBottom: 'none' } }}>
                 <TableCell sx={{ width: 40, p: { xs: 1, md: 2 } }}>
                     <IconButton aria-label="expand row" size="small" onClick={() => setOpen(!open)}>
                         {open ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />}
                     </IconButton>
                 </TableCell>
                 <TableCell sx={{ p: { xs: 1, md: 2 } }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: { xs: '0.875rem', md: 'inherit' } }}>
                         {report.street_name}
                     </Typography>
                     {isMobile && (
@@ -283,10 +283,10 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenVi
                 )}
             </TableRow>
             <TableRow>
-                <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={isMobile ? 3 : 6}>
+                <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider', paddingBottom: 0, paddingTop: 0 }} colSpan={isMobile ? 2 : 6}>
                     <Collapse in={open} timeout="auto" unmountOnExit>
                         <Box sx={{ m: { xs: 1, md: 2 }, p: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-                            <Typography variant="h6" gutterBottom component="div" sx={{ fontWeight: 700, color: 'primary.main', mb: 2 }}>
+                            <Typography variant="h6" gutterBottom component="div" sx={{ fontWeight: 700, color: 'primary.main', mb: 2, fontSize: { xs: '0.875rem', md: 'inherit' } }}>
                                 Chi tiết báo cáo
                             </Typography>
                             <Stack spacing={1.5}>
@@ -543,13 +543,13 @@ const InundationDashboard = () => {
 
     const renderHistoryTable = () => (
         <Box>
-            <Stack direction="row" spacing={2} sx={{ mb: 2 }} alignItems="center">
+            <Stack direction="row" spacing={2} sx={{ mb: 2 }} alignItems="center" flexWrap="wrap" useFlexGap>
                 <TextField
                     size="small"
                     placeholder="Tìm tên đường..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    sx={{ width: 250 }}
+                    sx={{ width: { xs: '100%', sm: 250 } }}
                     InputProps={{ startAdornment: <IconSearch size={16} sx={{ mr: 1, color: 'text.disabled' }} /> }}
                 />
                 {userRole !== 'employee' && (
@@ -562,7 +562,7 @@ const InundationDashboard = () => {
                             setOrgFilter(e.target.value);
                             setHistoryPage(0);
                         }}
-                        sx={{ minWidth: 150 }}
+                        sx={{ width: { xs: '100%', sm: 180 } }}
                     >
                         <MenuItem value="">Tất cả</MenuItem>
                         {organizations.map((org) => (
@@ -581,7 +581,7 @@ const InundationDashboard = () => {
                         setHistoryStatus(e.target.value);
                         setHistoryPage(0);
                     }}
-                    sx={{ minWidth: 150 }}
+                    sx={{ width: { xs: '100%', sm: 150 } }}
                 >
                     <MenuItem value="">Tất cả</MenuItem>
                     <MenuItem value="active">Đang ngập</MenuItem>
@@ -596,7 +596,7 @@ const InundationDashboard = () => {
                         setHistoryTrafficStatus(e.target.value);
                         setHistoryPage(0);
                     }}
-                    sx={{ minWidth: 180 }}
+                    sx={{ width: { xs: '100%', sm: 180 } }}
                 >
                     <MenuItem value="">Tất cả giao thông</MenuItem>
                     <MenuItem value="Đi lại bình thường">Đi lại bình thường</MenuItem>
@@ -604,7 +604,7 @@ const InundationDashboard = () => {
                     <MenuItem value="Không đi lại được">Không đi lại được</MenuItem>
                 </TextField>
             </Stack>
-            <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, '& .MuiTableCell-root': { fontSize: { xs: '1rem' } } }}>
+            <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, '& .MuiTableCell-root': { fontSize: { xs: '0.875rem' } } }}>
                 <Table sx={{ minWidth: isMobile ? 300 : 800 }}>
                     <TableHead sx={{ bgcolor: 'grey.50' }}>
                         <TableRow>
@@ -823,7 +823,7 @@ const InundationDashboard = () => {
                                 </Stack>
                             )}
                         </Box>
-                        <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, '& .MuiTableCell-root': { fontSize: { xs: '1rem' } } }}>
+                        <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, '& .MuiTableCell-root': { fontSize: { xs: '0.875rem' } } }}>
                             <Table sx={{ minWidth: isMobile ? 300 : 800 }}>
                                 <TableHead sx={{ bgcolor: 'grey.50' }}>
                                     <TableRow>
@@ -831,15 +831,11 @@ const InundationDashboard = () => {
                                         <TableCell sx={{ fontWeight: 700 }}>Điểm trực ngập</TableCell>
                                         {!isMobile && (
                                             <>
-                                                <TableCell sx={{ fontWeight: 700 }}>Đơn vị quản lý</TableCell>
-                                                <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>
-                                                <TableCell sx={{ fontWeight: 700 }}>Giao thông</TableCell>
+                                                <TableCell sx={{ fontWeight: 700, width: 250 }}>Đơn vị quản lý</TableCell>
+                                                <TableCell sx={{ fontWeight: 700 }} align="center">Trạng thái</TableCell>
+                                                <TableCell sx={{ fontWeight: 700 }} align="center">Giao thông</TableCell>
+                                                <TableCell sx={{ fontWeight: 700, width: 120 }} align="center">Thao tác</TableCell>
                                             </>
-                                        )}
-                                        {!isMobile && (
-                                            <TableCell sx={{ fontWeight: 700 }} align="right">
-                                                Thao tác
-                                            </TableCell>
                                         )}
                                     </TableRow>
                                 </TableHead>
@@ -951,37 +947,46 @@ const InundationDashboard = () => {
                     sx={{ fontWeight: 800, height: 36, fontSize: '0.95rem' }}
                 />
             </Stack>
-            <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
-                {userRole !== 'employee' && (
-                    <TextField
-                        select
-                        size="small"
-                        label="Đơn vị"
-                        value={orgFilter}
-                        onChange={(e) => setOrgFilter(e.target.value)}
-                        sx={{ minWidth: 160, bgcolor: 'background.paper', '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
-                    >
-                        <MenuItem value="">Tất cả đơn vị</MenuItem>
-                        {organizations.map((org) => (
-                            <MenuItem key={org.id} value={org.id}>
-                                {org.name}
-                            </MenuItem>
-                        ))}
-                    </TextField>
-                )}
+            <Stack spacing={1.5} sx={{ mb: 2 }}>
                 <TextField
-                    select
                     fullWidth
                     size="small"
-                    label="Trạng thái"
-                    value={historyStatus}
-                    onChange={(e) => setHistoryStatus(e.target.value)}
-                    sx={{ bgcolor: 'background.paper', '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
-                >
-                    <MenuItem value="">Tất cả</MenuItem>
-                    <MenuItem value="active">Đang ngập</MenuItem>
-                    <MenuItem value="normal">Bình thường</MenuItem>
-                </TextField>
+                    placeholder="Tìm tên đường, địa chỉ..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    InputProps={{ startAdornment: <IconSearch size={18} sx={{ color: 'text.disabled', mr: 1 }} /> }}
+                />
+                <Stack direction="row" spacing={1}>
+                    {userRole !== 'employee' && (
+                        <TextField
+                            select
+                            fullWidth
+                            size="small"
+                            label="Đơn vị"
+                            value={orgFilter}
+                            onChange={(e) => setOrgFilter(e.target.value)}
+                        >
+                            <MenuItem value="">Tất cả</MenuItem>
+                            {organizations.map((org) => (
+                                <MenuItem key={org.id} value={org.id}>
+                                    {org.name}
+                                </MenuItem>
+                            ))}
+                        </TextField>
+                    )}
+                    <TextField
+                        select
+                        fullWidth
+                        size="small"
+                        label="Trạng thái"
+                        value={historyStatus}
+                        onChange={(e) => setHistoryStatus(e.target.value)}
+                    >
+                        <MenuItem value="">Tất cả</MenuItem>
+                        <MenuItem value="active">Đang ngập</MenuItem>
+                        <MenuItem value="normal">Bình thường</MenuItem>
+                    </TextField>
+                </Stack>
                 <TextField
                     select
                     fullWidth
@@ -989,7 +994,6 @@ const InundationDashboard = () => {
                     label="Giao thông"
                     value={historyTrafficStatus}
                     onChange={(e) => setHistoryTrafficStatus(e.target.value)}
-                    sx={{ bgcolor: 'background.paper', '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
                 >
                     <MenuItem value="">Tất cả</MenuItem>
                     <MenuItem value="Đi lại bình thường">Bình thường</MenuItem>
@@ -997,16 +1001,7 @@ const InundationDashboard = () => {
                     <MenuItem value="Không đi lại được">Không đi lại được</MenuItem>
                 </TextField>
             </Stack>
-            <TextField
-                fullWidth
-                size="small"
-                placeholder="Tìm tên đường, địa chỉ..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                sx={{ mb: 2.5, bgcolor: 'background.paper', '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
-                InputProps={{ startAdornment: <IconSearch size={18} sx={{ color: 'text.disabled', mr: 1 }} /> }}
-            />
-            <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, '& .MuiTableCell-root': { fontSize: { xs: '1rem' } } }}>
+            <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, '& .MuiTableCell-root': { fontSize: { xs: '0.875rem' } } }}>
                 <Table sx={{ minWidth: isMobile ? 300 : 800 }}>
                     <TableHead sx={{ bgcolor: 'grey.50' }}>
                         <TableRow>
@@ -1014,15 +1009,11 @@ const InundationDashboard = () => {
                             <TableCell sx={{ fontWeight: 700 }}>Điểm trực ngập</TableCell>
                             {!isMobile && (
                                 <>
-                                    <TableCell sx={{ fontWeight: 700 }}>Đơn vị quản lý</TableCell>
-                                    <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>
-                                    <TableCell sx={{ fontWeight: 700 }}>Giao thông</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, width: 250 }}>Đơn vị quản lý</TableCell>
+                                    <TableCell sx={{ fontWeight: 700 }} align="center">Trạng thái</TableCell>
+                                    <TableCell sx={{ fontWeight: 700 }} align="center">Giao thông</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, width: 120 }} align="center">Thao tác</TableCell>
                                 </>
-                            )}
-                            {!isMobile && (
-                                <TableCell sx={{ fontWeight: 700 }} align="right">
-                                    Thao tác
-                                </TableCell>
                             )}
                         </TableRow>
                     </TableHead>

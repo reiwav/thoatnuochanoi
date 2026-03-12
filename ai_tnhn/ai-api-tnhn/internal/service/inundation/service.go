@@ -23,6 +23,7 @@ type Service interface {
 
 	// Points management
 	GetPointsStatus(ctx context.Context, orgID string) ([]PointStatus, error)
+	GetPointByID(ctx context.Context, id string) (*models.InundationPoint, error)
 	CreatePoint(ctx context.Context, point models.InundationPoint) (string, error)
 	UpdatePoint(ctx context.Context, id string, point models.InundationPoint) error
 	DeletePoint(ctx context.Context, id string) error
@@ -34,6 +35,8 @@ type Service interface {
 
 type PointStatus struct {
 	ID           string                   `json:"id"`
+	OrgID        string                   `json:"org_id"`
+	OrgName      string                   `json:"org_name"`
 	Name         string                   `json:"name"`
 	Address      string                   `json:"address"`
 	Lat          string                   `json:"lat"`
@@ -41,6 +44,7 @@ type PointStatus struct {
 	Status       string                   `json:"status"` // active, normal
 	ActiveReport *models.InundationReport `json:"active_report,omitempty"`
 	LastReportID string                   `json:"last_report_id"`
+	Active       bool                     `json:"active"`
 }
 
 type ImageContent struct {
@@ -244,6 +248,10 @@ func (s *service) Resolve(ctx context.Context, reportID string, endTime int64) e
 	return s.inundationRepo.Resolve(ctx, reportID, endTime)
 }
 
+func (s *service) GetPointByID(ctx context.Context, id string) (*models.InundationPoint, error) {
+	return s.inundationPointRepo.GetByID(ctx, id)
+}
+
 func (s *service) CreatePoint(ctx context.Context, point models.InundationPoint) (string, error) {
 	if point.Active == false {
 		point.Active = true
@@ -256,6 +264,13 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string) ([]PointSta
 	points, err := s.inundationPointRepo.ListByOrg(ctx, orgID)
 	if err != nil {
 		return nil, err
+	}
+
+	// 1.5 Get all organizations for mapping names
+	orgs, _, _ := s.orgRepo.List(ctx, filter.NewPaginationFilter()) // Minimal filter
+	orgMap := make(map[string]string)
+	for _, o := range orgs {
+		orgMap[o.ID] = o.Name
 	}
 
 	// 2. Get all active reports for this org (or all if orgID is empty)
@@ -324,6 +339,8 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string) ([]PointSta
 
 		result[i] = PointStatus{
 			ID:           p.ID,
+			OrgID:        p.OrgID,
+			OrgName:      orgMap[p.OrgID],
 			Name:         p.Name,
 			Address:      p.Address,
 			Lat:          p.Lat,
@@ -331,6 +348,7 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string) ([]PointSta
 			Status:       status,
 			ActiveReport: activeReport,
 			LastReportID: lastReportIDs[p.ID],
+			Active:       p.Active,
 		}
 	}
 

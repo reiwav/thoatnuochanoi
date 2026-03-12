@@ -57,7 +57,15 @@ func (t service) GetProfile(ctx context.Context, tokenID string) (*models.User, 
 	if err != nil {
 		return nil, err
 	}
-	return t.userRepo.GetByID(ctx, tk.UserID)
+	user, err := t.userRepo.GetByID(ctx, tk.UserID)
+	if err != nil {
+		return nil, err
+	}
+	// Normalize known role typos from legacy data
+	if user.Role == "supper_admib" || user.Role == "super_admin " {
+		user.Role = constant.ROLE_SUPER_ADMIN
+	}
+	return user, nil
 }
 
 func (t service) Logout(ctx context.Context, tokenID string) error {

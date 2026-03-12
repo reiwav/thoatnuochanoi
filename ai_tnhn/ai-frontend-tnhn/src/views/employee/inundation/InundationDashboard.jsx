@@ -22,6 +22,7 @@ import inundationApi from 'api/inundation';
 import MainCard from 'ui-component/cards/MainCard';
 
 import { getInundationImageUrl } from 'utils/imageHelper';
+import { getTrafficStatusColor, getTrafficStatusLabel } from 'utils/trafficStatusHelper';
 
 // ─── Mobile: Point card with inline detail ─────────────────────────────────
 const PointCard = ({ point, expandedId, handleCardClick, updateLength, setUpdateLength, updateWidth, setUpdateWidth, updateDepth, setUpdateDepth, updateTrafficStatus, setUpdateTrafficStatus, updateNote, setUpdateNote, updatePreviews, removeUpdateImage, resolveOnUpdate, setResolveOnUpdate, submitting, handleSubmitUpdate, handleUpdateImageChange, navigate, theme, report }) => {
@@ -89,8 +90,8 @@ const PointCard = ({ point, expandedId, handleCardClick, updateLength, setUpdate
                         </Typography>
                         {(report?.traffic_status || report?.trafficStatus) && (
                             <Chip
-                                label={report.traffic_status || report.trafficStatus}
-                                size="small" color="warning" variant="filled"
+                                label={getTrafficStatusLabel(report.traffic_status || report.trafficStatus)}
+                                size="small" color={getTrafficStatusColor(report.traffic_status || report.trafficStatus)} variant="filled"
                                 icon={<IconCar size={14} color="white" />}
                                 sx={{ mt: 1, fontWeight: 800, height: 24, fontSize: '0.75rem' }}
                             />
@@ -121,7 +122,7 @@ const PointCard = ({ point, expandedId, handleCardClick, updateLength, setUpdate
                     >
                         <MenuItem value="Đi lại bình thường">Đi lại bình thường</MenuItem>
                         <MenuItem value="Đi lại khó khăn">Đi lại khó khăn</MenuItem>
-                        <MenuItem value="Không đi được">Không đi được</MenuItem>
+                        <MenuItem value="Không đi lại được">Không đi lại được</MenuItem>
                     </TextField>
 
                     {/* Update Image Previews */}
@@ -393,7 +394,7 @@ const InundationDashboard = () => {
                     <MenuItem value="">Tất cả giao thông</MenuItem>
                     <MenuItem value="Đi lại bình thường">Đi lại bình thường</MenuItem>
                     <MenuItem value="Đi lại khó khăn">Đi lại khó khăn</MenuItem>
-                    <MenuItem value="Không đi được">Không đi được</MenuItem>
+                    <MenuItem value="Không đi lại được">Không đi lại được</MenuItem>
                 </TextField>
             </Stack>
             <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
@@ -422,7 +423,7 @@ const InundationDashboard = () => {
                                     <TableCell><Typography variant="body2" sx={{ fontWeight: 600 }}>{report.length || '0'}x{report.width || '0'}x{report.depth || '0'}</Typography></TableCell>
                                     <TableCell>
                                         {(report.traffic_status || report.trafficStatus) && (
-                                            <Chip label={report.traffic_status || report.trafficStatus} size="small" variant="outlined" color="warning" sx={{ fontWeight: 700, fontSize: '0.75rem' }} />
+                                            <Chip label={getTrafficStatusLabel(report.traffic_status || report.trafficStatus)} size="small" variant="outlined" color={getTrafficStatusColor(report.traffic_status || report.trafficStatus)} sx={{ fontWeight: 700, fontSize: '0.75rem' }} />
                                         )}
                                     </TableCell>
                                     <TableCell>
@@ -525,7 +526,7 @@ const InundationDashboard = () => {
                                 <MenuItem value="">Tất cả giao thông</MenuItem>
                                 <MenuItem value="Đi lại bình thường">Đi lại bình thường</MenuItem>
                                 <MenuItem value="Đi lại khó khăn">Đi lại khó khăn</MenuItem>
-                                <MenuItem value="Không đi được">Không đi được</MenuItem>
+                                <MenuItem value="Không đi lại được">Không đi lại được</MenuItem>
                             </TextField>
                             <Box sx={{ flexGrow: 1 }} />
                             {!loading && (
@@ -558,7 +559,7 @@ const InundationDashboard = () => {
                                             <TableCell><Chip label={point.status === 'active' ? 'Đang ngập' : 'Bình thường'} color={point.status === 'active' ? 'error' : 'success'} size="small" sx={{ fontWeight: 600 }} /></TableCell>
                                             <TableCell>
                                                 {(point.active_report?.traffic_status || point.active_report?.trafficStatus) && (
-                                                    <Chip label={point.active_report.traffic_status || point.active_report.trafficStatus} size="small" variant="outlined" color="warning" sx={{ fontWeight: 700 }} />
+                                                    <Chip label={getTrafficStatusLabel(point.active_report.traffic_status || point.active_report.trafficStatus)} size="small" variant="outlined" color={getTrafficStatusColor(point.active_report.traffic_status || point.active_report.trafficStatus)} sx={{ fontWeight: 700 }} />
                                                 )}
                                             </TableCell>
                                             <TableCell>
@@ -627,7 +628,7 @@ const InundationDashboard = () => {
                             <MenuItem value="">Tất cả</MenuItem>
                             <MenuItem value="Đi lại bình thường">Bình thường</MenuItem>
                             <MenuItem value="Đi lại khó khăn">Khó khăn</MenuItem>
-                            <MenuItem value="Không đi được">Tắc nghẽn</MenuItem>
+                            <MenuItem value="Không đi lại được">Không đi lại được</MenuItem>
                         </TextField>
                     </Stack>
                 </Stack>
@@ -655,7 +656,7 @@ const InundationDashboard = () => {
                                     <Stack direction="row" spacing={1} sx={{ mb: 1.5 }} flexWrap="wrap" gap={1}>
                                         <Chip label={`${report.length || 0}x${report.width || 0}x${report.depth || 0}`} size="small" variant="outlined" sx={{ fontWeight: 700 }} />
                                         {report.traffic_status && (
-                                            <Chip label={report.traffic_status} size="small" color="warning" sx={{ fontWeight: 800 }} />
+                                            <Chip label={getTrafficStatusLabel(report.traffic_status)} size="small" color={getTrafficStatusColor(report.traffic_status)} sx={{ fontWeight: 800 }} />
                                         )}
                                     </Stack>
 
@@ -733,7 +734,7 @@ const InundationDashboard = () => {
                     <MenuItem value="">Tất cả</MenuItem>
                     <MenuItem value="Đi lại bình thường">Bình thường</MenuItem>
                     <MenuItem value="Đi lại khó khăn">Khó khăn</MenuItem>
-                    <MenuItem value="Không đi được">Tắc nghẽn</MenuItem>
+                    <MenuItem value="Không đi lại được">Không đi lại được</MenuItem>
                 </TextField>
             </Stack>
             <TextField

@@ -11,6 +11,7 @@ import {
 import { toast } from 'react-hot-toast';
 
 import { getInundationImageUrl } from 'utils/imageHelper';
+import { getTrafficStatusColor } from 'utils/trafficStatusHelper';
 
 const InundationDetail = ({ selectedReport, loadingReport }) => {
     const theme = useTheme();
@@ -89,9 +90,9 @@ const InundationDetail = ({ selectedReport, loadingReport }) => {
                                 <Typography variant="body2" sx={{ fontWeight: 700 }}>{latestLength} x {latestWidth} x {latestDepth}</Typography>
                             </Box>
                             {latestTraffic && (
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, bgcolor: 'warning.light', px: 1, py: 0.2, borderRadius: 10 }}>
-                                    <IconCar size={14} color={theme.palette.warning.dark} />
-                                    <Typography variant="caption" sx={{ fontWeight: 700, color: 'warning.darker' }}>{latestTraffic}</Typography>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, bgcolor: `${getTrafficStatusColor(latestTraffic)}.light`, px: 1, py: 0.2, borderRadius: 10 }}>
+                                    <IconCar size={14} color={theme.palette[getTrafficStatusColor(latestTraffic)].dark} />
+                                    <Typography variant="caption" sx={{ fontWeight: 700, color: `${getTrafficStatusColor(latestTraffic)}.darker` }}>{latestTraffic}</Typography>
                                 </Box>
                             )}
                         </Box>
@@ -143,9 +144,9 @@ const InundationDetail = ({ selectedReport, loadingReport }) => {
                                     </Box>
                                 )}
                                 {(item.traffic_status || item.trafficStatus) && (
-                                    <Box sx={{ px: 1.2, py: 0.5, bgcolor: 'warning.lighter', borderRadius: 100, border: '1px solid', borderColor: 'warning.light', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                        <IconCar size={14} color={theme.palette.warning.main} />
-                                        <Typography variant="caption" sx={{ color: 'warning.dark', fontWeight: 700, fontSize: '0.9rem' }}>
+                                    <Box sx={{ px: 1.2, py: 0.5, bgcolor: `${getTrafficStatusColor(item.traffic_status || item.trafficStatus)}.lighter`, borderRadius: 100, border: '1px solid', borderColor: `${getTrafficStatusColor(item.traffic_status || item.trafficStatus)}.light`, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                        <IconCar size={14} color={theme.palette[getTrafficStatusColor(item.traffic_status || item.trafficStatus)].main} />
+                                        <Typography variant="caption" sx={{ color: `${getTrafficStatusColor(item.traffic_status || item.trafficStatus)}.dark`, fontWeight: 700, fontSize: '0.9rem' }}>
                                             {item.traffic_status || item.trafficStatus}
                                         </Typography>
                                     </Box>

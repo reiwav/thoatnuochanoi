@@ -214,7 +214,7 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
             >
                 <MenuItem value="Đi lại bình thường">Đi lại bình thường</MenuItem>
                 <MenuItem value="Đi lại khó khăn">Đi lại khó khăn</MenuItem>
-                <MenuItem value="Không đi được">Không đi được</MenuItem>
+                <MenuItem value="Không đi lại được">Không đi lại được</MenuItem>
             </TextField>
 
             <TextField

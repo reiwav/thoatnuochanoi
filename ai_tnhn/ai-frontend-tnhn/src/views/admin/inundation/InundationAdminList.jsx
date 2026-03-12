@@ -10,6 +10,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import { IconSearch, IconClock, IconAlertTriangle, IconX, IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import inundationApi from 'api/inundation';
 import { getInundationImageUrl } from 'utils/imageHelper';
+import { getTrafficStatusColor, getTrafficStatusLabel } from 'utils/trafficStatusHelper';
 import { toast } from 'react-hot-toast';
 
 const InundationAdminList = () => {
@@ -175,7 +176,7 @@ const InundationAdminList = () => {
                         <MenuItem value="">Tất cả giao thông</MenuItem>
                         <MenuItem value="Đi lại bình thường">Đi lại bình thường</MenuItem>
                         <MenuItem value="Đi lại khó khăn">Đi lại khó khăn</MenuItem>
-                        <MenuItem value="Không đi được">Không đi được</MenuItem>
+                        <MenuItem value="Không đi lại được">Không đi lại được</MenuItem>
                     </TextField>
 
                     <Box sx={{ flexGrow: 1 }} />
@@ -208,7 +209,7 @@ const InundationAdminList = () => {
                                         <TableCell><Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{point.name}</Typography></TableCell>
                                         <TableCell><Typography variant="body2">{point.address}</Typography></TableCell>
                                         <TableCell><Chip label={point.status === 'active' ? 'Đang ngập' : 'Bình thường'} color={point.status === 'active' ? 'error' : 'success'} size="small" sx={{ fontWeight: 700 }} /></TableCell>
-                                        <TableCell>{(point.active_report?.traffic_status || point.active_report?.trafficStatus) && <Chip label={point.active_report.traffic_status || point.active_report.trafficStatus} size="small" color="warning" variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem' }} />}</TableCell>
+                                        <TableCell>{(point.active_report?.traffic_status || point.active_report?.trafficStatus) && <Chip label={getTrafficStatusLabel(point.active_report.traffic_status || point.active_report.trafficStatus)} size="small" color={getTrafficStatusColor(point.active_report.traffic_status || point.active_report.trafficStatus)} variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem' }} />}</TableCell>
                                         <TableCell>{point.status === 'active' ? `${point.active_report?.length || 0}x${point.active_report?.width || 0}x${point.active_report?.depth || 0}` : '-'}</TableCell>
                                         <TableCell>{point.status === 'active' ? formatTime(point.active_report?.start_time) : '-'}</TableCell>
                                         <TableCell align="right">
@@ -251,7 +252,7 @@ const InundationAdminList = () => {
                                         <TableCell><Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{report.street_name}</Typography></TableCell>
                                         <TableCell><Typography variant="body2">{formatTime(report.start_time)}</Typography></TableCell>
                                         <TableCell><Typography variant="body2">{report.length || 0}x{report.width || 0}x{report.depth || 0}</Typography></TableCell>
-                                        <TableCell>{report.traffic_status && <Chip label={report.traffic_status} size="small" variant="outlined" color="warning" sx={{ fontWeight: 700, fontSize: '0.75rem' }} />}</TableCell>
+                                        <TableCell>{report.traffic_status && <Chip label={getTrafficStatusLabel(report.traffic_status)} size="small" variant="outlined" color={getTrafficStatusColor(report.traffic_status)} sx={{ fontWeight: 700, fontSize: '0.75rem' }} />}</TableCell>
                                         <TableCell><Chip label={report.status === 'active' ? 'Đang ngập' : 'Đã kết thúc'} color={report.status === 'active' ? 'error' : 'success'} size="small" sx={{ fontWeight: 700 }} /></TableCell>
                                         <TableCell>
                                             <Stack direction="row" spacing={0.5}>

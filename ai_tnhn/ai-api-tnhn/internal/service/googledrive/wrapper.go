@@ -41,7 +41,12 @@ func (w *storageWrapper) CreateOrgFolder(ctx context.Context, orgName string) (s
 	}
 
 	if w.driveSvc != nil {
-		return w.driveSvc.CreateOrgFolder(ctx, orgName)
+		driveID, err := w.driveSvc.CreateOrgFolder(ctx, orgName)
+		if err != nil {
+			fmt.Printf("Warning: failed to create drive org folder: %v\n", err)
+			return localID, nil // Fallback to local ID
+		}
+		return driveID, nil
 	}
 	return localID, nil
 }
@@ -79,7 +84,12 @@ func (w *storageWrapper) FindOrCreateFolder(ctx context.Context, parentID, folde
 	localID, _ := w.storageSvc.CreateFolder(ctx, parentID, folderName)
 
 	if w.driveSvc != nil {
-		return w.driveSvc.FindOrCreateFolder(ctx, parentID, folderName)
+		driveID, err := w.driveSvc.FindOrCreateFolder(ctx, parentID, folderName)
+		if err != nil {
+			fmt.Printf("Warning: failed to find or create drive folder '%s': %v\n", folderName, err)
+			return localID, nil // Fallback to local ID
+		}
+		return driveID, nil
 	}
 	return localID, nil
 }

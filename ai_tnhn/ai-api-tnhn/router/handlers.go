@@ -13,7 +13,6 @@ type HandlerFuncs struct {
 	ChangePasswordHandler          gin.HandlerFunc
 	LoginHandler                   gin.HandlerFunc
 	LogoutHandler                  gin.HandlerFunc
-	EmployeeLoginHandler           gin.HandlerFunc
 	GoogleLoginHandler             gin.HandlerFunc
 	GoogleCallbackHandler          gin.HandlerFunc
 	GoogleStatusHandler            gin.HandlerFunc

@@ -5,7 +5,6 @@ import Loadable from 'ui-component/Loadable';
 import MinimalLayout from 'layout/MinimalLayout';
 
 const LoginPage = Loadable(lazy(() => import('views/pages/authentication/Login')));
-const EmployeeLoginPage = Loadable(lazy(() => import('views/pages/authentication/EmployeeLogin')));
 
 // ==============================|| AUTHENTICATION ROUTING ||============================== //
 
@@ -16,10 +15,6 @@ const AuthenticationRoutes = {
     {
       path: '/pages/login',
       element: <LoginPage />
-    },
-    {
-      path: '/employee/login',
-      element: <EmployeeLoginPage />
     }
   ]
 };

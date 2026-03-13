@@ -64,20 +64,6 @@ func (h *AuthHandler) LoginHandler(c *gin.Context) {
 	h.SendData(c, res)
 }
 
-func (h *AuthHandler) EmployeeLoginHandler(c *gin.Context) {
-	var req auth.LoginRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		h.SendError(c, web.BadRequest("Invalid request: "+err.Error()))
-		return
-	}
-
-	res, err := h.authService.EmployeeLogin(c.Request.Context(), req)
-	if err != nil {
-		h.SendError(c, err)
-		return
-	}
-	h.SendData(c, res)
-}
 
 func (h *AuthHandler) LogoutHandler(c *gin.Context) {
 	token := h.contextWith.GetToken(c.Request)

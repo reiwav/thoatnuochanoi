@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ADMIN_TOKEN, EMPLOYEE_TOKEN } from 'constants/auth';
+import { ADMIN_TOKEN } from 'constants/auth';
 
 const axiosClient = axios.create({
   baseURL: (import.meta.env?.VITE_APP_API_URL || '') + '/api',
@@ -7,9 +7,7 @@ const axiosClient = axios.create({
 
 // Gắn token vào header trước mỗi request
 axiosClient.interceptors.request.use((config) => {
-  const isEmployeePath = window.location.pathname.startsWith('/employee') || window.location.pathname.startsWith('/screen');
-  const tokenKey = isEmployeePath ? EMPLOYEE_TOKEN : ADMIN_TOKEN;
-  const token = localStorage.getItem(tokenKey);
+  const token = localStorage.getItem(ADMIN_TOKEN);
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;

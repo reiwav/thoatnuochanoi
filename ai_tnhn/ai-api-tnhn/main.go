@@ -163,7 +163,6 @@ func main() {
 		Logger:                         log,
 		LoginHandler:                   authHandler.LoginHandler,
 		LogoutHandler:                  authHandler.LogoutHandler,
-		EmployeeLoginHandler:           authHandler.EmployeeLoginHandler,
 		GoogleLoginHandler:             authHandler.GoogleLoginHandler,
 		GoogleCallbackHandler:          authHandler.GoogleCallbackHandler,
 		GetProfileHandler:              authHandler.GetProfileHandler,

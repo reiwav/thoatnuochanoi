@@ -21,7 +21,6 @@ type Service interface {
 	Login(ctx context.Context, input LoginRequest) (*models.Token, error)
 	GetProfile(ctx context.Context, tokenID string) (*models.User, error)
 	Logout(ctx context.Context, tokenID string) error
-	EmployeeLogin(ctx context.Context, input LoginRequest) (*models.Token, error)
 	UpdateProfile(ctx context.Context, tokenID string, input UpdateProfileRequest) error
 	ChangePassword(ctx context.Context, tokenID string, input ChangePasswordRequest) error
 	OAuthLogin(ctx context.Context, email string) (*models.Token, error)
@@ -78,44 +77,16 @@ func (t service) Login(ctx context.Context, input LoginRequest) (*models.Token, 
 	err := t.userRepo.R_SelectOne(ctx, bson.M{
 		"email": input.Email}, &u)
 	if err != nil {
-		return nil, err
-	}
-	if u.Role == constant.ROLE_EMPLOYEE {
-		return nil, web.BadRequest("Don't have permission to login to admin portal")
-	}
-	// 2. Verify password
-	if err := u.Password.ComparePassword(input.Password); err != nil {
-		return nil, web.BadRequest("invalid username or password")
+		return nil, web.BadRequest("invalid email or password")
 	}
 
-	// 3. (Optional) Tạo token
-	tk := &models.Token{
-		UserID: u.ID,
-		Name:   u.Name,
-		OrgID:  u.OrgID,
-		Role:   u.Role,
-	}
-	err = t.tokenRepo.R_Create(ctx, tk)
-
-	return tk, err
-}
-
-func (t service) EmployeeLogin(ctx context.Context, input LoginRequest) (*models.Token, error) {
-	var u *models.User
-	err := t.userRepo.R_SelectOne(ctx, bson.M{
-		"email": input.Email}, &u)
-	if err != nil {
-		return nil, err
-	}
-	if u.Role != constant.ROLE_EMPLOYEE {
-		return nil, web.BadRequest("Only employees can login here")
-	}
 	if !u.Active {
-		return nil, web.BadRequest("Account is disabled")
+		return nil, web.BadRequest("account is disabled")
 	}
+
 	// 2. Verify password
 	if err := u.Password.ComparePassword(input.Password); err != nil {
-		return nil, web.BadRequest("invalid username or password")
+		return nil, web.BadRequest("invalid email or password")
 	}
 
 	// 3. Tạo token

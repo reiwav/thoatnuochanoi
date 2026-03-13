@@ -10,7 +10,6 @@ func (handlerFuncs HandlerFuncs) createAuthGroup(g *gin.RouterGroup,
 	mid middleware.Middleware, groupName string) {
 	authGroup := g.Group(groupName)
 	authGroup.POST("/login", handlerFuncs.LoginHandler)
-	authGroup.POST("/employee-login", handlerFuncs.EmployeeLoginHandler)
 	authGroup.Use(mid.MidBasicType())
 	authGroup.POST("/logout", handlerFuncs.LogoutHandler)
 	authGroup.GET("/profile", handlerFuncs.GetProfileHandler)

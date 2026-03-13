@@ -60,7 +60,6 @@ func (h HandlerFuncs) Create(mid middleware.Middleware, orgHandler *handler.Orga
 	authGroup := api.Group("/auth")
 	{
 		authGroup.POST("/login", h.LoginHandler)
-		authGroup.POST("/employee-login", h.EmployeeLoginHandler)
 		authGroup.GET("/google/login", h.GoogleLoginHandler)
 		authGroup.GET("/google/callback", h.GoogleCallbackHandler)
 

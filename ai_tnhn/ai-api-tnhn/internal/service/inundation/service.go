@@ -43,6 +43,7 @@ type PointStatus struct {
 	Lng          string                   `json:"lng"`
 	Status       string                   `json:"status"` // active, normal
 	ActiveReport *models.InundationReport `json:"active_report,omitempty"`
+	LastReport   *models.InundationReport `json:"last_report,omitempty"`
 	LastReportID string                   `json:"last_report_id"`
 	Active       bool                     `json:"active"`
 }
@@ -220,7 +221,40 @@ func (s *service) ListReportsWithFilter(ctx context.Context, orgID, status, traf
 	}
 
 	f.SetOrderBy("-created_at")
-	return s.inundationRepo.List(ctx, f)
+	reports, total, err := s.inundationRepo.List(ctx, f)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// NEW: Fetch updates for all reports in batch
+	if len(reports) > 0 {
+		reportIDs := make([]string, len(reports))
+		for i, r := range reports {
+			reportIDs[i] = r.ID
+		}
+
+		updatesMap := make(map[string][]models.InundationUpdate)
+		// Assuming we have or can implement ListByReportIDs or just iterate if repository is simple
+		// For now, let's look for all updates belonging to these reports
+		for _, rID := range reportIDs {
+			updates, _ := s.inundationUpdateRepo.ListByReportID(ctx, rID)
+			if len(updates) > 0 {
+				uSlice := make([]models.InundationUpdate, len(updates))
+				for i, u := range updates {
+					uSlice[i] = *u
+				}
+				updatesMap[rID] = uSlice
+			}
+		}
+
+		for _, r := range reports {
+			if u, ok := updatesMap[r.ID]; ok {
+				r.Updates = u
+			}
+		}
+	}
+
+	return reports, total, nil
 }
 
 func (s *service) GetReport(ctx context.Context, reportID string) (*models.InundationReport, error) {
@@ -319,6 +353,31 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string) ([]PointSta
 		}
 	}
 
+	// NEW: Fetch all last reports to get images
+	var lastIDs []string
+	for _, id := range lastReportIDs {
+		lastIDs = append(lastIDs, id)
+	}
+
+	lastReportsMap := make(map[string]*models.InundationReport)
+	if len(lastIDs) > 0 {
+		hf := filter.NewPaginationFilter()
+		hf.PerPage = 1000
+		hf.AddWhere("_id", "_id", bson.M{"$in": lastIDs})
+		reports, _, _ := s.inundationRepo.List(ctx, hf)
+		for _, r := range reports {
+			// Populate updates for last reports too
+			updates, _ := s.inundationUpdateRepo.ListByReportID(ctx, r.ID)
+			if len(updates) > 0 {
+				r.Updates = make([]models.InundationUpdate, len(updates))
+				for i, u := range updates {
+					r.Updates[i] = *u
+				}
+			}
+			lastReportsMap[r.ID] = r
+		}
+	}
+
 	// 4. Build merged result
 	result := make([]PointStatus, len(points))
 	for i, p := range points {
@@ -337,6 +396,7 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string) ([]PointSta
 			activeReport = report
 		}
 
+		lastID := lastReportIDs[p.ID]
 		result[i] = PointStatus{
 			ID:           p.ID,
 			OrgID:        p.OrgID,
@@ -347,7 +407,8 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string) ([]PointSta
 			Lng:          p.Lng,
 			Status:       status,
 			ActiveReport: activeReport,
-			LastReportID: lastReportIDs[p.ID],
+			LastReport:   lastReportsMap[lastID],
+			LastReportID: lastID,
 			Active:       p.Active,
 		}
 	}

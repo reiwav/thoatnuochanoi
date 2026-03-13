@@ -14,8 +14,43 @@ import { getInundationImageUrl } from 'utils/imageHelper';
 import { getTrafficStatusColor, getTrafficStatusLabel } from 'utils/trafficStatusHelper';
 import { toast } from 'react-hot-toast';
 
+const getLatestData = (report) => {
+    if (!report) return null;
+    const data = { ...report, traffic_status: report.traffic_status || report.trafficStatus };
+    
+    // Sort updates by timestamp newest first
+    const sortedUpdates = report.updates && report.updates.length > 0 
+        ? [...report.updates].sort((a, b) => b.timestamp - a.timestamp) 
+        : [];
+
+    if (sortedUpdates.length > 0) {
+        const latestUpdate = sortedUpdates[0];
+        
+        // Find most recent dimensions
+        const updateWithDimensions = sortedUpdates.find(u => u.length || u.width || u.depth);
+        // Find most recent traffic status
+        const updateWithTraffic = sortedUpdates.find(u => u.traffic_status || u.trafficStatus);
+        // Find most recent images
+        const updateWithImages = sortedUpdates.find(u => u.images && u.images.length > 0);
+
+        return {
+            ...data,
+            depth: updateWithDimensions?.depth || data.depth,
+            length: updateWithDimensions?.length || data.length,
+            width: updateWithDimensions?.width || data.width,
+            traffic_status: (updateWithTraffic?.traffic_status || updateWithTraffic?.trafficStatus) || data.traffic_status,
+            images: (updateWithImages?.images && updateWithImages.images.length > 0) ? updateWithImages.images : (data.images || []),
+            description: latestUpdate.description || data.description,
+            timestamp: latestUpdate.timestamp
+        };
+    }
+    return data;
+};
+
 const CollapsiblePointRow = ({ point, organizations, formatTime, handleOpenViewer, navigate, isMobile }) => {
     const [open, setOpen] = useState(isMobile && point.status === 'active');
+    const latest = useMemo(() => getLatestData(point.active_report || point.last_report), [point]);
+
     return (
         <React.Fragment>
             <TableRow hover sx={{ '& .MuiTableCell-root': { borderBottom: 'none' } }}>
@@ -36,7 +71,7 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, handleOpenViewe
                     <>
                         <TableCell><Typography variant="body2" color="primary">{point.org_name || organizations.find(o => o.id === point.org_id)?.name || ''}</Typography></TableCell>
                         <TableCell><Chip label={point.status === 'active' ? 'Đang ngập' : 'Bình thường'} color={point.status === 'active' ? 'error' : 'success'} size="small" sx={{ fontWeight: 700 }} /></TableCell>
-                        <TableCell>{(point.active_report?.traffic_status || point.active_report?.trafficStatus) && <Chip label={getTrafficStatusLabel(point.active_report.traffic_status || point.active_report.trafficStatus)} size="small" color={getTrafficStatusColor(point.active_report.traffic_status || point.active_report.trafficStatus)} variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem' }} />}</TableCell>
+                        <TableCell>{latest?.traffic_status && <Chip label={getTrafficStatusLabel(latest.traffic_status)} size="small" color={getTrafficStatusColor(latest.traffic_status)} variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem', opacity: point.status === 'active' ? 1 : 0.7 }} />}</TableCell>
                     </>
                 )}
                 {!isMobile && (
@@ -56,27 +91,36 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, handleOpenViewe
                                 {isMobile && (
                                     <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
                                         <Chip label={point.status === 'active' ? 'Đang ngập' : 'Bình thường'} color={point.status === 'active' ? 'error' : 'success'} size="small" sx={{ fontWeight: 700 }} />
-                                        {(point.active_report?.traffic_status || point.active_report?.trafficStatus) && (
-                                            <Chip label={getTrafficStatusLabel(point.active_report.traffic_status || point.active_report.trafficStatus)} size="small" color={getTrafficStatusColor(point.active_report.traffic_status || point.active_report.trafficStatus)} variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem' }} />
+                                        {latest?.traffic_status && (
+                                            <Chip label={getTrafficStatusLabel(latest.traffic_status)} size="small" color={getTrafficStatusColor(latest.traffic_status)} variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem' }} />
                                         )}
                                     </Stack>
                                 )}
                                 <Grid container spacing={2}>
                                     <Grid item xs={12} sm={6}>
                                         <Typography variant="body2" color="text.secondary">Kích thước ngập:</Typography>
-                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{point.status === 'active' ? `${point.active_report?.length || 0}m x ${point.active_report?.width || 0}m x ${point.active_report?.depth || 0}m` : '-'}</Typography>
+                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                            {latest ? `${latest.length || 0}m x ${latest.width || 0}m x ${latest.depth || 0}m` : '-'}
+                                        </Typography>
                                     </Grid>
                                     <Grid item xs={12} sm={6}>
                                         <Typography variant="body2" color="text.secondary">Thời gian bắt đầu:</Typography>
-                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{point.status === 'active' ? formatTime(point.active_report?.start_time) : '-'}</Typography>
+                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                            {latest ? formatTime(latest.start_time) : '-'}
+                                        </Typography>
+                                        {point.status === 'active' && latest?.timestamp && (
+                                             <Typography variant="caption" color="error" sx={{ fontWeight: 600, display: 'block' }}>
+                                                 Cập nhật lúc: {formatTime(latest.timestamp)}
+                                             </Typography>
+                                         )}
                                     </Grid>
                                 </Grid>
                                 <Box>
                                     <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>Ảnh liên quan:</Typography>
-                                    {point.status === 'active' && point.active_report?.images?.length > 0 ? (
+                                    {latest?.images?.length > 0 ? (
                                         <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', pb: 1 }}>
-                                            {point.active_report.images.map((img, idx) => (
-                                                <Box key={idx} component="img" src={getInundationImageUrl(img)} onClick={(e) => { e.stopPropagation(); handleOpenViewer(point.active_report.images, idx); }} sx={{ width: 56, height: 56, borderRadius: 1.5, objectFit: 'cover', cursor: 'pointer', border: '1px solid', borderColor: 'divider', flexShrink: 0 }} />
+                                            {latest.images.map((img, idx) => (
+                                                <Box key={idx} component="img" src={getInundationImageUrl(img)} onClick={(e) => { e.stopPropagation(); handleOpenViewer(latest.images, idx); }} sx={{ width: 56, height: 56, borderRadius: 1.5, objectFit: 'cover', cursor: 'pointer', border: '1px solid', borderColor: 'divider', flexShrink: 0 }} />
                                             ))}
                                         </Stack>
                                     ) : <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.disabled' }}>Không có ảnh</Typography>}

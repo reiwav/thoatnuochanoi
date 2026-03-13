@@ -53,8 +53,29 @@ import MainCard from 'ui-component/cards/MainCard';
 import { getInundationImageUrl } from 'utils/imageHelper';
 import { getTrafficStatusColor, getTrafficStatusLabel } from 'utils/trafficStatusHelper';
 
+const getLatestData = (report) => {
+    if (!report) return null;
+    const data = { ...report, traffic_status: report.traffic_status || report.trafficStatus };
+    if (report.updates && report.updates.length > 0) {
+        const latestUpdate = [...report.updates].sort((a, b) => b.timestamp - a.timestamp)[0];
+        return {
+            ...data,
+            depth: latestUpdate.depth || data.depth,
+            length: latestUpdate.length || data.length,
+            width: latestUpdate.width || data.width,
+            traffic_status: latestUpdate.traffic_status || latestUpdate.trafficStatus || data.traffic_status,
+            images: (latestUpdate.images && latestUpdate.images.length > 0) ? latestUpdate.images : data.images,
+            description: latestUpdate.description || data.description,
+            timestamp: latestUpdate.timestamp
+        };
+    }
+    return data;
+};
+
 const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, handleOpenViewer, navigate, isMobile, basePath }) => {
     const [open, setOpen] = useState(isMobile && point.status === 'active');
+    const latest = useMemo(() => getLatestData(point.active_report || point.last_report), [point]);
+
     return (
         <React.Fragment>
             <TableRow hover sx={{ '& .MuiTableCell-root': { borderBottom: 'none' } }}>
@@ -80,7 +101,7 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                                 {point.org_name || organizations.find((o) => o.id === point.org_id)?.name || ''}
                             </Typography>
                         </TableCell>
-                        <TableCell>
+                        <TableCell align="center">
                             <Chip
                                 label={point.status === 'active' ? 'Đang ngập' : 'Bình thường'}
                                 color={point.status === 'active' ? 'error' : 'success'}
@@ -89,22 +110,22 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                             />
                         </TableCell>
                         <TableCell>
-                            {(point.active_report?.traffic_status || point.active_report?.trafficStatus) && (
+                            {latest?.traffic_status && (
                                 <Chip
-                                    label={getTrafficStatusLabel(point.active_report.traffic_status || point.active_report.trafficStatus)}
+                                    label={getTrafficStatusLabel(latest.traffic_status)}
                                     size="small"
-                                    color={getTrafficStatusColor(point.active_report.traffic_status || point.active_report.trafficStatus)}
+                                    color={getTrafficStatusColor(latest.traffic_status)}
                                     variant="outlined"
-                                    sx={{ fontWeight: 800, fontSize: '0.75rem' }}
+                                    sx={{ fontWeight: 800, fontSize: '0.75rem', opacity: point.status === 'active' ? 1 : 0.7 }}
                                 />
                             )}
                         </TableCell>
                     </>
                 )}
                 {!isMobile && (
-                    <TableCell align="right" sx={{ p: { xs: 1, md: 2 } }}>
+                    <TableCell align="center" sx={{ p: { xs: 1, md: 2 }, width: 120 }}>
                         <Button
-                            variant={point.status === 'active' ? 'contained' : 'outlined'}
+                            variant={point.status === 'active' ? 'contained' : 'contained'}
                             color={point.status === 'active' ? 'error' : 'primary'}
                             size="small"
                             onClick={() =>
@@ -114,7 +135,6 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                                         : `${basePath}/inundation/form?tab=0&point_id=${point.id}&name=${encodeURIComponent(point.name)}`
                                 )
                             }
-                            sx={{ fontWeight: 700 }}
                         >
                             {point.status === 'active' ? 'Cập nhật' : 'Báo cáo'}
                         </Button>
@@ -137,11 +157,11 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                                             size="small"
                                             sx={{ fontWeight: 700 }}
                                         />
-                                        {(point.active_report?.traffic_status || point.active_report?.trafficStatus) && (
+                                        {latest?.traffic_status && (
                                             <Chip
-                                                label={getTrafficStatusLabel(point.active_report.traffic_status || point.active_report.trafficStatus)}
+                                                label={getTrafficStatusLabel(latest.traffic_status)}
                                                 size="small"
-                                                color={getTrafficStatusColor(point.active_report.traffic_status || point.active_report.trafficStatus)}
+                                                color={getTrafficStatusColor(latest.traffic_status)}
                                                 variant="outlined"
                                                 sx={{ fontWeight: 800, fontSize: '0.75rem' }}
                                             />
@@ -154,8 +174,8 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                                             Kích thước ngập:
                                         </Typography>
                                         <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                            {point.status === 'active'
-                                                ? `${point.active_report?.length || 0}m x ${point.active_report?.width || 0}m x ${point.active_report?.depth || 0}m`
+                                            {latest
+                                                ? `${latest.length || 0}m x ${latest.width || 0}m x ${latest.depth || 0}m`
                                                 : '-'}
                                         </Typography>
                                     </Grid>
@@ -164,11 +184,13 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                                             Thời gian bắt đầu:
                                         </Typography>
                                         <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                            {point.status === 'active' ? formatTime(point.active_report?.start_time) : '-'}
+                                            {latest ? formatTime(latest.start_time) : '-'}
                                         </Typography>
-                                        {point.status === 'active' && (
-                                            <Typography variant="caption" color="error" sx={{ fontWeight: 600 }}>
-                                                Đã kéo dài: {getDuration(point.active_report?.start_time)}
+                                        {latest && (
+                                            <Typography variant="caption" color={point.status === 'active' ? "error" : "text.secondary"} sx={{ fontWeight: 600, display: 'block' }}>
+                                                {point.status === 'active' 
+                                                    ? `Cập nhật lúc: ${formatTime(latest.timestamp || latest.start_time)} (${getDuration(latest.timestamp || latest.start_time)})` 
+                                                    : `Lần cuối: ${getDuration(latest.start_time)} trước`}
                                             </Typography>
                                         )}
                                     </Grid>
@@ -177,16 +199,16 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                                     <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                                         Ảnh liên quan:
                                     </Typography>
-                                    {point.status === 'active' && point.active_report?.images?.length > 0 ? (
+                                    {latest?.images?.length > 0 ? (
                                         <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', pb: 1 }}>
-                                            {point.active_report.images.map((img, idx) => (
+                                            {latest.images.map((img, idx) => (
                                                 <Box
                                                     key={idx}
                                                     component="img"
                                                     src={getInundationImageUrl(img)}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        handleOpenViewer(point.active_report.images, idx);
+                                                        handleOpenViewer(latest.images, idx);
                                                     }}
                                                     sx={{
                                                         width: 56,
@@ -236,6 +258,8 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
 
 const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenViewer, navigate, isMobile, basePath }) => {
     const [open, setOpen] = useState(isMobile && report.status === 'active');
+    const latest = useMemo(() => getLatestData(report), [report]);
+
     return (
         <React.Fragment>
             <TableRow hover sx={{ '& .MuiTableCell-root': { borderBottom: 'none' } }}>
@@ -311,17 +335,17 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenVi
                                         <Typography
                                             variant="body2"
                                             sx={{ fontWeight: 600 }}
-                                        >{`${report.length || 0}m x ${report.width || 0}m x ${report.depth || 0}m`}</Typography>
+                                        >{`${latest?.length || 0}m x ${latest?.width || 0}m x ${latest?.depth || 0}m`}</Typography>
                                     </Grid>
                                     <Grid item xs={12} sm={6}>
                                         <Typography variant="body2" color="text.secondary">
                                             Giao thông:
                                         </Typography>
-                                        {report.traffic_status ? (
+                                        {latest?.traffic_status ? (
                                             <Chip
-                                                label={getTrafficStatusLabel(report.traffic_status)}
+                                                label={getTrafficStatusLabel(latest.traffic_status)}
                                                 size="small"
-                                                color={getTrafficStatusColor(report.traffic_status)}
+                                                color={getTrafficStatusColor(latest.traffic_status)}
                                                 variant="outlined"
                                                 sx={{ fontWeight: 800, fontSize: '0.75rem', mt: 0.5 }}
                                             />
@@ -336,16 +360,16 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenVi
                                     <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                                         Ảnh liên quan:
                                     </Typography>
-                                    {report.images?.length > 0 ? (
+                                    {latest?.images?.length > 0 ? (
                                         <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', pb: 1 }}>
-                                            {report.images.map((img, idx) => (
+                                            {latest.images.map((img, idx) => (
                                                 <Box
                                                     key={idx}
                                                     component="img"
                                                     src={getInundationImageUrl(img)}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        handleOpenViewer(report.images, idx);
+                                                        handleOpenViewer(latest.images, idx);
                                                     }}
                                                     sx={{
                                                         width: 56,

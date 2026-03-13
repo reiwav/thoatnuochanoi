@@ -68,7 +68,7 @@ const adminPages = {
     },
     {
       id: 'inundation-report',
-      title: 'Điểm ngập lụt',
+      title: 'Điểm ngập',
       type: 'item',
       url: '/admin/inundation',
       icon: icons.IconTornado,
@@ -77,14 +77,14 @@ const adminPages = {
     },
     {
       id: 'inundation-management',
-      title: 'Điểm ngập úng',
+      title: 'Điểm ngập',
       type: 'collapse',
       icon: icons.IconTornado,
       roles: ['super_admin'],
       children: [
         {
           id: 'inundation',
-          title: 'Điểm ngập lụt',
+          title: 'Điểm ngập',
           type: 'item',
           url: '/admin/inundation',
           icon: icons.IconTornado,
@@ -117,7 +117,7 @@ const adminPages = {
     },
     {
       id: 'emergency-construction-report',
-      title: 'Công trình khẩn',
+      title: 'Công trình khẩn cấp',
       type: 'item',
       url: '/admin/emergency-construction/dashboard',
       icon: icons.IconAlertTriangle,

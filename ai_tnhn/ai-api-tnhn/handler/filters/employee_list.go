@@ -20,8 +20,9 @@ func NewEmployeeListRequest() *EmployeeListRequest {
 }
 
 func (f *EmployeeListRequest) GetWhere() filter.Where {
-	// Always filter by Role = employee
-	f.AddWhere("role", "role", "employee")
+	// Filter roles: by default show both employee and admin_org
+	// If we want to allow filtering by a specific role in the future, we can add it to the struct
+	f.AddWhere("role", "role", primitive.M{"$in": []string{"employee", "admin_org"}})
 
 	if f.OrgID != "" && f.OrgID != "all" {
 		f.AddWhere("org_id", "org_id", f.OrgID)

@@ -142,3 +142,14 @@
     transform: translateX(10px);
   }
 }
+
+// ==============================|| MOBILE OVERRIDES ||============================== //
+
+@media (max-width: 600px) {
+  .css-1a44f9j-MuiTypography-root {
+    font-size: 1rem !important;
+  }
+  .css-1ils44c-MuiTableCell-root.MuiTableCell-head {
+    font-size: 1rem !important;
+  }
+}

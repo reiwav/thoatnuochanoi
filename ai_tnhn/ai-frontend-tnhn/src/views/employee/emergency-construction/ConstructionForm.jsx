@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
     Box, Typography, Paper, TextField, Button, Slider, FormControlLabel,
     Checkbox, CircularProgress, Stack, Avatar, Card, CardContent, Divider,
-    Tabs, Tab, IconButton, List, useMediaQuery, MenuItem
+    IconButton, List, useMediaQuery, MenuItem
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -11,20 +11,38 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
-import { IconChevronLeft, IconSend, IconClipboardCheck, IconHistory, IconClock, IconAlertTriangle, IconPlus, IconTrash, IconCamera, IconPhoto } from '@tabler/icons-react';
+import { IconChevronLeft, IconSend, IconClipboardCheck, IconHistory, IconClock, IconAlertTriangle, IconPlus, IconTrash, IconCamera, IconPhoto, IconArrowLeft, IconMapPin, IconFileText, IconBulb, IconCloudUpload, IconMessageExclamation, IconCar } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 import emergencyConstructionApi from 'api/emergencyConstruction';
 import MainCard from 'ui-component/cards/MainCard';
 import { getInundationImageUrl } from 'utils/imageHelper';
+import { InputAdornment } from '@mui/material';
 
-function CustomTabPanel(props) {
-    const { children, value, index, ...other } = props;
+const TabSwitcher = ({ tab, setTab, visibleTabs }) => {
+    if (visibleTabs.length <= 1) return null;
+
     return (
-        <div role="tabpanel" hidden={value !== index} id={`simple-tabpanel-${index}`} aria-labelledby={`simple-tab-${index}`} {...other} style={{ flex: 1, overflowY: 'auto' }}>
-            {value === index && <Box sx={{ p: 0 }}>{children}</Box>}
-        </div>
+        <Box sx={{ display: 'flex', bgcolor: 'grey.100', borderRadius: 100, p: 0.5, mb: 3 }}>
+            {visibleTabs.map((t) => (
+                <Box
+                    key={t.id}
+                    onClick={() => setTab(t.id)}
+                    sx={{
+                        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.8,
+                        py: 0.9, borderRadius: 100, cursor: 'pointer', transition: 'all .2s',
+                        bgcolor: tab === t.id ? 'background.paper' : 'transparent',
+                        boxShadow: tab === t.id ? '0 1px 6px rgba(0,0,0,0.12)' : 'none',
+                        color: tab === t.id ? 'secondary.main' : 'text.secondary',
+                        fontWeight: tab === t.id ? 700 : 500
+                    }}
+                >
+                    {t.icon}
+                    <Typography sx={{ fontSize: '1rem', fontWeight: 'inherit', color: 'inherit', lineHeight: 1 }}>{t.label}</Typography>
+                </Box>
+            ))}
+        </Box>
     );
-}
+};
 
 const ConstructionForm = () => {
     const [searchParams] = useSearchParams();
@@ -150,103 +168,117 @@ const ConstructionForm = () => {
     };
 
     const renderForm = () => (
-        <Box sx={{ p: { xs: 2, md: 3 } }}>
-            <Box sx={{ mb: 3 }}>
-                <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>Lệnh số <span style={{ color: 'red' }}>*</span></Typography>
-                <TextField
-                    select fullWidth value={order} onChange={(e) => setOrder(e.target.value)}
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                >
-                    {[...Array(100)].map((_, i) => (
-                        <MenuItem key={i + 1} value={`Lệnh ${i + 1}`}>Lệnh {i + 1}</MenuItem>
-                    ))}
-                </TextField>
-            </Box>
-
-            <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>Vị trí <span style={{ color: 'red' }}>*</span></Typography>
+        <Stack spacing={2.5} sx={{ p: { xs: 2, md: 3 } }}>
             <TextField
-                fullWidth placeholder="Nhập vị trí..."
-                value={location} onChange={(e) => setLocation(e.target.value)}
-                sx={{ mb: 3, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-            />
+                select fullWidth label="Lệnh số" value={order}
+                onChange={(e) => setOrder(e.target.value)}
+                required
+                InputProps={{
+                    startAdornment: <InputAdornment position="start"><IconClipboardCheck size={18} color={theme.palette.text.secondary} /></InputAdornment>,
+                    sx: { borderRadius: 3 }
+                }}
+            >
+                {[...Array(100)].map((_, i) => (
+                    <MenuItem key={i + 1} value={`Lệnh ${i + 1}`}>Lệnh {i + 1}</MenuItem>
+                ))}
+            </TextField>
 
-            <Typography variant="h6" sx={{ mb: 1.5, fontWeight: 700 }}>Mô tả chung công việc trong ngày <span style={{ color: 'red' }}>*</span></Typography>
             <TextField
-                fullWidth multiline rows={3} placeholder="Mô tả chi tiết công việc..."
-                value={workDone} onChange={(e) => setWorkDone(e.target.value)}
-                sx={{
-                    mb: 3,
-                    '& .MuiInputBase-input': { fontSize: '1.05rem', lineHeight: 1.5 },
-                    '& .MuiOutlinedInput-root': { borderRadius: 2 }
+                fullWidth label="Vị trí" placeholder="Nhập vị trí..."
+                value={location} onChange={(e) => setLocation(e.target.value)} required
+                InputProps={{
+                    startAdornment: <InputAdornment position="start"><IconMapPin size={18} color={theme.palette.text.secondary} /></InputAdornment>,
+                    sx: { borderRadius: 3 }
                 }}
             />
 
-            <Divider sx={{ mb: 3 }} />
-
-            <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>Kết luận <span style={{ color: 'red' }}>*</span></Typography>
             <TextField
-                fullWidth multiline rows={2} placeholder="Nhập kết luận..."
-                value={conclusion} onChange={(e) => setConclusion(e.target.value)}
-                sx={{ mb: 3, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                fullWidth multiline rows={3} label="Mô tả chung công việc trong ngày"
+                placeholder="Mô tả chi tiết công việc..."
+                value={workDone} onChange={(e) => setWorkDone(e.target.value)} required
+                InputProps={{
+                    startAdornment: <InputAdornment position="start" sx={{ alignSelf: 'flex-start', mt: 1.5 }}><IconFileText size={18} color={theme.palette.text.secondary} /></InputAdornment>,
+                    sx: { borderRadius: 3, '& .MuiInputBase-input': { lineHeight: 1.5 } }
+                }}
             />
 
-            <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>Ảnh hưởng</Typography>
+            <Divider />
+
             <TextField
-                fullWidth multiline rows={2} placeholder="Nhập ảnh hưởng..."
+                fullWidth multiline rows={2} label="Kết luận"
+                placeholder="Nhập kết luận..."
+                value={conclusion} onChange={(e) => setConclusion(e.target.value)} required
+                InputProps={{
+                    startAdornment: <InputAdornment position="start" sx={{ alignSelf: 'flex-start', mt: 1.5 }}><IconBulb size={18} color={theme.palette.text.secondary} /></InputAdornment>,
+                    sx: { borderRadius: 3 }
+                }}
+            />
+
+            <TextField
+                fullWidth multiline rows={2} label="Ảnh hưởng"
+                placeholder="Nhập ảnh hưởng..."
                 value={influence} onChange={(e) => setInfluence(e.target.value)}
-                sx={{ mb: 3, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                InputProps={{
+                    startAdornment: <InputAdornment position="start" sx={{ alignSelf: 'flex-start', mt: 1.5 }}><IconCar size={18} color={theme.palette.text.secondary} /></InputAdornment>,
+                    sx: { borderRadius: 3 }
+                }}
             />
 
-            <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>Bất cập, đề xuất</Typography>
             <TextField
-                fullWidth multiline rows={2} placeholder="Nhập đề xuất..."
+                fullWidth multiline rows={2} label="Bất cập, đề xuất"
+                placeholder="Nhập đề xuất..."
                 value={proposal} onChange={(e) => setProposal(e.target.value)}
-                sx={{ mb: 3, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                InputProps={{
+                    startAdornment: <InputAdornment position="start" sx={{ alignSelf: 'flex-start', mt: 1.5 }}><IconMessageExclamation size={18} color={theme.palette.text.secondary} /></InputAdornment>,
+                    sx: { borderRadius: 3 }
+                }}
             />
 
-            <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>Vướng mắc, khó khăn (nếu có)</Typography>
             <TextField
-                fullWidth multiline rows={2} placeholder="Nhập vướng mắc..."
+                fullWidth multiline rows={2} label="Vướng mắc, khó khăn (nếu có)"
+                placeholder="Nhập vướng mắc..."
                 value={issues} onChange={(e) => setIssues(e.target.value)}
-                sx={{ mb: 3, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                InputProps={{
+                    startAdornment: <InputAdornment position="start" sx={{ alignSelf: 'flex-start', mt: 1.5 }}><IconAlertTriangle size={18} color={theme.palette.text.secondary} /></InputAdornment>,
+                    sx: { borderRadius: 3 }
+                }}
             />
 
-            <Box sx={{ mb: 3 }}>
-                <Typography variant="h6" sx={{ mb: 1.5, fontWeight: 700 }}>Hình ảnh báo cáo</Typography>
-                <Box sx={{ display: 'flex', gap: 1, mb: 1.5, flexWrap: 'wrap' }}>
-                    {imagePreviews.map((preview, idx) => (
-                        <Box key={idx} sx={{ position: 'relative', width: 80, height: 80 }}>
-                            <Avatar variant="rounded" src={preview} sx={{ width: 80, height: 80 }} />
-                            <IconButton
-                                size="small" color="error"
-                                onClick={() => removeImage(idx)}
-                                sx={{ position: 'absolute', top: -5, right: -5, bgcolor: 'background.paper', boxShadow: 1, '&:hover': { bgcolor: 'grey.100' } }}
-                            >
-                                <IconTrash size={14} />
-                            </IconButton>
-                        </Box>
-                    ))}
-                    <Button
-                        component="label" variant="outlined"
-                        sx={{ width: 80, height: 80, borderRadius: 2, display: 'flex', flexDirection: 'column', gap: 0.5, borderColor: 'divider', color: 'text.secondary' }}
-                    >
+            <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1, display: 'block' }}>Hình ảnh báo cáo</Typography>
+                <Box>
+                    <Box component="label" sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5, border: '2px dashed', borderColor: 'divider', borderRadius: 2, p: 2, cursor: 'pointer', bgcolor: 'grey.50', transition: 'all .2s', '&:hover': { borderColor: 'primary.main', bgcolor: 'primary.lighter' } }}>
                         <input type="file" hidden multiple accept="image/*" onChange={handleImageChange} />
-                        <IconCamera size={24} />
-                        <Typography variant="caption" fontWeight={700}>Thêm ảnh</Typography>
-                    </Button>
+                        <IconCloudUpload size={26} color={theme.palette.primary.main} />
+                        <Typography variant="body2" color="text.secondary">Thêm ảnh</Typography>
+                    </Box>
+                    {imagePreviews.length > 0 && (
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1.5 }}>
+                            {imagePreviews.map((preview, idx) => (
+                                <Box key={idx} sx={{ position: 'relative', width: 68, height: 68 }}>
+                                    <Avatar variant="rounded" src={preview} sx={{ width: '100%', height: '100%', borderRadius: 1.5, border: '1px solid', borderColor: 'divider' }} />
+                                    <IconButton
+                                        size="small" color="error"
+                                        onClick={() => removeImage(idx)}
+                                        sx={{ position: 'absolute', top: -6, right: -6, bgcolor: 'error.main', color: '#fff', p: 0.3, '&:hover': { bgcolor: 'error.dark' } }}
+                                    >
+                                        <IconTrash size={11} />
+                                    </IconButton>
+                                </Box>
+                            ))}
+                        </Box>
+                    )}
                 </Box>
             </Box>
-
-            {/* Removed Expected Date Picker */}
 
             <Button
                 fullWidth variant="contained" color="primary" size="large" onClick={handleSubmit} disabled={loading}
                 startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <IconSend size={20} />}
-                sx={{ borderRadius: 2, fontWeight: 700, py: 1.5 }}
+                sx={{ borderRadius: 100, py: 1.5, fontWeight: 700, mt: 1 }}
             >
                 Gửi Báo Cáo
             </Button>
-        </Box>
+        </Stack>
     );
 
     const renderHistory = () => (
@@ -305,36 +337,42 @@ const ConstructionForm = () => {
         </Box>
     );
 
-    const content = (
-        <Box sx={{ display: 'flex', flexDirection: 'column', height: isMobile ? 'calc(100vh - 56px)' : 'auto' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', px: 2, py: 1.5, borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
-                <IconButton onClick={() => navigate(-1)} sx={{ mr: 1, ml: -1 }}><IconChevronLeft /></IconButton>
-                <Typography variant="h4" sx={{ fontWeight: 800, flex: 1 }} noWrap>{constructionName}</Typography>
-            </Box>
-
-            <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
-                <Tabs value={tabValue} onChange={handleTabChange} variant="fullWidth">
-                    <Tab icon={<IconClipboardCheck size={20} />} iconPosition="start" label="Báo cáo" sx={{ fontSize: '0.95rem', fontWeight: 700 }} />
-                    <Tab icon={<IconHistory size={20} />} iconPosition="start" label="Lịch sử chi tiết" sx={{ fontSize: '0.95rem', fontWeight: 700 }} />
-                </Tabs>
-            </Box>
-
-            <CustomTabPanel value={tabValue} index={0}>{renderForm()}</CustomTabPanel>
-            <CustomTabPanel value={tabValue} index={1}>{renderHistory()}</CustomTabPanel>
+    const renderContent = () => (
+        <Box sx={{ width: '100%' }}>
+            <TabSwitcher
+                tab={tabValue}
+                setTab={setTabValue}
+                visibleTabs={[
+                    { id: 0, label: 'Báo cáo', icon: <IconClipboardCheck size={18} /> },
+                    { id: 1, label: 'Lịch sử', icon: <IconHistory size={18} /> }
+                ]}
+            />
+            {tabValue === 0 ? renderForm() : renderHistory()}
         </Box>
     );
 
     if (isMobile) {
         return (
-            <Box sx={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, bgcolor: 'background.paper', zIndex: 1300 }}>
-                {content}
+            <Box sx={{ px: 2, pt: 2, pb: 4 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                    <IconButton size="small" onClick={() => navigate(-1)}>
+                        <IconArrowLeft size={20} />
+                    </IconButton>
+                    <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                        {constructionName}
+                    </Typography>
+                </Box>
+                {renderContent()}
             </Box>
         );
     }
 
     return (
-        <MainCard sx={{ height: 'calc(100vh - 120px)', '& .MuiCardContent-root': { p: 0, height: '100%' } }}>
-            {content}
+        <MainCard
+            title={constructionName}
+            secondary={<Button variant="outlined" size="small" startIcon={<IconArrowLeft size={16} />} onClick={() => navigate(-1)}>Quay lại</Button>}
+        >
+            <Box sx={{ maxWidth: 640, mx: 'auto' }}>{renderContent()}</Box>
         </MainCard>
     );
 };

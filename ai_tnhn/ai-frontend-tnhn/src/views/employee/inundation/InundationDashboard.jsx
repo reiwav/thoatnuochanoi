@@ -851,6 +851,7 @@ const InundationDashboard = () => {
                                 report={report}
                                 organizations={organizations}
                                 formatTime={formatTime}
+                                getDuration={getDuration}
                                 handleOpenViewer={handleOpenViewer}
                                 navigate={navigate}
                                 isMobile={isMobile}
@@ -903,6 +904,7 @@ const InundationDashboard = () => {
                                         report={report}
                                         organizations={organizations}
                                         formatTime={formatTime}
+                                        getDuration={getDuration}
                                         handleOpenViewer={handleOpenViewer}
                                         navigate={navigate}
                                         isMobile={isMobile}

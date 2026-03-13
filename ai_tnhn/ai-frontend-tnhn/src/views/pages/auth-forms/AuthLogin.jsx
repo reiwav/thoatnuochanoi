@@ -66,6 +66,7 @@ export default function AuthLogin() {
     try {
       // Gọi API thực tế
       const response = await authApi.login(values);
+      console.log(response);
       const result = response.data;
 
       // 2. Kiểm tra status từ server trả về

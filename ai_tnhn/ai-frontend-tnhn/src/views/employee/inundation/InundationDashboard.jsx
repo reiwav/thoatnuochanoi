@@ -76,113 +76,172 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
     const [open, setOpen] = useState(point.status === 'active');
     const latest = useMemo(() => getLatestData(point.active_report || point.last_report), [point]);
 
+    const renderCard = () => (
+        <Paper elevation={0} sx={{ p: 2, mb: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 3, bgcolor: 'background.paper' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1, gap: 1 }}>
+                <Box sx={{ flex: 1 }}>
+                    <Typography variant="h5" sx={{ fontWeight: 900, color: 'primary.dark', mb: 1, lineHeight: 1.2 }}>
+                        {point.name}
+                    </Typography>
+                    <Stack direction="row" spacing={1} flexWrap="wrap">
+                        <Chip
+                            label={point.status === 'active' ? 'Đang ngập' : 'Bình thường'}
+                            color={point.status === 'active' ? 'error' : 'success'}
+                            size="small" sx={{ fontWeight: 800 }}
+                        />
+                        {latest?.traffic_status && (
+                            <Chip
+                                label={getTrafficStatusLabel(latest.traffic_status)}
+                                size="small" color={getTrafficStatusColor(latest.traffic_status)}
+                                variant="outlined" sx={{ fontWeight: 800 }}
+                            />
+                        )}
+                    </Stack>
+                </Box>
+                <IconButton size="small" onClick={() => setOpen(!open)} sx={{ mt: -0.5 }}>
+                    {open ? <IconChevronUp size={22} /> : <IconChevronDown size={22} />}
+                </IconButton>
+            </Box>
+
+            <Collapse in={open} timeout="auto" unmountOnExit>
+                <Stack spacing={2} sx={{ mt: 2, pt: 2, borderTop: '1px dashed', borderColor: 'divider' }}>
+                    <Typography variant="body1" sx={{ fontWeight: 700, color: 'primary.main' }}>
+                        {point.address}
+                    </Typography>
+                    
+                     <Box>
+                        <Typography variant="body2" color="text.secondary">Đơn vị quản lý:</Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 700, color: 'primary.main' }}>
+                            {point.org_name || organizations.find((o) => o.id === point.org_id)?.name || ''}
+                        </Typography>
+                    </Box>
+
+                    <Grid container spacing={2}>
+                        <Grid item xs={12} sm={6}>
+                            <Typography variant="body2" color="text.secondary">Kích thước ngập:</Typography>
+                            <Typography variant="body1" sx={{ fontWeight: 700 }}>
+                                {latest ? `${latest.length || 0}m x ${latest.width || 0}m x ${latest.depth || 0}m` : '-'}
+                            </Typography>
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <Typography variant="body2" color="text.secondary">Thời gian:</Typography>
+                            <Typography variant="body1" sx={{ fontWeight: 700 }}>
+                                {latest ? formatTime(latest.start_time) : '-'}
+                            </Typography>
+                            {latest && (
+                                <Typography variant="caption" color={point.status === 'active' ? "error" : "text.secondary"} sx={{ fontWeight: 700, display: 'block', mt: 0.5, fontSize: '0.8rem' }}>
+                                    {point.status === 'active'
+                                        ? `Cập nhật: ${formatTime(latest.timestamp || latest.start_time)} (${getDuration(latest.timestamp || latest.start_time)})`
+                                        : `Lần cuối: ${getDuration(latest.start_time)} trước`}
+                                </Typography>
+                            )}
+                        </Grid>
+                    </Grid>
+
+                     <Box>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 700 }}>Ảnh liên quan:</Typography>
+                        {latest?.images?.length > 0 ? (
+                            <Box sx={{ display: 'flex', gap: 1.2, overflowX: 'auto', pb: 1, '&::-webkit-scrollbar': { height: 4 }, '&::-webkit-scrollbar-thumb': { bgcolor: 'grey.300', borderRadius: 4 } }}>
+                                {latest.images.map((img, idx) => (
+                                    <Box
+                                        key={idx} component="img" src={getInundationImageUrl(img)}
+                                        onClick={(e) => { e.stopPropagation(); handleOpenViewer(latest.images, idx); }}
+                                        sx={{ width: 80, height: 80, borderRadius: 2, objectFit: 'cover', cursor: 'zoom-in', border: '1px solid', borderColor: 'divider', flexShrink: 0, transition: 'transform .2s', '&:hover': { transform: 'scale(1.02)' } }}
+                                    />
+                                ))}
+                            </Box>
+                        ) : (
+                            <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.disabled' }}>Không có ảnh</Typography>
+                        )}
+                    </Box>
+
+                    {point.status === 'active' && (
+                        <Button
+                            fullWidth variant="contained" color="error" size="large"
+                            onClick={() => navigate(`${basePath}/inundation/form?tab=1&id=${point.active_report.id}&name=${encodeURIComponent(point.name)}`)}
+                            sx={{ borderRadius: 2, fontWeight: 800, py: 1.5 }}
+                        >
+                            Cập nhật tình hình
+                        </Button>
+                    )}
+                </Stack>
+            </Collapse>
+        </Paper>
+    );
+
+    if (isMobile) return renderCard();
+
     return (
         <React.Fragment>
             <TableRow hover sx={{ '& .MuiTableCell-root': { borderBottom: 'none' } }}>
-                <TableCell sx={{ width: 40, p: { xs: 1, md: 2 } }}>
+                <TableCell sx={{ width: 40, p: 2 }}>
                     <IconButton aria-label="expand row" size="small" onClick={() => setOpen(!open)}>
                         {open ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />}
                     </IconButton>
                 </TableCell>
-                <TableCell sx={{ p: { xs: 1, md: 2 } }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: { xs: '0.875rem', md: 'inherit' } }}>
+                <TableCell sx={{ p: 2 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
                         {point.name}
                     </Typography>
-                    {isMobile && (
-                        <Typography variant="body2" color="primary" sx={{ mt: 0.5 }}>
-                            {point.org_name || organizations.find((o) => o.id === point.org_id)?.name || ''}
-                        </Typography>
+                </TableCell>
+                <TableCell>
+                    <Typography variant="body2" color="primary">
+                        {point.org_name || organizations.find((o) => o.id === point.org_id)?.name || ''}
+                    </Typography>
+                </TableCell>
+                <TableCell align="center">
+                    <Chip
+                        label={point.status === 'active' ? 'Đang ngập' : 'Bình thường'}
+                        color={point.status === 'active' ? 'error' : 'success'}
+                        size="small"
+                        sx={{ fontWeight: 700 }}
+                    />
+                </TableCell>
+                <TableCell>
+                    {latest?.traffic_status && (
+                        <Chip
+                            label={getTrafficStatusLabel(latest.traffic_status)}
+                            size="small"
+                            color={getTrafficStatusColor(latest.traffic_status)}
+                            variant="outlined"
+                            sx={{ fontWeight: 800, fontSize: '0.75rem', opacity: point.status === 'active' ? 1 : 0.7 }}
+                        />
                     )}
                 </TableCell>
-                {!isMobile && (
-                    <>
-                        <TableCell>
-                            <Typography variant="body2" color="primary">
-                                {point.org_name || organizations.find((o) => o.id === point.org_id)?.name || ''}
-                            </Typography>
-                        </TableCell>
-                        <TableCell align="center">
-                            <Chip
-                                label={point.status === 'active' ? 'Đang ngập' : 'Bình thường'}
-                                color={point.status === 'active' ? 'error' : 'success'}
-                                size="small"
-                                sx={{ fontWeight: 700 }}
-                            />
-                        </TableCell>
-                        <TableCell>
-                            {latest?.traffic_status && (
-                                <Chip
-                                    label={getTrafficStatusLabel(latest.traffic_status)}
-                                    size="small"
-                                    color={getTrafficStatusColor(latest.traffic_status)}
-                                    variant="outlined"
-                                    sx={{ fontWeight: 800, fontSize: '0.75rem', opacity: point.status === 'active' ? 1 : 0.7 }}
-                                />
-                            )}
-                        </TableCell>
-                    </>
-                )}
-                {!isMobile && (
-                    <TableCell align="center" sx={{ p: { xs: 1, md: 2 }, width: 120 }}>
-                        <Button
-                            variant={point.status === 'active' ? 'contained' : 'contained'}
-                            color={point.status === 'active' ? 'error' : 'primary'}
-                            size="small"
-                            onClick={() =>
-                                navigate(
-                                    point.status === 'active'
-                                        ? `${basePath}/inundation/form?tab=1&id=${point.active_report.id}&name=${encodeURIComponent(point.name)}`
-                                        : `${basePath}/inundation/form?tab=0&point_id=${point.id}&name=${encodeURIComponent(point.name)}`
-                                )
-                            }
-                        >
-                            {point.status === 'active' ? 'Cập nhật' : 'Báo cáo'}
-                        </Button>
-                    </TableCell>
-                )}
+                <TableCell align="center" sx={{ p: 2, width: 120 }}>
+                    <Button
+                        variant="contained"
+                        color={point.status === 'active' ? 'error' : 'primary'}
+                        size="small"
+                        onClick={() =>
+                            navigate(
+                                point.status === 'active'
+                                    ? `${basePath}/inundation/form?tab=1&id=${point.active_report.id}&name=${encodeURIComponent(point.name)}`
+                                    : `${basePath}/inundation/form?tab=0&point_id=${point.id}&name=${encodeURIComponent(point.name)}`
+                            )
+                        }
+                    >
+                        {point.status === 'active' ? 'Cập nhật' : 'Báo cáo'}
+                    </Button>
+                </TableCell>
             </TableRow>
             <TableRow>
-                <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider', paddingBottom: 0, paddingTop: 0 }} colSpan={isMobile ? 2 : 6}>
+                <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider', paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
                     <Collapse in={open} timeout="auto" unmountOnExit>
-                        <Box sx={{ m: { xs: 1, md: 2 }, p: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-                            <Typography variant="h6" gutterBottom component="div" sx={{ fontWeight: 700, color: 'primary.main', mb: 2, fontSize: { xs: '0.875rem', md: 'inherit' } }}>
+                        <Box sx={{ m: 2, p: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                            <Typography variant="h6" gutterBottom component="div" sx={{ fontWeight: 700, color: 'primary.main', mb: 2 }}>
                                 {point.address}
                             </Typography>
                             <Stack spacing={1.5}>
-                                {isMobile && (
-                                    <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
-                                        <Chip
-                                            label={point.status === 'active' ? 'Đang ngập' : 'Bình thường'}
-                                            color={point.status === 'active' ? 'error' : 'success'}
-                                            size="small"
-                                            sx={{ fontWeight: 700 }}
-                                        />
-                                        {latest?.traffic_status && (
-                                            <Chip
-                                                label={getTrafficStatusLabel(latest.traffic_status)}
-                                                size="small"
-                                                color={getTrafficStatusColor(latest.traffic_status)}
-                                                variant="outlined"
-                                                sx={{ fontWeight: 800, fontSize: '0.75rem' }}
-                                            />
-                                        )}
-                                    </Stack>
-                                )}
                                 <Grid container spacing={2}>
                                     <Grid item xs={12} sm={6}>
-                                        <Typography variant="body2" color="text.secondary">
-                                            Kích thước ngập:
-                                        </Typography>
+                                        <Typography variant="body2" color="text.secondary">Kích thước ngập:</Typography>
                                         <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                            {latest
-                                                ? `${latest.length || 0}m x ${latest.width || 0}m x ${latest.depth || 0}m`
-                                                : '-'}
+                                            {latest ? `${latest.length || 0}m x ${latest.width || 0}m x ${latest.depth || 0}m` : '-'}
                                         </Typography>
                                     </Grid>
                                     <Grid item xs={12} sm={6}>
-                                        <Typography variant="body2" color="text.secondary">
-                                            Thời gian bắt đầu:
-                                        </Typography>
+                                        <Typography variant="body2" color="text.secondary">Thời gian bắt đầu:</Typography>
                                         <Typography variant="body2" sx={{ fontWeight: 600 }}>
                                             {latest ? formatTime(latest.start_time) : '-'}
                                         </Typography>
@@ -196,55 +255,53 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                                     </Grid>
                                 </Grid>
                                 <Box>
-                                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                                        Ảnh liên quan:
-                                    </Typography>
+                                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>Ảnh liên quan:</Typography>
                                     {latest?.images?.length > 0 ? (
                                         <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', pb: 1 }}>
                                             {latest.images.map((img, idx) => (
                                                 <Box
-                                                    key={idx}
-                                                    component="img"
-                                                    src={getInundationImageUrl(img)}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleOpenViewer(latest.images, idx);
-                                                    }}
-                                                    sx={{
-                                                        width: 56,
-                                                        height: 56,
-                                                        borderRadius: 1.5,
-                                                        objectFit: 'cover',
-                                                        cursor: 'pointer',
-                                                        border: '1px solid',
-                                                        borderColor: 'divider',
-                                                        flexShrink: 0
-                                                    }}
+                                                    key={idx} component="img" src={getInundationImageUrl(img)}
+                                                    onClick={(e) => { e.stopPropagation(); handleOpenViewer(latest.images, idx); }}
+                                                    sx={{ width: 56, height: 56, borderRadius: 1.5, objectFit: 'cover', cursor: 'pointer', border: '1px solid', borderColor: 'divider', flexShrink: 0 }}
                                                 />
                                             ))}
                                         </Stack>
                                     ) : (
-                                        <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.disabled' }}>
-                                            Không có ảnh
-                                        </Typography>
+                                        <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.disabled' }}>Không có ảnh</Typography>
                                     )}
                                 </Box>
-                                {isMobile && (
+                                {point.status === 'active' && (
                                     <Box sx={{ mt: 1, textAlign: 'right' }}>
                                         <Button
-                                            variant={point.status === 'active' ? 'contained' : 'contained'}
-                                            color={point.status === 'active' ? 'error' : 'primary'}
-                                            size="small"
-                                            onClick={() =>
-                                                navigate(
-                                                    point.status === 'active'
-                                                        ? `${basePath}/inundation/form?tab=1&id=${point.active_report.id}&name=${encodeURIComponent(point.name)}`
-                                                        : `${basePath}/inundation/form?tab=0&point_id=${point.id}&name=${encodeURIComponent(point.name)}`
-                                                )
-                                            }
+                                            variant="contained" color="error" size="small"
+                                            onClick={() => navigate(`${basePath}/inundation/form?tab=1&id=${point.active_report.id}&name=${encodeURIComponent(point.name)}`)}
                                         >
-                                            {point.status === 'active' ? 'Cập nhật' : 'Báo cáo'}
+                                            Cập nhật
                                         </Button>
+                                    </Box>
+                                )}
+                                {latest?.updates?.length > 0 && (
+                                    <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>Lịch sử cập nhật:</Typography>
+                                        <Stack spacing={1}>
+                                            {latest.updates.slice().sort((a,b) => b.timestamp - a.timestamp).map((upd, idx) => (
+                                                <Box key={idx} sx={{ p: 1, bgcolor: 'background.paper', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
+                                                    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
+                                                        <Typography variant="caption" sx={{ fontWeight: 700, color: 'primary.main' }}>
+                                                            {formatTime(upd.timestamp)}
+                                                        </Typography>
+                                                        {upd.traffic_status && (
+                                                            <Chip 
+                                                                label={getTrafficStatusLabel(upd.traffic_status)} 
+                                                                size="small" color={getTrafficStatusColor(upd.traffic_status)} 
+                                                                variant="outlined" sx={{ height: 18, fontSize: '0.625rem' }} 
+                                                            />
+                                                        )}
+                                                    </Stack>
+                                                    <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>{upd.description || 'Không có mô tả'}</Typography>
+                                                </Box>
+                                            ))}
+                                        </Stack>
                                     </Box>
                                 )}
                             </Stack>
@@ -256,91 +313,180 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
     );
 };
 
-const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenViewer, navigate, isMobile, basePath }) => {
+const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenViewer, navigate, isMobile, basePath, getDuration }) => {
     const [open, setOpen] = useState(report.status === 'active');
     const latest = useMemo(() => getLatestData(report), [report]);
+
+    const renderCard = () => (
+        <Paper elevation={0} sx={{ p: 2, mb: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 3, bgcolor: 'background.paper' }}>
+             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5, gap: 1 }}>
+                <Box sx={{ flex: 1 }}>
+                    <Typography variant="h5" sx={{ fontWeight: 900, color: 'primary.dark', mb: 1, lineHeight: 1.2 }}>
+                        {report.street_name}
+                    </Typography>
+                    <Stack direction="row" spacing={1}>
+                        <Chip
+                            label={report.status === 'active' ? 'Đang ngập' : 'Đã kết thúc'}
+                            color={report.status === 'active' ? 'error' : 'success'}
+                            size="small" sx={{ fontWeight: 800 }}
+                        />
+                    </Stack>
+                </Box>
+                <IconButton size="small" onClick={() => setOpen(!open)} sx={{ mt: -0.5 }}>
+                    {open ? <IconChevronUp size={22} /> : <IconChevronDown size={22} />}
+                </IconButton>
+            </Box>
+
+             <Collapse in={open} timeout="auto" unmountOnExit>
+                <Stack spacing={2} sx={{ mt: 2, pt: 2, borderTop: '1px dashed', borderColor: 'divider' }}>
+                    <Box>
+                        <Typography variant="body2" color="text.secondary">Đơn vị quản lý:</Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 700, color: 'primary.main' }}>
+                            {organizations.find((o) => o.id === report.org_id)?.name || report.org_id}
+                        </Typography>
+                    </Box>
+
+                    <Grid container spacing={2}>
+                        <Grid item xs={12} sm={6}>
+                            <Typography variant="body2" color="text.secondary">Thời gian ngập:</Typography>
+                            <Typography variant="body1" sx={{ fontWeight: 700 }}>{`Bắt đầu: ${formatTime(report.start_time)}`}</Typography>
+                            <Typography variant="body1" sx={{ fontWeight: 700 }}>{report.status === 'resolved' ? `Kết thúc: ${formatTime(report.end_time)}` : 'Đang diễn ra'}</Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, display: 'block', mt: 0.5, fontSize: '0.8rem' }}>
+                                Tổng thời gian: {getDuration(report.start_time, report.end_time)}
+                            </Typography>
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <Typography variant="body2" color="text.secondary">Kích thước ngập:</Typography>
+                            <Typography variant="body1" sx={{ fontWeight: 700 }}>{`${latest?.length || 0}m x ${latest?.width || 0}m x ${latest?.depth || 0}m`}</Typography>
+                        </Grid>
+                    </Grid>
+
+                     <Box>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 700 }}>Ảnh liên quan:</Typography>
+                        {latest?.images?.length > 0 ? (
+                            <Box sx={{ display: 'flex', gap: 1.2, overflowX: 'auto', pb: 1, '&::-webkit-scrollbar': { height: 4 }, '&::-webkit-scrollbar-thumb': { bgcolor: 'grey.300', borderRadius: 4 } }}>
+                                {latest.images.map((img, idx) => (
+                                    <Box
+                                        key={idx} component="img" src={getInundationImageUrl(img)}
+                                        onClick={(e) => { e.stopPropagation(); handleOpenViewer(latest.images, idx); }}
+                                        sx={{ width: 80, height: 80, borderRadius: 2, objectFit: 'cover', cursor: 'zoom-in', border: '1px solid', borderColor: 'divider', flexShrink: 0, transition: 'transform .2s', '&:hover': { transform: 'scale(1.02)' } }}
+                                    />
+                                ))}
+                            </Box>
+                        ) : (
+                            <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.disabled' }}>Không có ảnh</Typography>
+                        )}
+                    </Box>
+
+                    <Button
+                        fullWidth variant="contained" color="primary" size="large"
+                        onClick={() => navigate(`${basePath}/inundation/form?id=${report.id}&tab=1&readonly=true`)}
+                        sx={{ borderRadius: 2, fontWeight: 800, py: 1.5 }}
+                    >
+                        Xem chi tiết
+                    </Button>
+
+                    {report.updates?.length > 0 && (
+                        <Box sx={{ mt: 1, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 1.5 }}>Lịch sử cập nhật:</Typography>
+                            <Stack spacing={1.5}>
+                                {report.updates.slice().sort((a,b) => b.timestamp - a.timestamp).map((upd, idx) => (
+                                    <Box key={idx} sx={{ p: 1.5, bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                                        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.8 }}>
+                                            <Typography variant="body2" sx={{ fontWeight: 800, color: 'primary.main' }}>
+                                                {formatTime(upd.timestamp)}
+                                            </Typography>
+                                            {(upd.traffic_status || upd.trafficStatus) && (
+                                                <Chip 
+                                                    label={getTrafficStatusLabel(upd.traffic_status || upd.trafficStatus)} 
+                                                    size="small" color={getTrafficStatusColor(upd.traffic_status || upd.trafficStatus)} 
+                                                    variant="outlined" sx={{ fontWeight: 800 }} 
+                                                />
+                                            )}
+                                        </Stack>
+                                        <Typography variant="body2" sx={{ fontSize: '0.9rem', lineHeight: 1.4 }}>
+                                            {upd.description || 'Không có mô tả'}
+                                        </Typography>
+                                    </Box>
+                                ))}
+                            </Stack>
+                        </Box>
+                    )}
+                </Stack>
+            </Collapse>
+        </Paper>
+    );
+
+    if (isMobile) return renderCard();
 
     return (
         <React.Fragment>
             <TableRow hover sx={{ '& .MuiTableCell-root': { borderBottom: 'none' } }}>
-                <TableCell sx={{ width: 40, p: { xs: 1, md: 2 } }}>
+                <TableCell sx={{ width: 40, p: 2 }}>
                     <IconButton aria-label="expand row" size="small" onClick={() => setOpen(!open)}>
                         {open ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />}
                     </IconButton>
                 </TableCell>
-                <TableCell sx={{ p: { xs: 1, md: 2 } }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: { xs: '0.875rem', md: 'inherit' } }}>
+                <TableCell sx={{ p: 2 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
                         {report.street_name}
                     </Typography>
-                    {isMobile && (
-                        <Typography variant="body2" color="primary" sx={{ mt: 0.5 }}>
-                            {organizations.find((o) => o.id === report.org_id)?.name || report.org_id}
-                        </Typography>
-                    )}
                 </TableCell>
-                {!isMobile && (
-                    <>
-                        <TableCell>
-                            <Typography variant="body2" color="primary">
-                                {organizations.find((o) => o.id === report.org_id)?.name || report.org_id}
-                            </Typography>
-                        </TableCell>
-                        <TableCell>
-                            <Typography variant="body2">{formatTime(report.start_time)}</Typography>
-                        </TableCell>
-                        <TableCell>
-                            <Chip
-                                label={report.status === 'active' ? 'Đang ngập' : 'Đã kết thúc'}
-                                color={report.status === 'active' ? 'error' : 'success'}
-                                size="small"
-                                sx={{ fontWeight: 700 }}
-                            />
-                        </TableCell>
-                    </>
-                )}
-                {!isMobile && (
-                    <TableCell align="right" sx={{ p: { xs: 1, md: 2 } }}>
-                        <Button size="small" variant="text" onClick={() => navigate(`${basePath}/inundation/form?id=${report.id}&tab=1&readonly=true`)}>
-                            Xem chi tiết
-                        </Button>
-                    </TableCell>
-                )}
+                <TableCell>
+                    <Typography variant="body2" color="primary">
+                        {organizations.find((o) => o.id === report.org_id)?.name || report.org_id}
+                    </Typography>
+                </TableCell>
+                <TableCell>
+                    <Typography variant="body2">{formatTime(report.start_time)}</Typography>
+                </TableCell>
+                <TableCell>
+                    <Typography variant="body2">{report.end_time ? formatTime(report.end_time) : '-'}</Typography>
+                </TableCell>
+                <TableCell>
+                    <Chip
+                        label={report.status === 'active' ? 'Đang ngập' : 'Đã kết thúc'}
+                        color={report.status === 'active' ? 'error' : 'success'}
+                        size="small"
+                        sx={{ fontWeight: 700 }}
+                    />
+                </TableCell>
+                <TableCell align="right" sx={{ p: 2 }}>
+                    <Button size="small" variant="text" onClick={() => navigate(`${basePath}/inundation/form?id=${report.id}&tab=1&readonly=true`)}>
+                        Xem chi tiết
+                    </Button>
+                </TableCell>
             </TableRow>
             <TableRow>
-                <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider', paddingBottom: 0, paddingTop: 0 }} colSpan={isMobile ? 2 : 6}>
+                <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider', paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
                     <Collapse in={open} timeout="auto" unmountOnExit>
-                        <Box sx={{ m: { xs: 1, md: 2 }, p: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-                            <Typography variant="h6" gutterBottom component="div" sx={{ fontWeight: 700, color: 'primary.main', mb: 2, fontSize: { xs: '0.875rem', md: 'inherit' } }}>
+                        <Box sx={{ m: 2, p: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                            <Typography variant="h6" gutterBottom component="div" sx={{ fontWeight: 700, color: 'primary.main', mb: 2 }}>
                                 Chi tiết báo cáo
                             </Typography>
                             <Stack spacing={1.5}>
-                                {isMobile && (
-                                    <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
-                                        <Chip
-                                            label={report.status === 'active' ? 'Đang ngập' : 'Đã kết thúc'}
-                                            color={report.status === 'active' ? 'error' : 'success'}
-                                            size="small"
-                                            sx={{ fontWeight: 700 }}
-                                        />
-                                        <Typography variant="body2" sx={{ mt: 0.5 }}>
-                                            <strong>Bắt đầu:</strong> {formatTime(report.start_time)}
-                                        </Typography>
-                                    </Stack>
-                                )}
                                 <Grid container spacing={2}>
                                     <Grid item xs={12} sm={6}>
-                                        <Typography variant="body2" color="text.secondary">
-                                            Kích thước ngập:
+                                        <Typography variant="body2" color="text.secondary">Thời gian ngập:</Typography>
+                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                            {`Bắt đầu: ${formatTime(report.start_time)}`}
                                         </Typography>
+                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                            {report.status === 'resolved' ? `Kết thúc: ${formatTime(report.end_time)}` : 'Đang diễn ra'}
+                                        </Typography>
+                                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block' }}>
+                                            Tổng thời gian: {getDuration(report.start_time, report.end_time)}
+                                        </Typography>
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <Typography variant="body2" color="text.secondary">Kích thước ngập:</Typography>
                                         <Typography
                                             variant="body2"
                                             sx={{ fontWeight: 600 }}
                                         >{`${latest?.length || 0}m x ${latest?.width || 0}m x ${latest?.depth || 0}m`}</Typography>
                                     </Grid>
                                     <Grid item xs={12} sm={6}>
-                                        <Typography variant="body2" color="text.secondary">
-                                            Giao thông:
-                                        </Typography>
+                                        <Typography variant="body2" color="text.secondary">Giao thông:</Typography>
                                         {latest?.traffic_status ? (
                                             <Chip
                                                 label={getTrafficStatusLabel(latest.traffic_status)}
@@ -350,56 +496,48 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenVi
                                                 sx={{ fontWeight: 800, fontSize: '0.75rem', mt: 0.5 }}
                                             />
                                         ) : (
-                                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                                -
-                                            </Typography>
+                                            <Typography variant="body2" sx={{ fontWeight: 600 }}>-</Typography>
                                         )}
                                     </Grid>
                                 </Grid>
                                 <Box>
-                                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                                        Ảnh liên quan:
-                                    </Typography>
+                                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>Ảnh liên quan:</Typography>
                                     {latest?.images?.length > 0 ? (
                                         <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', pb: 1 }}>
                                             {latest.images.map((img, idx) => (
                                                 <Box
-                                                    key={idx}
-                                                    component="img"
-                                                    src={getInundationImageUrl(img)}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleOpenViewer(latest.images, idx);
-                                                    }}
-                                                    sx={{
-                                                        width: 56,
-                                                        height: 56,
-                                                        borderRadius: 1.5,
-                                                        objectFit: 'cover',
-                                                        cursor: 'pointer',
-                                                        border: '1px solid',
-                                                        borderColor: 'divider',
-                                                        flexShrink: 0
-                                                    }}
+                                                    key={idx} component="img" src={getInundationImageUrl(img)}
+                                                    onClick={(e) => { e.stopPropagation(); handleOpenViewer(latest.images, idx); }}
+                                                    sx={{ width: 56, height: 56, borderRadius: 1.5, objectFit: 'cover', cursor: 'pointer', border: '1px solid', borderColor: 'divider', flexShrink: 0 }}
                                                 />
                                             ))}
                                         </Stack>
                                     ) : (
-                                        <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.disabled' }}>
-                                            Không có ảnh
-                                        </Typography>
+                                        <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.disabled' }}>Không có ảnh</Typography>
                                     )}
                                 </Box>
-                                {isMobile && (
-                                    <Box sx={{ mt: 1, textAlign: 'right' }}>
-                                        <Button
-                                            size="small"
-                                            variant="contained"
-                                            color="primary"
-                                            onClick={() => navigate(`${basePath}/inundation/form?id=${report.id}&tab=1&readonly=true`)}
-                                        >
-                                            Xem chi tiết
-                                        </Button>
+                                {report.updates?.length > 0 && (
+                                    <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>Lịch sử cập nhật:</Typography>
+                                        <Stack spacing={1}>
+                                            {report.updates.slice().sort((a,b) => b.timestamp - a.timestamp).map((upd, idx) => (
+                                                <Box key={idx} sx={{ p: 1, bgcolor: 'background.paper', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
+                                                    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
+                                                        <Typography variant="caption" sx={{ fontWeight: 700, color: 'primary.main' }}>
+                                                            {formatTime(upd.timestamp)}
+                                                        </Typography>
+                                                        {(upd.traffic_status || upd.trafficStatus) && (
+                                                            <Chip 
+                                                                label={getTrafficStatusLabel(upd.traffic_status || upd.trafficStatus)} 
+                                                                size="small" color={getTrafficStatusColor(upd.traffic_status || upd.trafficStatus)} 
+                                                                variant="outlined" sx={{ height: 18, fontSize: '0.625rem' }} 
+                                                            />
+                                                        )}
+                                                    </Stack>
+                                                    <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>{upd.description || 'Không có mô tả'}</Typography>
+                                                </Box>
+                                            ))}
+                                        </Stack>
                                     </Box>
                                 )}
                             </Stack>
@@ -553,9 +691,10 @@ const InundationDashboard = () => {
         return new Date(ts * 1000).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
     };
 
-    const getDuration = (startTime) => {
+    const getDuration = (startTime, endTime) => {
         if (!startTime) return '';
-        const diff = Math.floor(Date.now() / 1000) - startTime;
+        const end = endTime || Math.floor(Date.now() / 1000);
+        const diff = end - startTime;
         const h = Math.floor(diff / 3600);
         const m = Math.floor((diff % 3600) / 60);
         return h > 0 ? `${h}h ${m}p` : `${m}p`;
@@ -571,28 +710,33 @@ const InundationDashboard = () => {
 
     const renderHistoryTable = () => (
         <Box>
-            <Stack direction="row" spacing={2} sx={{ mb: 2 }} alignItems="center" flexWrap="wrap" useFlexGap>
+            <Stack spacing={isMobile ? 2 : 1.5} sx={{ mb: 2 }}>
                 <TextField
-                    size="small"
-                    placeholder="Tìm tên đường..."
+                    fullWidth
+                    size={isMobile ? "medium" : "small"}
+                    placeholder="Tìm tên đường, địa chỉ..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    sx={{ width: { xs: '100%', sm: 250 } }}
-                    InputProps={{ startAdornment: <IconSearch size={16} sx={{ mr: 1, color: 'text.disabled' }} /> }}
+                    InputProps={{ 
+                        startAdornment: <IconSearch size={20} sx={{ color: 'text.disabled', mr: 1, ml: 0.5 }} />,
+                        sx: { borderRadius: 3, fontWeight: 600 }
+                    }}
                 />
-                {userRole !== 'employee' && (
+                <Stack direction={isMobile ? "column" : "row"} spacing={isMobile ? 2 : 1}>
+                {organizations.length > 1 && (
                     <TextField
                         select
-                        size="small"
+                        fullWidth
+                        size={isMobile ? "medium" : "small"}
                         label="Đơn vị quản lý"
                         value={orgFilter}
                         onChange={(e) => {
                             setOrgFilter(e.target.value);
                             setHistoryPage(0);
                         }}
-                        sx={{ width: { xs: '100%', sm: 180 } }}
+                        InputProps={{ sx: { borderRadius: 3, fontWeight: 600 } }}
                     >
-                        <MenuItem value="">Tất cả</MenuItem>
+                        <MenuItem value="">Tất cả đơn vị</MenuItem>
                         {organizations.map((org) => (
                             <MenuItem key={org.id} value={org.id}>
                                 {org.name}
@@ -600,101 +744,151 @@ const InundationDashboard = () => {
                         ))}
                     </TextField>
                 )}
-                <TextField
-                    select
-                    size="small"
-                    label="Trạng thái"
-                    value={historyStatus}
-                    onChange={(e) => {
-                        setHistoryStatus(e.target.value);
-                        setHistoryPage(0);
-                    }}
-                    sx={{ width: { xs: '100%', sm: 150 } }}
-                >
-                    <MenuItem value="">Tất cả</MenuItem>
-                    <MenuItem value="active">Đang ngập</MenuItem>
-                    <MenuItem value="resolved">Đã kết thúc</MenuItem>
-                </TextField>
-                <TextField
-                    select
-                    size="small"
-                    label="Giao thông"
-                    value={historyTrafficStatus}
-                    onChange={(e) => {
-                        setHistoryTrafficStatus(e.target.value);
-                        setHistoryPage(0);
-                    }}
-                    sx={{ width: { xs: '100%', sm: 180 } }}
-                >
-                    <MenuItem value="">Tất cả giao thông</MenuItem>
-                    <MenuItem value="Đi lại bình thường">Đi lại bình thường</MenuItem>
-                    <MenuItem value="Đi lại khó khăn">Đi lại khó khăn</MenuItem>
-                    <MenuItem value="Không đi lại được">Không đi lại được</MenuItem>
-                </TextField>
+                    <TextField
+                        select
+                        fullWidth
+                        size={isMobile ? "medium" : "small"}
+                        label="Trạng thái"
+                        value={historyStatus}
+                        onChange={(e) => {
+                            setHistoryStatus(e.target.value);
+                            setHistoryPage(0);
+                        }}
+                        InputProps={{ sx: { borderRadius: 3, fontWeight: 600 } }}
+                    >
+                        <MenuItem value="">Tất cả trạng thái</MenuItem>
+                        <MenuItem value="active">Đang diễn biến</MenuItem>
+                        <MenuItem value="resolved">Đã kết thúc</MenuItem>
+                    </TextField>
+                    {isMobile && (
+                        <TextField
+                            select
+                            fullWidth
+                            size="medium"
+                            label="Tình trạng giao thông"
+                            value={historyTrafficStatus}
+                            onChange={(e) => {
+                                setHistoryTrafficStatus(e.target.value);
+                                setHistoryPage(0);
+                            }}
+                            InputProps={{ sx: { borderRadius: 3, fontWeight: 600 } }}
+                        >
+                            <MenuItem value="">Tất cả giao thông</MenuItem>
+                            <MenuItem value="Đi lại bình thường">Bình thường</MenuItem>
+                            <MenuItem value="Đi lại khó khăn">Khó khăn</MenuItem>
+                            <MenuItem value="Không đi lại được">Không đi lại được</MenuItem>
+                        </TextField>
+                    )}
+                </Stack>
+                {!isMobile && (
+                    <TextField
+                        select
+                        fullWidth
+                        size="small"
+                        label="Giao thông"
+                        value={historyTrafficStatus}
+                        onChange={(e) => {
+                            setHistoryTrafficStatus(e.target.value);
+                            setHistoryPage(0);
+                        }}
+                        InputProps={{ sx: { borderRadius: 2 } }}
+                    >
+                        <MenuItem value="">Tất cả</MenuItem>
+                        <MenuItem value="Đi lại bình thường">Bình thường</MenuItem>
+                        <MenuItem value="Đi lại khó khăn">Khó khăn</MenuItem>
+                        <MenuItem value="Không đi lại được">Không đi lại được</MenuItem>
+                    </TextField>
+                )}
             </Stack>
-            <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, '& .MuiTableCell-root': { fontSize: { xs: '0.875rem' } } }}>
-                <Table sx={{ minWidth: isMobile ? 300 : 800 }}>
-                    <TableHead sx={{ bgcolor: 'grey.50' }}>
-                        <TableRow>
-                            <TableCell sx={{ width: 40 }} />
-                            <TableCell sx={{ fontWeight: 700 }}>Tuyến đường / Điểm</TableCell>
-                            {!isMobile && (
-                                <>
-                                    <TableCell sx={{ fontWeight: 700 }}>Đơn vị quản lý</TableCell>
-                                    <TableCell sx={{ fontWeight: 700 }}>Thời gian</TableCell>
-                                    <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>
-                                </>
-                            )}
-                            {!isMobile && (
-                                <TableCell sx={{ fontWeight: 700 }} align="right">
-                                    Thao tác
-                                </TableCell>
-                            )}
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {loadingHistory ? (
+            {isMobile ? (
+                <Stack spacing={2} sx={{ mb: 10 }}>
+                    {loadingHistory ? [1, 2, 3].map((i) => <Skeleton key={i} variant="rectangular" height={140} sx={{ borderRadius: 3 }} />)
+                        : orgReports.length === 0 ? (
+                            <Box sx={{ py: 5, textAlign: 'center', bgcolor: 'grey.50', borderRadius: 3, border: '1px dashed', borderColor: 'divider' }}>
+                                <Typography color="text.secondary">Không có dữ liệu lịch sử</Typography>
+                            </Box>
+                        ) : orgReports.map((report) => (
+                            <CollapsibleHistoryRow
+                                key={report.id}
+                                report={report}
+                                organizations={organizations}
+                                formatTime={formatTime}
+                                handleOpenViewer={handleOpenViewer}
+                                navigate={navigate}
+                                isMobile={isMobile}
+                                basePath={basePath}
+                            />
+                        ))}
+                    <TablePagination
+                        rowsPerPageOptions={[5, 10, 25]}
+                        component="div"
+                        count={totalHistory}
+                        rowsPerPage={historyRowsPerPage}
+                        page={historyPage}
+                        onPageChange={(e, p) => setHistoryPage(p)}
+                        onRowsPerPageChange={(e) => { setHistoryRowsPerPage(parseInt(e.target.value, 10)); setHistoryPage(0); }}
+                        labelRowsPerPage=""
+                        sx={{ '.MuiTablePagination-selectLabel, .MuiTablePagination-input': { display: 'none' } }}
+                    />
+                </Stack>
+            ) : (
+                <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, '& .MuiTableCell-root': { fontSize: { xs: '0.875rem' } } }}>
+                    <Table sx={{ minWidth: 800 }}>
+                        <TableHead sx={{ bgcolor: 'grey.50' }}>
                             <TableRow>
-                                <TableCell colSpan={isMobile ? 3 : 6} align="center" sx={{ py: 3 }}>
-                                    <CircularProgress size={24} />
-                                </TableCell>
+                                <TableCell sx={{ width: 40 }} />
+                                <TableCell sx={{ fontWeight: 700 }}>Tuyến đường / Điểm</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>Đơn vị quản lý</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>Bắt đầu</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>Kết thúc</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }} align="right">Thao tác</TableCell>
                             </TableRow>
-                        ) : orgReports.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={isMobile ? 3 : 6} align="center" sx={{ py: 3 }}>
-                                    Không có dữ liệu lịch sử
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            orgReports.map((report) => (
-                                <CollapsibleHistoryRow
-                                    key={report.id}
-                                    report={report}
-                                    organizations={organizations}
-                                    formatTime={formatTime}
-                                    handleOpenViewer={handleOpenViewer}
-                                    navigate={navigate}
-                                    isMobile={isMobile}
-                                    basePath={basePath}
-                                />
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
-                <TablePagination
-                    rowsPerPageOptions={[10, 25, 50]}
-                    component="div"
-                    count={totalHistory}
-                    rowsPerPage={historyRowsPerPage}
-                    page={historyPage}
-                    onPageChange={(e, p) => setHistoryPage(p)}
-                    onRowsPerPageChange={(e) => {
-                        setHistoryRowsPerPage(parseInt(e.target.value, 10));
-                        setHistoryPage(0);
-                    }}
-                    labelRowsPerPage="Dòng mỗi trang:"
-                />
-            </TableContainer>
+                        </TableHead>
+                        <TableBody>
+                            {loadingHistory ? (
+                                <TableRow>
+                                    <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
+                                        <CircularProgress size={24} />
+                                    </TableCell>
+                                </TableRow>
+                            ) : orgReports.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
+                                        Không có dữ liệu lịch sử
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                orgReports.map((report) => (
+                                    <CollapsibleHistoryRow
+                                        key={report.id}
+                                        report={report}
+                                        organizations={organizations}
+                                        formatTime={formatTime}
+                                        handleOpenViewer={handleOpenViewer}
+                                        navigate={navigate}
+                                        isMobile={isMobile}
+                                        basePath={basePath}
+                                    />
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
+                    <TablePagination
+                        rowsPerPageOptions={[10, 25, 50]}
+                        component="div"
+                        count={totalHistory}
+                        rowsPerPage={historyRowsPerPage}
+                        page={historyPage}
+                        onPageChange={(e, p) => setHistoryPage(p)}
+                        onRowsPerPageChange={(e) => {
+                            setHistoryRowsPerPage(parseInt(e.target.value, 10));
+                            setHistoryPage(0);
+                        }}
+                        labelRowsPerPage="Dòng mỗi trang:"
+                    />
+                </TableContainer>
+            )}
         </Box>
     );
 
@@ -801,7 +995,7 @@ const InundationDashboard = () => {
                                 sx={{ width: 260 }}
                                 InputProps={{ startAdornment: <IconSearch size={16} sx={{ mr: 1, color: 'text.disabled' }} /> }}
                             />
-                            {userRole !== 'employee' && (
+                            {organizations.length > 1 && (
                                 <TextField
                                     select
                                     size="small"
@@ -810,13 +1004,13 @@ const InundationDashboard = () => {
                                     onChange={(e) => setOrgFilter(e.target.value)}
                                     sx={{ minWidth: 150 }}
                                 >
-                                    <MenuItem value="">Tất cả đơn vị</MenuItem>
-                                    {organizations.map((org) => (
-                                        <MenuItem key={org.id} value={org.id}>
-                                            {org.name}
-                                        </MenuItem>
-                                    ))}
-                                </TextField>
+                                <MenuItem value="">Tất cả đơn vị</MenuItem>
+                                {organizations.map((org) => (
+                                    <MenuItem key={org.id} value={org.id}>
+                                        {org.name}
+                                    </MenuItem>
+                                ))}
+                            </TextField>
                             )}
                             <TextField
                                 select
@@ -916,7 +1110,7 @@ const InundationDashboard = () => {
 
     if (activeTab === 3) {
         return (
-            <Box sx={{ px: 2, pt: 4, textAlign: 'center' }}>
+            <Box sx={{ px: isMobile ? 1.2 : 2, pt: 4, textAlign: 'center' }}>
                 <Avatar sx={{ width: 96, height: 96, mx: 'auto', mb: 2, bgcolor: 'primary.main' }}>
                     <IconUser size={48} />
                 </Avatar>
@@ -948,7 +1142,7 @@ const InundationDashboard = () => {
     }
 
     return (
-        <Box sx={{ px: 2, pt: 2, pb: 4 }}>
+        <Box sx={{ px: isMobile ? 1.2 : 2, pt: 2, pb: 4 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="h2" sx={{ fontWeight: 900, color: 'primary.main', letterSpacing: -0.5 }}>
                     Trực ngập lụt
@@ -975,101 +1169,140 @@ const InundationDashboard = () => {
                     sx={{ fontWeight: 800, height: 36, fontSize: '0.95rem' }}
                 />
             </Stack>
-            <Stack spacing={1.5} sx={{ mb: 2 }}>
+            <Stack spacing={isMobile ? 2 : 1.5} sx={{ mb: 2 }}>
                 <TextField
                     fullWidth
-                    size="small"
+                    size={isMobile ? "medium" : "small"}
                     placeholder="Tìm tên đường, địa chỉ..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    InputProps={{ startAdornment: <IconSearch size={18} sx={{ color: 'text.disabled', mr: 1 }} /> }}
+                    InputProps={{ 
+                        startAdornment: <IconSearch size={20} sx={{ color: 'text.disabled', mr: 1, ml: 0.5 }} />,
+                        sx: { borderRadius: 3, fontWeight: 600 }
+                    }}
                 />
-                <Stack direction="row" spacing={1}>
-                    {userRole !== 'employee' && (
+                <Stack direction={isMobile ? "column" : "row"} spacing={isMobile ? 2 : 1}>
+                {organizations.length > 1 && (
+                    <TextField
+                        select
+                        fullWidth
+                        size={isMobile ? "medium" : "small"}
+                        label="Đơn vị quản lý"
+                        value={orgFilter}
+                        onChange={(e) => setOrgFilter(e.target.value)}
+                        InputProps={{ sx: { borderRadius: 3, fontWeight: 600 } }}
+                    >
+                        <MenuItem value="">Tất cả đơn vị</MenuItem>
+                        {organizations.map((org) => (
+                            <MenuItem key={org.id} value={org.id}>
+                                {org.name}
+                            </MenuItem>
+                        ))}
+                    </TextField>
+                )}
+                    <TextField
+                        select
+                        fullWidth
+                        size={isMobile ? "medium" : "small"}
+                        label="Trạng thái ngập"
+                        value={historyStatus}
+                        onChange={(e) => setHistoryStatus(e.target.value)}
+                        InputProps={{ sx: { borderRadius: 3, fontWeight: 600 } }}
+                    >
+                        <MenuItem value="">Tất cả trạng thái</MenuItem>
+                        <MenuItem value="active">Đang diễn biến</MenuItem>
+                        <MenuItem value="normal">Bình thường</MenuItem>
+                    </TextField>
+                    {isMobile && (
                         <TextField
                             select
                             fullWidth
-                            size="small"
-                            label="Đơn vị"
-                            value={orgFilter}
-                            onChange={(e) => setOrgFilter(e.target.value)}
+                            size="medium"
+                            label="Tình trạng giao thông"
+                            value={historyTrafficStatus}
+                            onChange={(e) => setHistoryTrafficStatus(e.target.value)}
+                            InputProps={{ sx: { borderRadius: 3, fontWeight: 600 } }}
                         >
-                            <MenuItem value="">Tất cả</MenuItem>
-                            {organizations.map((org) => (
-                                <MenuItem key={org.id} value={org.id}>
-                                    {org.name}
-                                </MenuItem>
-                            ))}
+                            <MenuItem value="">Tất cả giao thông</MenuItem>
+                            <MenuItem value="Đi lại bình thường">Bình thường</MenuItem>
+                            <MenuItem value="Đi lại khó khăn">Khó khăn</MenuItem>
+                            <MenuItem value="Không đi lại được">Không đi lại được</MenuItem>
                         </TextField>
                     )}
+                </Stack>
+                {!isMobile && (
                     <TextField
                         select
                         fullWidth
                         size="small"
-                        label="Trạng thái"
-                        value={historyStatus}
-                        onChange={(e) => setHistoryStatus(e.target.value)}
+                        label="Giao thông"
+                        value={historyTrafficStatus}
+                        onChange={(e) => setHistoryTrafficStatus(e.target.value)}
+                        InputProps={{ sx: { borderRadius: 2 } }}
                     >
                         <MenuItem value="">Tất cả</MenuItem>
-                        <MenuItem value="active">Đang ngập</MenuItem>
-                        <MenuItem value="normal">Bình thường</MenuItem>
+                        <MenuItem value="Đi lại bình thường">Bình thường</MenuItem>
+                        <MenuItem value="Đi lại khó khăn">Khó khăn</MenuItem>
+                        <MenuItem value="Không đi lại được">Không đi lại được</MenuItem>
                     </TextField>
-                </Stack>
-                <TextField
-                    select
-                    fullWidth
-                    size="small"
-                    label="Giao thông"
-                    value={historyTrafficStatus}
-                    onChange={(e) => setHistoryTrafficStatus(e.target.value)}
-                >
-                    <MenuItem value="">Tất cả</MenuItem>
-                    <MenuItem value="Đi lại bình thường">Bình thường</MenuItem>
-                    <MenuItem value="Đi lại khó khăn">Khó khăn</MenuItem>
-                    <MenuItem value="Không đi lại được">Không đi lại được</MenuItem>
-                </TextField>
+                )}
             </Stack>
-            <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, '& .MuiTableCell-root': { fontSize: { xs: '0.875rem' } } }}>
-                <Table sx={{ minWidth: isMobile ? 300 : 800 }}>
-                    <TableHead sx={{ bgcolor: 'grey.50' }}>
-                        <TableRow>
-                            <TableCell sx={{ width: 40 }} />
-                            <TableCell sx={{ fontWeight: 700 }}>Điểm ngập</TableCell>
-                            {!isMobile && (
-                                <>
-                                    <TableCell sx={{ fontWeight: 700, width: 250 }}>Đơn vị quản lý</TableCell>
-                                    <TableCell sx={{ fontWeight: 700 }} align="center">Trạng thái</TableCell>
-                                    <TableCell sx={{ fontWeight: 700 }} align="center">Giao thông</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, width: 120 }} align="center">Thao tác</TableCell>
-                                </>
-                            )}
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {loading
-                            ? [1, 2, 3].map((i) => (
-                                <TableRow key={i}>
-                                    <TableCell colSpan={isMobile ? 3 : 6}>
-                                        <Skeleton height={40} />
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                            : filteredPoints.map((point) => (
-                                <CollapsiblePointRow
-                                    key={point.id}
-                                    point={point}
-                                    organizations={organizations}
-                                    formatTime={formatTime}
-                                    getDuration={getDuration}
-                                    handleOpenViewer={handleOpenViewer}
-                                    navigate={navigate}
-                                    isMobile={isMobile}
-                                    basePath={basePath}
-                                />
-                            ))}
-                    </TableBody>
-                </Table>
-            </TableContainer>
+            {isMobile ? (
+                <Stack spacing={2} sx={{ mb: 10 }}>
+                    {loading ? [1, 2, 3].map((i) => <Skeleton key={i} variant="rectangular" height={120} sx={{ borderRadius: 3 }} />)
+                        : filteredPoints.map((point) => (
+                            <CollapsiblePointRow
+                                key={point.id}
+                                point={point}
+                                organizations={organizations}
+                                formatTime={formatTime}
+                                getDuration={getDuration}
+                                handleOpenViewer={handleOpenViewer}
+                                navigate={navigate}
+                                isMobile={isMobile}
+                                basePath={basePath}
+                            />
+                        ))}
+                </Stack>
+            ) : (
+                <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, '& .MuiTableCell-root': { fontSize: { xs: '0.875rem' } } }}>
+                    <Table sx={{ minWidth: 800 }}>
+                        <TableHead sx={{ bgcolor: 'grey.50' }}>
+                            <TableRow>
+                                <TableCell sx={{ width: 40 }} />
+                                <TableCell sx={{ fontWeight: 700 }}>Điểm ngập</TableCell>
+                                <TableCell sx={{ fontWeight: 700, width: 250 }}>Đơn vị quản lý</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }} align="center">Trạng thái</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }} align="center">Giao thông</TableCell>
+                                <TableCell sx={{ fontWeight: 700, width: 120 }} align="center">Thao tác</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {loading
+                                ? [1, 2, 3].map((i) => (
+                                    <TableRow key={i}>
+                                        <TableCell colSpan={6}>
+                                            <Skeleton height={40} />
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                                : filteredPoints.map((point) => (
+                                    <CollapsiblePointRow
+                                        key={point.id}
+                                        point={point}
+                                        organizations={organizations}
+                                        formatTime={formatTime}
+                                        getDuration={getDuration}
+                                        handleOpenViewer={handleOpenViewer}
+                                        navigate={navigate}
+                                        isMobile={isMobile}
+                                        basePath={basePath}
+                                    />
+                                ))}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+            )}
             {renderImageViewer()}
         </Box>
     );

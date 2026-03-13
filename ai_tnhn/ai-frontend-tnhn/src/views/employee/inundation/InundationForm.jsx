@@ -129,7 +129,7 @@ const InundationForm = () => {
 
     if (isMobile) {
         return (
-            <Box sx={{ px: 2, pt: 2 }}>
+            <Box sx={{ px: 2, pt: 2, pb: 4 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                     <IconButton size="small" onClick={() => navigate(-1)}>
                         <IconArrowLeft size={20} />

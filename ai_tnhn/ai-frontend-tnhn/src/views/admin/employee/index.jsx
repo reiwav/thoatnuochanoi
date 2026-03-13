@@ -104,8 +104,9 @@ const EmployeeList = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const userRole = localStorage.getItem('role');
+    const userOrgId = localStorage.getItem('org_id') || '';
     const [searchParams] = useSearchParams();
-    const urlOrgId = searchParams.get('org_id') || '';
+    const urlOrgId = searchParams.get('org_id') || userOrgId;
     const urlOrgName = searchParams.get('org_name') || '';
 
     const [loading, setLoading] = useState(false);
@@ -123,7 +124,6 @@ const EmployeeList = () => {
 
     // Fetch all orgs for the dialog dropdown
     const loadOrganizations = async () => {
-        if (userRole === 'admin_org') return; // Quản lý chỉ thấy org của mình, không cần load list org
         try {
             const res = await organizationApi.getAll({ per_page: 1000 });
             if (res.data?.status === 'success') {
@@ -244,7 +244,7 @@ const EmployeeList = () => {
                             {isMobile && <TableCell width="40px" />}
                             <TableCell sx={{ fontWeight: 700 }}>Tên</TableCell>
                             {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>}
-                            {!isMobile && userRole !== 'admin_org' && <TableCell sx={{ fontWeight: 700 }}>Công ty</TableCell>}
+                            {!isMobile && userRole === 'super_admin' && <TableCell sx={{ fontWeight: 700 }}>Công ty</TableCell>}
                             {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Vai trò</TableCell>}
                             {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>}
                             <TableCell align="right" sx={{ fontWeight: 700 }}>Thao tác</TableCell>
@@ -287,7 +287,7 @@ const EmployeeList = () => {
                 employee={editingEmployee}
                 isEdit={!!editingEmployee}
                 organizations={organizations}
-                defaultOrgId={urlOrgId}
+                defaultOrgId={urlOrgId || userOrgId}
                 userRole={userRole}
             />
         </MainCard>

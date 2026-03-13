@@ -69,6 +69,12 @@ func (h *EmergencyConstructionHandler) List(c *gin.Context) {
 		return
 	}
 
+	// Security isolation
+	client := h.GetTokenFromContext(c)
+	if client.Role != "super_admin" {
+		req.OrgID = client.OrgId
+	}
+
 	items, total, err := h.service.List(c.Request.Context(), req)
 	web.AssertNil(err)
 	h.SendData(c, gin.H{
@@ -82,6 +88,12 @@ func (h *EmergencyConstructionHandler) ListHistory(c *gin.Context) {
 	if err := c.ShouldBindQuery(req); err != nil {
 		web.AssertNil(web.BadRequest(err.Error()))
 		return
+	}
+
+	// Security isolation
+	client := h.GetTokenFromContext(c)
+	if client.Role != "super_admin" {
+		req.OrgID = client.OrgId
 	}
 
 	items, total, err := h.service.ListHistory(c.Request.Context(), req)

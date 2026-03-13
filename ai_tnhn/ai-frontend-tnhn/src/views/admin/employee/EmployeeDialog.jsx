@@ -99,8 +99,8 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                         </Grid>
                     </Grid>
 
-                    {/* Org selector dropdown */}
-                    {userRole !== 'admin_org' && (
+                    {/* Org selector dropdown - Only for Super Admin */}
+                    {userRole === 'super_admin' && (
                         <FormControl fullWidth size="small">
                             <InputLabel>Công ty / Xí nghiệp *</InputLabel>
                             <Select

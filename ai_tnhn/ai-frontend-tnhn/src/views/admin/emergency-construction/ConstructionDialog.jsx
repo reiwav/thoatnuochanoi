@@ -8,7 +8,7 @@ import { IconX } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 import organizationApi from 'api/organization';
 
-const ConstructionDialog = ({ open, onClose, onSubmit, item, isEdit }) => {
+const ConstructionDialog = ({ open, onClose, onSubmit, item, isEdit, userRole = '', defaultOrgId = '' }) => {
     const [formData, setFormData] = useState({
         name: '',
         description: '',
@@ -56,7 +56,7 @@ const ConstructionDialog = ({ open, onClose, onSubmit, item, isEdit }) => {
                     end_date: Math.floor(Date.now() / 1000) + 86400 * 30, // Default 30 days
                     status: 'planned',
                     cost: 0,
-                    org_id: ''
+                    org_id: defaultOrgId || ''
                 });
             }
         }
@@ -151,16 +151,18 @@ const ConstructionDialog = ({ open, onClose, onSubmit, item, isEdit }) => {
                             />
                         </Grid>
                     </Grid>
-                    <TextField
-                        fullWidth select label="Đơn vị quản lý" required size="small"
-                        value={formData.org_id}
-                        onChange={(e) => handleChange('org_id', e.target.value)}
-                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
-                    >
-                        {organizations.map((org) => (
-                            <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>
-                        ))}
-                    </TextField>
+                    {userRole === 'super_admin' && (
+                        <TextField
+                            fullWidth select label="Đơn vị quản lý" required size="small"
+                            value={formData.org_id}
+                            onChange={(e) => handleChange('org_id', e.target.value)}
+                            sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
+                        >
+                            {organizations.map((org) => (
+                                <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>
+                            ))}
+                        </TextField>
+                    )}
                     <TextField
                         fullWidth label="Mô tả" size="small" multiline rows={3}
                         value={formData.description}

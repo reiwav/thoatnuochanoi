@@ -9,7 +9,8 @@ import Typography from '@mui/material/Typography';
 
 // constant
 const headerStyle = {
-  '& .MuiCardHeader-action': { mr: 0 }
+  '& .MuiCardHeader-action': { mr: 0 },
+  p: { xs: 1.5, sm: 2 }
 };
 
 export default function MainCard({
@@ -54,7 +55,7 @@ export default function MainCard({
 
       {/* card content */}
       {content && (
-        <CardContent sx={contentSX} className={contentClass}>
+        <CardContent sx={{ p: { xs: 1.5, sm: 2 }, ...contentSX }} className={contentClass}>
           {children}
         </CardContent>
       )}

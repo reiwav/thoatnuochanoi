@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
     Box, Typography, Stack, Chip, Divider, Paper, CircularProgress,
-    Dialog, DialogContent, IconButton as MuiIconButton
+    Dialog, DialogContent, IconButton as MuiIconButton, useMediaQuery
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import {
@@ -15,6 +15,7 @@ import { getTrafficStatusColor } from 'utils/trafficStatusHelper';
 
 const InundationDetail = ({ selectedReport, loadingReport }) => {
     const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
     const [viewer, setViewer] = useState({ open: false, images: [], index: 0 });
 
@@ -69,14 +70,14 @@ const InundationDetail = ({ selectedReport, loadingReport }) => {
 
     return (
         <Box>
-            <Paper sx={{ mb: 3, p: 2, bgcolor: 'secondary.lighter', borderRadius: 3, boxShadow: 'none', border: '1px solid', borderColor: 'secondary.light' }}>
-                <Stack spacing={1}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Typography variant="h4" color="secondary.dark" sx={{ fontWeight: 900 }}>{selectedReport.street_name}</Typography>
+            <Paper sx={{ mb: 3, p: isMobile ? 1 : 2, bgcolor: 'secondary.lighter', borderRadius: 3, boxShadow: 'none', border: '1px solid', borderColor: 'secondary.light' }}>
+                <Stack spacing={1.5}>
+                    <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: 1.5 }}>
+                        <Typography variant={isMobile ? "h4" : "h3"} color="secondary.dark" sx={{ fontWeight: 900, flex: 1, lineHeight: 1.2 }}>{selectedReport.street_name}</Typography>
                         <Chip
                             label={selectedReport.status === 'active' ? 'Đang diễn biến' : 'Đã kết thúc'}
                             color={selectedReport.status === 'active' ? 'error' : 'success'}
-                            size="small" sx={{ fontWeight: 800, height: 24, fontSize: '0.82rem' }}
+                            size="small" sx={{ fontWeight: 800, height: 28, fontSize: '0.85rem' }}
                         />
                     </Box>
 
@@ -109,8 +110,8 @@ const InundationDetail = ({ selectedReport, loadingReport }) => {
                     <Box
                         key={idx}
                         sx={{
-                            display: 'flex', gap: 2, position: 'relative',
-                            p: 1, mx: -1, borderRadius: 2
+                            display: 'flex', gap: isMobile ? 1.5 : 2, position: 'relative',
+                            p: 1, borderRadius: 2
                         }}
                     >
                         {idx < arr.length - 1 && (
@@ -125,13 +126,13 @@ const InundationDetail = ({ selectedReport, loadingReport }) => {
                             {item.type === 'start' ? <IconPlus size={10} /> : (item.title === 'Kết thúc đợt ngập' ? <IconX size={10} /> : <IconRefresh size={10} />)}
                         </Box>
 
-                        <Box sx={{ pb: 3, flex: 1 }}>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-                                <Typography variant="h6" sx={{ fontWeight: 800 }}>{item.title}</Typography>
-                                <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 600 }}>
-                                    {new Date(item.ts * 1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                        <Box sx={{ pb: 3, flex: 1, minWidth: 0 }}>
+                            <Stack direction={isMobile ? "column" : "row"} justifyContent="space-between" alignItems={isMobile ? "flex-start" : "center"} sx={{ mb: 0.5, gap: isMobile ? 0.3 : 1 }}>
+                                <Typography variant="h6" sx={{ fontWeight: 800, flex: 1, fontSize: isMobile ? '0.9rem' : 'inherit', lineHeight: 1.3, wordBreak: 'break-word' }}>{item.title}</Typography>
+                                <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 600, whiteSpace: 'nowrap', opacity: 0.8, fontSize: isMobile ? '0.75rem' : '0.875rem' }}>
+                                    {new Date(item.ts * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })} • {new Date(item.ts * 1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                                 </Typography>
-                            </Box>
+                            </Stack>
                             <Typography variant="body1" color="textSecondary" sx={{ mb: 1.5 }}>{item.desc}</Typography>
 
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
@@ -161,13 +162,13 @@ const InundationDetail = ({ selectedReport, loadingReport }) => {
                                 )}
                             </Box>
 
-                            {item.images?.length > 0 && (
-                                <Box sx={{ display: 'flex', gap: 1, mt: 1.5, overflowX: 'auto', pb: 0.5 }}>
+                             {item.images?.length > 0 && (
+                                <Box sx={{ display: 'flex', gap: 1.2, mt: 1.5, overflowX: 'auto', pb: 1, '&::-webkit-scrollbar': { height: 4 }, '&::-webkit-scrollbar-thumb': { bgcolor: 'grey.300', borderRadius: 4 } }}>
                                     {item.images.map((img, i) => (
                                         <Box
                                             key={i} component="img" src={getInundationImageUrl(img)}
                                             onClick={(e) => { e.stopPropagation(); handleOpenViewer(item.images, i); }}
-                                            sx={{ width: 80, height: 80, borderRadius: 2, objectFit: 'cover', border: '2px solid white', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', cursor: 'zoom-in', transition: 'transform .2s', '&:hover': { transform: 'scale(1.05)' } }}
+                                            sx={{ width: 90, height: 90, borderRadius: 2, objectFit: 'cover', border: '1px solid', borderColor: 'divider', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', cursor: 'zoom-in', transition: 'transform .2s', flexShrink: 0, '&:hover': { transform: 'scale(1.02)' } }}
                                         />
                                     ))}
                                 </Box>

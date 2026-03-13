@@ -1,8 +1,10 @@
 package handler
 
 import (
+	"ai-api-tnhn/constant"
 	"ai-api-tnhn/handler/filters"
 	"ai-api-tnhn/internal/models"
+	"ai-api-tnhn/internal/service/auth"
 	"ai-api-tnhn/internal/service/organization"
 	"ai-api-tnhn/utils/web"
 
@@ -11,12 +13,16 @@ import (
 
 type OrganizationHandler struct {
 	web.JsonRender
-	service organization.Service
+	service     organization.Service
+	authService auth.Service
+	contextWith web.ContextWith
 }
 
-func NewOrganizationHandler(service organization.Service) *OrganizationHandler {
+func NewOrganizationHandler(service organization.Service, authService auth.Service, contextWith web.ContextWith) *OrganizationHandler {
 	return &OrganizationHandler{
-		service: service,
+		service:     service,
+		authService: authService,
+		contextWith: contextWith,
 	}
 }
 
@@ -87,6 +93,24 @@ func (h *OrganizationHandler) List(c *gin.Context) {
 	if err := c.ShouldBindQuery(req); err != nil {
 		web.AssertNil(web.BadRequest(err.Error()))
 		return
+	}
+
+	// Security: If not Super Admin or TNHN, force filter to their own OrgID
+	token := h.contextWith.GetToken(c.Request)
+	user, err := h.authService.GetProfile(c.Request.Context(), token)
+	if err == nil && user != nil {
+		isSuperAdmin := user.Role == constant.ROLE_SUPER_ADMIN
+		isTNHN := false
+
+		// Check if user belongs to TNHN org
+		org, errOrg := h.service.GetByID(c.Request.Context(), user.OrgID)
+		if errOrg == nil && org != nil && (org.Code == "TNHN" || org.Code == "tnhn") {
+			isTNHN = true
+		}
+
+		if !isSuperAdmin && !isTNHN {
+			req.ID = user.OrgID
+		}
 	}
 
 	orgs, total, err := h.service.List(c.Request.Context(), req)

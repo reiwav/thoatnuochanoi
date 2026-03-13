@@ -150,7 +150,7 @@ func main() {
 	contextWith := web.NewContextWith()
 
 	authHandler := handler.NewAuthHandler(authService, tokenService, contextWith, confg.OAuthConfig)
-	orgHandler := handler.NewOrganizationHandler(orgService)
+	orgHandler := handler.NewOrganizationHandler(orgService, authService, contextWith)
 	empHandler := handler.NewEmployeeHandler(empService, contextWith)
 	stationHandler := handler.NewStationHandler(stationService)
 	inuHandler := handler.NewInundationHandler(inuService, authService, contextWith)

@@ -8,6 +8,7 @@ import (
 
 type OrganizationListRequest struct {
 	filter.PaginationFilter
+	ID     string `json:"id" form:"id"`
 	Name   string `json:"name" form:"name"`
 	Code   string `json:"code" form:"code"`
 	Status string `json:"status" form:"status"`
@@ -20,6 +21,9 @@ func NewOrganizationListRequest() *OrganizationListRequest {
 }
 
 func (f *OrganizationListRequest) GetWhere() filter.Where {
+	if f.ID != "" {
+		f.AddWhere("_id", "_id", f.ID)
+	}
 	if f.Name != "" {
 		f.AddWhere("name", "name", primitive.Regex{Pattern: f.Name, Options: "i"})
 	}

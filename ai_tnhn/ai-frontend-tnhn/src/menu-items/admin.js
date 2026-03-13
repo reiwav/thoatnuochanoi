@@ -73,7 +73,7 @@ const adminPages = {
       url: '/admin/inundation',
       icon: icons.IconTornado,
       breadcrumbs: false,
-      roles: ['employee']
+      roles: ['employee', 'admin_org']
     },
     {
       id: 'inundation-management',
@@ -122,7 +122,7 @@ const adminPages = {
       url: '/admin/emergency-construction/dashboard',
       icon: icons.IconAlertTriangle,
       breadcrumbs: false,
-      roles: ['employee']
+      roles: ['employee', 'admin_org']
     },
     {
       id: 'river-management',

@@ -32,7 +32,7 @@ const ConstructionRow = ({ row, handleOpenEdit, handleDelete, orgs, getStatusChi
                         <Typography variant="caption" color="textSecondary">Đến: {new Date(row.end_date * 1000).toLocaleDateString('vi-VN')}</Typography>
                     </TableCell>
                 )}
-                {!isMobile && <TableCell>{orgs[row.org_id] || row.org_id}</TableCell>}
+                {!isMobile && userRole === 'super_admin' && <TableCell>{orgs[row.org_id] || row.org_id}</TableCell>}
                 {!isMobile && <TableCell>{getStatusChip(row.status)}</TableCell>}
                 <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
                     <Tooltip title="Chỉnh sửa">
@@ -68,10 +68,12 @@ const ConstructionRow = ({ row, handleOpenEdit, handleDelete, orgs, getStatusChi
                                                 <Typography variant="caption" color="textSecondary">Đến: {new Date(row.end_date * 1000).toLocaleDateString('vi-VN')}</Typography>
                                             </TableCell>
                                         </TableRow>
-                                        <TableRow>
-                                            <TableCell component="th" scope="row" sx={{ fontWeight: 600, borderBottom: 'none' }}>Đơn vị quản lý</TableCell>
-                                            <TableCell sx={{ borderBottom: 'none' }}>{orgs[row.org_id] || row.org_id}</TableCell>
-                                        </TableRow>
+                                        {userRole === 'super_admin' && (
+                                            <TableRow>
+                                                <TableCell component="th" scope="row" sx={{ fontWeight: 600, borderBottom: 'none' }}>Đơn vị quản lý</TableCell>
+                                                <TableCell sx={{ borderBottom: 'none' }}>{orgs[row.org_id] || row.org_id}</TableCell>
+                                            </TableRow>
+                                        )}
                                         <TableRow>
                                             <TableCell component="th" scope="row" sx={{ fontWeight: 600, borderBottom: 'none' }}>Trạng thái</TableCell>
                                             <TableCell sx={{ borderBottom: 'none' }}>{getStatusChip(row.status)}</TableCell>
@@ -90,6 +92,8 @@ const ConstructionRow = ({ row, handleOpenEdit, handleDelete, orgs, getStatusChi
 const ConstructionList = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const userRole = localStorage.getItem('role');
+    const userOrgId = localStorage.getItem('org_id');
     const [loading, setLoading] = useState(false);
     const [items, setItems] = useState([]);
     const [page, setPage] = useState(0);
@@ -211,7 +215,7 @@ const ConstructionList = () => {
                             <TableCell sx={{ fontWeight: 700 }}>Tên công trình</TableCell>
                             {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Vị trí</TableCell>}
                             {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Thời gian</TableCell>}
-                            {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Đơn vị quản lý</TableCell>}
+                            {!isMobile && userRole === 'super_admin' && <TableCell sx={{ fontWeight: 700 }}>Đơn vị quản lý</TableCell>}
                             {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>}
                             <TableCell align="right" sx={{ fontWeight: 700 }}>Thao tác</TableCell>
                         </TableRow>
@@ -248,6 +252,7 @@ const ConstructionList = () => {
             <ConstructionDialog
                 open={dialogOpen} onClose={() => setDialogOpen(false)}
                 onSubmit={handleSubmit} item={editingItem} isEdit={!!editingItem}
+                userRole={userRole} defaultOrgId={userOrgId}
             />
         </Box>
     );

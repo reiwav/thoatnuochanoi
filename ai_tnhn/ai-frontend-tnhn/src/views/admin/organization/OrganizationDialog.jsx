@@ -225,7 +225,7 @@ const OrganizationDialog = ({ open, onClose, onSubmit, organization, isEdit }) =
     };
 
     const handleSave = () => {
-        if (!formData.name) return toast.error("Vui lòng nhập tên công ty");
+        if (!formData.name) return toast.error("Vui lòng nhập Tên đơn vị");
         if (!formData.code) return toast.error("Vui lòng nhập mã công ty");
         if (!formData.phone_number) return toast.error("Vui lòng nhập số điện thoại");
         if (!formData.email) return toast.error("Vui lòng nhập email");
@@ -276,7 +276,7 @@ const OrganizationDialog = ({ open, onClose, onSubmit, organization, isEdit }) =
                                     Thông tin cơ bản
                                 </Typography>
                                 <TextField
-                                    fullWidth label="Tên công ty" required size="small"
+                                    fullWidth label="Tên đơn vị" required size="small"
                                     value={formData.name}
                                     onChange={(e) => handleChange('name', e.target.value)}
                                     sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#f8fafc' } }}

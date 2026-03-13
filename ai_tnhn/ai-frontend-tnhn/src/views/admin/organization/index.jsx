@@ -109,18 +109,18 @@ const OrganizationList = () => {
 
     return (
         <MainCard
-            title="Quản lý công ty"
+            title="Quản lý đơn vị"
             secondary={
                 <AnimateButton>
                     <Button variant="contained" color="secondary" startIcon={<IconPlus size={18} />} onClick={handleOpenCreate}>
-                        Thêm công ty
+                        Thêm đơn vị
                     </Button>
                 </AnimateButton>
             }
         >
             <Grid container spacing={2} sx={{ mb: 3 }} alignItems="center">
                 <Grid item xs={12} sm={4}>
-                    <TextField fullWidth label="Tên công ty" value={filterInputs.name}
+                    <TextField fullWidth label="Tên đơn vị" value={filterInputs.name}
                         onChange={(e) => setFilterInputs({ ...filterInputs, name: e.target.value })}
                         size="small" sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }} />
                 </Grid>
@@ -141,7 +141,7 @@ const OrganizationList = () => {
                 <Table>
                     <TableHead sx={{ bgcolor: 'grey.50' }}>
                         <TableRow>
-                            <TableCell sx={{ fontWeight: 700 }}>Tên công ty</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }}>Tên đơn vị</TableCell>
                             <TableCell sx={{ fontWeight: 700 }}>Mã</TableCell>
                             <TableCell sx={{ fontWeight: 700 }}>Thông tin liên hệ</TableCell>
                             <TableCell sx={{ fontWeight: 700 }}>Trạm được gán</TableCell>

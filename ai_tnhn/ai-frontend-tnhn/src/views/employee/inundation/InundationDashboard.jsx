@@ -73,7 +73,7 @@ const getLatestData = (report) => {
 };
 
 const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, handleOpenViewer, navigate, isMobile, basePath }) => {
-    const [open, setOpen] = useState(isMobile && point.status === 'active');
+    const [open, setOpen] = useState(point.status === 'active');
     const latest = useMemo(() => getLatestData(point.active_report || point.last_report), [point]);
 
     return (
@@ -257,7 +257,7 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
 };
 
 const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenViewer, navigate, isMobile, basePath }) => {
-    const [open, setOpen] = useState(isMobile && report.status === 'active');
+    const [open, setOpen] = useState(report.status === 'active');
     const latest = useMemo(() => getLatestData(report), [report]);
 
     return (

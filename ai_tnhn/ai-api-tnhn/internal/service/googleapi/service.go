@@ -271,7 +271,7 @@ func (s *service) GetRainSummary(ctx context.Context) (*RainSummaryData, error) 
 			fmt.Sscanf(v, "%d", &id)
 		}
 
-		stationMap[id] = t.TenTram
+		stationMap[id] = t.TenPhuong
 	}
 
 	fmt.Printf(" [GoogleAPI] Rain Data Count: %d, Stations Count: %d\n", len(rainData.Content.Data), len(rainData.Content.Tram))

@@ -121,92 +121,235 @@ const StationRainSummary = () => {
     const notRainingCount = tableData.length - rainingCount;
 
     return (
-        <Box sx={{ width: '100%', bgcolor: '#4fc3f7', minHeight: '100vh', p: 3 }}>
-            <Box sx={{ mb: 4, display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, bgcolor: '#4caf50', px: 4, py: 2, borderRadius: 4, boxShadow: '0 4px 8px rgba(0,0,0,0.2)' }}>
-                    <Box sx={{ width: 16, height: 16, borderRadius: '50%', bgcolor: 'white' }} />
-                    <Typography variant="h3" sx={{ color: 'white', fontWeight: 700, margin: 0, lineHeight: 1 }}>
-                        Đang mưa: {rainingCount}
-                    </Typography>
-                </Box>
-
-                <Typography variant="h2" sx={{ color: 'white', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, textShadow: '1px 1px 2px rgba(0,0,0,0.2)', textAlign: 'center', flexGrow: 1 }}>
-                    TRẠM ĐO LƯỢNG MƯA TỰ ĐỘNG
+        <Box sx={{ 
+            width: '100%', 
+            background: 'linear-gradient(135deg, #0288d1 0%, #4fc3f7 100%)', 
+            minHeight: '100vh', 
+            p: { xs: 2, md: 4 } 
+        }}>
+            <Box sx={{ 
+                mb: 4, 
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'center', 
+                gap: 3 
+            }}>
+                <Typography 
+                    variant="h1" 
+                    sx={{ 
+                        color: 'white', 
+                        fontWeight: 900, 
+                        textTransform: 'uppercase', 
+                        letterSpacing: { xs: 1, md: 2 }, 
+                        textAlign: 'center',
+                        fontSize: { xs: '1.5rem', sm: '2rem', md: '2.5rem' },
+                        textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                    }}
+                >
+                    Trạm đo lượng mưa tự động
                 </Typography>
 
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, bgcolor: '#f5f5f5', px: 4, py: 2, borderRadius: 4, boxShadow: '0 4px 8px rgba(0,0,0,0.1)' }}>
-                    <Box sx={{ width: 16, height: 16, borderRadius: '50%', bgcolor: '#9e9e9e' }} />
-                    <Typography variant="h3" sx={{ color: '#424242', fontWeight: 700, margin: 0, lineHeight: 1 }}>
-                        Không mưa: {notRainingCount}
-                    </Typography>
-                </Box>
+                <Stack 
+                    direction={{ xs: 'column', sm: 'row' }} 
+                    spacing={2} 
+                    sx={{ width: '100%', justifyContent: 'center' }}
+                >
+                    <Box sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: 2, 
+                        bgcolor: 'rgba(76, 175, 80, 0.9)', 
+                        backdropFilter: 'blur(4px)',
+                        px: 3, 
+                        py: 1.5, 
+                        borderRadius: 3, 
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                        border: '1px solid rgba(255,255,255,0.2)'
+                    }}>
+                        <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: 'white', animation: 'pulse 2s infinite' }} />
+                        <Typography sx={{ color: 'white', fontWeight: 700, fontSize: '1rem' }}>
+                            Đang mưa: {rainingCount}
+                        </Typography>
+                    </Box>
+
+                    <Box sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: 2, 
+                        bgcolor: 'rgba(255, 255, 255, 0.9)', 
+                        backdropFilter: 'blur(4px)',
+                        px: 3, 
+                        py: 1.5, 
+                        borderRadius: 3, 
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                        border: '1px solid rgba(255,255,255,0.2)'
+                    }}>
+                        <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#9e9e9e' }} />
+                        <Typography sx={{ color: '#424242', fontWeight: 700, fontSize: '1rem' }}>
+                            Không mưa: {notRainingCount}
+                        </Typography>
+                    </Box>
+                </Stack>
             </Box>
 
             {loading && tableData.length === 0 ? (
-                <Box display="flex" justifyContent="center" my={5}>
-                    <CircularProgress color="inherit" sx={{ color: 'white' }} />
+                <Box display="flex" justifyContent="center" my={10}>
+                    <CircularProgress size={60} thickness={4} sx={{ color: 'white' }} />
                 </Box>
             ) : tableData.length === 0 ? (
-                <Box display="flex" justifyContent="center" my={5}>
-                    <Typography variant="h5" sx={{ color: 'white' }}>Không có dữ liệu</Typography>
+                <Box display="flex" justifyContent="center" my={10}>
+                    <Typography variant="h4" sx={{ color: 'white', fontWeight: 600 }}>Không có dữ liệu</Typography>
                 </Box>
             ) : (
-                <Grid container spacing={3} alignItems="stretch">
+                <Grid 
+                    container 
+                    spacing={{ xs: 2, md: 3 }} 
+                    alignItems="stretch" 
+                    columns={20}
+                >
                     {tableData.map((row) => (
-                        <Grid item xs={12} sm={6} md={3} lg={3} xl={3} key={row.id}>
+                        <Grid item xs={10} sm={5} md={5} lg={4} xl={4} key={row.id} sx={{ display: 'flex' }}>
                             <Card sx={{
-                                display: 'flex', flexDirection: 'column',
-                                height: '100%', minWidth: 0, width: `220px`,
-                                borderRadius: '4px',
-                                boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                                transition: 'transform 0.2s',
+                                display: 'flex', 
+                                flexDirection: 'column',
+                                height: '100%', 
+                                width: '100%',
+                                maxWidth: 'none',
+                                flexGrow: 1,
+                                minWidth: 0,
+                                borderRadius: 4,
+                                boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                overflow: 'hidden',
                                 '&:hover': {
-                                    transform: 'translateY(-4px)',
-                                    boxShadow: '0 6px 12px rgba(0,0,0,0.15)',
+                                    transform: 'translateY(-8px)',
+                                    boxShadow: '0 12px 24px rgba(0,0,0,0.2)',
                                 }
                             }}>
-                                <CardContent sx={{ textAlign: 'center', p: '16px !important', flexGrow: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
-                                    <Typography variant="h4" sx={{ color: '#2196f3', fontWeight: 700, mb: 1, textTransform: 'uppercase', wordBreak: 'break-word' }}>
-                                        {row.name}
-                                    </Typography>
-
-                                    <Typography variant="body2" sx={{ color: 'text.primary', mb: 2, wordBreak: 'break-word' }}>
-                                        ({row.address})
-                                    </Typography>
-
-                                    <Stack direction="row" justifyContent="center" alignItems="center" spacing={1} sx={{ mb: 3 }}>
-
-                                        <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: row.isRaining ? '#4caf50' : '#757575' }} />
-                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                            {row.isRaining ? 'Đang mưa' : 'Không mưa'}
+                                <CardContent sx={{ 
+                                    textAlign: 'center', 
+                                    p: { xs: 1.5, sm: 2, md: 3 }, 
+                                    flexGrow: 1, 
+                                    display: 'flex', 
+                                    flexDirection: 'column', 
+                                    justifyContent: 'space-between'
+                                }}>
+                                    <Box>
+                                        <Typography 
+                                            variant="h5" 
+                                            sx={{ 
+                                                color: '#0288d1', 
+                                                fontWeight: 800, 
+                                                mb: 0.5, 
+                                                textTransform: 'uppercase', 
+                                                lineHeight: 1.2,
+                                                fontSize: { xs: '0.9rem', sm: '1.2rem' },
+                                                minHeight: '2.4em',
+                                                display: '-webkit-box',
+                                                WebkitLineClamp: 2,
+                                                WebkitBoxOrient: 'vertical',
+                                                overflow: 'hidden'
+                                            }}
+                                        >
+                                            {row.name}
                                         </Typography>
-                                    </Stack>
 
-                                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'baseline', mb: 3 }}>
-                                        {/* Decorative dots to match design slightly */}
-                                        {row.rainSession === 0 && (
-                                            <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mr: 1, opacity: 0.6 }}>
-                                                <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: 'text.secondary' }} />
-                                                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'text.secondary' }} />
-                                                <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: 'text.secondary' }} />
-                                            </Stack>
-                                        )}
-                                        <Typography variant="h2" sx={{ color: row.isRaining ? '#f44336' : '#008842ff', fontWeight: 800, fontSize: '2.5rem', lineHeight: 1 }}>
+                                        <Typography 
+                                            variant="caption" 
+                                            sx={{ 
+                                                color: 'text.secondary', 
+                                                display: 'block',
+                                                mb: 2, 
+                                                fontWeight: 500,
+                                                fontStyle: 'italic',
+                                                minHeight: '2.8em',
+                                                lineHeight: 1.2
+                                            }}
+                                        >
+                                            {row.address}
+                                        </Typography>
+
+                                        <Box sx={{ 
+                                            display: 'inline-flex', 
+                                            alignItems: 'center', 
+                                            gap: 1, 
+                                            px: 1.5, 
+                                            py: 0.5, 
+                                            borderRadius: 2, 
+                                            bgcolor: row.isRaining ? 'rgba(76, 175, 80, 0.1)' : 'rgba(0,0,0,0.05)',
+                                            mb: 2
+                                        }}>
+                                            <Box sx={{ 
+                                                width: 8, 
+                                                height: 8, 
+                                                borderRadius: '50%', 
+                                                bgcolor: row.isRaining ? '#4caf50' : '#9e9e9e',
+                                                boxShadow: row.isRaining ? '0 0 8px #4caf50' : 'none'
+                                            }} />
+                                            <Typography 
+                                                variant="caption" 
+                                                sx={{ 
+                                                    fontWeight: 700, 
+                                                    color: row.isRaining ? '#2e7d32' : 'text.secondary',
+                                                    textTransform: 'uppercase'
+                                                }}
+                                            >
+                                                {row.isRaining ? 'Đang mưa' : 'Không mưa'}
+                                            </Typography>
+                                        </Box>
+                                    </Box>
+
+                                    <Box sx={{ my: 2 }}>
+                                        <Typography 
+                                            variant="h2" 
+                                            sx={{ 
+                                                color: row.isRaining ? '#d32f2f' : '#1b5e20', 
+                                                fontWeight: 900, 
+                                                fontSize: { xs: '2.5rem', md: '3rem' }, 
+                                                lineHeight: 1,
+                                                fontFamily: '"Outfit", "Roboto", "Helvetica", "Arial", sans-serif'
+                                            }}
+                                        >
                                             {row.rainSession.toFixed(1)}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', textTransform: 'uppercase' }}>
+                                            mm
                                         </Typography>
                                     </Box>
 
-                                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 1.5, fontSize: '0.8rem' }}>
-                                        Bắt đầu: {row.startTime} <br /> Kết thúc: {row.currentTime}
-                                    </Typography>
-
-
+                                    <Box sx={{ 
+                                        mt: 'auto', 
+                                        pt: 2, 
+                                        borderTop: '1px dashed rgba(0,0,0,0.1)',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: 0.5
+                                    }}>
+                                        <Typography variant="caption" sx={{ display: 'flex', justifyContent: 'space-between', color: 'text.secondary' }}>
+                                            <span>Bắt đầu:</span>
+                                            <span style={{ fontWeight: 600, color: '#333' }}>{row.timeStartOnly || '...'}</span>
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ display: 'flex', justifyContent: 'space-between', color: 'text.secondary' }}>
+                                            <span>Kết thúc:</span>
+                                            <span style={{ fontWeight: 600, color: '#333' }}>{row.timeCurrentOnly || '...'}</span>
+                                        </Typography>
+                                    </Box>
                                 </CardContent>
                             </Card>
                         </Grid>
                     ))}
                 </Grid>
             )}
+            <style>
+                {`
+                @keyframes pulse {
+                    0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
+                    70% { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); }
+                    100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+                }
+                `}
+            </style>
         </Box>
     );
 };

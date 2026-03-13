@@ -3,9 +3,10 @@ import { useSearchParams } from 'react-router-dom';
 import {
     Button, Grid, TextField, Table, TableBody,
     TableCell, TableContainer, TableHead, TableRow, Paper,
-    IconButton, CircularProgress, TablePagination, Typography, Chip, Box, Alert
+    IconButton, CircularProgress, TablePagination, Typography, Chip, Box, Alert,
+    Collapse, useTheme, useMediaQuery
 } from '@mui/material';
-import { IconTrash, IconPlus, IconEdit, IconSearch, IconBuilding } from '@tabler/icons-react';
+import { IconTrash, IconPlus, IconEdit, IconSearch, IconBuilding, IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 
 // project imports
@@ -15,7 +16,93 @@ import employeeApi from 'api/employee';
 import organizationApi from 'api/organization';
 import EmployeeDialog from './EmployeeDialog';
 
+const EmployeeRow = ({ row, handleOpenEdit, handleDelete, roleLabel, orgName, userRole, isMobile }) => {
+    const [open, setOpen] = useState(false);
+
+    return (
+        <>
+            <TableRow hover>
+                {isMobile && (
+                    <TableCell padding="checkbox">
+                        <IconButton size="small" onClick={() => setOpen(!open)}>
+                            {open ? <IconChevronUp /> : <IconChevronDown />}
+                        </IconButton>
+                    </TableCell>
+                )}
+                <TableCell sx={{ fontWeight: 600 }}>{row.name}</TableCell>
+                {!isMobile && <TableCell>{row.email}</TableCell>}
+                {!isMobile && userRole !== 'admin_org' && (
+                    <TableCell>
+                        <Typography variant="caption" color="textSecondary">{orgName(row.org_id)}</Typography>
+                    </TableCell>
+                )}
+                {!isMobile && (
+                    <TableCell>
+                        <Chip label={roleLabel(row.role)} color={row.role === 'admin_org' ? 'info' : 'default'} size="small" variant="outlined" />
+                    </TableCell>
+                )}
+                {!isMobile && (
+                    <TableCell>
+                        <Chip label={row.active ? 'Hoạt động' : 'Ngừng hoạt động'} color={row.active ? 'success' : 'default'} size="small" variant="outlined" />
+                    </TableCell>
+                )}
+                <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+                    <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>
+                        <IconEdit size={20} />
+                    </IconButton>
+                    <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}>
+                        <IconTrash size={20} />
+                    </IconButton>
+                </TableCell>
+            </TableRow>
+            {isMobile && (
+                <TableRow>
+                    <TableCell style={{ padding: 0 }} colSpan={3}>
+                        <Collapse in={open} timeout="auto" unmountOnExit>
+                            <Box sx={{ margin: 0, backgroundColor: 'grey.50', p: 2 }}>
+                                <Typography variant="subtitle2" gutterBottom component="div" sx={{ color: 'primary.main', fontWeight: 600 }}>
+                                    Chi tiết người dùng
+                                </Typography>
+                                <Table size="small" aria-label="details">
+                                    <TableBody>
+                                        <TableRow>
+                                            <TableCell component="th" scope="row" sx={{ fontWeight: 600, width: '40%', borderBottom: 'none' }}>Email</TableCell>
+                                            <TableCell sx={{ borderBottom: 'none' }}>{row.email}</TableCell>
+                                        </TableRow>
+                                        {userRole !== 'admin_org' && (
+                                            <TableRow>
+                                                <TableCell component="th" scope="row" sx={{ fontWeight: 600, borderBottom: 'none' }}>Công ty</TableCell>
+                                                <TableCell sx={{ borderBottom: 'none' }}>
+                                                    <Typography variant="body2">{orgName(row.org_id)}</Typography>
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                        <TableRow>
+                                            <TableCell component="th" scope="row" sx={{ fontWeight: 600, borderBottom: 'none' }}>Vai trò</TableCell>
+                                            <TableCell sx={{ borderBottom: 'none' }}>
+                                                <Chip label={roleLabel(row.role)} color={row.role === 'admin_org' ? 'info' : 'default'} size="small" variant="outlined" />
+                                            </TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell component="th" scope="row" sx={{ fontWeight: 600, borderBottom: 'none' }}>Trạng thái</TableCell>
+                                            <TableCell sx={{ borderBottom: 'none' }}>
+                                                <Chip label={row.active ? 'Hoạt động' : 'Ngừng hoạt động'} color={row.active ? 'success' : 'default'} size="small" variant="outlined" />
+                                            </TableCell>
+                                        </TableRow>
+                                    </TableBody>
+                                </Table>
+                            </Box>
+                        </Collapse>
+                    </TableCell>
+                </TableRow>
+            )}
+        </>
+    );
+};
+
 const EmployeeList = () => {
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const userRole = localStorage.getItem('role');
     const [searchParams] = useSearchParams();
     const urlOrgId = searchParams.get('org_id') || '';
@@ -154,52 +241,32 @@ const EmployeeList = () => {
                 <Table>
                     <TableHead sx={{ bgcolor: 'grey.50' }}>
                         <TableRow>
+                            {isMobile && <TableCell width="40px" />}
                             <TableCell sx={{ fontWeight: 700 }}>Tên</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>
-                            {userRole !== 'admin_org' && <TableCell sx={{ fontWeight: 700 }}>Công ty</TableCell>}
-                            <TableCell sx={{ fontWeight: 700 }}>Vai trò</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>
+                            {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>}
+                            {!isMobile && userRole !== 'admin_org' && <TableCell sx={{ fontWeight: 700 }}>Công ty</TableCell>}
+                            {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Vai trò</TableCell>}
+                            {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>}
                             <TableCell align="right" sx={{ fontWeight: 700 }}>Thao tác</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {loading ? (
-                            <TableRow><TableCell colSpan={6} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
+                            <TableRow><TableCell colSpan={isMobile ? 3 : (userRole === 'admin_org' ? 5 : 6)} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
                         ) : employees.length === 0 ? (
-                            <TableRow><TableCell colSpan={6} align="center" sx={{ py: 3 }}>Không tìm thấy người dùng</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={isMobile ? 3 : (userRole === 'admin_org' ? 5 : 6)} align="center" sx={{ py: 3 }}>Không tìm thấy người dùng</TableCell></TableRow>
                         ) : (
                             employees.map((row) => (
-                                <TableRow key={row.id} hover>
-                                    <TableCell sx={{ fontWeight: 600 }}>{row.name}</TableCell>
-                                    <TableCell>{row.email}</TableCell>
-                                    {userRole !== 'admin_org' && (
-                                        <TableCell>
-                                            <Typography variant="caption" color="textSecondary">{orgName(row.org_id)}</Typography>
-                                        </TableCell>
-                                    )}
-                                    <TableCell>
-                                        <Chip
-                                            label={roleLabel(row.role)}
-                                            color={row.role === 'admin_org' ? 'info' : 'default'}
-                                            size="small" variant="outlined"
-                                        />
-                                    </TableCell>
-                                    <TableCell>
-                                        <Chip
-                                            label={row.active ? 'Hoạt động' : 'Ngừng hoạt động'}
-                                            color={row.active ? 'success' : 'default'}
-                                            size="small" variant="outlined"
-                                        />
-                                    </TableCell>
-                                    <TableCell align="right">
-                                        <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>
-                                            <IconEdit size={20} />
-                                        </IconButton>
-                                        <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}>
-                                            <IconTrash size={20} />
-                                        </IconButton>
-                                    </TableCell>
-                                </TableRow>
+                                <EmployeeRow
+                                    key={row.id}
+                                    row={row}
+                                    handleOpenEdit={handleOpenEdit}
+                                    handleDelete={handleDelete}
+                                    roleLabel={roleLabel}
+                                    orgName={orgName}
+                                    userRole={userRole}
+                                    isMobile={isMobile}
+                                />
                             ))
                         )}
                     </TableBody>

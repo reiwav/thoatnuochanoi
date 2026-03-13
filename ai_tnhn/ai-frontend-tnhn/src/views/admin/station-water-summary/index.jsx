@@ -125,15 +125,37 @@ const StationWaterSummary = () => {
     );
 
     return (
-        <Box sx={{ width: '100%', bgcolor: '#4fc3f7', minHeight: '100vh', p: 3 }}>
-            <Box sx={{ mb: 4, display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
-                <Typography variant="h2" sx={{ color: 'white', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, textShadow: '1px 1px 2px rgba(0,0,0,0.2)', textAlign: 'center', flexGrow: 1 }}>
-                    HỆ THỐNG GIÁM SÁT MỰC NƯỚC TỰ ĐỘNG
+        <Box sx={{ 
+            width: '100%', 
+            background: 'linear-gradient(135deg, #1a237e 0%, #4fc3f7 100%)', 
+            minHeight: '100vh', 
+            p: { xs: 2, md: 4 } 
+        }}>
+            <Box sx={{ 
+                mb: 4, 
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'center', 
+                gap: 3 
+            }}>
+                <Typography 
+                    variant="h1" 
+                    sx={{ 
+                        color: 'white', 
+                        fontWeight: 900, 
+                        textTransform: 'uppercase', 
+                        letterSpacing: { xs: 1, md: 2 }, 
+                        textAlign: 'center',
+                        fontSize: { xs: '1.5rem', sm: '2rem', md: '2.5rem' },
+                        textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                    }}
+                >
+                    Hệ thống giám sát mực nước tự động
                 </Typography>
             </Box>
 
             <Box sx={{ mb: 4 }}>
-                <Paper elevation={3} sx={{ borderRadius: 3, p: 0.5, bgcolor: 'rgba(255, 255, 255, 0.95)', maxWidth: 600, mx: 'auto' }}>
+                <Paper elevation={6} sx={{ borderRadius: 4, p: 0.5, bgcolor: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(10px)', maxWidth: 600, mx: 'auto' }}>
                     <Tabs
                         value={tabValue}
                         onChange={handleTabChange}
@@ -142,7 +164,7 @@ const StationWaterSummary = () => {
                             minHeight: 48,
                             '& .MuiTabs-indicator': {
                                 height: '100%',
-                                borderRadius: 2.5,
+                                borderRadius: 3.5,
                                 bgcolor: '#1a237e',
                                 opacity: 0.1,
                                 zIndex: 0
@@ -179,15 +201,106 @@ const StationWaterSummary = () => {
             </Box>
 
             {loading && tableData.length === 0 ? (
-                <Box display="flex" justifyContent="center" my={5}>
-                    <CircularProgress color="inherit" sx={{ color: 'white' }} />
+                <Box display="flex" justifyContent="center" my={10}>
+                    <CircularProgress size={60} thickness={4} sx={{ color: 'white' }} />
                 </Box>
             ) : activeData.length === 0 ? (
-                <Box display="flex" justifyContent="center" my={5}>
-                    <Typography variant="h5" sx={{ color: 'white' }}>Không có dữ liệu</Typography>
+                <Box display="flex" justifyContent="center" my={10}>
+                    <Typography variant="h4" sx={{ color: 'white', fontWeight: 600 }}>Không có dữ liệu</Typography>
                 </Box>
             ) : (
-                renderGrid(activeData)
+                <Grid 
+                    container 
+                    spacing={{ xs: 2, md: 3 }} 
+                    alignItems="stretch" 
+                    columns={20}
+                >
+                    {activeData.map((row) => (
+                        <Grid item xs={10} sm={5} md={5} lg={4} xl={4} key={row.id} sx={{ display: 'flex' }}>
+                            <Card sx={{
+                                display: 'flex', 
+                                flexDirection: 'column',
+                                height: '100%', 
+                                width: '100%',
+                                maxWidth: 'none',
+                                flexGrow: 1,
+                                minWidth: 0,
+                                borderRadius: 4,
+                                boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                overflow: 'hidden',
+                                '&:hover': {
+                                    transform: 'translateY(-8px)',
+                                    boxShadow: '0 12px 24px rgba(0,0,0,0.2)',
+                                }
+                            }}>
+                                <CardContent sx={{ 
+                                    textAlign: 'center', 
+                                    p: { xs: 1.5, sm: 2, md: 3 }, 
+                                    flexGrow: 1, 
+                                    display: 'flex', 
+                                    flexDirection: 'column', 
+                                    justifyContent: 'space-between'
+                                }}>
+                                    <Box>
+                                        <Typography 
+                                            variant="h5" 
+                                            sx={{ 
+                                                color: '#1a237e', 
+                                                fontWeight: 800, 
+                                                mb: 2, 
+                                                textTransform: 'uppercase', 
+                                                lineHeight: 1.2,
+                                                fontSize: { xs: '0.9rem', sm: '1.2rem' },
+                                                minHeight: '2.4em',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center'
+                                            }}
+                                        >
+                                            {row.name}
+                                        </Typography>
+                                    </Box>
+
+                                    <Box sx={{ my: 2 }}>
+                                        <Typography 
+                                            variant="h2" 
+                                            sx={{ 
+                                                color: '#1b5e20', 
+                                                fontWeight: 900, 
+                                                fontSize: { xs: '2.5rem', md: '3rem' }, 
+                                                lineHeight: 1,
+                                                fontFamily: '"Outfit", "Roboto", "Helvetica", "Arial", sans-serif'
+                                            }}
+                                        >
+                                            {row.level.toFixed(2)}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', textTransform: 'uppercase' }}>
+                                            m
+                                        </Typography>
+                                    </Box>
+
+                                    <Box sx={{ 
+                                        mt: 'auto', 
+                                        pt: 2, 
+                                        borderTop: '1px dashed rgba(0,0,0,0.1)',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: 0.5
+                                    }}>
+                                        <Typography variant="caption" sx={{ display: 'flex', justifyContent: 'center', color: 'text.secondary', fontWeight: 600 }}>
+                                            Cập nhật:
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ fontWeight: 700, color: '#333' }}>
+                                            {row.time}
+                                        </Typography>
+                                    </Box>
+                                </CardContent>
+                            </Card>
+                        </Grid>
+                    ))}
+                </Grid>
             )}
         </Box>
     );

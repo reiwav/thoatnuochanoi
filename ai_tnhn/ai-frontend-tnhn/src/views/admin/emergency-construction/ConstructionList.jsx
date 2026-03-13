@@ -2,15 +2,94 @@ import { useState, useEffect } from 'react';
 import {
     Box, Button, Grid, TextField, Table, TableBody,
     TableCell, TableContainer, TableHead, TableRow, Paper,
-    IconButton, CircularProgress, TablePagination, Typography, Chip, Tooltip, Stack
+    IconButton, CircularProgress, TablePagination, Typography, Chip, Tooltip, Stack,
+    Collapse, useTheme, useMediaQuery
 } from '@mui/material';
-import { IconTrash, IconPlus, IconEdit, IconSearch } from '@tabler/icons-react';
+import { IconTrash, IconPlus, IconEdit, IconSearch, IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 import emergencyConstructionApi from 'api/emergencyConstruction';
 import ConstructionDialog from './ConstructionDialog';
 import organizationApi from 'api/organization';
 
+const ConstructionRow = ({ row, handleOpenEdit, handleDelete, orgs, getStatusChip, isMobile }) => {
+    const [open, setOpen] = useState(false);
+
+    return (
+        <>
+            <TableRow hover>
+                {isMobile && (
+                    <TableCell padding="checkbox">
+                        <IconButton size="small" onClick={() => setOpen(!open)}>
+                            {open ? <IconChevronUp /> : <IconChevronDown />}
+                        </IconButton>
+                    </TableCell>
+                )}
+                <TableCell sx={{ fontWeight: 600 }}>{row.name}</TableCell>
+                {!isMobile && <TableCell>{row.location}</TableCell>}
+                {!isMobile && (
+                    <TableCell>
+                        <Typography variant="body2">{new Date(row.start_date * 1000).toLocaleDateString('vi-VN')}</Typography>
+                        <Typography variant="caption" color="textSecondary">Đến: {new Date(row.end_date * 1000).toLocaleDateString('vi-VN')}</Typography>
+                    </TableCell>
+                )}
+                {!isMobile && <TableCell>{orgs[row.org_id] || row.org_id}</TableCell>}
+                {!isMobile && <TableCell>{getStatusChip(row.status)}</TableCell>}
+                <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+                    <Tooltip title="Chỉnh sửa">
+                        <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>
+                            <IconEdit size={20} />
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Xóa">
+                        <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}>
+                            <IconTrash size={20} />
+                        </IconButton>
+                    </Tooltip>
+                </TableCell>
+            </TableRow>
+            {isMobile && (
+                <TableRow>
+                    <TableCell style={{ padding: 0 }} colSpan={3}>
+                        <Collapse in={open} timeout="auto" unmountOnExit>
+                            <Box sx={{ margin: 0, backgroundColor: 'grey.50', p: 2 }}>
+                                <Typography variant="subtitle2" gutterBottom component="div" sx={{ color: 'primary.main', fontWeight: 600 }}>
+                                    Chi tiết công trình
+                                </Typography>
+                                <Table size="small" aria-label="details">
+                                    <TableBody>
+                                        <TableRow>
+                                            <TableCell component="th" scope="row" sx={{ fontWeight: 600, width: '40%', borderBottom: 'none' }}>Vị trí</TableCell>
+                                            <TableCell sx={{ borderBottom: 'none' }}>{row.location}</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell component="th" scope="row" sx={{ fontWeight: 600, borderBottom: 'none' }}>Thời gian</TableCell>
+                                            <TableCell sx={{ borderBottom: 'none' }}>
+                                                <Typography variant="body2">{new Date(row.start_date * 1000).toLocaleDateString('vi-VN')}</Typography>
+                                                <Typography variant="caption" color="textSecondary">Đến: {new Date(row.end_date * 1000).toLocaleDateString('vi-VN')}</Typography>
+                                            </TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell component="th" scope="row" sx={{ fontWeight: 600, borderBottom: 'none' }}>Đơn vị quản lý</TableCell>
+                                            <TableCell sx={{ borderBottom: 'none' }}>{orgs[row.org_id] || row.org_id}</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell component="th" scope="row" sx={{ fontWeight: 600, borderBottom: 'none' }}>Trạng thái</TableCell>
+                                            <TableCell sx={{ borderBottom: 'none' }}>{getStatusChip(row.status)}</TableCell>
+                                        </TableRow>
+                                    </TableBody>
+                                </Table>
+                            </Box>
+                        </Collapse>
+                    </TableCell>
+                </TableRow>
+            )}
+        </>
+    );
+};
+
 const ConstructionList = () => {
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const [loading, setLoading] = useState(false);
     const [items, setItems] = useState([]);
     const [page, setPage] = useState(0);
@@ -128,43 +207,31 @@ const ConstructionList = () => {
                 <Table>
                     <TableHead sx={{ bgcolor: 'grey.50' }}>
                         <TableRow>
+                            {isMobile && <TableCell width="40px" />}
                             <TableCell sx={{ fontWeight: 700 }}>Tên công trình</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }}>Vị trí</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }}>Thời gian</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }}>Đơn vị quản lý</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>
+                            {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Vị trí</TableCell>}
+                            {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Thời gian</TableCell>}
+                            {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Đơn vị quản lý</TableCell>}
+                            {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>}
                             <TableCell align="right" sx={{ fontWeight: 700 }}>Thao tác</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {loading ? (
-                            <TableRow><TableCell colSpan={6} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
+                            <TableRow><TableCell colSpan={isMobile ? 3 : 7} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
                         ) : items.length === 0 ? (
-                            <TableRow><TableCell colSpan={6} align="center" sx={{ py: 3 }}>Không tìm thấy công trình</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={isMobile ? 3 : 7} align="center" sx={{ py: 3 }}>Không tìm thấy công trình</TableCell></TableRow>
                         ) : (
                             items.map((row) => (
-                                <TableRow key={row.id} hover>
-                                    <TableCell sx={{ fontWeight: 600 }}>{row.name}</TableCell>
-                                    <TableCell>{row.location}</TableCell>
-                                    <TableCell>
-                                        <Typography variant="body2">{new Date(row.start_date * 1000).toLocaleDateString('vi-VN')}</Typography>
-                                        <Typography variant="caption" color="textSecondary">Đến: {new Date(row.end_date * 1000).toLocaleDateString('vi-VN')}</Typography>
-                                    </TableCell>
-                                    <TableCell>{orgs[row.org_id] || row.org_id}</TableCell>
-                                    <TableCell>{getStatusChip(row.status)}</TableCell>
-                                    <TableCell align="right">
-                                        <Tooltip title="Chỉnh sửa">
-                                            <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>
-                                                <IconEdit size={20} />
-                                            </IconButton>
-                                        </Tooltip>
-                                        <Tooltip title="Xóa">
-                                            <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}>
-                                                <IconTrash size={20} />
-                                            </IconButton>
-                                        </Tooltip>
-                                    </TableCell>
-                                </TableRow>
+                                <ConstructionRow
+                                    key={row.id}
+                                    row={row}
+                                    handleOpenEdit={handleOpenEdit}
+                                    handleDelete={handleDelete}
+                                    orgs={orgs}
+                                    getStatusChip={getStatusChip}
+                                    isMobile={isMobile}
+                                />
                             ))
                         )}
                     </TableBody>

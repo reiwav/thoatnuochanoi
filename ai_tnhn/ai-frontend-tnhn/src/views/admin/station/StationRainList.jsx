@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import {
-    Button, Grid, TextField, Table, TableBody,
+    Button, Grid, TextField, Table, TableBody, Box,
     TableCell, TableContainer, TableHead, TableRow, Paper,
-    IconButton, CircularProgress, TablePagination, Typography, Chip, Tooltip
+    IconButton, CircularProgress, TablePagination, Typography, Chip, Tooltip,
+    Collapse, useTheme, useMediaQuery
 } from '@mui/material';
-import { IconTrash, IconPlus, IconEdit, IconSearch } from '@tabler/icons-react';
+import { IconTrash, IconPlus, IconEdit, IconSearch, IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 
 // project imports
@@ -13,7 +14,83 @@ import AnimateButton from 'ui-component/extended/AnimateButton';
 import stationApi from 'api/station';
 import StationDialog from './StationDialog';
 
+const StationRow = ({ row, handleOpenEdit, handleDelete, isMobile }) => {
+    const [open, setOpen] = useState(false);
+
+    return (
+        <>
+            <TableRow hover>
+                {isMobile && (
+                    <TableCell padding="checkbox">
+                        <IconButton size="small" onClick={() => setOpen(!open)}>
+                            {open ? <IconChevronUp /> : <IconChevronDown />}
+                        </IconButton>
+                    </TableCell>
+                )}
+                <TableCell sx={{ fontWeight: 800, fontSize: '1.05rem', color: 'primary.dark' }}>{row.TenTram}</TableCell>
+                {!isMobile && <TableCell sx={{ fontSize: '0.95rem' }}>{row.DiaChi}</TableCell>}
+                {!isMobile && <TableCell sx={{ fontSize: '0.85rem' }}>{row.Lat}, {row.Lng}</TableCell>}
+                {!isMobile && <TableCell sx={{ fontSize: '1rem', fontWeight: 700 }}>{row.NguongCanhBao || '-'}</TableCell>}
+                {!isMobile && (
+                    <TableCell>
+                        <Chip label={row.Active ? 'Hoạt động' : 'Ngừng'} color={row.Active ? 'success' : 'default'} size="small" variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem', height: 24 }} />
+                    </TableCell>
+                )}
+                <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+                    <Tooltip title="Chỉnh sửa">
+                        <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>
+                            <IconEdit size={20} />
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Xóa">
+                        <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}>
+                            <IconTrash size={20} />
+                        </IconButton>
+                    </Tooltip>
+                </TableCell>
+            </TableRow>
+            {isMobile && (
+                <TableRow>
+                    <TableCell style={{ padding: 0 }} colSpan={3}>
+                        <Collapse in={open} timeout="auto" unmountOnExit>
+                            <Box sx={{ margin: 0, backgroundColor: 'grey.50', p: 2 }}>
+                                <Typography variant="subtitle2" gutterBottom component="div" sx={{ color: 'primary.main', fontWeight: 600 }}>
+                                    Chi tiết trạm
+                                </Typography>
+                                <Table size="small" aria-label="details">
+                                    <TableBody>
+                                        <TableRow>
+                                            <TableCell component="th" scope="row" sx={{ fontWeight: 600, width: '40%', borderBottom: 'none' }}>Địa chỉ</TableCell>
+                                            <TableCell sx={{ borderBottom: 'none' }}>{row.DiaChi}</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell component="th" scope="row" sx={{ fontWeight: 600, borderBottom: 'none' }}>Tọa độ</TableCell>
+                                            <TableCell sx={{ borderBottom: 'none' }}>{row.Lat}, {row.Lng}</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell component="th" scope="row" sx={{ fontWeight: 600, borderBottom: 'none' }}>Ngưỡng</TableCell>
+                                            <TableCell sx={{ borderBottom: 'none', fontWeight: 700 }}>{row.NguongCanhBao || '-'}</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell component="th" scope="row" sx={{ fontWeight: 600, borderBottom: 'none' }}>Trạng thái</TableCell>
+                                            <TableCell sx={{ borderBottom: 'none' }}>
+                                                <Chip label={row.Active ? 'Hoạt động' : 'Ngừng'} color={row.Active ? 'success' : 'default'} size="small" variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem', height: 24 }} />
+                                            </TableCell>
+                                        </TableRow>
+                                    </TableBody>
+                                </Table>
+                            </Box>
+                        </Collapse>
+                    </TableCell>
+                </TableRow>
+            )}
+        </>
+    );
+};
+
 const StationRainList = () => {
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const [loading, setLoading] = useState(false);
     const [stations, setStations] = useState([]);
     const [page, setPage] = useState(0);
@@ -110,43 +187,29 @@ const StationRainList = () => {
                 <Table>
                     <TableHead sx={{ bgcolor: 'grey.50' }}>
                         <TableRow>
+                            {isMobile && <TableCell width="40px" />}
                             <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Tên trạm</TableCell>
-                            <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Địa chỉ</TableCell>
-                            <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Tọa độ</TableCell>
-                            <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Ngưỡng</TableCell>
-                            <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Trạng thái</TableCell>
+                            {!isMobile && <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Địa chỉ</TableCell>}
+                            {!isMobile && <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Tọa độ</TableCell>}
+                            {!isMobile && <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Ngưỡng</TableCell>}
+                            {!isMobile && <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Trạng thái</TableCell>}
                             <TableCell align="right" sx={{ fontWeight: 800, fontSize: '1rem' }}>Thao tác</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {loading ? (
-                            <TableRow><TableCell colSpan={5} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
+                            <TableRow><TableCell colSpan={isMobile ? 3 : 7} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
                         ) : stations.length === 0 ? (
-                            <TableRow><TableCell colSpan={5} align="center" sx={{ py: 3 }}>Không tìm thấy trạm</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={isMobile ? 3 : 7} align="center" sx={{ py: 3 }}>Không tìm thấy trạm</TableCell></TableRow>
                         ) : (
                             stations.map((row) => (
-                                <TableRow key={row.id} hover>
-                                    <TableCell sx={{ fontWeight: 800, fontSize: '1.05rem', color: 'primary.dark' }}>{row.TenTram}</TableCell>
-                                    <TableCell sx={{ fontSize: '0.95rem' }}>{row.DiaChi}</TableCell>
-                                    <TableCell sx={{ fontSize: '0.85rem' }}>{row.Lat}, {row.Lng}</TableCell>
-                                    <TableCell sx={{ fontSize: '1rem', fontWeight: 700 }}>{row.NguongCanhBao || '-'}</TableCell>
-                                    <TableCell>
-                                        <Chip label={row.Active ? 'Hoạt động' : 'Ngừng'}
-                                            color={row.Active ? 'success' : 'default'} size="small" variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem', height: 24 }} />
-                                    </TableCell>
-                                    <TableCell align="right">
-                                        <Tooltip title="Chỉnh sửa">
-                                            <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>
-                                                <IconEdit size={20} />
-                                            </IconButton>
-                                        </Tooltip>
-                                        <Tooltip title="Xóa">
-                                            <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}>
-                                                <IconTrash size={20} />
-                                            </IconButton>
-                                        </Tooltip>
-                                    </TableCell>
-                                </TableRow>
+                                <StationRow
+                                    key={row.id}
+                                    row={row}
+                                    handleOpenEdit={handleOpenEdit}
+                                    handleDelete={handleDelete}
+                                    isMobile={isMobile}
+                                />
                             ))
                         )}
                     </TableBody>

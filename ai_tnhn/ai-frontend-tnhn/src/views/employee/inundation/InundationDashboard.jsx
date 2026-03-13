@@ -54,7 +54,7 @@ import { getInundationImageUrl } from 'utils/imageHelper';
 import { getTrafficStatusColor, getTrafficStatusLabel } from 'utils/trafficStatusHelper';
 
 const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, handleOpenViewer, navigate, isMobile, basePath }) => {
-    const [open, setOpen] = useState(false);
+    const [open, setOpen] = useState(isMobile && point.status === 'active');
     return (
         <React.Fragment>
             <TableRow hover sx={{ '& .MuiTableCell-root': { borderBottom: 'none' } }}>
@@ -235,7 +235,7 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
 };
 
 const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenViewer, navigate, isMobile, basePath }) => {
-    const [open, setOpen] = useState(false);
+    const [open, setOpen] = useState(isMobile && report.status === 'active');
     return (
         <React.Fragment>
             <TableRow hover sx={{ '& .MuiTableCell-root': { borderBottom: 'none' } }}>

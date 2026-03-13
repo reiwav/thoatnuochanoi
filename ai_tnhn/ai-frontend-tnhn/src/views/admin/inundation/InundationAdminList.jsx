@@ -15,7 +15,7 @@ import { getTrafficStatusColor, getTrafficStatusLabel } from 'utils/trafficStatu
 import { toast } from 'react-hot-toast';
 
 const CollapsiblePointRow = ({ point, organizations, formatTime, handleOpenViewer, navigate, isMobile }) => {
-    const [open, setOpen] = useState(false);
+    const [open, setOpen] = useState(isMobile && point.status === 'active');
     return (
         <React.Fragment>
             <TableRow hover sx={{ '& .MuiTableCell-root': { borderBottom: 'none' } }}>
@@ -96,7 +96,7 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, handleOpenViewe
 };
 
 const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenViewer, navigate, isMobile }) => {
-    const [open, setOpen] = useState(false);
+    const [open, setOpen] = useState(isMobile && report.status === 'active');
     return (
         <React.Fragment>
             <TableRow hover sx={{ '& .MuiTableCell-root': { borderBottom: 'none' } }}>

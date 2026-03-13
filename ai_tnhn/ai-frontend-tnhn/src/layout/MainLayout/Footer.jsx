@@ -9,14 +9,14 @@ export default function Footer() {
   return (
     <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', pt: 3, mt: 'auto' }}>
       <Typography variant="caption" sx={{ fontWeight: 600 }}>
-        &copy; 2024 Bản quyền thuộc về{' '}
+        &copy; 2026 Bản quyền thuộc về{' '}
         <Typography component="span" sx={{ color: 'primary.main', fontWeight: 800 }}>
           Hanoi Sewerage and Drainage Company (HSDC)
         </Typography>
       </Typography>
       <Stack direction="row" sx={{ gap: 2, alignItems: 'center' }}>
         <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 500 }}>
-          Hệ thống Quản lý Thoát nước & Ngập lụt
+          Hệ thống HSDC AI
         </Typography>
       </Stack>
     </Stack>

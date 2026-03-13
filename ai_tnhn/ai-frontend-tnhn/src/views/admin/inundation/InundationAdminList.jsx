@@ -17,15 +17,15 @@ import { toast } from 'react-hot-toast';
 const getLatestData = (report) => {
     if (!report) return null;
     const data = { ...report, traffic_status: report.traffic_status || report.trafficStatus };
-    
+
     // Sort updates by timestamp newest first
-    const sortedUpdates = report.updates && report.updates.length > 0 
-        ? [...report.updates].sort((a, b) => b.timestamp - a.timestamp) 
+    const sortedUpdates = report.updates && report.updates.length > 0
+        ? [...report.updates].sort((a, b) => b.timestamp - a.timestamp)
         : [];
 
     if (sortedUpdates.length > 0) {
         const latestUpdate = sortedUpdates[0];
-        
+
         // Find most recent dimensions
         const updateWithDimensions = sortedUpdates.find(u => u.length || u.width || u.depth);
         // Find most recent traffic status
@@ -109,10 +109,10 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, handleOpenViewe
                                             {latest ? formatTime(latest.start_time) : '-'}
                                         </Typography>
                                         {point.status === 'active' && latest?.timestamp && (
-                                             <Typography variant="caption" color="error" sx={{ fontWeight: 600, display: 'block' }}>
-                                                 Cập nhật lúc: {formatTime(latest.timestamp)}
-                                             </Typography>
-                                         )}
+                                            <Typography variant="caption" color="error" sx={{ fontWeight: 600, display: 'block' }}>
+                                                Cập nhật lúc: {formatTime(latest.timestamp)}
+                                            </Typography>
+                                        )}
                                     </Grid>
                                 </Grid>
                                 <Box>
@@ -363,7 +363,7 @@ const InundationAdminList = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
                     <Stack direction="row" alignItems="center" spacing={1}>
                         <IconAlertTriangle size={24} color="red" />
-                        <Typography variant="h3" sx={{ fontWeight: 800 }}>## TRỰC NGẬP LỤT HÀ NỘI</Typography>
+                        <Typography variant="h3" sx={{ fontWeight: 800 }}>## Điểm ngập</Typography>
                     </Stack>
                     <Stack direction="row" spacing={1}>
                         <Chip label="Điểm trực" variant={activeTab === 0 ? 'filled' : 'outlined'} color="primary" onClick={() => setActiveTab(0)} sx={{ fontWeight: 700, cursor: 'pointer' }} />
@@ -440,7 +440,7 @@ const InundationAdminList = () => {
                             <TableHead sx={{ bgcolor: 'grey.50' }}>
                                 <TableRow>
                                     <TableCell sx={{ width: 40 }} />
-                                    <TableCell sx={{ fontWeight: 700 }}>Điểm trực ngập</TableCell>
+                                    <TableCell sx={{ fontWeight: 700 }}>Điểm ngập</TableCell>
                                     {!isMobile && (
                                         <>
                                             <TableCell sx={{ fontWeight: 700, width: 250 }}>Đơn vị quản lý</TableCell>

@@ -188,8 +188,8 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                                         </Typography>
                                         {latest && (
                                             <Typography variant="caption" color={point.status === 'active' ? "error" : "text.secondary"} sx={{ fontWeight: 600, display: 'block' }}>
-                                                {point.status === 'active' 
-                                                    ? `Cập nhật lúc: ${formatTime(latest.timestamp || latest.start_time)} (${getDuration(latest.timestamp || latest.start_time)})` 
+                                                {point.status === 'active'
+                                                    ? `Cập nhật lúc: ${formatTime(latest.timestamp || latest.start_time)} (${getDuration(latest.timestamp || latest.start_time)})`
                                                     : `Lần cuối: ${getDuration(latest.start_time)} trước`}
                                             </Typography>
                                         )}
@@ -764,7 +764,7 @@ const InundationDashboard = () => {
             <MainCard
                 title={
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
-                        <Typography variant="h3">Trực ngập lụt Hà Nội</Typography>
+                        <Typography variant="h3">Điểm ngập</Typography>
                         <Stack direction="row" spacing={1}>
                             <Chip
                                 label="Điểm trực"
@@ -852,7 +852,7 @@ const InundationDashboard = () => {
                                 <TableHead sx={{ bgcolor: 'grey.50' }}>
                                     <TableRow>
                                         <TableCell sx={{ width: 40 }} />
-                                        <TableCell sx={{ fontWeight: 700 }}>Điểm trực ngập</TableCell>
+                                        <TableCell sx={{ fontWeight: 700 }}>Điểm ngập</TableCell>
                                         {!isMobile && (
                                             <>
                                                 <TableCell sx={{ fontWeight: 700, width: 250 }}>Đơn vị quản lý</TableCell>
@@ -1030,7 +1030,7 @@ const InundationDashboard = () => {
                     <TableHead sx={{ bgcolor: 'grey.50' }}>
                         <TableRow>
                             <TableCell sx={{ width: 40 }} />
-                            <TableCell sx={{ fontWeight: 700 }}>Điểm trực ngập</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }}>Điểm ngập</TableCell>
                             {!isMobile && (
                                 <>
                                     <TableCell sx={{ fontWeight: 700, width: 250 }}>Đơn vị quản lý</TableCell>

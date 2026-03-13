@@ -15,7 +15,7 @@ import (
 
 type Service interface {
 	CreateReport(ctx context.Context, report *models.InundationReport, images []ImageContent) error
-	AddUpdate(ctx context.Context, reportID string, update models.InundationUpdate, userID string, userEmail string, images []ImageContent) error
+	AddUpdate(ctx context.Context, reportID string, update *models.InundationUpdate, userID string, userEmail string, images []ImageContent) error
 	ListReports(ctx context.Context, orgID string) ([]*models.InundationReport, int64, error)
 	ListReportsWithFilter(ctx context.Context, orgID, status, trafficStatus, query string, page, size int) ([]*models.InundationReport, int64, error)
 	GetReport(ctx context.Context, reportID string) (*models.InundationReport, error)
@@ -113,7 +113,7 @@ func (s *service) CreateReport(ctx context.Context, report *models.InundationRep
 	return s.inundationRepo.Create(ctx, report)
 }
 
-func (s *service) AddUpdate(ctx context.Context, reportID string, update models.InundationUpdate, userID string, userEmail string, images []ImageContent) error {
+func (s *service) AddUpdate(ctx context.Context, reportID string, update *models.InundationUpdate, userID string, userEmail string, images []ImageContent) error {
 	// 1. Get Report to find Org/Folder
 	report, err := s.inundationRepo.GetByID(ctx, reportID)
 	if err != nil {
@@ -177,7 +177,7 @@ func (s *service) AddUpdate(ctx context.Context, reportID string, update models.
 	}
 
 	// 4. Save update to dedicated collection
-	err = s.inundationUpdateRepo.Create(ctx, &update)
+	err = s.inundationUpdateRepo.Create(ctx, update)
 	if err != nil {
 		return err
 	}

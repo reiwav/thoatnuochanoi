@@ -142,6 +142,7 @@ func (h *InundationHandler) AddUpdateSituation(c *gin.Context) {
 	}
 
 	// 3. Add Update
+<<<<<<< HEAD
 	update := models.InundationUpdate{
 		Description:   description,
 		Depth:         depth,
@@ -149,6 +150,14 @@ func (h *InundationHandler) AddUpdateSituation(c *gin.Context) {
 		Width:         width,
 		TrafficStatus: trafficStatus,
 		Timestamp:     time.Now().Unix(),
+=======
+	update := &models.InundationUpdate{
+		Description: description,
+		Depth:       depth,
+		Length:      length,
+		Width:       width,
+		Timestamp:   time.Now().Unix(),
+>>>>>>> 8118ff9ecd60c6df05bcafd607ca9b6e8eca3ee4
 	}
 
 	err = h.service.AddUpdate(c.Request.Context(), reportID, update, user.ID, user.Email, images)
@@ -163,7 +172,7 @@ func (h *InundationHandler) AddUpdateSituation(c *gin.Context) {
 		_ = h.service.Resolve(c.Request.Context(), reportID, 0)
 	}
 
-	h.SendData(c, true)
+	h.SendData(c, update)
 }
 
 func (h *InundationHandler) GetReport(c *gin.Context) {

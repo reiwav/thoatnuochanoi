@@ -165,7 +165,7 @@ const ConstructionReporting = () => {
                 <Box sx={{ px: 2, pt: 2, pb: 6 }}>
                     <Typography variant="h5" sx={{ fontWeight: 800, mb: 3 }}>Lịch sử báo cáo công trình</Typography>
 
-                    <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+                    <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap', alignItems: 'center' }}>
                         <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
                             <DatePicker
                                 label="Chọn ngày báo cáo" value={historyDateFilter} onChange={(v) => setHistoryDateFilter(v)}
@@ -180,6 +180,21 @@ const ConstructionReporting = () => {
                             <option value="">Tất cả công trình</option>
                             {constructions.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </TextField>
+                        <TextField
+                            size="small"
+                            placeholder="Tìm kiếm nội dung..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            sx={{ minWidth: isMobile ? '100%' : 300 }}
+                            InputProps={{
+                                startAdornment: <IconSearch size={18} style={{ color: theme.palette.text.disabled, marginRight: 8 }} />,
+                                endAdornment: searchQuery ? (
+                                    <IconButton size="small" onClick={() => setSearchQuery('')}>
+                                        <IconX size={16} />
+                                    </IconButton>
+                                ) : null
+                            }}
+                        />
                     </Box>
 
                     {historyLoading ? (
@@ -188,8 +203,12 @@ const ConstructionReporting = () => {
                         <Typography color="textSecondary" align="center" sx={{ py: 4, fontStyle: 'italic' }}>Chưa có báo cáo nào được ghi nhận.</Typography>
                     ) : isMobile ? (
                         <List sx={{ p: 0 }}>
-                            {(historyConstructionFilter || historyDateFilter ?
-                                history.filter(h => (!historyConstructionFilter || h.construction_id === historyConstructionFilter) && (!historyDateFilter || (h.report_date >= historyDateFilter.startOf('day').unix() && h.report_date <= historyDateFilter.endOf('day').unix()))) :
+                            {(historyConstructionFilter || historyDateFilter || searchQuery ?
+                                history.filter(h => 
+                                    (!historyConstructionFilter || h.construction_id === historyConstructionFilter) && 
+                                    (!historyDateFilter || (h.report_date >= historyDateFilter.startOf('day').unix() && h.report_date <= historyDateFilter.endOf('day').unix())) &&
+                                    (!searchQuery || h.work_done?.toLowerCase().includes(searchQuery.toLowerCase()) || h.construction_name?.toLowerCase().includes(searchQuery.toLowerCase()))
+                                ) :
                                 history
                             ).map((h, idx) => (
                                 <Card key={idx} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '12px', mb: 2 }}>
@@ -243,8 +262,12 @@ const ConstructionReporting = () => {
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {(historyConstructionFilter || historyDateFilter ?
-                                        history.filter(h => (!historyConstructionFilter || h.construction_id === historyConstructionFilter) && (!historyDateFilter || (h.report_date >= historyDateFilter.startOf('day').unix() && h.report_date <= historyDateFilter.endOf('day').unix()))) :
+                                    {(historyConstructionFilter || historyDateFilter || searchQuery ?
+                                        history.filter(h => 
+                                            (!historyConstructionFilter || h.construction_id === historyConstructionFilter) && 
+                                            (!historyDateFilter || (h.report_date >= historyDateFilter.startOf('day').unix() && h.report_date <= historyDateFilter.endOf('day').unix())) &&
+                                            (!searchQuery || h.work_done?.toLowerCase().includes(searchQuery.toLowerCase()) || h.construction_name?.toLowerCase().includes(searchQuery.toLowerCase()))
+                                        ) :
                                         history
                                     ).map((h, idx) => (
                                         <TableRow key={idx} hover>

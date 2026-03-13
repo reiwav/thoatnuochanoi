@@ -23,6 +23,11 @@ const emergencyConstructionApi = {
         return axiosClient.get('/admin/emergency-constructions/history', { params });
     },
     createProgress: (data) => {
+        if (data instanceof FormData) {
+            return axiosClient.post('/admin/emergency-constructions/progress', data, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+        }
         return axiosClient.post('/admin/emergency-constructions/progress', data);
     },
     getProgressHistory: (id) => {

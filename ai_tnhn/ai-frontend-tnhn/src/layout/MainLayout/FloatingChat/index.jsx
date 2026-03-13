@@ -69,18 +69,18 @@ const FloatingChat = () => {
                     onClick={handleToggle}
                     size="medium"
                     variant="circular"
-                    color="primary"
+                    color="secondary"
                     sx={{
                         borderRadius: 0,
                         borderTopLeftRadius: '50%',
                         borderBottomLeftRadius: '50%',
                         borderTopRightRadius: '50%',
                         borderBottomRightRadius: '4px',
-                        top: '25%',
+                        top: 'calc(25% + 60px)',
                         position: 'fixed',
                         right: 10,
                         zIndex: 1200,
-                        boxShadow: theme.customShadows?.primary || theme.shadows[10]
+                        boxShadow: theme.vars?.customShadows?.secondary || theme.customShadows?.secondary || theme.shadows[10]
                     }}
                 >
                     <AnimateButton type="rotate">

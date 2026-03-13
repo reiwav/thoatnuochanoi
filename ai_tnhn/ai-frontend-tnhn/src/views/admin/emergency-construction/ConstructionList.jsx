@@ -11,7 +11,7 @@ import emergencyConstructionApi from 'api/emergencyConstruction';
 import ConstructionDialog from './ConstructionDialog';
 import organizationApi from 'api/organization';
 
-const ConstructionRow = ({ row, handleOpenEdit, handleDelete, orgs, getStatusChip, isMobile }) => {
+const ConstructionRow = ({ row, handleOpenEdit, handleDelete, orgs, getStatusChip, isMobile, userRole }) => {
     const [open, setOpen] = useState(false);
 
     return (
@@ -91,7 +91,7 @@ const ConstructionRow = ({ row, handleOpenEdit, handleDelete, orgs, getStatusChi
 
 const ConstructionList = () => {
     const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const userRole = localStorage.getItem('role');
     const userOrgId = localStorage.getItem('org_id');
     const [loading, setLoading] = useState(false);
@@ -194,12 +194,12 @@ const ConstructionList = () => {
             </Stack>
 
             <Grid container spacing={2} sx={{ mb: 3 }} alignItems="center">
-                <Grid item xs={12} sm={4}>
+                <Grid item xs={12} sm={8} md={4}>
                     <TextField fullWidth label="Tên công trình" value={filterInputs.name}
                         onChange={(e) => setFilterInputs({ ...filterInputs, name: e.target.value })}
                         size="small" sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }} />
                 </Grid>
-                <Grid item xs={12} sm={3}>
+                <Grid item xs={12} sm={4} md={3}>
                     <Button fullWidth variant="contained" color="primary" startIcon={<IconSearch size={20} />}
                         onClick={handleSearch} sx={{ borderRadius: '10px' }}>
                         Tìm kiếm
@@ -235,6 +235,7 @@ const ConstructionList = () => {
                                     orgs={orgs}
                                     getStatusChip={getStatusChip}
                                     isMobile={isMobile}
+                                    userRole={userRole}
                                 />
                             ))
                         )}

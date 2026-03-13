@@ -4,10 +4,19 @@ import (
 	"ai-api-tnhn/internal/base/mgo/filter"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/repository"
+	"ai-api-tnhn/internal/service/googledrive"
 	"context"
 	"errors"
+	"fmt"
+	"io"
 	"time"
 )
+
+type ImageContent struct {
+	Name     string
+	MimeType string
+	Reader   io.Reader
+}
 
 type Service interface {
 	Create(ctx context.Context, item *models.EmergencyConstruction, userID string) error
@@ -19,7 +28,7 @@ type Service interface {
 	GetHistory(ctx context.Context, constructionID string) ([]*models.EmergencyConstructionHistory, error)
 
 	// Progress Reporting
-	ReportProgress(ctx context.Context, progress *models.EmergencyConstructionProgress) error
+	ReportProgress(ctx context.Context, progress *models.EmergencyConstructionProgress, images []ImageContent) error
 	GetProgressHistory(ctx context.Context, constructionID string) ([]*models.EmergencyConstructionProgress, error)
 }
 
@@ -29,15 +38,17 @@ type service struct {
 	progressRepo repository.EmergencyConstructionProgress
 	userRepo     repository.User
 	orgRepo      repository.Organization
+	driveSvc     googledrive.Service
 }
 
-func NewService(repo repository.EmergencyConstruction, historyRepo repository.EmergencyConstructionHistory, progressRepo repository.EmergencyConstructionProgress, userRepo repository.User, orgRepo repository.Organization) Service {
+func NewService(repo repository.EmergencyConstruction, historyRepo repository.EmergencyConstructionHistory, progressRepo repository.EmergencyConstructionProgress, userRepo repository.User, orgRepo repository.Organization, driveSvc googledrive.Service) Service {
 	return &service{
 		repo:         repo,
 		historyRepo:  historyRepo,
 		progressRepo: progressRepo,
 		userRepo:     userRepo,
 		orgRepo:      orgRepo,
+		driveSvc:     driveSvc,
 	}
 }
 
@@ -133,7 +144,7 @@ func (s *service) GetHistory(ctx context.Context, constructionID string) ([]*mod
 	return s.historyRepo.ListByConstructionID(ctx, constructionID)
 }
 
-func (s *service) ReportProgress(ctx context.Context, progress *models.EmergencyConstructionProgress) error {
+func (s *service) ReportProgress(ctx context.Context, progress *models.EmergencyConstructionProgress, images []ImageContent) error {
 	// 0. Fetch Reporter Details
 	if progress.ReportedBy != "" {
 		u, err := s.userRepo.GetByID(ctx, progress.ReportedBy)
@@ -158,6 +169,31 @@ func (s *service) ReportProgress(ctx context.Context, progress *models.Emergency
 		}
 	}
 
+	// 0.5 Upload images if any
+	if len(images) > 0 {
+		// Get Org to find Drive Folder
+		org, err := s.orgRepo.GetByID(ctx, progress.ReporterOrgName) // This is wrong, ReporterOrgName is a string name
+		// Let's use user's orgID if we can fetch it
+		u, err := s.userRepo.GetByID(ctx, progress.ReportedBy)
+		if err == nil && u != nil && u.OrgID != "" {
+			org, err = s.orgRepo.GetByID(ctx, u.OrgID)
+			if err == nil && org != nil {
+				// Resolve Folder: Org -> Type (CONSTRUCTION) -> Station (Construction Name) -> Date
+				folderID, err := s.resolveUploadFolder(ctx, org, "CONSTRUCTION", progress.ConstructionID)
+				if err == nil {
+					var imageIDs []string
+					for _, img := range images {
+						id, err := s.driveSvc.UploadFile(ctx, folderID, img.Name, img.MimeType, img.Reader, false)
+						if err == nil {
+							imageIDs = append(imageIDs, id)
+						}
+					}
+					progress.Images = imageIDs
+				}
+			}
+		}
+	}
+
 	// 1. Save progress report
 	err := s.progressRepo.Create(ctx, progress)
 	if err != nil {
@@ -165,6 +201,40 @@ func (s *service) ReportProgress(ctx context.Context, progress *models.Emergency
 	}
 
 	return nil
+}
+
+// Logic copied from inundation service to handle dynamic folders
+func (s *service) resolveUploadFolder(ctx context.Context, org *models.Organization, dataType string, constructionID string) (string, error) {
+	orgFolderID := org.DriveFolderID
+	if orgFolderID == "" || orgFolderID == "." {
+		newFolderID, err := s.driveSvc.CreateOrgFolder(ctx, org.Name)
+		if err != nil {
+			return "", err
+		}
+		orgFolderID = newFolderID
+		org.DriveFolderID = newFolderID
+		_ = s.orgRepo.Upsert(ctx, org)
+	}
+
+	typeFolderID, err := s.driveSvc.FindOrCreateFolder(ctx, orgFolderID, dataType)
+	if err != nil {
+		return "", err
+	}
+
+	folderName := "UNKNOWN_CONSTRUCTION"
+	if constructionID != "" {
+		cons, err := s.repo.GetByID(ctx, constructionID)
+		if err == nil && cons != nil {
+			folderName = fmt.Sprintf("%s_%s", cons.Name, cons.ID)
+		}
+	}
+	consFolderID, err := s.driveSvc.FindOrCreateFolder(ctx, typeFolderID, folderName)
+	if err != nil {
+		return "", err
+	}
+
+	dateFolderName := time.Now().Format("2006-01-02")
+	return s.driveSvc.FindOrCreateFolder(ctx, consFolderID, dateFolderName)
 }
 
 func (s *service) GetProgressHistory(ctx context.Context, constructionID string) ([]*models.EmergencyConstructionProgress, error) {

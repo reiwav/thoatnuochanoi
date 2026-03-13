@@ -201,7 +201,7 @@ export default function MainLayout() {
               indicatorColor="primary"
               textColor="primary"
             >
-              <Tab label="Trực ngập lụt" sx={{ fontWeight: 700, fontSize: '0.95rem' }} />
+              <Tab label="Điểm ngập" sx={{ fontWeight: 700, fontSize: '0.95rem' }} />
               <Tab label="Công trình khẩn" sx={{ fontWeight: 700, fontSize: '0.95rem' }} />
             </Tabs>
           </Paper>

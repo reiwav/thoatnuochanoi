@@ -375,7 +375,7 @@ func (s *service) Chat(ctx context.Context, prompt string, history []ChatMessage
 					ExpectedCompletionDate: expectedDate,
 					ReportedBy:             userID,
 				}
-				err = s.emcSvc.ReportProgress(ctx, progress)
+				err = s.emcSvc.ReportProgress(ctx, progress, nil)
 				result = map[string]string{"status": "success", "message": "Báo cáo tiến độ thành công"}
 			case "get_emergency_work_history":
 				constructionID, _ := call.Args["construction_id"].(string)

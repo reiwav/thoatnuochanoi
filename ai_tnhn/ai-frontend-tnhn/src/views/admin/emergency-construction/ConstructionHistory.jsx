@@ -1,21 +1,32 @@
 import { useState, useEffect } from 'react';
 import {
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
-    CircularProgress, TablePagination, Typography, Chip, Box
+    CircularProgress, TablePagination, Typography, Chip, Box, TextField, InputAdornment, IconButton, Grid
 } from '@mui/material';
+import { IconSearch, IconX } from '@tabler/icons-react';
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import emergencyConstructionApi from 'api/emergencyConstruction';
 
 const ConstructionHistory = () => {
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const [loading, setLoading] = useState(false);
     const [items, setItems] = useState([]);
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [totalItems, setTotalItems] = useState(0);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
 
     const loadHistory = async () => {
         setLoading(true);
         try {
-            const res = await emergencyConstructionApi.getGlobalHistory({ page: page + 1, per_page: rowsPerPage });
+            const res = await emergencyConstructionApi.getGlobalHistory({ 
+                page: page + 1, 
+                per_page: rowsPerPage,
+                query: debouncedSearch 
+            });
             if (res.data?.status === 'success') {
                 setItems(res.data.data?.data || []);
                 setTotalItems(res.data.data?.total || 0);
@@ -28,8 +39,13 @@ const ConstructionHistory = () => {
     };
 
     useEffect(() => {
+        const handler = setTimeout(() => setDebouncedSearch(searchQuery), 500);
+        return () => clearTimeout(handler);
+    }, [searchQuery]);
+
+    useEffect(() => {
         loadHistory();
-    }, [page, rowsPerPage]);
+    }, [page, rowsPerPage, debouncedSearch]);
 
     const getActionChip = (action) => {
         const config = {
@@ -54,6 +70,30 @@ const ConstructionHistory = () => {
 
     return (
         <Box>
+            <Box sx={{ mb: 3 }}>
+                <TextField
+                    fullWidth
+                    size="small"
+                    placeholder="Tìm kiếm theo ghi chú, tên công trình..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    sx={{ maxWidth: isMobile ? '100%' : 400, bgcolor: 'background.paper', borderRadius: 2 }}
+                    InputProps={{
+                        startAdornment: (
+                            <InputAdornment position="start">
+                                <IconSearch size={18} />
+                            </InputAdornment>
+                        ),
+                        endAdornment: searchQuery && (
+                            <InputAdornment position="end">
+                                <IconButton size="small" onClick={() => setSearchQuery('')}>
+                                    <IconX size={16} />
+                                </IconButton>
+                            </InputAdornment>
+                        )
+                    }}
+                />
+            </Box>
             <TableContainer component={Paper} sx={{ border: '1px solid', borderColor: 'divider', boxShadow: 'none', borderRadius: '12px' }}>
                 <Table>
                     <TableHead sx={{ bgcolor: 'grey.50' }}>

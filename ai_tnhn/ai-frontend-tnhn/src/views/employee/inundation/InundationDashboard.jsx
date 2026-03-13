@@ -82,7 +82,14 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
         <Paper elevation={0} sx={{ p: 2, mb: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 3, bgcolor: 'background.paper' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1, gap: 1 }}>
                 <Box sx={{ flex: 1 }}>
-                    <Typography variant="h5" sx={{ fontWeight: 900, color: 'primary.dark', mb: 1, lineHeight: 1.2 }}>
+                    <Typography 
+                        variant="h5" 
+                        onClick={() => navigate(point.status === 'active' 
+                            ? `${basePath}/inundation/form?tab=1&id=${point.active_report.id}&name=${encodeURIComponent(point.name)}`
+                            : `${basePath}/inundation/form?tab=0&point_id=${point.id}&name=${encodeURIComponent(point.name)}`
+                        )}
+                        sx={{ fontWeight: 900, color: 'primary.dark', mb: 1, lineHeight: 1.2, cursor: 'pointer', '&:hover': { color: 'primary.main' } }}
+                    >
                         {point.name}
                     </Typography>
                     <Stack direction="row" spacing={1} flexWrap="wrap">
@@ -110,8 +117,8 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                     <Typography variant="body1" sx={{ fontWeight: 700, color: 'primary.main' }}>
                         {point.address}
                     </Typography>
-                    
-                     <Box>
+
+                    <Box>
                         <Typography variant="body2" color="text.secondary">Đơn vị quản lý:</Typography>
                         <Typography variant="body1" sx={{ fontWeight: 700, color: 'primary.main' }}>
                             {point.org_name || organizations.find((o) => o.id === point.org_id)?.name || ''}
@@ -140,7 +147,7 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                         </Grid>
                     </Grid>
 
-                     <Box>
+                    <Box>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 700 }}>Ảnh liên quan:</Typography>
                         {latest?.images?.length > 0 ? (
                             <Box sx={{ display: 'flex', gap: 1.2, overflowX: 'auto', pb: 1, '&::-webkit-scrollbar': { height: 4 }, '&::-webkit-scrollbar-thumb': { bgcolor: 'grey.300', borderRadius: 4 } }}>
@@ -157,13 +164,21 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                         )}
                     </Box>
 
-                    {point.status === 'active' && (
+                    {point.status === 'active' ? (
                         <Button
                             fullWidth variant="contained" color="error" size="large"
                             onClick={() => navigate(`${basePath}/inundation/form?tab=1&id=${point.active_report.id}&name=${encodeURIComponent(point.name)}`)}
                             sx={{ borderRadius: 2, fontWeight: 800, py: 1.5 }}
                         >
                             Cập nhật tình hình
+                        </Button>
+                    ) : (
+                        <Button
+                            fullWidth variant="contained" color="primary" size="large"
+                            onClick={() => navigate(`${basePath}/inundation/form?tab=0&point_id=${point.id}&name=${encodeURIComponent(point.name)}`)}
+                            sx={{ borderRadius: 2, fontWeight: 800, py: 1.5 }}
+                        >
+                            Báo cáo điểm ngập
                         </Button>
                     )}
                 </Stack>
@@ -182,7 +197,14 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                     </IconButton>
                 </TableCell>
                 <TableCell sx={{ p: 2 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                    <Typography 
+                        variant="subtitle2" 
+                        onClick={() => navigate(point.status === 'active' 
+                            ? `${basePath}/inundation/form?tab=1&id=${point.active_report.id}&name=${encodeURIComponent(point.name)}`
+                            : `${basePath}/inundation/form?tab=0&point_id=${point.id}&name=${encodeURIComponent(point.name)}`
+                        )}
+                        sx={{ fontWeight: 700, cursor: 'pointer', '&:hover': { color: 'primary.main' } }}
+                    >
                         {point.name}
                     </Typography>
                 </TableCell>
@@ -286,17 +308,17 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                                     <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
                                         <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>Lịch sử cập nhật:</Typography>
                                         <Stack spacing={1}>
-                                            {latest.updates.slice().sort((a,b) => b.timestamp - a.timestamp).map((upd, idx) => (
+                                            {latest.updates.slice().sort((a, b) => b.timestamp - a.timestamp).map((upd, idx) => (
                                                 <Box key={idx} sx={{ p: 1, bgcolor: 'background.paper', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
                                                     <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
                                                         <Typography variant="caption" sx={{ fontWeight: 700, color: 'primary.main' }}>
                                                             {formatTime(upd.timestamp)}
                                                         </Typography>
                                                         {upd.traffic_status && (
-                                                            <Chip 
-                                                                label={getTrafficStatusLabel(upd.traffic_status)} 
-                                                                size="small" color={getTrafficStatusColor(upd.traffic_status)} 
-                                                                variant="outlined" sx={{ height: 18, fontSize: '0.625rem' }} 
+                                                            <Chip
+                                                                label={getTrafficStatusLabel(upd.traffic_status)}
+                                                                size="small" color={getTrafficStatusColor(upd.traffic_status)}
+                                                                variant="outlined" sx={{ height: 18, fontSize: '0.625rem' }}
                                                             />
                                                         )}
                                                     </Stack>
@@ -321,9 +343,13 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenVi
 
     const renderCard = () => (
         <Paper elevation={0} sx={{ p: 2, mb: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 3, bgcolor: 'background.paper' }}>
-             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5, gap: 1 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5, gap: 1 }}>
                 <Box sx={{ flex: 1 }}>
-                    <Typography variant="h5" sx={{ fontWeight: 900, color: 'primary.dark', mb: 1, lineHeight: 1.2 }}>
+                    <Typography 
+                        variant="h5" 
+                        onClick={() => navigate(`${basePath}/inundation/form?id=${report.id}&tab=1&readonly=true`)}
+                        sx={{ fontWeight: 900, color: 'primary.dark', mb: 1, lineHeight: 1.2, cursor: 'pointer', '&:hover': { color: 'primary.main' } }}
+                    >
                         {report.street_name}
                     </Typography>
                     <Stack direction="row" spacing={1}>
@@ -339,7 +365,7 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenVi
                 </IconButton>
             </Box>
 
-             <Collapse in={open} timeout="auto" unmountOnExit>
+            <Collapse in={open} timeout="auto" unmountOnExit>
                 <Stack spacing={2} sx={{ mt: 2, pt: 2, borderTop: '1px dashed', borderColor: 'divider' }}>
                     <Box>
                         <Typography variant="body2" color="text.secondary">Đơn vị quản lý:</Typography>
@@ -363,7 +389,7 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenVi
                         </Grid>
                     </Grid>
 
-                     <Box>
+                    <Box>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 700 }}>Ảnh liên quan:</Typography>
                         {latest?.images?.length > 0 ? (
                             <Box sx={{ display: 'flex', gap: 1.2, overflowX: 'auto', pb: 1, '&::-webkit-scrollbar': { height: 4 }, '&::-webkit-scrollbar-thumb': { bgcolor: 'grey.300', borderRadius: 4 } }}>
@@ -392,17 +418,17 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenVi
                         <Box sx={{ mt: 1, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
                             <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 1.5 }}>Lịch sử cập nhật:</Typography>
                             <Stack spacing={1.5}>
-                                {report.updates.slice().sort((a,b) => b.timestamp - a.timestamp).map((upd, idx) => (
+                                {report.updates.slice().sort((a, b) => b.timestamp - a.timestamp).map((upd, idx) => (
                                     <Box key={idx} sx={{ p: 1.5, bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
                                         <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.8 }}>
                                             <Typography variant="body2" sx={{ fontWeight: 800, color: 'primary.main' }}>
                                                 {formatTime(upd.timestamp)}
                                             </Typography>
                                             {(upd.traffic_status || upd.trafficStatus) && (
-                                                <Chip 
-                                                    label={getTrafficStatusLabel(upd.traffic_status || upd.trafficStatus)} 
-                                                    size="small" color={getTrafficStatusColor(upd.traffic_status || upd.trafficStatus)} 
-                                                    variant="outlined" sx={{ fontWeight: 800 }} 
+                                                <Chip
+                                                    label={getTrafficStatusLabel(upd.traffic_status || upd.trafficStatus)}
+                                                    size="small" color={getTrafficStatusColor(upd.traffic_status || upd.trafficStatus)}
+                                                    variant="outlined" sx={{ fontWeight: 800 }}
                                                 />
                                             )}
                                         </Stack>
@@ -430,7 +456,11 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenVi
                     </IconButton>
                 </TableCell>
                 <TableCell sx={{ p: 2 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                    <Typography 
+                        variant="subtitle2" 
+                        onClick={() => navigate(`${basePath}/inundation/form?id=${report.id}&tab=1&readonly=true`)}
+                        sx={{ fontWeight: 700, cursor: 'pointer', '&:hover': { color: 'primary.main' } }}
+                    >
                         {report.street_name}
                     </Typography>
                 </TableCell>
@@ -522,17 +552,17 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenVi
                                     <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
                                         <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>Lịch sử cập nhật:</Typography>
                                         <Stack spacing={1}>
-                                            {report.updates.slice().sort((a,b) => b.timestamp - a.timestamp).map((upd, idx) => (
+                                            {report.updates.slice().sort((a, b) => b.timestamp - a.timestamp).map((upd, idx) => (
                                                 <Box key={idx} sx={{ p: 1, bgcolor: 'background.paper', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
                                                     <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
                                                         <Typography variant="caption" sx={{ fontWeight: 700, color: 'primary.main' }}>
                                                             {formatTime(upd.timestamp)}
                                                         </Typography>
                                                         {(upd.traffic_status || upd.trafficStatus) && (
-                                                            <Chip 
-                                                                label={getTrafficStatusLabel(upd.traffic_status || upd.trafficStatus)} 
-                                                                size="small" color={getTrafficStatusColor(upd.traffic_status || upd.trafficStatus)} 
-                                                                variant="outlined" sx={{ height: 18, fontSize: '0.625rem' }} 
+                                                            <Chip
+                                                                label={getTrafficStatusLabel(upd.traffic_status || upd.trafficStatus)}
+                                                                size="small" color={getTrafficStatusColor(upd.traffic_status || upd.trafficStatus)}
+                                                                variant="outlined" sx={{ height: 18, fontSize: '0.625rem' }}
                                                             />
                                                         )}
                                                     </Stack>
@@ -725,33 +755,33 @@ const InundationDashboard = () => {
                     placeholder="Tìm tên đường, địa chỉ..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    InputProps={{ 
+                    InputProps={{
                         startAdornment: <IconSearch size={20} sx={{ color: 'text.disabled', mr: 1, ml: 0.5 }} />,
                         sx: { borderRadius: 3, fontWeight: 600 }
                     }}
                 />
                 <Stack direction={isMobile ? "column" : "row"} spacing={isMobile ? 2 : 1}>
-                {organizations.length > 1 && (
-                    <TextField
-                        select
-                        fullWidth
-                        size={isMobile ? "medium" : "small"}
-                        label="Đơn vị quản lý"
-                        value={orgFilter}
-                        onChange={(e) => {
-                            setOrgFilter(e.target.value);
-                            setHistoryPage(0);
-                        }}
-                        InputProps={{ sx: { borderRadius: 3, fontWeight: 600 } }}
-                    >
-                        <MenuItem value="">Tất cả đơn vị</MenuItem>
-                        {organizations.map((org) => (
-                            <MenuItem key={org.id} value={org.id}>
-                                {org.name}
-                            </MenuItem>
-                        ))}
-                    </TextField>
-                )}
+                    {organizations.length > 1 && (
+                        <TextField
+                            select
+                            fullWidth
+                            size={isMobile ? "medium" : "small"}
+                            label="Đơn vị quản lý"
+                            value={orgFilter}
+                            onChange={(e) => {
+                                setOrgFilter(e.target.value);
+                                setHistoryPage(0);
+                            }}
+                            InputProps={{ sx: { borderRadius: 3, fontWeight: 600 } }}
+                        >
+                            <MenuItem value="">Tất cả đơn vị</MenuItem>
+                            {organizations.map((org) => (
+                                <MenuItem key={org.id} value={org.id}>
+                                    {org.name}
+                                </MenuItem>
+                            ))}
+                        </TextField>
+                    )}
                     <TextField
                         select
                         fullWidth
@@ -1012,13 +1042,13 @@ const InundationDashboard = () => {
                                     onChange={(e) => setOrgFilter(e.target.value)}
                                     sx={{ minWidth: 150 }}
                                 >
-                                <MenuItem value="">Tất cả đơn vị</MenuItem>
-                                {organizations.map((org) => (
-                                    <MenuItem key={org.id} value={org.id}>
-                                        {org.name}
-                                    </MenuItem>
-                                ))}
-                            </TextField>
+                                    <MenuItem value="">Tất cả đơn vị</MenuItem>
+                                    {organizations.map((org) => (
+                                        <MenuItem key={org.id} value={org.id}>
+                                            {org.name}
+                                        </MenuItem>
+                                    ))}
+                                </TextField>
                             )}
                             <TextField
                                 select
@@ -1153,7 +1183,7 @@ const InundationDashboard = () => {
         <Box sx={{ px: isMobile ? 1.2 : 2, pt: 2, pb: 4 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="h2" sx={{ fontWeight: 900, color: 'primary.main', letterSpacing: -0.5 }}>
-                    Trực ngập lụt
+                    Điểm ngập
                 </Typography>
                 <Badge badgeContent={stats.active} color="error" max={99} overlap="circular">
                     <Avatar sx={{ bgcolor: 'error.lighter', width: 40, height: 40 }}>
@@ -1184,30 +1214,30 @@ const InundationDashboard = () => {
                     placeholder="Tìm tên đường, địa chỉ..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    InputProps={{ 
+                    InputProps={{
                         startAdornment: <IconSearch size={20} sx={{ color: 'text.disabled', mr: 1, ml: 0.5 }} />,
                         sx: { borderRadius: 3, fontWeight: 600 }
                     }}
                 />
                 <Stack direction={isMobile ? "column" : "row"} spacing={isMobile ? 2 : 1}>
-                {organizations.length > 1 && (
-                    <TextField
-                        select
-                        fullWidth
-                        size={isMobile ? "medium" : "small"}
-                        label="Đơn vị quản lý"
-                        value={orgFilter}
-                        onChange={(e) => setOrgFilter(e.target.value)}
-                        InputProps={{ sx: { borderRadius: 3, fontWeight: 600 } }}
-                    >
-                        <MenuItem value="">Tất cả đơn vị</MenuItem>
-                        {organizations.map((org) => (
-                            <MenuItem key={org.id} value={org.id}>
-                                {org.name}
-                            </MenuItem>
-                        ))}
-                    </TextField>
-                )}
+                    {organizations.length > 1 && (
+                        <TextField
+                            select
+                            fullWidth
+                            size={isMobile ? "medium" : "small"}
+                            label="Đơn vị quản lý"
+                            value={orgFilter}
+                            onChange={(e) => setOrgFilter(e.target.value)}
+                            InputProps={{ sx: { borderRadius: 3, fontWeight: 600 } }}
+                        >
+                            <MenuItem value="">Tất cả đơn vị</MenuItem>
+                            {organizations.map((org) => (
+                                <MenuItem key={org.id} value={org.id}>
+                                    {org.name}
+                                </MenuItem>
+                            ))}
+                        </TextField>
+                    )}
                     <TextField
                         select
                         fullWidth

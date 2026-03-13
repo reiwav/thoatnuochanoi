@@ -17,6 +17,12 @@ type EmergencyConstructionProgress struct {
 	Tasks                  []ProgressTask `bson:"tasks" json:"tasks"`
 	ProgressPercentage     int            `bson:"progress_percentage" json:"progress_percentage"`
 	Issues                 string         `bson:"issues" json:"issues"`
+	Order                  string         `bson:"order" json:"order"`
+	Location               string         `bson:"location" json:"location"`
+	Conclusion             string         `bson:"conclusion" json:"conclusion"`
+	Influence              string         `bson:"influence" json:"influence"`
+	Proposal               string         `bson:"proposal" json:"proposal"`
+	Images                 []string       `bson:"images" json:"images"`
 	IsCompleted            bool           `bson:"is_completed" json:"is_completed"`
 	ExpectedCompletionDate int64          `bson:"expected_completion_date" json:"expected_completion_date"`
 	ReportedBy             string         `bson:"reported_by" json:"reported_by"`

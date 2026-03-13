@@ -5,6 +5,8 @@ import (
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/service/emergency_construction"
 	"ai-api-tnhn/utils/web"
+	"encoding/json"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -112,16 +114,65 @@ func (h *EmergencyConstructionHandler) GetHistory(c *gin.Context) {
 }
 
 func (h *EmergencyConstructionHandler) ReportProgress(c *gin.Context) {
+	// Check if multipart form
 	var item models.EmergencyConstructionProgress
-	if err := c.ShouldBindJSON(&item); err != nil {
-		web.AssertNil(web.BadRequest(err.Error()))
-		return
+	var images []emergency_construction.ImageContent
+
+	if contentType := c.GetHeader("Content-Type"); len(contentType) >= 19 && contentType[:19] == "multipart/form-data" {
+		form, err := c.MultipartForm()
+		if err != nil {
+			web.AssertNil(web.BadRequest(err.Error()))
+			return
+		}
+
+		item.ConstructionID = c.PostForm("construction_id")
+		item.WorkDone = c.PostForm("work_done")
+		item.Issues = c.PostForm("issues")
+		item.Order = c.PostForm("order")
+		item.Location = c.PostForm("location")
+		item.Conclusion = c.PostForm("conclusion")
+		item.Influence = c.PostForm("influence")
+		item.Proposal = c.PostForm("proposal")
+
+		if progressStr := c.PostForm("progress_percentage"); progressStr != "" {
+			p, _ := strconv.Atoi(progressStr)
+			item.ProgressPercentage = p
+		}
+
+		if expectedDateStr := c.PostForm("expected_completion_date"); expectedDateStr != "" {
+			ed, _ := strconv.ParseInt(expectedDateStr, 10, 64)
+			item.ExpectedCompletionDate = ed
+		}
+
+		if tasksStr := c.PostForm("tasks"); tasksStr != "" {
+			_ = json.Unmarshal([]byte(tasksStr), &item.Tasks)
+		}
+
+		// Handle images
+		files := form.File["images"]
+		for _, fileHeader := range files {
+			file, err := fileHeader.Open()
+			if err != nil {
+				continue
+			}
+			defer file.Close()
+			images = append(images, emergency_construction.ImageContent{
+				Name:     fileHeader.Filename,
+				MimeType: fileHeader.Header.Get("Content-Type"),
+				Reader:   file,
+			})
+		}
+	} else {
+		if err := c.ShouldBindJSON(&item); err != nil {
+			web.AssertNil(web.BadRequest(err.Error()))
+			return
+		}
 	}
 
 	userID := h.GetTokenFromContext(c).UserID
 	item.ReportedBy = userID
 
-	err := h.service.ReportProgress(c.Request.Context(), &item)
+	err := h.service.ReportProgress(c.Request.Context(), &item, images)
 	web.AssertNil(err)
 	h.SendData(c, item)
 }

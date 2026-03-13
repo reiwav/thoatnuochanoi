@@ -98,7 +98,7 @@ func main() {
 	if googleApiService != nil {
 		googleApiService.SetEmailService(emailService)
 	}
-	emConstructionService := emergency_construction.NewService(emConstructionRepo, emConstructionHistoryRepo, emConstructionProgressRepo, userRepo, orgRepo)
+	emConstructionService := emergency_construction.NewService(emConstructionRepo, emConstructionHistoryRepo, emConstructionProgressRepo, userRepo, orgRepo, driveService)
 	queryService := querysvc.NewService(db.DB)
 	queryHandler := handler.NewQueryHandler(queryService)
 	stationDataService := stationdata.NewService(stationService, waterService)

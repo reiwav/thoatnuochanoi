@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
     Box, Typography, Paper, TextField, Button, Slider, FormControlLabel,
     Checkbox, CircularProgress, Stack, Avatar, Card, CardContent, Divider,
-    Tabs, Tab, IconButton, List, useMediaQuery
+    Tabs, Tab, IconButton, List, useMediaQuery, MenuItem
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -11,10 +11,11 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
-import { IconChevronLeft, IconSend, IconClipboardCheck, IconHistory, IconClock, IconAlertTriangle, IconPlus, IconTrash } from '@tabler/icons-react';
+import { IconChevronLeft, IconSend, IconClipboardCheck, IconHistory, IconClock, IconAlertTriangle, IconPlus, IconTrash, IconCamera, IconPhoto } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 import emergencyConstructionApi from 'api/emergencyConstruction';
 import MainCard from 'ui-component/cards/MainCard';
+import { getInundationImageUrl } from 'utils/imageHelper';
 
 function CustomTabPanel(props) {
     const { children, value, index, ...other } = props;
@@ -41,10 +42,14 @@ const ConstructionForm = () => {
 
     // Form states
     const [workDone, setWorkDone] = useState('');
-    const [tasks, setTasks] = useState([]);
-    const [progress, setProgress] = useState(0);
     const [issues, setIssues] = useState('');
-    const [expectedDate, setExpectedDate] = useState(null);
+    const [order, setOrder] = useState('');
+    const [location, setLocation] = useState('');
+    const [conclusion, setConclusion] = useState('');
+    const [influence, setInfluence] = useState('');
+    const [proposal, setProposal] = useState('');
+    const [images, setImages] = useState([]);
+    const [imagePreviews, setImagePreviews] = useState([]);
 
     const userRole = localStorage.getItem('role') || 'employee';
     const basePath = userRole === 'employee' ? '/company' : '/admin';
@@ -80,34 +85,60 @@ const ConstructionForm = () => {
         setTabValue(newValue);
     };
 
+    const handleImageChange = (e) => {
+        const files = Array.from(e.target.files);
+        setImages([...images, ...files]);
+
+        const newPreviews = files.map(file => URL.createObjectURL(file));
+        setImagePreviews([...imagePreviews, ...newPreviews]);
+    };
+
+    const removeImage = (index) => {
+        const newImages = [...images];
+        newImages.splice(index, 1);
+        setImages(newImages);
+
+        const newPreviews = [...imagePreviews];
+        URL.revokeObjectURL(newPreviews[index]);
+        newPreviews.splice(index, 1);
+        setImagePreviews(newPreviews);
+    };
+
     const handleSubmit = async () => {
-        if (!workDone.trim() && tasks.length === 0) { toast.error('Vui lòng nhập nội dung công việc hoặc thêm đầu việc'); return; }
-        if (tasks.some(t => !t.name.trim())) { toast.error('Vui lòng nhập tên cho tất cả đầu việc con'); return; }
-        if (progress > 0 && !expectedDate) {
-            toast.error('Vui lòng chọn ngày dự kiến hoàn thành'); return;
-        }
+        if (!workDone.trim()) { toast.error('Vui lòng nhập nội dung công việc báo cáo'); return; }
 
         setLoading(true);
         try {
-            const payload = {
-                construction_id: constructionId,
-                work_done: workDone,
-                tasks: tasks.map(t => ({ name: t.name, percentage: parseInt(t.percentage) || 0 })),
-                progress_percentage: progress,
-                issues: issues,
-                is_completed: false, // Legacy field, keeping false
-                expected_completion_date: expectedDate ? expectedDate.unix() : 0
-            };
+            const formData = new FormData();
+            formData.append('construction_id', constructionId);
+            formData.append('work_done', workDone);
+            formData.append('tasks', JSON.stringify([]));
+            formData.append('progress_percentage', 0);
+            formData.append('issues', issues);
+            formData.append('order', order);
+            formData.append('location', location);
+            formData.append('conclusion', conclusion);
+            formData.append('influence', influence);
+            formData.append('proposal', proposal);
+            formData.append('expected_completion_date', 0);
 
-            const res = await emergencyConstructionApi.createProgress(payload);
+            images.forEach((image) => {
+                formData.append('images', image);
+            });
+
+            const res = await emergencyConstructionApi.createProgress(formData);
             if (res.data) {
                 toast.success('Báo cáo tiến độ thành công');
                 // Reset form
                 setWorkDone('');
-                setTasks([]);
-                setProgress(0);
                 setIssues('');
-                setExpectedDate(null);
+                setOrder('');
+                setLocation('');
+                setConclusion('');
+                setInfluence('');
+                setProposal('');
+                setImages([]);
+                setImagePreviews([]);
                 // Switch to history tab to view the new report
                 setTabValue(1);
             }
@@ -120,6 +151,25 @@ const ConstructionForm = () => {
 
     const renderForm = () => (
         <Box sx={{ p: { xs: 2, md: 3 } }}>
+            <Box sx={{ mb: 3 }}>
+                <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>Lệnh số <span style={{ color: 'red' }}>*</span></Typography>
+                <TextField
+                    select fullWidth value={order} onChange={(e) => setOrder(e.target.value)}
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                >
+                    {[...Array(100)].map((_, i) => (
+                        <MenuItem key={i + 1} value={`Lệnh ${i + 1}`}>Lệnh {i + 1}</MenuItem>
+                    ))}
+                </TextField>
+            </Box>
+
+            <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>Vị trí <span style={{ color: 'red' }}>*</span></Typography>
+            <TextField
+                fullWidth placeholder="Nhập vị trí..."
+                value={location} onChange={(e) => setLocation(e.target.value)}
+                sx={{ mb: 3, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+            />
+
             <Typography variant="h6" sx={{ mb: 1.5, fontWeight: 700 }}>Mô tả chung công việc trong ngày <span style={{ color: 'red' }}>*</span></Typography>
             <TextField
                 fullWidth multiline rows={3} placeholder="Mô tả chi tiết công việc..."
@@ -131,73 +181,63 @@ const ConstructionForm = () => {
                 }}
             />
 
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6" sx={{ fontWeight: 700 }}>Các đầu việc chi tiết</Typography>
-                <Button size="medium" variant="outlined" startIcon={<IconPlus size={18} />} onClick={() => setTasks([...tasks, { name: '', percentage: 0 }])} sx={{ borderRadius: 2, fontWeight: 700 }}>
-                    Thêm đầu việc
-                </Button>
-            </Box>
+            <Divider sx={{ mb: 3 }} />
 
-            {tasks.map((task, index) => (
-                <Card key={index} variant="outlined" sx={{ mb: 2, p: 2, borderRadius: 2, bgcolor: 'grey.50' }}>
-                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
-                        <TextField
-                            fullWidth placeholder={`Tên đầu việc ${index + 1}...`}
-                            value={task.name} onChange={(e) => { const newTasks = [...tasks]; newTasks[index].name = e.target.value; setTasks(newTasks); }}
-                            sx={{ '& .MuiInputBase-input': { fontSize: '1rem', fontWeight: 600 } }}
-                        />
-                        <IconButton color="error" size="medium" onClick={() => { const newTasks = [...tasks]; newTasks.splice(index, 1); setTasks(newTasks); }}>
-                            <IconTrash size={22} />
-                        </IconButton>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <Typography variant="body1" sx={{ fontWeight: 700 }}>Tiến độ ({task.percentage}%)</Typography>
-                        <Box sx={{ width: '60%' }}>
-                            <Slider
-                                value={task.percentage} onChange={(e, val) => { const newTasks = [...tasks]; newTasks[index].percentage = val; setTasks(newTasks); }}
-                                step={10} marks min={0} max={100} valueLabelDisplay="auto" size="small"
-                            />
-                        </Box>
-                    </Box>
-                </Card>
-            ))}
+            <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>Kết luận <span style={{ color: 'red' }}>*</span></Typography>
+            <TextField
+                fullWidth multiline rows={2} placeholder="Nhập kết luận..."
+                value={conclusion} onChange={(e) => setConclusion(e.target.value)}
+                sx={{ mb: 3, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+            />
 
-            <Divider sx={{ mb: 3, mt: tasks.length > 0 ? 1 : 0 }} />
+            <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>Ảnh hưởng</Typography>
+            <TextField
+                fullWidth multiline rows={2} placeholder="Nhập ảnh hưởng..."
+                value={influence} onChange={(e) => setInfluence(e.target.value)}
+                sx={{ mb: 3, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+            />
 
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Tiến độ tổng của toàn dự án (%)</Typography>
-                <Typography variant="h6" color="primary" fontWeight={800}>{progress}%</Typography>
-            </Box>
-            <Slider
-                value={progress} onChange={(e, val) => setProgress(val)}
-                valueLabelDisplay="auto" step={5} marks min={0} max={100}
-                sx={{ mb: 3 }}
+            <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>Bất cập, đề xuất</Typography>
+            <TextField
+                fullWidth multiline rows={2} placeholder="Nhập đề xuất..."
+                value={proposal} onChange={(e) => setProposal(e.target.value)}
+                sx={{ mb: 3, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
             />
 
             <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>Vướng mắc, khó khăn (nếu có)</Typography>
             <TextField
-                fullWidth multiline rows={2} placeholder="Nhập khó khăn..."
+                fullWidth multiline rows={2} placeholder="Nhập vướng mắc..."
                 value={issues} onChange={(e) => setIssues(e.target.value)}
-                sx={{
-                    mb: 4,
-                    '& .MuiInputBase-input': { fontSize: '1rem' }
-                }}
+                sx={{ mb: 3, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
             />
 
-            <Box sx={{ mb: 4 }}>
-                <Typography variant="h6" sx={{ mb: 1.5, fontWeight: 700 }}>Ngày dự kiến hoàn thành <span style={{ color: 'red' }}>*</span></Typography>
-                <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
-                    <DatePicker
-                        value={expectedDate} onChange={(newDate) => setExpectedDate(newDate)}
-                        format="DD/MM/YYYY" slotProps={{
-                            textField: {
-                                fullWidth: true,
-                                sx: { '& .MuiInputBase-input': { fontSize: '1.1rem', fontWeight: 600 } }
-                            }
-                        }}
-                    />
-                </LocalizationProvider>
+            <Box sx={{ mb: 3 }}>
+                <Typography variant="h6" sx={{ mb: 1.5, fontWeight: 700 }}>Hình ảnh báo cáo</Typography>
+                <Box sx={{ display: 'flex', gap: 1, mb: 1.5, flexWrap: 'wrap' }}>
+                    {imagePreviews.map((preview, idx) => (
+                        <Box key={idx} sx={{ position: 'relative', width: 80, height: 80 }}>
+                            <Avatar variant="rounded" src={preview} sx={{ width: 80, height: 80 }} />
+                            <IconButton
+                                size="small" color="error"
+                                onClick={() => removeImage(idx)}
+                                sx={{ position: 'absolute', top: -5, right: -5, bgcolor: 'background.paper', boxShadow: 1, '&:hover': { bgcolor: 'grey.100' } }}
+                            >
+                                <IconTrash size={14} />
+                            </IconButton>
+                        </Box>
+                    ))}
+                    <Button
+                        component="label" variant="outlined"
+                        sx={{ width: 80, height: 80, borderRadius: 2, display: 'flex', flexDirection: 'column', gap: 0.5, borderColor: 'divider', color: 'text.secondary' }}
+                    >
+                        <input type="file" hidden multiple accept="image/*" onChange={handleImageChange} />
+                        <IconCamera size={24} />
+                        <Typography variant="caption" fontWeight={700}>Thêm ảnh</Typography>
+                    </Button>
+                </Box>
             </Box>
+
+            {/* Removed Expected Date Picker */}
 
             <Button
                 fullWidth variant="contained" color="primary" size="large" onClick={handleSubmit} disabled={loading}
@@ -222,25 +262,29 @@ const ConstructionForm = () => {
                             <CardContent sx={{ p: '16px !important' }}>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5 }}>
                                     <Typography variant="body1" fontWeight={700} color="primary">{new Date(h.report_date * 1000).toLocaleString('vi-VN')}</Typography>
-                                    <Typography variant="h4" fontWeight={900} color="secondary.main">{h.progress_percentage}%</Typography>
                                 </Box>
-                                {h.work_done && <Typography variant="body1" sx={{ mb: 2, lineHeight: 1.6, fontWeight: 500 }}>{h.work_done}</Typography>}
+                                {h.order && <Typography variant="h6" color="secondary" fontWeight={800} sx={{ mb: 1 }}>{h.order}</Typography>}
+                                {h.location && <Typography variant="body2" color="textSecondary" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}><IconAlertTriangle size={16} /> {h.location}</Typography>}
+                                {h.work_done && <Box sx={{ mb: 2 }}><Typography variant="subtitle2" color="textSecondary" fontWeight={700}>Công việc thực hiện:</Typography><Typography variant="body1" sx={{ lineHeight: 1.6, fontWeight: 500 }}>{h.work_done}</Typography></Box>}
 
-                                {h.tasks && h.tasks.length > 0 && (
-                                    <Box sx={{ mb: 2 }}>
-                                        {h.tasks.map((t, tidx) => (
-                                            <Box key={tidx} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1, p: 1.5, bgcolor: 'primary.lighter', borderRadius: 2 }}>
-                                                <Typography variant="body1" sx={{ fontWeight: 700, color: 'primary.dark' }}>• {t.name}</Typography>
-                                                <Typography variant="h6" sx={{ fontWeight: 900, color: 'primary.main' }}>{t.percentage}%</Typography>
-                                            </Box>
-                                        ))}
-                                    </Box>
-                                )}
+                                {/* Removed tasks summary */}
+
+                                {h.conclusion && <Box sx={{ mb: 1.5 }}><Typography variant="subtitle2" color="primary" fontWeight={700}>Kết luận:</Typography><Typography variant="body2">{h.conclusion}</Typography></Box>}
+                                {h.influence && <Box sx={{ mb: 1.5 }}><Typography variant="subtitle2" color="textSecondary" fontWeight={700}>Ảnh hưởng:</Typography><Typography variant="body2">{h.influence}</Typography></Box>}
+                                {h.proposal && <Box sx={{ mb: 1.5 }}><Typography variant="subtitle2" color="textSecondary" fontWeight={700}>Đề xuất:</Typography><Typography variant="body2">{h.proposal}</Typography></Box>}
 
                                 {h.issues && (
                                     <Box sx={{ p: 1, bgcolor: 'error.lighter', borderRadius: 1.5, mb: 1.5 }}>
                                         <Typography variant="body2" color="error.dark" display="block" fontWeight={700}>Vướng mắc:</Typography>
                                         <Typography variant="body2" color="error.dark">{h.issues}</Typography>
+                                    </Box>
+                                )}
+
+                                {h.images && h.images.length > 0 && (
+                                    <Box sx={{ display: 'flex', gap: 1, mb: 2, overflowX: 'auto', pb: 1 }}>
+                                        {h.images.map((img, iidx) => (
+                                            <Avatar key={iidx} variant="rounded" src={getInundationImageUrl(img)} sx={{ width: 100, height: 100, borderRadius: 2, border: '1px solid', borderColor: 'divider' }} />
+                                        ))}
                                     </Box>
                                 )}
                                 <Divider sx={{ mb: 1.5 }} />

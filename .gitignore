@@ -10,3 +10,4 @@ deploy/
 docker/
 *.json
 ai_tnhn/ai-api-tnhn/main
+ai_tnhn/ai-api-tnhn/uploads/

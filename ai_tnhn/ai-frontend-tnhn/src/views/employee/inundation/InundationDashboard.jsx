@@ -48,6 +48,8 @@ import {
 import { toast } from 'react-hot-toast';
 import inundationApi from 'api/inundation';
 import organizationApi from 'api/organization';
+import authApi from 'api/auth';
+import { ADMIN_TOKEN } from 'constants/auth';
 import MainCard from 'ui-component/cards/MainCard';
 
 import { getInundationImageUrl } from 'utils/imageHelper';
@@ -700,10 +702,16 @@ const InundationDashboard = () => {
         return h > 0 ? `${h}h ${m}p` : `${m}p`;
     };
 
-    const handleLogout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('role');
-        navigate('/pages/login');
+    const handleLogout = async () => {
+        try {
+            await authApi.logout();
+        } catch (err) {
+            console.error('Logout failed:', err);
+        } finally {
+            localStorage.removeItem(ADMIN_TOKEN);
+            localStorage.removeItem('role');
+            navigate('/pages/login', { replace: true });
+        }
     };
 
     // ─── Render Logic ─────────────────────────────────────────────────────────

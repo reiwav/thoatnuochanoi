@@ -324,7 +324,11 @@ const InundationAdminList = () => {
                 p.address?.toLowerCase().includes(q)
             );
         }
-        return result;
+        return [...result].sort((a, b) => {
+            if (a.status === 'active' && b.status !== 'active') return -1;
+            if (a.status !== 'active' && b.status === 'active') return 1;
+            return 0;
+        });
     }, [points, searchQuery, statusFilter, trafficFilter]);
 
     const formatTime = (ts) => {

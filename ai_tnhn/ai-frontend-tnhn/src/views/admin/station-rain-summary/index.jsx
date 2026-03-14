@@ -201,145 +201,147 @@ const StationRainSummary = () => {
                     <Typography variant="h4" sx={{ color: 'white', fontWeight: 600 }}>Không có dữ liệu</Typography>
                 </Box>
             ) : (
-                <Grid 
-                    container 
-                    spacing={{ xs: 2, md: 3 }} 
-                    alignItems="stretch" 
-                    columns={20}
+                <Box 
+                    sx={{
+                        display: 'grid',
+                        gridTemplateColumns: {
+                            xs: 'repeat(2, 1fr)',      // 2 cards per row on mobile
+                            sm: 'repeat(3, 1fr)',      // 3 cards per row on small tablets
+                            md: 'repeat(5, 1fr)',      // 5 cards per row exactly on desktop
+                        },
+                        gap: { xs: 2, md: 3 },
+                        alignItems: 'stretch',
+                        width: '100%'
+                    }}
                 >
                     {tableData.map((row) => (
-                        <Grid item xs={10} sm={5} md={5} lg={4} xl={4} key={row.id} sx={{ display: 'flex' }}>
-                            <Card sx={{
+                        <Card key={row.id} sx={{
+                            display: 'flex', 
+                            flexDirection: 'column',
+                            height: '100%', 
+                            width: '100%',
+                            borderRadius: 4,
+                            boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            overflow: 'hidden',
+                            '&:hover': {
+                                transform: 'translateY(-8px)',
+                                boxShadow: '0 12px 24px rgba(0,0,0,0.2)',
+                            }
+                        }}>
+                            <CardContent sx={{ 
+                                textAlign: 'center', 
+                                p: { xs: 1.5, sm: 2, md: 3 }, 
+                                flexGrow: 1, 
                                 display: 'flex', 
-                                flexDirection: 'column',
-                                height: '100%', 
-                                width: '100%',
-                                maxWidth: 'none',
-                                flexGrow: 1,
-                                minWidth: 0,
-                                borderRadius: 4,
-                                boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
-                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                                border: '1px solid rgba(255,255,255,0.1)',
-                                overflow: 'hidden',
-                                '&:hover': {
-                                    transform: 'translateY(-8px)',
-                                    boxShadow: '0 12px 24px rgba(0,0,0,0.2)',
-                                }
+                                flexDirection: 'column', 
+                                justifyContent: 'space-between'
                             }}>
-                                <CardContent sx={{ 
-                                    textAlign: 'center', 
-                                    p: { xs: 1.5, sm: 2, md: 3 }, 
-                                    flexGrow: 1, 
-                                    display: 'flex', 
-                                    flexDirection: 'column', 
-                                    justifyContent: 'space-between'
-                                }}>
-                                    <Box>
-                                        <Typography 
-                                            variant="h5" 
-                                            sx={{ 
-                                                color: '#0288d1', 
-                                                fontWeight: 800, 
-                                                mb: 0.5, 
-                                                textTransform: 'uppercase', 
-                                                lineHeight: 1.2,
-                                                fontSize: { xs: '0.9rem', sm: '1.2rem' },
-                                                minHeight: '2.4em',
-                                                display: '-webkit-box',
-                                                WebkitLineClamp: 2,
-                                                WebkitBoxOrient: 'vertical',
-                                                overflow: 'hidden'
-                                            }}
-                                        >
-                                            {row.name}
-                                        </Typography>
+                                <Box>
+                                    <Typography 
+                                        variant="h5" 
+                                        sx={{ 
+                                            color: '#0288d1', 
+                                            fontWeight: 800, 
+                                            mb: 0.5, 
+                                            textTransform: 'uppercase', 
+                                            lineHeight: 1.2,
+                                            fontSize: { xs: '0.9rem', sm: '1.2rem' },
+                                            minHeight: '2.4em',
+                                            display: '-webkit-box',
+                                            WebkitLineClamp: 2,
+                                            WebkitBoxOrient: 'vertical',
+                                            overflow: 'hidden'
+                                        }}
+                                    >
+                                        {row.name}
+                                    </Typography>
 
+                                    <Typography 
+                                        variant="caption" 
+                                        sx={{ 
+                                            color: 'text.secondary', 
+                                            display: 'block',
+                                            mb: 2, 
+                                            fontWeight: 500,
+                                            fontStyle: 'italic',
+                                            minHeight: '2.8em',
+                                            lineHeight: 1.2
+                                        }}
+                                    >
+                                        {row.address}
+                                    </Typography>
+
+                                    <Box sx={{ 
+                                        display: 'inline-flex', 
+                                        alignItems: 'center', 
+                                        gap: 1, 
+                                        px: 1.5, 
+                                        py: 0.5, 
+                                        borderRadius: 2, 
+                                        bgcolor: row.isRaining ? 'rgba(76, 175, 80, 0.1)' : 'rgba(0,0,0,0.05)',
+                                        mb: 2
+                                    }}>
+                                        <Box sx={{ 
+                                            width: 8, 
+                                            height: 8, 
+                                            borderRadius: '50%', 
+                                            bgcolor: row.isRaining ? '#4caf50' : '#9e9e9e',
+                                            boxShadow: row.isRaining ? '0 0 8px #4caf50' : 'none'
+                                        }} />
                                         <Typography 
                                             variant="caption" 
                                             sx={{ 
-                                                color: 'text.secondary', 
-                                                display: 'block',
-                                                mb: 2, 
-                                                fontWeight: 500,
-                                                fontStyle: 'italic',
-                                                minHeight: '2.8em',
-                                                lineHeight: 1.2
+                                                fontWeight: 700, 
+                                                color: row.isRaining ? '#2e7d32' : 'text.secondary',
+                                                textTransform: 'uppercase'
                                             }}
                                         >
-                                            {row.address}
-                                        </Typography>
-
-                                        <Box sx={{ 
-                                            display: 'inline-flex', 
-                                            alignItems: 'center', 
-                                            gap: 1, 
-                                            px: 1.5, 
-                                            py: 0.5, 
-                                            borderRadius: 2, 
-                                            bgcolor: row.isRaining ? 'rgba(76, 175, 80, 0.1)' : 'rgba(0,0,0,0.05)',
-                                            mb: 2
-                                        }}>
-                                            <Box sx={{ 
-                                                width: 8, 
-                                                height: 8, 
-                                                borderRadius: '50%', 
-                                                bgcolor: row.isRaining ? '#4caf50' : '#9e9e9e',
-                                                boxShadow: row.isRaining ? '0 0 8px #4caf50' : 'none'
-                                            }} />
-                                            <Typography 
-                                                variant="caption" 
-                                                sx={{ 
-                                                    fontWeight: 700, 
-                                                    color: row.isRaining ? '#2e7d32' : 'text.secondary',
-                                                    textTransform: 'uppercase'
-                                                }}
-                                            >
-                                                {row.isRaining ? 'Đang mưa' : 'Không mưa'}
-                                            </Typography>
-                                        </Box>
-                                    </Box>
-
-                                    <Box sx={{ my: 2 }}>
-                                        <Typography 
-                                            variant="h2" 
-                                            sx={{ 
-                                                color: row.isRaining ? '#d32f2f' : '#1b5e20', 
-                                                fontWeight: 900, 
-                                                fontSize: { xs: '2.5rem', md: '3rem' }, 
-                                                lineHeight: 1,
-                                                fontFamily: '"Outfit", "Roboto", "Helvetica", "Arial", sans-serif'
-                                            }}
-                                        >
-                                            {row.rainSession.toFixed(1)}
-                                        </Typography>
-                                        <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', textTransform: 'uppercase' }}>
-                                            mm
+                                            {row.isRaining ? 'Đang mưa' : 'Không mưa'}
                                         </Typography>
                                     </Box>
+                                </Box>
 
-                                    <Box sx={{ 
-                                        mt: 'auto', 
-                                        pt: 2, 
-                                        borderTop: '1px dashed rgba(0,0,0,0.1)',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        gap: 0.5
-                                    }}>
-                                        <Typography variant="caption" sx={{ display: 'flex', justifyContent: 'space-between', color: 'text.secondary' }}>
-                                            <span>Bắt đầu:</span>
-                                            <span style={{ fontWeight: 600, color: '#333' }}>{row.timeStartOnly || '...'}</span>
-                                        </Typography>
-                                        <Typography variant="caption" sx={{ display: 'flex', justifyContent: 'space-between', color: 'text.secondary' }}>
-                                            <span>Kết thúc:</span>
-                                            <span style={{ fontWeight: 600, color: '#333' }}>{row.timeCurrentOnly || '...'}</span>
-                                        </Typography>
-                                    </Box>
-                                </CardContent>
-                            </Card>
-                        </Grid>
+                                <Box sx={{ my: 2 }}>
+                                    <Typography 
+                                        variant="h2" 
+                                        sx={{ 
+                                            color: row.isRaining ? '#d32f2f' : '#1b5e20', 
+                                            fontWeight: 900, 
+                                            fontSize: { xs: '2.5rem', md: '3rem' }, 
+                                            lineHeight: 1,
+                                            fontFamily: '"Outfit", "Roboto", "Helvetica", "Arial", sans-serif'
+                                        }}
+                                    >
+                                        {row.rainSession.toFixed(1)}
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', textTransform: 'uppercase' }}>
+                                        mm
+                                    </Typography>
+                                </Box>
+
+                                <Box sx={{ 
+                                    mt: 'auto', 
+                                    pt: 2, 
+                                    borderTop: '1px dashed rgba(0,0,0,0.1)',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: 0.5
+                                }}>
+                                    <Typography variant="caption" sx={{ display: 'flex', justifyContent: 'space-between', color: 'text.secondary' }}>
+                                        <span>Bắt đầu:</span>
+                                        <span style={{ fontWeight: 600, color: '#333' }}>{row.timeStartOnly || '...'}</span>
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ display: 'flex', justifyContent: 'space-between', color: 'text.secondary' }}>
+                                        <span>Kết thúc:</span>
+                                        <span style={{ fontWeight: 600, color: '#333' }}>{row.timeCurrentOnly || '...'}</span>
+                                    </Typography>
+                                </Box>
+                            </CardContent>
+                        </Card>
                     ))}
-                </Grid>
+                </Box>
             )}
             <style>
                 {`

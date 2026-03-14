@@ -252,22 +252,31 @@ const adminPages = {
       roles: ['super_admin']
     },
     {
-      id: 'employee-list',
+      id: 'tai-khoan-phan-quyen',
       title: 'Tài khoản',
-      type: 'item',
-      url: '/admin/employee',
+      type: 'collapse',
       icon: icons.IconUsers,
-      breadcrumbs: false,
-      roles: ['super_admin', 'admin_org']
-    },
-    {
-      id: 'organization-list',
-      title: 'Phân quyền',
-      type: 'item',
-      url: '/admin/organization',
-      icon: icons.IconBuilding,
-      breadcrumbs: false,
-      roles: ['super_admin']
+      roles: ['super_admin', 'admin_org'],
+      children: [
+        {
+          id: 'employee-list',
+          title: 'Tài khoản',
+          type: 'item',
+          url: '/admin/employee',
+          icon: icons.IconUsers,
+          breadcrumbs: false,
+          roles: ['super_admin', 'admin_org']
+        },
+        {
+          id: 'organization-list',
+          title: 'Phân quyền',
+          type: 'item',
+          url: '/admin/organization',
+          icon: icons.IconBuilding,
+          breadcrumbs: false,
+          roles: ['super_admin']
+        }
+      ]
     },
   ]
 };

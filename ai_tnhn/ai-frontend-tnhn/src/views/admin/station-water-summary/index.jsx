@@ -209,98 +209,100 @@ const StationWaterSummary = () => {
                     <Typography variant="h4" sx={{ color: 'white', fontWeight: 600 }}>Không có dữ liệu</Typography>
                 </Box>
             ) : (
-                <Grid 
-                    container 
-                    spacing={{ xs: 2, md: 3 }} 
-                    alignItems="stretch" 
-                    columns={20}
+                <Box 
+                    sx={{
+                        display: 'grid',
+                        gridTemplateColumns: {
+                            xs: 'repeat(2, 1fr)',      // 2 cards per row on mobile
+                            sm: 'repeat(3, 1fr)',      // 3 cards per row on small tablets
+                            md: 'repeat(5, 1fr)',      // 5 cards per row exactly on desktop
+                        },
+                        gap: { xs: 2, md: 3 },
+                        alignItems: 'stretch',
+                        width: '100%'
+                    }}
                 >
                     {activeData.map((row) => (
-                        <Grid item xs={10} sm={5} md={5} lg={4} xl={4} key={row.id} sx={{ display: 'flex' }}>
-                            <Card sx={{
+                        <Card key={row.id} sx={{
+                            display: 'flex', 
+                            flexDirection: 'column',
+                            height: '100%', 
+                            width: '100%',
+                            borderRadius: 4,
+                            boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            overflow: 'hidden',
+                            '&:hover': {
+                                transform: 'translateY(-8px)',
+                                boxShadow: '0 12px 24px rgba(0,0,0,0.2)',
+                            }
+                        }}>
+                            <CardContent sx={{ 
+                                textAlign: 'center', 
+                                p: { xs: 1.5, sm: 2, md: 3 }, 
+                                flexGrow: 1, 
                                 display: 'flex', 
-                                flexDirection: 'column',
-                                height: '100%', 
-                                width: '100%',
-                                maxWidth: 'none',
-                                flexGrow: 1,
-                                minWidth: 0,
-                                borderRadius: 4,
-                                boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
-                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                                border: '1px solid rgba(255,255,255,0.1)',
-                                overflow: 'hidden',
-                                '&:hover': {
-                                    transform: 'translateY(-8px)',
-                                    boxShadow: '0 12px 24px rgba(0,0,0,0.2)',
-                                }
+                                flexDirection: 'column', 
+                                justifyContent: 'space-between'
                             }}>
-                                <CardContent sx={{ 
-                                    textAlign: 'center', 
-                                    p: { xs: 1.5, sm: 2, md: 3 }, 
-                                    flexGrow: 1, 
-                                    display: 'flex', 
-                                    flexDirection: 'column', 
-                                    justifyContent: 'space-between'
+                                <Box>
+                                    <Typography 
+                                        variant="h5" 
+                                        sx={{ 
+                                            color: '#1a237e', 
+                                            fontWeight: 800, 
+                                            mb: 2, 
+                                            textTransform: 'uppercase', 
+                                            lineHeight: 1.2,
+                                            fontSize: { xs: '0.9rem', sm: '1.2rem' },
+                                            minHeight: '2.4em',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center'
+                                        }}
+                                    >
+                                        {row.name}
+                                    </Typography>
+                                </Box>
+
+                                <Box sx={{ my: 2 }}>
+                                    <Typography 
+                                        variant="h2" 
+                                        sx={{ 
+                                            color: '#1b5e20', 
+                                            fontWeight: 900, 
+                                            fontSize: { xs: '2.5rem', md: '3rem' }, 
+                                            lineHeight: 1,
+                                            fontFamily: '"Outfit", "Roboto", "Helvetica", "Arial", sans-serif'
+                                        }}
+                                    >
+                                        {row.level.toFixed(2)}
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', textTransform: 'uppercase' }}>
+                                        m
+                                    </Typography>
+                                </Box>
+
+                                <Box sx={{ 
+                                    mt: 'auto', 
+                                    pt: 2, 
+                                    borderTop: '1px dashed rgba(0,0,0,0.1)',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: 0.5
                                 }}>
-                                    <Box>
-                                        <Typography 
-                                            variant="h5" 
-                                            sx={{ 
-                                                color: '#1a237e', 
-                                                fontWeight: 800, 
-                                                mb: 2, 
-                                                textTransform: 'uppercase', 
-                                                lineHeight: 1.2,
-                                                fontSize: { xs: '0.9rem', sm: '1.2rem' },
-                                                minHeight: '2.4em',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center'
-                                            }}
-                                        >
-                                            {row.name}
-                                        </Typography>
-                                    </Box>
-
-                                    <Box sx={{ my: 2 }}>
-                                        <Typography 
-                                            variant="h2" 
-                                            sx={{ 
-                                                color: '#1b5e20', 
-                                                fontWeight: 900, 
-                                                fontSize: { xs: '2.5rem', md: '3rem' }, 
-                                                lineHeight: 1,
-                                                fontFamily: '"Outfit", "Roboto", "Helvetica", "Arial", sans-serif'
-                                            }}
-                                        >
-                                            {row.level.toFixed(2)}
-                                        </Typography>
-                                        <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', textTransform: 'uppercase' }}>
-                                            m
-                                        </Typography>
-                                    </Box>
-
-                                    <Box sx={{ 
-                                        mt: 'auto', 
-                                        pt: 2, 
-                                        borderTop: '1px dashed rgba(0,0,0,0.1)',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        gap: 0.5
-                                    }}>
-                                        <Typography variant="caption" sx={{ display: 'flex', justifyContent: 'center', color: 'text.secondary', fontWeight: 600 }}>
-                                            Cập nhật:
-                                        </Typography>
-                                        <Typography variant="caption" sx={{ fontWeight: 700, color: '#333' }}>
-                                            {row.time}
-                                        </Typography>
-                                    </Box>
-                                </CardContent>
-                            </Card>
-                        </Grid>
+                                    <Typography variant="caption" sx={{ display: 'flex', justifyContent: 'center', color: 'text.secondary', fontWeight: 600 }}>
+                                        Cập nhật:
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ fontWeight: 700, color: '#333' }}>
+                                        {row.time}
+                                    </Typography>
+                                </Box>
+                            </CardContent>
+                        </Card>
                     ))}
-                </Grid>
+                </Box>
             )}
         </Box>
     );

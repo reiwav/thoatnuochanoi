@@ -226,7 +226,7 @@ const OrganizationDialog = ({ open, onClose, onSubmit, organization, isEdit }) =
 
     const handleSave = () => {
         if (!formData.name) return toast.error("Vui lòng nhập Tên đơn vị");
-        if (!formData.code) return toast.error("Vui lòng nhập mã công ty");
+        if (!formData.code) return toast.error("Vui lòng nhập mã đơn vị");
         if (!formData.phone_number) return toast.error("Vui lòng nhập số điện thoại");
         if (!formData.email) return toast.error("Vui lòng nhập email");
 
@@ -264,7 +264,7 @@ const OrganizationDialog = ({ open, onClose, onSubmit, organization, isEdit }) =
         <>
             <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
                 <DialogTitle sx={{ fontWeight: 800, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    {isEdit ? 'Chỉnh sửa công ty' : 'Thêm công ty mới'}
+                    {isEdit ? 'Chỉnh sửa đơn vị' : 'Thêm đơn vị mới'}
                     <IconButton onClick={onClose} size="small"><IconX size={20} /></IconButton>
                 </DialogTitle>
                 <DialogContent dividers>
@@ -282,7 +282,7 @@ const OrganizationDialog = ({ open, onClose, onSubmit, organization, isEdit }) =
                                     sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#f8fafc' } }}
                                 />
                                 <TextField
-                                    fullWidth label="Mã công ty" required size="small"
+                                    fullWidth label="Mã đơn vị" required size="small"
                                     value={formData.code}
                                     onChange={(e) => handleChange('code', e.target.value)}
                                     disabled={isEdit}

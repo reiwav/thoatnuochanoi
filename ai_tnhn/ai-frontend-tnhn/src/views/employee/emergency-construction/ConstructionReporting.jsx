@@ -46,7 +46,7 @@ const CollapsibleProgressRow = ({ h, isMobile, handleOpenViewer, theme }) => {
                     <Collapse in={open} timeout="auto" unmountOnExit>
                         <Box sx={{ m: { xs: 1, md: 2 }, p: 3, bgcolor: 'grey.50', borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
                             <Typography variant="h5" sx={{ fontWeight: 800, color: 'primary.main', mb: 2 }}>Chi tiết báo cáo thi công</Typography>
-                            
+
                             <Grid container spacing={3}>
                                 <Grid item xs={12} md={6}>
                                     <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 700, display: 'block', mb: 0.5 }}>NỘI DUNG CÔNG VIỆC:</Typography>
@@ -61,7 +61,7 @@ const CollapsibleProgressRow = ({ h, isMobile, handleOpenViewer, theme }) => {
                                         </Box>
                                     )}
                                 </Grid>
-                                
+
                                 <Grid item xs={12} md={6}>
                                     {h.conclusion && (
                                         <Box sx={{ mb: 2, p: 2, bgcolor: 'primary.lighter', borderRadius: 2, borderLeft: '4px solid', borderColor: 'primary.main' }}>
@@ -265,11 +265,11 @@ const ConstructionReporting = () => {
                             <DatePicker
                                 label="Chọn ngày" value={historyDateFilter} onChange={(v) => { setHistoryDateFilter(v); setPage(0); }}
                                 format="DD/MM/YYYY"
-                                slotProps={{ 
-                                    textField: { 
-                                        size: 'small', 
-                                        sx: { minWidth: 180, bgcolor: 'background.paper', borderRadius: 2 } 
-                                    } 
+                                slotProps={{
+                                    textField: {
+                                        size: 'small',
+                                        sx: { minWidth: 180, bgcolor: 'background.paper', borderRadius: 2 }
+                                    }
                                 }}
                             />
                         </LocalizationProvider>
@@ -326,20 +326,20 @@ const ConstructionReporting = () => {
                                             <TableCell sx={{ fontWeight: 800 }}>Người báo cáo</TableCell>
                                             <TableCell sx={{ fontWeight: 800 }}>Ngày báo cáo</TableCell>
                                             <TableCell sx={{ fontWeight: 800 }}>Ghi chú công việc</TableCell>
-                                            <TableCell align="right" sx={{ fontWeight: 800 }}>Thao tác</TableCell>
+                                            <TableCell align="right" sx={{ fontWeight: 800, width: 150 }}>Thao tác</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
                                         {history
-                                            .filter(h => 
-                                                (historyConstructionFilter.length === 0 || historyConstructionFilter.includes(h.construction_id)) && 
+                                            .filter(h =>
+                                                (historyConstructionFilter.length === 0 || historyConstructionFilter.includes(h.construction_id)) &&
                                                 (!historyDateFilter || (h.report_date >= historyDateFilter.startOf('day').unix() && h.report_date <= historyDateFilter.endOf('day').unix()))
                                             )
                                             .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                                             .map((h, idx) => (
-                                                <CollapsibleProgressRow 
-                                                    key={idx} h={h} isMobile={isMobile} 
-                                                    handleOpenViewer={handleOpenViewer} theme={theme} 
+                                                <CollapsibleProgressRow
+                                                    key={idx} h={h} isMobile={isMobile}
+                                                    handleOpenViewer={handleOpenViewer} theme={theme}
                                                 />
                                             ))
                                         }
@@ -348,8 +348,8 @@ const ConstructionReporting = () => {
                                 <TablePagination
                                     rowsPerPageOptions={[10, 25, 50]}
                                     component="div"
-                                    count={history.filter(h => 
-                                        (historyConstructionFilter.length === 0 || historyConstructionFilter.includes(h.construction_id)) && 
+                                    count={history.filter(h =>
+                                        (historyConstructionFilter.length === 0 || historyConstructionFilter.includes(h.construction_id)) &&
                                         (!historyDateFilter || (h.report_date >= historyDateFilter.startOf('day').unix() && h.report_date <= historyDateFilter.endOf('day').unix()))
                                     ).length}
                                     rowsPerPage={rowsPerPage}
@@ -363,8 +363,8 @@ const ConstructionReporting = () => {
                     ) : (
                         /* Employee View: Timeline based */
                         <Box sx={{ px: 1 }}>
-                            {history.filter(h => 
-                                (historyConstructionFilter.length === 0 || historyConstructionFilter.includes(h.construction_id)) && 
+                            {history.filter(h =>
+                                (historyConstructionFilter.length === 0 || historyConstructionFilter.includes(h.construction_id)) &&
                                 (!historyDateFilter || (h.report_date >= historyDateFilter.startOf('day').unix() && h.report_date <= historyDateFilter.endOf('day').unix()))
                             ).map((h, idx, array) => (
                                 <Box key={idx} sx={{ display: 'flex', gap: isMobile ? 1.5 : 2, position: 'relative' }}>
@@ -380,17 +380,17 @@ const ConstructionReporting = () => {
                                     </Box>
                                     <Box sx={{ pb: 4, flex: 1, minWidth: 0 }}>
                                         <Stack direction={isMobile ? "column" : "row"} justifyContent="space-between" alignItems={isMobile ? "flex-start" : "center"} sx={{ mb: 1 }}>
-                                             <Box sx={{ flex: 1 }}>
-                                                 <Typography variant="h5" sx={{ fontWeight: 900, color: 'primary.main', mb: 0.5 }}>{h.construction_name}</Typography>
-                                                 <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', opacity: 0.9 }}>{h.order || `Báo cáo ${dayjs(h.report_date * 1000).format('DD/MM')}`}</Typography>
-                                             </Box>
-                                             <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 600, opacity: 0.8, mt: isMobile ? 0.5 : 0 }}>
-                                                 {dayjs(h.report_date * 1000).format('DD/MM/YYYY • HH:mm')}
-                                             </Typography>
+                                            <Box sx={{ flex: 1 }}>
+                                                <Typography variant="h5" sx={{ fontWeight: 900, color: 'primary.main', mb: 0.5 }}>{h.construction_name}</Typography>
+                                                <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', opacity: 0.9 }}>{h.order || `Báo cáo ${dayjs(h.report_date * 1000).format('DD/MM')}`}</Typography>
+                                            </Box>
+                                            <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 600, opacity: 0.8, mt: isMobile ? 0.5 : 0 }}>
+                                                {dayjs(h.report_date * 1000).format('DD/MM/YYYY • HH:mm')}
+                                            </Typography>
                                         </Stack>
-                                        
+
                                         <Typography variant="body1" sx={{ mb: 2, color: 'text.secondary', lineHeight: 1.6 }}>{h.work_done}</Typography>
-                                        
+
                                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8, mb: 1.5 }}>
                                             {h.location && (
                                                 <Box sx={{ px: 1.2, py: 0.5, bgcolor: 'grey.50', borderRadius: 100, border: '1px solid', borderColor: 'grey.200', display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -462,7 +462,7 @@ const ConstructionReporting = () => {
                     ) : (
                         <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <Box>
-                                <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.dark', mb: 1.5 }}>Quản lý thi công khẩn cấp</Typography>
+                                <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.dark', mb: 1.5 }}>Quản lý công trình khẩn cấp</Typography>
                                 <Stack direction="row" spacing={1.5}>
                                     <Chip label={`Tất cả (${stats.total})`} size="small" variant={activeTab === 0 ? 'filled' : 'outlined'} color="primary" onClick={() => navigate(`${basePath}/emergency-construction/dashboard`)} sx={{ fontWeight: 700, px: 1, cursor: 'pointer' }} />
                                     <Chip label={`Chưa xong (${stats.ongoing})`} size="small" color="warning" variant={activeTab === 1 ? 'filled' : 'outlined'} onClick={() => navigate(`${basePath}/emergency-construction/dashboard?activeTab=1`)} sx={{ fontWeight: 700, px: 1, cursor: 'pointer' }} />

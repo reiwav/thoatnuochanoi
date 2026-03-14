@@ -83,13 +83,13 @@ const ConstructionForm = () => {
         }
         if (editReportId) {
             if (userRole === 'employee') {
-                toast.error('Bạn không có quyền chỉnh sửa báo cáo');
+                toast.error('Bạn không có quyền chỉnh sửa Cập nhật tiến độ');
                 navigate(`${basePath}/emergency-construction/dashboard`);
                 return;
             }
             loadReportDetails();
         }
-        if (tabValue === 1) {
+        if (tabValue === 0) {
             loadHistory();
         }
     }, [constructionId, tabValue, editReportId]);
@@ -110,7 +110,7 @@ const ConstructionForm = () => {
                 setExistingImages(data.images || []);
             }
         } catch (err) {
-            toast.error('Lỗi tải thông tin báo cáo');
+            toast.error('Lỗi tải thông tin Cập nhật tiến độ');
         } finally {
             setFetching(false);
         }
@@ -127,7 +127,7 @@ const ConstructionForm = () => {
                 setHistory(data);
             }
         } catch (err) {
-            toast.error('Lỗi tải lịch sử');
+            toast.error('Lỗi tải Theo dõi tiến độ');
         } finally {
             setLoading(false);
         }
@@ -181,7 +181,7 @@ const ConstructionForm = () => {
     };
 
     const handleSubmit = async () => {
-        if (!workDone.trim()) { toast.error('Vui lòng nhập nội dung công việc báo cáo'); return; }
+        if (!workDone.trim()) { toast.error('Vui lòng nhập nội dung công việc Cập nhật tiến độ'); return; }
 
         setLoading(true);
         try {
@@ -203,12 +203,12 @@ const ConstructionForm = () => {
                 formData.append('images', image);
             });
 
-            const res = editReportId 
+            const res = editReportId
                 ? await emergencyConstructionApi.updateProgress(editReportId, formData)
                 : await emergencyConstructionApi.createProgress(formData);
 
             if (res.data) {
-                toast.success(editReportId ? 'Cập nhật báo cáo thành công' : 'Báo cáo tiến độ thành công');
+                toast.success(editReportId ? 'Cập nhật Cập nhật tiến độ thành công' : 'Cập nhật tiến độ tiến độ thành công');
                 if (editReportId) {
                     navigate(`${basePath}/emergency-construction/report-history`);
                 } else {
@@ -228,7 +228,7 @@ const ConstructionForm = () => {
                 }
             }
         } catch (err) {
-            toast.error(err.response?.data?.error || 'Lỗi gửi báo cáo');
+            toast.error(err.response?.data?.error || 'Lỗi gửi Cập nhật tiến độ');
         } finally {
             setLoading(false);
         }
@@ -312,7 +312,7 @@ const ConstructionForm = () => {
             />
 
             <Box>
-                <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1, display: 'block' }}>Hình ảnh báo cáo</Typography>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1, display: 'block' }}>Hình ảnh Cập nhật tiến độ</Typography>
                 <Box>
                     <Box component="label" sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5, border: '2px dashed', borderColor: 'divider', borderRadius: 2, p: 2, cursor: 'pointer', bgcolor: 'grey.50', transition: 'all .2s', '&:hover': { borderColor: 'primary.main', bgcolor: 'primary.lighter' } }}>
                         <input type="file" hidden multiple accept="image/*" onChange={handleImageChange} />
@@ -325,10 +325,10 @@ const ConstructionForm = () => {
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                                 {existingImages.map((img, idx) => (
                                     <Box key={idx} sx={{ position: 'relative', width: 68, height: 68 }}>
-                                        <Avatar 
-                                            variant="rounded" 
-                                            src={getInundationImageUrl(img)} 
-                                            sx={{ width: '100%', height: '100%', borderRadius: 1.5, border: '1px solid', borderColor: 'divider', cursor: 'pointer' }} 
+                                        <Avatar
+                                            variant="rounded"
+                                            src={getInundationImageUrl(img)}
+                                            sx={{ width: '100%', height: '100%', borderRadius: 1.5, border: '1px solid', borderColor: 'divider', cursor: 'pointer' }}
                                             onClick={() => handleOpenViewer(existingImages, idx)}
                                         />
                                         <IconButton
@@ -348,9 +348,9 @@ const ConstructionForm = () => {
                             <Typography variant="caption" sx={{ color: 'text.secondary', mb: 0.5, display: 'block', width: '100%' }}>Ảnh mới thêm:</Typography>
                             {imagePreviews.map((preview, idx) => (
                                 <Box key={idx} sx={{ position: 'relative', width: 68, height: 68 }}>
-                                    <Avatar 
-                                        variant="rounded" src={preview} 
-                                        sx={{ width: '100%', height: '100%', borderRadius: 1.5, border: '1px solid', borderColor: 'divider', cursor: 'zoom-in' }} 
+                                    <Avatar
+                                        variant="rounded" src={preview}
+                                        sx={{ width: '100%', height: '100%', borderRadius: 1.5, border: '1px solid', borderColor: 'divider', cursor: 'zoom-in' }}
                                         onClick={() => handleOpenLocalViewer(idx)}
                                     />
                                     <IconButton
@@ -372,7 +372,7 @@ const ConstructionForm = () => {
                 startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <IconSend size={20} />}
                 sx={{ borderRadius: 100, py: 1.5, fontWeight: 700, mt: 1 }}
             >
-                {fetching ? 'Đang tải...' : editReportId ? 'Cập nhật báo cáo' : 'Gửi Báo Cáo'}
+                {fetching ? 'Đang tải...' : editReportId ? 'Cập nhật Cập nhật tiến độ' : 'Gửi Cập nhật tiến độ'}
             </Button>
         </Stack>
     );
@@ -383,14 +383,14 @@ const ConstructionForm = () => {
             <Paper sx={{ mb: 3, p: isMobile ? 1.5 : 2, bgcolor: 'secondary.lighter', borderRadius: 3, boxShadow: 'none', border: '1px solid', borderColor: 'secondary.light' }}>
                 <Stack spacing={1}>
                     <Typography variant={isMobile ? "h4" : "h3"} color="secondary.dark" sx={{ fontWeight: 900, lineHeight: 1.2 }}>{constructionName}</Typography>
-                    <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 600 }}>Lịch sử báo cáo tiến độ chi tiết</Typography>
+                    <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 600 }}>Theo dõi tiến độ Cập nhật tiến độ tiến độ chi tiết</Typography>
                 </Stack>
             </Paper>
 
             {loading ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}><CircularProgress /></Box>
             ) : history.length === 0 ? (
-                <Typography align="center" color="textSecondary" sx={{ py: 5, fontStyle: 'italic' }}>Chưa có lịch sử báo cáo</Typography>
+                <Typography align="center" color="textSecondary" sx={{ py: 5, fontStyle: 'italic' }}>Chưa có Theo dõi tiến độ Cập nhật tiến độ</Typography>
             ) : (
                 <Box sx={{ px: 1 }}>
                     {history.map((h, idx) => (
@@ -407,14 +407,14 @@ const ConstructionForm = () => {
                             </Box>
                             <Box sx={{ pb: 3, flex: 1, minWidth: 0 }}>
                                 <Stack direction={isMobile ? "column" : "row"} justifyContent="space-between" alignItems={isMobile ? "flex-start" : "center"} sx={{ mb: 1 }}>
-                                     <Typography variant="h6" sx={{ fontWeight: 800, color: 'text.primary' }}>{h.order || `Báo cáo ${dayjs(h.report_date * 1000).format('DD/MM')}`}</Typography>
-                                     <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 600, opacity: 0.8 }}>
-                                         {dayjs(h.report_date * 1000).format('DD/MM/YYYY • HH:mm')}
-                                     </Typography>
+                                    <Typography variant="h6" sx={{ fontWeight: 800, color: 'text.primary' }}>{h.order || `Cập nhật tiến độ ${dayjs(h.report_date * 1000).format('DD/MM')}`}</Typography>
+                                    <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 600, opacity: 0.8 }}>
+                                        {dayjs(h.report_date * 1000).format('DD/MM/YYYY • HH:mm')}
+                                    </Typography>
                                 </Stack>
-                                
+
                                 <Typography variant="body1" sx={{ mb: 1.5, color: 'text.secondary', lineHeight: 1.6 }}>{h.work_done}</Typography>
-                                
+
                                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8, mb: 1.5 }}>
                                     {h.location && (
                                         <Box sx={{ px: 1.2, py: 0.5, bgcolor: 'grey.50', borderRadius: 100, border: '1px solid', borderColor: 'grey.200', display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -469,11 +469,11 @@ const ConstructionForm = () => {
                 tab={tabValue}
                 setTab={setTabValue}
                 visibleTabs={[
-                    { id: 0, label: 'Báo cáo', icon: <IconClipboardCheck size={18} /> },
-                    { id: 1, label: 'Lịch sử', icon: <IconHistory size={18} /> }
+                    { id: 0, label: 'Theo dõi tiến độ', icon: <IconHistory size={18} /> },
+                    { id: 1, label: 'Cập nhật tiến độ', icon: <IconClipboardCheck size={18} /> }
                 ]}
             />
-            {tabValue === 0 ? renderForm() : renderHistory()}
+            {tabValue === 0 ? renderHistory() : renderForm()}
 
             {/* Image Slider / Lightbox */}
             <Dialog open={viewer.open} onClose={handleCloseViewer} maxWidth="lg" PaperProps={{ sx: { bgcolor: 'black', borderRadius: 4, overflow: 'hidden', position: 'relative' } }}>

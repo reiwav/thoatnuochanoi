@@ -8,8 +8,8 @@ import {
     Dialog, DialogContent
 } from '@mui/material';
 import MainCard from 'ui-component/cards/MainCard';
-import { 
-    IconSearch, IconAlertTriangle, IconX, IconChevronUp, IconChevronDown, 
+import {
+    IconSearch, IconAlertTriangle, IconX, IconChevronUp, IconChevronDown,
     IconMapPin, IconCalendar, IconUser, IconClipboardList, IconSquare, IconCheckbox,
     IconChevronLeft, IconChevronRight, IconEdit
 } from '@tabler/icons-react';
@@ -51,9 +51,9 @@ const CollapsibleProgressRow = ({ row, handleOpenViewer, isMobile, userRole }) =
                 <TableCell align="right">
                     <Stack direction="row" spacing={1} justifyContent="flex-end">
                         {isAdmin && (
-                            <Button 
-                                size="small" 
-                                variant="outlined" 
+                            <Button
+                                size="small"
+                                variant="outlined"
                                 color="secondary"
                                 startIcon={<IconEdit size={16} />}
                                 onClick={handleEdit}
@@ -62,9 +62,9 @@ const CollapsibleProgressRow = ({ row, handleOpenViewer, isMobile, userRole }) =
                                 Sửa
                             </Button>
                         )}
-                        <Button 
-                            size="small" 
-                            variant="text" 
+                        <Button
+                            size="small"
+                            variant="text"
                             onClick={() => setOpen(!open)}
                             endIcon={open ? <IconChevronUp size={16} /> : <IconChevronDown size={16} />}
                         >
@@ -78,7 +78,7 @@ const CollapsibleProgressRow = ({ row, handleOpenViewer, isMobile, userRole }) =
                     <Collapse in={open} timeout="auto" unmountOnExit>
                         <Box sx={{ m: { xs: 1, md: 2 }, p: 3, bgcolor: 'grey.50', borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
                             <Typography variant="h5" sx={{ fontWeight: 800, color: 'primary.main', mb: 2 }}>Chi tiết báo cáo thi công</Typography>
-                            
+
                             <Grid container spacing={3}>
                                 <Grid item xs={12} md={6}>
                                     <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 700, display: 'block', mb: 0.5 }}>NỘI DUNG CÔNG VIỆC:</Typography>
@@ -93,7 +93,7 @@ const CollapsibleProgressRow = ({ row, handleOpenViewer, isMobile, userRole }) =
                                         </Box>
                                     )}
                                 </Grid>
-                                
+
                                 <Grid item xs={12} md={6}>
                                     {row.conclusion && (
                                         <Box sx={{ mb: 2, p: 2, bgcolor: 'primary.lighter', borderRadius: 2, borderLeft: '4px solid', borderColor: 'primary.main' }}>
@@ -172,11 +172,11 @@ const ConstructionProgressHistory = () => {
                 per_page: rowsPerPage,
                 query: searchQuery
             };
-            
+
             if (dateFilter) {
                 params.date = dateFilter.format('YYYY-MM-DD');
             }
-            
+
             if (constructionFilter.length > 0) {
                 params.construction_ids = constructionFilter.join(',');
             }
@@ -253,12 +253,12 @@ const ConstructionProgressHistory = () => {
                                     value={dateFilter}
                                     onChange={(val) => { setDateFilter(val); setPage(0); }}
                                     format="DD/MM/YYYY"
-                                    slotProps={{ 
-                                        textField: { 
-                                            size: 'small', 
+                                    slotProps={{
+                                        textField: {
+                                            size: 'small',
                                             fullWidth: true,
-                                            sx: { bgcolor: 'background.paper', borderRadius: 2 } 
-                                        } 
+                                            sx: { bgcolor: 'background.paper', borderRadius: 2 }
+                                        }
                                     }}
                                 />
                             </Box>
@@ -293,11 +293,11 @@ const ConstructionProgressHistory = () => {
                                 sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 }, flex: 1 }}
                             />
                             {(dateFilter || constructionFilter.length > 0 || searchQuery) && (
-                                <Button 
-                                    size="medium" 
-                                    color="error" 
+                                <Button
+                                    size="medium"
+                                    color="error"
                                     variant="outlined"
-                                    startIcon={<IconX size={16} />} 
+                                    startIcon={<IconX size={16} />}
                                     onClick={() => { setDateFilter(null); setConstructionFilter([]); setSearchQuery(''); setPage(0); }}
                                     sx={{ borderRadius: 2, height: 40, whiteSpace: 'nowrap', minWidth: 'fit-content' }}
                                 >
@@ -327,17 +327,17 @@ const ConstructionProgressHistory = () => {
                                     <TableCell sx={{ fontWeight: 800 }}>Người báo cáo</TableCell>
                                     <TableCell sx={{ fontWeight: 800 }}>Ngày báo cáo</TableCell>
                                     <TableCell sx={{ fontWeight: 800 }}>Ghi chú công việc</TableCell>
-                                    <TableCell align="right" sx={{ fontWeight: 800 }}>Thao tác</TableCell>
+                                    <TableCell align="center" sx={{ fontWeight: 800, width: 200, alignItems: 'center' }}>Thao tác</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
                                 {reports.map((row) => (
-                                    <CollapsibleProgressRow 
-                                        key={row.id} 
-                                        row={row} 
-                                        isMobile={isMobile} 
+                                    <CollapsibleProgressRow
+                                        key={row.id}
+                                        row={row}
+                                        isMobile={isMobile}
                                         userRole={userRole}
-                                        handleOpenViewer={handleOpenViewer} 
+                                        handleOpenViewer={handleOpenViewer}
                                     />
                                 ))}
                             </TableBody>
@@ -365,10 +365,10 @@ const ConstructionProgressHistory = () => {
                 <DialogContent sx={{ p: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', position: 'relative' }}>
                     {viewer.images.length > 1 && (
                         <>
-                            <IconButton onClick={() => setViewer(v => ({...v, index: (v.index - 1 + v.images.length) % v.images.length}))} sx={{ position: 'absolute', left: 16, zIndex: 10, color: 'white', bgcolor: 'rgba(0,0,0,0.3)' }}>
+                            <IconButton onClick={() => setViewer(v => ({ ...v, index: (v.index - 1 + v.images.length) % v.images.length }))} sx={{ position: 'absolute', left: 16, zIndex: 10, color: 'white', bgcolor: 'rgba(0,0,0,0.3)' }}>
                                 <IconChevronLeft size={32} />
                             </IconButton>
-                            <IconButton onClick={() => setViewer(v => ({...v, index: (v.index + 1) % v.images.length}))} sx={{ position: 'absolute', right: 16, zIndex: 10, color: 'white', bgcolor: 'rgba(0,0,0,0.3)' }}>
+                            <IconButton onClick={() => setViewer(v => ({ ...v, index: (v.index + 1) % v.images.length }))} sx={{ position: 'absolute', right: 16, zIndex: 10, color: 'white', bgcolor: 'rgba(0,0,0,0.3)' }}>
                                 <IconChevronRight size={32} />
                             </IconButton>
                         </>

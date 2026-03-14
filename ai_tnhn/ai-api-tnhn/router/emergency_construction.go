@@ -18,7 +18,9 @@ func (h HandlerFuncs) EmergencyConstructionRoutes(rg *gin.RouterGroup, mid middl
 		group.PUT("/:id", handler.Update)
 		group.DELETE("/:id", handler.Delete)
 		group.GET("/:id/history", handler.GetHistory)
+		group.GET("/progress/:id", handler.GetProgressByID)
 		group.POST("/progress", handler.ReportProgress)
+		group.PUT("/progress/:id", handler.UpdateProgress)
 		group.GET("/:id/progress", handler.GetProgressHistory)
 	}
 }

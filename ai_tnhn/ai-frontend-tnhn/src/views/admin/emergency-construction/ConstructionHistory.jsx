@@ -73,15 +73,14 @@ const ConstructionHistory = () => {
             <Box sx={{ mb: 3 }}>
                 <TextField
                     fullWidth
-                    size="small"
+                    size={isMobile ? "medium" : "small"}
                     placeholder="Tìm kiếm theo ghi chú, tên công trình..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    sx={{ maxWidth: isMobile ? '100%' : 400, bgcolor: 'background.paper', borderRadius: 2 }}
                     InputProps={{
                         startAdornment: (
                             <InputAdornment position="start">
-                                <IconSearch size={18} />
+                                <IconSearch size={20} sx={{ color: 'text.disabled', mr: 1, ml: 0.5 }} />
                             </InputAdornment>
                         ),
                         endAdornment: searchQuery && (
@@ -90,19 +89,21 @@ const ConstructionHistory = () => {
                                     <IconX size={16} />
                                 </IconButton>
                             </InputAdornment>
-                        )
+                        ),
+                        sx: { borderRadius: 3, fontWeight: 600 }
                     }}
+                    sx={{ maxWidth: isMobile ? '100%' : 400, bgcolor: 'background.paper' }}
                 />
             </Box>
-            <TableContainer component={Paper} sx={{ border: '1px solid', borderColor: 'divider', boxShadow: 'none', borderRadius: '12px' }}>
+            <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, overflow: 'hidden' }}>
                 <Table>
                     <TableHead sx={{ bgcolor: 'grey.50' }}>
                         <TableRow>
-                            <TableCell sx={{ fontWeight: 700 }}>Thời gian</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }}>Thao tác</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }}>Thay đổi trạng thái</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }}>Ghi chú</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }}>Người thực hiện</TableCell>
+                            <TableCell sx={{ fontWeight: 800 }}>Thời gian</TableCell>
+                            <TableCell sx={{ fontWeight: 800 }}>Thao tác</TableCell>
+                            <TableCell sx={{ fontWeight: 800 }}>Thay đổi trạng thái</TableCell>
+                            <TableCell sx={{ fontWeight: 800 }}>Ghi chú</TableCell>
+                            <TableCell sx={{ fontWeight: 800 }}>Người thực hiện</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>

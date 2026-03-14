@@ -6,6 +6,7 @@ import (
 	"ai-api-tnhn/internal/service/emergency_construction"
 	"ai-api-tnhn/utils/web"
 	"encoding/json"
+	"fmt"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -113,12 +114,42 @@ func (h *EmergencyConstructionHandler) GetHistory(c *gin.Context) {
 	h.SendData(c, history)
 }
 
+func (h *EmergencyConstructionHandler) GetProgressByID(c *gin.Context) {
+	client := h.GetTokenFromContext(c)
+	if client.Role == "employee" {
+		web.AssertNil(web.Forbidden("Bạn không có quyền xem chi tiết báo cáo này"))
+		return
+	}
+
+	id := c.Param("id")
+	progress, err := h.service.GetProgressByID(c.Request.Context(), id)
+	web.AssertNil(err)
+	h.SendData(c, progress)
+}
+
 func (h *EmergencyConstructionHandler) ReportProgress(c *gin.Context) {
-	// Check if multipart form
+	h.handleProgress(c, "")
+}
+
+func (h *EmergencyConstructionHandler) UpdateProgress(c *gin.Context) {
+	client := h.GetTokenFromContext(c)
+	if client.Role == "employee" {
+		web.AssertNil(web.Forbidden("Bạn không có quyền chỉnh sửa báo cáo này"))
+		return
+	}
+
+	id := c.Param("id")
+	h.handleProgress(c, id)
+}
+
+func (h *EmergencyConstructionHandler) handleProgress(c *gin.Context, id string) {
 	var item models.EmergencyConstructionProgress
 	var images []emergency_construction.ImageContent
 
-	if contentType := c.GetHeader("Content-Type"); len(contentType) >= 19 && contentType[:19] == "multipart/form-data" {
+	contentType := c.GetHeader("Content-Type")
+	isMultipart := len(contentType) >= 19 && contentType[:19] == "multipart/form-data"
+
+	if isMultipart {
 		form, err := c.MultipartForm()
 		if err != nil {
 			web.AssertNil(web.BadRequest(err.Error()))
@@ -148,6 +179,11 @@ func (h *EmergencyConstructionHandler) ReportProgress(c *gin.Context) {
 			_ = json.Unmarshal([]byte(tasksStr), &item.Tasks)
 		}
 
+		if existingImagesStr := c.PostForm("existing_images"); existingImagesStr != "" {
+			_ = json.Unmarshal([]byte(existingImagesStr), &item.Images)
+			fmt.Printf("DEBUG: Found %d existing images in update request\n", len(item.Images))
+		}
+
 		// Handle images
 		files := form.File["images"]
 		for _, fileHeader := range files {
@@ -172,7 +208,13 @@ func (h *EmergencyConstructionHandler) ReportProgress(c *gin.Context) {
 	userID := h.GetTokenFromContext(c).UserID
 	item.ReportedBy = userID
 
-	err := h.service.ReportProgress(c.Request.Context(), &item, images)
+	var err error
+	if id == "" {
+		err = h.service.ReportProgress(c.Request.Context(), &item, images)
+	} else {
+		err = h.service.UpdateProgress(c.Request.Context(), id, &item, images)
+	}
+
 	web.AssertNil(err)
 	h.SendData(c, item)
 }

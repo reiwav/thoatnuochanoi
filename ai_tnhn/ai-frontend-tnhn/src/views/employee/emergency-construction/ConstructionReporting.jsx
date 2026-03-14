@@ -1,14 +1,15 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation, useOutletContext } from 'react-router-dom';
 import {
     Box, Typography, Paper, Table, TableBody,
     TableCell, TableContainer, TableHead, TableRow,
-    Button, CircularProgress, Chip,
+    Button, CircularProgress, Chip, Grid,
     Stack, Tab, Tabs, Tooltip, useMediaQuery, Card, CardContent, Divider,
-    Avatar, List, ListItem, ListItemIcon, ListItemText, TextField, IconButton, Dialog, DialogContent, Autocomplete, Checkbox
+    Avatar, List, ListItem, ListItemIcon, ListItemText, TextField, IconButton, Dialog, DialogContent, Autocomplete, Checkbox,
+    TablePagination, Collapse
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { IconClipboardCheck, IconHistory, IconChevronRight, IconUser, IconLogout, IconSearch, IconX, IconRefresh, IconMapPin, IconChevronLeft, IconChevronDown, IconSquare, IconCheckbox } from '@tabler/icons-react';
+import { IconClipboardCheck, IconHistory, IconChevronRight, IconUser, IconLogout, IconSearch, IconX, IconRefresh, IconMapPin, IconChevronLeft, IconChevronDown, IconSquare, IconCheckbox, IconChevronUp } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 import emergencyConstructionApi from 'api/emergencyConstruction';
 import authApi from 'api/auth';
@@ -19,6 +20,86 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import 'dayjs/locale/vi';
 import dayjs from 'dayjs';
 import { getInundationImageUrl } from 'utils/imageHelper';
+
+const CollapsibleProgressRow = ({ h, isMobile, handleOpenViewer, theme }) => {
+    const [open, setOpen] = useState(false);
+
+    return (
+        <React.Fragment>
+            <TableRow hover sx={{ '& .MuiTableCell-root': { borderBottom: 'none' } }}>
+                <TableCell sx={{ width: 40, p: { xs: 1, md: 2 } }}>
+                    <IconButton aria-label="expand row" size="small" onClick={() => setOpen(!open)}>
+                        {open ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />}
+                    </IconButton>
+                </TableCell>
+                <TableCell sx={{ fontWeight: 700, p: { xs: 1, md: 2 } }}>{h.construction_name}</TableCell>
+                <TableCell>{h.order || '-'}</TableCell>
+                <TableCell>{h.reporter_name || '-'}</TableCell>
+                <TableCell>{dayjs(h.report_date * 1000).format('DD/MM/YYYY • HH:mm')}</TableCell>
+                <TableCell sx={{ maxWidth: 300, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{h.work_done}</TableCell>
+                <TableCell align="right">
+                    <Button size="small" variant="text" onClick={() => setOpen(!open)}>Chi tiết</Button>
+                </TableCell>
+            </TableRow>
+            <TableRow>
+                <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider', paddingBottom: 0, paddingTop: 0 }} colSpan={7}>
+                    <Collapse in={open} timeout="auto" unmountOnExit>
+                        <Box sx={{ m: { xs: 1, md: 2 }, p: 3, bgcolor: 'grey.50', borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+                            <Typography variant="h5" sx={{ fontWeight: 800, color: 'primary.main', mb: 2 }}>Chi tiết báo cáo thi công</Typography>
+                            
+                            <Grid container spacing={3}>
+                                <Grid item xs={12} md={6}>
+                                    <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 700, display: 'block', mb: 0.5 }}>NỘI DUNG CÔNG VIỆC:</Typography>
+                                    <Typography variant="body1" sx={{ mb: 2, lineHeight: 1.6 }}>{h.work_done}</Typography>
+
+                                    {h.location && (
+                                        <Box sx={{ mb: 2 }}>
+                                            <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 700, display: 'block', mb: 0.5 }}>VỊ TRÍ:</Typography>
+                                            <Typography variant="body2" sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                <IconMapPin size={16} /> {h.location}
+                                            </Typography>
+                                        </Box>
+                                    )}
+                                </Grid>
+                                
+                                <Grid item xs={12} md={6}>
+                                    {h.conclusion && (
+                                        <Box sx={{ mb: 2, p: 2, bgcolor: 'primary.lighter', borderRadius: 2, borderLeft: '4px solid', borderColor: 'primary.main' }}>
+                                            <Typography variant="caption" color="primary.dark" fontWeight={900} display="block" sx={{ mb: 0.5 }}>KẾT LUẬN:</Typography>
+                                            <Typography variant="body2" sx={{ fontWeight: 500 }}>{h.conclusion}</Typography>
+                                        </Box>
+                                    )}
+
+                                    {h.issues && (
+                                        <Box sx={{ mb: 2, p: 2, bgcolor: 'error.lighter', borderRadius: 2, borderLeft: '4px solid', borderColor: 'error.main' }}>
+                                            <Typography variant="caption" color="error.dark" fontWeight={900} display="block" sx={{ mb: 0.5 }}>VƯỚNG MẮC:</Typography>
+                                            <Typography variant="body2" sx={{ fontWeight: 500 }}>{h.issues}</Typography>
+                                        </Box>
+                                    )}
+                                </Grid>
+
+                                {h.images && h.images.length > 0 && (
+                                    <Grid item xs={12}>
+                                        <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 700, display: 'block', mb: 1 }}>HÌNH ẢNH HIỆN TRƯỜNG:</Typography>
+                                        <Box sx={{ display: 'flex', gap: 1.5, overflowX: 'auto', pb: 1, '&::-webkit-scrollbar': { height: 4 }, '&::-webkit-scrollbar-thumb': { bgcolor: 'grey.300', borderRadius: 4 } }}>
+                                            {h.images.map((img, iidx) => (
+                                                <Box
+                                                    key={iidx} component="img" src={getInundationImageUrl(img)}
+                                                    onClick={(e) => { e.stopPropagation(); handleOpenViewer(h.images, iidx); }}
+                                                    sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover', border: '1px solid', borderColor: 'divider', cursor: 'zoom-in', transition: 'transform .2s', flexShrink: 0, '&:hover': { transform: 'scale(1.05)', zIndex: 2 } }}
+                                                />
+                                            ))}
+                                        </Box>
+                                    </Grid>
+                                )}
+                            </Grid>
+                        </Box>
+                    </Collapse>
+                </TableCell>
+            </TableRow>
+        </React.Fragment>
+    );
+};
 
 const ConstructionReporting = () => {
     const theme = useTheme();
@@ -40,6 +121,8 @@ const ConstructionReporting = () => {
     const [userOrgId, setUserOrgId] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [viewer, setViewer] = useState({ open: false, images: [], index: 0 });
+    const [page, setPage] = useState(0);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
 
     const userRole = localStorage.getItem('role') || 'employee';
     const isEmployee = userRole === 'employee' || userRole === 'technician';
@@ -180,7 +263,7 @@ const ConstructionReporting = () => {
                     <Box sx={{ display: 'flex', gap: 2, mb: 4, flexWrap: 'wrap', alignItems: 'center', bgcolor: 'grey.50', p: 2, borderRadius: 3, border: '1px solid', borderColor: 'grey.200' }}>
                         <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
                             <DatePicker
-                                label="Chọn ngày" value={historyDateFilter} onChange={(v) => setHistoryDateFilter(v)}
+                                label="Chọn ngày" value={historyDateFilter} onChange={(v) => { setHistoryDateFilter(v); setPage(0); }}
                                 format="DD/MM/YYYY"
                                 slotProps={{ 
                                     textField: { 
@@ -198,7 +281,7 @@ const ConstructionReporting = () => {
                             disableCloseOnSelect
                             getOptionLabel={(option) => option.name}
                             value={constructions.filter(c => historyConstructionFilter.includes(c.id))}
-                            onChange={(_, newValue) => setHistoryConstructionFilter(newValue.map(v => v.id))}
+                            onChange={(_, newValue) => { setHistoryConstructionFilter(newValue.map(v => v.id)); setPage(0); }}
                             renderInput={(params) => (
                                 <TextField {...params} label="Chọn công trình" placeholder="Tìm kiếm..." sx={{ minWidth: 300, bgcolor: 'background.paper', borderRadius: 2 }} />
                             )}
@@ -220,7 +303,7 @@ const ConstructionReporting = () => {
                         />
 
                         {(historyDateFilter || historyConstructionFilter.length > 0) && (
-                            <Button size="small" color="error" startIcon={<IconX size={16} />} onClick={() => { setHistoryDateFilter(null); setHistoryConstructionFilter([]); }}>
+                            <Button size="small" color="error" startIcon={<IconX size={16} />} onClick={() => { setHistoryDateFilter(null); setHistoryConstructionFilter([]); setPage(0); }}>
                                 Xóa bộ lọc
                             </Button>
                         )}
@@ -230,7 +313,55 @@ const ConstructionReporting = () => {
                         <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>
                     ) : (history.length === 0) ? (
                         <Typography color="textSecondary" align="center" sx={{ py: 4, fontStyle: 'italic' }}>Chưa có báo cáo nào được ghi nhận.</Typography>
+                    ) : !isEmployee ? (
+                        /* Admin View: Table based */
+                        <Box>
+                            <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, overflow: 'hidden' }}>
+                                <Table>
+                                    <TableHead sx={{ bgcolor: 'grey.50' }}>
+                                        <TableRow>
+                                            <TableCell sx={{ width: 40 }} />
+                                            <TableCell sx={{ fontWeight: 800 }}>Tên công trình</TableCell>
+                                            <TableCell sx={{ fontWeight: 800 }}>Lệnh / Lần báo cáo</TableCell>
+                                            <TableCell sx={{ fontWeight: 800 }}>Người báo cáo</TableCell>
+                                            <TableCell sx={{ fontWeight: 800 }}>Ngày báo cáo</TableCell>
+                                            <TableCell sx={{ fontWeight: 800 }}>Ghi chú công việc</TableCell>
+                                            <TableCell align="right" sx={{ fontWeight: 800 }}>Thao tác</TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {history
+                                            .filter(h => 
+                                                (historyConstructionFilter.length === 0 || historyConstructionFilter.includes(h.construction_id)) && 
+                                                (!historyDateFilter || (h.report_date >= historyDateFilter.startOf('day').unix() && h.report_date <= historyDateFilter.endOf('day').unix()))
+                                            )
+                                            .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                                            .map((h, idx) => (
+                                                <CollapsibleProgressRow 
+                                                    key={idx} h={h} isMobile={isMobile} 
+                                                    handleOpenViewer={handleOpenViewer} theme={theme} 
+                                                />
+                                            ))
+                                        }
+                                    </TableBody>
+                                </Table>
+                                <TablePagination
+                                    rowsPerPageOptions={[10, 25, 50]}
+                                    component="div"
+                                    count={history.filter(h => 
+                                        (historyConstructionFilter.length === 0 || historyConstructionFilter.includes(h.construction_id)) && 
+                                        (!historyDateFilter || (h.report_date >= historyDateFilter.startOf('day').unix() && h.report_date <= historyDateFilter.endOf('day').unix()))
+                                    ).length}
+                                    rowsPerPage={rowsPerPage}
+                                    page={page}
+                                    onPageChange={(_, newPage) => setPage(newPage)}
+                                    onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+                                    labelRowsPerPage="Dòng mỗi trang:"
+                                />
+                            </TableContainer>
+                        </Box>
                     ) : (
+                        /* Employee View: Timeline based */
                         <Box sx={{ px: 1 }}>
                             {history.filter(h => 
                                 (historyConstructionFilter.length === 0 || historyConstructionFilter.includes(h.construction_id)) && 

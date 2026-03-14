@@ -1,51 +1,24 @@
-import { useState } from 'react';
-import { Box, Tab, Tabs, Typography } from '@mui/material';
+import { Box, Typography, Stack } from '@mui/material';
+import { IconAlertTriangle } from '@tabler/icons-react';
 import MainCard from 'ui-component/cards/MainCard';
 import ConstructionList from './ConstructionList';
-import ConstructionHistory from './ConstructionHistory';
-
-function TabPanel(props) {
-    const { children, value, index, ...other } = props;
-
-    return (
-        <div
-            role="tabpanel"
-            hidden={value !== index}
-            id={`simple-tabpanel-${index}`}
-            aria-labelledby={`simple-tab-${index}`}
-            {...other}
-        >
-            {value === index && (
-                <Box sx={{ p: 3 }}>
-                    {children}
-                </Box>
-            )}
-        </div>
-    );
-}
 
 const EmergencyConstruction = () => {
-    const [value, setValue] = useState(0);
-
-    const handleChange = (event, newValue) => {
-        setValue(newValue);
-    };
-
     return (
-        <MainCard title="Quản lý công trình khẩn cấp">
-            <Box sx={{ width: '100%' }}>
-                <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                    <Tabs value={value} onChange={handleChange} aria-label="emergency construction tabs">
-                        <Tab label="Danh sách công trình" />
-                        <Tab label="Lịch sử thay đổi" />
-                    </Tabs>
+        <MainCard 
+            title={
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                        <IconAlertTriangle size={24} color="#f44336" />
+                        <Typography variant="h3" sx={{ fontWeight: 800 }}>Công trình khẩn cấp</Typography>
+                    </Stack>
                 </Box>
-                <TabPanel value={value} index={0}>
+            }
+        >
+            <Box sx={{ width: '100%' }}>
+                <Box sx={{ p: 3 }}>
                     <ConstructionList />
-                </TabPanel>
-                <TabPanel value={value} index={1}>
-                    <ConstructionHistory />
-                </TabPanel>
+                </Box>
             </Box>
         </MainCard>
     );

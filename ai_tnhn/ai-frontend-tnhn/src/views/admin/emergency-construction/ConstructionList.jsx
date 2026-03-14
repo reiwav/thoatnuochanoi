@@ -1,95 +1,118 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     Box, Button, Grid, TextField, Table, TableBody,
     TableCell, TableContainer, TableHead, TableRow, Paper,
     IconButton, CircularProgress, TablePagination, Typography, Chip, Tooltip, Stack,
-    Collapse, useTheme, useMediaQuery
+    Collapse, useTheme, useMediaQuery, MenuItem
 } from '@mui/material';
-import { IconTrash, IconPlus, IconEdit, IconSearch, IconChevronDown, IconChevronUp } from '@tabler/icons-react';
+import { IconTrash, IconPlus, IconEdit, IconSearch, IconChevronDown, IconChevronUp, IconMapPin, IconCalendar, IconUser, IconAlertTriangle } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 import emergencyConstructionApi from 'api/emergencyConstruction';
 import ConstructionDialog from './ConstructionDialog';
 import organizationApi from 'api/organization';
 
-const ConstructionRow = ({ row, handleOpenEdit, handleDelete, orgs, getStatusChip, isMobile, userRole }) => {
+const CollapsibleConstructionRow = ({ row, handleOpenEdit, handleDelete, orgs, getStatusChip, isMobile, userRole, navigate }) => {
     const [open, setOpen] = useState(false);
 
+    if (isMobile) {
+        return (
+            <Box sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 3, border: '1px solid', borderColor: 'divider', mb: 2 }}>
+                <Stack spacing={1.5}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ gap: 1 }}>
+                        <Box sx={{ flex: 1 }}>
+                            <Typography variant="h5" sx={{ fontWeight: 900, color: 'primary.dark', lineHeight: 1.2, mb: 1 }}>{row.name}</Typography>
+                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                {getStatusChip(row.status)}
+                                <Chip label={orgs[row.org_id] || 'Đơn vị quản lý'} size="small" variant="outlined" sx={{ fontWeight: 700, fontSize: '0.75rem' }} />
+                            </Box>
+                        </Box>
+                        <IconButton size="small" onClick={() => setOpen(!open)} sx={{ mt: -0.5, mr: -0.5 }}>
+                            {open ? <IconChevronUp size={24} /> : <IconChevronDown size={24} />}
+                        </IconButton>
+                    </Stack>
+
+                    <Collapse in={open} timeout="auto" unmountOnExit>
+                        <Box sx={{ mt: 2, pt: 2, borderTop: '1px dashed', borderColor: 'divider' }}>
+                            <Box sx={{ mb: 2 }}>
+                                <Typography variant="caption" color="text.secondary" display="block" sx={{ fontWeight: 700, mb: 0.5 }}>VỊ TRÍ:</Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 700, color: 'primary.dark', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                    <IconMapPin size={16} /> {row.location || '-'}
+                                </Typography>
+                            </Box>
+                            
+                            <Box sx={{ mb: 2 }}>
+                                <Typography variant="caption" color="text.secondary" display="block" sx={{ fontWeight: 700, mb: 0.5 }}>THỜI GIAN:</Typography>
+                                <Stack direction="row" spacing={2}>
+                                    <Box>
+                                        <Typography variant="caption" color="textSecondary">Bắt đầu:</Typography>
+                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{new Date(row.start_date * 1000).toLocaleDateString('vi-VN')}</Typography>
+                                    </Box>
+                                    <Box>
+                                        <Typography variant="caption" color="textSecondary">Kết thúc:</Typography>
+                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{new Date(row.end_date * 1000).toLocaleDateString('vi-VN')}</Typography>
+                                    </Box>
+                                </Stack>
+                            </Box>
+
+
+                            <Stack direction="row" justifyContent="flex-end" spacing={1} sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+                                <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}><IconEdit size={20} /></IconButton>
+                                <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}><IconTrash size={20} /></IconButton>
+                            </Stack>
+                        </Box>
+                    </Collapse>
+                </Stack>
+            </Box>
+        );
+    }
+
     return (
-        <>
-            <TableRow hover>
-                {isMobile && (
-                    <TableCell padding="checkbox">
-                        <IconButton size="small" onClick={() => setOpen(!open)}>
-                            {open ? <IconChevronUp /> : <IconChevronDown />}
-                        </IconButton>
-                    </TableCell>
-                )}
-                <TableCell sx={{ fontWeight: 600 }}>{row.name}</TableCell>
-                {!isMobile && <TableCell>{row.location}</TableCell>}
-                {!isMobile && (
-                    <TableCell>
-                        <Typography variant="body2">{new Date(row.start_date * 1000).toLocaleDateString('vi-VN')}</Typography>
-                        <Typography variant="caption" color="textSecondary">Đến: {new Date(row.end_date * 1000).toLocaleDateString('vi-VN')}</Typography>
-                    </TableCell>
-                )}
-                {!isMobile && userRole === 'super_admin' && <TableCell>{orgs[row.org_id] || row.org_id}</TableCell>}
-                {!isMobile && <TableCell>{getStatusChip(row.status)}</TableCell>}
-                <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                    <Tooltip title="Chỉnh sửa">
-                        <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>
-                            <IconEdit size={20} />
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Xóa">
-                        <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}>
-                            <IconTrash size={20} />
-                        </IconButton>
-                    </Tooltip>
+        <React.Fragment>
+            <TableRow hover sx={{ '& .MuiTableCell-root': { borderBottom: 'none' } }}>
+                <TableCell sx={{ width: 40 }}>
+                    <IconButton aria-label="expand row" size="small" onClick={() => setOpen(!open)}>
+                        {open ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />}
+                    </IconButton>
+                </TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>{row.name}</TableCell>
+                <TableCell>{orgs[row.org_id] || row.org_id}</TableCell>
+                <TableCell>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{new Date(row.start_date * 1000).toLocaleDateString('vi-VN')}</Typography>
+                    <Typography variant="caption" color="textSecondary">Đến: {new Date(row.end_date * 1000).toLocaleDateString('vi-VN')}</Typography>
+                </TableCell>
+                <TableCell align="center">{getStatusChip(row.status)}</TableCell>
+                <TableCell align="right">
+                    <Stack direction="row" spacing={1} justifyContent="flex-end">
+                        <Tooltip title="Chỉnh sửa"><IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}><IconEdit size={18} /></IconButton></Tooltip>
+                        <Tooltip title="Xóa"><IconButton color="error" size="small" onClick={() => handleDelete(row.id)}><IconTrash size={18} /></IconButton></Tooltip>
+                    </Stack>
                 </TableCell>
             </TableRow>
-            {isMobile && (
-                <TableRow>
-                    <TableCell style={{ padding: 0 }} colSpan={3}>
-                        <Collapse in={open} timeout="auto" unmountOnExit>
-                            <Box sx={{ margin: 0, backgroundColor: 'grey.50', p: 2 }}>
-                                <Typography variant="subtitle2" gutterBottom component="div" sx={{ color: 'primary.main', fontWeight: 600 }}>
-                                    Chi tiết công trình
-                                </Typography>
-                                <Table size="small" aria-label="details">
-                                    <TableBody>
-                                        <TableRow>
-                                            <TableCell component="th" scope="row" sx={{ fontWeight: 600, width: '40%', borderBottom: 'none' }}>Vị trí</TableCell>
-                                            <TableCell sx={{ borderBottom: 'none' }}>{row.location}</TableCell>
-                                        </TableRow>
-                                        <TableRow>
-                                            <TableCell component="th" scope="row" sx={{ fontWeight: 600, borderBottom: 'none' }}>Thời gian</TableCell>
-                                            <TableCell sx={{ borderBottom: 'none' }}>
-                                                <Typography variant="body2">{new Date(row.start_date * 1000).toLocaleDateString('vi-VN')}</Typography>
-                                                <Typography variant="caption" color="textSecondary">Đến: {new Date(row.end_date * 1000).toLocaleDateString('vi-VN')}</Typography>
-                                            </TableCell>
-                                        </TableRow>
-                                        {userRole === 'super_admin' && (
-                                            <TableRow>
-                                                <TableCell component="th" scope="row" sx={{ fontWeight: 600, borderBottom: 'none' }}>Đơn vị quản lý</TableCell>
-                                                <TableCell sx={{ borderBottom: 'none' }}>{orgs[row.org_id] || row.org_id}</TableCell>
-                                            </TableRow>
-                                        )}
-                                        <TableRow>
-                                            <TableCell component="th" scope="row" sx={{ fontWeight: 600, borderBottom: 'none' }}>Trạng thái</TableCell>
-                                            <TableCell sx={{ borderBottom: 'none' }}>{getStatusChip(row.status)}</TableCell>
-                                        </TableRow>
-                                    </TableBody>
-                                </Table>
-                            </Box>
-                        </Collapse>
-                    </TableCell>
-                </TableRow>
-            )}
-        </>
+            <TableRow>
+                <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider', py: 0 }} colSpan={6}>
+                    <Collapse in={open} timeout="auto" unmountOnExit>
+                        <Box sx={{ m: 2, p: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                            <Grid container spacing={3}>
+                                <Grid item xs={12} md={6}>
+                                    <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 700, display: 'block', mb: 0.5 }}>VỊ TRÍ THI CÔNG:</Typography>
+                                    <Typography variant="body1" sx={{ fontWeight: 600, color: 'primary.dark' }}>{row.location || 'Chưa cập nhật'}</Typography>
+                                </Grid>
+                                <Grid item xs={12} md={6}>
+                                    <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 700, display: 'block', mb: 0.5 }}>MÔ TẢ CÔNG VIỆC:</Typography>
+                                    <Typography variant="body2">{row.description || 'Không có mô tả'}</Typography>
+                                </Grid>
+                            </Grid>
+                        </Box>
+                    </Collapse>
+                </TableCell>
+            </TableRow>
+        </React.Fragment>
     );
 };
 
 const ConstructionList = () => {
+    const navigate = useNavigate();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const userRole = localStorage.getItem('role');
@@ -193,41 +216,48 @@ const ConstructionList = () => {
                 </Button>
             </Stack>
 
-            <Grid container spacing={2} sx={{ mb: 3 }} alignItems="center">
-                <Grid item xs={12} sm={8} md={4}>
-                    <TextField fullWidth label="Tên công trình" value={filterInputs.name}
-                        onChange={(e) => setFilterInputs({ ...filterInputs, name: e.target.value })}
-                        size="small" sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }} />
-                </Grid>
-                <Grid item xs={12} sm={4} md={3}>
-                    <Button fullWidth variant="contained" color="primary" startIcon={<IconSearch size={20} />}
-                        onClick={handleSearch} sx={{ borderRadius: '10px' }}>
-                        Tìm kiếm
-                    </Button>
-                </Grid>
-            </Grid>
+            <Stack direction={isMobile ? "column" : "row"} spacing={1.5} sx={{ mb: 3 }}>
+                <TextField 
+                    fullWidth 
+                    size={isMobile ? "medium" : "small"} 
+                    placeholder="Tìm tên công trình, địa chỉ..." 
+                    value={filterInputs.name}
+                    onChange={(e) => setFilterInputs({ ...filterInputs, name: e.target.value })}
+                    InputProps={{ 
+                        startAdornment: <IconSearch size={20} sx={{ color: 'text.disabled', mr: 1, ml: 0.5 }} />,
+                        sx: { borderRadius: 3, fontWeight: 600 }
+                    }}
+                />
+                <TextField
+                    select
+                    fullWidth
+                    size={isMobile ? "medium" : "small"}
+                    label="Trạng thái"
+                    value={filterInputs.status}
+                    onChange={(e) => setFilterInputs({ ...filterInputs, status: e.target.value })}
+                    InputProps={{ sx: { borderRadius: 3, fontWeight: 600 } }}
+                    sx={{ maxWidth: isMobile ? '100%' : 200 }}
+                >
+                    <MenuItem value="">Tất cả</MenuItem>
+                    <MenuItem value="planned">Dự kiến</MenuItem>
+                    <MenuItem value="ongoing">Đang thi công</MenuItem>
+                    <MenuItem value="completed">Hoàn thành</MenuItem>
+                    <MenuItem value="suspended">Tạm dừng</MenuItem>
+                </TextField>
+                <Button 
+                    variant="contained" color="primary" sx={{ borderRadius: 3, px: 4, fontWeight: 700, height: isMobile ? 48 : 40 }}
+                    onClick={handleSearch}
+                >
+                    Lọc
+                </Button>
+            </Stack>
 
-            <TableContainer component={Paper} sx={{ border: '1px solid', borderColor: 'divider', boxShadow: 'none', borderRadius: '12px' }}>
-                <Table>
-                    <TableHead sx={{ bgcolor: 'grey.50' }}>
-                        <TableRow>
-                            {isMobile && <TableCell width="40px" />}
-                            <TableCell sx={{ fontWeight: 700 }}>Tên công trình</TableCell>
-                            {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Vị trí</TableCell>}
-                            {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Thời gian</TableCell>}
-                            {!isMobile && userRole === 'super_admin' && <TableCell sx={{ fontWeight: 700 }}>Đơn vị quản lý</TableCell>}
-                            {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>}
-                            <TableCell align="right" sx={{ fontWeight: 700 }}>Thao tác</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {loading ? (
-                            <TableRow><TableCell colSpan={isMobile ? 3 : 7} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
-                        ) : items.length === 0 ? (
-                            <TableRow><TableCell colSpan={isMobile ? 3 : 7} align="center" sx={{ py: 3 }}>Không tìm thấy công trình</TableCell></TableRow>
-                        ) : (
+            {isMobile ? (
+                <Stack spacing={2} sx={{ mb: 4 }}>
+                    {loading ? [1, 2, 3].map(i => <Box key={i} sx={{ height: 140, bgcolor: 'grey.100', borderRadius: 3, animation: 'pulse 1.5s infinite' }} />) :
+                        items.length === 0 ? <Typography align="center" color="textSecondary" sx={{ py: 4 }}>Không tìm thấy công trình nào</Typography> :
                             items.map((row) => (
-                                <ConstructionRow
+                                <CollapsibleConstructionRow
                                     key={row.id}
                                     row={row}
                                     handleOpenEdit={handleOpenEdit}
@@ -236,19 +266,48 @@ const ConstructionList = () => {
                                     getStatusChip={getStatusChip}
                                     isMobile={isMobile}
                                     userRole={userRole}
+                                    navigate={navigate}
                                 />
                             ))
-                        )}
-                    </TableBody>
-                </Table>
-                <TablePagination
-                    rowsPerPageOptions={[10, 25, 50]} component="div" count={totalItems}
-                    rowsPerPage={rowsPerPage} page={page}
-                    onPageChange={(e, newPage) => setPage(newPage)}
-                    onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
-                    labelRowsPerPage="Số dòng:"
-                />
-            </TableContainer>
+                    }
+                </Stack>
+            ) : (
+                <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, overflow: 'hidden' }}>
+                    <Table>
+                        <TableHead sx={{ bgcolor: 'grey.50' }}>
+                            <TableRow>
+                                <TableCell sx={{ width: 40 }} />
+                                <TableCell sx={{ fontWeight: 800 }}>Tên công trình</TableCell>
+                                <TableCell sx={{ fontWeight: 800, width: 250 }}>Đơn vị quản lý</TableCell>
+                                <TableCell sx={{ fontWeight: 800 }}>Thời gian</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 800 }}>Trạng thái</TableCell>
+                                <TableCell align="right" sx={{ fontWeight: 800, width: 200 }}>Thao tác</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {loading ? (
+                                <TableRow><TableCell colSpan={6} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
+                            ) : items.length === 0 ? (
+                                <TableRow><TableCell colSpan={6} align="center" sx={{ py: 3 }}>Không tìm thấy công trình</TableCell></TableRow>
+                            ) : (
+                                items.map((row) => (
+                                    <CollapsibleConstructionRow
+                                        key={row.id}
+                                        row={row}
+                                        handleOpenEdit={handleOpenEdit}
+                                        handleDelete={handleDelete}
+                                        orgs={orgs}
+                                        getStatusChip={getStatusChip}
+                                        isMobile={isMobile}
+                                        userRole={userRole}
+                                        navigate={navigate}
+                                    />
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+            )}
 
             <ConstructionDialog
                 open={dialogOpen} onClose={() => setDialogOpen(false)}

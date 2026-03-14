@@ -80,7 +80,7 @@ const adminPages = {
       title: 'Điểm ngập',
       type: 'collapse',
       icon: icons.IconTornado,
-      roles: ['super_admin'],
+      roles: ['super_admin', 'admin_org'],
       children: [
         {
           id: 'inundation',
@@ -122,7 +122,7 @@ const adminPages = {
       url: '/admin/emergency-construction/dashboard',
       icon: icons.IconAlertTriangle,
       breadcrumbs: false,
-      roles: ['employee', 'admin_org']
+      roles: ['employee']
     },
     {
       id: 'river-management',
@@ -193,11 +193,27 @@ const adminPages = {
 
     {
       id: 'emergency-construction',
-      title: 'Công trình khẩn cấp (ĐPT)',
+      title: 'Công trình khẩn cấp',
       type: 'collapse',
       icon: icons.IconAlertTriangle,
-      roles: ['super_admin'],
+      roles: ['super_admin', 'admin_org'],
       children: [
+        {
+          id: 'emergency-construction-report-child',
+          title: 'Báo cáo',
+          type: 'item',
+          url: '/admin/emergency-construction/dashboard',
+          icon: icons.IconClipboardList,
+          breadcrumbs: false
+        },
+        {
+          id: 'emergency-construction-report-history',
+          title: 'Lịch sử báo cáo',
+          type: 'item',
+          url: '/admin/emergency-construction/report-history',
+          icon: icons.IconHistory,
+          breadcrumbs: false
+        },
         {
           id: 'emergency-construction-list',
           title: 'Danh sách',
@@ -205,20 +221,12 @@ const adminPages = {
           url: '/admin/emergency-construction',
           icon: icons.IconList,
           breadcrumbs: false
-        },
-        {
-          id: 'emergency-construction-history',
-          title: 'Lịch sử báo cáo',
-          type: 'item',
-          url: '/admin/emergency-construction/dashboard?activeTab=2',
-          icon: icons.IconHistory,
-          breadcrumbs: false
         }
       ]
     },
     {
       id: 'cua-pai',
-      title: 'Cửa phai (ĐPT)',
+      title: 'Cửa phai',
       type: 'item',
       url: '/admin/cua-pai',
       icon: icons.IconDoor,
@@ -227,7 +235,7 @@ const adminPages = {
     },
     {
       id: 'tram-bo',
-      title: 'Trạm bơm (ĐPT)',
+      title: 'Trạm bơm',
       type: 'item',
       url: '/admin/tram-bo',
       icon: icons.IconEngine,
@@ -236,7 +244,7 @@ const adminPages = {
     },
     {
       id: 'sa-hinh-ngap',
-      title: 'Sa hình ngập (ĐPT)',
+      title: 'Sa hình ngập',
       type: 'item',
       url: '/admin/sa-hinh-ngap',
       icon: icons.IconMap,
@@ -254,7 +262,7 @@ const adminPages = {
     },
     {
       id: 'organization-list',
-      title: 'Phân quyền (ĐPT)',
+      title: 'Phân quyền',
       type: 'item',
       url: '/admin/organization',
       icon: icons.IconBuilding,

@@ -29,6 +29,8 @@ type Service interface {
 
 	// Progress Reporting
 	ReportProgress(ctx context.Context, progress *models.EmergencyConstructionProgress, images []ImageContent) error
+	UpdateProgress(ctx context.Context, id string, progress *models.EmergencyConstructionProgress, images []ImageContent) error
+	GetProgressByID(ctx context.Context, id string) (*models.EmergencyConstructionProgress, error)
 	GetProgressHistory(ctx context.Context, constructionID string) ([]*models.EmergencyConstructionProgress, error)
 }
 
@@ -145,8 +147,45 @@ func (s *service) GetHistory(ctx context.Context, constructionID string) ([]*mod
 }
 
 func (s *service) ReportProgress(ctx context.Context, progress *models.EmergencyConstructionProgress, images []ImageContent) error {
-	// 0. Fetch Reporter Details
-	if progress.ReportedBy != "" {
+	// ... (same logic as before, but I'll make it reusable)
+	return s.saveProgress(ctx, progress, images, true)
+}
+
+func (s *service) UpdateProgress(ctx context.Context, id string, progress *models.EmergencyConstructionProgress, images []ImageContent) error {
+	existing, err := s.progressRepo.GetByID(ctx, id)
+	if err != nil {
+		return errors.New("progress report not found")
+	}
+
+	// Update fields
+	existing.WorkDone = progress.WorkDone
+	existing.Issues = progress.Issues
+	existing.Order = progress.Order
+	existing.Location = progress.Location
+	existing.Conclusion = progress.Conclusion
+	existing.Influence = progress.Influence
+	existing.Proposal = progress.Proposal
+	existing.Images = progress.Images
+
+	// Merge or replace images? For now, if new images are provided, we add them.
+	// In a real app, we might want more complex image management.
+	return s.saveProgress(ctx, existing, images, false)
+}
+
+func (s *service) GetProgressByID(ctx context.Context, id string) (*models.EmergencyConstructionProgress, error) {
+	progress, err := s.progressRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if cons, errCons := s.repo.GetByID(ctx, progress.ConstructionID); errCons == nil && cons != nil {
+		progress.ConstructionName = cons.Name
+	}
+	return progress, nil
+}
+
+func (s *service) saveProgress(ctx context.Context, progress *models.EmergencyConstructionProgress, images []ImageContent, isNew bool) error {
+	// 0. Fetch Reporter Details if missing
+	if progress.ReporterName == "" && progress.ReportedBy != "" {
 		u, err := s.userRepo.GetByID(ctx, progress.ReportedBy)
 		if err == nil && u != nil {
 			progress.ReporterName = u.Name
@@ -160,7 +199,10 @@ func (s *service) ReportProgress(ctx context.Context, progress *models.Emergency
 		}
 	}
 
-	progress.ReportDate = time.Now().Unix()
+	if isNew {
+		progress.ReportDate = time.Now().Unix()
+	}
+
 	if progress.ProgressPercentage >= 100 || progress.IsCompleted {
 		progress.IsCompleted = true
 		progress.ProgressPercentage = 100
@@ -171,14 +213,10 @@ func (s *service) ReportProgress(ctx context.Context, progress *models.Emergency
 
 	// 0.5 Upload images if any
 	if len(images) > 0 {
-		// Get Org to find Drive Folder
-		org, err := s.orgRepo.GetByID(ctx, progress.ReporterOrgName) // This is wrong, ReporterOrgName is a string name
-		// Let's use user's orgID if we can fetch it
 		u, err := s.userRepo.GetByID(ctx, progress.ReportedBy)
 		if err == nil && u != nil && u.OrgID != "" {
-			org, err = s.orgRepo.GetByID(ctx, u.OrgID)
+			org, err := s.orgRepo.GetByID(ctx, u.OrgID)
 			if err == nil && org != nil {
-				// Resolve Folder: Org -> Type (CONSTRUCTION) -> Station (Construction Name) -> Date
 				folderID, err := s.resolveUploadFolder(ctx, org, "CONSTRUCTION", progress.ConstructionID)
 				if err == nil {
 					var imageIDs []string
@@ -188,19 +226,14 @@ func (s *service) ReportProgress(ctx context.Context, progress *models.Emergency
 							imageIDs = append(imageIDs, id)
 						}
 					}
-					progress.Images = imageIDs
+					progress.Images = append(progress.Images, imageIDs...)
 				}
 			}
 		}
 	}
 
 	// 1. Save progress report
-	err := s.progressRepo.Create(ctx, progress)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return s.progressRepo.Upsert(ctx, progress)
 }
 
 // Logic copied from inundation service to handle dynamic folders

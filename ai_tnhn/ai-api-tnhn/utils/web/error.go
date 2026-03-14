@@ -76,3 +76,13 @@ func (e NotFound) Error() string {
 func (e NotFound) StatusCode() int {
 	return http.StatusNotFound
 }
+
+type Forbidden string
+
+func (e Forbidden) Error() string {
+	return string(e)
+}
+
+func (e Forbidden) StatusCode() int {
+	return http.StatusForbidden
+}

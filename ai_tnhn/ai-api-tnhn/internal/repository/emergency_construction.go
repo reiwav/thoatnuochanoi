@@ -25,6 +25,8 @@ type EmergencyConstructionHistory interface {
 type EmergencyConstructionProgress interface {
 	mgo.BaseTable
 	Create(ctx context.Context, item *models.EmergencyConstructionProgress) error
+	Upsert(ctx context.Context, item *models.EmergencyConstructionProgress) error
+	GetByID(ctx context.Context, id string) (*models.EmergencyConstructionProgress, error)
 	List(ctx context.Context, filter filter.Filter) ([]*models.EmergencyConstructionProgress, int64, error)
 	ListByConstructionID(ctx context.Context, constructionID string) ([]*models.EmergencyConstructionProgress, error)
 }

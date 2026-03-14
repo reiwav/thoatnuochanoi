@@ -53,9 +53,11 @@ const ConstructionForm = () => {
     const constructionId = searchParams.get('id');
     const constructionName = searchParams.get('name') || 'Chi tiết công trình';
     const initialTab = parseInt(searchParams.get('tab') || '0');
+    const editReportId = searchParams.get('edit_id');
 
     const [tabValue, setTabValue] = useState(initialTab);
     const [loading, setLoading] = useState(false);
+    const [fetching, setFetching] = useState(false);
     const [history, setHistory] = useState([]);
     const [viewer, setViewer] = useState({ open: false, images: [], index: 0 });
 
@@ -69,6 +71,7 @@ const ConstructionForm = () => {
     const [proposal, setProposal] = useState('');
     const [images, setImages] = useState([]);
     const [imagePreviews, setImagePreviews] = useState([]);
+    const [existingImages, setExistingImages] = useState([]);
 
     const userRole = localStorage.getItem('role') || 'employee';
     const basePath = userRole === 'employee' ? '/company' : '/admin';
@@ -78,10 +81,40 @@ const ConstructionForm = () => {
             navigate(`${basePath}/emergency-construction/dashboard`);
             return;
         }
+        if (editReportId) {
+            if (userRole === 'employee') {
+                toast.error('Bạn không có quyền chỉnh sửa báo cáo');
+                navigate(`${basePath}/emergency-construction/dashboard`);
+                return;
+            }
+            loadReportDetails();
+        }
         if (tabValue === 1) {
             loadHistory();
         }
-    }, [constructionId, tabValue]);
+    }, [constructionId, tabValue, editReportId]);
+
+    const loadReportDetails = async () => {
+        setFetching(true);
+        try {
+            const res = await emergencyConstructionApi.getProgressById(editReportId);
+            if (res.data?.status === 'success') {
+                const data = res.data.data;
+                setWorkDone(data.work_done || '');
+                setIssues(data.issues || '');
+                setOrder(data.order || '');
+                setLocation(data.location || '');
+                setConclusion(data.conclusion || '');
+                setInfluence(data.influence || '');
+                setProposal(data.proposal || '');
+                setExistingImages(data.images || []);
+            }
+        } catch (err) {
+            toast.error('Lỗi tải thông tin báo cáo');
+        } finally {
+            setFetching(false);
+        }
+    };
 
     const loadHistory = async () => {
         setLoading(true);
@@ -114,6 +147,10 @@ const ConstructionForm = () => {
         setViewer((v) => ({ ...v, index: (v.index + 1) % v.images.length }));
     };
 
+    const handleOpenLocalViewer = (idx) => {
+        setViewer({ open: true, images: imagePreviews, index: idx, isLocal: true });
+    };
+
     const handleTabChange = (event, newValue) => {
         setTabValue(newValue);
     };
@@ -137,6 +174,12 @@ const ConstructionForm = () => {
         setImagePreviews(newPreviews);
     };
 
+    const removeExistingImage = (index) => {
+        const newExisting = [...existingImages];
+        newExisting.splice(index, 1);
+        setExistingImages(newExisting);
+    };
+
     const handleSubmit = async () => {
         if (!workDone.trim()) { toast.error('Vui lòng nhập nội dung công việc báo cáo'); return; }
 
@@ -154,26 +197,35 @@ const ConstructionForm = () => {
             formData.append('influence', influence);
             formData.append('proposal', proposal);
             formData.append('expected_completion_date', 0);
+            formData.append('existing_images', JSON.stringify(existingImages));
 
             images.forEach((image) => {
                 formData.append('images', image);
             });
 
-            const res = await emergencyConstructionApi.createProgress(formData);
+            const res = editReportId 
+                ? await emergencyConstructionApi.updateProgress(editReportId, formData)
+                : await emergencyConstructionApi.createProgress(formData);
+
             if (res.data) {
-                toast.success('Báo cáo tiến độ thành công');
-                // Reset form
-                setWorkDone('');
-                setIssues('');
-                setOrder('');
-                setLocation('');
-                setConclusion('');
-                setInfluence('');
-                setProposal('');
-                setImages([]);
-                setImagePreviews([]);
-                // Switch to history tab to view the new report
-                setTabValue(1);
+                toast.success(editReportId ? 'Cập nhật báo cáo thành công' : 'Báo cáo tiến độ thành công');
+                if (editReportId) {
+                    navigate(`${basePath}/emergency-construction/report-history`);
+                } else {
+                    // Reset form
+                    setWorkDone('');
+                    setIssues('');
+                    setOrder('');
+                    setLocation('');
+                    setConclusion('');
+                    setInfluence('');
+                    setProposal('');
+                    setImages([]);
+                    setImagePreviews([]);
+                    setExistingImages([]);
+                    // Switch to history tab to view the new report
+                    setTabValue(1);
+                }
             }
         } catch (err) {
             toast.error(err.response?.data?.error || 'Lỗi gửi báo cáo');
@@ -267,15 +319,44 @@ const ConstructionForm = () => {
                         <IconCloudUpload size={26} color={theme.palette.primary.main} />
                         <Typography variant="body2" color="text.secondary">Thêm ảnh</Typography>
                     </Box>
+                    {existingImages.length > 0 && (
+                        <Box sx={{ mt: 1.5 }}>
+                            <Typography variant="caption" sx={{ color: 'text.secondary', mb: 0.5, display: 'block' }}>Ảnh đã có (Click để xem):</Typography>
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                {existingImages.map((img, idx) => (
+                                    <Box key={idx} sx={{ position: 'relative', width: 68, height: 68 }}>
+                                        <Avatar 
+                                            variant="rounded" 
+                                            src={getInundationImageUrl(img)} 
+                                            sx={{ width: '100%', height: '100%', borderRadius: 1.5, border: '1px solid', borderColor: 'divider', cursor: 'pointer' }} 
+                                            onClick={() => handleOpenViewer(existingImages, idx)}
+                                        />
+                                        <IconButton
+                                            size="small" color="error"
+                                            onClick={() => removeExistingImage(idx)}
+                                            sx={{ position: 'absolute', top: -6, right: -6, bgcolor: 'error.main', color: '#fff', p: 0.3, '&:hover': { bgcolor: 'error.dark' }, zIndex: 1 }}
+                                        >
+                                            <IconTrash size={11} />
+                                        </IconButton>
+                                    </Box>
+                                ))}
+                            </Box>
+                        </Box>
+                    )}
                     {imagePreviews.length > 0 && (
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1.5 }}>
+                            <Typography variant="caption" sx={{ color: 'text.secondary', mb: 0.5, display: 'block', width: '100%' }}>Ảnh mới thêm:</Typography>
                             {imagePreviews.map((preview, idx) => (
                                 <Box key={idx} sx={{ position: 'relative', width: 68, height: 68 }}>
-                                    <Avatar variant="rounded" src={preview} sx={{ width: '100%', height: '100%', borderRadius: 1.5, border: '1px solid', borderColor: 'divider' }} />
+                                    <Avatar 
+                                        variant="rounded" src={preview} 
+                                        sx={{ width: '100%', height: '100%', borderRadius: 1.5, border: '1px solid', borderColor: 'divider', cursor: 'zoom-in' }} 
+                                        onClick={() => handleOpenLocalViewer(idx)}
+                                    />
                                     <IconButton
                                         size="small" color="error"
                                         onClick={() => removeImage(idx)}
-                                        sx={{ position: 'absolute', top: -6, right: -6, bgcolor: 'error.main', color: '#fff', p: 0.3, '&:hover': { bgcolor: 'error.dark' } }}
+                                        sx={{ position: 'absolute', top: -6, right: -6, bgcolor: 'error.main', color: '#fff', p: 0.3, '&:hover': { bgcolor: 'error.dark' }, zIndex: 1 }}
                                     >
                                         <IconTrash size={11} />
                                     </IconButton>
@@ -287,11 +368,11 @@ const ConstructionForm = () => {
             </Box>
 
             <Button
-                fullWidth variant="contained" color="primary" size="large" onClick={handleSubmit} disabled={loading}
+                fullWidth variant="contained" color="primary" size="large" onClick={handleSubmit} disabled={loading || fetching}
                 startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <IconSend size={20} />}
                 sx={{ borderRadius: 100, py: 1.5, fontWeight: 700, mt: 1 }}
             >
-                Gửi Báo Cáo
+                {fetching ? 'Đang tải...' : editReportId ? 'Cập nhật báo cáo' : 'Gửi Báo Cáo'}
             </Button>
         </Stack>
     );
@@ -414,7 +495,7 @@ const ConstructionForm = () => {
 
                     <Box
                         component="img"
-                        src={getInundationImageUrl(viewer.images[viewer.index])}
+                        src={viewer.isLocal ? viewer.images[viewer.index] : getInundationImageUrl(viewer.images[viewer.index])}
                         sx={{ maxWidth: '100%', maxHeight: '85vh', objectFit: 'contain' }}
                     />
 

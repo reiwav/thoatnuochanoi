@@ -86,6 +86,19 @@ func (r *emConstructionProgressRepo) Create(ctx context.Context, item *models.Em
 	return r.R_Create(ctx, item)
 }
 
+func (r *emConstructionProgressRepo) Upsert(ctx context.Context, item *models.EmergencyConstructionProgress) error {
+	if item.ID == "" {
+		return r.R_Create(ctx, item)
+	}
+	return r.R_Update(ctx, item)
+}
+
+func (r *emConstructionProgressRepo) GetByID(ctx context.Context, id string) (*models.EmergencyConstructionProgress, error) {
+	var item models.EmergencyConstructionProgress
+	err := r.R_SelectByID(ctx, id, &item)
+	return &item, err
+}
+
 func (r *emConstructionProgressRepo) List(ctx context.Context, filter filter.Filter) ([]*models.EmergencyConstructionProgress, int64, error) {
 	var items []*models.EmergencyConstructionProgress
 	total, err := r.R_SearchAndCount(ctx, filter, &items)

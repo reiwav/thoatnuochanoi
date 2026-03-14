@@ -25,6 +25,7 @@ const ConstructionReportingPage = Loadable(lazy(() => import('views/employee/eme
 const ConstructionFormPage = Loadable(lazy(() => import('views/employee/emergency-construction/ConstructionForm')));
 const ConstructionProgressHistoryPage = Loadable(lazy(() => import('views/admin/emergency-construction/ConstructionProgressHistory')));
 const InundationAdminList = Loadable(lazy(() => import('views/admin/inundation/InundationAdminList')));
+const UnderDevelopment = Loadable(lazy(() => import('views/pages/under-development')));
 
 // ==============================|| MAIN ROUTING ||============================== //
 
@@ -60,6 +61,9 @@ const MainRoutes = {
         { path: 'station/lake/history', element: <StationHistory type="lake" /> },
         { path: 'station/inundation/list', element: <StationInundationList /> },
         { path: 'station/inundation/history', element: <InundationStationHistory /> },
+        { path: 'cua-pai', element: <UnderDevelopment /> },
+        { path: 'tram-bo', element: <UnderDevelopment /> },
+        { path: 'sa-hinh-ngap', element: <UnderDevelopment /> },
         { path: 'ai-support', element: <AiSupportPage /> }
       ]
     },

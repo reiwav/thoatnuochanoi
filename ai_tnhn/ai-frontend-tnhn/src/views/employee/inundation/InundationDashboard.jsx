@@ -198,12 +198,12 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                 </TableCell>
                 <TableCell sx={{ p: 2 }}>
                     <Typography 
-                        variant="subtitle2" 
+                        variant="body2"
+                        sx={{ fontWeight: 800, cursor: 'pointer', '&:hover': { color: 'primary.main' }, color: 'primary.dark' }}
                         onClick={() => navigate(point.status === 'active' 
                             ? `${basePath}/inundation/form?tab=1&id=${point.active_report.id}&name=${encodeURIComponent(point.name)}`
                             : `${basePath}/inundation/form?tab=0&point_id=${point.id}&name=${encodeURIComponent(point.name)}`
                         )}
-                        sx={{ fontWeight: 700, cursor: 'pointer', '&:hover': { color: 'primary.main' } }}
                     >
                         {point.name}
                     </Typography>
@@ -294,16 +294,6 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                                         <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.disabled' }}>Không có ảnh</Typography>
                                     )}
                                 </Box>
-                                {point.status === 'active' && (
-                                    <Box sx={{ mt: 1, textAlign: 'right' }}>
-                                        <Button
-                                            variant="contained" color="error" size="small"
-                                            onClick={() => navigate(`${basePath}/inundation/form?tab=1&id=${point.active_report.id}&name=${encodeURIComponent(point.name)}`)}
-                                        >
-                                            Cập nhật
-                                        </Button>
-                                    </Box>
-                                )}
                                 {latest?.updates?.length > 0 && (
                                     <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
                                         <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>Lịch sử cập nhật:</Typography>
@@ -457,9 +447,9 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenVi
                 </TableCell>
                 <TableCell sx={{ p: 2 }}>
                     <Typography 
-                        variant="subtitle2" 
+                        variant="body2"
+                        sx={{ fontWeight: 800, cursor: 'pointer', '&:hover': { color: 'primary.main' }, color: 'primary.dark' }}
                         onClick={() => navigate(`${basePath}/inundation/form?id=${report.id}&tab=1&readonly=true`)}
-                        sx={{ fontWeight: 700, cursor: 'pointer', '&:hover': { color: 'primary.main' } }}
                     >
                         {report.street_name}
                     </Typography>

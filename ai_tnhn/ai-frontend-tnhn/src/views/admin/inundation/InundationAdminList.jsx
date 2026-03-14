@@ -166,7 +166,7 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                     </IconButton>
                 </TableCell>
                 <TableCell sx={{ p: { xs: 1, md: 2 } }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{point.name}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 800, color: 'primary.dark' }}>{point.name}</Typography>
                 </TableCell>
                 <TableCell><Typography variant="body2" color="primary">{point.org_name || organizations.find(o => o.id === point.org_id)?.name || ''}</Typography></TableCell>
                 <TableCell><Chip label={point.status === 'active' ? 'Đang ngập' : 'Bình thường'} color={point.status === 'active' ? 'error' : 'success'} size="small" sx={{ fontWeight: 700 }} /></TableCell>
@@ -345,7 +345,7 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, getDuration,
                     </IconButton>
                 </TableCell>
                 <TableCell sx={{ p: { xs: 1, md: 2 } }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{report.street_name}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 800, color: 'primary.dark' }}>{report.street_name}</Typography>
                 </TableCell>
                 <TableCell><Typography variant="body2" color="primary">{organizations.find(o => o.id === report.org_id)?.name || report.org_id}</Typography></TableCell>
                 <TableCell><Typography variant="body2">{formatTime(report.start_time)}</Typography></TableCell>

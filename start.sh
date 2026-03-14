@@ -27,13 +27,13 @@ trap cleanup SIGINT SIGTERM
 
 # Start Backend
 echo -e "${GREEN}[Backend] Starting ai-api-tnhn...${NC}"
-cd "$BASE_DIR/ai-api-tnhn" || exit
+cd "$BASE_DIR/ai_tnhn/ai-api-tnhn" || exit
 go run main.go &
 BACKEND_PID=$!
 
 # Start Frontend
 echo -e "${GREEN}[Frontend] Starting ai-frontend-tnhn...${NC}"
-cd "$BASE_DIR/ai-frontend-tnhn" || exit
+cd "$BASE_DIR/ai_tnhn/ai-frontend-tnhn" || exit
 npm run start &
 FRONTEND_PID=$!
 

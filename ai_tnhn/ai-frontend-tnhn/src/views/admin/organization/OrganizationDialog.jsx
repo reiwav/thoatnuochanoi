@@ -3,9 +3,9 @@ import {
     Dialog, DialogTitle, DialogContent, DialogActions,
     TextField, Button, Grid, IconButton, Stack, FormControlLabel, Switch,
     Typography, Box, Checkbox, Divider, Table, TableBody,
-    TableCell, TableContainer, TableHead, TableRow, Paper, InputAdornment
+    TableCell, TableContainer, TableHead, TableRow, Paper, InputAdornment, MenuItem
 } from '@mui/material';
-import { IconX, IconSearch, IconChevronRight } from '@tabler/icons-react';
+import { IconX, IconSearch, IconChevronRight, IconClipboardCheck } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 import stationApi from 'api/station';
 
@@ -141,7 +141,8 @@ const OrganizationDialog = ({ open, onClose, onSubmit, organization, isEdit }) =
         rain_station_ids: [],
         lake_station_ids: [],
         river_station_ids: [],
-        inundation_ids: []
+        inundation_ids: [],
+        order: ''
     });
 
     const [stations, setStations] = useState({
@@ -196,7 +197,8 @@ const OrganizationDialog = ({ open, onClose, onSubmit, organization, isEdit }) =
                     rain_station_ids: organization.rain_station_ids || [],
                     lake_station_ids: organization.lake_station_ids || [],
                     river_station_ids: organization.river_station_ids || [],
-                    inundation_ids: organization.inundation_ids || []
+                    inundation_ids: organization.inundation_ids || [],
+                    order: organization.order || ''
                 });
             } else {
                 setFormData({
@@ -211,7 +213,8 @@ const OrganizationDialog = ({ open, onClose, onSubmit, organization, isEdit }) =
                     rain_station_ids: [],
                     lake_station_ids: [],
                     river_station_ids: [],
-                    inundation_ids: []
+                    inundation_ids: [],
+                    order: ''
                 });
             }
         }
@@ -341,6 +344,21 @@ const OrganizationDialog = ({ open, onClose, onSubmit, organization, isEdit }) =
                                 {renderSelectionTrigger("Mực nước hồ", "lake_station_ids", "lake", stations.lake, "TenTram")}
                                 {renderSelectionTrigger("Mực nước sông", "river_station_ids", "river", stations.river, "TenTram")}
                                 {renderSelectionTrigger("Điểm ngập úng", "inundation_ids", "inundation", stations.inundation, "name")}
+
+                                <TextField
+                                    select fullWidth label="Lệnh số" value={formData.order}
+                                    onChange={(e) => handleChange('order', e.target.value)}
+                                    size="small"
+                                    InputProps={{
+                                        startAdornment: <InputAdornment position="start"><IconClipboardCheck size={18} style={{ color: '#64748b' }} /></InputAdornment>,
+                                        sx: { '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#f8fafc' } }
+                                    }}
+                                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#f8fafc' }, mt: 2 }}
+                                >
+                                    {[...Array(100)].map((_, i) => (
+                                        <MenuItem key={i + 1} value={`Lệnh ${i + 1}`}>Lệnh {i + 1}</MenuItem>
+                                    ))}
+                                </TextField>
 
                                 <Divider sx={{ my: 0.5 }} />
 

@@ -119,6 +119,7 @@ func (s *service) Update(ctx context.Context, id string, org *models.Organizatio
 	existing.LakeStationIDs = org.LakeStationIDs
 	existing.RiverStationIDs = org.RiverStationIDs
 	existing.InundationIDs = org.InundationIDs
+	existing.Order = org.Order
 
 	return s.orgRepo.Upsert(ctx, existing)
 }

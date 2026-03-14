@@ -99,6 +99,8 @@ func (h *EmergencyConstructionHandler) ListHistory(c *gin.Context) {
 		req.OrgID = client.OrgId
 	}
 
+	req.SetOrderBy("-report_date")
+
 	items, total, err := h.service.ListHistory(c.Request.Context(), req)
 	web.AssertNil(err)
 	h.SendData(c, gin.H{

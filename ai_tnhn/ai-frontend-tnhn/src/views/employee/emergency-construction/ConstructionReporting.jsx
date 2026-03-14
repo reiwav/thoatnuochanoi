@@ -4,16 +4,14 @@ import {
     Box, Typography, Paper, Table, TableBody,
     TableCell, TableContainer, TableHead, TableRow,
     Button, CircularProgress, Chip, Grid,
-    Stack, Tab, Tabs, Tooltip, useMediaQuery, Card, CardContent, Divider,
+    Stack, useMediaQuery, Card, CardContent, Divider,
     Avatar, List, ListItem, ListItemIcon, ListItemText, TextField, IconButton, Dialog, DialogContent, Autocomplete, Checkbox,
     TablePagination, Collapse
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { IconClipboardCheck, IconHistory, IconChevronRight, IconUser, IconLogout, IconSearch, IconX, IconRefresh, IconMapPin, IconChevronLeft, IconChevronDown, IconSquare, IconCheckbox, IconChevronUp } from '@tabler/icons-react';
+import { IconChevronRight, IconUser, IconLogout, IconSearch, IconX, IconRefresh, IconMapPin, IconChevronLeft, IconChevronDown, IconSquare, IconCheckbox, IconChevronUp } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 import emergencyConstructionApi from 'api/emergencyConstruction';
-import authApi from 'api/auth';
-import MainCard from 'ui-component/cards/MainCard';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -35,7 +33,7 @@ const CollapsibleProgressRow = ({ h, isMobile, handleOpenViewer, theme }) => {
                 <TableCell sx={{ fontWeight: 700, p: { xs: 1, md: 2 } }}>{h.construction_name}</TableCell>
                 <TableCell>{h.order || '-'}</TableCell>
                 <TableCell>{h.reporter_name || '-'}</TableCell>
-                <TableCell>{dayjs(h.report_date * 1000).format('DD/MM/YYYY • HH:mm')}</TableCell>
+                <TableCell>{h.organization_name}</TableCell>
                 <TableCell sx={{ maxWidth: 300, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{h.work_done}</TableCell>
                 <TableCell align="right">
                     <Button size="small" variant="text" onClick={() => setOpen(!open)}>Chi tiết</Button>
@@ -509,7 +507,7 @@ const ConstructionReporting = () => {
                                     <TableRow>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', py: 2 }}>Tên công trình</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', py: 2 }}>Vị trí</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', py: 2 }}>Thời gian dự kiến</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', py: 2 }}>Nhà thầu thi công</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', py: 2 }}>Trạng thái</TableCell>
                                         <TableCell align="right" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', py: 2 }}>Thao tác</TableCell>
                                     </TableRow>
@@ -526,7 +524,7 @@ const ConstructionReporting = () => {
                                                 </Typography>
                                             </TableCell>
                                             <TableCell>
-                                                <Chip label={new Date(row.end_date * 1000).toLocaleDateString('vi-VN')} size="small" variant="outlined" sx={{ bgcolor: 'background.paper' }} />
+                                                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'primary.dark' }}>{row.organization_name}</Typography>
                                             </TableCell>
                                             <TableCell>{getStatusChip(row.status)}</TableCell>
                                             <TableCell align="right">

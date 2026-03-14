@@ -14,4 +14,5 @@ type EmergencyConstruction struct {
 	Status          string `bson:"status" json:"status"` // planned, ongoing, completed, suspended
 	Cost            int64  `bson:"cost" json:"cost"`
 	OrgID           string `bson:"org_id" json:"org_id"`
+	OrganizationName string `bson:"-" json:"organization_name,omitempty"`
 }

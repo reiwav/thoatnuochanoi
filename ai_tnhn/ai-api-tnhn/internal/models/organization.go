@@ -19,4 +19,5 @@ type Organization struct {
 	LakeStationIDs  []string `bson:"lake_station_ids" json:"lake_station_ids"`
 	RiverStationIDs []string `bson:"river_station_ids" json:"river_station_ids"`
 	InundationIDs   []string `bson:"inundation_ids" json:"inundation_ids"`
+	Order           string   `bson:"order" json:"order"`
 }

@@ -6,7 +6,7 @@ import {
     IconButton, CircularProgress, TablePagination, Typography, Chip, Tooltip,
     Collapse, Box, useTheme, useMediaQuery
 } from '@mui/material';
-import { IconTrash, IconPlus, IconEdit, IconSearch, IconUsers, IconChevronDown, IconChevronUp } from '@tabler/icons-react';
+import { IconTrash, IconPlus, IconEdit, IconSearch, IconUsers, IconChevronDown, IconChevronUp, IconClipboardCheck } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 import stationApi from 'api/station';
 import { IconCloudRain, IconRipple, IconDroplet, IconAlertTriangle } from '@tabler/icons-react';
@@ -32,6 +32,14 @@ const OrgRow = ({ row, handleManageUsers, handleOpenEdit, handleDelete, totals, 
                 )}
                 <TableCell sx={{ fontWeight: 600 }}>{row.name}</TableCell>
                 {!isMobile && <TableCell>{row.code}</TableCell>}
+                {!isMobile && (
+                    <TableCell>
+                        <Stack direction="row" alignItems="center" spacing={0.5}>
+                            <IconClipboardCheck size={16} style={{ color: '#64748b' }} />
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>{row.order || '-'}</Typography>
+                        </Stack>
+                    </TableCell>
+                )}
                 {!isMobile && (
                     <TableCell>
                         <Typography variant="body2" sx={{ fontWeight: 500 }}>{row.phone_number}</Typography>
@@ -92,6 +100,10 @@ const OrgRow = ({ row, handleManageUsers, handleOpenEdit, handleDelete, totals, 
                                         <TableRow>
                                             <TableCell component="th" scope="row" sx={{ fontWeight: 600, width: '40%', borderBottom: 'none' }}>Mã</TableCell>
                                             <TableCell sx={{ borderBottom: 'none' }}>{row.code}</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell component="th" scope="row" sx={{ fontWeight: 600, borderBottom: 'none' }}>Lệnh số</TableCell>
+                                            <TableCell sx={{ borderBottom: 'none' }}>{row.order || '-'}</TableCell>
                                         </TableRow>
                                         <TableRow>
                                             <TableCell component="th" scope="row" sx={{ fontWeight: 600, borderBottom: 'none' }}>Liên hệ</TableCell>
@@ -267,6 +279,7 @@ const OrganizationList = () => {
                             {isMobile && <TableCell width="40px" />}
                             <TableCell sx={{ fontWeight: 700 }}>Tên đơn vị</TableCell>
                             {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Mã</TableCell>}
+                            {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Lệnh số</TableCell>}
                             {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Thông tin liên hệ</TableCell>}
                             {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Trạm được gán</TableCell>}
                             {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>}

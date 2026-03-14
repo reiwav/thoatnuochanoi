@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sort"
 	"time"
 )
 
@@ -120,11 +121,28 @@ func (s *service) Delete(ctx context.Context, id string) error {
 }
 
 func (s *service) GetByID(ctx context.Context, id string) (*models.EmergencyConstruction, error) {
-	return s.repo.GetByID(ctx, id)
+	item, err := s.repo.GetByID(ctx, id)
+	if err == nil && item != nil && item.OrgID != "" {
+		if org, errOrg := s.orgRepo.GetByID(ctx, item.OrgID); errOrg == nil && org != nil {
+			item.OrganizationName = org.Name
+		}
+	}
+	return item, err
 }
 
 func (s *service) List(ctx context.Context, f filter.Filter) ([]*models.EmergencyConstruction, int64, error) {
-	return s.repo.List(ctx, f)
+	items, total, err := s.repo.List(ctx, f)
+	if err == nil {
+		// Try resolving organization name
+		for _, item := range items {
+			if item.OrgID != "" {
+				if org, errOrg := s.orgRepo.GetByID(ctx, item.OrgID); errOrg == nil && org != nil {
+					item.OrganizationName = org.Name
+				}
+			}
+		}
+	}
+	return items, total, err
 }
 
 func (s *service) ListHistory(ctx context.Context, f filter.Filter) ([]*models.EmergencyConstructionProgress, int64, error) {
@@ -278,6 +296,9 @@ func (s *service) GetProgressHistory(ctx context.Context, constructionID string)
 				item.ConstructionName = cons.Name
 			}
 		}
+		sort.Slice(items, func(i, j int) bool {
+			return items[i].ReportDate > items[j].ReportDate
+		})
 	}
 	return items, err
 }

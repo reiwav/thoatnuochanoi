@@ -47,7 +47,7 @@ const getLatestData = (report) => {
     return data;
 };
 
-const CollapsiblePointRow = ({ point, organizations, formatTime, handleOpenViewer, navigate, isMobile }) => {
+const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, handleOpenViewer, navigate, isMobile }) => {
     const [open, setOpen] = useState(point.status === 'active');
     const latest = useMemo(() => getLatestData(point.active_report || point.last_report), [point]);
 
@@ -263,7 +263,7 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, handleOpenViewe
     );
 };
 
-const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenViewer, navigate, isMobile }) => {
+const CollapsibleHistoryRow = ({ report, organizations, formatTime, getDuration, handleOpenViewer, navigate, isMobile }) => {
     const [open, setOpen] = useState(report.status === 'active');
     if (isMobile) {
         return (
@@ -678,6 +678,7 @@ const InundationAdminList = () => {
                                             point={point}
                                             organizations={organizations}
                                             formatTime={formatTime}
+                                            getDuration={getDuration}
                                             handleOpenViewer={handleOpenViewer}
                                             navigate={navigate}
                                             isMobile={isMobile}
@@ -707,6 +708,7 @@ const InundationAdminList = () => {
                                                     point={point}
                                                     organizations={organizations}
                                                     formatTime={formatTime}
+                                                    getDuration={getDuration}
                                                     handleOpenViewer={handleOpenViewer}
                                                     navigate={navigate}
                                                     isMobile={isMobile}
@@ -734,6 +736,7 @@ const InundationAdminList = () => {
                                             report={report}
                                             organizations={organizations}
                                             formatTime={formatTime}
+                                            getDuration={getDuration}
                                             handleOpenViewer={handleOpenViewer}
                                             navigate={navigate}
                                             isMobile={isMobile}
@@ -775,6 +778,7 @@ const InundationAdminList = () => {
                                                     report={report}
                                                     organizations={organizations}
                                                     formatTime={formatTime}
+                                                    getDuration={getDuration}
                                                     handleOpenViewer={handleOpenViewer}
                                                     navigate={navigate}
                                                     isMobile={isMobile}

@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
     Box, Typography, Paper, TextField, Button, Slider, FormControlLabel,
     Checkbox, CircularProgress, Stack, Avatar, Card, CardContent, Divider,
-    IconButton, List, useMediaQuery, MenuItem
+    IconButton, List, useMediaQuery, MenuItem, Dialog, DialogContent
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -11,7 +11,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
-import { IconChevronLeft, IconSend, IconClipboardCheck, IconHistory, IconClock, IconAlertTriangle, IconPlus, IconTrash, IconCamera, IconPhoto, IconArrowLeft, IconMapPin, IconFileText, IconBulb, IconCloudUpload, IconMessageExclamation, IconCar } from '@tabler/icons-react';
+import { IconChevronLeft, IconSend, IconClipboardCheck, IconHistory, IconClock, IconAlertTriangle, IconPlus, IconTrash, IconCamera, IconPhoto, IconArrowLeft, IconMapPin, IconFileText, IconBulb, IconCloudUpload, IconMessageExclamation, IconCar, IconRefresh, IconUser, IconX, IconChevronRight } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 import emergencyConstructionApi from 'api/emergencyConstruction';
 import MainCard from 'ui-component/cards/MainCard';
@@ -57,6 +57,7 @@ const ConstructionForm = () => {
     const [tabValue, setTabValue] = useState(initialTab);
     const [loading, setLoading] = useState(false);
     const [history, setHistory] = useState([]);
+    const [viewer, setViewer] = useState({ open: false, images: [], index: 0 });
 
     // Form states
     const [workDone, setWorkDone] = useState('');
@@ -97,6 +98,20 @@ const ConstructionForm = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleOpenViewer = (imgs, idx = 0) => {
+        if (!imgs || imgs.length === 0) return;
+        setViewer({ open: true, images: imgs, index: idx });
+    };
+    const handleCloseViewer = () => setViewer({ ...viewer, open: false });
+    const handlePrev = (e) => {
+        e?.stopPropagation();
+        setViewer((v) => ({ ...v, index: (v.index - 1 + v.images.length) % v.images.length }));
+    };
+    const handleNext = (e) => {
+        e?.stopPropagation();
+        setViewer((v) => ({ ...v, index: (v.index + 1) % v.images.length }));
     };
 
     const handleTabChange = (event, newValue) => {
@@ -282,57 +297,87 @@ const ConstructionForm = () => {
     );
 
     const renderHistory = () => (
-        <Box sx={{ p: { xs: 2, md: 3 }, bgcolor: 'grey.50', minHeight: '100%' }}>
+        <Box sx={{ p: { xs: 1, md: 2 }, bgcolor: 'background.paper', minHeight: '100%' }}>
+            {/* Header section similar to InundationDetail */}
+            <Paper sx={{ mb: 3, p: isMobile ? 1.5 : 2, bgcolor: 'secondary.lighter', borderRadius: 3, boxShadow: 'none', border: '1px solid', borderColor: 'secondary.light' }}>
+                <Stack spacing={1}>
+                    <Typography variant={isMobile ? "h4" : "h3"} color="secondary.dark" sx={{ fontWeight: 900, lineHeight: 1.2 }}>{constructionName}</Typography>
+                    <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 600 }}>Lịch sử báo cáo tiến độ chi tiết</Typography>
+                </Stack>
+            </Paper>
+
             {loading ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}><CircularProgress /></Box>
             ) : history.length === 0 ? (
                 <Typography align="center" color="textSecondary" sx={{ py: 5, fontStyle: 'italic' }}>Chưa có lịch sử báo cáo</Typography>
             ) : (
-                <List sx={{ p: 0 }}>
+                <Box sx={{ px: 1 }}>
                     {history.map((h, idx) => (
-                        <Card key={idx} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '12px', mb: 2 }}>
-                            <CardContent sx={{ p: '16px !important' }}>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5 }}>
-                                    <Typography variant="body1" fontWeight={700} color="primary">{new Date(h.report_date * 1000).toLocaleString('vi-VN')}</Typography>
+                        <Box key={idx} sx={{ display: 'flex', gap: isMobile ? 1.5 : 2, position: 'relative' }}>
+                            {idx < history.length - 1 && (
+                                <Box sx={{ position: 'absolute', left: 11, top: 32, width: 2, height: 'calc(100% - 20px)', bgcolor: 'grey.200' }} />
+                            )}
+                            <Box sx={{
+                                width: 24, height: 24, borderRadius: '50%', flexShrink: 0, zIndex: 1, mt: 1,
+                                bgcolor: idx === 0 ? 'secondary.main' : 'grey.300',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', border: '4px solid white', boxShadow: '0 0 0 1px #eee'
+                            }}>
+                                <IconRefresh size={10} />
+                            </Box>
+                            <Box sx={{ pb: 3, flex: 1, minWidth: 0 }}>
+                                <Stack direction={isMobile ? "column" : "row"} justifyContent="space-between" alignItems={isMobile ? "flex-start" : "center"} sx={{ mb: 1 }}>
+                                     <Typography variant="h6" sx={{ fontWeight: 800, color: 'text.primary' }}>{h.order || `Báo cáo ${dayjs(h.report_date * 1000).format('DD/MM')}`}</Typography>
+                                     <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 600, opacity: 0.8 }}>
+                                         {dayjs(h.report_date * 1000).format('DD/MM/YYYY • HH:mm')}
+                                     </Typography>
+                                </Stack>
+                                
+                                <Typography variant="body1" sx={{ mb: 1.5, color: 'text.secondary', lineHeight: 1.6 }}>{h.work_done}</Typography>
+                                
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8, mb: 1.5 }}>
+                                    {h.location && (
+                                        <Box sx={{ px: 1.2, py: 0.5, bgcolor: 'grey.50', borderRadius: 100, border: '1px solid', borderColor: 'grey.200', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                            <IconMapPin size={14} color={theme.palette.text.secondary} />
+                                            <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.primary' }}>{h.location}</Typography>
+                                        </Box>
+                                    )}
+                                    {h.reporter_name && (
+                                        <Box sx={{ px: 1.2, py: 0.5, bgcolor: 'secondary.lighter', borderRadius: 100, border: '1px solid', borderColor: 'secondary.light', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                            <IconUser size={14} color={theme.palette.secondary.main} />
+                                            <Typography variant="caption" sx={{ color: 'secondary.dark', fontWeight: 700 }}>{h.reporter_name}</Typography>
+                                        </Box>
+                                    )}
                                 </Box>
-                                {h.order && <Typography variant="h6" color="secondary" fontWeight={800} sx={{ mb: 1 }}>{h.order}</Typography>}
-                                {h.location && <Typography variant="body2" color="textSecondary" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}><IconAlertTriangle size={16} /> {h.location}</Typography>}
-                                {h.work_done && <Box sx={{ mb: 2 }}><Typography variant="subtitle2" color="textSecondary" fontWeight={700}>Công việc thực hiện:</Typography><Typography variant="body1" sx={{ lineHeight: 1.6, fontWeight: 500 }}>{h.work_done}</Typography></Box>}
 
-                                {/* Removed tasks summary */}
-
-                                {h.conclusion && <Box sx={{ mb: 1.5 }}><Typography variant="subtitle2" color="primary" fontWeight={700}>Kết luận:</Typography><Typography variant="body2">{h.conclusion}</Typography></Box>}
-                                {h.influence && <Box sx={{ mb: 1.5 }}><Typography variant="subtitle2" color="textSecondary" fontWeight={700}>Ảnh hưởng:</Typography><Typography variant="body2">{h.influence}</Typography></Box>}
-                                {h.proposal && <Box sx={{ mb: 1.5 }}><Typography variant="subtitle2" color="textSecondary" fontWeight={700}>Đề xuất:</Typography><Typography variant="body2">{h.proposal}</Typography></Box>}
+                                {h.conclusion && (
+                                    <Box sx={{ mb: 1.5, p: 1.5, bgcolor: 'primary.lighter', borderRadius: 2, borderLeft: '4px solid', borderColor: 'primary.main' }}>
+                                        <Typography variant="caption" color="primary.dark" fontWeight={900} display="block" sx={{ mb: 0.5 }}>KẾT LUẬN:</Typography>
+                                        <Typography variant="body2" sx={{ fontWeight: 500 }}>{h.conclusion}</Typography>
+                                    </Box>
+                                )}
 
                                 {h.issues && (
-                                    <Box sx={{ p: 1, bgcolor: 'error.lighter', borderRadius: 1.5, mb: 1.5 }}>
-                                        <Typography variant="body2" color="error.dark" display="block" fontWeight={700}>Vướng mắc:</Typography>
-                                        <Typography variant="body2" color="error.dark">{h.issues}</Typography>
+                                    <Box sx={{ mb: 1.5, p: 1.5, bgcolor: 'error.lighter', borderRadius: 2, borderLeft: '4px solid', borderColor: 'error.main' }}>
+                                        <Typography variant="caption" color="error.dark" fontWeight={900} display="block" sx={{ mb: 0.5 }}>VƯỚNG MẮC:</Typography>
+                                        <Typography variant="body2" sx={{ fontWeight: 500 }}>{h.issues}</Typography>
                                     </Box>
                                 )}
 
                                 {h.images && h.images.length > 0 && (
-                                    <Box sx={{ display: 'flex', gap: 1, mb: 2, overflowX: 'auto', pb: 1 }}>
+                                    <Box sx={{ display: 'flex', gap: 1.2, mt: 1, overflowX: 'auto', pb: 1, '&::-webkit-scrollbar': { height: 4 }, '&::-webkit-scrollbar-thumb': { bgcolor: 'grey.300', borderRadius: 4 } }}>
                                         {h.images.map((img, iidx) => (
-                                            <Avatar key={iidx} variant="rounded" src={getInundationImageUrl(img)} sx={{ width: 100, height: 100, borderRadius: 2, border: '1px solid', borderColor: 'divider' }} />
+                                            <Box
+                                                key={iidx} component="img" src={getInundationImageUrl(img)}
+                                                onClick={(e) => { e.stopPropagation(); handleOpenViewer(h.images, iidx); }}
+                                                sx={{ width: 90, height: 90, borderRadius: 2, objectFit: 'cover', border: '1px solid', borderColor: 'divider', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', cursor: 'zoom-in', transition: 'transform .2s', flexShrink: 0, '&:hover': { transform: 'scale(1.02)' } }}
+                                            />
                                         ))}
                                     </Box>
                                 )}
-                                <Divider sx={{ mb: 1.5 }} />
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: 'grey.100', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <Typography variant="caption" fontWeight={700}>{h.reporter_name?.charAt(0)}</Typography>
-                                    </Box>
-                                    <Box>
-                                        <Typography variant="body2" display="block" fontWeight={700}>{h.reporter_name}</Typography>
-                                        <Typography variant="body2" color="textSecondary">{h.reporter_email}</Typography>
-                                    </Box>
-                                </Box>
-                            </CardContent>
-                        </Card>
+                            </Box>
+                        </Box>
                     ))}
-                </List>
+                </Box>
             )}
         </Box>
     );
@@ -348,6 +393,38 @@ const ConstructionForm = () => {
                 ]}
             />
             {tabValue === 0 ? renderForm() : renderHistory()}
+
+            {/* Image Slider / Lightbox */}
+            <Dialog open={viewer.open} onClose={handleCloseViewer} maxWidth="lg" PaperProps={{ sx: { bgcolor: 'black', borderRadius: 4, overflow: 'hidden', position: 'relative' } }}>
+                <IconButton onClick={handleCloseViewer} sx={{ position: 'absolute', top: 16, right: 16, zIndex: 10, color: 'white', bgcolor: 'rgba(0,0,0,0.5)', '&:hover': { bgcolor: 'rgba(0,0,0,0.8)' } }}>
+                    <IconX size={20} />
+                </IconButton>
+
+                <DialogContent sx={{ p: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', position: 'relative' }}>
+                    {viewer.images.length > 1 && (
+                        <>
+                            <IconButton onClick={handlePrev} sx={{ position: 'absolute', left: 16, zIndex: 10, color: 'white', bgcolor: 'rgba(0,0,0,0.3)' }}>
+                                <IconChevronLeft size={32} />
+                            </IconButton>
+                            <IconButton onClick={handleNext} sx={{ position: 'absolute', right: 16, zIndex: 10, color: 'white', bgcolor: 'rgba(0,0,0,0.3)' }}>
+                                <IconChevronRight size={32} />
+                            </IconButton>
+                        </>
+                    )}
+
+                    <Box
+                        component="img"
+                        src={getInundationImageUrl(viewer.images[viewer.index])}
+                        sx={{ maxWidth: '100%', maxHeight: '85vh', objectFit: 'contain' }}
+                    />
+
+                    <Box sx={{ position: 'absolute', bottom: 16, left: 0, right: 0, textAlign: 'center' }}>
+                        <Typography sx={{ color: 'white', bgcolor: 'rgba(0,0,0,0.5)', display: 'inline-block', px: 2, py: 0.5, borderRadius: 10, fontSize: '0.85rem' }}>
+                            {viewer.index + 1} / {viewer.images.length}
+                        </Typography>
+                    </Box>
+                </DialogContent>
+            </Dialog>
         </Box>
     );
 

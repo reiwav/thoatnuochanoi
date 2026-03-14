@@ -5,10 +5,10 @@ import {
     TableCell, TableContainer, TableHead, TableRow,
     Button, CircularProgress, Chip,
     Stack, Tab, Tabs, Tooltip, useMediaQuery, Card, CardContent, Divider,
-    Avatar, List, ListItem, ListItemIcon, ListItemText, TextField, IconButton
+    Avatar, List, ListItem, ListItemIcon, ListItemText, TextField, IconButton, Dialog, DialogContent, Autocomplete, Checkbox
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { IconClipboardCheck, IconHistory, IconChevronRight, IconUser, IconLogout, IconSearch, IconX } from '@tabler/icons-react';
+import { IconClipboardCheck, IconHistory, IconChevronRight, IconUser, IconLogout, IconSearch, IconX, IconRefresh, IconMapPin, IconChevronLeft, IconChevronDown, IconSquare, IconCheckbox } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 import emergencyConstructionApi from 'api/emergencyConstruction';
 import authApi from 'api/auth';
@@ -17,6 +17,8 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import 'dayjs/locale/vi';
+import dayjs from 'dayjs';
+import { getInundationImageUrl } from 'utils/imageHelper';
 
 const ConstructionReporting = () => {
     const theme = useTheme();
@@ -34,9 +36,10 @@ const ConstructionReporting = () => {
     const [constructions, setConstructions] = useState([]);
     const [history, setHistory] = useState([]);
     const [historyDateFilter, setHistoryDateFilter] = useState(null);
-    const [historyConstructionFilter, setHistoryConstructionFilter] = useState('');
+    const [historyConstructionFilter, setHistoryConstructionFilter] = useState([]);
     const [userOrgId, setUserOrgId] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
+    const [viewer, setViewer] = useState({ open: false, images: [], index: 0 });
 
     const userRole = localStorage.getItem('role') || 'employee';
     const isEmployee = userRole === 'employee' || userRole === 'technician';
@@ -67,10 +70,6 @@ const ConstructionReporting = () => {
         if (!userOrgId) return;
         setHistoryLoading(true);
         try {
-            // Ideally we need a GET /api/admin/emergency-constructions/reports/all
-            // Since we don't have it, we might need a workaround or adapt an existing API.
-            // For now, let's assume we can fetch history for all constructions mapping over them.
-            // This is a temporary limitation. In a real app we'd add a dedicated endpoint.
             const allHistory = [];
             for (const c of constructions) {
                 const res = await emergencyConstructionApi.getProgressHistory(c.id);
@@ -78,7 +77,6 @@ const ConstructionReporting = () => {
                     allHistory.push(...res.data.data.map(h => ({ ...h, construction_name: c.name })));
                 }
             }
-            // Sort by report_date descending
             allHistory.sort((a, b) => b.report_date - a.report_date);
             setHistory(allHistory);
         } catch (err) {
@@ -86,6 +84,20 @@ const ConstructionReporting = () => {
         } finally {
             setHistoryLoading(false);
         }
+    };
+
+    const handleOpenViewer = (imgs, idx = 0) => {
+        if (!imgs || imgs.length === 0) return;
+        setViewer({ open: true, images: imgs, index: idx });
+    };
+    const handleCloseViewer = () => setViewer({ ...viewer, open: false });
+    const handlePrev = (e) => {
+        e?.stopPropagation();
+        setViewer((v) => ({ ...v, index: (v.index - 1 + v.images.length) % v.images.length }));
+    };
+    const handleNext = (e) => {
+        e?.stopPropagation();
+        setViewer((v) => ({ ...v, index: (v.index + 1) % v.images.length }));
     };
 
 
@@ -162,166 +174,136 @@ const ConstructionReporting = () => {
 
             {/* Tab 2: Global History */}
             {activeTab === 2 && (
-                <Box sx={{ px: 2, pt: 2, pb: 6 }}>
-                    <Typography variant="h5" sx={{ fontWeight: 800, mb: 3 }}>Lịch sử báo cáo công trình</Typography>
+                <Box sx={{ px: isMobile ? 2 : 3, pt: 3, pb: 8 }}>
+                    <Typography variant="h3" sx={{ fontWeight: 900, color: 'primary.dark', mb: 3 }}>Lịch sử báo cáo toàn hệ thống</Typography>
 
-                    <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <Box sx={{ display: 'flex', gap: 2, mb: 4, flexWrap: 'wrap', alignItems: 'center', bgcolor: 'grey.50', p: 2, borderRadius: 3, border: '1px solid', borderColor: 'grey.200' }}>
                         <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
                             <DatePicker
-                                label="Chọn ngày báo cáo" value={historyDateFilter} onChange={(v) => setHistoryDateFilter(v)}
-                                format="DD/MM/YYYY" slotProps={{ textField: { size: 'small', sx: { minWidth: 200 } } }}
+                                label="Chọn ngày" value={historyDateFilter} onChange={(v) => setHistoryDateFilter(v)}
+                                format="DD/MM/YYYY"
+                                slotProps={{ 
+                                    textField: { 
+                                        size: 'small', 
+                                        sx: { minWidth: 180, bgcolor: 'background.paper', borderRadius: 2 } 
+                                    } 
+                                }}
                             />
                         </LocalizationProvider>
-                        <TextField
-                            select label="Chọn công trình" size="small" value={historyConstructionFilter}
-                            onChange={(e) => setHistoryConstructionFilter(e.target.value)} sx={{ minWidth: 250 }}
-                            SelectProps={{ native: true }}
-                        >
-                            <option value="">Tất cả công trình</option>
-                            {constructions.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                        </TextField>
-                        <TextField
+
+                        <Autocomplete
+                            multiple
                             size="small"
-                            placeholder="Tìm kiếm nội dung..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            sx={{ minWidth: isMobile ? '100%' : 300 }}
-                            InputProps={{
-                                startAdornment: <IconSearch size={18} style={{ color: theme.palette.text.disabled, marginRight: 8 }} />,
-                                endAdornment: searchQuery ? (
-                                    <IconButton size="small" onClick={() => setSearchQuery('')}>
-                                        <IconX size={16} />
-                                    </IconButton>
-                                ) : null
+                            options={constructions}
+                            disableCloseOnSelect
+                            getOptionLabel={(option) => option.name}
+                            value={constructions.filter(c => historyConstructionFilter.includes(c.id))}
+                            onChange={(_, newValue) => setHistoryConstructionFilter(newValue.map(v => v.id))}
+                            renderInput={(params) => (
+                                <TextField {...params} label="Chọn công trình" placeholder="Tìm kiếm..." sx={{ minWidth: 300, bgcolor: 'background.paper', borderRadius: 2 }} />
+                            )}
+                            renderOption={(props, option, { selected }) => (
+                                <li {...props}>
+                                    <Checkbox
+                                        icon={<IconSquare size={20} />}
+                                        checkedIcon={<IconCheckbox size={20} />}
+                                        style={{ marginRight: 8 }}
+                                        checked={selected}
+                                    />
+                                    <Typography variant="body2">{option.name}</Typography>
+                                </li>
+                            )}
+                            sx={{
+                                flex: 1, minWidth: 250,
+                                '& .MuiOutlinedInput-root': { borderRadius: 2 }
                             }}
                         />
+
+                        {(historyDateFilter || historyConstructionFilter.length > 0) && (
+                            <Button size="small" color="error" startIcon={<IconX size={16} />} onClick={() => { setHistoryDateFilter(null); setHistoryConstructionFilter([]); }}>
+                                Xóa bộ lọc
+                            </Button>
+                        )}
                     </Box>
 
                     {historyLoading ? (
                         <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>
                     ) : (history.length === 0) ? (
                         <Typography color="textSecondary" align="center" sx={{ py: 4, fontStyle: 'italic' }}>Chưa có báo cáo nào được ghi nhận.</Typography>
-                    ) : isMobile ? (
-                        <List sx={{ p: 0 }}>
-                            {(historyConstructionFilter || historyDateFilter || searchQuery ?
-                                history.filter(h => 
-                                    (!historyConstructionFilter || h.construction_id === historyConstructionFilter) && 
-                                    (!historyDateFilter || (h.report_date >= historyDateFilter.startOf('day').unix() && h.report_date <= historyDateFilter.endOf('day').unix())) &&
-                                    (!searchQuery || h.work_done?.toLowerCase().includes(searchQuery.toLowerCase()) || h.construction_name?.toLowerCase().includes(searchQuery.toLowerCase()))
-                                ) :
-                                history
-                            ).map((h, idx) => (
-                                <Card key={idx} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '12px', mb: 2 }}>
-                                    <CardContent sx={{ p: '16px !important' }}>
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                                            <Typography variant="subtitle2" fontWeight={800} color="primary">{h.construction_name}</Typography>
-                                            <Typography variant="h6" fontWeight={800} color="secondary.main">{h.progress_percentage}%</Typography>
+                    ) : (
+                        <Box sx={{ px: 1 }}>
+                            {history.filter(h => 
+                                (historyConstructionFilter.length === 0 || historyConstructionFilter.includes(h.construction_id)) && 
+                                (!historyDateFilter || (h.report_date >= historyDateFilter.startOf('day').unix() && h.report_date <= historyDateFilter.endOf('day').unix()))
+                            ).map((h, idx, array) => (
+                                <Box key={idx} sx={{ display: 'flex', gap: isMobile ? 1.5 : 2, position: 'relative' }}>
+                                    {idx < array.length - 1 && (
+                                        <Box sx={{ position: 'absolute', left: 11, top: 32, width: 2, height: 'calc(100% - 20px)', bgcolor: 'grey.200' }} />
+                                    )}
+                                    <Box sx={{
+                                        width: 24, height: 24, borderRadius: '50%', flexShrink: 0, zIndex: 1, mt: 1,
+                                        bgcolor: idx === 0 ? 'secondary.main' : 'grey.300',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', border: '4px solid white', boxShadow: '0 0 0 1px #eee'
+                                    }}>
+                                        <IconRefresh size={10} />
+                                    </Box>
+                                    <Box sx={{ pb: 4, flex: 1, minWidth: 0 }}>
+                                        <Stack direction={isMobile ? "column" : "row"} justifyContent="space-between" alignItems={isMobile ? "flex-start" : "center"} sx={{ mb: 1 }}>
+                                             <Box sx={{ flex: 1 }}>
+                                                 <Typography variant="h5" sx={{ fontWeight: 900, color: 'primary.main', mb: 0.5 }}>{h.construction_name}</Typography>
+                                                 <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', opacity: 0.9 }}>{h.order || `Báo cáo ${dayjs(h.report_date * 1000).format('DD/MM')}`}</Typography>
+                                             </Box>
+                                             <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 600, opacity: 0.8, mt: isMobile ? 0.5 : 0 }}>
+                                                 {dayjs(h.report_date * 1000).format('DD/MM/YYYY • HH:mm')}
+                                             </Typography>
+                                        </Stack>
+                                        
+                                        <Typography variant="body1" sx={{ mb: 2, color: 'text.secondary', lineHeight: 1.6 }}>{h.work_done}</Typography>
+                                        
+                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8, mb: 1.5 }}>
+                                            {h.location && (
+                                                <Box sx={{ px: 1.2, py: 0.5, bgcolor: 'grey.50', borderRadius: 100, border: '1px solid', borderColor: 'grey.200', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                    <IconMapPin size={14} color={theme.palette.text.secondary} />
+                                                    <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.primary' }}>{h.location}</Typography>
+                                                </Box>
+                                            )}
+                                            {h.reporter_name && (
+                                                <Box sx={{ px: 1.2, py: 0.5, bgcolor: 'secondary.lighter', borderRadius: 100, border: '1px solid', borderColor: 'secondary.light', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                    <IconUser size={14} color={theme.palette.secondary.main} />
+                                                    <Typography variant="caption" sx={{ color: 'secondary.dark', fontWeight: 700 }}>{h.reporter_name}</Typography>
+                                                </Box>
+                                            )}
                                         </Box>
-                                        <Typography variant="caption" color="textSecondary" sx={{ mb: 1.5, display: 'block' }}>
-                                            {new Date(h.report_date * 1000).toLocaleString('vi-VN')}
-                                        </Typography>
-                                        <Typography variant="body2" sx={{ mb: 1.5, lineHeight: 1.5 }}>{h.work_done}</Typography>
 
-                                        {h.tasks && h.tasks.length > 0 && (
-                                            <Box sx={{ mb: 1.5 }}>
-                                                {h.tasks.map((t, tidx) => (
-                                                    <Box key={tidx} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5, p: 1, bgcolor: 'primary.lighter', borderRadius: 1 }}>
-                                                        <Typography variant="caption" sx={{ fontWeight: 600, color: 'primary.dark' }}>• {t.name}</Typography>
-                                                        <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main' }}>{t.percentage}%</Typography>
-                                                    </Box>
+                                        {h.conclusion && (
+                                            <Box sx={{ mb: 1.5, p: 1.5, bgcolor: 'primary.lighter', borderRadius: 2, borderLeft: '4px solid', borderColor: 'primary.main' }}>
+                                                <Typography variant="caption" color="primary.dark" fontWeight={900} display="block" sx={{ mb: 0.5 }}>KẾT LUẬN:</Typography>
+                                                <Typography variant="body2" sx={{ fontWeight: 500 }}>{h.conclusion}</Typography>
+                                            </Box>
+                                        )}
+
+                                        {h.issues && (
+                                            <Box sx={{ mb: 1.5, p: 1.5, bgcolor: 'error.lighter', borderRadius: 2, borderLeft: '4px solid', borderColor: 'error.main' }}>
+                                                <Typography variant="caption" color="error.dark" fontWeight={900} display="block" sx={{ mb: 0.5 }}>VƯỚNG MẮC:</Typography>
+                                                <Typography variant="body2" sx={{ fontWeight: 500 }}>{h.issues}</Typography>
+                                            </Box>
+                                        )}
+
+                                        {h.images && h.images.length > 0 && (
+                                            <Box sx={{ display: 'flex', gap: 1.2, mt: 1, overflowX: 'auto', pb: 1, '&::-webkit-scrollbar': { height: 4 }, '&::-webkit-scrollbar-thumb': { bgcolor: 'grey.300', borderRadius: 4 } }}>
+                                                {h.images.map((img, iidx) => (
+                                                    <Box
+                                                        key={iidx} component="img" src={getInundationImageUrl(img)}
+                                                        onClick={(e) => { e.stopPropagation(); handleOpenViewer(h.images, iidx); }}
+                                                        sx={{ width: 100, height: 100, borderRadius: 2, objectFit: 'cover', border: '1px solid', borderColor: 'divider', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', cursor: 'zoom-in', transition: 'transform .2s', flexShrink: 0, '&:hover': { transform: 'scale(1.02)' } }}
+                                                    />
                                                 ))}
                                             </Box>
                                         )}
-                                        {h.issues && (
-                                            <Box sx={{ p: 1, bgcolor: 'error.lighter', borderRadius: 1.5, mb: 1.5 }}>
-                                                <Typography variant="caption" color="error.dark" display="block" fontWeight={700}>Vướng mắc:</Typography>
-                                                <Typography variant="caption" color="error.dark">{h.issues}</Typography>
-                                            </Box>
-                                        )}
-                                        <Divider sx={{ mb: 1.5 }} />
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            <Box sx={{ width: 28, height: 28, borderRadius: '50%', bgcolor: 'grey.100', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                <Typography variant="caption" fontWeight={700}>{h.reporter_name?.charAt(0)}</Typography>
-                                            </Box>
-                                            <Typography variant="caption" fontWeight={700}>{h.reporter_name}</Typography>
-                                        </Box>
-                                    </CardContent>
-                                </Card>
+                                    </Box>
+                                </Box>
                             ))}
-                        </List>
-                    ) : (
-                        <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'grey.200', borderRadius: 3, boxShadow: '0px 4px 20px rgba(0,0,0,0.03)', overflow: 'hidden' }}>
-                            <Table size="small" sx={{ minWidth: 800 }}>
-                                <TableHead sx={{ bgcolor: 'grey.50' }}>
-                                    <TableRow>
-                                        <TableCell sx={{ fontWeight: 800, width: '15%', py: 1.5, color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.75rem' }}>Thời gian</TableCell>
-                                        <TableCell sx={{ fontWeight: 800, width: '25%', py: 1.5, color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.75rem' }}>Công trình</TableCell>
-                                        <TableCell sx={{ fontWeight: 800, width: '35%', py: 1.5, color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.75rem' }}>Nội dung & Tiến độ</TableCell>
-                                        <TableCell sx={{ fontWeight: 800, width: '10%', py: 1.5, color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.75rem' }}>Vướng mắc</TableCell>
-                                        <TableCell sx={{ fontWeight: 800, width: '15%', py: 1.5, color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.75rem' }}>Người báo cáo</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {(historyConstructionFilter || historyDateFilter || searchQuery ?
-                                        history.filter(h => 
-                                            (!historyConstructionFilter || h.construction_id === historyConstructionFilter) && 
-                                            (!historyDateFilter || (h.report_date >= historyDateFilter.startOf('day').unix() && h.report_date <= historyDateFilter.endOf('day').unix())) &&
-                                            (!searchQuery || h.work_done?.toLowerCase().includes(searchQuery.toLowerCase()) || h.construction_name?.toLowerCase().includes(searchQuery.toLowerCase()))
-                                        ) :
-                                        history
-                                    ).map((h, idx) => (
-                                        <TableRow key={idx} hover>
-                                            <TableCell sx={{ verticalAlign: 'top', py: 2 }}>
-                                                <Typography variant="body2" fontWeight={600} sx={{ color: 'text.primary' }}>{new Date(h.report_date * 1000).toLocaleDateString('vi-VN')}</Typography>
-                                                <Typography variant="caption" color="textSecondary" sx={{ bgcolor: 'grey.100', px: 1, py: 0.2, borderRadius: 1, mt: 0.5, display: 'inline-block' }}>
-                                                    {new Date(h.report_date * 1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
-                                                </Typography>
-                                            </TableCell>
-                                            <TableCell sx={{ verticalAlign: 'top', py: 2 }}>
-                                                <Typography variant="subtitle2" fontWeight={800} color="primary.main">{h.construction_name}</Typography>
-                                            </TableCell>
-                                            <TableCell sx={{ verticalAlign: 'top', py: 2 }}>
-                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                                                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>{h.work_done || 'Cập nhật tiến độ'}</Typography>
-                                                    <Chip size="small" label={`${h.progress_percentage}%`} color={h.progress_percentage === 100 ? 'success' : 'primary'} sx={{ height: 22, fontSize: '0.75rem', fontWeight: 800, minWidth: 50 }} />
-                                                </Box>
-
-                                                {h.tasks && h.tasks.length > 0 && (
-                                                    <Box sx={{ mt: 1, pl: 1.5, borderLeft: '3px solid', borderColor: 'primary.light', bgcolor: 'grey.50', p: 1, borderRadius: '0 4px 4px 0' }}>
-                                                        {h.tasks.map((t, tidx) => (
-                                                            <Box key={tidx} sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                                                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>• {t.name}</Typography>
-                                                                <Typography variant="caption" fontWeight={800} color="primary.main">{t.percentage}%</Typography>
-                                                            </Box>
-                                                        ))}
-                                                    </Box>
-                                                )}
-                                            </TableCell>
-                                            <TableCell sx={{ verticalAlign: 'top', py: 2 }}>
-                                                {h.issues ? (
-                                                    <Tooltip title={h.issues}>
-                                                        <Box sx={{ bgcolor: 'error.lighter', p: 1, borderRadius: 1 }}>
-                                                            <Typography variant="caption" color="error.dark" fontWeight={600} sx={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{h.issues}</Typography>
-                                                        </Box>
-                                                    </Tooltip>
-                                                ) : <Typography variant="caption" color="textSecondary" fontStyle="italic">Không có</Typography>}
-                                            </TableCell>
-                                            <TableCell sx={{ verticalAlign: 'top', py: 2 }}>
-                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                    <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.lighter', color: 'primary.dark', fontWeight: 800, fontSize: '0.9rem' }}>
-                                                        {h.reporter_name?.charAt(0)}
-                                                    </Avatar>
-                                                    <Box>
-                                                        <Typography variant="body2" fontWeight={700} sx={{ color: 'text.primary' }}>{h.reporter_name}</Typography>
-                                                        <Typography variant="caption" color="textSecondary" display="block">{h.reporter_email}</Typography>
-                                                    </Box>
-                                                </Box>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
+                        </Box>
                     )}
                 </Box>
             )}
@@ -429,6 +411,38 @@ const ConstructionReporting = () => {
                     )}
                 </Box>
             )}
+
+            {/* Image Slider / Lightbox */}
+            <Dialog open={viewer.open} onClose={handleCloseViewer} maxWidth="lg" PaperProps={{ sx: { bgcolor: 'black', borderRadius: 4, overflow: 'hidden', position: 'relative' } }}>
+                <IconButton onClick={handleCloseViewer} sx={{ position: 'absolute', top: 16, right: 16, zIndex: 10, color: 'white', bgcolor: 'rgba(0,0,0,0.5)', '&:hover': { bgcolor: 'rgba(0,0,0,0.8)' } }}>
+                    <IconX size={20} />
+                </IconButton>
+
+                <DialogContent sx={{ p: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', position: 'relative' }}>
+                    {viewer.images.length > 1 && (
+                        <>
+                            <IconButton onClick={handlePrev} sx={{ position: 'absolute', left: 16, zIndex: 10, color: 'white', bgcolor: 'rgba(0,0,0,0.3)' }}>
+                                <IconChevronLeft size={32} />
+                            </IconButton>
+                            <IconButton onClick={handleNext} sx={{ position: 'absolute', right: 16, zIndex: 10, color: 'white', bgcolor: 'rgba(0,0,0,0.3)' }}>
+                                <IconChevronRight size={32} />
+                            </IconButton>
+                        </>
+                    )}
+
+                    <Box
+                        component="img"
+                        src={getInundationImageUrl(viewer.images[viewer.index])}
+                        sx={{ maxWidth: '100%', maxHeight: '85vh', objectFit: 'contain' }}
+                    />
+
+                    <Box sx={{ position: 'absolute', bottom: 16, left: 0, right: 0, textAlign: 'center' }}>
+                        <Typography sx={{ color: 'white', bgcolor: 'rgba(0,0,0,0.5)', display: 'inline-block', px: 2, py: 0.5, borderRadius: 10, fontSize: '0.85rem' }}>
+                            {viewer.index + 1} / {viewer.images.length}
+                        </Typography>
+                    </Box>
+                </DialogContent>
+            </Dialog>
         </>
     );
 };

@@ -27,14 +27,16 @@ type Service interface {
 var DefaultSubfolders = []string{"RAIN", "RIVER", "LAKE", "CAMERA", "FLOOD"}
 
 type service struct {
-	driveSvc  *drive.Service
-	rootID    string
-	workspace string
+	driveSvc   *drive.Service
+	httpClient *resty.Client
+	rootID     string
+	workspace  string
 }
 
 func NewService(conf config.GoogleDriveConfig, oauthConf config.OAuthConfig) (Service, error) {
 	ctx := context.Background()
 	var driveSvc *drive.Service
+	var oauthHttpClient *resty.Client
 	var err error
 
 	if conf.GoogleRefreshToken != "" {
@@ -57,6 +59,7 @@ func NewService(conf config.GoogleDriveConfig, oauthConf config.OAuthConfig) (Se
 		if err != nil {
 			return nil, fmt.Errorf("failed to create drive service with oauth2: %w", err)
 		}
+		oauthHttpClient = resty.NewWithClient(client)
 	} else {
 		// Use Service Account Fallback
 		if conf.Credentials == "" {
@@ -66,12 +69,14 @@ func NewService(conf config.GoogleDriveConfig, oauthConf config.OAuthConfig) (Se
 		if err != nil {
 			return nil, fmt.Errorf("failed to create drive service with service account: %w", err)
 		}
+		oauthHttpClient = resty.New()
 	}
 
 	return &service{
-		driveSvc:  driveSvc,
-		rootID:    conf.RootFolderID,
-		workspace: conf.WorkspaceName,
+		driveSvc:   driveSvc,
+		httpClient: oauthHttpClient,
+		rootID:     conf.RootFolderID,
+		workspace:  conf.WorkspaceName,
 	}, nil
 }
 
@@ -185,25 +190,23 @@ func (s *service) TriggerReportGeneration(ctx context.Context, webhookURL, templ
 		return "", fmt.Errorf("webhook URL is empty")
 	}
 
-	// Construct the final request body
-	requestBody := make(map[string]interface{})
-	for k, v := range payload {
-		requestBody[k] = v
+	// Construct the final request body to match script.gs expectations
+	requestBody := map[string]interface{}{
+		"doc_id": templateFileID,
+		"data":   payload,
 	}
-	requestBody["docID"] = templateFileID
-	requestBody["folderId"] = targetFolderID
 
 	// Log the final payload being sent to Apps Script
 	payloadJson, _ := json.MarshalIndent(requestBody, "", "  ")
 	fmt.Printf(">>> TriggerReportGeneration FINAL PAYLOAD to %s:\n%s\n", webhookURL, string(payloadJson))
 
-	client := resty.New()
 	// Apps Script redirects are common
-	client.SetRedirectPolicy(resty.FlexibleRedirectPolicy(10))
+	s.httpClient.SetRedirectPolicy(resty.FlexibleRedirectPolicy(10))
 
-	resp, err := client.R().
+	resp, err := s.httpClient.R().
 		SetContext(ctx).
 		SetHeader("Content-Type", "application/json").
+		SetHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36").
 		SetBody(requestBody).
 		Post(webhookURL)
 
@@ -212,7 +215,9 @@ func (s *service) TriggerReportGeneration(ctx context.Context, webhookURL, templ
 	}
 
 	if resp.IsError() {
-		return "", fmt.Errorf("webhook returned error status: %d - %s", resp.StatusCode(), resp.String())
+		// Log response body for debugging
+		fmt.Printf(">>> TriggerReportGeneration ERROR Response: %s\n", resp.String())
+		return "", fmt.Errorf("webhook returned error status: %d", resp.StatusCode())
 	}
 
 	// Try to parse JSON response looking for a URL

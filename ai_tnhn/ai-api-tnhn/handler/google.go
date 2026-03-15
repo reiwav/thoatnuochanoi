@@ -175,6 +175,12 @@ func (h *GoogleHandler) GetUnreadEmails(c *gin.Context) {
 
 // GenerateQuickReport handles the request to generate a quick report via Apps Script
 func (h *GoogleHandler) GenerateQuickReport(c *gin.Context) {
+	h.GenerateQuickReportV3(c)
+}
+
+
+// GenerateQuickReportV3 is the version 3 that matches script.gs requirements (using 2D arrays for tables)
+func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 	if h.driveSvc == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Google Drive service is not initialized."})
 		return
@@ -183,13 +189,13 @@ func (h *GoogleHandler) GenerateQuickReport(c *gin.Context) {
 	// 0. Setup Context and Time
 	ctx := c.Request.Context()
 	now := time.Now()
-	day := now.Format("02")
-	month := now.Format("01")
-	year := now.Format("2006")
-	hourFull := now.Format("15h04")
-	hourSimple := now.Format("15h")
+	dd := now.Format("02")
+	mm := now.Format("01")
+	yyyy := now.Format("2006")
+	hh := now.Format("15h04")
+	shortHour := now.Format("15h")
 
-	h.log.GetLogger().Infof(">>> Generating report for %s-%s-%s %s", day, month, year, hourFull)
+	h.log.GetLogger().Infof(">>> Generating report V3 for %s-%s-%s %s", dd, mm, yyyy, hh)
 
 	// 1. Fetch Water Data (Lakes and Rivers)
 	waterURL := "https://noibo.thoatnuochanoi.vn/api/thuytri/getallmucnuoc?id=3a1a672f-c56f-4752-b86c-455e30427b87"
@@ -212,9 +218,8 @@ func (h *GoogleHandler) GenerateQuickReport(c *gin.Context) {
 	if err != nil || rResp.IsError() {
 		h.log.GetLogger().Warnf("Failed to fetch rain data: %v, status: %d", err, rResp.StatusCode())
 	}
-	h.log.GetLogger().Infof(" [QuickReport] Rain API Response: %d bytes, status: %d", len(rResp.Body()), rResp.StatusCode())
 
-	// Map Stations for lookup
+	// Map Stations
 	waterStations := make(map[string]string)
 	for _, t := range waterResp.Content.Tram {
 		id, _ := t["Id"].(string)
@@ -236,11 +241,18 @@ func (h *GoogleHandler) GenerateQuickReport(c *gin.Context) {
 		rainStations[idStr] = name
 	}
 
-	// Prepare Payload slices
-	lakeDataRaw := []map[string]interface{}{}
-	riverDataRaw := []map[string]interface{}{}
-	phuongDataRaw := []map[string]interface{}{}
-	xaDataRaw := []map[string]interface{}{}
+	// Prepare Data
+	lakeDataRaw := [][]string{{"Tên Trạm", "Mực nước"}}
+	riverDataRaw := [][]string{{"Tên Trạm", "Mực nước"}}
+	phuongDataRaw := [][]string{{"Tên Phường", "Lượng mưa"}}
+	xaDataRaw := [][]string{{"Tên Xã", "Lượng mưa"}}
+
+	// Temporary slices for sorting
+	type itemVal struct {
+		name string
+		val  float64
+	}
+	var lakes, rivers, phuongs, xas []itemVal
 
 	for _, d := range waterResp.Content.Data {
 		tid, _ := d["TramId"].(string)
@@ -250,17 +262,10 @@ func (h *GoogleHandler) GenerateQuickReport(c *gin.Context) {
 		if name == "" {
 			continue
 		}
-
-		item := map[string]interface{}{
-			"tram":    name,
-			"mucnuoc": fmt.Sprintf("%.2fm", val/100.0),
-			"val":     val,
-		}
-
 		if loai == 2 {
-			lakeDataRaw = append(lakeDataRaw, item)
+			lakes = append(lakes, itemVal{name, val})
 		} else {
-			riverDataRaw = append(riverDataRaw, item)
+			rivers = append(rivers, itemVal{name, val})
 		}
 	}
 
@@ -276,153 +281,50 @@ func (h *GoogleHandler) GenerateQuickReport(c *gin.Context) {
 		if name == "" {
 			continue
 		}
-
-		item := map[string]interface{}{
-			"name":  name,
-			"value": fmt.Sprintf("%.1f", val),
-			"val":   val,
-		}
-
-		// Categorize based on name: default to Phường if not Xã
-		if strings.Contains(name, "Xã") || strings.Contains(name, "xã") {
-			xaDataRaw = append(xaDataRaw, item)
+		if strings.Contains(strings.ToLower(name), "xã") {
+			xas = append(xas, itemVal{name, val})
 		} else {
-			phuongDataRaw = append(phuongDataRaw, item)
+			phuongs = append(phuongs, itemVal{name, val})
 		}
 	}
 
-	// Sort and Limit
-	sort.Slice(lakeDataRaw, func(i, j int) bool {
-		return lakeDataRaw[i]["val"].(float64) > lakeDataRaw[j]["val"].(float64)
-	})
-	if len(lakeDataRaw) > 5 {
-		lakeDataRaw = lakeDataRaw[:5]
-	}
+	// Sort and transform to 2D
+	sort.Slice(lakes, func(i, j int) bool { return lakes[i].val > lakes[j].val })
+	sort.Slice(rivers, func(i, j int) bool { return rivers[i].val > rivers[j].val })
+	sort.Slice(phuongs, func(i, j int) bool { return phuongs[i].val > phuongs[j].val })
+	sort.Slice(xas, func(i, j int) bool { return xas[i].val > xas[j].val })
 
-	sort.Slice(riverDataRaw, func(i, j int) bool {
-		return riverDataRaw[i]["val"].(float64) > riverDataRaw[j]["val"].(float64)
-	})
-	if len(riverDataRaw) > 5 {
-		riverDataRaw = riverDataRaw[:5]
-	}
-
-	sort.Slice(phuongDataRaw, func(i, j int) bool {
-		return phuongDataRaw[i]["val"].(float64) > phuongDataRaw[j]["val"].(float64)
-	})
-	if len(phuongDataRaw) > 10 {
-		phuongDataRaw = phuongDataRaw[:10]
-	}
-
-	sort.Slice(xaDataRaw, func(i, j int) bool {
-		return xaDataRaw[i]["val"].(float64) > xaDataRaw[j]["val"].(float64)
-	})
-	if len(xaDataRaw) > 10 {
-		xaDataRaw = xaDataRaw[:10]
-	}
-
-	// Convert back to requested slices of maps
-	lakeData := []map[string]string{}
-	for _, item := range lakeDataRaw {
-		lakeData = append(lakeData, map[string]string{
-			"tram":    item["tram"].(string),
-			"mucnuoc": item["mucnuoc"].(string),
-		})
-	}
-	riverData := []map[string]string{}
-	for _, item := range riverDataRaw {
-		riverData = append(riverData, map[string]string{
-			"tram":    item["tram"].(string),
-			"mucnuoc": item["mucnuoc"].(string),
-		})
-	}
-	phuongData := []map[string]string{}
-	for _, item := range phuongDataRaw {
-		phuongData = append(phuongData, map[string]string{
-			"name":  item["name"].(string),
-			"value": item["value"].(string),
-		})
-	}
-	xaData := []map[string]string{}
-	for _, item := range xaDataRaw {
-		xaData = append(xaData, map[string]string{
-			"name":  item["name"].(string),
-			"value": item["value"].(string),
-		})
-	}
-
-	h.log.GetLogger().Infof(" [QuickReport] Data stats: %d Phường (top 10), %d Xã (top 10), %d Lakes (top 5), %d Rivers (top 5)", len(phuongData), len(xaData), len(lakeData), len(riverData))
-
-	// 1.4 Fetch latest email content (Page 1 of PDF) for noi_dung
-	extractedContent := ""
-	if h.emailSvc != nil {
-		content, err := h.emailSvc.GetLatestEmailAttachmentPage1(ctx)
-		if err == nil && content != "" {
-			extractedContent = content
+	limit := func(vals []itemVal, n int) []itemVal {
+		if len(vals) > n {
+			return vals[:n]
 		}
+		return vals
 	}
 
-	// 1.4.1 Calculate rainy points using the summary service (which handles the 5-min freshness logic)
-	rainyPoints := 0
-	rainSummary, err := h.googleSvc.GetRainSummary(ctx)
-	if err == nil && rainSummary != nil {
-		rainyPoints = rainSummary.RainyStations
+	for _, v := range limit(lakes, 5) {
+		lakeDataRaw = append(lakeDataRaw, []string{v.name, fmt.Sprintf("%.2fm", v.val/100.0)})
+	}
+	for _, v := range limit(rivers, 5) {
+		riverDataRaw = append(riverDataRaw, []string{v.name, fmt.Sprintf("%.2fm", v.val/100.0)})
+	}
+	for _, v := range limit(phuongs, 10) {
+		phuongDataRaw = append(phuongDataRaw, []string{v.name, fmt.Sprintf("%.1f", v.val)})
+	}
+	for _, v := range limit(xas, 10) {
+		xaDataRaw = append(xaDataRaw, []string{v.name, fmt.Sprintf("%.1f", v.val)})
 	}
 
-	// 1.4.2 Use Gemini to generate professional content for noi_dung
-	noiDung := "Báo cáo tình hình mưa" // Default
-	if h.geminiSvc != nil && extractedContent != "" {
-		prompt := fmt.Sprintf(`hãy phân tích và thay thế nội dung mẫu này [Do ảnh hưởng của do ảnh hưởng của vùng mây đối lưu (lấy thông tin trên bản tin cảnh báo của khí tượng thuỷ văn đồng bằng bắc bộ email hoặc website) địa bàn Thành phố có Mưa nhỏ rải rác trên diện rộng (nếu mưa trên nhiều điểm tại bảng thì nó sẽ tự động ghi là mưa rải rác diện rộng, nếu ít thì nó ghi mưa vùng….., tự nó phân bổ)] theo đúng logic sau:
-
-Dữ liệu đầu vào:
-
-Số lượng điểm đang có mưa: %d
-
-
-
-Nguồn dữ liệu (Nguyên nhân): [%s]
-
-
-
-Quy tắc phân loại hình thái mưa:
-
-Nếu số điểm < 5: Ghi là "Mưa vùng".
-
-Nếu số điểm từ 5 đến 10: Ghi là "Mưa rải rác trên diện rộng".
-
-Nếu số điểm > 10: Ghi là "Mưa trên diện rộng".
-
-
-
-Yêu cầu trình bày:
-
-Kết hợp nguyên nhân từ nguồn dữ liệu để viết thành một câu hoàn chỉnh, chuyên nghiệp về lý do và kết qủa mưa của các khu vực của HÀ Nội
-`, rainyPoints, extractedContent)
-
-		aiResult, err := h.geminiSvc.Chat(ctx, prompt, nil, "system_report")
-		if err == nil && aiResult != "" {
-			noiDung = aiResult
-		}
-	} else if extractedContent != "" {
-		noiDung = extractedContent
-	}
-	fmt.Println("============ noiDung", noiDung)
-	// 1.5 Calculate time_mua
+	// Calculate rain timing
 	timeMua := ""
 	var minStart, maxEnd time.Time
-	parseTime := func(s string) time.Time {
-		if s == "" {
+	parseT := func(s interface{}) time.Time {
+		if s == nil {
 			return time.Time{}
 		}
-		layouts := []string{
-			"02/01/2006 15:04:05",
-			"02/01/2006 15:04",
-			"2006-01-02 15:04:05",
-			"2006-01-02 15:04",
-			time.RFC3339,
-			"2006-01-02T15:04:05",
-		}
+		sStr := fmt.Sprintf("%v", s)
+		layouts := []string{"02/01/2006 15:04:05", "02/01/2006 15:04", "2006-01-02 15:04:05", "2006-01-02 15:04", time.RFC3339}
 		for _, layout := range layouts {
-			t, err := time.ParseInLocation(layout, s, time.Local)
+			t, err := time.ParseInLocation(layout, sStr, time.Local)
 			if err == nil {
 				return t
 			}
@@ -433,12 +335,8 @@ Kết hợp nguyên nhân từ nguồn dữ liệu để viết thành một câ
 	for _, d := range rainResp.Content.Data {
 		lmht, _ := d["LuongMua_HT"].(float64)
 		if lmht > 0 {
-			tbdStr, _ := d["ThoiGian_BD"].(string)
-			thtStr, _ := d["ThoiGian_HT"].(string)
-
-			tbd := parseTime(tbdStr)
-			tht := parseTime(thtStr)
-
+			tbd := parseT(d["ThoiGian_BD"])
+			tht := parseT(d["ThoiGian_HT"])
 			if !tbd.IsZero() && (minStart.IsZero() || tbd.Before(minStart)) {
 				minStart = tbd
 			}
@@ -452,58 +350,72 @@ Kết hợp nguyên nhân từ nguồn dữ liệu để viết thành một câ
 		timeMua = fmt.Sprintf("%s đến %s", minStart.Format("15h04'"), maxEnd.Format("15h04'"))
 	}
 
-	// 2. Construct Payload
-	payload := map[string]interface{}{
-		"day":        day,
-		"month":      month,
-		"year":       year,
-		"hour":       hourFull,
-		"phuongData": phuongData,
-		"xaData":     xaData,
-		"lakeData":   lakeData,
-		"riverData":  riverData,
-		"noi_dung":   noiDung,
-		"time_mua":   timeMua,
+	// Content Generation
+	extractedContent := ""
+	if h.emailSvc != nil {
+		content, err := h.emailSvc.GetLatestEmailAttachmentPage1(ctx)
+		if err == nil && content != "" {
+			extractedContent = content
+		}
 	}
-	fmt.Println("==========================", timeMua)
-	// 3. Upload Template and naming
-	targetFilename := fmt.Sprintf("Báo cáo mưa ngày %s-%s-%s thời điểm %s.docx", day, month, year, hourSimple)
+
+	rainyPoints := len(phuongs) + len(xas)
+	noidung := "Báo cáo tình hình mưa"
+	if h.geminiSvc != nil && extractedContent != "" {
+		prompt := fmt.Sprintf(`hãy phân tích và viết nội dung báo cáo phù hợp dựa trên: số điểm đang có mưa (%d), và nội dung trích xuất từ email dự báo/cảnh báo: [%s]. Tuân thủ quy tắc: Nếu < 5 điểm: "Mưa vùng", 5-10: "Mưa rải rác trên diện rộng", > 10: "Mưa trên diện rộng". Kết hợp với nguyên nhân từ email để viết thành câu hoàn chỉnh.`, rainyPoints, extractedContent)
+		aiResult, err := h.geminiSvc.Chat(ctx, prompt, nil, "system_report")
+		if err == nil && aiResult != "" {
+			noidung = aiResult
+		}
+	}
+
+	// Construct Payload matching script.gs
+	payload := map[string]interface{}{
+		"dd":               dd,
+		"mm":               mm,
+		"yyyy":             yyyy,
+		"hh":               hh,
+		"noidung":          noidung,
+		"time_mua":         timeMua,
+		"table_mua_phuong": phuongDataRaw,
+		"table_mua_xa":     xaDataRaw,
+		"table_song_ho":    map[string]interface{}{
+			"river": riverDataRaw,
+			"lake":  lakeDataRaw,
+		},
+	}
+
+	// Upload Template
+	targetFilename := fmt.Sprintf("Báo cáo mưa ngày %s-%s-%s thời điểm %s.docx", dd, mm, yyyy, shortHour)
 	localTemplate := filepath.Join("doc", "Báo cáo mưa ngày {dd}-{mm}-{yyyy} thời điểm {hh}.docx")
 	fileData, err := os.Open(localTemplate)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Template document not found locally: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Template document not found: " + err.Error()})
 		return
 	}
 	defer fileData.Close()
 
 	reportsFolderID, err := h.driveSvc.FindOrCreateFolder(ctx, h.config.RootFolderID, "REPORTS")
 	if err != nil {
-		h.log.GetLogger().Warnf("Failed to find or create REPORTS folder, using root: %v", err)
 		reportsFolderID = h.config.RootFolderID
 	}
 
 	templateFileID, err := h.driveSvc.UploadFile(ctx, reportsFolderID, targetFilename, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", fileData, true)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload template to Drive: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload template: " + err.Error()})
 		return
 	}
 
-	// 4. Trigger Apps Script
-	if h.config.AppsScriptWebhookURL == "" {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Apps Script Webhook URL is not configured."})
-		return
-	}
-
+	// Trigger Apps Script
+	h.log.GetLogger().Infof(">>> Triggering report generation V3 with Webhook: %s", h.config.AppsScriptWebhookURL)
 	reportResp, err := h.driveSvc.TriggerReportGeneration(ctx, h.config.AppsScriptWebhookURL, templateFileID, reportsFolderID, payload)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to trigger Apps Script: " + err.Error()})
 		return
 	}
 
-	// reportResp is usually a JSON string from Apps Script
 	resLink := h.extractReportLink(reportResp)
 	if resLink == "" {
-		// Fallback to direct Drive link of the uploaded/converted document
 		resLink = fmt.Sprintf("https://docs.google.com/document/d/%s/edit", templateFileID)
 	}
 
@@ -513,7 +425,7 @@ Kết hợp nguyên nhân từ nguồn dữ liệu để viết thành một câ
 		"data": gin.H{
 			"result":      reportResp,
 			"report_url":  resLink,
-			"report_link": resLink, // keep as fallback
+			"report_link": resLink,
 			"docID":       templateFileID,
 		},
 	})

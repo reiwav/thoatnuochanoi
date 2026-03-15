@@ -12,6 +12,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"ai-api-tnhn/internal/models"
@@ -77,6 +78,25 @@ func NewService(apiKey string, waterSvc water.Service, googleApiSvc googleapi.Se
 }
 
 func (s *service) Chat(ctx context.Context, prompt string, history []ChatMessage, userID string) (string, error) {
+	// Pre-process prompt for special keywords (mưa 3 ngày trước)
+	lowerPrompt := strings.ToLower(prompt)
+	if strings.Contains(lowerPrompt, "mưa") && (strings.Contains(lowerPrompt, "3 ngày trước") || strings.Contains(lowerPrompt, "ba ngày trước")) {
+		now := time.Now()
+		targetDate := now.AddDate(0, 0, -3)
+		dateStr := targetDate.Format("2006-01-02")
+
+		rainData, err := s.waterSvc.GetRainDataByDate(ctx, dateStr)
+		if err == nil {
+			dataJSON, _ := json.Marshal(rainData)
+			prompt = fmt.Sprintf("[Hệ thống cung cấp thêm context]: Dữ liệu lượng mưa thực tế ngày %s (3 ngày trước tính từ %s): %s\n\n[Câu hỏi của người dùng]: %s",
+				dateStr, now.Format("2006-01-02"), string(dataJSON), prompt)
+		}
+	} else {
+		// Always add current time for context
+		prompt = fmt.Sprintf("[Hệ thống]: Thời gian hiện tại là %s\n\n[Câu hỏi của người dùng]: %s",
+			time.Now().Format("2006-01-02 15:04:05"), prompt)
+	}
+
 	// Define Tools
 	tools := []*genai.FunctionDeclaration{
 		{

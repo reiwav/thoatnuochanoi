@@ -11,7 +11,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
-import { IconChevronLeft, IconSend, IconClipboardCheck, IconHistory, IconClock, IconAlertTriangle, IconPlus, IconTrash, IconCamera, IconPhoto, IconArrowLeft, IconMapPin, IconFileText, IconBulb, IconCloudUpload, IconMessageExclamation, IconCar, IconRefresh, IconUser, IconX, IconChevronRight } from '@tabler/icons-react';
+import { IconChevronLeft, IconSend, IconClipboardCheck, IconHistory, IconClock, IconAlertTriangle, IconPlus, IconTrash, IconCamera, IconPhoto, IconArrowLeft, IconMapPin, IconFileText, IconBulb, IconCloudUpload, IconMessageExclamation, IconCar, IconRefresh, IconUser, IconX, IconChevronRight, IconDownload } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 import emergencyConstructionApi from 'api/emergencyConstruction';
 import MainCard from 'ui-component/cards/MainCard';
@@ -149,6 +149,35 @@ const ConstructionForm = () => {
 
     const handleOpenLocalViewer = (idx) => {
         setViewer({ open: true, images: imagePreviews, index: idx, isLocal: true });
+    };
+
+    const handleExportExcel = () => {
+        if (!history || history.length === 0) {
+            toast.error("Không có dữ liệu để xuất");
+            return;
+        }
+
+        const excelData = history.map((item, index) => ({
+            "STT": index + 1,
+            "Lệnh": item.order || `Cập nhật tiến độ ${dayjs(item.report_date * 1000).format('DD/MM')}`,
+            "Thời gian": dayjs(item.report_date * 1000).format('DD/MM/YYYY HH:mm:ss'),
+            "Người báo cáo": item.reporter_name || "",
+            "Vị trí": item.location || "",
+            "Nội dung công việc": item.work_done || "",
+            "Kết luận": item.conclusion || "",
+            "Ảnh hưởng": item.influence || "",
+            "Đề xuất": item.proposal || "",
+            "Vướng mắc": item.issues || ""
+        }));
+
+        import("xlsx").then(XLSX => {
+            const worksheet = XLSX.utils.json_to_sheet(excelData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "TienDo");
+            XLSX.writeFile(workbook, `TienDo_${constructionName.replace(/\s+/g, '_')}_${dayjs().format('YYYYMMDD')}.xlsx`);
+        }).catch(() => {
+            toast.error("Lỗi khi xuất File Excel");
+        });
     };
 
     const handleTabChange = (event, newValue) => {
@@ -383,14 +412,14 @@ const ConstructionForm = () => {
             <Paper sx={{ mb: 3, p: isMobile ? 1.5 : 2, bgcolor: 'secondary.lighter', borderRadius: 3, boxShadow: 'none', border: '1px solid', borderColor: 'secondary.light' }}>
                 <Stack spacing={1}>
                     <Typography variant={isMobile ? "h4" : "h3"} color="secondary.dark" sx={{ fontWeight: 900, lineHeight: 1.2 }}>{constructionName}</Typography>
-                    <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 600 }}>Theo dõi tiến độ Cập nhật tiến độ tiến độ chi tiết</Typography>
+                    <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 600 }}> Cập nhật theo dõi tiến độ chi tiết</Typography>
                 </Stack>
             </Paper>
 
             {loading ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}><CircularProgress /></Box>
             ) : history.length === 0 ? (
-                <Typography align="center" color="textSecondary" sx={{ py: 5, fontStyle: 'italic' }}>Chưa có Theo dõi tiến độ Cập nhật tiến độ</Typography>
+                <Typography align="center" color="textSecondary" sx={{ py: 5, fontStyle: 'italic' }}>Chưa có dữ liệu Theo dõi tiến độ</Typography>
             ) : (
                 <Box sx={{ px: 1 }}>
                     {history.map((h, idx) => (
@@ -473,6 +502,21 @@ const ConstructionForm = () => {
                     { id: 1, label: 'Cập nhật tiến độ', icon: <IconClipboardCheck size={18} /> }
                 ]}
             />
+            {tabValue === 0 && (
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', px: { xs: 1, md: 2 }, mb: -1, position: 'relative', zIndex: 10 }}>
+                    <Button
+                        variant="outlined"
+                        color="primary"
+                        size="small"
+                        startIcon={<IconDownload size={16} />}
+                        onClick={handleExportExcel}
+                        disabled={history.length === 0}
+                        sx={{ borderRadius: 2, bgcolor: 'background.paper' }}
+                    >
+                        Xuất Excel
+                    </Button>
+                </Box>
+            )}
             {tabValue === 0 ? renderHistory() : renderForm()}
 
             {/* Image Slider / Lightbox */}

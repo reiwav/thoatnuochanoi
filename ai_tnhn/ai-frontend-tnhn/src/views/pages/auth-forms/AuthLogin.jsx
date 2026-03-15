@@ -77,7 +77,7 @@ export default function AuthLogin() {
 
         // Store role
         let role = tokenData.role || 'employee';
-        if (role === 'supper_admib' || role === 'supper_admin' || role === 'super_admib') {
+        if (role === 'supper_admin' || role === 'supper_admin' || role === 'super_admib') {
           role = 'super_admin';
         }
         localStorage.setItem('role', role);

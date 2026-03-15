@@ -64,7 +64,7 @@ export default function MainLayout() {
         if (result.status === 'success') {
           const user = result.data;
           // Normalize role typo
-          if (user.role === 'supper_admib' || user.role === 'supper_admin' || user.role === 'super_admib') {
+          if (user.role === 'supper_admin' || user.role === 'supper_admin' || user.role === 'super_admib') {
             user.role = 'super_admin';
           }
           setUserInfo(user);

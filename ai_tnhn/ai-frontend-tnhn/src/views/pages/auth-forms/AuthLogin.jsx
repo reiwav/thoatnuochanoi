@@ -38,13 +38,29 @@ export default function AuthLogin() {
   const [error, setError] = useState(''); // Lưu thông báo lỗi API
 
   // --- 1.5. Check token from Google ---
+  // --- 1.5. Check token and metadata from Google OAuth ---
   useEffect(() => {
     const token = searchParams.get('token');
+    const role = searchParams.get('role');
+    const name = searchParams.get('name');
+
     if (token) {
       localStorage.setItem(ADMIN_TOKEN, token);
-      // Admin and TNHN go to /admin after Google OAuth, employees to /company
-      // Let MainLayout handle specific sub-path redirect after role check
-      navigate('/', { replace: true });
+      
+      // Store metadata if available
+      let userRole = role || 'employee';
+      if (userRole === 'supper_admin' || userRole === 'super_admib') {
+        userRole = 'super_admin';
+      }
+      localStorage.setItem('role', userRole);
+      if (name) localStorage.setItem('name', name);
+
+      // Immediate redirection based on role
+      if (userRole === 'employee' || userRole === 'technician') {
+        navigate('/company/inundation', { replace: true });
+      } else {
+        navigate('/admin/inundation', { replace: true });
+      }
     }
   }, [searchParams, navigate]);
 

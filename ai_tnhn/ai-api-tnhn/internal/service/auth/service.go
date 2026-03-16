@@ -61,7 +61,7 @@ func (t service) GetProfile(ctx context.Context, tokenID string) (*models.User, 
 		return nil, err
 	}
 	// Normalize known role typos from legacy data
-	if user.Role == "supper_admib" || user.Role == "super_admin " {
+	if user.Role == "supper_admib" || user.Role == "supper_admin" || user.Role == "super_admin " {
 		user.Role = constant.ROLE_SUPER_ADMIN
 	}
 	return user, nil

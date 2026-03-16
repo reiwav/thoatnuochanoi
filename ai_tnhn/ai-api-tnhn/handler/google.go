@@ -434,20 +434,36 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 func (h *GoogleHandler) extractReportLink(resp string) string {
 	var data map[string]interface{}
 	if err := json.Unmarshal([]byte(resp), &data); err == nil {
-		// Prioritize constructing standard EDIT link from IDs if available
-		if docID, ok := data["newDocId"].(string); ok && docID != "" {
-			return fmt.Sprintf("https://docs.google.com/document/d/%s/edit", docID)
-		}
-		if docID, ok := data["docID"].(string); ok && docID != "" {
-			return fmt.Sprintf("https://docs.google.com/document/d/%s/edit", docID)
+		// 1. Check top level keys
+		keys := []string{"newDocId", "docID", "docId", "file_id", "fileId"}
+		for _, key := range keys {
+			if val, ok := data[key].(string); ok && val != "" {
+				return fmt.Sprintf("https://docs.google.com/document/d/%s/edit", val)
+			}
 		}
 
-		// Fallback to fileUrl or report_link provided by script
-		if link, ok := data["fileUrl"].(string); ok && link != "" {
-			return link
+		// 2. Check nested 'data' object (my recent Apps Script change)
+		if nested, ok := data["data"].(map[string]interface{}); ok {
+			for _, key := range keys {
+				if val, ok := nested[key].(string); ok && val != "" {
+					return fmt.Sprintf("https://docs.google.com/document/d/%s/edit", val)
+				}
+			}
+			// Check urls in nested data
+			urlKeys := []string{"report_url", "file_url", "report_link", "fileUrl"}
+			for _, key := range urlKeys {
+				if val, ok := nested[key].(string); ok && val != "" {
+					return val
+				}
+			}
 		}
-		if link, ok := data["report_link"].(string); ok && link != "" {
-			return link
+
+		// 3. Check top level URL keys
+		urlKeys := []string{"report_url", "file_url", "fileUrl", "report_link"}
+		for _, key := range urlKeys {
+			if val, ok := data[key].(string); ok && val != "" {
+				return val
+			}
 		}
 	}
 	return ""

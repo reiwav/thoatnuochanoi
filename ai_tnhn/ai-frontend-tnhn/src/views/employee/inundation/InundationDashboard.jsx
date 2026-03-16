@@ -1151,14 +1151,6 @@ const InundationDashboard = () => {
                     {userInfo?.email || 'Phòng Thoát Nước Hà Nội'}
                 </Typography>
                 <List sx={{ bgcolor: 'background.paper', borderRadius: 4, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', mb: 4, overflow: 'hidden' }}>
-                    <ListItem button sx={{ py: 2 }}>
-                        <ListItemIcon>
-                            <IconUser size={26} color={theme.palette.primary.main} />
-                        </ListItemIcon>
-                        <ListItemText primary="Thông tin cá nhân" primaryTypographyProps={{ fontWeight: 700 }} />
-                        <IconChevronRight size={20} />
-                    </ListItem>
-                    <Divider />
                     <ListItem button onClick={handleLogout} sx={{ color: 'error.main', py: 2 }}>
                         <ListItemIcon>
                             <IconLogout size={26} color={theme.palette.error.main} />

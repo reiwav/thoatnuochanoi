@@ -82,3 +82,15 @@ func (s *localService) CreateFolder(ctx context.Context, parentID, name string) 
 	}
 	return relPath, nil
 }
+
+func (s *localService) GetFileContent(ctx context.Context, fileID string) ([]byte, error) {
+	// fileID can be a relative path or a URL starting with /api/storage/file/
+	filePath := fileID
+	const prefix = "/api/storage/file/"
+	if len(fileID) > len(prefix) && fileID[:len(prefix)] == prefix {
+		filePath = fileID[len(prefix):]
+	}
+
+	fullPath := filepath.Join(s.basePath, filePath)
+	return os.ReadFile(fullPath)
+}

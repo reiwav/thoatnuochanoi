@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/xuri/excelize/v2"
@@ -313,6 +315,8 @@ func (s *service) GetProgressHistory(ctx context.Context, constructionID string)
 }
 
 func (s *service) ExportExcelToDrive(ctx context.Context, dateStr string, orgID string) (string, error) {
+	fmt.Printf("DEBUG Service: ExportExcelToDrive started for date %s, orgID %s\n", dateStr, orgID)
+	fmt.Printf("DEBUG Service: driveSvc implementation type: %T\n", s.driveSvc)
 	// 1. Parse date
 	loc, _ := time.LoadLocation("Asia/Ho_Chi_Minh")
 	t, err := time.ParseInLocation("2006-01-02", dateStr, loc)
@@ -426,28 +430,50 @@ func (s *service) ExportExcelToDrive(ctx context.Context, dateStr string, orgID 
 
 				// Handle Images
 				if len(p.Images) > 0 {
-					imgX := 0.0
-					for _, imgID := range p.Images {
-						imgData, err := s.driveSvc.GetFileContent(ctx, imgID)
-						if err == nil {
-							_ = f.AddPictureFromBytes(sheetName, fmt.Sprintf("H%d", rowIdx), &excelize.Picture{
-								Extension: ".jpg",
-								File:      imgData,
-								Format:    &excelize.GraphicOptions{
-									ScaleX: 0.2,
-									ScaleY: 0.2,
-									OffsetX: int(imgX),
-								},
-							})
-							imgX += 100 // Spacing between images
+					fmt.Printf("DEBUG: Found %d images for progress %s\n", len(p.Images), p.ID)
+					for k, imgID := range p.Images {
+						// Column H is index 8. Next images go to I, J, K...
+						colIdx := 8 + k
+						cellName, _ := excelize.CoordinatesToCellName(colIdx, rowIdx)
+						
+						// Add text link as fallback/extra info
+						imageURL := imgID
+						if !strings.HasPrefix(imgID, "http") && !strings.HasPrefix(imgID, "/") {
+							imageURL = "https://drive.google.com/file/d/" + imgID + "/view"
 						}
+						f.SetCellValue(sheetName, cellName, "Link ảnh "+strconv.Itoa(k+1))
+						_ = f.SetCellHyperLink(sheetName, cellName, imageURL, "External")
+
+						imgData, err := s.driveSvc.GetFileContent(ctx, imgID)
+						if err != nil {
+							fmt.Printf("DEBUG: Failed to get image %s content: %v\n", imgID, err)
+							continue
+						}
+						
+						// Set column width for image columns
+						colName, _ := excelize.ColumnNumberToName(colIdx)
+						_ = f.SetColWidth(sheetName, colName, colName, 25)
+
+						_ = f.AddPictureFromBytes(sheetName, cellName, &excelize.Picture{
+							Extension: ".jpg",
+							File:      imgData,
+							Format:    &excelize.GraphicOptions{
+								ScaleX: 0.15,
+								ScaleY: 0.15,
+								OffsetX: 5,
+								OffsetY: 60, // Move image down to not overlap text link
+							},
+						})
+
+						fmt.Printf("DEBUG: Embedded image %s into cell %s with link %s\n", imgID, cellName, imageURL)
 					}
 					f.SetRowHeight(sheetName, rowIdx, 100)
 				} else {
+					fmt.Printf("DEBUG: No images found for progress %s\n", p.ID)
 					f.SetRowHeight(sheetName, rowIdx, 60)
 				}
 
-				f.SetCellStyle(sheetName, fmt.Sprintf("A%d", rowIdx), fmt.Sprintf("H%d", rowIdx), contentStyle)
+				f.SetCellStyle(sheetName, "A"+strconv.Itoa(rowIdx), "Z"+strconv.Itoa(rowIdx), contentStyle)
 				rowIdx++
 				stt++
 			}

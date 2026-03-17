@@ -8,4 +8,5 @@ import (
 type Service interface {
 	UploadFile(ctx context.Context, folderID, name, mimeType string, content io.Reader, convert bool) (string, error)
 	CreateFolder(ctx context.Context, parentID, name string) (string, error)
+	GetFileContent(ctx context.Context, fileID string) ([]byte, error)
 }

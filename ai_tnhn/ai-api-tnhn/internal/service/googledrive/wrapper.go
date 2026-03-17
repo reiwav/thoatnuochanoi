@@ -111,18 +111,15 @@ func (w *storageWrapper) CopyFile(ctx context.Context, fileID, parentID, newName
 
 func (w *storageWrapper) GetFileContent(ctx context.Context, fileID string) ([]byte, error) {
 	cleanID := strings.TrimSpace(fileID)
-	fmt.Printf("DEBUG Wrapper: GetFileContent called for '%s' (clean: '%s')\n", fileID, cleanID)
 
 	// If fileID starts with /api/storage/file/, it's a local file
 	const prefix = "/api/storage/file/"
 	if strings.HasPrefix(cleanID, prefix) {
-		fmt.Printf("DEBUG Wrapper: Routing to local storage for %s\n", cleanID)
 		return w.storageSvc.GetFileContent(ctx, cleanID)
 	}
 
 	if w.driveSvc == nil {
 		return nil, fmt.Errorf("google drive service required for get file content")
 	}
-	fmt.Printf("DEBUG Wrapper: Routing to Google Drive for %s\n", cleanID)
 	return w.driveSvc.GetFileContent(ctx, cleanID)
 }

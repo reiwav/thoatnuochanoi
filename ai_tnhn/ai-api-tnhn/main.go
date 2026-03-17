@@ -6,7 +6,6 @@ import (
 	"ai-api-tnhn/internal/base/index"
 	"ai-api-tnhn/internal/base/logger"
 	"ai-api-tnhn/internal/base/mgo/db"
-	"fmt"
 	"ai-api-tnhn/internal/repository/query"
 	"ai-api-tnhn/internal/service/auth"
 	"ai-api-tnhn/internal/service/email"
@@ -29,6 +28,7 @@ import (
 	"ai-api-tnhn/router/middleware"
 	"ai-api-tnhn/utils/web"
 	"context"
+
 	"github.com/joho/godotenv"
 )
 
@@ -72,24 +72,19 @@ func main() {
 
 	// Storage Selection
 	var storageSvc storage.Service
-	fmt.Printf("DEBUG: confg.StorageType = %s\n", confg.StorageType)
 	if confg.StorageType == "local" {
 		storageSvc, _ = storage.NewLocalService(confg.LocalStoragePath)
-		fmt.Printf("DEBUG: Using local storage at: %s\n", confg.LocalStoragePath)
 		log.GetLogger().Infof("Using local storage at: %s", confg.LocalStoragePath)
 	} else {
 		storageSvc = driveService
-		fmt.Printf("DEBUG: Using Google Drive storage\n")
 		log.GetLogger().Info("Using Google Drive storage")
 	}
 
 	if storageSvc != nil {
-		fmt.Printf("DEBUG: Wrapping driveService with storageWrapper\n")
 		driveService = googledrive.NewStorageWrapper(storageSvc, driveService)
 	}
 
 	if driveService != nil {
-		fmt.Printf("DEBUG: Final driveService implementation: %T\n", driveService)
 		log.GetLogger().Info("Drive/Storage service initialized")
 	}
 

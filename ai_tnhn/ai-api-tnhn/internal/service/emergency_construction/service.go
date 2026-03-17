@@ -12,7 +12,6 @@ import (
 	"io"
 	"sort"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/xuri/excelize/v2"
@@ -315,8 +314,6 @@ func (s *service) GetProgressHistory(ctx context.Context, constructionID string)
 }
 
 func (s *service) ExportExcelToDrive(ctx context.Context, dateStr string, orgID string) (string, error) {
-	fmt.Printf("DEBUG Service: ExportExcelToDrive started for date %s, orgID %s\n", dateStr, orgID)
-	fmt.Printf("DEBUG Service: driveSvc implementation type: %T\n", s.driveSvc)
 	// 1. Parse date
 	loc, _ := time.LoadLocation("Asia/Ho_Chi_Minh")
 	t, err := time.ParseInLocation("2006-01-02", dateStr, loc)
@@ -430,23 +427,13 @@ func (s *service) ExportExcelToDrive(ctx context.Context, dateStr string, orgID 
 
 				// Handle Images
 				if len(p.Images) > 0 {
-					fmt.Printf("DEBUG: Found %d images for progress %s\n", len(p.Images), p.ID)
 					for k, imgID := range p.Images {
 						// Column H is index 8. Next images go to I, J, K...
 						colIdx := 8 + k
 						cellName, _ := excelize.CoordinatesToCellName(colIdx, rowIdx)
 						
-						// Add text link as fallback/extra info
-						imageURL := imgID
-						if !strings.HasPrefix(imgID, "http") && !strings.HasPrefix(imgID, "/") {
-							imageURL = "https://drive.google.com/file/d/" + imgID + "/view"
-						}
-						f.SetCellValue(sheetName, cellName, "Link ảnh "+strconv.Itoa(k+1))
-						_ = f.SetCellHyperLink(sheetName, cellName, imageURL, "External")
-
 						imgData, err := s.driveSvc.GetFileContent(ctx, imgID)
 						if err != nil {
-							fmt.Printf("DEBUG: Failed to get image %s content: %v\n", imgID, err)
 							continue
 						}
 						
@@ -461,15 +448,12 @@ func (s *service) ExportExcelToDrive(ctx context.Context, dateStr string, orgID 
 								ScaleX: 0.15,
 								ScaleY: 0.15,
 								OffsetX: 5,
-								OffsetY: 60, // Move image down to not overlap text link
+								OffsetY: 5,
 							},
 						})
-
-						fmt.Printf("DEBUG: Embedded image %s into cell %s with link %s\n", imgID, cellName, imageURL)
 					}
 					f.SetRowHeight(sheetName, rowIdx, 100)
 				} else {
-					fmt.Printf("DEBUG: No images found for progress %s\n", p.ID)
 					f.SetRowHeight(sheetName, rowIdx, 60)
 				}
 

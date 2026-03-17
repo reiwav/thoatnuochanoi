@@ -50,6 +50,7 @@ type RainStationStat struct {
 	TotalRain   float64 `json:"total_rain"`
 	SessionRain float64 `json:"session_rain"`
 	StartTime   string  `json:"start_time"`
+	EndTime     string  `json:"end_time"`
 	// TenPhuong   string  `json:"ten_phuong"`
 	// DiaChi      string  `json:"dia_chi"`
 	// ThuTu       int     `json:"thu_tu"`
@@ -316,11 +317,17 @@ func (s *service) GetRainSummary(ctx context.Context) (*RainSummaryData, error) 
 					sessionRain = 0
 				}
 
+				tHT := d.ThoiGian_HT
+				if len(tHT) > 16 {
+					tHT = tHT[11:16]
+				}
+
 				measurements = append(measurements, RainStationStat{
 					Name:        stationMap[id],
 					TotalRain:   d.LuongMua_HT,
 					SessionRain: sessionRain,
 					StartTime:   tBD,
+					EndTime:     tHT,
 				})
 			}
 		}

@@ -118,7 +118,7 @@ const AiSupport = () => {
                     displayText = 'Hiện tại ghi nhận không có mưa tại tất cả các trạm.';
                 } else {
                     displayText = `Tình hình mưa hiện tại:\n- Tổng số trạm: ${data.total_stations}\n- Số trạm đang có mưa: ${data.rainy_stations}\n- Trạm mưa lớn nhất: ${data.max_rain_station?.name} (${data.max_rain_station?.total_rain}mm)\n\nChi tiết một số trạm mưa lớn:\n` +
-                        data.measurements.slice(0, 5).map(m => `- ${m.name}: ${m.total_rain}mm (Bắt đầu từ ${m.start_time})`).join('\n');
+                        data.measurements.slice(0, 5).map(m => `- ${m.name}: ${m.total_rain}mm (${m.start_time} - ${m.end_time || 'Đang mưa'})`).join('\n');
                 }
             } else {
                 displayText = 'Không thể lấy thông tin lượng mưa lúc này.';
@@ -587,12 +587,12 @@ const AiSupport = () => {
                 </Box>
 
                 {/* Suggested Questions */}
-                {!loading && messages.length === 1 && (
+                {!loading && (
                     <Box sx={{ px: 3, pb: 2, display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
                         {[
-                            { text: 'Tình hình mưa đang như thế nào?', type: 'rain' },
-                            { text: 'Kiểm tra dung lượng bộ nhớ', type: 'storage' },
-                            { text: 'Có email mới nào không?', type: 'email' }
+                            { text: 'Lượng mưa hiện tại các điểm?', type: 'rain' },
+                            { text: 'Những điểm nào đang ngập, tình trạng?', type: 'question' },
+                            { text: 'Lượng mưa ở khu vực gần điểm ngập?', type: 'question' }
                         ].map((q, i) => (
                             <Paper
                                 key={i}

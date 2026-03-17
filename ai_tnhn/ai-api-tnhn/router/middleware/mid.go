@@ -53,7 +53,7 @@ func (m mid) MidBasicType(roles ...string) gin.HandlerFunc {
 		}
 
 		// Normalize typo from database
-		if tok.Role == "supper_admib" || tok.Role == "super_admin " {
+		if tok.Role == "supper_admib" || tok.Role == "supper_admin" || tok.Role == "super_admin " {
 			tok.Role = constant.ROLE_SUPER_ADMIN
 		}
 		fmt.Println("tok.Role: ", tok.Role)

@@ -237,13 +237,7 @@ const ConstructionReporting = () => {
                     <Typography variant="h3" sx={{ fontWeight: 800, mb: 0.5 }}>{userInfo?.name || 'Cán bộ kỹ thuật'}</Typography>
                     <Typography variant="body1" color="textSecondary" sx={{ mb: 4 }}>{userInfo?.email || 'Phòng Thoát Nước Hà Nội'}</Typography>
 
-                    <List sx={{ bgcolor: 'background.paper', borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.05)', mb: 4 }}>
-                        <ListItem button onClick={() => toast.success('Tính năng đang phát triển')} sx={{ py: 1.5 }}>
-                            <ListItemIcon><IconUser size={26} color={theme.palette.primary.main} /></ListItemIcon>
-                            <ListItemText primary="Thông tin cá nhân" primaryTypographyProps={{ fontSize: '1.05rem', fontWeight: 600 }} />
-                            <IconChevronRight size={24} style={{ color: theme.palette.text.disabled }} />
-                        </ListItem>
-                        <Divider variant="middle" />
+                    <List sx={{ bgcolor: 'background.paper', borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.05)', mb: 4, overflow: 'hidden' }}>
                         <ListItem button onClick={handleLogout} sx={{ color: 'error.main', py: 1.5 }}>
                             <ListItemIcon><IconLogout size={26} color={theme.palette.error.main} /></ListItemIcon>
                             <ListItemText primary="Đăng xuất" primaryTypographyProps={{ fontSize: '1.05rem', fontWeight: 600 }} />

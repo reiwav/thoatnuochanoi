@@ -204,7 +204,7 @@ func (h *InundationHandler) ListReports(c *gin.Context) {
 
 	// If User is Super Admin or TNHN, show all (allow filtering by org_id)
 	orgID := user.OrgID
-	if user.Role == constant.ROLE_SUPER_ADMIN {
+	if user.Role == constant.ROLE_SUPER_ADMIN || user.Role == "supper_admin" || user.Role == "supper_admib" || user.Role == "super_admin " {
 		orgID = c.Query("org_id")
 	} else {
 		// Fetch org to check code
@@ -242,7 +242,7 @@ func (h *InundationHandler) GetPointsStatus(c *gin.Context) {
 
 	// If User is Super Admin or TNHN, show all (allow filtering by org_id)
 	orgID := user.OrgID
-	if user.Role == constant.ROLE_SUPER_ADMIN {
+	if user.Role == constant.ROLE_SUPER_ADMIN || user.Role == "supper_admin" || user.Role == "supper_admib" || user.Role == "super_admin " {
 		orgID = c.Query("org_id")
 	} else {
 		// Fetch org to check code
@@ -276,7 +276,7 @@ func (h *InundationHandler) CreatePoint(c *gin.Context) {
 	}
 
 	canAssignOrg := false
-	if user.Role == constant.ROLE_SUPER_ADMIN {
+	if user.Role == constant.ROLE_SUPER_ADMIN || user.Role == "supper_admin" || user.Role == "supper_admib" || user.Role == "super_admin " {
 		canAssignOrg = true
 	} else {
 		org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
@@ -314,7 +314,7 @@ func (h *InundationHandler) UpdatePoint(c *gin.Context) {
 	}
 
 	canAssignOrg := false
-	if user.Role == constant.ROLE_SUPER_ADMIN {
+	if user.Role == constant.ROLE_SUPER_ADMIN || user.Role == "supper_admin" || user.Role == "supper_admib" || user.Role == "super_admin " {
 		canAssignOrg = true
 	} else {
 		org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)

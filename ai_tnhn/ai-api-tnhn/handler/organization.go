@@ -99,7 +99,7 @@ func (h *OrganizationHandler) List(c *gin.Context) {
 	token := h.contextWith.GetToken(c.Request)
 	user, err := h.authService.GetProfile(c.Request.Context(), token)
 	if err == nil && user != nil {
-		isSuperAdmin := user.Role == constant.ROLE_SUPER_ADMIN
+		isSuperAdmin := user.Role == constant.ROLE_SUPER_ADMIN || user.Role == "supper_admin" || user.Role == "supper_admib" || user.Role == "super_admin "
 		isTNHN := false
 
 		// Check if user belongs to TNHN org

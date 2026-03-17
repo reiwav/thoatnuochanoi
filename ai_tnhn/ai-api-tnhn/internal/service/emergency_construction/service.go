@@ -5,12 +5,16 @@ import (
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/repository"
 	"ai-api-tnhn/internal/service/googledrive"
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"io"
 	"sort"
 	"time"
+
+	"github.com/xuri/excelize/v2"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type ImageContent struct {
@@ -33,6 +37,7 @@ type Service interface {
 	UpdateProgress(ctx context.Context, id string, progress *models.EmergencyConstructionProgress, images []ImageContent) error
 	GetProgressByID(ctx context.Context, id string) (*models.EmergencyConstructionProgress, error)
 	GetProgressHistory(ctx context.Context, constructionID string) ([]*models.EmergencyConstructionProgress, error)
+	ExportExcelToDrive(ctx context.Context, date string, orgID string) (string, error)
 }
 
 type service struct {
@@ -272,6 +277,10 @@ func (s *service) resolveUploadFolder(ctx context.Context, org *models.Organizat
 		return "", err
 	}
 
+	if dataType == "REPORTS" {
+		return typeFolderID, nil
+	}
+
 	folderName := "UNKNOWN_CONSTRUCTION"
 	if constructionID != "" {
 		cons, err := s.repo.GetByID(ctx, constructionID)
@@ -301,4 +310,172 @@ func (s *service) GetProgressHistory(ctx context.Context, constructionID string)
 		})
 	}
 	return items, err
+}
+
+func (s *service) ExportExcelToDrive(ctx context.Context, dateStr string, orgID string) (string, error) {
+	// 1. Parse date
+	loc, _ := time.LoadLocation("Asia/Ho_Chi_Minh")
+	t, err := time.ParseInLocation("2006-01-02", dateStr, loc)
+	if err != nil {
+		return "", fmt.Errorf("invalid date format: %w", err)
+	}
+	startOfDay := t.Unix()
+	endOfDay := t.Add(24 * time.Hour).Unix() - 1
+
+	// 2. Fetch Organizations
+	orgs := []*models.Organization{}
+	if orgID != "" {
+		org, err := s.orgRepo.GetByID(ctx, orgID)
+		if err != nil {
+			return "", fmt.Errorf("organization not found: %w", err)
+		}
+		orgs = append(orgs, org)
+	} else {
+		// List all (basic simple list for now)
+		items, _, err := s.orgRepo.List(ctx, filter.NewBasicFilter())
+		if err != nil {
+			return "", fmt.Errorf("failed to list organizations: %w", err)
+		}
+		orgs = items
+	}
+
+	// 3. Create Excel
+	f := excelize.NewFile()
+	sheetName := "Báo cáo ngày Tổng hợp lệnh"
+	f.SetSheetName("Sheet1", sheetName)
+
+	// Style headers
+	titleStyle, _ := f.NewStyle(&excelize.Style{
+		Font: &excelize.Font{Bold: true, Size: 14},
+		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center"},
+	})
+	headerStyle, _ := f.NewStyle(&excelize.Style{
+		Font: &excelize.Font{Bold: true},
+		Fill: excelize.Fill{Type: "pattern", Color: []string{"#DCE6F1"}, Pattern: 1},
+		Border: []excelize.Border{
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "right", Color: "000000", Style: 1},
+			{Type: "top", Color: "000000", Style: 1},
+			{Type: "bottom", Color: "000000", Style: 1},
+		},
+		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+	})
+	contentStyle, _ := f.NewStyle(&excelize.Style{
+		Border: []excelize.Border{
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "right", Color: "000000", Style: 1},
+			{Type: "top", Color: "000000", Style: 1},
+			{Type: "bottom", Color: "000000", Style: 1},
+		},
+		Alignment: &excelize.Alignment{Vertical: "center", WrapText: true},
+	})
+
+	// Row 0: Title
+	f.MergeCell(sheetName, "A1", "H1")
+	f.SetCellValue(sheetName, "A1", fmt.Sprintf("BẢNG TỔNG HỢP KẾT QUẢ TÌNH HÌNH TRIỂN KHAI CÁC LỆNH KHẨN CẤP NGÀY %s", dateStr))
+	f.SetCellStyle(sheetName, "A1", "H1", titleStyle)
+	f.SetRowHeight(sheetName, 1, 30)
+
+	// Row 1: Headers
+	headers := []string{"STT", "XÍ NGHIỆP", "CÁC LỆNH VÀ DỰ ÁN", "CÁC LỆNH", "VỊ TRÍ - TÌNH HÌNH TRIỂN KHAI", "ẢNH HƯỞNG", "ĐỀ XUẤT", "ẢNH"}
+	for i, h := range headers {
+		cell, _ := excelize.CoordinatesToCellName(i+1, 2)
+		f.SetCellValue(sheetName, cell, h)
+	}
+	f.SetCellStyle(sheetName, "A2", "H2", headerStyle)
+	f.SetRowHeight(sheetName, 2, 40)
+
+	// Column Widths
+	widths := map[string]float64{"A": 5, "B": 25, "C": 30, "D": 15, "E": 50, "F": 20, "G": 20, "H": 40}
+	for col, width := range widths {
+		f.SetColWidth(sheetName, col, col, width)
+	}
+
+	// 4. Fill Data
+	rowIdx := 3
+	stt := 1
+	for _, org := range orgs {
+		// Fetch constructions for this org
+		consList, _, err := s.repo.List(ctx, filter.NewBasicFilter().AddWhere("org_id", "org_id", org.ID))
+		if err != nil || len(consList) == 0 {
+			continue
+		}
+
+		orgNameWritten := false
+		for _, cons := range consList {
+			// Fetch progress for this construction on this day
+			progressList, _, err := s.progressRepo.List(ctx, filter.NewBasicFilter().
+				AddWhere("construction_id", "construction_id", cons.ID).
+				AddWhere("report_date", "report_date", bson.M{"$gte": startOfDay, "$lte": endOfDay}))
+			
+			if err != nil || len(progressList) == 0 {
+				continue
+			}
+
+			for _, p := range progressList {
+				f.SetCellValue(sheetName, fmt.Sprintf("A%d", rowIdx), stt)
+				if !orgNameWritten {
+					f.SetCellValue(sheetName, fmt.Sprintf("B%d", rowIdx), org.Name)
+					orgNameWritten = true
+				}
+				f.SetCellValue(sheetName, fmt.Sprintf("C%d", rowIdx), cons.Name)
+				f.SetCellValue(sheetName, fmt.Sprintf("D%d", rowIdx), p.Order)
+				f.SetCellValue(sheetName, fmt.Sprintf("E%d", rowIdx), fmt.Sprintf("Vị trí: %s\nNội dung: %s", p.Location, p.WorkDone))
+				f.SetCellValue(sheetName, fmt.Sprintf("F%d", rowIdx), p.Influence)
+				f.SetCellValue(sheetName, fmt.Sprintf("G%d", rowIdx), p.Proposal)
+
+				// Handle Images
+				if len(p.Images) > 0 {
+					imgX := 0.0
+					for _, imgID := range p.Images {
+						imgData, err := s.driveSvc.GetFileContent(ctx, imgID)
+						if err == nil {
+							_ = f.AddPictureFromBytes(sheetName, fmt.Sprintf("H%d", rowIdx), &excelize.Picture{
+								Extension: ".jpg",
+								File:      imgData,
+								Format:    &excelize.GraphicOptions{
+									ScaleX: 0.2,
+									ScaleY: 0.2,
+									OffsetX: int(imgX),
+								},
+							})
+							imgX += 100 // Spacing between images
+						}
+					}
+					f.SetRowHeight(sheetName, rowIdx, 100)
+				} else {
+					f.SetRowHeight(sheetName, rowIdx, 60)
+				}
+
+				f.SetCellStyle(sheetName, fmt.Sprintf("A%d", rowIdx), fmt.Sprintf("H%d", rowIdx), contentStyle)
+				rowIdx++
+				stt++
+			}
+		}
+	}
+
+	// 5. Save to buffer and Upload to Drive
+	var buf bytes.Buffer
+	if err := f.Write(&buf); err != nil {
+		return "", fmt.Errorf("failed to write excel to buffer: %w", err)
+	}
+	_ = f.Close()
+
+	// Determine target folder (REPORTS folder for the org, or a general one)
+	// For now, let's use the first org's folder or a general one if not specified
+	targetOrg := orgs[0]
+	folderID, err := s.resolveUploadFolder(ctx, targetOrg, "REPORTS", "")
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve report folder: %w", err)
+	}
+
+	fileName := fmt.Sprintf("BC_TH_Lenh_Khan_Cap_%s.xlsx", dateStr)
+	// MIME type for .xlsx
+	excelMime := "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+	fileID, err := s.driveSvc.UploadFile(ctx, folderID, fileName, excelMime, &buf, false)
+	if err != nil {
+		return "", fmt.Errorf("failed to upload report to drive: %w", err)
+	}
+
+	return fileID, nil
 }

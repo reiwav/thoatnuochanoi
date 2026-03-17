@@ -10,6 +10,7 @@ import (
 
 	"golang.org/x/oauth2"
 	"google.golang.org/api/drive/v3"
+	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 
 	"github.com/go-resty/resty/v2"
@@ -22,6 +23,7 @@ type Service interface {
 	FindOrCreateFolder(ctx context.Context, parentID, folderName string) (string, error)
 	TriggerReportGeneration(ctx context.Context, webhookURL, templateFileID, targetFolderID string, payload map[string]interface{}) (string, error)
 	CopyFile(ctx context.Context, fileID, parentID, newName string) (string, error)
+	GetFileContent(ctx context.Context, fileID string) ([]byte, error)
 }
 
 var DefaultSubfolders = []string{"RAIN", "RIVER", "LAKE", "CAMERA", "FLOOD"}
@@ -156,7 +158,8 @@ func (s *service) UploadFile(ctx context.Context, folderID, name, mimeType strin
 	}
 
 	f := &drive.File{
-		Name: name,
+		Name:     name,
+		MimeType: mimeType,
 	}
 	if convert {
 		f.MimeType = "application/vnd.google-apps.document"
@@ -166,7 +169,7 @@ func (s *service) UploadFile(ctx context.Context, folderID, name, mimeType strin
 		f.Parents = []string{folderID}
 	}
 
-	file, err := s.driveSvc.Files.Create(f).Media(content).SupportsAllDrives(true).Fields("id").Do()
+	file, err := s.driveSvc.Files.Create(f).Media(content, googleapi.ContentType(mimeType)).SupportsAllDrives(true).Fields("id").Do()
 	if err != nil {
 		return "", fmt.Errorf("failed to upload file: %w", err)
 	}
@@ -271,4 +274,14 @@ func (s *service) CopyFile(ctx context.Context, fileID, parentID, newName string
 	}
 
 	return file.Id, nil
+}
+
+func (s *service) GetFileContent(ctx context.Context, fileID string) ([]byte, error) {
+	resp, err := s.driveSvc.Files.Get(fileID).Download()
+	if err != nil {
+		return nil, fmt.Errorf("failed to download file %s: %w", fileID, err)
+	}
+	defer resp.Body.Close()
+
+	return io.ReadAll(resp.Body)
 }

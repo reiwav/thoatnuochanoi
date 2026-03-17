@@ -107,3 +107,10 @@ func (w *storageWrapper) CopyFile(ctx context.Context, fileID, parentID, newName
 	}
 	return w.driveSvc.CopyFile(ctx, fileID, parentID, newName)
 }
+
+func (w *storageWrapper) GetFileContent(ctx context.Context, fileID string) ([]byte, error) {
+	if w.driveSvc == nil {
+		return nil, fmt.Errorf("google drive service required for get file content")
+	}
+	return w.driveSvc.GetFileContent(ctx, fileID)
+}

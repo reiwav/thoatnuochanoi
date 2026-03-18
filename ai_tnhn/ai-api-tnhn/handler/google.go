@@ -369,17 +369,41 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 		}
 	}
 
+	// 1.5 Fetch Inundation Data
+	soLuongUngNgap := 0
+	chiTietCacDiem := ""
+	if inundationSummary, err := h.googleSvc.GetInundationSummary(ctx); err == nil && inundationSummary != nil {
+		soLuongUngNgap = inundationSummary.ActivePoints
+		if soLuongUngNgap > 0 {
+			var details []string
+			for _, pt := range inundationSummary.OngoingPoints {
+				depthInfo := pt.Depth
+				if depthInfo == "" {
+					depthInfo = "chưa rõ độ sâu"
+				} else {
+					depthInfo = "ngập " + depthInfo
+				}
+				details = append(details, fmt.Sprintf("%s (%s)", pt.StreetName, depthInfo))
+			}
+			chiTietCacDiem = strings.Join(details, ", ")
+		}
+	} else if err != nil {
+		h.log.GetLogger().Warnf("Failed to fetch inundation data: %v", err)
+	}
+
 	// Construct Payload matching script.gs
 	payload := map[string]interface{}{
-		"dd":               dd,
-		"mm":               mm,
-		"yyyy":             yyyy,
-		"hh":               hh,
-		"noidung":          noidung,
-		"time_mua":         timeMua,
-		"table_mua_phuong": phuongDataRaw,
-		"table_mua_xa":     xaDataRaw,
-		"table_song_ho":    map[string]interface{}{
+		"dd":                dd,
+		"mm":                mm,
+		"yyyy":              yyyy,
+		"hh":                hh,
+		"noidung":           noidung,
+		"time_mua":          timeMua,
+		"so_luong_ung_ngap": soLuongUngNgap,
+		"chi_tiet_cac_diem": chiTietCacDiem,
+		"table_mua_phuong":  phuongDataRaw,
+		"table_mua_xa":      xaDataRaw,
+		"table_song_ho": map[string]interface{}{
 			"river": riverDataRaw,
 			"lake":  lakeDataRaw,
 		},

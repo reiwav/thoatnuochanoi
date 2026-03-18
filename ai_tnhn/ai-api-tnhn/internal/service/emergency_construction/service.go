@@ -10,6 +10,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"time"
@@ -170,9 +172,44 @@ func (s *service) GetHistory(ctx context.Context, constructionID string) ([]*mod
 	return s.historyRepo.ListByConstructionID(ctx, constructionID)
 }
 
+func (s *service) GetProgressByID(ctx context.Context, id string) (*models.EmergencyConstructionProgress, error) {
+	return s.progressRepo.GetByID(ctx, id)
+}
+
 func (s *service) ReportProgress(ctx context.Context, progress *models.EmergencyConstructionProgress, images []ImageContent) error {
-	// ... (same logic as before, but I'll make it reusable)
 	return s.saveProgress(ctx, progress, images, true)
+}
+
+func (s *service) saveProgress(ctx context.Context, progress *models.EmergencyConstructionProgress, images []ImageContent, isNew bool) error {
+	if progress.ProgressPercentage >= 100 || progress.IsCompleted {
+		progress.IsCompleted = true
+		progress.ProgressPercentage = 100
+		if progress.ExpectedCompletionDate == 0 {
+			progress.ExpectedCompletionDate = time.Now().Unix()
+		}
+	}
+
+	if len(images) > 0 {
+		u, err := s.userRepo.GetByID(ctx, progress.ReportedBy)
+		if err == nil && u != nil && u.OrgID != "" {
+			org, err := s.orgRepo.GetByID(ctx, u.OrgID)
+			if err == nil && org != nil {
+				folderID, err := s.resolveUploadFolder(ctx, org, "CONSTRUCTION", progress.ConstructionID)
+				if err == nil {
+					var imageIDs []string
+					for _, img := range images {
+						id, err := s.driveSvc.UploadFile(ctx, folderID, img.Name, img.MimeType, img.Reader, false)
+						if err == nil {
+							imageIDs = append(imageIDs, id)
+						}
+					}
+					progress.Images = append(progress.Images, imageIDs...)
+				}
+			}
+		}
+	}
+
+	return s.progressRepo.Upsert(ctx, progress)
 }
 
 func (s *service) UpdateProgress(ctx context.Context, id string, progress *models.EmergencyConstructionProgress, images []ImageContent) error {
@@ -186,46 +223,6 @@ func (s *service) UpdateProgress(ctx context.Context, id string, progress *model
 	existing.Issues = progress.Issues
 	existing.Order = progress.Order
 	existing.Location = progress.Location
-	existing.Conclusion = progress.Conclusion
-	existing.Influence = progress.Influence
-	existing.Proposal = progress.Proposal
-	existing.Images = progress.Images
-
-	// Merge or replace images? For now, if new images are provided, we add them.
-	// In a real app, we might want more complex image management.
-	return s.saveProgress(ctx, existing, images, false)
-}
-
-func (s *service) GetProgressByID(ctx context.Context, id string) (*models.EmergencyConstructionProgress, error) {
-	progress, err := s.progressRepo.GetByID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	if cons, errCons := s.repo.GetByID(ctx, progress.ConstructionID); errCons == nil && cons != nil {
-		progress.ConstructionName = cons.Name
-	}
-	return progress, nil
-}
-
-func (s *service) saveProgress(ctx context.Context, progress *models.EmergencyConstructionProgress, images []ImageContent, isNew bool) error {
-	// 0. Fetch Reporter Details if missing
-	if progress.ReporterName == "" && progress.ReportedBy != "" {
-		u, err := s.userRepo.GetByID(ctx, progress.ReportedBy)
-		if err == nil && u != nil {
-			progress.ReporterName = u.Name
-			progress.ReporterEmail = u.Email
-			if u.OrgID != "" {
-				org, err := s.orgRepo.GetByID(ctx, u.OrgID)
-				if err == nil && org != nil {
-					progress.ReporterOrgName = org.Name
-				}
-			}
-		}
-	}
-
-	if isNew {
-		progress.ReportDate = time.Now().Unix()
-	}
 
 	if progress.ProgressPercentage >= 100 || progress.IsCompleted {
 		progress.IsCompleted = true
@@ -321,7 +318,7 @@ func (s *service) ExportExcelToDrive(ctx context.Context, dateStr string, orgID 
 		return "", fmt.Errorf("invalid date format: %w", err)
 	}
 	startOfDay := t.Unix()
-	endOfDay := t.Add(24 * time.Hour).Unix() - 1
+	endOfDay := t.Add(24*time.Hour).Unix() - 1
 
 	// 2. Fetch Organizations
 	orgs := []*models.Organization{}
@@ -347,7 +344,7 @@ func (s *service) ExportExcelToDrive(ctx context.Context, dateStr string, orgID 
 
 	// Style headers
 	titleStyle, _ := f.NewStyle(&excelize.Style{
-		Font: &excelize.Font{Bold: true, Size: 14},
+		Font:      &excelize.Font{Bold: true, Size: 14},
 		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center"},
 	})
 	headerStyle, _ := f.NewStyle(&excelize.Style{
@@ -408,7 +405,7 @@ func (s *service) ExportExcelToDrive(ctx context.Context, dateStr string, orgID 
 			progressList, _, err := s.progressRepo.List(ctx, filter.NewBasicFilter().
 				AddWhere("construction_id", "construction_id", cons.ID).
 				AddWhere("report_date", "report_date", bson.M{"$gte": startOfDay, "$lte": endOfDay}))
-			
+
 			if err != nil || len(progressList) == 0 {
 				continue
 			}
@@ -431,12 +428,12 @@ func (s *service) ExportExcelToDrive(ctx context.Context, dateStr string, orgID 
 						// Column H is index 8. Next images go to I, J, K...
 						colIdx := 8 + k
 						cellName, _ := excelize.CoordinatesToCellName(colIdx, rowIdx)
-						
+
 						imgData, err := s.driveSvc.GetFileContent(ctx, imgID)
 						if err != nil {
 							continue
 						}
-						
+
 						// Set column width for image columns
 						colName, _ := excelize.ColumnNumberToName(colIdx)
 						_ = f.SetColWidth(sheetName, colName, colName, 25)
@@ -444,9 +441,9 @@ func (s *service) ExportExcelToDrive(ctx context.Context, dateStr string, orgID 
 						_ = f.AddPictureFromBytes(sheetName, cellName, &excelize.Picture{
 							Extension: ".jpg",
 							File:      imgData,
-							Format:    &excelize.GraphicOptions{
-								ScaleX: 0.15,
-								ScaleY: 0.15,
+							Format: &excelize.GraphicOptions{
+								ScaleX:  0.15,
+								ScaleY:  0.15,
 								OffsetX: 5,
 								OffsetY: 5,
 							},
@@ -486,6 +483,10 @@ func (s *service) ExportExcelToDrive(ctx context.Context, dateStr string, orgID 
 	if err != nil {
 		return "", fmt.Errorf("failed to upload report to drive: %w", err)
 	}
+
+	// DEBUG: Save a local copy for verification
+	localDebugPath := filepath.Join("uploads", fileName)
+	_ = os.WriteFile(localDebugPath, buf.Bytes(), 0666)
 
 	return fileID, nil
 }

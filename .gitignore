@@ -11,3 +11,7 @@ docker/
 *.json
 ai_tnhn/ai-api-tnhn/main
 ai_tnhn/ai-api-tnhn/uploads/
+# sensor-data submodule
+sensor-data/**/node_modules/
+sensor-data/backend/server
+sensor-data/frontend/dist/

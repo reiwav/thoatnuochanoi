@@ -356,6 +356,31 @@ const AiSupport = () => {
             .finally(() => setLoading(false));
     };
 
+    const handleQuickReportText = async () => {
+        setLoading(true);
+        try {
+            const res = await axiosClient.post('/admin/google/quick-report-text');
+            if (res.data?.status === 'success') {
+                const aiMsg = {
+                    id: Date.now(),
+                    role: 'ai',
+                    text: res.data.data
+                };
+                setMessages(prev => [...prev, aiMsg]);
+            }
+        } catch (error) {
+            console.error('Failed to generate quick report text:', error);
+            const aiMsg = {
+                id: Date.now(),
+                role: 'ai',
+                text: 'Có lỗi xảy ra khi tổng hợp báo cáo. Vui lòng thử lại sau.'
+            };
+            setMessages(prev => [...prev, aiMsg]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleConstructionReport = async () => {
         setExporting(true);
         try {
@@ -398,17 +423,26 @@ const AiSupport = () => {
                             <Typography variant="caption" color="text.secondary">Thoát nước Hà Nội</Typography>
                         </Box>
                     </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, md: 2 } }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, md: 1.5 } }}>
                         {!isMobile && (
                             <>
                                 <Button
                                     variant="contained"
+                                    color="success"
+                                    startIcon={<IconRefresh size={18} />}
+                                    onClick={handleQuickReportText}
+                                    sx={{ borderRadius: '8px', boxShadow: 'none' }}
+                                >
+                                    Tổng hợp báo cáo
+                                </Button>
+                                <Button
+                                    variant="outlined"
                                     color="primary"
                                     startIcon={<IconBolt size={18} />}
                                     onClick={handleQuickReport}
-                                    sx={{ borderRadius: '8px', boxShadow: 'none' }}
+                                    sx={{ borderRadius: '8px', boxShadow: 'none', borderColor: 'divider' }}
                                 >
-                                    Báo cáo nhanh
+                                    Báo cáo nhanh (Word)
                                 </Button>
                                 <Button
                                     variant="outlined"
@@ -417,20 +451,20 @@ const AiSupport = () => {
                                     onClick={() => setOpenReportDialog(true)}
                                     sx={{ borderRadius: '8px', borderColor: 'divider', color: 'text.primary', '&:hover': { borderColor: 'primary.main', color: 'primary.main', bgcolor: 'transparent' } }}
                                 >
-                                    Báo cáo công trình
+                                    BC công trình
                                 </Button>
                             </>
                         )}
                         {isMobile && (
                             <>
-                                <Tooltip title="Báo cáo nhanh">
-                                    <IconButton color="primary" onClick={handleQuickReport} sx={{ bgcolor: 'primary.light', borderRadius: '8px' }}>
-                                        <IconBolt size={20} />
+                                <Tooltip title="Tổng hợp báo cáo">
+                                    <IconButton color="success" onClick={handleQuickReportText} sx={{ bgcolor: 'success.light', borderRadius: '8px' }}>
+                                        <IconRefresh size={20} />
                                     </IconButton>
                                 </Tooltip>
-                                <Tooltip title="Báo cáo công trình">
-                                    <IconButton color="secondary" onClick={() => setOpenReportDialog(true)} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px' }}>
-                                        <IconDatabase size={20} />
+                                <Tooltip title="Báo cáo nhanh (Word)">
+                                    <IconButton color="primary" onClick={handleQuickReport} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px' }}>
+                                        <IconBolt size={20} />
                                     </IconButton>
                                 </Tooltip>
                             </>

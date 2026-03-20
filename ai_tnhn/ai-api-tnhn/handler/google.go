@@ -178,7 +178,6 @@ func (h *GoogleHandler) GenerateQuickReport(c *gin.Context) {
 	h.GenerateQuickReportV3(c)
 }
 
-
 // GenerateQuickReportV3 is the version 3 that matches script.gs requirements (using 2D arrays for tables)
 func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 	if h.driveSvc == nil {
@@ -452,6 +451,193 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 			"report_link": resLink,
 			"docID":       templateFileID,
 		},
+	})
+}
+
+func (h *GoogleHandler) GenerateQuickReportText(c *gin.Context) {
+	if h.geminiSvc == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Gemini AI service is not initialized."})
+		return
+	}
+
+	ctx := c.Request.Context()
+	now := time.Now()
+	reportTime := now.Format("15h04")
+	reportDate := now.Format("02/01/2006")
+
+	// 1. Fetch Rain Data
+	rainURL := "https://noibo.thoatnuochanoi.vn/api/thuytri/getallrain?id=3a1a672f-c56f-4752-b86c-455e30427b87"
+	client := resty.New()
+	var rainResp struct {
+		Content struct {
+			Tram []map[string]interface{} `json:"tram"`
+			Data []map[string]interface{} `json:"data"`
+		} `json:"Content"`
+	}
+
+	rResp, err := client.R().SetResult(&rainResp).Get(rainURL)
+	if err != nil || rResp.IsError() {
+		h.log.GetLogger().Warnf("Failed to fetch rain data: %v", err)
+	}
+
+	rainStations := make(map[string]string)
+	for _, t := range rainResp.Content.Tram {
+		var idStr string
+		if id, ok := t["Id"].(float64); ok {
+			idStr = fmt.Sprintf("%.0f", id)
+		} else if id, ok := t["Id"].(string); ok {
+			idStr = id
+		}
+		name, _ := t["TenPhuong"].(string)
+		if name == "" {
+			name, _ = t["TenTram"].(string)
+		}
+		rainStations[idStr] = name
+	}
+
+	var minStart time.Time
+	var maxRain float64
+	var maxRainStationName string
+	var totalRainyPoints int
+	var rainSum float64
+	var minRainVal float64 = 9999
+	var maxRainVal float64 = 0
+
+	parseT := func(s interface{}) time.Time {
+		if s == nil {
+			return time.Time{}
+		}
+		sStr := fmt.Sprintf("%v", s)
+		layouts := []string{"02/01/2006 15:04:05", "02/01/2006 15:04", "2006-01-02 15:04:05", "2006-01-02 15:04", time.RFC3339}
+		for _, layout := range layouts {
+			t, err := time.ParseInLocation(layout, sStr, time.Local)
+			if err == nil {
+				return t
+			}
+		}
+		return time.Time{}
+	}
+
+	for _, d := range rainResp.Content.Data {
+		val, _ := d["LuongMua_HT"].(float64)
+		if val > 0 {
+			totalRainyPoints++
+			rainSum += val
+			if val < minRainVal {
+				minRainVal = val
+			}
+			if val > maxRainVal {
+				maxRainVal = val
+			}
+
+			var tidStr string
+			if tid, ok := d["TramId"].(float64); ok {
+				tidStr = fmt.Sprintf("%.0f", tid)
+			} else if tid, ok := d["TramId"].(string); ok {
+				tidStr = tid
+			}
+
+			if val > maxRain {
+				maxRain = val
+				maxRainStationName = rainStations[tidStr]
+			}
+
+			tbd := parseT(d["ThoiGian_BD"])
+			if !tbd.IsZero() && (minStart.IsZero() || tbd.Before(minStart)) {
+				minStart = tbd
+			}
+		}
+	}
+
+	if totalRainyPoints == 0 {
+		minRainVal = 0
+		// Fetch inundation anyway
+		inundationInfo := "Trên các tuyến đường an toàn, không xảy ra úng ngập"
+		if inundationSummary, err := h.googleSvc.GetInundationSummary(ctx); err == nil && inundationSummary != nil {
+			if inundationSummary.ActivePoints > 0 {
+				var details []string
+				for _, pt := range inundationSummary.OngoingPoints {
+					details = append(details, fmt.Sprintf("%s", pt.StreetName))
+				}
+				inundationInfo = "Xuất hiện úng ngập tại: " + strings.Join(details, ", ")
+			}
+		}
+
+		report := fmt.Sprintf("Công ty Thoát nước Hà Nội báo cáo UBND Thành phố tình hình PCUN đô thị thời điểm: “%s ngày %s”: Hiện tại trên địa bàn Thành phố không có mưa; %s. Công ty sẽ tiếp tục theo dõi và báo cáo khi có diễn biến mới. Trân trọng./.", reportTime, reportDate, inundationInfo)
+
+		c.JSON(http.StatusOK, gin.H{
+			"status":  "success",
+			"message": "Report text generated successfully",
+			"data":    report,
+		})
+		return
+	}
+
+	rainStartTime := "rạng sáng"
+	if !minStart.IsZero() {
+		rainStartTime = minStart.Format("15h04")
+	}
+
+	rainIntensity := "nhỏ"
+	if maxRainVal > 100 {
+		rainIntensity = "rất lớn"
+	} else if maxRainVal > 50 {
+		rainIntensity = "lớn"
+	}
+
+	rainSpread := "diện hẹp"
+	if totalRainyPoints > 20 {
+		rainSpread = "diện rộng"
+	}
+
+	// 2. Fetch Inundation Data
+	inundationInfo := "Trên các tuyến đường an toàn, không xảy ra úng ngập"
+	if inundationSummary, err := h.googleSvc.GetInundationSummary(ctx); err == nil && inundationSummary != nil {
+		if inundationSummary.ActivePoints > 0 {
+			var details []string
+			for _, pt := range inundationSummary.OngoingPoints {
+				details = append(details, fmt.Sprintf("%s", pt.StreetName))
+			}
+			inundationInfo = "Xuất hiện úng ngập tại: " + strings.Join(details, ", ")
+		}
+	}
+
+	// 3. Construct Data for Gemini
+	rawSummary := fmt.Sprintf(`- Thời điểm báo cáo: %s ngày %s
+- Thời điểm bắt đầu mưa: %s
+- Cường độ mưa: %s
+- Diện mưa: %s (%d điểm đo)
+- Lượng mưa phổ biến: %.1f đến %.1f mm
+- Điểm mưa lớn nhất: %s (%.1f mm)
+- Tình trạng úng ngập: %s
+- Công tác triển khai: Các trạm bơm Yên Sở, Cổ Nhuế, Đồng Bông 1, Hầm chui... vận hành từ khi xuất hiện mưa để hạ mực nước hệ thống, đảm bảo giao thông.`,
+		reportTime, reportDate, rainStartTime, rainIntensity, rainSpread, totalRainyPoints, minRainVal, maxRainVal, maxRainStationName, maxRain, inundationInfo)
+
+	prompt := fmt.Sprintf(`Vai trò: Trợ lý tổng hợp báo cáo kỹ thuật. 
+Nhiệm vụ: Dựa vào DỮ LIỆU THÔ bên dưới, hãy viết lại thành một đoạn văn báo cáo CHÍNH XÁC theo MẪU BÁO CÁO yêu cầu.
+
+DỮ LIỆU THÔ:
+[%s]
+
+MẪU BÁO CÁO YÊU CẦU (Phải giữ nguyên cấu trúc văn bản này, chỉ thay thế các phần trong ngoặc []):
+Công ty Thoát nước Hà Nội báo cáo UBND Thành phố tình hình PCUN đô thị thời điểm: “[Giờ] ngày [Ngày]”: Trên địa bàn thành phố xuất hiện mưa từ [Thời điểm bắt đầu mưa] đến thời điểm hiện tại. Mưa cường độ [Cường độ mưa], [Diện rộng hay hẹp], lượng mưa phổ biến [Số mm] đến [Số mm]mm, riêng quận: [Tên trạm/quận lớn nhất] có lượng mưa lớn hơn [Số mm]mm; [Tình trạng úng ngập]; Công ty Thoát nước Hà Nội đã triển khai ứng trực tại các vị trí có khả năng ngập từ [Thời điểm bắt đầu mưa]; các trạm bơm Yên Sở, cổ nhuế, đồng bông 1, hầm chui... vận hành từ khi xuất hiện mưa để hạ mực nước hệ thống, đảm bảo giao thông ở hầm chui, các cửa phai vận hành theo quy định. Công ty sẽ tiếp tục báo cáo khi có diễn biến mưa trong thời gian tới. Trân trọng./.
+
+QUY TẮC:
+1. Chỉ trả về duy nhất đoạn văn báo cáo, không thêm lời dẫn hay giải thích.
+2. [Tình trạng úng ngập] nếu an toàn thì ghi "Trên các tuyến đường an toàn, ko xảy ra úng ngập", nếu có ngập thì liệt kê các điểm.
+3. [Cường độ mưa] chọn 1 trong 3: nhỏ, lớn, rất lớn.
+4. [Diện rộng hay hẹp] nếu trên 20 điểm ghi "trên diện rộng", ngược lại ghi "diện hẹp".`, rawSummary)
+
+	aiResult, err := h.geminiSvc.Chat(ctx, prompt, nil, "system_report_text")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate text via Gemini: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Report text generated successfully",
+		"data":    aiResult,
 	})
 }
 

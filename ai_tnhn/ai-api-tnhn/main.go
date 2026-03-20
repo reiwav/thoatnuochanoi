@@ -181,6 +181,7 @@ func main() {
 		GoogleUnreadEmailsHandler:      googleHandler.GetUnreadEmails,
 		GenerateQuickReportHandler:     googleHandler.GenerateQuickReport,
 		GenerateQuickReportV3:          googleHandler.GenerateQuickReportV3,
+		GenerateQuickReportTextHandler: googleHandler.GenerateQuickReportText,
 		GetRainDataByDate:              waterHandler.GetRainDataByDate,
 		DatabaseQueryHandler:           queryHandler.Query,
 	}

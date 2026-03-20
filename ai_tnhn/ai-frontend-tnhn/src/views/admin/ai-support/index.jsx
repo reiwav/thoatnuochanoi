@@ -381,6 +381,34 @@ const AiSupport = () => {
         }
     };
 
+    const handleAIDynamicReport = async () => {
+        setLoading(true);
+        const userMsg = { id: Date.now(), role: 'user', text: 'Hãy phân tích và tạo báo cáo tổng hợp AI mới nhất.' };
+        setMessages(prev => [...prev, userMsg]);
+
+        try {
+            const res = await axiosClient.post('/admin/google/dynamic-report');
+            if (res.data?.status === 'success') {
+                const aiMsg = {
+                    id: Date.now() + 1,
+                    role: 'ai',
+                    text: res.data.data
+                };
+                setMessages(prev => [...prev, aiMsg]);
+            }
+        } catch (error) {
+            console.error('Failed to generate dynamic AI report:', error);
+            const aiMsg = {
+                id: Date.now() + 1,
+                role: 'ai',
+                text: 'Có lỗi xảy ra khi Gemini đang phân tích dữ liệu. Vui lòng thử lại sau.'
+            };
+            setMessages(prev => [...prev, aiMsg]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleConstructionReport = async () => {
         setExporting(true);
         try {
@@ -436,6 +464,15 @@ const AiSupport = () => {
                                     Tổng hợp báo cáo
                                 </Button>
                                 <Button
+                                    variant="contained"
+                                    color="secondary"
+                                    startIcon={<IconRobot size={18} />}
+                                    onClick={handleAIDynamicReport}
+                                    sx={{ borderRadius: '8px', boxShadow: 'none' }}
+                                >
+                                    Báo cáo AI (Mới)
+                                </Button>
+                                <Button
                                     variant="outlined"
                                     color="primary"
                                     startIcon={<IconBolt size={18} />}
@@ -460,6 +497,11 @@ const AiSupport = () => {
                                 <Tooltip title="Tổng hợp báo cáo">
                                     <IconButton color="success" onClick={handleQuickReportText} sx={{ bgcolor: 'success.light', borderRadius: '8px' }}>
                                         <IconRefresh size={20} />
+                                    </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Báo cáo AI (Mới)">
+                                    <IconButton color="secondary" onClick={handleAIDynamicReport} sx={{ bgcolor: 'secondary.light', borderRadius: '8px', ml: 1 }}>
+                                        <IconRobot size={20} />
                                     </IconButton>
                                 </Tooltip>
                                 <Tooltip title="Báo cáo nhanh (Word)">
@@ -625,12 +667,17 @@ const AiSupport = () => {
                     <Box sx={{ px: 3, pb: 2, display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
                         {[
                             { text: 'Lượng mưa hiện tại các điểm?', type: 'rain' },
+                            { text: 'Tổng hợp báo cáo nhanh (AI)?', type: 'dynamic' },
                             { text: 'Những điểm nào đang ngập, tình trạng?', type: 'question' },
                             { text: 'Lượng mưa ở khu vực gần điểm ngập?', type: 'question' }
                         ].map((q, i) => (
                             <Paper
                                 key={i}
-                                onClick={() => q.type === 'rain' ? handleRainSummary() : handleSendQuestion(q.text)}
+                                onClick={() => {
+                                    if (q.type === 'rain') handleRainSummary();
+                                    else if (q.type === 'dynamic') handleAIDynamicReport();
+                                    else handleSendQuestion(q.text);
+                                }}
                                 sx={{
                                     px: 2, py: 1, borderRadius: '12px', cursor: 'pointer',
                                     border: '1px solid', borderColor: 'primary.200',

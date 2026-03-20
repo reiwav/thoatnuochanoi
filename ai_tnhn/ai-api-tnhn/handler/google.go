@@ -641,6 +641,44 @@ QUY TẮC:
 	})
 }
 
+func (h *GoogleHandler) GenerateAIDynamicReport(c *gin.Context) {
+	if h.geminiSvc == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Gemini AI service is not initialized."})
+		return
+	}
+
+	ctx := c.Request.Context()
+	userID, _ := h.contextWith.GetUserID(c)
+
+	// Prompt designed to trigger tool usage (rain, inundation, water)
+	prompt := `Dựa trên dữ liệu thực tế hiện tại từ hệ thống, hãy thực hiện các bước sau:
+1. Tổng hợp tình hình mưa hiện tại (lượng mưa lớn nhất ở đâu, bao nhiêu điểm đang có mưa).
+2. Kiểm tra tình hình ngập lụt (có bao nhiêu điểm đang ngập, vị trí cụ thể).
+3. Kiểm tra mực nước sông và hồ hiện tại (trình trạng hạ mực nước để đón mưa).
+4. (Nếu có) Đọc nội dung email cảnh báo/dự báo thời tiết gần nhất để biết nguyên nhân và dự báo tiếp theo.
+
+Từ các dữ liệu trên, hãy viết một bản BÁO CÁO TỔNG HỢP TÌNH HÌNH THOÁT NƯỚC VÀ PHÒNG CHỐNG ÚNG NGẬP tại Hà Nội ngay lúc này. 
+
+YÊU CẦU:
+- Văn phong chuyên nghiệp, súc tích, chính xác.
+- Sử dụng các thông số kỹ thuật thực tế thu thập được.
+- Làm nổi bật những vấn đề cấp bách (nếu có).
+- Kết cấu báo cáo rõ ràng bằng tiếng Việt.
+- Không sử dụng ngôn ngữ quá máy móc, hãy viết như một chuyên gia đang báo cáo cho lãnh đạo.`
+
+	aiResult, err := h.geminiSvc.Chat(ctx, prompt, nil, userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate dynamic report: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Dynamic AI report generated successfully",
+		"data":    aiResult,
+	})
+}
+
 func (h *GoogleHandler) extractReportLink(resp string) string {
 	var data map[string]interface{}
 	if err := json.Unmarshal([]byte(resp), &data); err == nil {

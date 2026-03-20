@@ -182,6 +182,7 @@ func main() {
 		GenerateQuickReportHandler:     googleHandler.GenerateQuickReport,
 		GenerateQuickReportV3:          googleHandler.GenerateQuickReportV3,
 		GenerateQuickReportTextHandler: googleHandler.GenerateQuickReportText,
+		GenerateAIDynamicReportHandler: googleHandler.GenerateAIDynamicReport,
 		GetRainDataByDate:              waterHandler.GetRainDataByDate,
 		DatabaseQueryHandler:           queryHandler.Query,
 	}

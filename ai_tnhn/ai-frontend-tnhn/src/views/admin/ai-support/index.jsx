@@ -461,7 +461,7 @@ const AiSupport = () => {
                                     onClick={handleQuickReportText}
                                     sx={{ borderRadius: '8px', boxShadow: 'none' }}
                                 >
-                                    Tổng hợp báo cáo
+                                    Tin nhắn báo cáo
                                 </Button>
                                 <Button
                                     variant="contained"
@@ -470,7 +470,7 @@ const AiSupport = () => {
                                     onClick={handleAIDynamicReport}
                                     sx={{ borderRadius: '8px', boxShadow: 'none' }}
                                 >
-                                    Báo cáo AI (Mới)
+                                    Báo cáo tổng hợp
                                 </Button>
                                 <Button
                                     variant="outlined"
@@ -479,7 +479,7 @@ const AiSupport = () => {
                                     onClick={handleQuickReport}
                                     sx={{ borderRadius: '8px', boxShadow: 'none', borderColor: 'divider' }}
                                 >
-                                    Báo cáo nhanh (Word)
+                                    Báo cáo sau mưa (Words)
                                 </Button>
                                 <Button
                                     variant="outlined"
@@ -488,23 +488,23 @@ const AiSupport = () => {
                                     onClick={() => setOpenReportDialog(true)}
                                     sx={{ borderRadius: '8px', borderColor: 'divider', color: 'text.primary', '&:hover': { borderColor: 'primary.main', color: 'primary.main', bgcolor: 'transparent' } }}
                                 >
-                                    BC công trình
+                                    BC CT KC
                                 </Button>
                             </>
                         )}
                         {isMobile && (
                             <>
-                                <Tooltip title="Tổng hợp báo cáo">
+                                <Tooltip title="Tin nhắn báo cáo">
                                     <IconButton color="success" onClick={handleQuickReportText} sx={{ bgcolor: 'success.light', borderRadius: '8px' }}>
                                         <IconRefresh size={20} />
                                     </IconButton>
                                 </Tooltip>
-                                <Tooltip title="Báo cáo AI (Mới)">
+                                <Tooltip title="Báo cáo tổng hợp">
                                     <IconButton color="secondary" onClick={handleAIDynamicReport} sx={{ bgcolor: 'secondary.light', borderRadius: '8px', ml: 1 }}>
                                         <IconRobot size={20} />
                                     </IconButton>
                                 </Tooltip>
-                                <Tooltip title="Báo cáo nhanh (Word)">
+                                <Tooltip title="Báo cáo sau mưa (Words)">
                                     <IconButton color="primary" onClick={handleQuickReport} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px' }}>
                                         <IconBolt size={20} />
                                     </IconButton>

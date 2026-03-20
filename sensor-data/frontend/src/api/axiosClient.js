@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+const baseURL = (import.meta.env.VITE_APP_API_URL !== undefined ? import.meta.env.VITE_APP_API_URL : 'http://localhost:8099') + '/api';
+
 const axiosClient = axios.create({
-  baseURL: (import.meta.env?.VITE_APP_API_URL || 'http://localhost:8080') + '/api',
+  baseURL,
 });
 
 axiosClient.interceptors.request.use((config) => {

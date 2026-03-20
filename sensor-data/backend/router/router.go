@@ -2,6 +2,7 @@ package router
 
 import (
 	"sensor-backend/handler"
+	"strings"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -34,6 +35,24 @@ func NewRouter(authH *handler.AuthHandler, sensorH *handler.SensorHandler, devic
 		authorized.GET("/devices", deviceH.GetDevices)
 		authorized.PATCH("/devices/:id/config", deviceH.UpdateDeviceConfig)
 	}
+
+	// Serve Frontend Static Files
+	r.Static("/assets", "./frontend/assets")
+	r.StaticFile("/vite.svg", "./frontend/vite.svg")
+	r.StaticFile("/favicon.ico", "./frontend/favicon.ico")
+
+	// SPA Routing: Serve index.html for any other non-API routes
+	r.NoRoute(func(c *gin.Context) {
+		path := c.Request.URL.Path
+		if strings.HasPrefix(path, "/api") {
+			c.JSON(404, gin.H{"status": "error", "message": "API endpoint not found"})
+			return
+		}
+
+		// Check if the requested file exists in the frontend folder
+		// (Optional, if r.Static and r.StaticFile didn't catch it)
+		c.File("./frontend/index.html")
+	})
 
 	return r
 }

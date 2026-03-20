@@ -16,5 +16,4 @@ const (
 
 	//cái này để reload device với SN
 	CmdGrapEventID = "cmd_grap_event"
-
 )

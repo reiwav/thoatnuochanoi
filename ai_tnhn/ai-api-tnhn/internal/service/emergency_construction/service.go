@@ -14,10 +14,12 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/xuri/excelize/v2"
 	"go.mongodb.org/mongo-driver/bson"
+	"golang.org/x/sync/errgroup"
 )
 
 type ImageContent struct {
@@ -50,6 +52,8 @@ type service struct {
 	userRepo     repository.User
 	orgRepo      repository.Organization
 	driveSvc     googledrive.Service
+	folderCache  map[string]string
+	cacheMu      sync.RWMutex
 }
 
 func NewService(repo repository.EmergencyConstruction, historyRepo repository.EmergencyConstructionHistory, progressRepo repository.EmergencyConstructionProgress, userRepo repository.User, orgRepo repository.Organization, driveSvc googledrive.Service) Service {
@@ -60,6 +64,7 @@ func NewService(repo repository.EmergencyConstruction, historyRepo repository.Em
 		userRepo:     userRepo,
 		orgRepo:      orgRepo,
 		driveSvc:     driveSvc,
+		folderCache:  make(map[string]string),
 	}
 }
 
@@ -196,14 +201,27 @@ func (s *service) saveProgress(ctx context.Context, progress *models.EmergencyCo
 			if err == nil && org != nil {
 				folderID, err := s.resolveUploadFolder(ctx, org, "CONSTRUCTION", progress.ConstructionID)
 				if err == nil {
-					var imageIDs []string
-					for _, img := range images {
-						id, err := s.driveSvc.UploadFile(ctx, folderID, img.Name, img.MimeType, img.Reader, false)
-						if err == nil {
-							imageIDs = append(imageIDs, id)
+					g, gCtx := errgroup.WithContext(ctx)
+					imageIDs := make([]string, len(images))
+
+					for i, img := range images {
+						i, img := i, img // closure capture
+						g.Go(func() error {
+							id, err := s.driveSvc.UploadFileSimple(gCtx, folderID, img.Name, img.MimeType, img.Reader)
+							if err == nil {
+								imageIDs[i] = id
+							}
+							return err
+						})
+					}
+
+					_ = g.Wait()
+
+					for _, id := range imageIDs {
+						if id != "" {
+							progress.Images = append(progress.Images, id)
 						}
 					}
-					progress.Images = append(progress.Images, imageIDs...)
 				}
 			}
 		}
@@ -240,14 +258,27 @@ func (s *service) UpdateProgress(ctx context.Context, id string, progress *model
 			if err == nil && org != nil {
 				folderID, err := s.resolveUploadFolder(ctx, org, "CONSTRUCTION", progress.ConstructionID)
 				if err == nil {
-					var imageIDs []string
-					for _, img := range images {
-						id, err := s.driveSvc.UploadFile(ctx, folderID, img.Name, img.MimeType, img.Reader, false)
-						if err == nil {
-							imageIDs = append(imageIDs, id)
+					g, gCtx := errgroup.WithContext(ctx)
+					imageIDs := make([]string, len(images))
+
+					for i, img := range images {
+						i, img := i, img // closure capture
+						g.Go(func() error {
+							id, err := s.driveSvc.UploadFileSimple(gCtx, folderID, img.Name, img.MimeType, img.Reader)
+							if err == nil {
+								imageIDs[i] = id
+							}
+							return err
+						})
+					}
+
+					_ = g.Wait()
+
+					for _, id := range imageIDs {
+						if id != "" {
+							progress.Images = append(progress.Images, id)
 						}
 					}
-					progress.Images = append(progress.Images, imageIDs...)
 				}
 			}
 		}
@@ -270,15 +301,28 @@ func (s *service) resolveUploadFolder(ctx context.Context, org *models.Organizat
 		_ = s.orgRepo.Upsert(ctx, org)
 	}
 
-	typeFolderID, err := s.driveSvc.FindOrCreateFolder(ctx, orgFolderID, dataType)
-	if err != nil {
-		return "", err
+	// 1. Get/Create Type Folder (e.g., CONSTRUCTION)
+	typeKey := fmt.Sprintf("type_%s_%s", orgFolderID, dataType)
+	s.cacheMu.RLock()
+	typeFolderID, ok := s.folderCache[typeKey]
+	s.cacheMu.RUnlock()
+
+	if !ok {
+		var err error
+		typeFolderID, err = s.driveSvc.FindOrCreateFolder(ctx, orgFolderID, dataType)
+		if err != nil {
+			return "", err
+		}
+		s.cacheMu.Lock()
+		s.folderCache[typeKey] = typeFolderID
+		s.cacheMu.Unlock()
 	}
 
 	if dataType == "REPORTS" {
 		return typeFolderID, nil
 	}
 
+	// 2. Get/Create Construction Folder
 	folderName := "UNKNOWN_CONSTRUCTION"
 	if constructionID != "" {
 		cons, err := s.repo.GetByID(ctx, constructionID)
@@ -286,13 +330,45 @@ func (s *service) resolveUploadFolder(ctx context.Context, org *models.Organizat
 			folderName = fmt.Sprintf("%s_%s", cons.Name, cons.ID)
 		}
 	}
-	consFolderID, err := s.driveSvc.FindOrCreateFolder(ctx, typeFolderID, folderName)
-	if err != nil {
-		return "", err
+
+	consKey := fmt.Sprintf("cons_%s_%s", typeFolderID, folderName)
+	s.cacheMu.RLock()
+	consFolderID, ok := s.folderCache[consKey]
+	s.cacheMu.RUnlock()
+
+	if !ok {
+		var err error
+		consFolderID, err = s.driveSvc.FindOrCreateFolder(ctx, typeFolderID, folderName)
+		if err != nil {
+			return "", err
+		}
+		s.cacheMu.Lock()
+		s.folderCache[consKey] = consFolderID
+		s.cacheMu.Unlock()
 	}
 
+	// 3. Get/Create Date Folder
 	dateFolderName := time.Now().Format("2006-01-02")
-	return s.driveSvc.FindOrCreateFolder(ctx, consFolderID, dateFolderName)
+	dateKey := fmt.Sprintf("date_%s_%s", consFolderID, dateFolderName)
+	s.cacheMu.RLock()
+	dateFolderID, ok := s.folderCache[dateKey]
+	s.cacheMu.RUnlock()
+
+	if !ok {
+		var err error
+		dateFolderID, err = s.driveSvc.FindOrCreateFolder(ctx, consFolderID, dateFolderName)
+		if err != nil {
+			return "", err
+		}
+		s.cacheMu.Lock()
+		s.folderCache[dateKey] = dateFolderID
+		s.cacheMu.Unlock()
+
+		// Make the date folder public so files inside inherit the permission
+		_ = s.driveSvc.SetPublic(ctx, dateFolderID)
+	}
+
+	return dateFolderID, nil
 }
 
 func (s *service) GetProgressHistory(ctx context.Context, constructionID string) ([]*models.EmergencyConstructionProgress, error) {
@@ -422,17 +498,37 @@ func (s *service) ExportExcelToDrive(ctx context.Context, dateStr string, orgID 
 				f.SetCellValue(sheetName, fmt.Sprintf("F%d", rowIdx), p.Influence)
 				f.SetCellValue(sheetName, fmt.Sprintf("G%d", rowIdx), p.Proposal)
 
-				// Handle Images
+				// Handle Images in parallel
 				if len(p.Images) > 0 {
-					for k, imgID := range p.Images {
-						// Column H is index 8. Next images go to I, J, K...
-						colIdx := 8 + k
-						cellName, _ := excelize.CoordinatesToCellName(colIdx, rowIdx)
+					g, gCtx := errgroup.WithContext(ctx)
+					type imgResult struct {
+						index int
+						data  []byte
+					}
+					results := make([]imgResult, len(p.Images))
 
-						imgData, err := s.driveSvc.GetFileContent(ctx, imgID)
-						if err != nil {
+					for k, imgID := range p.Images {
+						k, imgID := k, imgID
+						g.Go(func() error {
+							imgData, err := s.driveSvc.GetFileContent(gCtx, imgID)
+							if err == nil {
+								results[k] = imgResult{index: k, data: imgData}
+							}
+							return err
+						})
+					}
+
+					if err := g.Wait(); err != nil {
+						// Some images might fail, continue with others
+					}
+
+					for _, res := range results {
+						if res.data == nil {
 							continue
 						}
+						// Column H is index 8. Next images go to I, J, K...
+						colIdx := 8 + res.index
+						cellName, _ := excelize.CoordinatesToCellName(colIdx, rowIdx)
 
 						// Set column width for image columns
 						colName, _ := excelize.ColumnNumberToName(colIdx)
@@ -440,7 +536,7 @@ func (s *service) ExportExcelToDrive(ctx context.Context, dateStr string, orgID 
 
 						_ = f.AddPictureFromBytes(sheetName, cellName, &excelize.Picture{
 							Extension: ".jpg",
-							File:      imgData,
+							File:      res.data,
 							Format: &excelize.GraphicOptions{
 								ScaleX:  0.15,
 								ScaleY:  0.15,

@@ -27,6 +27,13 @@ func (w *storageWrapper) UploadFile(ctx context.Context, folderID, name, mimeTyp
 	return w.storageSvc.UploadFile(ctx, folderID, name, mimeType, content, convert)
 }
 
+func (w *storageWrapper) UploadFileSimple(ctx context.Context, folderID, name, mimeType string, content io.Reader) (string, error) {
+	if w.driveSvc != nil {
+		return w.driveSvc.UploadFileSimple(ctx, folderID, name, mimeType, content)
+	}
+	return w.storageSvc.UploadFileSimple(ctx, folderID, name, mimeType, content)
+}
+
 func (w *storageWrapper) CreateFolder(ctx context.Context, parentID, name string) (string, error) {
 	if w.driveSvc != nil {
 		return w.driveSvc.CreateFolder(ctx, parentID, name)
@@ -122,4 +129,11 @@ func (w *storageWrapper) GetFileContent(ctx context.Context, fileID string) ([]b
 		return nil, fmt.Errorf("google drive service required for get file content")
 	}
 	return w.driveSvc.GetFileContent(ctx, cleanID)
+}
+
+func (w *storageWrapper) SetPublic(ctx context.Context, fileID string) error {
+	if w.driveSvc != nil {
+		return w.driveSvc.SetPublic(ctx, fileID)
+	}
+	return w.storageSvc.SetPublic(ctx, fileID)
 }

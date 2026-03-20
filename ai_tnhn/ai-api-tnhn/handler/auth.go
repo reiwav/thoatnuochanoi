@@ -64,7 +64,6 @@ func (h *AuthHandler) LoginHandler(c *gin.Context) {
 	h.SendData(c, res)
 }
 
-
 func (h *AuthHandler) LogoutHandler(c *gin.Context) {
 	token := h.contextWith.GetToken(c.Request)
 	err := h.authService.Logout(c.Request.Context(), token)
@@ -157,10 +156,10 @@ func (h *AuthHandler) GoogleCallbackHandler(c *gin.Context) {
 	}
 
 	// 5. Redirect to frontend with token, role, and name
-	redirectURL := fmt.Sprintf("%s/?token=%s&role=%s&name=%s", 
-		h.frontendURL, 
-		res.ID, 
-		role, 
+	redirectURL := fmt.Sprintf("%s/?token=%s&role=%s&name=%s",
+		h.frontendURL,
+		res.ID,
+		role,
 		res.Name,
 	)
 	c.Redirect(http.StatusTemporaryRedirect, redirectURL)

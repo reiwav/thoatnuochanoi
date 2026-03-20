@@ -60,6 +60,9 @@ func (s *localService) UploadFile(ctx context.Context, folderID, name, mimeType 
 
 	return "/api/storage/file/" + relPath, nil
 }
+func (s *localService) UploadFileSimple(ctx context.Context, folderID, name, mimeType string, content io.Reader) (string, error) {
+	return s.UploadFile(ctx, folderID, name, mimeType, content, false)
+}
 
 func (s *localService) CreateFolder(ctx context.Context, parentID, name string) (string, error) {
 	targetDir := s.basePath
@@ -93,4 +96,7 @@ func (s *localService) GetFileContent(ctx context.Context, fileID string) ([]byt
 
 	fullPath := filepath.Join(s.basePath, filePath)
 	return os.ReadFile(fullPath)
+}
+func (s *localService) SetPublic(ctx context.Context, fileID string) error {
+	return nil // No-op for local storage as it's governed by API exposure
 }

@@ -152,6 +152,14 @@ func (s *service) CreateFolder(ctx context.Context, parentID, name string) (stri
 }
 
 func (s *service) UploadFile(ctx context.Context, folderID, name, mimeType string, content io.Reader, convert bool) (string, error) {
+	return s.uploadFile(ctx, folderID, name, mimeType, content, convert, true)
+}
+
+func (s *service) UploadFileSimple(ctx context.Context, folderID, name, mimeType string, content io.Reader) (string, error) {
+	return s.uploadFile(ctx, folderID, name, mimeType, content, false, false)
+}
+
+func (s *service) uploadFile(ctx context.Context, folderID, name, mimeType string, content io.Reader, convert bool, setPublic bool) (string, error) {
 	// Sanitize folderID
 	if folderID == "." {
 		folderID = ""
@@ -174,14 +182,16 @@ func (s *service) UploadFile(ctx context.Context, folderID, name, mimeType strin
 		return "", fmt.Errorf("failed to upload file: %w", err)
 	}
 
-	// Grant public read permission to the file so the frontend can view it
-	permission := &drive.Permission{
-		Type: "anyone",
-		Role: "reader",
-	}
-	_, err = s.driveSvc.Permissions.Create(file.Id, permission).SupportsAllDrives(true).Do()
-	if err != nil {
-		fmt.Printf("Warning: failed to make uploaded file %s public: %v\n", file.Id, err)
+	if setPublic {
+		// Grant public read permission to the file so the frontend can view it
+		permission := &drive.Permission{
+			Type: "anyone",
+			Role: "reader",
+		}
+		_, err = s.driveSvc.Permissions.Create(file.Id, permission).SupportsAllDrives(true).Do()
+		if err != nil {
+			fmt.Printf("Warning: failed to make uploaded file %s public: %v\n", file.Id, err)
+		}
 	}
 
 	return file.Id, nil
@@ -284,4 +294,16 @@ func (s *service) GetFileContent(ctx context.Context, fileID string) ([]byte, er
 	defer resp.Body.Close()
 
 	return io.ReadAll(resp.Body)
+}
+
+func (s *service) SetPublic(ctx context.Context, fileID string) error {
+	permission := &drive.Permission{
+		Type: "anyone",
+		Role: "reader",
+	}
+	_, err := s.driveSvc.Permissions.Create(fileID, permission).SupportsAllDrives(true).Do()
+	if err != nil {
+		return fmt.Errorf("failed to make file %s public: %w", fileID, err)
+	}
+	return nil
 }

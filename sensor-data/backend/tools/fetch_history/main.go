@@ -45,8 +45,8 @@ func main() {
 	} else {
 		now := time.Now()
 		endDate = now.Format("2006-01-02")
-		startDate = now.AddDate(0, 0, -3).Format("2006-01-02")
-		fmt.Printf("Using default last 3 days: %s to %s (Pass args to override)\n", startDate, endDate)
+		startDate = now.Format("2006-01-02")
+		fmt.Printf("Using default 1 day: %s to %s (Pass args to override)\n", startDate, endDate)
 	}
 
 	cron.FetchHistoryData(ctx, database, startDate, endDate, nil)

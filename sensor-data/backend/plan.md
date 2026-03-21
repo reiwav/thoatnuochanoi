@@ -54,7 +54,7 @@ Khi bạn chạy đi chạy lại cái Tool này, nếu không cấu hình Index
 ## 3. Hướng dẫn chạy Tool `fetch_history`
 Mở một Tab Terminal / Command Prompt mới, trỏ vào thư mục `backend` và chạy lệnh sau tuỳ theo nhu cầu lấy dữ liệu:
 
-1. **Lấy dữ liệu tự động 3 ngày gần nhất (Default mode):**
+1. **Lấy dữ liệu tự động 1 ngày (Today):**
    *(Chế độ an toàn mặc định để test nhẹ, tránh làm sập phần cứng Bo mạch RPi)*
    ```bash
    go run tools/fetch_history/main.go
@@ -63,7 +63,7 @@ Mở một Tab Terminal / Command Prompt mới, trỏ vào thư mục `backend` 
 2. **Lấy dữ liệu toàn bộ theo khoảng thời gian tuỳ ý (Custom Range):**
    Bạn truyền 2 tham số `Ngày Bắt Đầu` và `Ngày Kết Thúc` vào sau lệnh (Định dạng `YYYY-MM-DD`):
    ```bash
-   go run tools/fetch_history/main.go 2026-01-01 2026-03-19
+   go run tools/fetch_history/main.go 2025-08-05 2025-09-05
    ```
 
 Lưu ý: Tool sẽ in ra Terminal trực tiếp từng bước nó đang quét Trạm nào, lấy Kênh nào (`Temp` hay `pH`), và số lượng BulkWrite chèn đè hoặc thêm mới thành công bao nhiêu bản ghi để bạn dễ dàng Monitor. Cứ vứt đấy cho nó kéo background là Database ngập tràn Data chuẩn mượt!
@@ -81,5 +81,10 @@ go run tools/seed_devices/main.go
 Nếu bạn chỉ muốn kéo lại dữ liệu thiếu của đúng 1 thiết bị và đúng 1 kênh cụ thể (Ví dụ: Trạm 119, Kênh 1) từ ngày `08` đến ngày `10`, bạn dùng tool `fetch_single` kèm 4 tham số: `link`, `channelID`, `startDate` (YYYY-MM-DD), `endDate` (YYYY-MM-DD). Tool sẽ tự động tìm tên kênh, tính toán Warning/High và ghi vào DB.
 
 ```bash
-go run tools/fetch_single/main.go "http://14.224.214.119:8880" 1 "2026-03-08" "2026-03-10"
+go run tools/fetch_single/main.go "http://14.224.214.119:8880" 1 "2025-08-05" "2025-09-05"
 ```
+chỉ có data từ 05/08/2025
+
+go run tools/fetch_history/main.go 2025-11-10 2026-01-01
+
+go run tools/fetch_single/main.go "http://14.224.214.119:8880" 0 "2025-09-13" "2025-09-13"

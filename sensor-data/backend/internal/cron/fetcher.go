@@ -83,17 +83,11 @@ func FetchHistoryData(ctx context.Context, database *mongo.Database, startDate, 
 			continue
 		}
 
-		for d := tStart; !d.After(tEnd); d = d.AddDate(0, 0, 3) {
-			chunkEnd := d.AddDate(0, 0, 2)
-			if chunkEnd.After(tEnd) {
-				chunkEnd = tEnd
-			}
-
+		for d := tStart; !d.After(tEnd); d = d.AddDate(0, 0, 1) {
 			currentDateStr := d.Format("2006-01-02")
-			chunkEndStr := chunkEnd.Format("2006-01-02")
 
 			if minTime == nil {
-				fmt.Printf("   [Fetcher] => Fetching Date %s to %s...\n", currentDateStr, chunkEndStr)
+				fmt.Printf("   [Fetcher] => Fetching Date %s...\n", currentDateStr)
 			}
 
 			for sType, sLabel := range constants.SensorLabels {
@@ -124,7 +118,7 @@ func FetchHistoryData(ctx context.Context, database *mongo.Database, startDate, 
 					highSet = cItem.HighAlarmSet
 				}
 
-				apiUrl := fmt.Sprintf("%s/macros/load_history_date_channel/%d,%s,%s", link, hwID, currentDateStr, chunkEndStr)
+				apiUrl := fmt.Sprintf("%s/macros/load_history_date_channel/%d,%s,%s", link, hwID, currentDateStr, currentDateStr)
 				resp, err := httpClient.Post(apiUrl, "application/json", nil)
 				if err != nil {
 					fmt.Printf("     [Error] POST request failed for channel %s: %v\n", sLabel, err)
@@ -224,7 +218,7 @@ func FetchHistoryData(ctx context.Context, database *mongo.Database, startDate, 
 
 			// Xong 1 lượt (3 ngày), nghỉ 5 giây
 			if minTime == nil {
-				fmt.Printf("   [Fetcher] Finished chunk %s to %s. Sleeping 5s before next chunk...\n", currentDateStr, chunkEndStr)
+				fmt.Printf("   [Fetcher] Finished date %s. Sleeping 5s before next date...\n", currentDateStr)
 			}
 			time.Sleep(5 * time.Second)
 		}

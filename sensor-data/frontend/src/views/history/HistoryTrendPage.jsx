@@ -52,6 +52,7 @@ export default function HistoryTrendPage() {
   
   // Data State
   const [chartOptions, setChartOptions] = useState({});
+  const [thresholds, setThresholds] = useState({ w: 0, h: 0 });
 
   useEffect(() => {
     fetchDevices();
@@ -139,10 +140,13 @@ export default function HistoryTrendPage() {
 
       const count = rawData.length;
       const avg = count > 0 ? (sum / count).toFixed(2) : 0;
+      const wSet = count > 0 ? (rawData[0].warningSet || 0) : 0;
+      const hSet = count > 0 ? (rawData[0].highAlarmSet || 0) : 0;
+      setThresholds({ w: wSet, h: hSet });
       
       let titleHtml = '';
       if (count > 0) {
-          titleHtml = `<b>${codeName}</b> Min: <b>${cMin}</b> - ${minTimeStr} Max: <b>${cMax}</b> - ${maxTimeStr}<br/>Avg: <b>${avg}</b> - Entries: <b>${count}</b>`;
+          titleHtml = `<b>${codeName}</b> Min: <b>${cMin}</b> - Max: <b>${cMax}</b> - Avg: <b>${avg}</b><br/>Threshold: W: <b>${wSet}</b>, H: <b>${hSet}</b> - Entries: <b>${count}</b>`;
       } else {
           titleHtml = `<b>${codeName}</b> - No Data Available`;
       }
@@ -205,7 +209,25 @@ export default function HistoryTrendPage() {
         yAxis: {
             title: { text: null },
             gridLineColor: 'rgba(255,255,255,0.1)',
-            labels: { style: { color: '#9ca3af' } }
+            labels: { style: { color: '#9ca3af' } },
+            plotLines: [
+                ...(wSet > 0 ? [{
+                    value: wSet,
+                    color: '#facc15',
+                    dashStyle: 'shortdash',
+                    width: 2,
+                    zIndex: 5,
+                    label: { text: `Warning: ${wSet}`, align: 'right', style: { color: '#facc15', fontSize: '10px', fontWeight: 'bold' } }
+                }] : []),
+                ...(hSet > 0 ? [{
+                    value: hSet,
+                    color: '#ef4444',
+                    dashStyle: 'shortdash',
+                    width: 2,
+                    zIndex: 5,
+                    label: { text: `High Alarm: ${hSet}`, align: 'right', style: { color: '#ef4444', fontSize: '10px', fontWeight: 'bold' } }
+                }] : [])
+            ]
         },
         tooltip: {
             xDateFormat: '%Y-%m-%d %H:%M:%S',
@@ -337,6 +359,21 @@ export default function HistoryTrendPage() {
               onChange={(e) => setEndDate(e.target.value)}
               style={{ width: '100%', padding: '10px', border: '1px solid var(--border-color)', borderRadius: '6px', background: 'rgba(0,0,0,0.3)', color: '#fff' }}
             />
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: 'block', fontSize: '12px', color: '#facc15', marginBottom: '5px' }}>Warning Set</label>
+              <div style={{ padding: '8px', background: 'rgba(250,204,21,0.1)', border: '1px solid rgba(250,204,21,0.3)', borderRadius: '6px', color: '#facc15', textAlign: 'center', fontSize: '14px', fontWeight: 'bold' }}>
+                {thresholds.w || '--'}
+              </div>
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: 'block', fontSize: '12px', color: '#ef4444', marginBottom: '5px' }}>High Alarm</label>
+              <div style={{ padding: '8px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '6px', color: '#ef4444', textAlign: 'center', fontSize: '14px', fontWeight: 'bold' }}>
+                {thresholds.h || '--'}
+              </div>
+            </div>
           </div>
 
           <div style={{ marginTop: '10px' }}>

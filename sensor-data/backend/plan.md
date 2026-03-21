@@ -76,3 +76,10 @@ Giữa mỗi ngày: Sau khi insert xong đống bản ghi của ngày đó vào 
 ```bash
 go run tools/seed_devices/main.go
 ```
+
+# Chạy lệnh kéo riêng một kênh bị lỗi (Single Fetch Tool)
+Nếu bạn chỉ muốn kéo lại dữ liệu thiếu của đúng 1 thiết bị và đúng 1 kênh cụ thể (Ví dụ: Trạm 119, Kênh 1) từ ngày `08` đến ngày `10`, bạn dùng tool `fetch_single` kèm 4 tham số: `link`, `channelID`, `startDate` (YYYY-MM-DD), `endDate` (YYYY-MM-DD). Tool sẽ tự động tìm tên kênh, tính toán Warning/High và ghi vào DB.
+
+```bash
+go run tools/fetch_single/main.go "http://14.224.214.119:8880" 1 "2026-03-08" "2026-03-10"
+```

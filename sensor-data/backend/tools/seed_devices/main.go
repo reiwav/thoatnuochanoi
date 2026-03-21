@@ -34,11 +34,12 @@ func main() {
 	// 2. Add 2 new rows
 	devices := []models.Device{
 		{
-			Name:    "Modbus RTU Registers",
-			Address: "XLNT_KIMLIEN",
-			IP:      "14.224.214.119",
-			Link:    "http://14.224.214.119:8880",
-			Config: []models.DeviceConfig{
+			Name:     "Modbus RTU Registers",
+			Address:  "XLNT_KIMLIEN",
+			IP:       "14.224.214.119",
+			Link:     "http://14.224.214.119:8880",
+			IsActive: true,
+			Config:   []models.DeviceConfig{
 				{ID: 1, Name: "Chỉ số đo hoạt độ của ion hydro", Code: "pH", AddressSlave: "1", FunctionCode: "3 RO Holding Regs", Register: 16, Length: 0, DataType: "Register Integer", WarningSet: 5.5, HighAlarmSet: 9, Unit: "-"},
 				{ID: 2, Name: "Chỉ số đo nhiệt độ", Code: "Temp", AddressSlave: "1", FunctionCode: "3 RO Holding Regs", Register: 19, Length: 0, DataType: "Register Integer", WarningSet: 0, HighAlarmSet: 40, Unit: "oC"},
 				{ID: 3, Name: "Chỉ số đo COD", Code: "COD", AddressSlave: "1", FunctionCode: "3 RO Holding Regs", Register: 17, Length: 0, DataType: "Register Integer", WarningSet: 0, HighAlarmSet: 135, Unit: "mg/l"},
@@ -51,11 +52,12 @@ func main() {
 			},
 		},
 		{
-			Name:    "Modbus RTU Registers",
-			Address: "XLNT_TRUCBACH",
-			IP:      "14.224.214.175",
-			Link:    "http://14.224.214.175:8880",
-			Config: []models.DeviceConfig{
+			Name:     "Modbus RTU Registers",
+			Address:  "XLNT_TRUCBACH",
+			IP:       "14.224.214.175",
+			Link:     "http://14.224.214.175:8880",
+			IsActive: false,
+			Config:   []models.DeviceConfig{
 				{ID: 1, Name: "Chỉ số đo hoạt độ của ion hydro", Code: "pH", AddressSlave: "1", FunctionCode: "3 RO Holding Regs", Register: 16, Length: 0, DataType: "Register Integer", WarningSet: 0, HighAlarmSet: 14, Unit: "-"},
 				{ID: 2, Name: "Chỉ số đo nhiệt độ", Code: "Temp", AddressSlave: "1", FunctionCode: "3 RO Holding Regs", Register: 19, Length: 0, DataType: "Register Integer", WarningSet: 0, HighAlarmSet: 60, Unit: "oC"},
 				{ID: 3, Name: "Chỉ số đo COD", Code: "COD", AddressSlave: "1", FunctionCode: "3 RO Holding Regs", Register: 17, Length: 0, DataType: "Register Integer", WarningSet: 0, HighAlarmSet: 80, Unit: "mg/l"},

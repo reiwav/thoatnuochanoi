@@ -19,7 +19,7 @@ func NewDeviceRepo(db *mongo.Database) repository.DeviceRepository {
 }
 
 func (r *deviceRepo) FindAll(ctx context.Context) ([]models.Device, error) {
-	cursor, err := r.collection.Find(ctx, bson.M{})
+	cursor, err := r.collection.Find(ctx, bson.M{"is_active": true})
 	if err != nil {
 		return nil, err
 	}

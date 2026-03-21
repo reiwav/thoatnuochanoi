@@ -67,3 +67,12 @@ Mở một Tab Terminal / Command Prompt mới, trỏ vào thư mục `backend` 
    ```
 
 Lưu ý: Tool sẽ in ra Terminal trực tiếp từng bước nó đang quét Trạm nào, lấy Kênh nào (`Temp` hay `pH`), và số lượng BulkWrite chèn đè hoặc thêm mới thành công bao nhiêu bản ghi để bạn dễ dàng Monitor. Cứ vứt đấy cho nó kéo background là Database ngập tràn Data chuẩn mượt!
+
+Đã đảo vòng lặp lên trên: Bây giờ tool sẽ quét tuần tự từng ngày (from startDate to endDate).
+Trong mỗi ngày: Sẽ kéo lần lượt dữ liệu của từng kênh cấu hình (pH, Nhiệt độ, COD...). Giữa các kênh sẽ nghỉ nhẹ 0.5s để server không bị đơ giật.
+Giữa mỗi ngày: Sau khi insert xong đống bản ghi của ngày đó vào cơ sở dữ liệu, tool sẽ hiện log Finished date ... Sleeping 5s before next date... và thật sự chờ 5 giây rồi mới nhúc nhích sang ngày tiếp theo, tránh bị block IP hay sập server!
+
+# Chạy seed data 
+```bash
+go run tools/seed_devices/main.go
+```

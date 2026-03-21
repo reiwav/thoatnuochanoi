@@ -12,7 +12,6 @@ type UserRepository interface {
 	Insert(ctx context.Context, user *models.User) error
 }
 
-
 type DeviceRepository interface {
 	FindAll(ctx context.Context) ([]models.Device, error)
 	GetByID(ctx context.Context, id primitive.ObjectID) (*models.Device, error)

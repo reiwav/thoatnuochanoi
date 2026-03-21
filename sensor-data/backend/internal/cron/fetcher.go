@@ -40,7 +40,7 @@ func FetchHistoryData(ctx context.Context, database *mongo.Database, startDate, 
 		Timeout: 60 * time.Second,
 	}
 
-	cursor, err := deviceColl.Find(ctx, bson.M{})
+	cursor, err := deviceColl.Find(ctx, bson.M{"is_active": true})
 	if err != nil {
 		log.Printf("[Cron Error] DB find devices failed: %v", err)
 		return
@@ -75,131 +75,158 @@ func FetchHistoryData(ctx context.Context, database *mongo.Database, startDate, 
 		}
 		mapResp.Body.Close()
 
-		// 2. Fetch history for each configured sensor type
-		for sType, sLabel := range constants.SensorLabels {
-			hwID := -1
-			for hwName, hId := range hwMap {
-				if strings.Contains(hwName, strings.ToLower(sLabel)) {
-					hwID = hId
-					break
-				}
+		// 2. Fetch history cho từng ngày để tránh sập server
+		tStart, err := time.Parse("2006-01-02", startDate)
+		tEnd, err2 := time.Parse("2006-01-02", endDate)
+		if err != nil || err2 != nil {
+			fmt.Printf("     [Error] Invalid date format\n")
+			continue
+		}
+
+		for d := tStart; !d.After(tEnd); d = d.AddDate(0, 0, 3) {
+			chunkEnd := d.AddDate(0, 0, 2)
+			if chunkEnd.After(tEnd) {
+				chunkEnd = tEnd
 			}
 
-			if hwID == -1 {
-				continue
+			currentDateStr := d.Format("2006-01-02")
+			chunkEndStr := chunkEnd.Format("2006-01-02")
+
+			if minTime == nil {
+				fmt.Printf("   [Fetcher] => Fetching Date %s to %s...\n", currentDateStr, chunkEndStr)
 			}
 
-			var cItem *models.DeviceConfig
-			for i, cfg := range dev.Config {
-				if strings.Contains(strings.ToLower(cfg.Code), strings.ToLower(sLabel)) {
-					cItem = &dev.Config[i]
-					break
-				}
-			}
-
-			warnSet := 0.0
-			highSet := 0.0
-			if cItem != nil {
-				warnSet = cItem.WarningSet
-				highSet = cItem.HighAlarmSet
-			}
-
-			apiUrl := fmt.Sprintf("%s/macros/load_history_date_channel/%d,%s,%s", link, hwID, startDate, endDate)
-			resp, err := httpClient.Post(apiUrl, "application/json", nil)
-			if err != nil {
-				fmt.Printf("     [Error] POST request failed: %v\n", err)
-				continue
-			}
-
-			var apiResp HistoryApiResponse
-			if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
-				fmt.Printf("     [Error] Decode JSON failed (maybe empty?): %v\n", err)
-				resp.Body.Close()
-				continue
-			}
-			resp.Body.Close()
-
-			var operations []mongo.WriteModel
-			const BatchSize = 1000
-			totalProcessed := 0
-
-			for _, p := range apiResp.Datas.Data {
-				if len(p) < 2 {
-					continue
-				}
-
-				tsRaw, ok1 := p[0].(float64)
-				valRaw, ok2 := p[1].(float64)
-				if !ok1 || !ok2 {
-					continue
-				}
-
-				msec := int64(tsRaw) - 25200000
-				ts := time.UnixMilli(msec)
-
-				// Skip if older than minTime
-				if minTime != nil && ts.Before(*minTime) {
-					continue
-				}
-
-				status := StatusNormal
-				if highSet > 0 || warnSet > 0 {
-					if highSet > 0 && valRaw >= highSet {
-						status = StatusHighAlarm
-					} else if warnSet > 0 && valRaw >= warnSet {
-						status = StatusWarning
+			for sType, sLabel := range constants.SensorLabels {
+				hwID := -1
+				for hwName, hId := range hwMap {
+					if strings.Contains(hwName, strings.ToLower(sLabel)) {
+						hwID = hId
+						break
 					}
 				}
 
-				doc := models.HistoryTrend{
-					DeviceLink:   dev.Link,
-					DeviceIP:     dev.IP,
-					Code:         sLabel,
-					SensorType:   int(sType),
-					Timestamp:    ts,
-					Value:        valRaw,
-					WarningSet:   warnSet,
-					HighAlarmSet: highSet,
-					Status:       status,
+				if hwID == -1 {
+					continue
 				}
 
-				filter := bson.M{
-					"device_link": doc.DeviceLink,
-					"code":        doc.Code,
-					"sensor_type": doc.SensorType,
-					"timestamp":   doc.Timestamp,
-				}
-				update := bson.M{
-					"$set": doc,
+				var cItem *models.DeviceConfig
+				for i, cfg := range dev.Config {
+					if strings.Contains(strings.ToLower(cfg.Code), strings.ToLower(sLabel)) {
+						cItem = &dev.Config[i]
+						break
+					}
 				}
 
-				model := mongo.NewUpdateOneModel().SetFilter(filter).SetUpdate(update).SetUpsert(true)
-				operations = append(operations, model)
+				warnSet := 0.0
+				highSet := 0.0
+				if cItem != nil {
+					warnSet = cItem.WarningSet
+					highSet = cItem.HighAlarmSet
+				}
 
-				if len(operations) >= BatchSize {
+				apiUrl := fmt.Sprintf("%s/macros/load_history_date_channel/%d,%s,%s", link, hwID, currentDateStr, chunkEndStr)
+				resp, err := httpClient.Post(apiUrl, "application/json", nil)
+				if err != nil {
+					fmt.Printf("     [Error] POST request failed for channel %s: %v\n", sLabel, err)
+					continue
+				}
+
+				var apiResp HistoryApiResponse
+				if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
+					fmt.Printf("     [Warn] Decode JSON failed (maybe empty) for channel %s\n", sLabel)
+					resp.Body.Close()
+					continue
+				}
+				resp.Body.Close()
+
+				var operations []mongo.WriteModel
+				const BatchSize = 1000
+				totalProcessed := 0
+
+				for _, p := range apiResp.Datas.Data {
+					if len(p) < 2 {
+						continue
+					}
+
+					tsRaw, ok1 := p[0].(float64)
+					valRaw, ok2 := p[1].(float64)
+					if !ok1 || !ok2 {
+						continue
+					}
+
+					msec := int64(tsRaw) - 25200000
+					ts := time.UnixMilli(msec)
+
+					// Skip if older than minTime (dành cho cron ngắn hạn)
+					if minTime != nil && ts.Before(*minTime) {
+						continue
+					}
+
+					status := StatusNormal
+					if highSet > 0 || warnSet > 0 {
+						if highSet > 0 && valRaw >= highSet {
+							status = StatusHighAlarm
+						} else if warnSet > 0 && valRaw >= warnSet {
+							status = StatusWarning
+						}
+					}
+
+					doc := models.HistoryTrend{
+						DeviceLink:   dev.Link,
+						DeviceIP:     dev.IP,
+						Code:         sLabel,
+						SensorType:   int(sType),
+						Timestamp:    ts,
+						Value:        valRaw,
+						WarningSet:   warnSet,
+						HighAlarmSet: highSet,
+						Status:       status,
+					}
+
+					filter := bson.M{
+						"device_link": doc.DeviceLink,
+						"code":        doc.Code,
+						"sensor_type": doc.SensorType,
+						"timestamp":   doc.Timestamp,
+					}
+					update := bson.M{
+						"$set": doc,
+					}
+
+					model := mongo.NewUpdateOneModel().SetFilter(filter).SetUpdate(update).SetUpsert(true)
+					operations = append(operations, model)
+
+					if len(operations) >= BatchSize {
+						res, err := historyColl.BulkWrite(ctx, operations)
+						if err != nil {
+							fmt.Printf("     [Error] BulkWrite failed: %v\n", err)
+						} else {
+							totalProcessed += int(res.UpsertedCount + res.ModifiedCount)
+						}
+						operations = nil
+					}
+				}
+
+				if len(operations) > 0 {
 					res, err := historyColl.BulkWrite(ctx, operations)
 					if err != nil {
-						fmt.Printf("     [Error] BulkWrite failed: %v\n", err)
+						fmt.Printf("     [Error] Final BulkWrite failed: %v\n", err)
 					} else {
 						totalProcessed += int(res.UpsertedCount + res.ModifiedCount)
 					}
-					operations = nil
 				}
+
+				if minTime == nil && totalProcessed > 0 {
+					fmt.Printf("       -> Channel %s: Processed ~%d records.\n", sLabel, totalProcessed)
+				}
+				time.Sleep(500 * time.Millisecond) // Nghỉ nửa giây giữa các kênh trong 1 ngày
 			}
 
-			if len(operations) > 0 {
-				res, err := historyColl.BulkWrite(ctx, operations)
-				if err != nil {
-					fmt.Printf("     [Error] Final BulkWrite failed: %v\n", err)
-				} else {
-					totalProcessed += int(res.UpsertedCount + res.ModifiedCount)
-				}
-			}
-
+			// Xong 1 lượt (3 ngày), nghỉ 5 giây
 			if minTime == nil {
-				fmt.Printf("     -> Channel %s: Processed ~%d records.\n", sLabel, totalProcessed)
+				fmt.Printf("   [Fetcher] Finished chunk %s to %s. Sleeping 5s before next chunk...\n", currentDateStr, chunkEndStr)
 			}
-			time.Sleep(500 * time.Millisecond) // reduce stress on device
+			time.Sleep(5 * time.Second)
 		}
 	}
 	if minTime == nil {

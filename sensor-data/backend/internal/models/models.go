@@ -59,9 +59,10 @@ type Device struct {
 	ID      primitive.ObjectID `bson:"_id,omitempty" json:"id"`
 	Name    string             `bson:"name" json:"name"`
 	Address string             `bson:"address" json:"address"`
-	IP      string             `bson:"ip" json:"ip"`
-	Link    string             `bson:"link" json:"link"`
-	Config  []DeviceConfig     `bson:"config" json:"config"`
+	IP       string             `bson:"ip" json:"ip"`
+	Link     string             `bson:"link" json:"link"`
+	IsActive bool               `bson:"is_active" json:"isActive"`
+	Config   []DeviceConfig     `bson:"config" json:"config"`
 }
 
 type HistoryTrend struct {

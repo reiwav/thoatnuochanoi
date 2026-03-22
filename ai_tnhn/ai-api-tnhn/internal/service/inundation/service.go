@@ -33,6 +33,7 @@ type Service interface {
 	// Org helpers for visibility
 	GetOrgByCode(ctx context.Context, code string) (*models.Organization, error)
 	GetOrgByID(ctx context.Context, id string) (*models.Organization, error)
+	ListOrganizations(ctx context.Context) ([]*models.Organization, error)
 }
 
 type PointStatus struct {
@@ -283,7 +284,7 @@ func (s *service) ListReportsWithFilter(ctx context.Context, orgID, status, traf
 		}
 
 		for _, r := range reports {
-			if u, ok := updatesMap[r.ID]; ok && r.Status != "resolved" {
+			if u, ok := updatesMap[r.ID]; ok {
 				r.Updates = u
 			}
 		}
@@ -540,4 +541,11 @@ func (s *service) GetOrgByCode(ctx context.Context, code string) (*models.Organi
 
 func (s *service) GetOrgByID(ctx context.Context, id string) (*models.Organization, error) {
 	return s.orgRepo.GetByID(ctx, id)
+}
+
+func (s *service) ListOrganizations(ctx context.Context) ([]*models.Organization, error) {
+	f := filter.NewPaginationFilter()
+	f.PerPage = 1000
+	orgs, _, err := s.orgRepo.List(ctx, f)
+	return orgs, err
 }

@@ -51,10 +51,6 @@ type RainStationStat struct {
 	SessionRain float64 `json:"session_rain"`
 	StartTime   string  `json:"start_time"`
 	EndTime     string  `json:"end_time"`
-	// TenPhuong   string  `json:"ten_phuong"`
-	// DiaChi      string  `json:"dia_chi"`
-	// ThuTu       int     `json:"thu_tu"`
-	// PhuongId    int     `json:"phuong_id"`
 }
 
 type RainSummaryData struct {
@@ -86,6 +82,7 @@ type InundationUpdateStat struct {
 
 type InundationPointStat struct {
 	StreetName    string                 `json:"street_name"`
+	OrgName       string                 `json:"org_name"`
 	Depth         string                 `json:"depth"`
 	StartTime     string                 `json:"start_time"`
 	Description   string                 `json:"description"`
@@ -152,7 +149,6 @@ func NewService(conf config.GoogleDriveConfig, oauthConf config.OAuthConfig, aiU
 			return nil, fmt.Errorf("failed to create gmail service: %w", err)
 		}
 	} else {
-		// Fallback to service account if possible, but Gmail usually needs user auth
 		if conf.Credentials == "" {
 			return nil, fmt.Errorf("google credentials not found")
 		}
@@ -160,7 +156,6 @@ func NewService(conf config.GoogleDriveConfig, oauthConf config.OAuthConfig, aiU
 		if err != nil {
 			return nil, fmt.Errorf("failed to create drive service: %w", err)
 		}
-		// Gmail might not work well with service account without domain-wide delegation
 		gmailSvc, err = gmail.NewService(ctx, option.WithCredentialsJSON([]byte(conf.Credentials)))
 		if err != nil {
 			return nil, fmt.Errorf("failed to create gmail service: %w", err)
@@ -183,7 +178,6 @@ func (s *service) SetEmailService(svc email.Service) {
 func (s *service) GetStatus(ctx context.Context) (*GoogleStatus, error) {
 	status := &GoogleStatus{}
 
-	// 1. Get IMAP unread count
 	if s.emailSvc != nil {
 		count, err := s.emailSvc.GetUnreadCount(ctx)
 		if err == nil {
@@ -201,7 +195,6 @@ func (s *service) GetStatus(ctx context.Context) (*GoogleStatus, error) {
 		}
 	}
 
-	// 2. Get Drive quota
 	about, err := s.driveSvc.About.Get().Fields("storageQuota").Do()
 	if err == nil && about.StorageQuota != nil {
 		status.DriveQuota = DriveQuota{
@@ -215,7 +208,6 @@ func (s *service) GetStatus(ctx context.Context) (*GoogleStatus, error) {
 		fmt.Printf("Warning: failed to fetch drive quota: %v\n", err)
 	}
 
-	// 3. Get AI Usage stats
 	aiStats, err := s.aiUsageRepo.GetAggregateStats(ctx, bson.M{})
 	if err == nil {
 		var totalTokens int64
@@ -247,7 +239,6 @@ func (s *service) GetStatus(ctx context.Context) (*GoogleStatus, error) {
 			TotalTokensStr:  number.Format(totalTokens),
 			RequestCount:    reqCount,
 			RequestCountStr: number.Format(reqCount),
-			// Approximate cost
 			TotalCostUSD:    float64(totalTokens) * 0.00000015,
 			TotalCostUSDStr: number.FormatDecimal(float64(totalTokens)*0.00000015, 6),
 		}
@@ -264,18 +255,14 @@ func (s *service) GetRainSummary(ctx context.Context) (*RainSummaryData, error) 
 	}
 	stationMap := make(map[int]string)
 	for _, t := range rainData.Content.Tram {
-		// handle id which might be float64 or string
 		var id int
 		if v, ok := t.Id.(float64); ok {
 			id = int(v)
 		} else if v, ok := t.Id.(string); ok {
 			fmt.Sscanf(v, "%d", &id)
 		}
-
 		stationMap[id] = t.TenPhuong
 	}
-
-	fmt.Printf(" [GoogleAPI] Rain Data Count: %d, Stations Count: %d\n", len(rainData.Content.Data), len(rainData.Content.Tram))
 
 	var measurements []RainStationStat
 	for _, d := range rainData.Content.Data {
@@ -287,23 +274,18 @@ func (s *service) GetRainSummary(ctx context.Context) (*RainSummaryData, error) 
 				fmt.Sscanf(v, "%d", &id)
 			}
 
-			// Extract time (usually T format)
 			tBD := d.ThoiGian_BD
 			if len(tBD) > 16 {
-				tBD = tBD[11:16] // Just HH:mm
+				tBD = tBD[11:16]
 			}
 
-			// Check if data is fresh (within 5 minutes)
 			isFresh := true
 			tHTStr := d.ThoiGian_HT
 			if tHTStr != "" {
-				// Expected format: "09/03/2026 14:05:34" or similar
 				tHT, err := time.ParseInLocation("02/01/2006 15:04:05", tHTStr, time.Local)
 				if err != nil {
-					// Try without seconds if it fails
 					tHT, err = time.ParseInLocation("02/01/2006 15:04", tHTStr, time.Local)
 				}
-
 				if err == nil {
 					if time.Since(tHT) > 5*time.Minute {
 						isFresh = false
@@ -316,12 +298,10 @@ func (s *service) GetRainSummary(ctx context.Context) (*RainSummaryData, error) 
 				if sessionRain < 0 {
 					sessionRain = 0
 				}
-
 				tHT := d.ThoiGian_HT
 				if len(tHT) > 16 {
 					tHT = tHT[11:16]
 				}
-
 				measurements = append(measurements, RainStationStat{
 					Name:        stationMap[id],
 					TotalRain:   d.LuongMua_HT,
@@ -377,18 +357,15 @@ func (s *service) GetWaterSummary(ctx context.Context) (*WaterSummaryData, error
 		if !ok {
 			continue
 		}
-
 		timeStr := d.ThoiGian_HT
 		if len(timeStr) > 16 {
 			timeStr = timeStr[11:16]
 		}
-
 		stat := WaterStationStat{
 			Name:     info.Name,
 			Level:    d.ThuongLuu_HT,
 			ThoiGian: timeStr,
 		}
-
 		if info.Loai == "2" {
 			stat.Label = "Hồ"
 			lakes = append(lakes, stat)
@@ -411,6 +388,13 @@ func (s *service) GetInundationSummary(ctx context.Context) (*InundationSummaryD
 		return nil, err
 	}
 
+	// Fetch all organizations once to map OrgID to OrgName efficiently
+	orgs, _ := s.inuSvc.ListOrganizations(ctx)
+	orgMap := make(map[string]string)
+	for _, org := range orgs {
+		orgMap[org.ID] = org.Name
+	}
+
 	var ongoing []InundationPointStat
 	for _, r := range reports {
 		if r.Status == "active" {
@@ -427,6 +411,7 @@ func (s *service) GetInundationSummary(ctx context.Context) (*InundationSummaryD
 
 			ongoing = append(ongoing, InundationPointStat{
 				StreetName:    r.StreetName,
+				OrgName:       orgMap[r.OrgID],
 				Depth:         r.Depth,
 				StartTime:     time.Unix(r.StartTime, 0).Format("15:04 02/01/2006"),
 				Description:   r.Description,

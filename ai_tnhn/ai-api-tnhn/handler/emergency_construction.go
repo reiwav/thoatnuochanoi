@@ -230,11 +230,6 @@ func (h *EmergencyConstructionHandler) GetProgressHistory(c *gin.Context) {
 
 func (h *EmergencyConstructionHandler) ExportExcel(c *gin.Context) {
 	date := c.Query("date")
-	if date == "" {
-		web.AssertNil(web.BadRequest("date is required (YYYY-MM-DD)"))
-		return
-	}
-
 	orgID := c.Query("org_id")
 	// Security isolation
 	client := h.GetTokenFromContext(c)

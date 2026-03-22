@@ -59,19 +59,19 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                         <Box sx={{ flex: 1 }}>
                             <Typography variant="h5" sx={{ fontWeight: 900, color: 'primary.dark', lineHeight: 1.2, mb: 1.5 }}>{point.name}</Typography>
                             <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
-                                <Chip 
-                                    label={point.status === 'active' ? 'Đang ngập' : 'Bình thường'} 
-                                    color={point.status === 'active' ? 'error' : 'success'} 
-                                    size="small" 
-                                    sx={{ fontWeight: 800 }} 
+                                <Chip
+                                    label={point.status === 'active' ? 'Đang ngập' : 'Bình thường'}
+                                    color={point.status === 'active' ? 'error' : 'success'}
+                                    size="small"
+                                    sx={{ fontWeight: 800 }}
                                 />
                                 {latest?.traffic_status && (
-                                    <Chip 
-                                        label={getTrafficStatusLabel(latest.traffic_status)} 
-                                        size="small" 
-                                        color={getTrafficStatusColor(latest.traffic_status)} 
-                                        variant="outlined" 
-                                        sx={{ fontWeight: 800, fontSize: '0.75rem' }} 
+                                    <Chip
+                                        label={getTrafficStatusLabel(latest.traffic_status)}
+                                        size="small"
+                                        color={getTrafficStatusColor(latest.traffic_status)}
+                                        variant="outlined"
+                                        sx={{ fontWeight: 800, fontSize: '0.75rem' }}
                                     />
                                 )}
                             </Stack>
@@ -82,7 +82,7 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                     </Stack>
 
                     <Collapse in={open} timeout="auto" unmountOnExit>
-                         <Box sx={{ mt: 2, pt: 2, borderTop: '1px dashed', borderColor: 'divider' }}>
+                        <Box sx={{ mt: 2, pt: 2, borderTop: '1px dashed', borderColor: 'divider' }}>
                             <Box sx={{ mb: 2 }}>
                                 <Typography variant="caption" color="text.secondary" display="block" sx={{ fontWeight: 700, mb: 0.5 }}>ĐỊA CHỈ:</Typography>
                                 <Typography variant="body2" sx={{ fontWeight: 700, color: 'primary.dark' }}>{point.address || '-'}</Typography>
@@ -114,7 +114,7 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                                 <Box sx={{ mb: 2 }}>
                                     <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', display: 'block', mb: 1 }}>LỊCH SỬ CẬP NHẬT:</Typography>
                                     <Stack spacing={1}>
-                                        {latest.updates.slice(0, 3).sort((a,b) => b.timestamp - a.timestamp).map((upd, idx) => (
+                                        {latest.updates.slice(0, 3).sort((a, b) => b.timestamp - a.timestamp).map((upd, idx) => (
                                             <Box key={idx} sx={{ p: 1, bgcolor: 'grey.50', borderRadius: 1.5, border: '1px solid', borderColor: 'divider' }}>
                                                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
                                                     <Typography variant="caption" sx={{ fontWeight: 700, color: 'primary.main' }}>{formatTime(upd.timestamp)}</Typography>
@@ -129,7 +129,7 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                                 </Box>
                             )}
 
-                             <Box sx={{ mb: 2 }}>
+                            <Box sx={{ mb: 2 }}>
                                 <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', display: 'block', mb: 1 }}>HÌNH ẢNH:</Typography>
                                 {latest?.images?.length > 0 ? (
                                     <Box sx={{ display: 'flex', gap: 1.2, overflowX: 'auto', pb: 1, '&::-webkit-scrollbar': { height: 4 }, '&::-webkit-scrollbar-thumb': { bgcolor: 'grey.300', borderRadius: 4 } }}>
@@ -140,10 +140,10 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                                 ) : <Typography variant="caption" sx={{ fontStyle: 'italic', color: 'text.disabled' }}>Không có ảnh</Typography>}
                             </Box>
 
-                            <Button 
-                                fullWidth 
-                                variant="contained" 
-                                color="primary" 
+                            <Button
+                                fullWidth
+                                variant="contained"
+                                color="primary"
                                 size="large"
                                 sx={{ borderRadius: 3, fontWeight: 700, py: 1 }}
                                 onClick={() => navigate(`/admin/inundation/form?id=${point.active_report?.id || point.last_report_id}&tab=1&readonly=true`)}
@@ -217,19 +217,19 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                                     <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
                                         <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>Lịch sử cập nhật:</Typography>
                                         <Stack spacing={1}>
-                                            {latest.updates.slice().sort((a,b) => b.timestamp - a.timestamp).map((upd, idx) => (
+                                            {latest.updates.slice().sort((a, b) => b.timestamp - a.timestamp).map((upd, idx) => (
                                                 <Box key={idx} sx={{ p: 1, bgcolor: 'background.paper', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
                                                     <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
                                                         <Typography variant="caption" sx={{ fontWeight: 700, color: 'primary.main' }}>
                                                             {formatTime(upd.timestamp)}
                                                         </Typography>
                                                         {(upd.traffic_status || upd.trafficStatus) && (
-                                                            <Chip 
-                                                                label={getTrafficStatusLabel(upd.traffic_status || upd.trafficStatus)} 
-                                                                size="small" 
-                                                                color={getTrafficStatusColor(upd.traffic_status || upd.trafficStatus)} 
-                                                                variant="outlined" 
-                                                                sx={{ height: 18, fontSize: '0.625rem' }} 
+                                                            <Chip
+                                                                label={getTrafficStatusLabel(upd.traffic_status || upd.trafficStatus)}
+                                                                size="small"
+                                                                color={getTrafficStatusColor(upd.traffic_status || upd.trafficStatus)}
+                                                                variant="outlined"
+                                                                sx={{ height: 18, fontSize: '0.625rem' }}
                                                             />
                                                         )}
                                                     </Stack>
@@ -273,11 +273,11 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, getDuration,
                         <Box sx={{ flex: 1 }}>
                             <Typography variant="h5" sx={{ fontWeight: 900, color: 'primary.dark', lineHeight: 1.2, mb: 1.5 }}>{report.street_name}</Typography>
                             <Stack direction="row" spacing={1}>
-                                <Chip 
-                                    label={report.status === 'active' ? 'Đang ngập' : 'Đã kết thúc'} 
-                                    color={report.status === 'active' ? 'error' : 'success'} 
-                                    size="small" 
-                                    sx={{ fontWeight: 800 }} 
+                                <Chip
+                                    label={report.status === 'active' ? 'Đang ngập' : 'Đã kết thúc'}
+                                    color={report.status === 'active' ? 'error' : 'success'}
+                                    size="small"
+                                    sx={{ fontWeight: 800 }}
                                 />
                             </Stack>
                         </Box>
@@ -287,7 +287,7 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, getDuration,
                     </Stack>
 
                     <Collapse in={open} timeout="auto" unmountOnExit>
-                         <Box sx={{ mt: 2, pt: 2, borderTop: '1px dashed', borderColor: 'divider' }}>
+                        <Box sx={{ mt: 2, pt: 2, borderTop: '1px dashed', borderColor: 'divider' }}>
                             <Box sx={{ mb: 2 }}>
                                 <Typography variant="caption" color="text.secondary" display="block" sx={{ fontWeight: 700, mb: 0.5 }}>ĐƠN VỊ QUẢN LÝ:</Typography>
                                 <Typography variant="body1" sx={{ fontWeight: 800, color: 'secondary.dark' }}>
@@ -308,7 +308,7 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, getDuration,
                                 </Grid>
                             </Grid>
 
-                             <Box sx={{ mb: 2 }}>
+                            <Box sx={{ mb: 2 }}>
                                 <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', display: 'block', mb: 1 }}>HÌNH ẢNH:</Typography>
                                 {report.images?.length > 0 ? (
                                     <Box sx={{ display: 'flex', gap: 1.2, overflowX: 'auto', pb: 1, '&::-webkit-scrollbar': { height: 4 }, '&::-webkit-scrollbar-thumb': { bgcolor: 'grey.300', borderRadius: 4 } }}>
@@ -319,10 +319,10 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, getDuration,
                                 ) : <Typography variant="caption" sx={{ fontStyle: 'italic', color: 'text.disabled' }}>Không có ảnh</Typography>}
                             </Box>
 
-                            <Button 
-                                fullWidth 
-                                variant="contained" 
-                                color="primary" 
+                            <Button
+                                fullWidth
+                                variant="contained"
+                                color="primary"
                                 size="large"
                                 sx={{ borderRadius: 3, fontWeight: 700, py: 1 }}
                                 onClick={() => navigate(`/admin/inundation/form?id=${report.id}&tab=1&readonly=true`)}
@@ -387,19 +387,19 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, getDuration,
                                     <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
                                         <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>Lịch sử cập nhật:</Typography>
                                         <Stack spacing={1}>
-                                            {report.updates.slice().sort((a,b) => b.timestamp - a.timestamp).map((upd, idx) => (
+                                            {report.updates.slice().sort((a, b) => b.timestamp - a.timestamp).map((upd, idx) => (
                                                 <Box key={idx} sx={{ p: 1, bgcolor: 'background.paper', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
                                                     <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
                                                         <Typography variant="caption" sx={{ fontWeight: 700, color: 'primary.main' }}>
                                                             {formatTime(upd.timestamp)}
                                                         </Typography>
                                                         {(upd.traffic_status || upd.trafficStatus) && (
-                                                            <Chip 
-                                                                label={getTrafficStatusLabel(upd.traffic_status || upd.trafficStatus)} 
-                                                                size="small" 
-                                                                color={getTrafficStatusColor(upd.traffic_status || upd.trafficStatus)} 
-                                                                variant="outlined" 
-                                                                sx={{ height: 18, fontSize: '0.625rem' }} 
+                                                            <Chip
+                                                                label={getTrafficStatusLabel(upd.traffic_status || upd.trafficStatus)}
+                                                                size="small"
+                                                                color={getTrafficStatusColor(upd.traffic_status || upd.trafficStatus)}
+                                                                variant="outlined"
+                                                                sx={{ height: 18, fontSize: '0.625rem' }}
                                                             />
                                                         )}
                                                     </Stack>
@@ -599,69 +599,69 @@ const InundationAdminList = () => {
             }
         >
             <Box sx={{ mb: 3 }}>
-            <Stack spacing={isMobile ? 2 : 1.5} sx={{ mb: 3 }}>
-                <TextField
-                    fullWidth
-                    size={isMobile ? "medium" : "small"}
-                    placeholder="Tìm tên đường, địa chỉ..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    InputProps={{ 
-                        startAdornment: <IconSearch size={20} sx={{ color: 'text.disabled', mr: 1, ml: 0.5 }} />,
-                        sx: { borderRadius: 3, fontWeight: 600 }
-                    }}
-                />
-                <Stack direction={isMobile ? "column" : "row"} spacing={isMobile ? 2 : 1}>
+                <Stack spacing={isMobile ? 2 : 1.5} sx={{ mb: 3 }}>
                     <TextField
-                        select
                         fullWidth
                         size={isMobile ? "medium" : "small"}
-                        label="Đơn vị quản lý"
-                        value={orgFilter}
-                        onChange={(e) => { setOrgFilter(e.target.value); setHistoryPage(0); }}
-                        InputProps={{ sx: { borderRadius: 3, fontWeight: 600 } }}
-                    >
-                        <MenuItem value="">Tất cả đơn vị</MenuItem>
-                        {organizations.map(org => (
-                            <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>
-                        ))}
-                    </TextField>
+                        placeholder="Tìm tên đường, địa chỉ..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        InputProps={{
+                            startAdornment: <IconSearch size={20} sx={{ color: 'text.disabled', mr: 1, ml: 0.5 }} />,
+                            sx: { borderRadius: 3, fontWeight: 600 }
+                        }}
+                    />
+                    <Stack direction={isMobile ? "column" : "row"} spacing={isMobile ? 2 : 1}>
+                        <TextField
+                            select
+                            fullWidth
+                            size={isMobile ? "medium" : "small"}
+                            label="Đơn vị quản lý"
+                            value={orgFilter}
+                            onChange={(e) => { setOrgFilter(e.target.value); setHistoryPage(0); }}
+                            InputProps={{ sx: { borderRadius: 3, fontWeight: 600 } }}
+                        >
+                            <MenuItem value="">Tất cả đơn vị</MenuItem>
+                            {organizations.map(org => (
+                                <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>
+                            ))}
+                        </TextField>
 
-                    <TextField
-                        select
-                        fullWidth
-                        size={isMobile ? "medium" : "small"}
-                        label="Trạng thái"
-                        value={statusFilter}
-                        onChange={(e) => { setStatusFilter(e.target.value); setHistoryPage(0); }}
-                        InputProps={{ sx: { borderRadius: 3, fontWeight: 600 } }}
-                    >
-                        <MenuItem value="">Tất cả trạng thái</MenuItem>
-                        <MenuItem value="active">Đang ngập</MenuItem>
-                        {activeTab === 0 ? <MenuItem value="normal">Bình thường</MenuItem> : <MenuItem value="resolved">Đã kết thúc</MenuItem>}
-                    </TextField>
+                        <TextField
+                            select
+                            fullWidth
+                            size={isMobile ? "medium" : "small"}
+                            label="Trạng thái"
+                            value={statusFilter}
+                            onChange={(e) => { setStatusFilter(e.target.value); setHistoryPage(0); }}
+                            InputProps={{ sx: { borderRadius: 3, fontWeight: 600 } }}
+                        >
+                            <MenuItem value="">Tất cả trạng thái</MenuItem>
+                            <MenuItem value="active">Đang ngập</MenuItem>
+                            {activeTab === 0 ? <MenuItem value="normal">Bình thường</MenuItem> : <MenuItem value="resolved">Đã kết thúc</MenuItem>}
+                        </TextField>
 
-                    <TextField
-                        select
-                        fullWidth
-                        size={isMobile ? "medium" : "small"}
-                        label="Giao thông"
-                        value={trafficFilter}
-                        onChange={(e) => { setTrafficFilter(e.target.value); setHistoryPage(0); }}
-                        InputProps={{ sx: { borderRadius: 3, fontWeight: 600 } }}
-                    >
-                        <MenuItem value="">Tất cả giao thông</MenuItem>
-                        <MenuItem value="Đi lại bình thường">Bình thường</MenuItem>
-                        <MenuItem value="Đi lại khó khăn">Khó khăn</MenuItem>
-                        <MenuItem value="Không đi lại được">Không đi lại được</MenuItem>
-                    </TextField>
+                        <TextField
+                            select
+                            fullWidth
+                            size={isMobile ? "medium" : "small"}
+                            label="Giao thông"
+                            value={trafficFilter}
+                            onChange={(e) => { setTrafficFilter(e.target.value); setHistoryPage(0); }}
+                            InputProps={{ sx: { borderRadius: 3, fontWeight: 600 } }}
+                        >
+                            <MenuItem value="">Tất cả giao thông</MenuItem>
+                            <MenuItem value="Đi lại bình thường">Bình thường</MenuItem>
+                            <MenuItem value="Đi lại khó khăn">Khó khăn</MenuItem>
+                            <MenuItem value="Không đi lại được">Không đi lại được</MenuItem>
+                        </TextField>
+                    </Stack>
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>
+                            {activeTab === 0 ? `Hiển thị: ${filteredPoints.length} điểm` : `Tổng cộng: ${totalHistory} báo cáo`}
+                        </Typography>
+                    </Box>
                 </Stack>
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>
-                        {activeTab === 0 ? `Hiển thị: ${filteredPoints.length} điểm` : `Tổng cộng: ${totalHistory} báo cáo`}
-                    </Typography>
-                </Box>
-            </Stack>
             </Box>
 
             {/* Section 1: Điểm trực */}

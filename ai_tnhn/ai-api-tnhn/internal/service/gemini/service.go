@@ -76,9 +76,14 @@ QUY TẮC TRẢ LỜI QUAN TRỌNG:
 3. KẾT HỢP DỮ LIỆU (PROXIMITY MATCHING):
    + Khi báo cáo về một điểm ngập, hãy chủ động tra cứu và hiển thị lượng mưa ở trạm đo gần khu vực đó nhất (Ví dụ: Nếu điểm ngập ở Thanh Xuân, hãy hiển thị thêm lượng mưa đo được tại trạm Thanh Xuân từ dữ liệu 'get_live_rain_summary').
 
-4. CÔNG TÁC THI CÔNG: Bạn có thể báo cáo tiến độ thi công hàng ngày cho các công trình khẩn (emergency constructions). Khi báo cáo, hãy hỏi: nội dung công việc, % hoàn thành, vướng mắc và ngày dự kiến xong.
+4. BÁO CÁO CÔNG TRÌNH KHẨN CẤP (BC CT KC):
+   + Khi người dùng yêu cầu 'Báo cáo Công trình Khẩn cấp' hoặc 'BC CT KC', hãy sử dụng công cụ 'get_unfinished_emergency_work_history' để lấy toàn bộ dữ liệu của các công trình chưa xong và toàn bộ lịch sử tiến độ của chúng.
+   + Trình bày báo cáo theo từng công trình: Liệt kê tên công trình, vị trí, các cột mốc tiến độ quan trọng từ trước đến nay, % hoàn thành hiện tại và các vướng mắc, đề xuất.
+   + Không cần hỏi về ngày tháng khi làm báo cáo BC CT KC vì hệ thống sẽ lấy toàn bộ lịch sử.
 
-5. EMAIL: Bạn có thể đọc nội dung chi tiết email. Khi liệt kê danh sách email trong bảng, hãy thêm cột 'Thao tác' với link: [Xem chi tiết](#email-detail-[ID]).`),
+5. CÔNG TÁC THI CÔNG: Bạn có thể báo cáo tiến độ thi công hàng ngày cho một công trình cụ thể bằng 'report_emergency_work_progress'. Khi báo cáo, hãy hỏi: nội dung công việc, % hoàn thành, vướng mắc và ngày dự kiến xong.
+
+6. EMAIL: Bạn có thể đọc nội dung chi tiết email. Khi liệt kê danh sách email trong bảng, hãy thêm cột 'Thao tác' với link: [Xem chi tiết](#email-detail-[ID]).`),
 		},
 	}
 
@@ -289,6 +294,10 @@ func (s *service) Chat(ctx context.Context, prompt string, history []ChatMessage
 				},
 			},
 		},
+		{
+			Name:        "get_unfinished_emergency_work_history",
+			Description: "Lấy TOÀN BỘ lịch sử báo cáo tiến độ của tất cả các công trình CHƯA HOÀN THÀNH. Không cần lọc theo ngày.",
+		},
 	}
 
 	s.model.Tools = []*genai.Tool{{FunctionDeclarations: tools}}
@@ -449,6 +458,8 @@ func (s *service) Chat(ctx context.Context, prompt string, history []ChatMessage
 					"$lte": end.Unix(),
 				})
 				result, _, err = s.emcSvc.ListHistory(ctx, f)
+			case "get_unfinished_emergency_work_history":
+				result, err = s.emcSvc.GetUnfinishedProgressHistory(ctx)
 			default:
 				err = fmt.Errorf("unknown tool: %s", call.Name)
 			}

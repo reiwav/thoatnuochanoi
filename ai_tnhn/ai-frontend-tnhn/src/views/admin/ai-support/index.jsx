@@ -39,7 +39,11 @@ const AiSupport = () => {
         try {
             const res = await axiosClient.get('/admin/google/status');
             if (res.data?.status === 'success') {
-                setStats(res.data.data);
+                setMessages(prevMessages => {
+                    const newStats = res.data.data;
+                    setStats(newStats);
+                    return prevMessages;
+                });
             }
         } catch (error) {
             console.error('Failed to fetch Google status:', error);
@@ -409,16 +413,24 @@ const AiSupport = () => {
         }
     };
 
-    const handleConstructionReport = async () => {
+    const handleConstructionReport = async (customDate = null) => {
+        const dateToUse = customDate !== null ? customDate : reportDate;
+        
+        // Add user message to chat to show what's happening
+        const titleText = dateToUse === '' ? '(Tất cả công trình đang thực hiện)' : `ngày ${dateToUse}`;
+        const userMsg = { id: Date.now(), role: 'user', text: `Xuất báo cáo BC CT KC ${titleText}` };
+        setMessages(prev => [...prev, userMsg]);
+        
         setExporting(true);
+        setLoading(true); // Show AI loading bubble
         try {
-            const res = await axiosClient.get(`/admin/emergency-constructions/export?date=${reportDate}`);
+            const res = await axiosClient.get(`/admin/emergency-constructions/export?date=${dateToUse}`);
             if (res.data?.status === 'success') {
                 const { url } = res.data.data;
                 const aiMsg = {
-                    id: Date.now(),
+                    id: Date.now() + 1,
                     role: 'ai',
-                    text: `### Đã tạo xong báo cáo công trình ngày ${reportDate}\n\nBạn có thể xem và tải về tại đây:\n[${url}](${url})`
+                    text: `### Đã tạo xong báo cáo công trình ${titleText}\n\nBạn có thể xem và tải về tại đây:\n[${url}](${url})`
                 };
                 setMessages(prev => [...prev, aiMsg]);
                 setOpenReportDialog(false);
@@ -426,13 +438,14 @@ const AiSupport = () => {
         } catch (error) {
             console.error('Export failed:', error);
             const aiMsg = {
-                id: Date.now(),
+                id: Date.now() + 1,
                 role: 'ai',
                 text: 'Có lỗi xảy ra khi xuất báo cáo. Vui lòng thử lại sau.'
             };
             setMessages(prev => [...prev, aiMsg]);
         } finally {
             setExporting(false);
+            setLoading(false);
         }
     };
 
@@ -485,7 +498,7 @@ const AiSupport = () => {
                                     variant="outlined"
                                     color="secondary"
                                     startIcon={<IconDatabase size={18} />}
-                                    onClick={() => setOpenReportDialog(true)}
+                                    onClick={() => handleConstructionReport('')}
                                     sx={{ borderRadius: '8px', borderColor: 'divider', color: 'text.primary', '&:hover': { borderColor: 'primary.main', color: 'primary.main', bgcolor: 'transparent' } }}
                                 >
                                     BC CT KC
@@ -753,7 +766,7 @@ const AiSupport = () => {
                     <Button onClick={() => setOpenReportDialog(false)} disabled={exporting}>Hủy</Button>
                     <Button
                         variant="contained"
-                        onClick={handleConstructionReport}
+                        onClick={() => handleConstructionReport()}
                         disabled={exporting}
                         startIcon={exporting ? <CircularProgress size={16} /> : <IconBolt size={18} />}
                     >
@@ -797,36 +810,16 @@ const StatsContent = ({ stats, statsLoading, fetchStats, formatBytes, quotaPerce
                             <Typography variant="h4" fontWeight={800} color="error.main" sx={{ mb: 1 }}>
                                 {stats.unread_emails} <Typography component="span" variant="body2" fontWeight={600} color="text.secondary">mới</Typography>
                             </Typography>
-
-                            <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
-                                <Button
-                                    size="small"
-                                    variant="outlined"
-                                    onClick={() => handleListEmails('recent')}
-                                    sx={{ fontSize: '10px', py: 0.5, borderRadius: '8px' }}
-                                >
-                                    Email gần đây
-                                </Button>
-                                <Button
-                                    size="small"
-                                    variant="contained"
-                                    disabled={stats.unread_emails === 0}
-                                    onClick={() => handleListEmails('unread')}
-                                    sx={{ fontSize: '10px', py: 0.5, borderRadius: '8px', boxShadow: 'none' }}
-                                >
-                                    Email mới
-                                </Button>
-                            </Stack>
                         </Box>
                     )}
                 </Box>
 
                 <Divider />
 
-                {/* Storage Stat */}
+                {/* Drive Stat */}
                 <Box>
                     <Stack direction="row" spacing={1} alignItems="center" mb={1}>
-                        <Avatar sx={{ width: 28, height: 28, bgcolor: '#e0f2fe', color: '#0369a1' }}>
+                        <Avatar sx={{ width: 28, height: 28, bgcolor: '#dcfce7', color: '#22c55e' }}>
                             <IconDatabase size={16} />
                         </Avatar>
                         <Typography variant="subtitle2" fontWeight={800} color="text.secondary">GOOGLE DRIVE</Typography>

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 
 	"golang.org/x/oauth2"
 	"google.golang.org/api/drive/v3"
@@ -67,7 +68,17 @@ func NewService(conf config.GoogleDriveConfig, oauthConf config.OAuthConfig) (Se
 		if conf.Credentials == "" {
 			return nil, fmt.Errorf("google drive credentials not found in environment and no refresh token provided")
 		}
-		driveSvc, err = drive.NewService(ctx, option.WithCredentialsJSON([]byte(conf.Credentials)))
+
+		creds := []byte(conf.Credentials)
+		// Check if Credentials is a file path
+		if len(conf.Credentials) < 1000 { // Heuristic: file paths are short, JSON is long
+			if fileData, err := os.ReadFile(conf.Credentials); err == nil {
+				creds = fileData
+				fmt.Printf("Loaded Google Drive credentials from file: %s\n", conf.Credentials)
+			}
+		}
+
+		driveSvc, err = drive.NewService(ctx, option.WithCredentialsJSON(creds))
 		if err != nil {
 			return nil, fmt.Errorf("failed to create drive service with service account: %w", err)
 		}

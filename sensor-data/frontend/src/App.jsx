@@ -72,7 +72,7 @@ export default function App() {
       <aside className="sidebar">
         <div className="sidebar-header">
           <div className="app-logo"><Activity color="#fff" size={24} /></div>
-          <span>ECAPRO V2.5</span>
+          <span>AI QUAN TRẮC TỰ ĐỘNG</span>
         </div>
 
         <nav className="sidebar-nav">

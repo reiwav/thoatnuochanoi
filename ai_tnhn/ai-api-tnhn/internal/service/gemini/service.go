@@ -13,12 +13,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"ai-api-tnhn/internal/models"
 
 	"github.com/google/generative-ai-go/genai"
 	"go.mongodb.org/mongo-driver/bson"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/api/option"
 )
 
@@ -339,155 +341,153 @@ func (s *service) Chat(ctx context.Context, prompt string, history []ChatMessage
 		}
 
 		var toolResponses []genai.Part
+		var mu sync.Mutex
+		g, gCtx := errgroup.WithContext(ctx)
+
 		for _, call := range toolCalls {
-			var result interface{}
-			var err error
+			call := call // capture
+			g.Go(func() error {
+				var result interface{}
+				var toolErr error
 
-			fmt.Printf(" [Gemini Chat] Tool Call: %s with args: %v\n", call.Name, call.Args)
+				fmt.Printf(" [Gemini Chat] Tool Call: %s with args: %v\n", call.Name, call.Args)
 
-			switch call.Name {
-			case "get_google_status":
-				result, err = s.googleApiSvc.GetStatus(ctx)
-			case "get_live_rain_summary":
-				result, err = s.googleApiSvc.GetRainSummary(ctx)
-			case "get_live_water_summary":
-				result, err = s.googleApiSvc.GetWaterSummary(ctx)
-			case "get_live_inundation_summary":
-				result, err = s.googleApiSvc.GetInundationSummary(ctx)
-			case "get_rain_data_by_date":
-				date, _ := call.Args["date"].(string)
-				result, err = s.waterSvc.GetRainDataByDate(ctx, date)
-			case "get_lake_data_by_date":
-				date, _ := call.Args["date"].(string)
-				result, err = s.waterSvc.GetLakeDataByDate(ctx, date)
-			case "get_river_data_by_date":
-				date, _ := call.Args["date"].(string)
-				result, err = s.waterSvc.GetRiverDataByDate(ctx, date)
-			case "list_inundation_reports":
-				result, _, err = s.inuSvc.ListReports(ctx, "")
-			case "get_system_overview":
-				result, err = s.stationDataSvc.GetSystemOverview(ctx)
-			case "list_stations_by_type":
-				stationType, _ := call.Args["type"].(string)
-				result, err = s.stationDataSvc.GetStationsByType(ctx, stationType)
-			case "get_rain_analytics":
-				stationID, _ := call.Args["station_id"].(float64) // genai args are float64 for numbers
-				year, _ := call.Args["year"].(float64)
-				month, _ := call.Args["month"].(float64)
-				startDate, _ := call.Args["start_date"].(string)
-				endDate, _ := call.Args["end_date"].(string)
-				groupBy, _ := call.Args["group_by"].(string)
-				result, err = s.stationDataSvc.GetRainAnalytics(ctx, int64(stationID), int(year), int(month), startDate, endDate, groupBy)
-			case "get_covered_wards":
-				result, err = s.stationDataSvc.GetCoveredWards(ctx)
-			case "get_rain_summary_by_ward":
-				year, _ := call.Args["year"].(float64)
-				month, _ := call.Args["month"].(float64)
-				startDate, _ := call.Args["start_date"].(string)
-				endDate, _ := call.Args["end_date"].(string)
-				result, err = s.stationDataSvc.GetRainSummaryByWard(ctx, int(year), int(month), startDate, endDate)
-			case "database_query":
-				coll, _ := call.Args["collection"].(string)
-				filter, _ := call.Args["filter"].(map[string]interface{})
-				result, err = s.querySvc.Query(ctx, coll, filter, 0)
-			case "read_email_by_title":
-				title, _ := call.Args["title"].(string)
-				result, err = s.googleApiSvc.ReadEmailByTitle(ctx, title)
-			case "read_email_by_id":
-				id, _ := call.Args["id"].(float64)
-				result, err = s.googleApiSvc.ReadEmailByID(ctx, uint32(id))
-			case "report_emergency_work_progress":
-				constructionID, _ := call.Args["construction_id"].(string)
-				workDone, _ := call.Args["work_done"].(string)
-				progressPercentage, _ := call.Args["progress_percentage"].(float64)
-				issues, _ := call.Args["issues"].(string)
-				isCompleted, _ := call.Args["is_completed"].(bool)
-				expectedDateStr, _ := call.Args["expected_completion_date"].(string)
-
-				var expectedDate int64
-				if expectedDateStr != "" {
-					t, err := time.Parse("2006-01-02", expectedDateStr)
-					if err == nil {
-						expectedDate = t.Unix()
+				switch call.Name {
+				case "get_google_status":
+					result, toolErr = s.googleApiSvc.GetStatus(gCtx)
+				case "get_live_rain_summary":
+					result, toolErr = s.googleApiSvc.GetRainSummary(gCtx)
+				case "get_live_water_summary":
+					result, toolErr = s.googleApiSvc.GetWaterSummary(gCtx)
+				case "get_live_inundation_summary":
+					result, toolErr = s.googleApiSvc.GetInundationSummary(gCtx)
+				case "get_rain_data_by_date":
+					date, _ := call.Args["date"].(string)
+					result, toolErr = s.waterSvc.GetRainDataByDate(gCtx, date)
+				case "get_lake_data_by_date":
+					date, _ := call.Args["date"].(string)
+					result, toolErr = s.waterSvc.GetLakeDataByDate(gCtx, date)
+				case "get_river_data_by_date":
+					date, _ := call.Args["date"].(string)
+					result, toolErr = s.waterSvc.GetRiverDataByDate(gCtx, date)
+				case "get_system_overview":
+					result, toolErr = s.stationDataSvc.GetSystemOverview(gCtx)
+				case "list_stations_by_type":
+					stationType, _ := call.Args["type"].(string)
+					result, toolErr = s.stationDataSvc.GetStationsByType(gCtx, stationType)
+				case "get_rain_analytics":
+					stationID, _ := call.Args["station_id"].(float64)
+					year, _ := call.Args["year"].(float64)
+					month, _ := call.Args["month"].(float64)
+					startDate, _ := call.Args["start_date"].(string)
+					endDate, _ := call.Args["end_date"].(string)
+					groupBy, _ := call.Args["group_by"].(string)
+					result, toolErr = s.stationDataSvc.GetRainAnalytics(gCtx, int64(stationID), int(year), int(month), startDate, endDate, groupBy)
+				case "get_covered_wards":
+					result, toolErr = s.stationDataSvc.GetCoveredWards(gCtx)
+				case "get_rain_summary_by_ward":
+					year, _ := call.Args["year"].(float64)
+					month, _ := call.Args["month"].(float64)
+					startDate, _ := call.Args["start_date"].(string)
+					endDate, _ := call.Args["end_date"].(string)
+					result, toolErr = s.stationDataSvc.GetRainSummaryByWard(gCtx, int(year), int(month), startDate, endDate)
+				case "database_query":
+					coll, _ := call.Args["collection"].(string)
+					filter, _ := call.Args["filter"].(map[string]interface{})
+					result, toolErr = s.querySvc.Query(gCtx, coll, filter, 0)
+				case "read_email_by_title":
+					title, _ := call.Args["title"].(string)
+					result, toolErr = s.googleApiSvc.ReadEmailByTitle(gCtx, title)
+				case "read_email_by_id":
+					id, _ := call.Args["id"].(float64)
+					result, toolErr = s.googleApiSvc.ReadEmailByID(gCtx, uint32(id))
+				case "report_emergency_work_progress":
+					constructionID, _ := call.Args["construction_id"].(string)
+					workDone, _ := call.Args["work_done"].(string)
+					progressPercentage, _ := call.Args["progress_percentage"].(float64)
+					issues, _ := call.Args["issues"].(string)
+					isCompleted, _ := call.Args["is_completed"].(bool)
+					expectedDateStr, _ := call.Args["expected_completion_date"].(string)
+					var expectedDate int64
+					if expectedDateStr != "" {
+						t, err := time.Parse("2006-01-02", expectedDateStr)
+						if err == nil {
+							expectedDate = t.Unix()
+						}
 					}
-				}
-
-				progress := &models.EmergencyConstructionProgress{
-					ConstructionID:         constructionID,
-					ReportDate:             time.Now().Unix(),
-					WorkDone:               workDone,
-					ProgressPercentage:     int(progressPercentage),
-					Issues:                 issues,
-					IsCompleted:            isCompleted,
-					ExpectedCompletionDate: expectedDate,
-					ReportedBy:             userID,
-				}
-				err = s.emcSvc.ReportProgress(ctx, progress, nil)
-				result = map[string]string{"status": "success", "message": "Báo cáo tiến độ thành công"}
-			case "get_emergency_work_history":
-				constructionID, _ := call.Args["construction_id"].(string)
-				result, err = s.emcSvc.GetProgressHistory(ctx, constructionID)
-			case "get_emergency_constructions":
-				result, _, err = s.emcSvc.List(ctx, filter.NewPaginationFilter())
-			case "get_recent_emergency_reports":
-				startDateStr, _ := call.Args["start_date"].(string)
-				endDateStr, _ := call.Args["end_date"].(string)
-
-				f := filter.NewPaginationFilter()
-				f.PerPage = 200 // Get more reports for AI context
-
-				// Default to last 3 days if not specified
-				start := time.Now().AddDate(0, 0, -2)
-				start = time.Date(start.Year(), start.Month(), start.Day(), 0, 0, 0, 0, time.Local)
-				end := time.Now()
-				end = time.Date(end.Year(), end.Month(), end.Day(), 23, 59, 59, 0, time.Local)
-
-				if startDateStr != "" {
-					if t, e := time.Parse("2006-01-02", startDateStr); e == nil {
-						start = time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local)
+					progress := &models.EmergencyConstructionProgress{
+						ConstructionID:         constructionID,
+						ReportDate:             time.Now().Unix(),
+						WorkDone:               workDone,
+						ProgressPercentage:     int(progressPercentage),
+						Issues:                 issues,
+						IsCompleted:            isCompleted,
+						ExpectedCompletionDate: expectedDate,
+						ReportedBy:             userID,
 					}
-				}
-				if endDateStr != "" {
-					if t, e := time.Parse("2006-01-02", endDateStr); e == nil {
-						end = time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 0, time.Local)
+					toolErr = s.emcSvc.ReportProgress(gCtx, progress, nil)
+					result = map[string]string{"status": "success", "message": "Báo cáo tiến độ thành công"}
+				case "get_emergency_work_history":
+					constructionID, _ := call.Args["construction_id"].(string)
+					result, toolErr = s.emcSvc.GetProgressHistory(gCtx, constructionID)
+				case "get_emergency_constructions":
+					result, _, toolErr = s.emcSvc.List(gCtx, filter.NewPaginationFilter())
+				case "get_recent_emergency_reports":
+					startDateStr, _ := call.Args["start_date"].(string)
+					endDateStr, _ := call.Args["end_date"].(string)
+					f := filter.NewPaginationFilter()
+					f.PerPage = 200
+					start := time.Now().AddDate(0, 0, -2)
+					start = time.Date(start.Year(), start.Month(), start.Day(), 0, 0, 0, 0, time.Local)
+					end := time.Now()
+					end = time.Date(end.Year(), end.Month(), end.Day(), 23, 59, 59, 0, time.Local)
+					if startDateStr != "" {
+						if t, e := time.Parse("2006-01-02", startDateStr); e == nil {
+							start = time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local)
+						}
 					}
+					if endDateStr != "" {
+						if t, e := time.Parse("2006-01-02", endDateStr); e == nil {
+							end = time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 0, time.Local)
+						}
+					}
+					f.AddWhere("report_date", "report_date", bson.M{
+						"$gte": start.Unix(),
+						"$lte": end.Unix(),
+					})
+					result, _, toolErr = s.emcSvc.ListHistory(gCtx, f)
+				case "get_unfinished_emergency_work_history":
+					result, toolErr = s.emcSvc.GetUnfinishedProgressHistory(gCtx)
+				default:
+					toolErr = fmt.Errorf("unknown tool: %s", call.Name)
 				}
 
-				f.AddWhere("report_date", "report_date", bson.M{
-					"$gte": start.Unix(),
-					"$lte": end.Unix(),
-				})
-				result, _, err = s.emcSvc.ListHistory(ctx, f)
-			case "get_unfinished_emergency_work_history":
-				result, err = s.emcSvc.GetUnfinishedProgressHistory(ctx)
-			default:
-				err = fmt.Errorf("unknown tool: %s", call.Name)
-			}
+				mu.Lock()
+				defer mu.Unlock()
 
-			if err != nil {
-				toolResponses = append(toolResponses, genai.FunctionResponse{
-					Name:     call.Name,
-					Response: map[string]interface{}{"error": err.Error()},
-				})
-			} else {
-				// To avoid Protobuf 'invalid type' errors and Context Token Limit issues:
-				// 1. Convert complex results to a JSON string.
-				jsonBytes, _ := json.Marshal(result)
-				respStr := string(jsonBytes)
-
-				fmt.Printf("\n=== [Gemini Chat] Tool Result Data (%s) ===\n%s\n===============================================\n", call.Name, respStr)
-
-				const maxContentLen = 30000 // Roughly 10-15k tokens safe margin
-				if len(respStr) > maxContentLen {
-					respStr = respStr[:maxContentLen] + "... (dữ liệu quá lớn, đã được cắt bớt để tối ưu context)"
+				if toolErr != nil {
+					toolResponses = append(toolResponses, genai.FunctionResponse{
+						Name:     call.Name,
+						Response: map[string]interface{}{"error": toolErr.Error()},
+					})
+				} else {
+					jsonBytes, _ := json.Marshal(result)
+					respStr := string(jsonBytes)
+					fmt.Printf("\n=== [Gemini Chat] Tool Result Data (%s) ===\n%s\n===============================================\n", call.Name, respStr)
+					const maxContentLen = 30000
+					if len(respStr) > maxContentLen {
+						respStr = respStr[:maxContentLen] + "... (dữ liệu quá lớn, đã được cắt bớt để tối ưu context)"
+					}
+					toolResponses = append(toolResponses, genai.FunctionResponse{
+						Name:     call.Name,
+						Response: map[string]interface{}{"result": respStr},
+					})
 				}
-
-				toolResponses = append(toolResponses, genai.FunctionResponse{
-					Name:     call.Name,
-					Response: map[string]interface{}{"result": respStr},
-				})
-			}
+				return nil
+			})
 		}
+
+		_ = g.Wait()
 
 		resp, err = session.SendMessage(ctx, toolResponses...)
 		if err != nil {
@@ -504,7 +504,7 @@ func (s *service) Chat(ctx context.Context, prompt string, history []ChatMessage
 	for _, part := range resp.Candidates[0].Content.Parts {
 		finalResult += fmt.Sprintf("%v", part)
 	}
-	return finalResult, nil //number.FormatText(finalResult), nil
+	return finalResult, nil
 }
 
 func (s *service) recordUsage(ctx context.Context, usage *genai.UsageMetadata) {
@@ -512,13 +512,12 @@ func (s *service) recordUsage(ctx context.Context, usage *genai.UsageMetadata) {
 		return
 	}
 	u := &models.AiUsage{
-		ModelName:       "gemini-2.5-flash", // Static for now as we hardcoded it in NewService
+		ModelName:       "gemini-2.5-flash",
 		PromptTokens:    int(usage.PromptTokenCount),
 		CandidateTokens: int(usage.CandidatesTokenCount),
 		TotalTokens:     int(usage.TotalTokenCount),
 		Timestamp:       time.Now(),
 	}
-	// We don't want to block the user if recording fails
 	go func() {
 		_ = s.aiUsageRepo.Save(context.Background(), u)
 	}()

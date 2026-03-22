@@ -283,7 +283,7 @@ func (s *service) ListReportsWithFilter(ctx context.Context, orgID, status, traf
 		}
 
 		for _, r := range reports {
-			if u, ok := updatesMap[r.ID]; ok {
+			if u, ok := updatesMap[r.ID]; ok && r.Status != "resolved" {
 				r.Updates = u
 			}
 		}

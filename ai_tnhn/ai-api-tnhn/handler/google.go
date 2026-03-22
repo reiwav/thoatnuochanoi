@@ -410,7 +410,7 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 
 	// Upload Template
 	targetFilename := fmt.Sprintf("Báo cáo mưa ngày %s-%s-%s thời điểm %s.docx", dd, mm, yyyy, shortHour)
-	localTemplate := filepath.Join("doc", "Báo cáo mưa ngày {dd}-{mm}-{yyyy} thời điểm {hh}.docx")
+	localTemplate := filepath.Join("doc", "Báo cáo mưa ngày {dd}-{mm}-{yyyy} thời điểm {hh}.docx")
 	fileData, err := os.Open(localTemplate)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Template document not found: " + err.Error()})

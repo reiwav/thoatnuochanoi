@@ -17,10 +17,10 @@ rm -rf "$DEPLOY_DIR"
 mkdir -p "$DEPLOY_DIR/frontend"
 
 # 2. Build Backend
-echo "Building Backend (Go) for linux/amd64..."
+echo "Building Backend (Go) for host platform..."
 cd "$BACKEND_DIR"
-GOOS=linux GOARCH=amd64 go build -o "$DEPLOY_DIR/sensor-backend" main.go
-echo "Backend build complete: $DEPLOY_DIR/sensor-backend (linux/amd64)"
+go build -o "$DEPLOY_DIR/sensor-backend" main.go
+echo "Backend build complete: $DEPLOY_DIR/sensor-backend"
 
 # 3. Build Frontend
 echo "Building Frontend (Vite)..."

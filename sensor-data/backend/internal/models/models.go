@@ -68,6 +68,7 @@ type Device struct {
 type HistoryTrend struct {
 	ID           primitive.ObjectID `bson:"_id,omitempty" json:"id"`
 	DeviceLink   string             `bson:"device_link" json:"deviceLink"`
+	DeviceName   string             `bson:"device_name" json:"deviceName"`
 	DeviceIP     string             `bson:"device_ip" json:"deviceIp"`
 	Code         string             `bson:"code" json:"code"`
 	SensorType   int                `bson:"sensor_type" json:"sensorType"`

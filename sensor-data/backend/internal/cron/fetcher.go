@@ -167,6 +167,7 @@ func FetchHistoryData(ctx context.Context, database *mongo.Database, startDate, 
 
 					doc := models.HistoryTrend{
 						DeviceLink:   dev.Link,
+						DeviceName:   dev.Name,
 						DeviceIP:     dev.IP,
 						Code:         sLabel,
 						SensorType:   int(sType),

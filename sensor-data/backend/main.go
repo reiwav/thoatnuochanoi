@@ -12,6 +12,7 @@ import (
 	"sensor-backend/internal/service/auth"
 	"sensor-backend/internal/service/device"
 	"sensor-backend/internal/service/sensor"
+	"sensor-backend/internal/service/ai"
 	"sensor-backend/router"
 	"time"
 )
@@ -43,14 +44,21 @@ func main() {
 	// Seed data
 	authSvc.SeedAdmin(context.Background())
 
+	// AI Service
+	aiSvc, err := ai.NewService(context.Background(), cfg.GeminiToken, sensorSvc)
+	if err != nil {
+		log.Printf("Warning: Could not initialize AI service: %v", err)
+	}
+
 
 	// Handlers
 	authH := handler.NewAuthHandler(authSvc)
 	sensorH := handler.NewSensorHandler(sensorSvc)
 	deviceH := handler.NewDeviceHandler(deviceSvc)
+	aiH := handler.NewAIHandler(aiSvc)
 
 	// Router
-	r := router.NewRouter(authH, sensorH, deviceH)
+	r := router.NewRouter(authH, sensorH, deviceH, aiH)
 
 	// Start 5-minute Cron job for fetching recent history
 	go func() {

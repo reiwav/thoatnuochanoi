@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  Activity, LayoutDashboard, List, Settings, LogOut, AlertCircle,
+  Activity, LayoutDashboard, List, Settings, LogOut, AlertCircle, Sparkles
 } from 'lucide-react';
 import { SENSOR_TOKEN } from 'constants/auth';
 
@@ -8,18 +8,21 @@ import LoginPage from 'views/auth/LoginPage';
 import DashboardPage from 'views/dashboard/DashboardPage';
 import ModbusSettingPage from 'views/modbus/ModbusSettingPage';
 import HistoryTrendPage from 'views/history/HistoryTrendPage';
+import ChatAI from 'views/chat/ChatAI';
 
 import './App.css';
 
 const NAV = [
   { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { key: 'history', label: 'History Trend', icon: Activity },
+  { key: 'chat-ai', label: 'Chat AI Support', icon: Sparkles },
   { key: 'modbussetting', label: 'Modbus Setting', icon: List },
 ];
 
 const PAGE_TITLES = {
   dashboard: 'Overview Analytics',
   history: 'History Trend Analysis',
+  'chat-ai': 'AI Support & Analysis',
   modbussetting: 'Modbus RTU Settings',
 };
 
@@ -47,6 +50,7 @@ export default function App() {
     switch (view) {
       case 'dashboard':     return <DashboardPage addAlert={addAlert} />;
       case 'history':       return <HistoryTrendPage addAlert={addAlert} />;
+      case 'chat-ai':       return <ChatAI />;
       case 'modbussetting': return <ModbusSettingPage addAlert={addAlert} />;
       default:              return null;
     }

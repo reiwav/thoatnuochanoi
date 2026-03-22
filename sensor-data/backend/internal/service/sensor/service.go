@@ -28,6 +28,8 @@ type Service interface {
 	GetOutputs(ctx context.Context, link string) ([]models.Output, error)
 	ToggleOutput(ctx context.Context, link string, id string, control bool) error
 	SeedOutputs(ctx context.Context, link string) error
+	ListDevices(ctx context.Context) ([]models.Device, error)
+	SearchHistory(ctx context.Context, start, end time.Time, minStatus int) ([]models.HistoryTrend, error)
 }
 
 type service struct {
@@ -257,4 +259,42 @@ func (s *service) SeedOutputs(ctx context.Context, link string) error {
 		}
 	}
 	return nil
+}
+
+func (s *service) ListDevices(ctx context.Context) ([]models.Device, error) {
+	coll := s.db.Collection("devices")
+	cursor, err := coll.Find(ctx, bson.M{})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var devices []models.Device
+	if err := cursor.All(ctx, &devices); err != nil {
+		return nil, err
+	}
+	return devices, nil
+}
+
+func (s *service) SearchHistory(ctx context.Context, start, end time.Time, minStatus int) ([]models.HistoryTrend, error) {
+	coll := s.db.Collection("history_trend")
+	filter := bson.M{
+		"timestamp": bson.M{"$gte": start, "$lte": end},
+		"status":    bson.M{"$gte": minStatus},
+	}
+	
+	// Limit to 100 results to avoid overwhelming the AI
+	opts := options.Find().SetSort(bson.D{{Key: "timestamp", Value: -1}}).SetLimit(100)
+	
+	cursor, err := coll.Find(ctx, filter, opts)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var results []models.HistoryTrend
+	if err := cursor.All(ctx, &results); err != nil {
+		return nil, err
+	}
+	return results, nil
 }

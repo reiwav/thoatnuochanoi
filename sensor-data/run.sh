@@ -12,14 +12,9 @@ if [ ! -d "$DEPLOY_DIR" ]; then
     ./build.sh
 fi
 
-# Check if we can run the binary (linux_amd64 on Mac)
+# Check if we can run the binary
 if [[ "$OSTYPE" == "darwin"* ]]; then
-    echo "------------------------------------------------------------------"
-    echo "WARNING: The backend is built for linux/amd64."
-    echo "You are currently on macOS, so you cannot run this binary locally."
-    echo "Please deploy the 'deploy/' folder to a Linux server to run it."
-    echo "------------------------------------------------------------------"
-    exit 1
+    echo "Running on macOS..."
 fi
 
 # Run backend

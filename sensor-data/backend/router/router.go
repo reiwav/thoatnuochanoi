@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func NewRouter(authH *handler.AuthHandler, sensorH *handler.SensorHandler, deviceH *handler.DeviceHandler) *gin.Engine {
+func NewRouter(authH *handler.AuthHandler, sensorH *handler.SensorHandler, deviceH *handler.DeviceHandler, aiH *handler.AIHandler) *gin.Engine {
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{
@@ -34,6 +34,9 @@ func NewRouter(authH *handler.AuthHandler, sensorH *handler.SensorHandler, devic
 		// Device Settings
 		authorized.GET("/devices", deviceH.GetDevices)
 		authorized.PATCH("/devices/:id/config", deviceH.UpdateDeviceConfig)
+
+		// AI Chat
+		authorized.POST("/ai/chat", aiH.Chat)
 	}
 
 	// Serve Frontend Static Files

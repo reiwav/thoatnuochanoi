@@ -85,6 +85,6 @@ go run tools/fetch_single/main.go "http://14.224.214.119:8880" 1 "2025-08-05" "2
 ```
 chỉ có data từ 05/08/2025
 
-go run tools/fetch_history/main.go 2025-11-10 2026-01-01
+go run tools/fetch_history/main.go 2025-11-11 2026-01-01
 
 go run tools/fetch_single/main.go "http://14.224.214.119:8880" 0 "2025-09-13" "2025-09-13"

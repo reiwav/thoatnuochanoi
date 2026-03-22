@@ -52,10 +52,10 @@ func main() {
 	// Router
 	r := router.NewRouter(authH, sensorH, deviceH)
 
-	// Start 1-minute Cron job for fetching recent history
+	// Start 5-minute Cron job for fetching recent history
 	go func() {
-		log.Println("[Cron] Starting background fetcher (1 min interval, last 10 mins data)...")
-		ticker := time.NewTicker(1 * time.Minute)
+		log.Println("[Cron] Starting background fetcher (5 min interval, last 10 mins data)...")
+		ticker := time.NewTicker(5 * time.Minute)
 		ctxCron := context.Background()
 
 		// Run once immediately on start:

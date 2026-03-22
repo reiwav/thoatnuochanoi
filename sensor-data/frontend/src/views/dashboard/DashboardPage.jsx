@@ -9,6 +9,7 @@ export default function DashboardPage({ addAlert }) {
   const [outputs, setOutputs] = useState([]);
   const [devices, setDevices] = useState([]);
   const [selectedLink, setSelectedLink] = useState('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchDevices();
@@ -16,6 +17,7 @@ export default function DashboardPage({ addAlert }) {
 
   useEffect(() => {
     if (!selectedLink) return;
+    setLoading(true); 
     fetchAll(selectedLink);
     const interval = setInterval(() => fetchAll(selectedLink), 5000);
     return () => clearInterval(interval);
@@ -43,7 +45,11 @@ export default function DashboardPage({ addAlert }) {
       const resp = await sensorApi.getMonitor({ link });
       const data = resp.data || [];
       setMonitorData(data);
-    } catch (err) { console.error('Monitor:', err); }
+      setLoading(false);
+    } catch (err) { 
+      console.error('Monitor:', err); 
+      setLoading(true); // Keep loading on error per user request
+    }
   };
 
 
@@ -104,7 +110,20 @@ export default function DashboardPage({ addAlert }) {
       </div>
 
       {/* Monitor Cards */}
-      <div className="monitor-grid">
+      <div className="monitor-grid" style={{ position: 'relative', minHeight: '300px' }}>
+        {loading && (
+          <div className="loading-overlay" style={{
+            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', zIndex: 50,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            borderRadius: '28px', gap: '15px', border: '1px solid var(--border-color)'
+          }}>
+             <RefreshCw className="spin" size={40} color="var(--accent-secondary)" />
+             <div style={{ color: '#fff', fontWeight: '600', letterSpacing: '0.5px' }}>Fetching System Data...</div>
+             <div style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>Waiting for response from sensor station</div>
+          </div>
+        )}
+
         {monitorData.map((mon, idx) => {
           const val = parseFloat(mon.value) || 0;
           let isWarning = false;

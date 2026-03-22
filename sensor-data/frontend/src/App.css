@@ -535,6 +535,10 @@ td {
   display: inline-block;
 }
 
+.spin {
+  animation: spin 1s linear infinite;
+}
+
 /* Filter Bar */
 .filter-bar {
   display: flex;

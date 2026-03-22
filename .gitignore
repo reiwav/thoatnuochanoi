@@ -15,3 +15,4 @@ ai_tnhn/ai-api-tnhn/uploads/
 sensor-data/**/node_modules/
 sensor-data/backend/server
 sensor-data/frontend/dist/
+sensor-data/backend/config/config.go

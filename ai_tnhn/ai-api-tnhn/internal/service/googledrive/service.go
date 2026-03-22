@@ -10,6 +10,7 @@ import (
 
 	"golang.org/x/oauth2"
 	"google.golang.org/api/drive/v3"
+	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 
 	"github.com/go-resty/resty/v2"
@@ -22,6 +23,7 @@ type Service interface {
 	FindOrCreateFolder(ctx context.Context, parentID, folderName string) (string, error)
 	TriggerReportGeneration(ctx context.Context, webhookURL, templateFileID, targetFolderID string, payload map[string]interface{}) (string, error)
 	CopyFile(ctx context.Context, fileID, parentID, newName string) (string, error)
+	GetFileContent(ctx context.Context, fileID string) ([]byte, error)
 }
 
 var DefaultSubfolders = []string{"RAIN", "RIVER", "LAKE", "CAMERA", "FLOOD"}
@@ -150,13 +152,22 @@ func (s *service) CreateFolder(ctx context.Context, parentID, name string) (stri
 }
 
 func (s *service) UploadFile(ctx context.Context, folderID, name, mimeType string, content io.Reader, convert bool) (string, error) {
+	return s.uploadFile(ctx, folderID, name, mimeType, content, convert, true)
+}
+
+func (s *service) UploadFileSimple(ctx context.Context, folderID, name, mimeType string, content io.Reader) (string, error) {
+	return s.uploadFile(ctx, folderID, name, mimeType, content, false, false)
+}
+
+func (s *service) uploadFile(ctx context.Context, folderID, name, mimeType string, content io.Reader, convert bool, setPublic bool) (string, error) {
 	// Sanitize folderID
 	if folderID == "." {
 		folderID = ""
 	}
 
 	f := &drive.File{
-		Name: name,
+		Name:     name,
+		MimeType: mimeType,
 	}
 	if convert {
 		f.MimeType = "application/vnd.google-apps.document"
@@ -166,19 +177,21 @@ func (s *service) UploadFile(ctx context.Context, folderID, name, mimeType strin
 		f.Parents = []string{folderID}
 	}
 
-	file, err := s.driveSvc.Files.Create(f).Media(content).SupportsAllDrives(true).Fields("id").Do()
+	file, err := s.driveSvc.Files.Create(f).Media(content, googleapi.ContentType(mimeType)).SupportsAllDrives(true).Fields("id").Do()
 	if err != nil {
 		return "", fmt.Errorf("failed to upload file: %w", err)
 	}
 
-	// Grant public read permission to the file so the frontend can view it
-	permission := &drive.Permission{
-		Type: "anyone",
-		Role: "reader",
-	}
-	_, err = s.driveSvc.Permissions.Create(file.Id, permission).SupportsAllDrives(true).Do()
-	if err != nil {
-		fmt.Printf("Warning: failed to make uploaded file %s public: %v\n", file.Id, err)
+	if setPublic {
+		// Grant public read permission to the file so the frontend can view it
+		permission := &drive.Permission{
+			Type: "anyone",
+			Role: "reader",
+		}
+		_, err = s.driveSvc.Permissions.Create(file.Id, permission).SupportsAllDrives(true).Do()
+		if err != nil {
+			fmt.Printf("Warning: failed to make uploaded file %s public: %v\n", file.Id, err)
+		}
 	}
 
 	return file.Id, nil
@@ -271,4 +284,26 @@ func (s *service) CopyFile(ctx context.Context, fileID, parentID, newName string
 	}
 
 	return file.Id, nil
+}
+
+func (s *service) GetFileContent(ctx context.Context, fileID string) ([]byte, error) {
+	resp, err := s.driveSvc.Files.Get(fileID).Download()
+	if err != nil {
+		return nil, fmt.Errorf("failed to download file %s: %w", fileID, err)
+	}
+	defer resp.Body.Close()
+
+	return io.ReadAll(resp.Body)
+}
+
+func (s *service) SetPublic(ctx context.Context, fileID string) error {
+	permission := &drive.Permission{
+		Type: "anyone",
+		Role: "reader",
+	}
+	_, err := s.driveSvc.Permissions.Create(fileID, permission).SupportsAllDrives(true).Do()
+	if err != nil {
+		return fmt.Errorf("failed to make file %s public: %w", fileID, err)
+	}
+	return nil
 }

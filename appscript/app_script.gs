@@ -11,10 +11,32 @@ function doPost(e) {
     const doc = DocumentApp.openById(newFile.getId());
     const body = doc.getBody();
 
+    // Xử lý câu từ cho phần úng ngập
+    let so_luong = data.so_luong_ung_ngap !== undefined ? data.so_luong_ung_ngap : 0;
+    let chi_tiet = data.chi_tiet_cac_diem !== undefined ? String(data.chi_tiet_cac_diem).trim() : "";
+
+    if (so_luong == 0) {
+      chi_tiet = ""; // Xóa chi tiết nếu không có điểm ngập
+    } else if (chi_tiet !== "") {
+      // Đảm bảo viết hoa chữ cái đầu tiên và có dấu chấm để thành câu hoàn chỉnh
+      chi_tiet = chi_tiet.charAt(0).toUpperCase() + chi_tiet.slice(1);
+      if (!chi_tiet.endsWith(".")) {
+        chi_tiet += ".";
+      }
+      // Nếu bổ sung thêm chữ "Cụ thể: " vào trước thì bật đoạn này lên:
+      if (!chi_tiet.toLowerCase().startsWith("cụ thể") && !chi_tiet.toLowerCase().startsWith("chi tiết")) {
+        chi_tiet = "Cụ thể: " + chi_tiet;
+      }
+    }
+    
+    data.so_luong_ung_ngap = so_luong;
+    data.chi_tiet_cac_diem = chi_tiet;
+
     // 2. Thay thế các placeholder văn bản đơn giản
-    const replacements = ['dd', 'mm', 'yyyy', 'hh', 'noidung', 'time_mua'];
+    const replacements = ['dd', 'mm', 'yyyy', 'hh', 'noidung', 'time_mua', 'so_luong_ung_ngap', 'chi_tiet_cac_diem'];
     replacements.forEach(key => {
-      body.replaceText('{' + key + '}', data[key] || "");
+      let value = (data[key] !== undefined && data[key] !== null) ? String(data[key]) : "";
+      body.replaceText('{' + key + '}', value);
     });
 
     // 3. Vẽ bảng Mưa Phường theo layout 5 cột
@@ -120,6 +142,7 @@ function renderDualColumnTable(body, placeholder, songHoData) {
  */
 function applyFiveColumnStyle(table, numRows) {
   table.setBorderWidth(1);
+  table.setBorderColor('#000000');
   
   // Set độ rộng cột
   table.setColumnWidth(0, 155); 
@@ -135,6 +158,26 @@ function applyFiveColumnStyle(table, numRows) {
       headerRow.getCell(j).setBold(true);
       headerRow.getCell(j).setBackgroundColor('#f3f3f3');
     }
+  }
+
+  // Khử viền trên/dưới cột giữa (cột 2) bằng cách dùng viền trắng đè lên
+  const whiteBorder = {};
+  whiteBorder[DocumentApp.Attribute.BORDER_COLOR] = '#ffffff';
+  
+  const blackBorder = {};
+  blackBorder[DocumentApp.Attribute.BORDER_COLOR] = '#000000';
+
+  for (let r = 0; r < numRows; r++) {
+    const row = table.getRow(r);
+    // 1. Gán trắng toàn bộ viền cột 2 (làm mất luôn viền trên, dưới)
+    row.getCell(2).setAttributes(whiteBorder);
+    
+    // 2. Gán đè lại đen cho cột 1 và 3 (thậm chí cột 0, 4) 
+    // để cứu vớt cạnh viền phải của cột 1 và cạnh trái của cột 3
+    row.getCell(0).setAttributes(blackBorder);
+    row.getCell(1).setAttributes(blackBorder);
+    row.getCell(3).setAttributes(blackBorder);
+    row.getCell(4).setAttributes(blackBorder);
   }
 }
 

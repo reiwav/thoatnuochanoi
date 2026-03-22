@@ -45,7 +45,7 @@ func (s *service) Create(ctx context.Context, input *models.User) (*models.User,
 		return nil, web.BadRequest("org_id is required")
 	}
 	input.Active = true // Default to active
-	
+
 	// Password will be hashed by userRepo.Create, so we don't hash it here
 	user, err := s.userRepo.Create(ctx, input)
 	if err != nil {

@@ -20,8 +20,7 @@ export const getInundationImageUrl = (img) => {
         return base + path;
     }
 
-    // Default Google Drive ID fallback - use the most universal format
-    // lh3 is usually faster for thumbnails but if it fails, uc?id= is more robust
-    // We'll try lh3 but without the extra parameters first, or just stick to uc?id= for safety
-    return `https://drive.google.com/uc?id=${img}`;
+    // Optimized Google Drive CDN format (lh3), which is faster and supports resizing
+    // s1000 provides a good balance between quality and performance
+    return `https://lh3.googleusercontent.com/d/${img}=s1000`;
 };

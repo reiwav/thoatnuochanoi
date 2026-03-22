@@ -5,12 +5,21 @@ import (
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/repository"
 	"ai-api-tnhn/internal/service/googledrive"
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 	"sort"
+	"strconv"
+	"sync"
 	"time"
+
+	"github.com/xuri/excelize/v2"
+	"go.mongodb.org/mongo-driver/bson"
+	"golang.org/x/sync/errgroup"
 )
 
 type ImageContent struct {
@@ -33,6 +42,7 @@ type Service interface {
 	UpdateProgress(ctx context.Context, id string, progress *models.EmergencyConstructionProgress, images []ImageContent) error
 	GetProgressByID(ctx context.Context, id string) (*models.EmergencyConstructionProgress, error)
 	GetProgressHistory(ctx context.Context, constructionID string) ([]*models.EmergencyConstructionProgress, error)
+	ExportExcelToDrive(ctx context.Context, date string, orgID string) (string, error)
 }
 
 type service struct {
@@ -42,6 +52,8 @@ type service struct {
 	userRepo     repository.User
 	orgRepo      repository.Organization
 	driveSvc     googledrive.Service
+	folderCache  map[string]string
+	cacheMu      sync.RWMutex
 }
 
 func NewService(repo repository.EmergencyConstruction, historyRepo repository.EmergencyConstructionHistory, progressRepo repository.EmergencyConstructionProgress, userRepo repository.User, orgRepo repository.Organization, driveSvc googledrive.Service) Service {
@@ -52,6 +64,7 @@ func NewService(repo repository.EmergencyConstruction, historyRepo repository.Em
 		userRepo:     userRepo,
 		orgRepo:      orgRepo,
 		driveSvc:     driveSvc,
+		folderCache:  make(map[string]string),
 	}
 }
 
@@ -164,9 +177,57 @@ func (s *service) GetHistory(ctx context.Context, constructionID string) ([]*mod
 	return s.historyRepo.ListByConstructionID(ctx, constructionID)
 }
 
+func (s *service) GetProgressByID(ctx context.Context, id string) (*models.EmergencyConstructionProgress, error) {
+	return s.progressRepo.GetByID(ctx, id)
+}
+
 func (s *service) ReportProgress(ctx context.Context, progress *models.EmergencyConstructionProgress, images []ImageContent) error {
-	// ... (same logic as before, but I'll make it reusable)
 	return s.saveProgress(ctx, progress, images, true)
+}
+
+func (s *service) saveProgress(ctx context.Context, progress *models.EmergencyConstructionProgress, images []ImageContent, isNew bool) error {
+	if progress.ProgressPercentage >= 100 || progress.IsCompleted {
+		progress.IsCompleted = true
+		progress.ProgressPercentage = 100
+		if progress.ExpectedCompletionDate == 0 {
+			progress.ExpectedCompletionDate = time.Now().Unix()
+		}
+	}
+
+	if len(images) > 0 {
+		u, err := s.userRepo.GetByID(ctx, progress.ReportedBy)
+		if err == nil && u != nil && u.OrgID != "" {
+			org, err := s.orgRepo.GetByID(ctx, u.OrgID)
+			if err == nil && org != nil {
+				folderID, err := s.resolveUploadFolder(ctx, org, "CONSTRUCTION", progress.ConstructionID)
+				if err == nil {
+					g, gCtx := errgroup.WithContext(ctx)
+					imageIDs := make([]string, len(images))
+
+					for i, img := range images {
+						i, img := i, img // closure capture
+						g.Go(func() error {
+							id, err := s.driveSvc.UploadFileSimple(gCtx, folderID, img.Name, img.MimeType, img.Reader)
+							if err == nil {
+								imageIDs[i] = id
+							}
+							return err
+						})
+					}
+
+					_ = g.Wait()
+
+					for _, id := range imageIDs {
+						if id != "" {
+							progress.Images = append(progress.Images, id)
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return s.progressRepo.Upsert(ctx, progress)
 }
 
 func (s *service) UpdateProgress(ctx context.Context, id string, progress *models.EmergencyConstructionProgress, images []ImageContent) error {
@@ -180,46 +241,6 @@ func (s *service) UpdateProgress(ctx context.Context, id string, progress *model
 	existing.Issues = progress.Issues
 	existing.Order = progress.Order
 	existing.Location = progress.Location
-	existing.Conclusion = progress.Conclusion
-	existing.Influence = progress.Influence
-	existing.Proposal = progress.Proposal
-	existing.Images = progress.Images
-
-	// Merge or replace images? For now, if new images are provided, we add them.
-	// In a real app, we might want more complex image management.
-	return s.saveProgress(ctx, existing, images, false)
-}
-
-func (s *service) GetProgressByID(ctx context.Context, id string) (*models.EmergencyConstructionProgress, error) {
-	progress, err := s.progressRepo.GetByID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	if cons, errCons := s.repo.GetByID(ctx, progress.ConstructionID); errCons == nil && cons != nil {
-		progress.ConstructionName = cons.Name
-	}
-	return progress, nil
-}
-
-func (s *service) saveProgress(ctx context.Context, progress *models.EmergencyConstructionProgress, images []ImageContent, isNew bool) error {
-	// 0. Fetch Reporter Details if missing
-	if progress.ReporterName == "" && progress.ReportedBy != "" {
-		u, err := s.userRepo.GetByID(ctx, progress.ReportedBy)
-		if err == nil && u != nil {
-			progress.ReporterName = u.Name
-			progress.ReporterEmail = u.Email
-			if u.OrgID != "" {
-				org, err := s.orgRepo.GetByID(ctx, u.OrgID)
-				if err == nil && org != nil {
-					progress.ReporterOrgName = org.Name
-				}
-			}
-		}
-	}
-
-	if isNew {
-		progress.ReportDate = time.Now().Unix()
-	}
 
 	if progress.ProgressPercentage >= 100 || progress.IsCompleted {
 		progress.IsCompleted = true
@@ -237,14 +258,27 @@ func (s *service) saveProgress(ctx context.Context, progress *models.EmergencyCo
 			if err == nil && org != nil {
 				folderID, err := s.resolveUploadFolder(ctx, org, "CONSTRUCTION", progress.ConstructionID)
 				if err == nil {
-					var imageIDs []string
-					for _, img := range images {
-						id, err := s.driveSvc.UploadFile(ctx, folderID, img.Name, img.MimeType, img.Reader, false)
-						if err == nil {
-							imageIDs = append(imageIDs, id)
+					g, gCtx := errgroup.WithContext(ctx)
+					imageIDs := make([]string, len(images))
+
+					for i, img := range images {
+						i, img := i, img // closure capture
+						g.Go(func() error {
+							id, err := s.driveSvc.UploadFileSimple(gCtx, folderID, img.Name, img.MimeType, img.Reader)
+							if err == nil {
+								imageIDs[i] = id
+							}
+							return err
+						})
+					}
+
+					_ = g.Wait()
+
+					for _, id := range imageIDs {
+						if id != "" {
+							progress.Images = append(progress.Images, id)
 						}
 					}
-					progress.Images = append(progress.Images, imageIDs...)
 				}
 			}
 		}
@@ -267,11 +301,28 @@ func (s *service) resolveUploadFolder(ctx context.Context, org *models.Organizat
 		_ = s.orgRepo.Upsert(ctx, org)
 	}
 
-	typeFolderID, err := s.driveSvc.FindOrCreateFolder(ctx, orgFolderID, dataType)
-	if err != nil {
-		return "", err
+	// 1. Get/Create Type Folder (e.g., CONSTRUCTION)
+	typeKey := fmt.Sprintf("type_%s_%s", orgFolderID, dataType)
+	s.cacheMu.RLock()
+	typeFolderID, ok := s.folderCache[typeKey]
+	s.cacheMu.RUnlock()
+
+	if !ok {
+		var err error
+		typeFolderID, err = s.driveSvc.FindOrCreateFolder(ctx, orgFolderID, dataType)
+		if err != nil {
+			return "", err
+		}
+		s.cacheMu.Lock()
+		s.folderCache[typeKey] = typeFolderID
+		s.cacheMu.Unlock()
 	}
 
+	if dataType == "REPORTS" {
+		return typeFolderID, nil
+	}
+
+	// 2. Get/Create Construction Folder
 	folderName := "UNKNOWN_CONSTRUCTION"
 	if constructionID != "" {
 		cons, err := s.repo.GetByID(ctx, constructionID)
@@ -279,13 +330,45 @@ func (s *service) resolveUploadFolder(ctx context.Context, org *models.Organizat
 			folderName = fmt.Sprintf("%s_%s", cons.Name, cons.ID)
 		}
 	}
-	consFolderID, err := s.driveSvc.FindOrCreateFolder(ctx, typeFolderID, folderName)
-	if err != nil {
-		return "", err
+
+	consKey := fmt.Sprintf("cons_%s_%s", typeFolderID, folderName)
+	s.cacheMu.RLock()
+	consFolderID, ok := s.folderCache[consKey]
+	s.cacheMu.RUnlock()
+
+	if !ok {
+		var err error
+		consFolderID, err = s.driveSvc.FindOrCreateFolder(ctx, typeFolderID, folderName)
+		if err != nil {
+			return "", err
+		}
+		s.cacheMu.Lock()
+		s.folderCache[consKey] = consFolderID
+		s.cacheMu.Unlock()
 	}
 
+	// 3. Get/Create Date Folder
 	dateFolderName := time.Now().Format("2006-01-02")
-	return s.driveSvc.FindOrCreateFolder(ctx, consFolderID, dateFolderName)
+	dateKey := fmt.Sprintf("date_%s_%s", consFolderID, dateFolderName)
+	s.cacheMu.RLock()
+	dateFolderID, ok := s.folderCache[dateKey]
+	s.cacheMu.RUnlock()
+
+	if !ok {
+		var err error
+		dateFolderID, err = s.driveSvc.FindOrCreateFolder(ctx, consFolderID, dateFolderName)
+		if err != nil {
+			return "", err
+		}
+		s.cacheMu.Lock()
+		s.folderCache[dateKey] = dateFolderID
+		s.cacheMu.Unlock()
+
+		// Make the date folder public so files inside inherit the permission
+		_ = s.driveSvc.SetPublic(ctx, dateFolderID)
+	}
+
+	return dateFolderID, nil
 }
 
 func (s *service) GetProgressHistory(ctx context.Context, constructionID string) ([]*models.EmergencyConstructionProgress, error) {
@@ -301,4 +384,205 @@ func (s *service) GetProgressHistory(ctx context.Context, constructionID string)
 		})
 	}
 	return items, err
+}
+
+func (s *service) ExportExcelToDrive(ctx context.Context, dateStr string, orgID string) (string, error) {
+	// 1. Parse date
+	loc, _ := time.LoadLocation("Asia/Ho_Chi_Minh")
+	t, err := time.ParseInLocation("2006-01-02", dateStr, loc)
+	if err != nil {
+		return "", fmt.Errorf("invalid date format: %w", err)
+	}
+	startOfDay := t.Unix()
+	endOfDay := t.Add(24*time.Hour).Unix() - 1
+
+	// 2. Fetch Organizations
+	orgs := []*models.Organization{}
+	if orgID != "" {
+		org, err := s.orgRepo.GetByID(ctx, orgID)
+		if err != nil {
+			return "", fmt.Errorf("organization not found: %w", err)
+		}
+		orgs = append(orgs, org)
+	} else {
+		// List all (basic simple list for now)
+		items, _, err := s.orgRepo.List(ctx, filter.NewBasicFilter())
+		if err != nil {
+			return "", fmt.Errorf("failed to list organizations: %w", err)
+		}
+		orgs = items
+	}
+
+	// 3. Create Excel
+	f := excelize.NewFile()
+	sheetName := "Báo cáo ngày Tổng hợp lệnh"
+	f.SetSheetName("Sheet1", sheetName)
+
+	// Style headers
+	titleStyle, _ := f.NewStyle(&excelize.Style{
+		Font:      &excelize.Font{Bold: true, Size: 14},
+		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center"},
+	})
+	headerStyle, _ := f.NewStyle(&excelize.Style{
+		Font: &excelize.Font{Bold: true},
+		Fill: excelize.Fill{Type: "pattern", Color: []string{"#DCE6F1"}, Pattern: 1},
+		Border: []excelize.Border{
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "right", Color: "000000", Style: 1},
+			{Type: "top", Color: "000000", Style: 1},
+			{Type: "bottom", Color: "000000", Style: 1},
+		},
+		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+	})
+	contentStyle, _ := f.NewStyle(&excelize.Style{
+		Border: []excelize.Border{
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "right", Color: "000000", Style: 1},
+			{Type: "top", Color: "000000", Style: 1},
+			{Type: "bottom", Color: "000000", Style: 1},
+		},
+		Alignment: &excelize.Alignment{Vertical: "center", WrapText: true},
+	})
+
+	// Row 0: Title
+	f.MergeCell(sheetName, "A1", "H1")
+	f.SetCellValue(sheetName, "A1", fmt.Sprintf("BẢNG TỔNG HỢP KẾT QUẢ TÌNH HÌNH TRIỂN KHAI CÁC LỆNH KHẨN CẤP NGÀY %s", dateStr))
+	f.SetCellStyle(sheetName, "A1", "H1", titleStyle)
+	f.SetRowHeight(sheetName, 1, 30)
+
+	// Row 1: Headers
+	headers := []string{"STT", "XÍ NGHIỆP", "CÁC LỆNH VÀ DỰ ÁN", "CÁC LỆNH", "VỊ TRÍ - TÌNH HÌNH TRIỂN KHAI", "ẢNH HƯỞNG", "ĐỀ XUẤT", "ẢNH"}
+	for i, h := range headers {
+		cell, _ := excelize.CoordinatesToCellName(i+1, 2)
+		f.SetCellValue(sheetName, cell, h)
+	}
+	f.SetCellStyle(sheetName, "A2", "H2", headerStyle)
+	f.SetRowHeight(sheetName, 2, 40)
+
+	// Column Widths
+	widths := map[string]float64{"A": 5, "B": 25, "C": 30, "D": 15, "E": 50, "F": 20, "G": 20, "H": 40}
+	for col, width := range widths {
+		f.SetColWidth(sheetName, col, col, width)
+	}
+
+	// 4. Fill Data
+	rowIdx := 3
+	stt := 1
+	for _, org := range orgs {
+		// Fetch constructions for this org
+		consList, _, err := s.repo.List(ctx, filter.NewBasicFilter().AddWhere("org_id", "org_id", org.ID))
+		if err != nil || len(consList) == 0 {
+			continue
+		}
+
+		orgNameWritten := false
+		for _, cons := range consList {
+			// Fetch progress for this construction on this day
+			progressList, _, err := s.progressRepo.List(ctx, filter.NewBasicFilter().
+				AddWhere("construction_id", "construction_id", cons.ID).
+				AddWhere("report_date", "report_date", bson.M{"$gte": startOfDay, "$lte": endOfDay}))
+
+			if err != nil || len(progressList) == 0 {
+				continue
+			}
+
+			for _, p := range progressList {
+				f.SetCellValue(sheetName, fmt.Sprintf("A%d", rowIdx), stt)
+				if !orgNameWritten {
+					f.SetCellValue(sheetName, fmt.Sprintf("B%d", rowIdx), org.Name)
+					orgNameWritten = true
+				}
+				f.SetCellValue(sheetName, fmt.Sprintf("C%d", rowIdx), cons.Name)
+				f.SetCellValue(sheetName, fmt.Sprintf("D%d", rowIdx), p.Order)
+				f.SetCellValue(sheetName, fmt.Sprintf("E%d", rowIdx), fmt.Sprintf("Vị trí: %s\nNội dung: %s", p.Location, p.WorkDone))
+				f.SetCellValue(sheetName, fmt.Sprintf("F%d", rowIdx), p.Influence)
+				f.SetCellValue(sheetName, fmt.Sprintf("G%d", rowIdx), p.Proposal)
+
+				// Handle Images in parallel
+				if len(p.Images) > 0 {
+					g, gCtx := errgroup.WithContext(ctx)
+					type imgResult struct {
+						index int
+						data  []byte
+					}
+					results := make([]imgResult, len(p.Images))
+
+					for k, imgID := range p.Images {
+						k, imgID := k, imgID
+						g.Go(func() error {
+							imgData, err := s.driveSvc.GetFileContent(gCtx, imgID)
+							if err == nil {
+								results[k] = imgResult{index: k, data: imgData}
+							}
+							return err
+						})
+					}
+
+					if err := g.Wait(); err != nil {
+						// Some images might fail, continue with others
+					}
+
+					for _, res := range results {
+						if res.data == nil {
+							continue
+						}
+						// Column H is index 8. Next images go to I, J, K...
+						colIdx := 8 + res.index
+						cellName, _ := excelize.CoordinatesToCellName(colIdx, rowIdx)
+
+						// Set column width for image columns
+						colName, _ := excelize.ColumnNumberToName(colIdx)
+						_ = f.SetColWidth(sheetName, colName, colName, 25)
+
+						_ = f.AddPictureFromBytes(sheetName, cellName, &excelize.Picture{
+							Extension: ".jpg",
+							File:      res.data,
+							Format: &excelize.GraphicOptions{
+								ScaleX:  0.15,
+								ScaleY:  0.15,
+								OffsetX: 5,
+								OffsetY: 5,
+							},
+						})
+					}
+					f.SetRowHeight(sheetName, rowIdx, 100)
+				} else {
+					f.SetRowHeight(sheetName, rowIdx, 60)
+				}
+
+				f.SetCellStyle(sheetName, "A"+strconv.Itoa(rowIdx), "Z"+strconv.Itoa(rowIdx), contentStyle)
+				rowIdx++
+				stt++
+			}
+		}
+	}
+
+	// 5. Save to buffer and Upload to Drive
+	var buf bytes.Buffer
+	if err := f.Write(&buf); err != nil {
+		return "", fmt.Errorf("failed to write excel to buffer: %w", err)
+	}
+	_ = f.Close()
+
+	// Determine target folder (REPORTS folder for the org, or a general one)
+	// For now, let's use the first org's folder or a general one if not specified
+	targetOrg := orgs[0]
+	folderID, err := s.resolveUploadFolder(ctx, targetOrg, "REPORTS", "")
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve report folder: %w", err)
+	}
+
+	fileName := fmt.Sprintf("BC_TH_Lenh_Khan_Cap_%s.xlsx", dateStr)
+	// MIME type for .xlsx
+	excelMime := "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+	fileID, err := s.driveSvc.UploadFile(ctx, folderID, fileName, excelMime, &buf, false)
+	if err != nil {
+		return "", fmt.Errorf("failed to upload report to drive: %w", err)
+	}
+
+	// DEBUG: Save a local copy for verification
+	localDebugPath := filepath.Join("uploads", fileName)
+	_ = os.WriteFile(localDebugPath, buf.Bytes(), 0666)
+
+	return fileID, nil
 }

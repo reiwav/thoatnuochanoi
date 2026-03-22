@@ -10,7 +10,7 @@ const EmergencyConstruction = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
                     <Stack direction="row" alignItems="center" spacing={1}>
                         <IconAlertTriangle size={24} color="#f44336" />
-                        <Typography variant="h3" sx={{ fontWeight: 800 }}>Công trình khẩn cấp</Typography>
+                        <Typography variant="h3" sx={{ fontWeight: 800 }}>BC CT KC</Typography>
                     </Stack>
                 </Box>
             }

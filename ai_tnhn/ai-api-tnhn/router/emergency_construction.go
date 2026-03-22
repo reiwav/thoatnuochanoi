@@ -22,5 +22,6 @@ func (h HandlerFuncs) EmergencyConstructionRoutes(rg *gin.RouterGroup, mid middl
 		group.POST("/progress", handler.ReportProgress)
 		group.PUT("/progress/:id", handler.UpdateProgress)
 		group.GET("/:id/progress", handler.GetProgressHistory)
+		group.GET("/export", handler.ExportExcel)
 	}
 }

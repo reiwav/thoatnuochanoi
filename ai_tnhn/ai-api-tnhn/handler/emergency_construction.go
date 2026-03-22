@@ -227,3 +227,26 @@ func (h *EmergencyConstructionHandler) GetProgressHistory(c *gin.Context) {
 	web.AssertNil(err)
 	h.SendData(c, history)
 }
+
+func (h *EmergencyConstructionHandler) ExportExcel(c *gin.Context) {
+	date := c.Query("date")
+	if date == "" {
+		web.AssertNil(web.BadRequest("date is required (YYYY-MM-DD)"))
+		return
+	}
+
+	orgID := c.Query("org_id")
+	// Security isolation
+	client := h.GetTokenFromContext(c)
+	if client.Role != "super_admin" && client.Role != "" { // Basic role check, super_admin can see all
+		orgID = client.OrgId
+	}
+
+	fileID, err := h.service.ExportExcelToDrive(c.Request.Context(), date, orgID)
+	web.AssertNil(err)
+
+	h.SendData(c, gin.H{
+		"file_id": fileID,
+		"url":     fmt.Sprintf("https://drive.google.com/file/d/%s/view", fileID),
+	})
+}

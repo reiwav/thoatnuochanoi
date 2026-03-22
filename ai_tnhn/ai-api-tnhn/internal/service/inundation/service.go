@@ -8,9 +8,11 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"sync"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"golang.org/x/sync/errgroup"
 )
 
 type Service interface {
@@ -60,6 +62,8 @@ type service struct {
 	inundationPointRepo  repository.InundationPoint
 	orgRepo              repository.Organization
 	driveSvc             googledrive.Service
+	folderCache          map[string]string
+	cacheMu              sync.RWMutex
 }
 
 func NewService(
@@ -75,6 +79,7 @@ func NewService(
 		inundationPointRepo:  inundationPointRepo,
 		orgRepo:              orgRepo,
 		driveSvc:             driveSvc,
+		folderCache:          make(map[string]string),
 	}
 }
 
@@ -95,17 +100,33 @@ func (s *service) CreateReport(ctx context.Context, report *models.InundationRep
 		}
 	}
 
-	// 3. Upload images to Google Drive
-	var imageIDs []string
-	for _, img := range images {
-		id, err := s.driveSvc.UploadFile(ctx, folderID, img.Name, img.MimeType, img.Reader, false)
-		if err != nil {
-			return err
+	// 3. Upload images to Google Drive in parallel
+	if len(images) > 0 {
+		g, gCtx := errgroup.WithContext(ctx)
+		imageIDs := make([]string, len(images))
+
+		for i, img := range images {
+			i, img := i, img // closure capture
+			g.Go(func() error {
+				id, err := s.driveSvc.UploadFileSimple(gCtx, folderID, img.Name, img.MimeType, img.Reader)
+				if err == nil {
+					imageIDs[i] = id
+				}
+				return err
+			})
 		}
-		imageIDs = append(imageIDs, id)
+
+		if err := g.Wait(); err != nil {
+			// Some might fail, we continue with what we have for robustness
+		}
+
+		for _, id := range imageIDs {
+			if id != "" {
+				report.Images = append(report.Images, id)
+			}
+		}
 	}
 
-	report.Images = imageIDs
 	if report.Status == "" {
 		report.Status = "active"
 	}
@@ -145,17 +166,31 @@ func (s *service) AddUpdate(ctx context.Context, reportID string, update *models
 		}
 	}
 
-	// 3. Upload images
-	var imageIDs []string
-	for _, img := range images {
-		id, err := s.driveSvc.UploadFile(ctx, folderID, img.Name, img.MimeType, img.Reader, false)
-		if err != nil {
-			return err
+	// 3. Upload images in parallel
+	if len(images) > 0 {
+		g, gCtx := errgroup.WithContext(ctx)
+		imageIDs := make([]string, len(images))
+
+		for i, img := range images {
+			i, img := i, img // closure capture
+			g.Go(func() error {
+				id, err := s.driveSvc.UploadFileSimple(gCtx, folderID, img.Name, img.MimeType, img.Reader)
+				if err == nil {
+					imageIDs[i] = id
+				}
+				return err
+			})
 		}
-		imageIDs = append(imageIDs, id)
+
+		_ = g.Wait()
+
+		for _, id := range imageIDs {
+			if id != "" {
+				update.Images = append(update.Images, id)
+			}
+		}
 	}
 
-	update.Images = imageIDs
 	update.ReportID = reportID
 	update.UserID = userID
 	update.UserEmail = userEmail
@@ -450,6 +485,16 @@ func (s *service) resolveUploadFolder(ctx context.Context, org *models.Organizat
 		return "", err
 	}
 
+	dateFolderName := time.Now().Format("2006-01-02")
+	dateKey := fmt.Sprintf("%s_%s_%s_%s", org.ID, dataType, pointID, dateFolderName)
+
+	s.cacheMu.RLock()
+	cachedID, ok := s.folderCache[dateKey]
+	s.cacheMu.RUnlock()
+	if ok {
+		return cachedID, nil
+	}
+
 	// 2. Get/Create Type Folder (e.g., FLOOD)
 	typeFolderID, err := s.driveSvc.FindOrCreateFolder(ctx, orgFolderID, dataType)
 	if err != nil {
@@ -472,10 +517,18 @@ func (s *service) resolveUploadFolder(ctx context.Context, org *models.Organizat
 	}
 
 	// 4. Get/Create Date Folder
-	dateFolderName := time.Now().Format("2006-01-02")
 	dateFolderID, err := s.driveSvc.FindOrCreateFolder(ctx, stationFolderID, dateFolderName)
 	if err != nil {
 		return "", fmt.Errorf("failed to handle date folder '%s': %w", dateFolderName, err)
+	}
+
+	if dateFolderID != "" {
+		s.cacheMu.Lock()
+		s.folderCache[dateKey] = dateFolderID
+		s.cacheMu.Unlock()
+
+		// Make the date folder public so files inside inherit the permission
+		_ = s.driveSvc.SetPublic(ctx, dateFolderID)
 	}
 
 	return dateFolderID, nil

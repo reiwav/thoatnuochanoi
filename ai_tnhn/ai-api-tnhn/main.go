@@ -28,6 +28,7 @@ import (
 	"ai-api-tnhn/router/middleware"
 	"ai-api-tnhn/utils/web"
 	"context"
+
 	"github.com/joho/godotenv"
 )
 
@@ -180,6 +181,8 @@ func main() {
 		GoogleUnreadEmailsHandler:      googleHandler.GetUnreadEmails,
 		GenerateQuickReportHandler:     googleHandler.GenerateQuickReport,
 		GenerateQuickReportV3:          googleHandler.GenerateQuickReportV3,
+		GenerateQuickReportTextHandler: googleHandler.GenerateQuickReportText,
+		GenerateAIDynamicReportHandler: googleHandler.GenerateAIDynamicReport,
 		GetRainDataByDate:              waterHandler.GetRainDataByDate,
 		DatabaseQueryHandler:           queryHandler.Query,
 	}

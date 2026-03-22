@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
     Box, Typography, TextField, IconButton, Paper, Stack,
     Avatar, CircularProgress, Divider, LinearProgress, Tooltip, Button,
-    useMediaQuery, SwipeableDrawer
+    useMediaQuery, SwipeableDrawer, Dialog, DialogTitle, DialogContent, DialogActions
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import {
@@ -30,6 +30,9 @@ const AiSupport = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const [showStats, setShowStats] = useState(false);
+    const [reportDate, setReportDate] = useState(new Date().toISOString().split('T')[0]);
+    const [openReportDialog, setOpenReportDialog] = useState(false);
+    const [exporting, setExporting] = useState(false);
 
     const fetchStats = async () => {
         setStatsLoading(true);
@@ -115,7 +118,7 @@ const AiSupport = () => {
                     displayText = 'Hiện tại ghi nhận không có mưa tại tất cả các trạm.';
                 } else {
                     displayText = `Tình hình mưa hiện tại:\n- Tổng số trạm: ${data.total_stations}\n- Số trạm đang có mưa: ${data.rainy_stations}\n- Trạm mưa lớn nhất: ${data.max_rain_station?.name} (${data.max_rain_station?.total_rain}mm)\n\nChi tiết một số trạm mưa lớn:\n` +
-                        data.measurements.slice(0, 5).map(m => `- ${m.name}: ${m.total_rain}mm (Bắt đầu từ ${m.start_time})`).join('\n');
+                        data.measurements.slice(0, 5).map(m => `- ${m.name}: ${m.total_rain}mm (${m.start_time} - ${m.end_time || 'Đang mưa'})`).join('\n');
                 }
             } else {
                 displayText = 'Không thể lấy thông tin lượng mưa lúc này.';
@@ -353,13 +356,84 @@ const AiSupport = () => {
             .finally(() => setLoading(false));
     };
 
-    const handleGeneralReport = () => {
-        const aiMsg = {
-            id: Date.now(),
-            role: 'ai',
-            text: 'Tính năng báo cáo tổng hợp đang được phát triển.'
-        };
-        setMessages(prev => [...prev, aiMsg]);
+    const handleQuickReportText = async () => {
+        setLoading(true);
+        try {
+            const res = await axiosClient.post('/admin/google/quick-report-text');
+            if (res.data?.status === 'success') {
+                const aiMsg = {
+                    id: Date.now(),
+                    role: 'ai',
+                    text: res.data.data
+                };
+                setMessages(prev => [...prev, aiMsg]);
+            }
+        } catch (error) {
+            console.error('Failed to generate quick report text:', error);
+            const aiMsg = {
+                id: Date.now(),
+                role: 'ai',
+                text: 'Có lỗi xảy ra khi tổng hợp báo cáo. Vui lòng thử lại sau.'
+            };
+            setMessages(prev => [...prev, aiMsg]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleAIDynamicReport = async () => {
+        setLoading(true);
+        const userMsg = { id: Date.now(), role: 'user', text: 'Hãy phân tích và tạo báo cáo tổng hợp AI mới nhất.' };
+        setMessages(prev => [...prev, userMsg]);
+
+        try {
+            const res = await axiosClient.post('/admin/google/dynamic-report');
+            if (res.data?.status === 'success') {
+                const aiMsg = {
+                    id: Date.now() + 1,
+                    role: 'ai',
+                    text: res.data.data
+                };
+                setMessages(prev => [...prev, aiMsg]);
+            }
+        } catch (error) {
+            console.error('Failed to generate dynamic AI report:', error);
+            const aiMsg = {
+                id: Date.now() + 1,
+                role: 'ai',
+                text: 'Có lỗi xảy ra khi Gemini đang phân tích dữ liệu. Vui lòng thử lại sau.'
+            };
+            setMessages(prev => [...prev, aiMsg]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleConstructionReport = async () => {
+        setExporting(true);
+        try {
+            const res = await axiosClient.get(`/admin/emergency-constructions/export?date=${reportDate}`);
+            if (res.data?.status === 'success') {
+                const { url } = res.data.data;
+                const aiMsg = {
+                    id: Date.now(),
+                    role: 'ai',
+                    text: `### Đã tạo xong báo cáo công trình ngày ${reportDate}\n\nBạn có thể xem và tải về tại đây:\n[${url}](${url})`
+                };
+                setMessages(prev => [...prev, aiMsg]);
+                setOpenReportDialog(false);
+            }
+        } catch (error) {
+            console.error('Export failed:', error);
+            const aiMsg = {
+                id: Date.now(),
+                role: 'ai',
+                text: 'Có lỗi xảy ra khi xuất báo cáo. Vui lòng thử lại sau.'
+            };
+            setMessages(prev => [...prev, aiMsg]);
+        } finally {
+            setExporting(false);
+        }
     };
 
     return (
@@ -377,39 +451,62 @@ const AiSupport = () => {
                             <Typography variant="caption" color="text.secondary">Thoát nước Hà Nội</Typography>
                         </Box>
                     </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, md: 2 } }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, md: 1.5 } }}>
                         {!isMobile && (
                             <>
                                 <Button
                                     variant="contained"
+                                    color="success"
+                                    startIcon={<IconRefresh size={18} />}
+                                    onClick={handleQuickReportText}
+                                    sx={{ borderRadius: '8px', boxShadow: 'none' }}
+                                >
+                                    Tin nhắn báo cáo
+                                </Button>
+                                <Button
+                                    variant="contained"
+                                    color="secondary"
+                                    startIcon={<IconRobot size={18} />}
+                                    onClick={handleAIDynamicReport}
+                                    sx={{ borderRadius: '8px', boxShadow: 'none' }}
+                                >
+                                    Báo cáo tổng hợp
+                                </Button>
+                                <Button
+                                    variant="outlined"
                                     color="primary"
                                     startIcon={<IconBolt size={18} />}
                                     onClick={handleQuickReport}
-                                    sx={{ borderRadius: '8px', boxShadow: 'none' }}
+                                    sx={{ borderRadius: '8px', boxShadow: 'none', borderColor: 'divider' }}
                                 >
-                                    Báo cáo nhanh
+                                    Báo cáo sau mưa (Words)
                                 </Button>
                                 <Button
                                     variant="outlined"
                                     color="secondary"
                                     startIcon={<IconDatabase size={18} />}
-                                    onClick={handleGeneralReport}
+                                    onClick={() => setOpenReportDialog(true)}
                                     sx={{ borderRadius: '8px', borderColor: 'divider', color: 'text.primary', '&:hover': { borderColor: 'primary.main', color: 'primary.main', bgcolor: 'transparent' } }}
                                 >
-                                    Báo cáo tổng hợp
+                                    BC CT KC
                                 </Button>
                             </>
                         )}
                         {isMobile && (
                             <>
-                                <Tooltip title="Báo cáo nhanh">
-                                    <IconButton color="primary" onClick={handleQuickReport} sx={{ bgcolor: 'primary.light', borderRadius: '8px' }}>
-                                        <IconBolt size={20} />
+                                <Tooltip title="Tin nhắn báo cáo">
+                                    <IconButton color="success" onClick={handleQuickReportText} sx={{ bgcolor: 'success.light', borderRadius: '8px' }}>
+                                        <IconRefresh size={20} />
                                     </IconButton>
                                 </Tooltip>
                                 <Tooltip title="Báo cáo tổng hợp">
-                                    <IconButton color="secondary" onClick={handleGeneralReport} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px' }}>
-                                        <IconDatabase size={20} />
+                                    <IconButton color="secondary" onClick={handleAIDynamicReport} sx={{ bgcolor: 'secondary.light', borderRadius: '8px', ml: 1 }}>
+                                        <IconRobot size={20} />
+                                    </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Báo cáo sau mưa (Words)">
+                                    <IconButton color="primary" onClick={handleQuickReport} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px' }}>
+                                        <IconBolt size={20} />
                                     </IconButton>
                                 </Tooltip>
                             </>
@@ -566,16 +663,21 @@ const AiSupport = () => {
                 </Box>
 
                 {/* Suggested Questions */}
-                {!loading && messages.length === 1 && (
+                {!loading && (
                     <Box sx={{ px: 3, pb: 2, display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
                         {[
-                            { text: 'Tình hình mưa đang như thế nào?', type: 'rain' },
-                            { text: 'Kiểm tra dung lượng bộ nhớ', type: 'storage' },
-                            { text: 'Có email mới nào không?', type: 'email' }
+                            { text: 'Lượng mưa hiện tại các điểm?', type: 'rain' },
+                            { text: 'Tổng hợp báo cáo nhanh (AI)?', type: 'dynamic' },
+                            { text: 'Những điểm nào đang ngập, tình trạng?', type: 'question' },
+                            { text: 'Lượng mưa ở khu vực gần điểm ngập?', type: 'question' }
                         ].map((q, i) => (
                             <Paper
                                 key={i}
-                                onClick={() => q.type === 'rain' ? handleRainSummary() : handleSendQuestion(q.text)}
+                                onClick={() => {
+                                    if (q.type === 'rain') handleRainSummary();
+                                    else if (q.type === 'dynamic') handleAIDynamicReport();
+                                    else handleSendQuestion(q.text);
+                                }}
                                 sx={{
                                     px: 2, py: 1, borderRadius: '12px', cursor: 'pointer',
                                     border: '1px solid', borderColor: 'primary.200',
@@ -631,6 +733,34 @@ const AiSupport = () => {
                     </Box>
                 )
             )}
+
+            <Dialog open={openReportDialog} onClose={() => !exporting && setOpenReportDialog(false)} PaperProps={{ sx: { borderRadius: '16px', minWidth: 320 } }}>
+                <DialogTitle sx={{ fontWeight: 800 }}>Xuất báo cáo công trình</DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Chọn ngày để xuất báo cáo tổng hợp các lệnh khẩn cấp.
+                    </Typography>
+                    <TextField
+                        fullWidth
+                        type="date"
+                        label="Chọn ngày"
+                        value={reportDate}
+                        onChange={(e) => setReportDate(e.target.value)}
+                        InputLabelProps={{ shrink: true }}
+                    />
+                </DialogContent>
+                <DialogActions sx={{ p: 2, pt: 0 }}>
+                    <Button onClick={() => setOpenReportDialog(false)} disabled={exporting}>Hủy</Button>
+                    <Button
+                        variant="contained"
+                        onClick={handleConstructionReport}
+                        disabled={exporting}
+                        startIcon={exporting ? <CircularProgress size={16} /> : <IconBolt size={18} />}
+                    >
+                        {exporting ? 'Đang xuất...' : 'Xuất báo cáo'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
             <style dangerouslySetInnerHTML={{
                 __html: `

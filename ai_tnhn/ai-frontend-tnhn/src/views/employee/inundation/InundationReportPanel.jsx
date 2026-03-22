@@ -180,7 +180,19 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
 
             {selectedReport && (
                 <FormControlLabel
-                    control={<Checkbox checked={resolveOnUpdate} onChange={(e) => setResolveOnUpdate(e.target.checked)} color="error" />}
+                    control={
+                        <Checkbox
+                            checked={resolveOnUpdate}
+                            onChange={(e) => {
+                                const checked = e.target.checked;
+                                setResolveOnUpdate(checked);
+                                if (checked) {
+                                    setValues(prev => ({ ...prev, traffic_status: 'Đi lại bình thường' }));
+                                }
+                            }}
+                            color="error"
+                        />
+                    }
                     label={<Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'error.main' }}>Đã hết ngập (Kết thúc đợt này)</Typography>}
                     sx={{ mt: -1, mb: 1 }}
                 />
@@ -248,12 +260,13 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
             </Box>
 
             <Button
-                fullWidth size="large" variant="contained" color="secondary"
+                fullWidth size="large" variant="contained"
+                color={resolveOnUpdate ? 'error' : 'secondary'}
                 onClick={handleSubmit} disabled={loading}
                 startIcon={loading ? <CircularProgress size={17} color="inherit" /> : <IconSend size={17} />}
                 sx={{ borderRadius: 100, py: 1.4, fontWeight: 700, mt: 1 }}
             >
-                {loading ? 'Đang xử lý...' : (selectedReport ? 'Cập nhật tình hình' : 'Gửi báo cáo')}
+                {loading ? 'Đang xử lý...' : (resolveOnUpdate ? 'Xác nhận Kết thúc đợt ngập' : (selectedReport ? 'Cập nhật tình hình' : 'Gửi báo cáo'))}
             </Button>
         </Stack>
     );

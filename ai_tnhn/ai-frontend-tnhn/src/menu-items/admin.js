@@ -117,7 +117,7 @@ const adminPages = {
     },
     {
       id: 'emergency-construction-report',
-      title: 'Công trình khẩn cấp',
+      title: 'BC CT KC',
       type: 'item',
       url: '/admin/emergency-construction/dashboard',
       icon: icons.IconAlertTriangle,
@@ -193,7 +193,7 @@ const adminPages = {
 
     {
       id: 'emergency-construction',
-      title: 'Công trình khẩn cấp',
+      title: 'BC CT KC',
       type: 'collapse',
       icon: icons.IconAlertTriangle,
       roles: ['super_admin', 'admin_org'],

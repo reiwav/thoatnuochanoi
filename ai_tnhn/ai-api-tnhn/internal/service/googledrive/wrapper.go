@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strings"
 )
 
 type storageWrapper struct {
@@ -20,10 +21,17 @@ func NewStorageWrapper(storageSvc storage.Service, driveSvc Service) Service {
 }
 
 func (w *storageWrapper) UploadFile(ctx context.Context, folderID, name, mimeType string, content io.Reader, convert bool) (string, error) {
-	if convert && w.driveSvc != nil {
+	if w.driveSvc != nil {
 		return w.driveSvc.UploadFile(ctx, folderID, name, mimeType, content, convert)
 	}
 	return w.storageSvc.UploadFile(ctx, folderID, name, mimeType, content, convert)
+}
+
+func (w *storageWrapper) UploadFileSimple(ctx context.Context, folderID, name, mimeType string, content io.Reader) (string, error) {
+	if w.driveSvc != nil {
+		return w.driveSvc.UploadFileSimple(ctx, folderID, name, mimeType, content)
+	}
+	return w.storageSvc.UploadFileSimple(ctx, folderID, name, mimeType, content)
 }
 
 func (w *storageWrapper) CreateFolder(ctx context.Context, parentID, name string) (string, error) {
@@ -106,4 +114,26 @@ func (w *storageWrapper) CopyFile(ctx context.Context, fileID, parentID, newName
 		return "", fmt.Errorf("google drive service required for copy file")
 	}
 	return w.driveSvc.CopyFile(ctx, fileID, parentID, newName)
+}
+
+func (w *storageWrapper) GetFileContent(ctx context.Context, fileID string) ([]byte, error) {
+	cleanID := strings.TrimSpace(fileID)
+
+	// If fileID starts with /api/storage/file/, it's a local file
+	const prefix = "/api/storage/file/"
+	if strings.HasPrefix(cleanID, prefix) {
+		return w.storageSvc.GetFileContent(ctx, cleanID)
+	}
+
+	if w.driveSvc == nil {
+		return nil, fmt.Errorf("google drive service required for get file content")
+	}
+	return w.driveSvc.GetFileContent(ctx, cleanID)
+}
+
+func (w *storageWrapper) SetPublic(ctx context.Context, fileID string) error {
+	if w.driveSvc != nil {
+		return w.driveSvc.SetPublic(ctx, fileID)
+	}
+	return w.storageSvc.SetPublic(ctx, fileID)
 }

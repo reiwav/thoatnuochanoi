@@ -437,7 +437,7 @@ const ConstructionReporting = () => {
                     {/* Header */}
                     {isMobile ? (
                         <Box sx={{ mb: 2 }}>
-                            <Typography variant="h3" sx={{ fontWeight: 900, color: 'primary.main', mb: 1.5 }}>Công trình khẩn</Typography>
+                            <Typography variant="h3" sx={{ fontWeight: 900, color: 'primary.main', mb: 1.5 }}>BC CT KC</Typography>
                             <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
                                 <Chip label={`Tất cả (${stats.total})`} size="small" variant={activeTab === 0 ? 'filled' : 'outlined'} color="primary" onClick={() => navigate(`${basePath}/emergency-construction/dashboard`)} sx={{ fontWeight: 700, height: 34, fontSize: '1rem', cursor: 'pointer' }} />
                                 <Chip label={`Chưa xong (${stats.ongoing})`} size="small" color="warning" variant={activeTab === 1 ? 'filled' : 'outlined'} onClick={() => navigate(`${basePath}/emergency-construction/dashboard?activeTab=1`)} sx={{ fontWeight: 700, height: 34, fontSize: '1rem', cursor: 'pointer' }} />
@@ -454,7 +454,7 @@ const ConstructionReporting = () => {
                     ) : (
                         <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <Box>
-                                <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.dark', mb: 1.5 }}>Quản lý công trình khẩn cấp</Typography>
+                                <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.dark', mb: 1.5 }}>Quản lý BC CT KC</Typography>
                                 <Stack direction="row" spacing={1.5}>
                                     <Chip label={`Tất cả (${stats.total})`} size="small" variant={activeTab === 0 ? 'filled' : 'outlined'} color="primary" onClick={() => navigate(`${basePath}/emergency-construction/dashboard`)} sx={{ fontWeight: 700, px: 1, cursor: 'pointer' }} />
                                     <Chip label={`Chưa xong (${stats.ongoing})`} size="small" color="warning" variant={activeTab === 1 ? 'filled' : 'outlined'} onClick={() => navigate(`${basePath}/emergency-construction/dashboard?activeTab=1`)} sx={{ fontWeight: 700, px: 1, cursor: 'pointer' }} />

@@ -25,6 +25,8 @@ type HandlerFuncs struct {
 	GoogleUnreadEmailsHandler      gin.HandlerFunc
 	GenerateQuickReportHandler     gin.HandlerFunc
 	GenerateQuickReportV3          gin.HandlerFunc
+	GenerateQuickReportTextHandler gin.HandlerFunc
+	GenerateAIDynamicReportHandler gin.HandlerFunc
 	GetRainDataByDate              gin.HandlerFunc
 	DatabaseQueryHandler           gin.HandlerFunc
 }

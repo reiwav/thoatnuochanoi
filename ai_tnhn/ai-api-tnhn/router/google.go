@@ -20,5 +20,7 @@ func (h HandlerFuncs) GoogleRoutes(api *gin.RouterGroup, mid middleware.Middlewa
 		google.GET("/emails/recent", h.GoogleRecentEmailsHandler)
 		google.GET("/emails/unread", h.GoogleUnreadEmailsHandler)
 		google.POST("/quick-report", h.GenerateQuickReportV3)
+		google.POST("/quick-report-text", h.GenerateQuickReportTextHandler)
+		google.POST("/dynamic-report", h.GenerateAIDynamicReportHandler)
 	}
 }

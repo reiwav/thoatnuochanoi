@@ -16,7 +16,7 @@ import { toast } from 'react-hot-toast';
 
 const getLatestData = (report) => {
     if (!report) return null;
-    const data = { ...report, traffic_status: report.traffic_status || report.trafficStatus };
+    let data = { ...report, traffic_status: report.traffic_status || report.trafficStatus };
 
     // Sort updates by timestamp newest first
     const sortedUpdates = report.updates && report.updates.length > 0
@@ -33,7 +33,7 @@ const getLatestData = (report) => {
         // Find most recent images
         const updateWithImages = sortedUpdates.find(u => u.images && u.images.length > 0);
 
-        return {
+        data = {
             ...data,
             depth: updateWithDimensions?.depth || data.depth,
             length: updateWithDimensions?.length || data.length,
@@ -43,6 +43,10 @@ const getLatestData = (report) => {
             description: latestUpdate.description || data.description,
             timestamp: latestUpdate.timestamp
         };
+    }
+
+    if (data.status === 'resolved' || data.status === 'normal') {
+        data.traffic_status = "";
     }
     return data;
 };
@@ -65,7 +69,7 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                                     size="small"
                                     sx={{ fontWeight: 800 }}
                                 />
-                                {latest?.traffic_status && (
+                                {point.status === 'active' && latest?.traffic_status && (
                                     <Chip
                                         label={getTrafficStatusLabel(latest.traffic_status)}
                                         size="small"
@@ -170,7 +174,7 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                 </TableCell>
                 <TableCell><Typography variant="body2" color="primary">{point.org_name || organizations.find(o => o.id === point.org_id)?.name || ''}</Typography></TableCell>
                 <TableCell><Chip label={point.status === 'active' ? 'Đang ngập' : 'Bình thường'} color={point.status === 'active' ? 'error' : 'success'} size="small" sx={{ fontWeight: 700 }} /></TableCell>
-                <TableCell>{latest?.traffic_status && <Chip label={getTrafficStatusLabel(latest.traffic_status)} size="small" color={getTrafficStatusColor(latest.traffic_status)} variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem', opacity: point.status === 'active' ? 1 : 0.7 }} />}</TableCell>
+                <TableCell>{point.status === 'active' && latest?.traffic_status && <Chip label={getTrafficStatusLabel(latest.traffic_status)} size="small" color={getTrafficStatusColor(latest.traffic_status)} variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem' }} />}</TableCell>
                 <TableCell align="right" sx={{ p: { xs: 1, md: 2 } }}>
                     <Button size="small" variant="text" onClick={() => navigate(`/admin/inundation/form?id=${point.active_report?.id || point.last_report_id}&tab=1&readonly=true`)}>Xem chi tiết</Button>
                 </TableCell>
@@ -186,7 +190,7 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                                 {isMobile && (
                                     <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
                                         <Chip label={point.status === 'active' ? 'Đang ngập' : 'Bình thường'} color={point.status === 'active' ? 'error' : 'success'} size="small" sx={{ fontWeight: 700 }} />
-                                        {latest?.traffic_status && (
+                                        {point.status === 'active' && latest?.traffic_status && (
                                             <Chip label={getTrafficStatusLabel(latest.traffic_status)} size="small" color={getTrafficStatusColor(latest.traffic_status)} variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem' }} />
                                         )}
                                     </Stack>

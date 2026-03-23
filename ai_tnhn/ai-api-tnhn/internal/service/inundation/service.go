@@ -128,6 +128,10 @@ func (s *service) CreateReport(ctx context.Context, report *models.InundationRep
 		}
 	}
 
+	if report.Status == "resolved" || report.Status == "normal" {
+		report.TrafficStatus = ""
+	}
+
 	if report.Status == "" {
 		report.Status = "active"
 	}
@@ -225,6 +229,10 @@ func (s *service) AddUpdate(ctx context.Context, reportID string, update *models
 	report.Width = update.Width
 	report.Depth = update.Depth
 
+	if report.Status == "resolved" || report.Status == "normal" {
+		report.TrafficStatus = ""
+	}
+
 	return s.inundationRepo.Update(ctx, report)
 }
 
@@ -284,6 +292,9 @@ func (s *service) ListReportsWithFilter(ctx context.Context, orgID, status, traf
 		}
 
 		for _, r := range reports {
+			if r.Status == "resolved" || r.Status == "normal" {
+				r.TrafficStatus = ""
+			}
 			if u, ok := updatesMap[r.ID]; ok {
 				r.Updates = u
 			}
@@ -433,6 +444,11 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string) ([]PointSta
 		}
 
 		lastID := lastReportIDs[p.ID]
+		lastReport := lastReportsMap[lastID]
+		if lastReport != nil && (lastReport.Status == "resolved" || lastReport.Status == "normal") {
+			lastReport.TrafficStatus = ""
+		}
+
 		result[i] = PointStatus{
 			ID:           p.ID,
 			OrgID:        p.OrgID,
@@ -443,7 +459,7 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string) ([]PointSta
 			Lng:          p.Lng,
 			Status:       status,
 			ActiveReport: activeReport,
-			LastReport:   lastReportsMap[lastID],
+			LastReport:   lastReport,
 			LastReportID: lastID,
 			Active:       p.Active,
 		}

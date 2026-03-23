@@ -57,10 +57,10 @@ import { getTrafficStatusColor, getTrafficStatusLabel } from 'utils/trafficStatu
 
 const getLatestData = (report) => {
     if (!report) return null;
-    const data = { ...report, traffic_status: report.traffic_status || report.trafficStatus };
+    let data = { ...report, traffic_status: report.traffic_status || report.trafficStatus };
     if (report.updates && report.updates.length > 0) {
         const latestUpdate = [...report.updates].sort((a, b) => b.timestamp - a.timestamp)[0];
-        return {
+        data = {
             ...data,
             depth: latestUpdate.depth || data.depth,
             length: latestUpdate.length || data.length,
@@ -70,6 +70,9 @@ const getLatestData = (report) => {
             description: latestUpdate.description || data.description,
             timestamp: latestUpdate.timestamp
         };
+    }
+    if (data.status === 'resolved' || data.status === 'normal' || (report && (report.status === 'resolved' || report.status === 'normal'))) {
+        data.traffic_status = "";
     }
     return data;
 };
@@ -98,7 +101,7 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                             color={point.status === 'active' ? 'error' : 'success'}
                             size="small" sx={{ fontWeight: 800 }}
                         />
-                        {latest?.traffic_status && (
+                        {point.status === 'active' && latest?.traffic_status && (
                             <Chip
                                 label={getTrafficStatusLabel(latest.traffic_status)}
                                 size="small" color={getTrafficStatusColor(latest.traffic_status)}
@@ -222,13 +225,13 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                     />
                 </TableCell>
                 <TableCell>
-                    {latest?.traffic_status && (
+                    {point.status === 'active' && latest?.traffic_status && (
                         <Chip
                             label={getTrafficStatusLabel(latest.traffic_status)}
                             size="small"
                             color={getTrafficStatusColor(latest.traffic_status)}
                             variant="outlined"
-                            sx={{ fontWeight: 800, fontSize: '0.75rem', opacity: point.status === 'active' ? 1 : 0.7 }}
+                            sx={{ fontWeight: 800, fontSize: '0.75rem' }}
                         />
                     )}
                 </TableCell>
@@ -509,7 +512,7 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenVi
                                     </Grid>
                                     <Grid item xs={12} sm={6}>
                                         <Typography variant="body2" color="text.secondary">Giao thông:</Typography>
-                                        {latest?.traffic_status ? (
+                                        {report.status === 'active' && latest?.traffic_status ? (
                                             <Chip
                                                 label={getTrafficStatusLabel(latest.traffic_status)}
                                                 size="small"

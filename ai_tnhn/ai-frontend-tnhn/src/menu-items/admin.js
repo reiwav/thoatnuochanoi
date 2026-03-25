@@ -17,7 +17,7 @@ const adminPages = {
   children: [
     {
       id: 'ai-support',
-      title: 'HSDC AI',
+      title: 'HTBC mùa mưa',
       type: 'item',
       url: '/admin/ai-support',
       icon: icons.IconMessageChatbot,

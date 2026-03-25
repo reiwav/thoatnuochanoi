@@ -16,7 +16,7 @@ export default function Footer() {
       </Typography>
       <Stack direction="row" sx={{ gap: 2, alignItems: 'center' }}>
         <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 500 }}>
-          Hệ thống HSDC AI
+          HTBC mùa mưa
         </Typography>
       </Stack>
     </Stack>

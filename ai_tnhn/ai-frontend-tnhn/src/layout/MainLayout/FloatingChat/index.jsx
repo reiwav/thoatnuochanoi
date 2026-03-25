@@ -14,7 +14,7 @@ const FloatingChat = () => {
     const theme = useTheme();
     const [open, setOpen] = useState(false);
     const [messages, setMessages] = useState([
-        { id: 1, role: 'ai', text: 'Chào Sếp! Tôi là HSDC AI. Hôm nay sếp muốn kiểm tra thông tin gì ạ?' }
+        { id: 1, role: 'ai', text: 'Bắt đầu làm việc!' }
     ]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
@@ -112,7 +112,7 @@ const FloatingChat = () => {
                                 <IconRobot size={24} />
                             </Avatar>
                             <Box>
-                                <Typography variant="h5" color="inherit" fontWeight={800}>HSDC AI Assistant</Typography>
+                                <Typography variant="h5" color="inherit" fontWeight={800}>HTBC mùa mưa</Typography>
                                 <Typography variant="caption" color="inherit" sx={{ opacity: 0.8 }}>Dành cho Super Admin</Typography>
                             </Box>
                         </Stack>

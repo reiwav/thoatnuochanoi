@@ -16,7 +16,7 @@ import remarkGfm from 'remark-gfm';
 
 const AiSupport = () => {
     const [messages, setMessages] = useState([
-        { id: 1, role: 'ai', text: 'Chào bạn! Tôi là trợ lý AI của Hệ thống Thoát nước Hà Nội. Tôi có thể giúp gì cho bạn hôm nay?' }
+        { id: 1, role: 'ai', text: 'Bắt đầu làm việc!' }
     ]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
@@ -415,12 +415,12 @@ const AiSupport = () => {
 
     const handleConstructionReport = async (customDate = null) => {
         const dateToUse = customDate !== null ? customDate : reportDate;
-        
+
         // Add user message to chat to show what's happening
         const titleText = dateToUse === '' ? '(Tất cả công trình đang thực hiện)' : `ngày ${dateToUse}`;
         const userMsg = { id: Date.now(), role: 'user', text: `Xuất báo cáo BC CT KC ${titleText}` };
         setMessages(prev => [...prev, userMsg]);
-        
+
         setExporting(true);
         setLoading(true); // Show AI loading bubble
         try {
@@ -460,7 +460,7 @@ const AiSupport = () => {
                             <IconRobot size={24} />
                         </Avatar>
                         <Box>
-                            <Typography variant="h4" fontWeight={800}>HSDC AI</Typography>
+                            <Typography variant="h4" fontWeight={800}>HTBC mùa mưa</Typography>
                             <Typography variant="caption" color="text.secondary">Thoát nước Hà Nội</Typography>
                         </Box>
                     </Box>

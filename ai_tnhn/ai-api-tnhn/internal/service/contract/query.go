@@ -1,6 +1,7 @@
 package contract
 
 import (
+	"ai-api-tnhn/internal/base/mgo/filter"
 	"context"
 	"math"
 	"strings"
@@ -64,7 +65,7 @@ func daysUntil(target time.Time) int {
 }
 
 func (s *service) getAllContracts(ctx context.Context) ([]*ContractQueryResult, error) {
-	contracts, _, err := s.repo.List(ctx, nil)
+	contracts, _, err := s.repo.List(ctx, filter.NewBasicFilter())
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +167,7 @@ func (s *service) GetExpired(ctx context.Context) ([]*ContractQueryResult, error
 }
 
 func (s *service) GetStagesDueSoon(ctx context.Context, days int) ([]*StageQueryResult, error) {
-	contracts, _, err := s.repo.List(ctx, nil)
+	contracts, _, err := s.repo.List(ctx, filter.NewBasicFilter())
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +195,7 @@ func (s *service) GetStagesDueSoon(ctx context.Context, days int) ([]*StageQuery
 }
 
 func (s *service) GetStagesPassed(ctx context.Context) ([]*StageQueryResult, error) {
-	contracts, _, err := s.repo.List(ctx, nil)
+	contracts, _, err := s.repo.List(ctx, filter.NewBasicFilter())
 	if err != nil {
 		return nil, err
 	}

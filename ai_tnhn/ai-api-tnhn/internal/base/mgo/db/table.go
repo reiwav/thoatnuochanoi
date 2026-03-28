@@ -31,6 +31,9 @@ func NewTable(name, prefix string, db *mongo.Database, l logger.Logger) *Table {
 }
 
 func (t *Table) R_Search(ctx context.Context, f filter.Filter, val interface{}) error {
+	if f == nil {
+		f = filter.NewBasicFilter()
+	}
 	var q = []bson.M{}
 	//var opts = options.Find()
 	f.AddWhere("deleted_at", "deleted_at", 0)
@@ -59,6 +62,9 @@ func (t *Table) R_Search(ctx context.Context, f filter.Filter, val interface{}) 
 }
 
 func (t *Table) R_SearchAndCount(ctx context.Context, f filter.Filter, val interface{}) (int64, error) {
+	if f == nil {
+		f = filter.NewBasicFilter()
+	}
 	var q = []bson.M{}
 	var qCount = []bson.M{}
 	//var opts = options.Find()
@@ -127,7 +133,7 @@ func (t *Table) R_CreateForce(ctx context.Context, model model.IModel) error {
 
 	var _, err = t.InsertOne(ctx, model)
 	if err != nil {
-		t.Errorf("Create table "+t.Name()+": "+err.Error(), model)
+		t.Errorf("Create table %s: %v", t.Name(), err)
 	}
 	return err
 }
@@ -136,7 +142,7 @@ func (t *Table) R_Update(ctx context.Context, model model.IModel) error {
 	model.BeforeUpdate()
 	var _, err = t.UpdateOne(ctx, bson.M{"_id": model.GetID(), "deleted_at": 0}, bson.M{"$set": model})
 	if err != nil {
-		t.Errorf("Update table "+t.Name()+": "+err.Error(), model)
+		t.Errorf("Update table %s: %v", t.Name(), err)
 	}
 	return err
 }
@@ -145,7 +151,7 @@ func (t *Table) R_Delete(ctx context.Context, id string, model model.IModel) err
 	model.BeforeDelete()
 	var _, err = t.UpdateOne(ctx, bson.M{"_id": id, "deleted_at": 0}, bson.M{"$set": bson.M{"deleted_at": time.Now().Unix()}})
 	if err != nil {
-		t.Errorf("Delete table "+t.Name()+": "+err.Error(), model)
+		t.Errorf("Delete table %s: %v", t.Name(), err)
 	}
 	return err
 }
@@ -153,7 +159,7 @@ func (t *Table) R_Delete(ctx context.Context, id string, model model.IModel) err
 func (t *Table) R_DeleteByID(ctx context.Context, id string) error {
 	var _, err = t.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{"deleted_at": time.Now().Unix()}})
 	if err != nil {
-		t.Errorf("DeleteByID "+err.Error(), id)
+		t.Errorf("DeleteByID %v", err)
 	}
 	return err
 }
@@ -161,7 +167,7 @@ func (t *Table) R_DeleteByID(ctx context.Context, id string) error {
 func (t *Table) R_RestoreByID(ctx context.Context, id string) error {
 	var _, err = t.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{"deleted_at": 0}})
 	if err != nil {
-		t.Errorf("RestoreByID "+err.Error(), id)
+		t.Errorf("RestoreByID %v", err)
 	}
 	return err
 }
@@ -175,7 +181,7 @@ func (t *Table) R_SelectAndDelete(ctx context.Context, id string) error {
 	var res = t.FindOneAndUpdate(ctx, bson.M{"_id": id, "deleted_at": 0},
 		bson.M{"$set": bson.M{"deleted_at": timeNow, "created_at": timeNow}}, opts)
 	if res.Err() != nil {
-		t.Errorf("Delete table " + t.Name() + ": " + res.Err().Error())
+		t.Errorf("Delete table %s: %v", t.Name(), res.Err())
 	}
 	return res.Err()
 }
@@ -184,7 +190,7 @@ func (t *Table) R_UnsafeUpdate(ctx context.Context, filter bson.M, v interface{}
 	filter["deleted_at"] = 0
 	var _, err = t.UpdateOne(ctx, filter, bson.M{"$set": v})
 	if err != nil {
-		t.Errorf("UnsafeUpdate table "+t.Name()+": "+err.Error(), v)
+		t.Errorf("UnsafeUpdate table %s: %v", t.Name(), err)
 	}
 	return err
 }
@@ -193,7 +199,7 @@ func (t *Table) R_UpdateForce(ctx context.Context, filter bson.M, v interface{})
 	filter["deleted_at"] = 0
 	var _, err = t.UpdateOne(ctx, filter, v)
 	if err != nil {
-		t.Errorf("UpdateForce table "+t.Name()+": "+err.Error(), v)
+		t.Errorf("UpdateForce table %s: %v", t.Name(), err)
 	}
 	return err
 }
@@ -201,7 +207,7 @@ func (t *Table) R_UpdateForce(ctx context.Context, filter bson.M, v interface{})
 func (t *Table) R_UnsafeUpdateByID(ctx context.Context, id string, v interface{}) error { // ...interface{}) error {
 	var _, err = t.UpdateOne(ctx, bson.M{"_id": id}, v)
 	if err != nil {
-		t.Errorf("UnsafeUpdateByID "+err.Error(), id, v)
+		t.Errorf("UnsafeUpdateByID %v", err)
 	}
 	return err
 }
@@ -210,7 +216,7 @@ func (t *Table) R_CreateMany(ctx context.Context, v []interface{}) ([]interface{
 	var res, err = t.InsertMany(ctx, v)
 	var ids []interface{}
 	if err != nil {
-		t.Errorf("UnsafeUpdateByID table "+t.Name()+": "+err.Error(), v)
+		t.Errorf("UnsafeUpdateByID table %s: %v", t.Name(), err)
 	}
 	if res != nil {
 		ids = res.InsertedIDs

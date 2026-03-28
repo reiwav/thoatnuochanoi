@@ -22,7 +22,8 @@ const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit }) => {
         stages: [{ name: '', amount: 0, date: null }],
         note: '',
         drive_folder_id: '',
-        drive_folder_link: ''
+        drive_folder_link: '',
+        files: []
     });
     const [uploading, setUploading] = useState(false);
     const [categories, setCategories] = useState([]);
@@ -31,7 +32,8 @@ const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit }) => {
         if (open) {
             loadCategories();
             if (isEdit && contract) {
-                setValues({
+                setValues(prev => ({
+                    ...prev,
                     name: contract.name || '',
                     category_id: contract.category_id || '',
                     start_date: contract.start_date ? dayjs(contract.start_date) : null,
@@ -42,8 +44,10 @@ const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit }) => {
                     })) : [{ name: '', amount: 0, date: null }],
                     note: contract.note || '',
                     drive_folder_id: contract.drive_folder_id || '',
-                    drive_folder_link: contract.drive_folder_link || ''
-                });
+                    drive_folder_link: contract.drive_folder_link || '',
+                    // Only overwrite files if they are not already set or if explicitly provided with content
+                    files: (contract.files && contract.files.length > 0) ? contract.files : prev.files
+                }));
             } else {
                 setValues({
                     name: '',
@@ -51,11 +55,16 @@ const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit }) => {
                     start_date: null,
                     end_date: null,
                     stages: [{ name: '', amount: 0, date: null }],
-                    note: ''
+                    note: '',
+                    drive_folder_id: '',
+                    drive_folder_link: '',
+                    files: []
                 });
             }
         }
     }, [open, isEdit, contract]);
+    // Note: We removed the direct 'contract' dependency to avoid frequent resets, 
+    // but React lint might complain. Using functional update to preserve state.
 
     const loadCategories = async () => {
         try {
@@ -65,6 +74,22 @@ const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit }) => {
             }
         } catch (err) {
             console.error('Failed to load categories');
+        }
+    };
+
+    const refreshFiles = async () => {
+        if (!isEdit || !contract?.id) return;
+        try {
+            const res = await contractApi.getById(contract.id);
+            if (res.data?.status === 'success') {
+                const refreshedFiles = res.data.data.files || [];
+                setValues(prev => ({
+                    ...prev,
+                    files: refreshedFiles
+                }));
+            }
+        } catch (err) {
+            console.error('Failed to refresh files', err);
         }
     };
 
@@ -260,19 +285,59 @@ const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit }) => {
                                 </Typography>
                             )}
 
-                            <Stack spacing={2}>
-                                {values.drive_folder_link && (
-                                    <Button
-                                        variant="contained"
-                                        color="primary"
-                                        startIcon={<IconExternalLink size={18} />}
-                                        href={values.drive_folder_link}
-                                        target="_blank"
-                                        fullWidth
-                                        sx={{ borderRadius: '8px' }}
-                                    >
-                                        Mở thư mục trên Drive
-                                    </Button>
+                            <Stack spacing={1.5}>
+                                {values.files && values.files.length > 0 && (
+                                    <Box sx={{ mt: 1 }}>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, mb: 1, display: 'block' }}>
+                                            DANH SÁCH TỆP ĐÃ TẢI LÊN:
+                                        </Typography>
+                                        {values.files.map((file, idx) => (
+                                            <Box key={idx} sx={{ display: 'flex', alignItems: 'center', mb: 1, gap: 0.5 }}>
+                                                <Button
+                                                    variant="outlined"
+                                                    size="small"
+                                                    startIcon={<IconExternalLink size={16} />}
+                                                    href={file.link || `https://drive.google.com/open?id=${file.id}`}
+                                                    target="_blank"
+                                                    sx={{ 
+                                                        flex: 1,
+                                                        justifyContent: 'flex-start', 
+                                                        textTransform: 'none',
+                                                        borderRadius: '8px',
+                                                        borderColor: 'divider',
+                                                        bgcolor: 'white',
+                                                        color: 'text.primary',
+                                                        '&:hover': { bgcolor: 'grey.100', borderColor: 'primary.main' }
+                                                    }}
+                                                >
+                                                    <Typography variant="body2" noWrap sx={{ maxWidth: '85%', fontWeight: 500 }}>
+                                                        {file.name}
+                                                    </Typography>
+                                                </Button>
+                                                <IconButton
+                                                    size="small"
+                                                    color="error"
+                                                    onClick={async () => {
+                                                        if (!window.confirm(`Xoá tệp "${file.name}"?`)) return;
+                                                        try {
+                                                            const res = await contractApi.deleteFile(file.id);
+                                                            if (res.data?.status === 'success') {
+                                                                toast.success('Đã xoá tệp');
+                                                                setValues(prev => ({
+                                                                    ...prev,
+                                                                    files: prev.files.filter((_, i) => i !== idx)
+                                                                }));
+                                                            }
+                                                        } catch (err) {
+                                                            toast.error('Lỗi khi xoá tệp');
+                                                        }
+                                                    }}
+                                                >
+                                                    <IconTrash size={16} />
+                                                </IconButton>
+                                            </Box>
+                                        ))}
+                                    </Box>
                                 )}
                                 
                                 <Box>
@@ -314,6 +379,15 @@ const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit }) => {
                                                 const res = await contractApi.uploadToFolder(currentFolderId, formData);
                                                 if (res.data?.status === 'success') {
                                                     toast.success('Tải lên thành công');
+                                                    const newFile = {
+                                                        id: res.data.data.file_id,
+                                                        name: res.data.data.name,
+                                                        link: res.data.data.link
+                                                    };
+                                                    setValues(prev => ({
+                                                        ...prev,
+                                                        files: [...(prev.files || []), newFile]
+                                                    }));
                                                 }
                                             } catch (err) {
                                                 console.error(err);

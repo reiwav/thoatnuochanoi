@@ -1,6 +1,9 @@
 package models
 
-import "ai-api-tnhn/internal/base/model"
+import (
+	"ai-api-tnhn/internal/base/model"
+	"ai-api-tnhn/internal/service/googledrive"
+)
 
 type ContractStage struct {
 	Name   string  `bson:"name" json:"name"`
@@ -18,5 +21,6 @@ type Contract struct {
 	Stages          []ContractStage `bson:"stages" json:"stages"`
 	Note            string          `bson:"note" json:"note"`
 	DriveFolderID   string          `bson:"drive_folder_id" json:"drive_folder_id"`
-	DriveFolderLink string          `bson:"drive_folder_link" json:"drive_folder_link"`
+	DriveFolderLink string                `bson:"drive_folder_link" json:"drive_folder_link"`
+	Files           []googledrive.FileInfo `bson:"-" json:"files"`
 }

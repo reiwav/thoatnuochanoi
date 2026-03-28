@@ -13,7 +13,8 @@ const contractApi = {
     uploadToFolder: (folderId, formData) => axiosClient.post(`/admin/contracts/upload-to-folder?folder_id=${folderId}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
     }),
-    chatContract: (data) => axiosClient.post('/admin/google/contract-chat', data)
+    chatContract: (data) => axiosClient.post('/admin/google/contract-chat', data),
+    deleteFile: (fileId) => axiosClient.delete(`/admin/contracts/delete-file?file_id=${fileId}`)
 };
 
 export default contractApi;

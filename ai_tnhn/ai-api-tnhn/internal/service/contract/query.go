@@ -2,6 +2,7 @@ package contract
 
 import (
 	"ai-api-tnhn/internal/base/mgo/filter"
+	"ai-api-tnhn/internal/service/googledrive"
 	"context"
 	"math"
 	"strings"
@@ -17,8 +18,9 @@ type ContractQueryResult struct {
 	StartDate       string  `json:"start_date"`
 	EndDate         string  `json:"end_date"`
 	DaysRemaining   int     `json:"days_remaining"` // negative = overdue
-	DriveFolderLink string  `json:"drive_folder_link"`
-	TotalValue      float64 `json:"total_value"`
+	DriveFolderLink string                `json:"drive_folder_link"`
+	TotalValue      float64               `json:"total_value"`
+	Files           []googledrive.FileInfo `json:"files"`
 }
 
 type StageQueryResult struct {
@@ -91,6 +93,12 @@ func (s *service) getAllContracts(ctx context.Context) ([]*ContractQueryResult, 
 			_ = s.repo.Upsert(ctx, c)
 		}
 
+		// Dynamic file listing
+		var files []googledrive.FileInfo
+		if c.DriveFolderID != "" && s.driveSvc != nil {
+			files, _ = s.driveSvc.ListFiles(ctx, c.DriveFolderID)
+		}
+
 		totalValue := 0.0
 		for _, stage := range c.Stages {
 			totalValue += stage.Amount
@@ -110,6 +118,7 @@ func (s *service) getAllContracts(ctx context.Context) ([]*ContractQueryResult, 
 			DaysRemaining:   daysRem,
 			DriveFolderLink: c.DriveFolderLink,
 			TotalValue:      totalValue,
+			Files:           files,
 		})
 	}
 	return results, nil

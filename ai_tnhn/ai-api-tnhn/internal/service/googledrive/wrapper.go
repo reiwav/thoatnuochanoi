@@ -154,3 +154,17 @@ func (w *storageWrapper) GetFolderLink(ctx context.Context, folderID string) str
 	}
 	return ""
 }
+
+func (w *storageWrapper) ListFiles(ctx context.Context, folderID string) ([]FileInfo, error) {
+	if w.driveSvc != nil {
+		return w.driveSvc.ListFiles(ctx, folderID)
+	}
+	return nil, nil
+}
+
+func (w *storageWrapper) DeleteFile(ctx context.Context, fileID string) error {
+	if w.driveSvc != nil {
+		return w.driveSvc.DeleteFile(ctx, fileID)
+	}
+	return fmt.Errorf("google drive service required for delete file")
+}

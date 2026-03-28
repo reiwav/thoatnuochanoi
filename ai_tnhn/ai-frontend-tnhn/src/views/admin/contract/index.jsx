@@ -108,6 +108,34 @@ const Row = ({ row, handleOpenEdit, handleDelete, isMobile, formatPrice, getTota
                                     <Typography variant="body2">{row.note}</Typography>
                                 </Box>
                             )}
+                            {row.files && row.files.length > 0 && (
+                                <Box sx={{ mt: 2 }}>
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <IconFileText size={18} /> Tài liệu đính kèm:
+                                    </Typography>
+                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                        {row.files.map((file, idx) => (
+                                            <Button
+                                                key={idx}
+                                                variant="outlined"
+                                                size="small"
+                                                startIcon={<IconFileText size={14} />}
+                                                href={file.link || `https://drive.google.com/open?id=${file.id}`}
+                                                target="_blank"
+                                                sx={{ 
+                                                    textTransform: 'none', 
+                                                    borderRadius: '6px',
+                                                    borderColor: 'divider',
+                                                    bgcolor: 'white',
+                                                    '&:hover': { borderColor: 'primary.main', bgcolor: 'primary.lightest' }
+                                                }}
+                                            >
+                                                {file.name}
+                                            </Button>
+                                        ))}
+                                    </Box>
+                                </Box>
+                            )}
                         </Box>
                     </Collapse>
                 </TableCell>

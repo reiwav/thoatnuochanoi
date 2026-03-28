@@ -21,5 +21,6 @@ func (h *HandlerFuncs) ContractRoutes(r *gin.RouterGroup, mid middleware.Middlew
 		group.DELETE("/:id", handler.Delete)
 		group.POST("/:id/upload", handler.Upload)
 		group.POST("/upload-to-folder", handler.UploadToFolder)
+		group.DELETE("/delete-file", handler.DeleteFile)
 	}
 }

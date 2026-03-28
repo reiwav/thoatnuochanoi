@@ -20,6 +20,7 @@ type Service interface {
 	List(ctx context.Context, f filter.Filter) ([]*models.Contract, int64, error)
 	UploadFile(ctx context.Context, id string, name, mimeType string, content io.Reader) (string, error)
 	UploadToFolder(ctx context.Context, folderID, name, mimeType string, content io.Reader) (string, error)
+	DeleteDriveFile(ctx context.Context, fileID string) error
 	PrepareDriveFolder(ctx context.Context, orgID, categoryID, name string) (string, string, error)
 
 	// AI query methods
@@ -140,6 +141,12 @@ func (s *service) GetByID(ctx context.Context, id string) (*models.Contract, err
 		_ = s.repo.Upsert(ctx, contract)
 	}
 
+	// Dynamic file listing
+	if contract.DriveFolderID != "" && s.driveSvc != nil {
+		files, _ := s.driveSvc.ListFiles(ctx, contract.DriveFolderID)
+		contract.Files = files
+	}
+
 	return contract, nil
 }
 
@@ -154,6 +161,13 @@ func (s *service) List(ctx context.Context, f filter.Filter) ([]*models.Contract
 		if strings.Contains(contract.DriveFolderID, "/") {
 			_ = s.ensureDriveFolder(ctx, contract, contract.OrgID)
 			_ = s.repo.Upsert(ctx, contract)
+		}
+
+		// Dynamic file listing
+		if contract.DriveFolderID != "" && s.driveSvc != nil {
+			files, _ := s.driveSvc.ListFiles(ctx, contract.DriveFolderID)
+			contract.Files = files
+			fmt.Printf("DEBUG: Contract %s has %d files\n", contract.ID, len(files))
 		}
 	}
 
@@ -184,6 +198,13 @@ func (s *service) UploadToFolder(ctx context.Context, folderID, name, mimeType s
 		return "", fmt.Errorf("google drive service not available")
 	}
 	return s.driveSvc.UploadFile(ctx, folderID, name, mimeType, content, false)
+}
+
+func (s *service) DeleteDriveFile(ctx context.Context, fileID string) error {
+	if s.driveSvc == nil {
+		return fmt.Errorf("google drive service not available")
+	}
+	return s.driveSvc.DeleteFile(ctx, fileID)
 }
 
 func (s *service) PrepareDriveFolder(ctx context.Context, orgID, categoryID, name string) (string, string, error) {

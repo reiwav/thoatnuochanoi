@@ -28,6 +28,14 @@ type Service interface {
 	MoveFile(ctx context.Context, fileID, newParentID string) error
 	GetFileContent(ctx context.Context, fileID string) ([]byte, error)
 	GetFolderLink(ctx context.Context, folderID string) string
+	ListFiles(ctx context.Context, folderID string) ([]FileInfo, error)
+	DeleteFile(ctx context.Context, fileID string) error
+}
+
+type FileInfo struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	Link string `json:"link"`
 }
 
 var DefaultSubfolders = []string{"RAIN", "RIVER", "LAKE", "CAMERA", "FLOOD", "CONTRACTS"}
@@ -347,4 +355,33 @@ func (s *service) MoveFile(ctx context.Context, fileID, newParentID string) erro
 
 func (s *service) GetFolderLink(ctx context.Context, folderID string) string {
 	return fmt.Sprintf("https://drive.google.com/drive/folders/%s", folderID)
+}
+
+func (s *service) ListFiles(ctx context.Context, folderID string) ([]FileInfo, error) {
+	if folderID == "" || folderID == "." {
+		return nil, nil
+	}
+
+	query := fmt.Sprintf("'%s' in parents and trashed = false and mimeType != 'application/vnd.google-apps.folder'", folderID)
+	res, err := s.driveSvc.Files.List().Q(query).SupportsAllDrives(true).IncludeItemsFromAllDrives(true).Fields("files(id, name, webViewLink)").Do()
+	if err != nil {
+		return nil, fmt.Errorf("failed to list files in folder %s: %w", folderID, err)
+	}
+
+	var files []FileInfo
+	for _, f := range res.Files {
+		files = append(files, FileInfo{
+			ID:   f.Id,
+			Name: f.Name,
+			Link: f.WebViewLink,
+		})
+	}
+	return files, nil
+}
+
+func (s *service) DeleteFile(ctx context.Context, fileID string) error {
+	if fileID == "" {
+		return fmt.Errorf("file ID is required")
+	}
+	return s.driveSvc.Files.Delete(fileID).SupportsAllDrives(true).Do()
 }

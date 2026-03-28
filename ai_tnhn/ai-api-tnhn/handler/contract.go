@@ -104,6 +104,7 @@ func (h *ContractHandler) Upload(c *gin.Context) {
 
 	h.SendData(c, gin.H{
 		"file_id": fileID,
+		"name":    file.Filename,
 		"link":    "https://drive.google.com/open?id=" + fileID,
 	})
 }
@@ -162,6 +163,23 @@ func (h *ContractHandler) UploadToFolder(c *gin.Context) {
 
 	h.SendData(c, gin.H{
 		"file_id": fileID,
+		"name":    file.Filename,
 		"link":    "https://drive.google.com/open?id=" + fileID,
 	})
+}
+
+func (h *ContractHandler) DeleteFile(c *gin.Context) {
+	fileID := c.Query("file_id")
+	if fileID == "" {
+		h.SendError(c, web.BadRequest("file_id is required"))
+		return
+	}
+
+	err := h.service.DeleteDriveFile(c.Request.Context(), fileID)
+	if err != nil {
+		h.SendError(c, web.InternalServerError(err.Error()))
+		return
+	}
+
+	h.Success(c)
 }

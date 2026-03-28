@@ -47,8 +47,20 @@ func (s *service) ensureDriveFolder(ctx context.Context, contract *models.Contra
 		return nil
 	}
 
-	// Step 1: CONTRACTS root (Global)
-	contractsRootID, err := s.driveSvc.FindOrCreateFolder(ctx, "", "CONTRACTS")
+	// Step 1: Org Folder
+	parentDriveID := ""
+	if orgID != "" && orgID != "all" && s.orgRepo != nil {
+		org, err := s.orgRepo.GetByID(ctx, orgID)
+		if err == nil && org != nil && org.Name != "" {
+			parentDriveID, err = s.driveSvc.FindOrCreateFolder(ctx, "", org.Name)
+			if err != nil {
+				return fmt.Errorf("failed to ensure organization folder: %w", err)
+			}
+		}
+	}
+
+	// Step 2: CONTRACTS folder under Org
+	contractsRootID, err := s.driveSvc.FindOrCreateFolder(ctx, parentDriveID, "CONTRACTS")
 	if err != nil {
 		return fmt.Errorf("failed to ensure CONTRACTS root folder: %w", err)
 	}
@@ -106,10 +118,9 @@ func (s *service) Update(ctx context.Context, id string, contract *models.Contra
 		}
 	}
 
-	if existing.DriveFolderID == "" {
-		_ = s.ensureDriveFolder(ctx, existing, existing.OrgID)
-	}
-
+	// Ensure drive folder is valid (repair if it's a path)
+	_ = s.ensureDriveFolder(ctx, existing, existing.OrgID)
+ 
 	return s.repo.Upsert(ctx, existing)
 }
 
@@ -118,11 +129,35 @@ func (s *service) Delete(ctx context.Context, id string) error {
 }
 
 func (s *service) GetByID(ctx context.Context, id string) (*models.Contract, error) {
-	return s.repo.GetByID(ctx, id)
+	contract, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Repair ID if it's a path
+	if strings.Contains(contract.DriveFolderID, "/") {
+		_ = s.ensureDriveFolder(ctx, contract, contract.OrgID)
+		_ = s.repo.Upsert(ctx, contract)
+	}
+
+	return contract, nil
 }
 
 func (s *service) List(ctx context.Context, f filter.Filter) ([]*models.Contract, int64, error) {
-	return s.repo.List(ctx, f)
+	contracts, total, err := s.repo.List(ctx, f)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Dynamic resolution and repair for path-based IDs
+	for _, contract := range contracts {
+		if strings.Contains(contract.DriveFolderID, "/") {
+			_ = s.ensureDriveFolder(ctx, contract, contract.OrgID)
+			_ = s.repo.Upsert(ctx, contract)
+		}
+	}
+
+	return contracts, total, nil
 }
 
 func (s *service) UploadFile(ctx context.Context, id string, name, mimeType string, content io.Reader) (string, error) {

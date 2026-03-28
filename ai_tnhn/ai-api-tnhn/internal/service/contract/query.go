@@ -85,6 +85,12 @@ func (s *service) getAllContracts(ctx context.Context) ([]*ContractQueryResult, 
 
 	var results []*ContractQueryResult
 	for _, c := range contracts {
+		// Repair ID if it's a path
+		if strings.Contains(c.DriveFolderID, "/") {
+			_ = s.ensureDriveFolder(ctx, c, c.OrgID)
+			_ = s.repo.Upsert(ctx, c)
+		}
+
 		totalValue := 0.0
 		for _, stage := range c.Stages {
 			totalValue += stage.Amount

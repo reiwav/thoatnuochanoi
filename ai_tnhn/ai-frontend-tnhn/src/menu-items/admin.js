@@ -278,6 +278,24 @@ const adminPages = {
         }
       ]
     },
+    {
+      id: 'contract-category',
+      title: 'Danh mục hợp đồng',
+      type: 'item',
+      url: '/admin/contract-category',
+      icon: icons.IconClipboardList,
+      breadcrumbs: false,
+      roles: ['super_admin', 'manager']
+    },
+    {
+      id: 'contract',
+      title: 'Quản lý hợp đồng',
+      type: 'item',
+      url: '/admin/contract',
+      icon: icons.IconClipboardList,
+      breadcrumbs: false,
+      roles: ['manager']
+    },
   ]
 };
 

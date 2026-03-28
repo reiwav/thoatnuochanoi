@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"golang.org/x/oauth2"
 	"google.golang.org/api/drive/v3"
@@ -24,7 +25,9 @@ type Service interface {
 	FindOrCreateFolder(ctx context.Context, parentID, folderName string) (string, error)
 	TriggerReportGeneration(ctx context.Context, webhookURL, templateFileID, targetFolderID string, payload map[string]interface{}) (string, error)
 	CopyFile(ctx context.Context, fileID, parentID, newName string) (string, error)
+	MoveFile(ctx context.Context, fileID, newParentID string) error
 	GetFileContent(ctx context.Context, fileID string) ([]byte, error)
+	GetFolderLink(ctx context.Context, folderID string) string
 }
 
 var DefaultSubfolders = []string{"RAIN", "RIVER", "LAKE", "CAMERA", "FLOOD"}
@@ -317,4 +320,31 @@ func (s *service) SetPublic(ctx context.Context, fileID string) error {
 		return fmt.Errorf("failed to make file %s public: %w", fileID, err)
 	}
 	return nil
+}
+
+func (s *service) MoveFile(ctx context.Context, fileID, newParentID string) error {
+	// Retrieve the existing parents to remove
+	f, err := s.driveSvc.Files.Get(fileID).Fields("parents").Do()
+	if err != nil {
+		return fmt.Errorf("failed to get file %s: %w", fileID, err)
+	}
+
+	previousParents := strings.Join(f.Parents, ",")
+
+	// Move the file to the new folder
+	_, err = s.driveSvc.Files.Update(fileID, nil).
+		AddParents(newParentID).
+		RemoveParents(previousParents).
+		SupportsAllDrives(true).
+		Do()
+
+	if err != nil {
+		return fmt.Errorf("failed to move file %s to folder %s: %w", fileID, newParentID, err)
+	}
+
+	return nil
+}
+
+func (s *service) GetFolderLink(ctx context.Context, folderID string) string {
+	return fmt.Sprintf("https://drive.google.com/drive/folders/%s", folderID)
 }

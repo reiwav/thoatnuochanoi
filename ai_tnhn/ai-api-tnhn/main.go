@@ -8,6 +8,8 @@ import (
 	"ai-api-tnhn/internal/base/mgo/db"
 	"ai-api-tnhn/internal/repository/query"
 	"ai-api-tnhn/internal/service/auth"
+	"ai-api-tnhn/internal/service/contract"
+	"ai-api-tnhn/internal/service/contract_category"
 	"ai-api-tnhn/internal/service/email"
 	"ai-api-tnhn/internal/service/emergency_construction"
 	"ai-api-tnhn/internal/service/employee"
@@ -55,6 +57,8 @@ func main() {
 	emConstructionRepo := query.NewEmergencyConstructionRepository(db.DB, "emergency_constructions", "emc", log)
 	emConstructionHistoryRepo := query.NewEmergencyConstructionHistoryRepository(db.DB, "emergency_construction_histories", "emch", log)
 	emConstructionProgressRepo := query.NewEmergencyConstructionProgressRepository(db.DB, "emergency_construction_progress", "emcp", log)
+	contractCategoryRepo := query.NewContractCategoryRepository(db.DB, "contract_categories", "ctc", log)
+	contractRepo := query.NewContractRepository(db.DB, "contracts", "ctr", log)
 
 	rainStationRepo := query.NewRainStationRepo(db.DB, "rain_stations", "rst", log)
 	lakeStationRepo := query.NewLakeStationRepo(db.DB, "lake_stations", "lst", log)
@@ -102,6 +106,8 @@ func main() {
 		googleApiService.SetEmailService(emailService)
 	}
 	emConstructionService := emergency_construction.NewService(emConstructionRepo, emConstructionHistoryRepo, emConstructionProgressRepo, userRepo, orgRepo, driveService)
+	contractCategoryService := contract_category.NewService(contractCategoryRepo, driveService)
+	contractService := contract.NewService(contractRepo, contractCategoryRepo, driveService)
 	queryService := querysvc.NewService(db.DB)
 	queryHandler := handler.NewQueryHandler(queryService)
 	stationDataService := stationdata.NewService(stationService, waterService)
@@ -160,6 +166,8 @@ func main() {
 	waterHandler := handler.NewWaterHandler(waterService)
 	emConstructionHandler := handler.NewEmergencyConstructionHandler(emConstructionService)
 	weatherHandler := handler.NewWeatherHandler(weatherService)
+	contractCategoryHandler := handler.NewContractCategoryHandler(contractCategoryService, authService, contextWith)
+	contractHandler := handler.NewContractHandler(contractService, authService, contextWith)
 	googleHandler := handler.NewGoogleHandler(googleApiService, geminiService, driveService, waterService, emailService, contextWith, confg.GoogleDriveConfig, log)
 	mid := middleware.NewMiddleware(confg, tokenRepo, contextWith, log)
 	handlers := router.HandlerFuncs{
@@ -187,6 +195,6 @@ func main() {
 		DatabaseQueryHandler:           queryHandler.Query,
 	}
 
-	r := handlers.Create(mid, orgHandler, empHandler, stationHandler, inuHandler, waterHandler, googleHandler, queryHandler, emConstructionHandler, weatherHandler)
+	r := handlers.Create(mid, orgHandler, empHandler, stationHandler, inuHandler, waterHandler, googleHandler, queryHandler, emConstructionHandler, weatherHandler, contractCategoryHandler, contractHandler)
 	r.Run(confg.Port)
 }

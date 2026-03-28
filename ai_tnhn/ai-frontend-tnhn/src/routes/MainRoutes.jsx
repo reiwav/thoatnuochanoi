@@ -25,6 +25,8 @@ const ConstructionReportingPage = Loadable(lazy(() => import('views/employee/eme
 const ConstructionFormPage = Loadable(lazy(() => import('views/employee/emergency-construction/ConstructionForm')));
 const ConstructionProgressHistoryPage = Loadable(lazy(() => import('views/admin/emergency-construction/ConstructionProgressHistory')));
 const InundationAdminList = Loadable(lazy(() => import('views/admin/inundation/InundationAdminList')));
+const ContractCategoryPage = Loadable(lazy(() => import('views/admin/contract-category')));
+const ContractPage = Loadable(lazy(() => import('views/admin/contract')));
 const UnderDevelopment = Loadable(lazy(() => import('views/pages/under-development')));
 
 // ==============================|| MAIN ROUTING ||============================== //
@@ -64,7 +66,9 @@ const MainRoutes = {
         { path: 'cua-pai', element: <UnderDevelopment /> },
         { path: 'tram-bo', element: <UnderDevelopment /> },
         { path: 'sa-hinh-ngap', element: <UnderDevelopment /> },
-        { path: 'ai-support', element: <AiSupportPage /> }
+        { path: 'ai-support', element: <AiSupportPage /> },
+        { path: 'contract-category', element: <ContractCategoryPage /> },
+        { path: 'contract', element: <ContractPage /> }
       ]
     },
     {

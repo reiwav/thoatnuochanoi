@@ -116,6 +116,13 @@ func (w *storageWrapper) CopyFile(ctx context.Context, fileID, parentID, newName
 	return w.driveSvc.CopyFile(ctx, fileID, parentID, newName)
 }
 
+func (w *storageWrapper) MoveFile(ctx context.Context, fileID, newParentID string) error {
+	if w.driveSvc == nil {
+		return fmt.Errorf("google drive service required for move file")
+	}
+	return w.driveSvc.MoveFile(ctx, fileID, newParentID)
+}
+
 func (w *storageWrapper) GetFileContent(ctx context.Context, fileID string) ([]byte, error) {
 	cleanID := strings.TrimSpace(fileID)
 
@@ -136,4 +143,11 @@ func (w *storageWrapper) SetPublic(ctx context.Context, fileID string) error {
 		return w.driveSvc.SetPublic(ctx, fileID)
 	}
 	return w.storageSvc.SetPublic(ctx, fileID)
+}
+
+func (w *storageWrapper) GetFolderLink(ctx context.Context, folderID string) string {
+	if w.driveSvc != nil {
+		return w.driveSvc.GetFolderLink(ctx, folderID)
+	}
+	return ""
 }

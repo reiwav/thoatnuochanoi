@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 )
 
@@ -46,60 +47,32 @@ func (s *service) ensureDriveFolder(ctx context.Context, contract *models.Contra
 		return nil
 	}
 
-	// Step 1: CONTRACTS root
+	// Step 1: CONTRACTS root (Global)
 	contractsRootID, err := s.driveSvc.FindOrCreateFolder(ctx, "", "CONTRACTS")
 	if err != nil {
 		return fmt.Errorf("failed to ensure CONTRACTS root folder: %w", err)
 	}
 
-	// Step 2: Org name folder under CONTRACTS
-	orgFolderID := contractsRootID
-	if orgID != "" && orgID != "all" && s.orgRepo != nil {
-		org, err := s.orgRepo.GetByID(ctx, orgID)
-		if err == nil && org != nil && org.Name != "" {
-			orgFolderID, err = s.driveSvc.FindOrCreateFolder(ctx, contractsRootID, org.Name)
-			if err != nil {
-				orgFolderID = contractsRootID // fallback
-			}
-		}
-	}
-
-	// Step 3: Category folder under Org
-	parentDriveID := orgFolderID
-	if contract.CategoryID != "" {
-		cat, err := s.catRepo.GetByID(ctx, contract.CategoryID)
-		if err == nil && cat != nil {
-			if cat.DriveFolderID == "" {
-				catFolderID, err := s.driveSvc.FindOrCreateFolder(ctx, orgFolderID, cat.Name)
-				if err == nil {
-					cat.DriveFolderID = catFolderID
-					_ = s.catRepo.Upsert(ctx, cat)
-					parentDriveID = catFolderID
-				}
-			} else {
-				parentDriveID = cat.DriveFolderID
-			}
-		}
-	}
-
-	// Step 4: Year / Month / Day subfolders
+	// Step 2: Year / Month subfolders
 	now := time.Now()
 	yearStr := now.Format("2006")
-	monthStr := fmt.Sprintf("Tháng %s", now.Format("01"))
-	dayStr := fmt.Sprintf("Ngày %s", now.Format("02"))
+	monthStr := fmt.Sprintf("%d", now.Month()) // just number e.g. "3"
 
-	if yearID, err := s.driveSvc.FindOrCreateFolder(ctx, parentDriveID, yearStr); err == nil {
-		if monthID, err := s.driveSvc.FindOrCreateFolder(ctx, yearID, monthStr); err == nil {
-			if dayID, err := s.driveSvc.FindOrCreateFolder(ctx, monthID, dayStr); err == nil {
-				parentDriveID = dayID
-			}
-		}
+	yearID, err := s.driveSvc.FindOrCreateFolder(ctx, contractsRootID, yearStr)
+	if err != nil {
+		return fmt.Errorf("failed to ensure year folder: %w", err)
+	}
+	monthID, err := s.driveSvc.FindOrCreateFolder(ctx, yearID, monthStr)
+	if err != nil {
+		return fmt.Errorf("failed to ensure month folder: %w", err)
 	}
 
-	// Step 5: Use day folder as the contract's upload target
-	if contract.DriveFolderID == "" {
-		contract.DriveFolderID = parentDriveID
-		contract.DriveFolderLink = s.driveSvc.GetFolderLink(ctx, parentDriveID)
+	// Step 3: Repair logic - if existing ID is a path (contains /), overwrite it
+	isPath := strings.Contains(contract.DriveFolderID, "/")
+
+	if contract.DriveFolderID == "" || isPath {
+		contract.DriveFolderID = monthID
+		contract.DriveFolderLink = s.driveSvc.GetFolderLink(ctx, monthID)
 	}
 
 	return nil
@@ -158,7 +131,8 @@ func (s *service) UploadFile(ctx context.Context, id string, name, mimeType stri
 		return "", err
 	}
 
-	if contract.DriveFolderID == "" {
+	isPath := strings.Contains(contract.DriveFolderID, "/")
+	if contract.DriveFolderID == "" || isPath {
 		_ = s.ensureDriveFolder(ctx, contract, contract.OrgID)
 		_ = s.repo.Upsert(ctx, contract)
 	}

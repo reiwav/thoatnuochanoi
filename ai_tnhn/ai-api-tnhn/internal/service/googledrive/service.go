@@ -30,7 +30,7 @@ type Service interface {
 	GetFolderLink(ctx context.Context, folderID string) string
 }
 
-var DefaultSubfolders = []string{"RAIN", "RIVER", "LAKE", "CAMERA", "FLOOD"}
+var DefaultSubfolders = []string{"RAIN", "RIVER", "LAKE", "CAMERA", "FLOOD", "CONTRACTS"}
 
 type service struct {
 	driveSvc   *drive.Service

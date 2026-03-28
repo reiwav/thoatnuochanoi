@@ -97,7 +97,10 @@ func (h *ContractHandler) Upload(c *gin.Context) {
 	defer f.Close()
 
 	fileID, err := h.service.UploadFile(c.Request.Context(), id, file.Filename, file.Header.Get("Content-Type"), f)
-	web.AssertNil(err)
+	if err != nil {
+		web.AssertNil(web.InternalServerError(err.Error()))
+		return
+	}
 
 	h.SendData(c, gin.H{
 		"file_id": fileID,
@@ -152,7 +155,10 @@ func (h *ContractHandler) UploadToFolder(c *gin.Context) {
 	defer f.Close()
 
 	fileID, err := h.service.UploadToFolder(c.Request.Context(), folderID, file.Filename, file.Header.Get("Content-Type"), f)
-	web.AssertNil(err)
+	if err != nil {
+		h.SendError(c, web.InternalServerError(err.Error()))
+		return
+	}
 
 	h.SendData(c, gin.H{
 		"file_id": fileID,

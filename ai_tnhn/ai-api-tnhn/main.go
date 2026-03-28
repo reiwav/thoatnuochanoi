@@ -107,7 +107,7 @@ func main() {
 	}
 	emConstructionService := emergency_construction.NewService(emConstructionRepo, emConstructionHistoryRepo, emConstructionProgressRepo, userRepo, orgRepo, driveService)
 	contractCategoryService := contract_category.NewService(contractCategoryRepo, driveService)
-	contractService := contract.NewService(contractRepo, contractCategoryRepo, driveService)
+	contractService := contract.NewService(contractRepo, contractCategoryRepo, orgRepo, driveService)
 	queryService := querysvc.NewService(db.DB)
 	queryHandler := handler.NewQueryHandler(queryService)
 	stationDataService := stationdata.NewService(stationService, waterService)

@@ -10,6 +10,7 @@ type ContractStage struct {
 
 type Contract struct {
 	model.BaseModel `bson:",inline"`
+	OrgID           string          `bson:"org_id" json:"org_id"`
 	Name            string          `bson:"name" json:"name"`
 	CategoryID      string          `bson:"category_id" json:"category_id"`
 	StartDate       string          `bson:"start_date" json:"start_date"`

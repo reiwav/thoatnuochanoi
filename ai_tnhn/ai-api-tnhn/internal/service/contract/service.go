@@ -19,38 +19,54 @@ type Service interface {
 	List(ctx context.Context, f filter.Filter) ([]*models.Contract, int64, error)
 	UploadFile(ctx context.Context, id string, name, mimeType string, content io.Reader) (string, error)
 	UploadToFolder(ctx context.Context, folderID, name, mimeType string, content io.Reader) (string, error)
-	PrepareDriveFolder(ctx context.Context, categoryID, name string) (string, string, error)
+	PrepareDriveFolder(ctx context.Context, orgID, categoryID, name string) (string, string, error)
 }
 
 type service struct {
 	repo     repository.Contract
 	catRepo  repository.ContractCategory
+	orgRepo  repository.Organization
 	driveSvc googledrive.Service
 }
 
-func NewService(repo repository.Contract, catRepo repository.ContractCategory, driveSvc googledrive.Service) Service {
-	return &service{repo: repo, catRepo: catRepo, driveSvc: driveSvc}
+func NewService(repo repository.Contract, catRepo repository.ContractCategory, orgRepo repository.Organization, driveSvc googledrive.Service) Service {
+	return &service{repo: repo, catRepo: catRepo, orgRepo: orgRepo, driveSvc: driveSvc}
 }
 
-func (s *service) ensureDriveFolder(ctx context.Context, contract *models.Contract) error {
+func (s *service) ensureDriveFolder(ctx context.Context, contract *models.Contract, orgID string) error {
 	if s.driveSvc == nil {
 		return nil
 	}
 
-	parentDriveID := ""
+	// Step 1: CONTRACTS root
+	contractsRootID, err := s.driveSvc.FindOrCreateFolder(ctx, "", "CONTRACTS")
+	if err != nil {
+		return fmt.Errorf("failed to ensure CONTRACTS root folder: %w", err)
+	}
+
+	// Step 2: Org name folder under CONTRACTS
+	orgFolderID := contractsRootID
+	if orgID != "" && orgID != "all" && s.orgRepo != nil {
+		org, err := s.orgRepo.GetByID(ctx, orgID)
+		if err == nil && org != nil && org.Name != "" {
+			orgFolderID, err = s.driveSvc.FindOrCreateFolder(ctx, contractsRootID, org.Name)
+			if err != nil {
+				orgFolderID = contractsRootID // fallback
+			}
+		}
+	}
+
+	// Step 3: Category folder under Org
+	parentDriveID := orgFolderID
 	if contract.CategoryID != "" {
 		cat, err := s.catRepo.GetByID(ctx, contract.CategoryID)
 		if err == nil && cat != nil {
 			if cat.DriveFolderID == "" {
-				// If category has no folder, CONTRACTS root is fallback
-				rootID, err := s.driveSvc.FindOrCreateFolder(ctx, "", "CONTRACTS")
+				catFolderID, err := s.driveSvc.FindOrCreateFolder(ctx, orgFolderID, cat.Name)
 				if err == nil {
-					catFolderID, err := s.driveSvc.FindOrCreateFolder(ctx, rootID, cat.Name)
-					if err == nil {
-						cat.DriveFolderID = catFolderID
-						_ = s.catRepo.Upsert(ctx, cat)
-						parentDriveID = catFolderID
-					}
+					cat.DriveFolderID = catFolderID
+					_ = s.catRepo.Upsert(ctx, cat)
+					parentDriveID = catFolderID
 				}
 			} else {
 				parentDriveID = cat.DriveFolderID
@@ -58,48 +74,31 @@ func (s *service) ensureDriveFolder(ctx context.Context, contract *models.Contra
 		}
 	}
 
-	if parentDriveID == "" {
-		var err error
-		parentDriveID, err = s.driveSvc.FindOrCreateFolder(ctx, "", "CONTRACTS")
-		if err != nil {
-			return fmt.Errorf("failed to ensure CONTRACTS root folder: %w", err)
-		}
-	}
-
-	// NEW: Add Year/Month/Day structure
+	// Step 4: Year / Month / Day subfolders
 	now := time.Now()
 	yearStr := now.Format("2006")
 	monthStr := fmt.Sprintf("Tháng %s", now.Format("01"))
 	dayStr := fmt.Sprintf("Ngày %s", now.Format("02"))
 
-	yearID, err := s.driveSvc.FindOrCreateFolder(ctx, parentDriveID, yearStr)
-	if err == nil {
-		monthID, err := s.driveSvc.FindOrCreateFolder(ctx, yearID, monthStr)
-		if err == nil {
-			dayID, err := s.driveSvc.FindOrCreateFolder(ctx, monthID, dayStr)
-			if err == nil {
+	if yearID, err := s.driveSvc.FindOrCreateFolder(ctx, parentDriveID, yearStr); err == nil {
+		if monthID, err := s.driveSvc.FindOrCreateFolder(ctx, yearID, monthStr); err == nil {
+			if dayID, err := s.driveSvc.FindOrCreateFolder(ctx, monthID, dayStr); err == nil {
 				parentDriveID = dayID
 			}
 		}
 	}
 
-	folderName := fmt.Sprintf("%s", contract.Name)
+	// Step 5: Use day folder as the contract's upload target
 	if contract.DriveFolderID == "" {
-		driveID, err := s.driveSvc.FindOrCreateFolder(ctx, parentDriveID, folderName)
-		if err != nil {
-			return fmt.Errorf("failed to create drive folder for contract: %w", err)
-		}
-		contract.DriveFolderID = driveID
-		contract.DriveFolderLink = s.driveSvc.GetFolderLink(ctx, driveID)
-	} else {
-		// Possibly move if parent changed? Handled in Update
+		contract.DriveFolderID = parentDriveID
+		contract.DriveFolderLink = s.driveSvc.GetFolderLink(ctx, parentDriveID)
 	}
 
 	return nil
 }
 
 func (s *service) Create(ctx context.Context, contract *models.Contract) error {
-	_ = s.ensureDriveFolder(ctx, contract)
+	_ = s.ensureDriveFolder(ctx, contract, contract.OrgID)
 	return s.repo.Upsert(ctx, contract)
 }
 
@@ -127,7 +126,7 @@ func (s *service) Update(ctx context.Context, id string, contract *models.Contra
 	}
 
 	if existing.DriveFolderID == "" {
-		_ = s.ensureDriveFolder(ctx, existing)
+		_ = s.ensureDriveFolder(ctx, existing, existing.OrgID)
 	}
 
 	return s.repo.Upsert(ctx, existing)
@@ -152,7 +151,7 @@ func (s *service) UploadFile(ctx context.Context, id string, name, mimeType stri
 	}
 
 	if contract.DriveFolderID == "" {
-		_ = s.ensureDriveFolder(ctx, contract)
+		_ = s.ensureDriveFolder(ctx, contract, contract.OrgID)
 		_ = s.repo.Upsert(ctx, contract)
 	}
 
@@ -170,13 +169,14 @@ func (s *service) UploadToFolder(ctx context.Context, folderID, name, mimeType s
 	return s.driveSvc.UploadFile(ctx, folderID, name, mimeType, content, false)
 }
 
-func (s *service) PrepareDriveFolder(ctx context.Context, categoryID, name string) (string, string, error) {
+func (s *service) PrepareDriveFolder(ctx context.Context, orgID, categoryID, name string) (string, string, error) {
 	tempContract := &models.Contract{
+		OrgID:      orgID,
 		CategoryID: categoryID,
 		Name:       name,
 	}
 
-	err := s.ensureDriveFolder(ctx, tempContract)
+	err := s.ensureDriveFolder(ctx, tempContract, orgID)
 	if err != nil {
 		return "", "", err
 	}

@@ -219,14 +219,14 @@ const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit }) => {
                             sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
                         />
 
-                        <Box sx={{ p: 2, border: '1px dashed', borderColor: (values.category_id && values.name) ? 'secondary.main' : 'grey.400', borderRadius: '12px', bgcolor: (values.category_id && values.name) ? 'secondary.light' : 'grey.50', opacity: 0.9 }}>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, display: 'flex', alignItems: 'center', gap: 1, color: (values.category_id && values.name) ? 'inherit' : 'text.disabled' }}>
+                        <Box sx={{ p: 2, border: '1px dashed', borderColor: values.category_id ? 'secondary.main' : 'grey.400', borderRadius: '12px', bgcolor: values.category_id ? 'secondary.light' : 'grey.50', opacity: 0.9 }}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, display: 'flex', alignItems: 'center', gap: 1, color: values.category_id ? 'inherit' : 'text.disabled' }}>
                                 <IconBrandGoogleDrive size={20} /> Tài liệu Google Drive
                             </Typography>
                             
-                            {(!values.category_id || !values.name) && (
+                            {!values.category_id && (
                                 <Typography variant="caption" color="error" sx={{ mb: 1, display: 'block' }}>
-                                    * Vui lòng nhập tên hợp đồng và chọn danh mục để tải tài liệu
+                                    * Vui lòng chọn danh mục để tải tài liệu lên Drive
                                 </Typography>
                             )}
 
@@ -250,7 +250,7 @@ const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit }) => {
                                         type="file"
                                         id="contract-file-upload"
                                         style={{ display: 'none' }}
-                                        disabled={!values.category_id || !values.name || uploading}
+                                        disabled={!values.category_id || uploading}
                                         onChange={async (e) => {
                                             const file = e.target.files[0];
                                             if (!file) return;
@@ -263,8 +263,7 @@ const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit }) => {
                                                 // Prepare folder if not exists
                                                 if (!currentFolderId) {
                                                     const prepRes = await contractApi.prepareFolder({
-                                                        category_id: values.category_id,
-                                                        name: values.name
+                                                        category_id: values.category_id
                                                     });
                                                     if (prepRes.data?.status === 'success') {
                                                         currentFolderId = prepRes.data.data.drive_folder_id;
@@ -302,7 +301,7 @@ const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit }) => {
                                             variant="outlined"
                                             color="secondary"
                                             startIcon={uploading ? <CircularProgress size={18} /> : <IconUpload size={18} />}
-                                            disabled={!values.category_id || !values.name || uploading}
+                                            disabled={!values.category_id || uploading}
                                             fullWidth
                                             sx={{ borderRadius: '8px', bgcolor: 'white' }}
                                         >

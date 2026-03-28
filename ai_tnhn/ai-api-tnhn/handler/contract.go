@@ -32,6 +32,8 @@ func (h *ContractHandler) Create(c *gin.Context) {
 		return
 	}
 
+	item.OrgID = h.contextWith.GetTokenFromContext(c).OrgId
+
 	err := h.service.Create(c.Request.Context(), &item)
 	web.AssertNil(err)
 	h.SendData(c, item)
@@ -113,12 +115,14 @@ func (h *ContractHandler) PrepareFolder(c *gin.Context) {
 		return
 	}
 
-	if body.Name == "" || body.CategoryID == "" {
-		web.AssertNil(web.BadRequest("name and category_id are required"))
+	if body.CategoryID == "" {
+		web.AssertNil(web.BadRequest("category_id is required"))
 		return
 	}
 
-	folderID, link, err := h.service.PrepareDriveFolder(c.Request.Context(), body.CategoryID, body.Name)
+	orgID := h.contextWith.GetTokenFromContext(c).OrgId
+
+	folderID, link, err := h.service.PrepareDriveFolder(c.Request.Context(), orgID, body.CategoryID, body.Name)
 	web.AssertNil(err)
 
 	h.SendData(c, gin.H{

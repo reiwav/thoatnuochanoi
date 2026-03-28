@@ -7,6 +7,7 @@ import (
 	"ai-api-tnhn/internal/service/googleapi"
 	"ai-api-tnhn/internal/service/inundation"
 	querysvc "ai-api-tnhn/internal/service/query"
+	"ai-api-tnhn/internal/service/contract"
 	"ai-api-tnhn/internal/service/stationdata"
 	"ai-api-tnhn/internal/service/water"
 	"context"
@@ -24,45 +25,7 @@ import (
 	"google.golang.org/api/option"
 )
 
-type ChatMessage struct {
-	Role    string `json:"role"` // "user" or "model"
-	Content string `json:"content"`
-}
-
-type Service interface {
-	Chat(ctx context.Context, prompt string, history []ChatMessage, userID string) (string, error)
-}
-
-type service struct {
-	client         *genai.Client
-	model          *genai.GenerativeModel
-	waterSvc       water.Service
-	googleApiSvc   googleapi.Service
-	inuSvc         inundation.Service
-	querySvc       querysvc.Service
-	stationDataSvc stationdata.Service
-	emcSvc         emergency_construction.Service
-	aiUsageRepo    repository.AiUsage
-}
-
-func NewService(apiKey string, waterSvc water.Service, googleApiSvc googleapi.Service, inuSvc inundation.Service, querySvc querysvc.Service, stationDataSvc stationdata.Service, emcSvc emergency_construction.Service, aiUsageRepo repository.AiUsage) (Service, error) {
-	if apiKey == "" {
-		return nil, fmt.Errorf("gemini api key is required")
-	}
-
-	ctx := context.Background()
-	client, err := genai.NewClient(ctx, option.WithAPIKey(apiKey))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create gemini client: %w", err)
-	}
-
-	// Use gemini-2.5-flash for faster and modern responses
-	model := client.GenerativeModel("gemini-2.5-flash")
-
-	// Set a system instruction to give the AI context
-	model.SystemInstruction = &genai.Content{
-		Parts: []genai.Part{
-			genai.Text(`Bạn là trợ lý AI thông minh của Hệ thống Thoát nước Hà Nội (TNHN). Hãy trả lời câu hỏi của người dùng một cách lịch sự, chuyên nghiệp và hữu ích bằng tiếng Việt.
+const chatSysInstruction = `Bạn là trợ lý AI thông minh của Hệ thống Thoát nước Hà Nội (TNHN). Hãy trả lời câu hỏi của người dùng một cách lịch sự, chuyên nghiệp và hữu ích bằng tiếng Việt.
 
 QUY TẮC TRẢ LỜI QUAN TRỌNG:
 1. LƯỢNG MƯA HIỆN TẠI: Khi báo cáo lượng mưa tại các điểm, phải hiển thị đầy đủ:
@@ -85,21 +48,103 @@ QUY TẮC TRẢ LỜI QUAN TRỌNG:
 
 5. CÔNG TÁC THI CÔNG: Bạn có thể báo cáo tiến độ thi công hàng ngày cho một công trình cụ thể bằng 'report_emergency_work_progress'. Khi báo cáo, hãy hỏi: nội dung công việc, % hoàn thành, vướng mắc và ngày dự kiến xong.
 
-6. EMAIL: Bạn có thể đọc nội dung chi tiết email. Khi liệt kê danh sách email trong bảng, hãy thêm cột 'Thao tác' với link: [Xem chi tiết](#email-detail-[ID]).`),
-		},
+6. EMAIL: Bạn có thể đọc nội dung chi tiết email. Khi liệt kê danh sách email trong bảng, hãy thêm cột 'Thao tác' với link: [Xem chi tiết](#email-detail-[ID]).`
+
+type ChatMessage struct {
+	Role    string `json:"role"` // "user" or "model"
+	Content string `json:"content"`
+}
+
+type Service interface {
+	Chat(ctx context.Context, prompt string, history []ChatMessage, userID string) (string, error)
+	ChatContract(ctx context.Context, prompt string, history []ChatMessage, userID string) (string, error)
+}
+
+type service struct {
+	clients               []*genai.Client
+	contractClients       []*genai.Client
+	mu                    sync.Mutex
+	roundRobinIdx         int
+	contractRoundRobinIdx int
+	waterSvc       water.Service
+	googleApiSvc   googleapi.Service
+	inuSvc         inundation.Service
+	querySvc       querysvc.Service
+	stationDataSvc stationdata.Service
+	emcSvc         emergency_construction.Service
+	contractSvc    contract.Service
+	aiUsageRepo    repository.AiUsage
+}
+
+func NewService(apiKey string, apiKeyContract string, waterSvc water.Service, googleApiSvc googleapi.Service, inuSvc inundation.Service, querySvc querysvc.Service, stationDataSvc stationdata.Service, emcSvc emergency_construction.Service, contractSvc contract.Service, aiUsageRepo repository.AiUsage) (Service, error) {
+	if apiKey == "" {
+		return nil, fmt.Errorf("gemini api key is required")
+	}
+
+	keys := strings.Split(apiKey, ",")
+	var clients []*genai.Client
+	var contractClients []*genai.Client
+	ctx := context.Background()
+
+	for _, key := range keys {
+		key = strings.TrimSpace(key)
+		if key == "" {
+			continue
+		}
+		client, err := genai.NewClient(ctx, option.WithAPIKey(key))
+		if err == nil {
+			clients = append(clients, client)
+		}
+	}
+
+	contractKeys := strings.Split(apiKeyContract, ",")
+	for _, key := range contractKeys {
+		key = strings.TrimSpace(key)
+		if key == "" {
+			continue
+		}
+		client, err := genai.NewClient(ctx, option.WithAPIKey(key))
+		if err == nil {
+			contractClients = append(contractClients, client)
+		}
+	}
+
+	if len(clients) == 0 {
+		return nil, fmt.Errorf("failed to create any valid gemini client")
+	}
+
+	if len(contractClients) == 0 {
+		contractClients = clients
 	}
 
 	return &service{
-		client:         client,
-		model:          model,
+		clients:         clients,
+		contractClients: contractClients,
 		waterSvc:       waterSvc,
 		googleApiSvc:   googleApiSvc,
 		inuSvc:         inuSvc,
 		querySvc:       querySvc,
 		stationDataSvc: stationDataSvc,
 		emcSvc:         emcSvc,
+		contractSvc:    contractSvc,
 		aiUsageRepo:    aiUsageRepo,
 	}, nil
+}
+
+func (s *service) getClient() *genai.Client {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	client := s.clients[s.roundRobinIdx]
+	s.roundRobinIdx = (s.roundRobinIdx + 1) % len(s.clients)
+	return client
+}
+
+func (s *service) getContractClient() *genai.Client {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	client := s.contractClients[s.contractRoundRobinIdx]
+	s.contractRoundRobinIdx = (s.contractRoundRobinIdx + 1) % len(s.contractClients)
+	return client
 }
 
 func (s *service) Chat(ctx context.Context, prompt string, history []ChatMessage, userID string) (string, error) {
@@ -302,7 +347,10 @@ func (s *service) Chat(ctx context.Context, prompt string, history []ChatMessage
 		},
 	}
 
-	s.model.Tools = []*genai.Tool{{FunctionDeclarations: tools}}
+	client := s.getClient()
+	model := client.GenerativeModel("gemini-2.5-flash")
+	model.SystemInstruction = &genai.Content{Parts: []genai.Part{genai.Text(chatSysInstruction)}}
+	model.Tools = []*genai.Tool{{FunctionDeclarations: tools}}
 
 	// Build history
 	var genaiHistory []*genai.Content
@@ -313,7 +361,7 @@ func (s *service) Chat(ctx context.Context, prompt string, history []ChatMessage
 		})
 	}
 
-	session := s.model.StartChat()
+	session := model.StartChat()
 	session.History = genaiHistory
 
 	fmt.Printf("\n=== [Gemini Chat] User Prompt ===\n%s\n=================================\n", prompt)

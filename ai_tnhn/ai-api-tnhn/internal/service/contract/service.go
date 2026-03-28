@@ -20,6 +20,14 @@ type Service interface {
 	UploadFile(ctx context.Context, id string, name, mimeType string, content io.Reader) (string, error)
 	UploadToFolder(ctx context.Context, folderID, name, mimeType string, content io.Reader) (string, error)
 	PrepareDriveFolder(ctx context.Context, orgID, categoryID, name string) (string, string, error)
+
+	// AI query methods
+	GetContractSummary(ctx context.Context) (*ContractSummaryStats, error)
+	GetExpiringSoon(ctx context.Context, days int) ([]*ContractQueryResult, error)
+	GetExpired(ctx context.Context) ([]*ContractQueryResult, error)
+	GetStagesDueSoon(ctx context.Context, days int) ([]*StageQueryResult, error)
+	GetStagesPassed(ctx context.Context) ([]*StageQueryResult, error)
+	SearchContracts(ctx context.Context, keyword string) ([]*ContractQueryResult, error)
 }
 
 type service struct {

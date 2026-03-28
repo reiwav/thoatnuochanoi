@@ -111,7 +111,7 @@ func main() {
 	queryService := querysvc.NewService(db.DB)
 	queryHandler := handler.NewQueryHandler(queryService)
 	stationDataService := stationdata.NewService(stationService, waterService)
-	geminiService, err := gemini.NewService(confg.GeminiAPIKey, waterService, googleApiService, inuService, queryService, stationDataService, emConstructionService, aiUsageRepo)
+	geminiService, err := gemini.NewService(confg.GeminiAPIKey, confg.GeminiAPIKeyContract, waterService, googleApiService, inuService, queryService, stationDataService, emConstructionService, contractService, aiUsageRepo)
 	if err != nil {
 		log.GetLogger().Errorf("Failed to initialize Gemini service: %v", err)
 	} else {
@@ -184,6 +184,7 @@ func main() {
 		GoogleWaterSummaryHandler:      googleHandler.GetWaterSummary,
 		GoogleInundationSummaryHandler: googleHandler.GetInundationSummary,
 		GoogleChatHandler:              googleHandler.Chat,
+		GoogleContractChatHandler:      googleHandler.ChatContract,
 		GoogleEmailDetailHandler:       googleHandler.GetEmailDetail,
 		GoogleRecentEmailsHandler:      googleHandler.GetRecentEmails,
 		GoogleUnreadEmailsHandler:      googleHandler.GetUnreadEmails,

@@ -20,6 +20,7 @@ const StationInundationList = Loadable(lazy(() => import('views/admin/station/St
 const StationHistory = Loadable(lazy(() => import('views/admin/station/StationHistory')));
 const InundationStationHistory = Loadable(lazy(() => import('views/admin/station/InundationStationHistory')));
 const AiSupportPage = Loadable(lazy(() => import('views/admin/ai-support')));
+const AiContractPage = Loadable(lazy(() => import('views/admin/ai-contract')));
 const EmergencyConstructionPage = Loadable(lazy(() => import('views/admin/emergency-construction')));
 const ConstructionReportingPage = Loadable(lazy(() => import('views/employee/emergency-construction/ConstructionReporting')));
 const ConstructionFormPage = Loadable(lazy(() => import('views/employee/emergency-construction/ConstructionForm')));
@@ -67,6 +68,7 @@ const MainRoutes = {
         { path: 'tram-bo', element: <UnderDevelopment /> },
         { path: 'sa-hinh-ngap', element: <UnderDevelopment /> },
         { path: 'ai-support', element: <AiSupportPage /> },
+        { path: 'ai-contract', element: <AiContractPage /> },
         { path: 'contract-category', element: <ContractCategoryPage /> },
         { path: 'contract', element: <ContractPage /> }
       ]

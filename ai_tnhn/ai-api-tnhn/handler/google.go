@@ -99,6 +99,34 @@ func (h *GoogleHandler) GetInundationSummary(c *gin.Context) {
 	})
 }
 
+func (h *GoogleHandler) ChatContract(c *gin.Context) {
+	if h.geminiSvc == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Gemini AI service is not initialized. Please check GEMINI_API_KEY."})
+		return
+	}
+
+	var body struct {
+		Prompt  string               `json:"prompt"`
+		History []gemini.ChatMessage `json:"history"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "prompt is required"})
+		return
+	}
+
+	userID, _ := h.contextWith.GetUserID(c)
+	response, err := h.geminiSvc.ChatContract(c.Request.Context(), body.Prompt, body.History, userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": "success",
+		"data":   response,
+	})
+}
+
 func (h *GoogleHandler) Chat(c *gin.Context) {
 	if h.geminiSvc == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Gemini AI service is not initialized. Please check GEMINI_API_KEY."})

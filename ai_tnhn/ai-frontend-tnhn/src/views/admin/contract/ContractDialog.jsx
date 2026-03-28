@@ -19,7 +19,7 @@ const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit }) => {
         category_id: '',
         start_date: null,
         end_date: null,
-        stages: [{ name: '', amount: 0, date: '' }],
+        stages: [{ name: '', amount: 0, date: null }],
         note: '',
         drive_folder_id: '',
         drive_folder_link: ''
@@ -36,7 +36,10 @@ const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit }) => {
                     category_id: contract.category_id || '',
                     start_date: contract.start_date ? dayjs(contract.start_date) : null,
                     end_date: contract.end_date ? dayjs(contract.end_date) : null,
-                    stages: contract.stages || [{ name: '', amount: 0, date: '' }],
+                    stages: contract.stages ? contract.stages.map(s => ({
+                        ...s,
+                        date: s.date ? dayjs(s.date) : null
+                    })) : [{ name: '', amount: 0, date: null }],
                     note: contract.note || '',
                     drive_folder_id: contract.drive_folder_id || '',
                     drive_folder_link: contract.drive_folder_link || ''
@@ -47,7 +50,7 @@ const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit }) => {
                     category_id: '',
                     start_date: null,
                     end_date: null,
-                    stages: [{ name: '', amount: 0, date: '' }],
+                    stages: [{ name: '', amount: 0, date: null }],
                     note: ''
                 });
             }
@@ -79,7 +82,7 @@ const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit }) => {
     const addStage = () => {
         setValues({
             ...values,
-            stages: [...values.stages, { name: '', amount: 0, date: '' }]
+            stages: [...values.stages, { name: '', amount: 0, date: null }]
         });
     };
 
@@ -90,8 +93,27 @@ const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit }) => {
 
     const handleSave = () => {
         if (!values.name) return;
+
+        // Validate stage constraints
+        if (values.start_date && values.end_date) {
+            for (let i = 0; i < values.stages.length; i++) {
+                const stage = values.stages[i];
+                if (stage.date) {
+                    const stDate = dayjs(stage.date);
+                    if (stDate.isBefore(values.start_date, 'day') || stDate.isAfter(values.end_date, 'day')) {
+                        toast.error(`Ngày của giai đoạn "${stage.name || `Giai đoạn ${i + 1}`}" phải nằm trong thời gian hợp đồng (${values.start_date.format('DD/MM/YYYY')} - ${values.end_date.format('DD/MM/YYYY')}).`);
+                        return; // Stop explicitly on error
+                    }
+                }
+            }
+        }
+
         const data = {
             ...values,
+            stages: values.stages.map(s => ({
+                ...s,
+                date: s.date ? dayjs(s.date).toISOString() : null
+            })),
             start_date: values.start_date ? values.start_date.toISOString() : null,
             end_date: values.end_date ? values.end_date.toISOString() : null,
         };
@@ -188,20 +210,28 @@ const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit }) => {
                                                     <IconTrash size={18} />
                                                 </IconButton>
                                             </Stack>
-                                            <TextField
-                                                size="small"
-                                                fullWidth
-                                                type="number"
-                                                label="Giá tiền"
-                                                placeholder="0"
-                                                value={stage.amount}
-                                                onChange={(e) => handleStageChange(index, 'amount', e.target.value)}
-                                                InputProps={{
-                                                    startAdornment: <InputAdornment position="start"><IconCash size={16} /></InputAdornment>,
-                                                    endAdornment: <InputAdornment position="end">VNĐ</InputAdornment>
-                                                }}
-                                                sx={{ bgcolor: 'white' }}
-                                            />
+                                            <Stack direction="row" spacing={2}>
+                                                <TextField
+                                                    size="small"
+                                                    fullWidth
+                                                    type="number"
+                                                    label="Giá tiền"
+                                                    placeholder="0"
+                                                    value={stage.amount}
+                                                    onChange={(e) => handleStageChange(index, 'amount', e.target.value)}
+                                                    InputProps={{
+                                                        startAdornment: <InputAdornment position="start"><IconCash size={16} /></InputAdornment>,
+                                                        endAdornment: <InputAdornment position="end">VNĐ</InputAdornment>
+                                                    }}
+                                                    sx={{ bgcolor: 'white' }}
+                                                />
+                                                <DatePicker
+                                                    label="Ngày dự kiến"
+                                                    value={stage.date}
+                                                    onChange={(val) => handleStageChange(index, 'date', val)}
+                                                    slotProps={{ textField: { fullWidth: true, size: 'small', sx: { bgcolor: 'white' } } }}
+                                                />
+                                            </Stack>
                                         </Stack>
                                     </Box>
                                 ))}

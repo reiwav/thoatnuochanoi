@@ -73,6 +73,7 @@ const Row = ({ row, handleOpenEdit, handleDelete, isMobile, formatPrice, getTota
                                     <TableHead>
                                         <TableRow>
                                             <TableCell sx={{ fontWeight: 700 }}>Tên giai đoạn</TableCell>
+                                            <TableCell sx={{ fontWeight: 700 }}>Ngày dự kiến</TableCell>
                                             <TableCell align="right" sx={{ fontWeight: 700 }}>Số tiền</TableCell>
                                         </TableRow>
                                     </TableHead>
@@ -82,13 +83,16 @@ const Row = ({ row, handleOpenEdit, handleDelete, isMobile, formatPrice, getTota
                                                 <TableCell component="th" scope="row">
                                                     {stage.name || `Giai đoạn ${idx + 1}`}
                                                 </TableCell>
+                                                <TableCell>
+                                                    {stage.date ? dayjs(stage.date).format('DD/MM/YYYY') : '---'}
+                                                </TableCell>
                                                 <TableCell align="right" sx={{ fontWeight: 600 }}>
                                                     {formatPrice(stage.amount)}
                                                 </TableCell>
                                             </TableRow>
                                         ))}
                                         <TableRow>
-                                            <TableCell sx={{ fontWeight: 700, pt: 2 }}>Tổng cộng</TableCell>
+                                            <TableCell colSpan={2} sx={{ fontWeight: 700, pt: 2, textAlign: 'right' }}>Tổng cộng:</TableCell>
                                             <TableCell align="right" sx={{ fontWeight: 700, pt: 2, color: 'success.main', fontSize: '1rem' }}>
                                                 {formatPrice(getTotalPrice(row.stages))}
                                             </TableCell>

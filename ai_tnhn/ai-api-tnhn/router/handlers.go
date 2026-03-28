@@ -20,6 +20,7 @@ type HandlerFuncs struct {
 	GoogleWaterSummaryHandler      gin.HandlerFunc
 	GoogleInundationSummaryHandler gin.HandlerFunc
 	GoogleChatHandler              gin.HandlerFunc
+	GoogleContractChatHandler      gin.HandlerFunc
 	GoogleEmailDetailHandler       gin.HandlerFunc
 	GoogleRecentEmailsHandler      gin.HandlerFunc
 	GoogleUnreadEmailsHandler      gin.HandlerFunc

@@ -288,13 +288,22 @@ const adminPages = {
       roles: ['super_admin', 'manager']
     },
     {
+      id: 'ai-contract',
+      title: 'AI Hợp đồng',
+      type: 'item',
+      url: '/admin/ai-contract',
+      icon: icons.IconMessageChatbot,
+      breadcrumbs: false,
+      roles: ['super_admin', 'manager']
+    },
+    {
       id: 'contract',
       title: 'Quản lý hợp đồng',
       type: 'item',
       url: '/admin/contract',
       icon: icons.IconClipboardList,
       breadcrumbs: false,
-      roles: ['manager']
+      roles: ['super_admin', 'manager']
     },
   ]
 };

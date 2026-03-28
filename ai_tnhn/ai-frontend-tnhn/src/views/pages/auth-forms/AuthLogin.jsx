@@ -58,8 +58,10 @@ export default function AuthLogin() {
       // Immediate redirection based on role
       if (userRole === 'employee' || userRole === 'technician') {
         navigate('/company/inundation', { replace: true });
+      } else if (userRole === 'manager') {
+        navigate('/admin/ai-contract', { replace: true });
       } else {
-        navigate('/admin/inundation', { replace: true });
+        navigate('/admin/ai-support', { replace: true });
       }
     }
   }, [searchParams, navigate]);
@@ -101,8 +103,10 @@ export default function AuthLogin() {
         // Redirect based on role
         if (role === 'employee' || role === 'technician') {
           navigate('/company/inundation');
+        } else if (role === 'manager') {
+          navigate('/admin/ai-contract');
         } else {
-          navigate('/admin/inundation');
+          navigate('/admin/ai-support');
         }
       } else {
         // Trường hợp code 200 nhưng status không phải success (nếu backend thiết kế vậy)

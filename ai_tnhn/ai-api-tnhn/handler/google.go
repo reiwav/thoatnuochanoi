@@ -283,13 +283,25 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 		return nil
 	})
 
-	// 3. Fetch Email Attachment
+	// 3. Fetch Email Attachment (OCR first, standard fallback)
 	extractedContent := ""
 	g.Go(func() error {
 		if h.emailSvc != nil {
-			if content, err := h.emailSvc.GetLatestEmailAttachmentPage1(gCtx); err == nil && content != "" {
-				extractedContent = content
+			// Try Gemini OCR first (handles image-based PDFs)
+			raw, _, ocrErr := h.emailSvc.GetLatestEmailAttachmentRaw(gCtx)
+			if ocrErr == nil && len(raw) > 0 {
+				ocrText, geminiErr := h.geminiSvc.ExtractTextFromPDF(gCtx, raw)
+				if geminiErr == nil && ocrText != "" {
+					extractedContent = ocrText
+					h.log.GetLogger().Infof("Gemini OCR successful (Page 1), %d characters", len(ocrText))
+					return nil
+				}
+				h.log.GetLogger().Warnf("Gemini OCR failed: %v. Falling back to standard extraction...", geminiErr)
 			}
+			// Fallback to standard extraction
+			// if content, err := h.emailSvc.GetLatestEmailAttachmentPage1(gCtx); err == nil && content != "" {
+			// 	extractedContent = content
+			// }
 		}
 		return nil
 	})
@@ -444,7 +456,16 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 
 	noidung := "Báo cáo tình hình mưa"
 	if h.geminiSvc != nil && extractedContent != "" {
-		prompt := fmt.Sprintf(`hãy phân tích và viết nội dung báo cáo thật ngắn gọn (1-2 câu), tập trung vào nguyên nhân gây mưa (nếu có) dựa trên: số điểm đang có mưa (%d), và nội dung từ email dự báo/cảnh báo: [%s]. Tuân thủ quy tắc: Nếu < 5 điểm là "Mưa vùng", 5-10: "Mưa rải rác trên diện rộng", > 10: "Mưa trên diện rộng". KHÔNG bao gồm thông tin nhiệt độ, gió, độ ẩm hay các dự báo thời tiết chi tiết về con người/giao thông.`, len(phuongs)+len(xas), extractedContent)
+		prompt := fmt.Sprintf(`Dựa trên nội dung bản tin dự báo thời tiết sau:
+---
+%s
+---
+Và số liệu: có %d điểm đang ghi nhận mưa.
+
+Hãy viết tóm tắt 1-2 câu ngắn gọn về tình hình mưa, bao gồm:
+- Hình thế thời tiết gây mưa (ví dụ: rãnh áp thấp, không khí lạnh, hội tụ gió...)
+- Mức độ mưa: Nếu < 5 điểm là "Mưa vùng", 5-10: "Mưa rải rác trên diện rộng", > 10: "Mưa trên diện rộng"
+KHÔNG bao gồm thông tin nhiệt độ, gió, độ ẩm hay khuyến cáo.`, extractedContent, len(phuongs)+len(xas))
 		if aiResult, err := h.geminiSvc.Chat(ctx, prompt, nil, "system_report"); err == nil && aiResult != "" {
 			noidung = aiResult
 		}

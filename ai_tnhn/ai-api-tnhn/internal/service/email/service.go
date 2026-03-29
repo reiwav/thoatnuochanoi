@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/emersion/go-imap"
@@ -49,6 +50,7 @@ type Service interface {
 	ReadEmailByID(ctx context.Context, id uint32) (*EmailDetail, error)
 	GetLatestEmailByFilter(ctx context.Context) (*EmailInfo, error)
 	GetLatestEmailAttachmentPage1(ctx context.Context) (string, error)
+	GetLatestEmailAttachmentRaw(ctx context.Context) ([]byte, string, error)
 }
 
 type service struct {
@@ -159,19 +161,27 @@ func (s *service) GetLatestRainWarning(ctx context.Context) (string, error) {
 
 func (s *service) extractTextFromPDF(r io.Reader, pageLimit int) (string, error) {
 	// Read entire content to memory because pdf.NewReader needs io.ReaderAt and size
+	// 1. Read all content first to handle non-seeking readers and get length
 	content, err := io.ReadAll(r)
 	if err != nil {
-		return "", fmt.Errorf("failed to read PDF content: %w", err)
+		return "", fmt.Errorf("failed to read PDF body: %w", err)
+	}
+	contentLen := int64(len(content))
+	fmt.Printf("DEBUG: PDF content buffered, size: %d bytes\n", contentLen)
+
+	if contentLen == 0 {
+		return "", fmt.Errorf("PDF content is empty")
 	}
 
 	readerAt := bytes.NewReader(content)
-	pdfReader, err := pdf.NewReader(readerAt, int64(len(content)))
+	pdfReader, err := pdf.NewReader(readerAt, contentLen)
 	if err != nil {
 		return "", fmt.Errorf("failed to create PDF reader: %w", err)
 	}
 
 	var buf bytes.Buffer
 	numPages := pdfReader.NumPage()
+	fmt.Printf("DEBUG: Found PDF with %d pages\n", numPages)
 	if pageLimit > 0 && numPages > pageLimit {
 		numPages = pageLimit
 	}
@@ -181,14 +191,44 @@ func (s *service) extractTextFromPDF(r io.Reader, pageLimit int) (string, error)
 		if p.V.IsNull() {
 			continue
 		}
+
 		text, err := p.GetPlainText(nil)
 		if err != nil {
-			return "", fmt.Errorf("failed to get text from page %d: %w", i, err)
+			fmt.Printf("DEBUG: Error getting plain text from page %d: %v\n", i, err)
+			continue
 		}
+
+		if text == "" {
+			// Fallback: try to get text from tokens
+			var fallbackBuf bytes.Buffer
+			contentStruct := p.Content()
+			for _, t := range contentStruct.Text {
+				fallbackBuf.WriteString(t.S)
+			}
+			text = fallbackBuf.String()
+			if text != "" {
+				fmt.Printf("DEBUG: Page %d: PlainText empty, used FallbackText (len: %d)\n", i, len(text))
+			} else {
+				fmt.Printf("DEBUG: Page %d: Both PlainText and FallbackText are empty\n", i)
+			}
+		} else {
+			fmt.Printf("DEBUG: Page %d: PlainText length: %d\n", i, len(text))
+		}
+
 		buf.WriteString(text)
 	}
 
-	return s.cleanExtractedText(buf.String()), nil
+	rawText := buf.String()
+	fmt.Printf("DEBUG: Raw extracted text length: %d\n", len(rawText))
+	if len(rawText) > 0 {
+		snippetLen := 100
+		if len(rawText) < snippetLen {
+			snippetLen = len(rawText)
+		}
+		fmt.Printf("DEBUG: First %d chars: %s\n", snippetLen, rawText[:snippetLen])
+	}
+
+	return s.cleanExtractedText(rawText), nil
 }
 
 func (s *service) cleanExtractedText(text string) string {
@@ -262,19 +302,28 @@ func (s *service) extractTextFromXlsx(r io.Reader) (string, error) {
 	return buf.String(), nil
 }
 
-func (s *service) GetUnreadCount(ctx context.Context) (int, error) {
+func (s *service) connectIMAP() (*client.Client, error) {
 	// 1. Connect to IMAP server
 	c, err := client.DialTLS(s.conf.IMAPServer, nil)
 	if err != nil {
-		return 0, fmt.Errorf("failed to connect to IMAP: %w", err)
+		return nil, fmt.Errorf("failed to connect to IMAP: %w", err)
 	}
-	defer c.Logout()
 
 	// 2. Login
 	cleanPassword := strings.ReplaceAll(s.conf.Password, " ", "")
 	if err := c.Login(s.conf.User, cleanPassword); err != nil {
-		return 0, fmt.Errorf("failed to login to IMAP: %w", err)
+		c.Logout()
+		return nil, fmt.Errorf("failed to login to IMAP: %w", err)
 	}
+	return c, nil
+}
+
+func (s *service) GetUnreadCount(ctx context.Context) (int, error) {
+	c, err := s.connectIMAP()
+	if err != nil {
+		return 0, err
+	}
+	defer c.Logout()
 
 	// 3. Select INBOX
 	_, err = c.Select("INBOX", true) // read-only
@@ -718,6 +767,49 @@ func (s *service) GetLatestEmailByFilter(ctx context.Context) (*EmailInfo, error
 	}, nil
 }
 
+func CreateAdvancedCriteria(include []string, exclude []string, from string) *imap.SearchCriteria {
+	var root *imap.SearchCriteria
+
+	// 1. Xử lý phần INCLUDE (OR logic)
+	if len(include) > 0 {
+		root = buildRecursiveOr(include)
+	} else {
+		root = imap.NewSearchCriteria()
+	}
+
+	// 2. Xử lý phần FROM (Phải khớp với From VÀ khớp với cụm OR ở trên)
+	if from != "" {
+		root.Header.Set("From", from)
+	}
+
+	// 3. Xử lý phần EXCLUDE (Loại trừ - NOT logic)
+	for _, word := range exclude {
+		notCrit := imap.NewSearchCriteria()
+		notCrit.Text = []string{word}
+		root.Not = append(root.Not, notCrit)
+	}
+
+	return root
+}
+
+// Hàm đệ quy để build cấu trúc OR lồng nhau chuẩn IMAP
+func buildRecursiveOr(keywords []string) *imap.SearchCriteria {
+	if len(keywords) == 1 {
+		c := imap.NewSearchCriteria()
+		c.Text = []string{keywords[0]}
+		return c
+	}
+
+	curr := imap.NewSearchCriteria()
+	curr.Text = []string{keywords[0]}
+
+	parent := imap.NewSearchCriteria()
+	parent.Or = [][2]*imap.SearchCriteria{
+		{curr, buildRecursiveOr(keywords[1:])},
+	}
+	return parent
+}
+
 func (s *service) GetLatestEmailAttachmentPage1(ctx context.Context) (string, error) {
 	// 1. Connect to IMAP server
 	c, err := client.DialTLS(s.conf.IMAPServer, nil)
@@ -743,24 +835,101 @@ func (s *service) GetLatestEmailAttachmentPage1(ctx context.Context) (string, er
 	}
 
 	// 4. Search for emails from the specified sender
-	criteria := imap.NewSearchCriteria()
-	criteria.Header.Set("From", s.conf.FromFilter)
-	criteria.Text = []string{"mưa"}
+	includeWords := []string{"mưa", "thời tiết", "Bản tin"}
+	excludeWords := []string{"THỦY VĂN", "CẢNH BÁO THUỶ VĂN"} // Ví dụ từ muốn loại bỏ
+
+	criteria := CreateAdvancedCriteria(includeWords, excludeWords, s.conf.FromFilter)
 	ids, err := c.Search(criteria)
+	if err == nil {
+		sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
+	}
+	fmt.Println("====================== ", ids, err)
 	if err != nil {
 		return "", fmt.Errorf("failed to search emails: %w", err)
 	}
 
-	if len(ids) == 0 {
-		return "No emails found from " + s.conf.FromFilter, nil
+	// 5. Get Subjects for debugging
+	if len(ids) > 0 {
+		seqset := new(imap.SeqSet)
+		seqset.AddNum(ids...)
+		items := []imap.FetchItem{imap.FetchEnvelope}
+		messages := make(chan *imap.Message, len(ids))
+		done := make(chan error, 1)
+		go func() {
+			// Note: c.Fetch closes the messages channel when done
+			done <- c.Fetch(seqset, items, messages)
+		}()
+
+		fmt.Println("Found emails:")
+		for msg := range messages {
+			fmt.Printf("  ID: %d - Subject: %s\n", msg.SeqNum, msg.Envelope.Subject)
+		}
+		if err := <-done; err != nil {
+			fmt.Printf("Warning: failed to fetch envelopes: %v\n", err)
+		}
 	}
 
-	// 5. Get the latest email ID
-	latestID := ids[len(ids)-1]
-	seqset := new(imap.SeqSet)
-	seqset.AddNum(latestID)
+	// 6. Try the last few emails to find one with readable content
+	numToTry := 3
+	if len(ids) < numToTry {
+		numToTry = len(ids)
+	}
 
-	// Fetch the message body
+	for i := 0; i < numToTry; i++ {
+		latestID := ids[len(ids)-1-i]
+		fmt.Printf("DEBUG: Trying email ID %d (%d/%d)\n", latestID, i+1, numToTry)
+		content, _, _, err := s.fetchAndParseEmailExtended(c, latestID, false)
+		if err == nil && content != "" && !strings.Contains(content, "No attachment found") {
+			return content, nil
+		}
+		fmt.Printf("DEBUG: Email %d yield no usable content: %v\n", latestID, err)
+	}
+
+	return "", fmt.Errorf("no readable weather report found in the latest emails")
+}
+
+func (s *service) GetLatestEmailAttachmentRaw(ctx context.Context) ([]byte, string, error) {
+	c, err := s.connectIMAP()
+	if err != nil {
+		return nil, "", err
+	}
+	defer c.Logout()
+
+	_, err = c.Select("INBOX", true)
+	if err != nil {
+		return nil, "", err
+	}
+
+	includeWords := []string{"mưa", "thời tiết", "Bản tin"}
+	excludeWords := []string{"THỦY VĂN", "CẢNH BÁO THUỶ VĂN"}
+
+	criteria := CreateAdvancedCriteria(includeWords, excludeWords, s.conf.FromFilter)
+	ids, err := c.Search(criteria)
+	if err != nil {
+		return nil, "", err
+	}
+	sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
+
+	if len(ids) == 0 {
+		return nil, "", fmt.Errorf("no matching emails found")
+	}
+
+	latestID := ids[len(ids)-1]
+	_, raw, filename, err := s.fetchAndParseEmailExtended(c, latestID, true)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to fetch email %d: %w", latestID, err)
+	}
+	if len(raw) == 0 {
+		return nil, "", fmt.Errorf("email %d has no PDF attachment", latestID)
+	}
+
+	return raw, filename, nil
+}
+
+func (s *service) fetchAndParseEmailExtended(c *client.Client, id uint32, returnRaw bool) (string, []byte, string, error) {
+	seqset := new(imap.SeqSet)
+	seqset.AddNum(id)
+
 	var section imap.BodySectionName
 	items := []imap.FetchItem{section.FetchItem()}
 
@@ -772,47 +941,106 @@ func (s *service) GetLatestEmailAttachmentPage1(ctx context.Context) (string, er
 
 	msg := <-messages
 	if msg == nil {
-		return "Message not found", nil
+		return "", nil, "", fmt.Errorf("message not found")
 	}
 	if err := <-done; err != nil {
-		return "", fmt.Errorf("failed to fetch message: %w", err)
+		return "", nil, "", fmt.Errorf("failed to fetch message: %w", err)
 	}
 
 	r := msg.GetBody(&section)
 	if r == nil {
-		return "Message body not found", nil
+		return "", nil, "", fmt.Errorf("message body not found")
 	}
 
-	// 6. Parse message and find PDF attachment
 	mr, err := mail.CreateReader(r)
 	if err != nil {
-		return "", fmt.Errorf("failed to create mail reader: %w", err)
+		return "", nil, "", fmt.Errorf("failed to create mail reader: %w", err)
 	}
 
+	var emailBody string
+	var htmlBody string
 	for {
 		p, err := mr.NextPart()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			return "", fmt.Errorf("failed to read next part: %w", err)
+			return "", nil, "", fmt.Errorf("failed to read next part: %w", err)
 		}
 
+		cType := p.Header.Get("Content-Type")
 		switch h := p.Header.(type) {
 		case *mail.AttachmentHeader:
 			filename, _ := h.Filename()
 			lowerName := strings.ToLower(filename)
-			if strings.HasSuffix(lowerName, ".pdf") {
-				return s.extractTextFromPDF(p.Body, 1) // LIMIT to PAGE 1
+			if strings.HasSuffix(lowerName, ".pdf") || strings.Contains(strings.ToLower(cType), "application/pdf") {
+				if returnRaw {
+					b, err := io.ReadAll(p.Body)
+					return "", b, filename, err
+				}
+				pdfText, err := s.extractTextFromPDF(p.Body, 1) // Only page 1
+				if err == nil && pdfText != "" {
+					return pdfText, nil, "", nil
+				}
 			}
-			if strings.HasSuffix(lowerName, ".docx") {
-				return s.extractTextFromDocx(p.Body)
+		case *mail.InlineHeader:
+			if strings.Contains(strings.ToLower(cType), "application/pdf") {
+				if returnRaw {
+					b, err := io.ReadAll(p.Body)
+					return "", b, "inline.pdf", err
+				}
+				pdfText, err := s.extractTextFromPDF(p.Body, 1) // Only page 1
+				if err == nil && pdfText != "" {
+					return pdfText, nil, "", nil
+				}
 			}
-			if strings.HasSuffix(lowerName, ".xlsx") {
-				return s.extractTextFromXlsx(p.Body)
+			if strings.Contains(cType, "text/plain") {
+				b, _ := io.ReadAll(p.Body)
+				emailBody += string(b)
+			} else if strings.Contains(cType, "text/html") {
+				b, _ := io.ReadAll(p.Body)
+				htmlBody += string(b)
+			}
+		default:
+			if strings.Contains(strings.ToLower(cType), "application/pdf") {
+				if returnRaw {
+					b, err := io.ReadAll(p.Body)
+					return "", b, "attachment.pdf", err
+				}
+				pdfText, err := s.extractTextFromPDF(p.Body, 1) // Only page 1
+				if err == nil && pdfText != "" {
+					return pdfText, nil, "", nil
+				}
 			}
 		}
 	}
 
-	return "No attachment found in the latest email", nil
+	if emailBody != "" {
+		return s.cleanExtractedText(emailBody), nil, "", nil
+	}
+	if htmlBody != "" {
+		return s.cleanExtractedText(stripHTML(htmlBody)), nil, "", nil
+	}
+
+	return "", nil, "", nil
+}
+
+func stripHTML(html string) string {
+	// Simple regex-less HTML stripper for basic report content
+	var buf bytes.Buffer
+	inTag := false
+	for _, r := range html {
+		if r == '<' {
+			inTag = true
+			continue
+		}
+		if r == '>' {
+			inTag = false
+			continue
+		}
+		if !inTag {
+			buf.WriteRune(r)
+		}
+	}
+	return buf.String()
 }

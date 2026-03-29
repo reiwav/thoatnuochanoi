@@ -7,9 +7,33 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
+
+var vietnamTZ = time.FixedZone("Asia/Ho_Chi_Minh", 7*60*60)
+
+// convertUTCToVietnam converts a UTC timestamp string to Vietnam timezone (UTC+7).
+// Input format: "2026-03-09T04:40:11" (UTC without timezone suffix)
+// Output format: "2026-03-09T11:40:11" (Vietnam local time)
+func convertUTCToVietnam(utcStr string) string {
+	if utcStr == "" || utcStr == "-" {
+		return utcStr
+	}
+	layouts := []string{
+		"2006-01-02T15:04:05",
+		"2006-01-02 15:04:05",
+	}
+	for _, layout := range layouts {
+		t, err := time.Parse(layout, utcStr)
+		if err == nil {
+			vnTime := t.In(vietnamTZ)
+			return vnTime.Format("2006-01-02T15:04:05")
+		}
+	}
+	return utcStr
+}
 
 type RainDataResponse struct {
 	Code    int `json:"Code"`
@@ -27,11 +51,15 @@ type RainDataResponse struct {
 			Active    bool        `json:"Active"`
 		} `json:"tram"`
 		Data []struct {
+			Id          int         `json:"Id"`
 			TramId      interface{} `json:"TramId"` // Can be float64 or string
 			LuongMua_BD float64     `json:"LuongMua_BD"`
 			ThoiGian_BD string      `json:"ThoiGian_BD"`
 			LuongMua_HT float64     `json:"LuongMua_HT"`
 			ThoiGian_HT string      `json:"ThoiGian_HT"`
+			LuongMua_Tr float64     `json:"LuongMua_Tr"`
+			ThoiGian_Tr string      `json:"ThoiGian_Tr"`
+			AC          int         `json:"AC"`
 		} `json:"data"`
 	} `json:"Content"`
 }
@@ -89,6 +117,13 @@ func (s *service) GetRawRainData(ctx context.Context) (*RainDataResponse, error)
 		return nil, fmt.Errorf("failed to unmarshal rain data: %w", err)
 	}
 
+	// Convert UTC timestamps to Vietnam timezone (UTC+7)
+	for i := range rainData.Content.Data {
+		rainData.Content.Data[i].ThoiGian_BD = convertUTCToVietnam(rainData.Content.Data[i].ThoiGian_BD)
+		rainData.Content.Data[i].ThoiGian_HT = convertUTCToVietnam(rainData.Content.Data[i].ThoiGian_HT)
+		rainData.Content.Data[i].ThoiGian_Tr = convertUTCToVietnam(rainData.Content.Data[i].ThoiGian_Tr)
+	}
+
 	return &rainData, nil
 }
 
@@ -108,6 +143,11 @@ func (s *service) GetRawWaterData(ctx context.Context) (*WaterDataResponse, erro
 	var waterData WaterDataResponse
 	if err := json.Unmarshal(bodyBytes, &waterData); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal water data: %w", err)
+	}
+
+	// Convert UTC timestamps to Vietnam timezone (UTC+7)
+	for i := range waterData.Content.Data {
+		waterData.Content.Data[i].ThoiGian_HT = convertUTCToVietnam(waterData.Content.Data[i].ThoiGian_HT)
 	}
 
 	return &waterData, nil

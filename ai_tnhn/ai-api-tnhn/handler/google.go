@@ -16,6 +16,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -363,10 +364,21 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 	}
 	var lakes, rivers, phuongs, xas []itemVal
 
+	parseNum := func(v interface{}) float64 {
+		if f, ok := v.(float64); ok {
+			return f
+		}
+		if s, ok := v.(string); ok {
+			f, _ := strconv.ParseFloat(s, 64)
+			return f
+		}
+		return 0
+	}
+
 	for _, d := range waterResp.Content.Data {
 		tid, _ := d["TramId"].(string)
-		val, _ := d["ThuongLuu_HT"].(float64)
-		loai, _ := d["Loai"].(float64)
+		val := parseNum(d["ThuongLuu_HT"])
+		loai := parseNum(d["Loai"])
 		name := waterStations[tid]
 		if name == "" {
 			continue
@@ -385,8 +397,8 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 		} else if tid, ok := d["TramId"].(string); ok {
 			tidStr = tid
 		}
-		val, _ := d["LuongMua_HT"].(float64)
-		name := rainStations[tidStr]
+		val := parseNum(d["LuongMua_HT"])
+		name := strings.TrimSpace(rainStations[tidStr])
 		if name == "" {
 			continue
 		}
@@ -402,23 +414,16 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 	sort.Slice(phuongs, func(i, j int) bool { return phuongs[i].val > phuongs[j].val })
 	sort.Slice(xas, func(i, j int) bool { return xas[i].val > xas[j].val })
 
-	limit := func(vals []itemVal, n int) []itemVal {
-		if len(vals) > n {
-			return vals[:n]
-		}
-		return vals
-	}
-
-	for _, v := range limit(lakes, 5) {
+	for _, v := range lakes {
 		lakeDataRaw = append(lakeDataRaw, []string{v.name, fmt.Sprintf("%.2fm", v.val/100.0)})
 	}
-	for _, v := range limit(rivers, 5) {
+	for _, v := range rivers {
 		riverDataRaw = append(riverDataRaw, []string{v.name, fmt.Sprintf("%.2fm", v.val/100.0)})
 	}
-	for _, v := range limit(phuongs, 10) {
+	for _, v := range phuongs {
 		phuongDataRaw = append(phuongDataRaw, []string{v.name, fmt.Sprintf("%.1f", v.val)})
 	}
-	for _, v := range limit(xas, 10) {
+	for _, v := range xas {
 		xaDataRaw = append(xaDataRaw, []string{v.name, fmt.Sprintf("%.1f", v.val)})
 	}
 
@@ -471,14 +476,32 @@ KHÔNG bao gồm thông tin nhiệt độ, gió, độ ẩm hay khuyến cáo.`,
 		}
 	}
 
-	payload := map[string]interface{}{
-		"dd": dd, "mm": mm, "yyyy": yyyy, "hh": hh, "noidung": noidung, "time_mua": timeMua,
-		"so_luong_ung_ngap": soLuongUngNgap, "chi_tiet_cac_diem": chiTietCacDiem, "table_mua_phuong": phuongDataRaw, "table_mua_xa": xaDataRaw,
-		"table_song_ho": map[string]interface{}{"river": riverDataRaw, "lake": lakeDataRaw},
+	// Split tables into halves for 2-column layout
+	splitTable := func(data [][]string) ([][]string, [][]string) {
+		if len(data) <= 1 {
+			return data, [][]string{data[0]} // header only
+		}
+		header := data[0]
+		items := data[1:]
+		half := (len(items) + 1) / 2
+		t1 := append([][]string{header}, items[:half]...)
+		t2 := append([][]string{header}, items[half:]...)
+		return t1, t2
 	}
 
-	targetFilename := fmt.Sprintf("Báo cáo mưa ngày %s-%s-%s thời điểm %s.docx", dd, mm, yyyy, shortHour)
-	localTemplate := filepath.Join("doc", "Báo cáo mưa ngày {dd}-{mm}-{yyyy} thời điểm {hh}.docx")
+	phuong1, phuong2 := splitTable(phuongDataRaw)
+	xa1, xa2 := splitTable(xaDataRaw)
+
+	payload := map[string]interface{}{
+		"dd": dd, "mm": mm, "yyyy": yyyy, "hh": hh, "noidung": noidung, "time_mua": timeMua,
+		"so_luong_ung_ngap": soLuongUngNgap, "chi_tiet_cac_diem": chiTietCacDiem,
+		"table1_mua_phuong": phuong1, "table2_mua_phuong": phuong2,
+		"table1_mua_xa": xa1, "table2_mua_xa": xa2,
+		"table_song": riverDataRaw, "table_ho": lakeDataRaw,
+	}
+
+	targetFilename := fmt.Sprintf("Bao cao mua ngay %s-%s-%s thoi diem %s.docx", dd, mm, yyyy, shortHour)
+	localTemplate := filepath.Join("doc", "Bao cao mua ngay {dd}-{mm}-{yyyy} thoi diem {hh}.docx")
 	fileData, err := os.Open(localTemplate)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Template document not found"})

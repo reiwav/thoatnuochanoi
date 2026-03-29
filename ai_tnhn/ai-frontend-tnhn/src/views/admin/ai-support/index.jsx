@@ -121,8 +121,16 @@ const AiSupport = () => {
                 if (data.rainy_stations === 0) {
                     displayText = 'Hiện tại ghi nhận không có mưa tại tất cả các trạm.';
                 } else {
-                    displayText = `Tình hình mưa hiện tại:\n- Tổng số trạm: ${data.total_stations}\n- Số trạm đang có mưa: ${data.rainy_stations}\n- Trạm mưa lớn nhất: ${data.max_rain_station?.name} (${data.max_rain_station?.total_rain}mm)\n\nChi tiết một số trạm mưa lớn:\n` +
-                        data.measurements.slice(0, 5).map(m => `- ${m.name}: ${m.total_rain}mm (${m.start_time} - ${m.end_time || 'Đang mưa'})`).join('\n');
+                    // displayText = `Tình hình mưa hiện tại:\n- Tổng số trạm: ${data.total_stations}\n- Số trạm đang có mưa: ${data.rainy_stations}\n- Trạm mưa lớn nhất: ${data.max_rain_station?.name} (${data.max_rain_station?.total_rain}mm)\n\nChi tiết một số trạm mưa lớn:\n` +
+                    displayText = `Tình hình mưa hiện tại:\n` +
+                        `- Tổng số trạm: ${data.total_stations}\n` +
+                        `- Số trạm đang có mưa: ${data.rainy_stations}\n` +
+                        `- Trạm mưa lớn nhất: ${data.max_rain_station?.name} (${data.max_rain_station?.total_rain}mm)\n\n` +
+                        `Chi tiết danh sách các trạm mưa:\n` +
+                        // Loại bỏ .slice(0, 5) để lấy toàn bộ mảng measurements
+                        data.measurements.map(m =>
+                            `- ${m.name}: ${m.total_rain}mm (${m.start_time} - ${m.end_time || 'Đang mưa'})`
+                        ).join('\n');
                 }
             } else {
                 displayText = 'Không thể lấy thông tin lượng mưa lúc này.';

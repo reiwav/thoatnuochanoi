@@ -121,26 +121,26 @@ const StationRainSummary = () => {
     const notRainingCount = tableData.length - rainingCount;
 
     return (
-        <Box sx={{ 
-            width: '100%', 
-            background: 'linear-gradient(135deg, #0288d1 0%, #4fc3f7 100%)', 
-            minHeight: '100vh', 
-            p: { xs: 2, md: 4 } 
+        <Box sx={{
+            width: '100%',
+            background: 'linear-gradient(135deg, #0288d1 0%, #4fc3f7 100%)',
+            minHeight: '100vh',
+            p: { xs: 2, md: 4 }
         }}>
-            <Box sx={{ 
-                mb: 4, 
-                display: 'flex', 
-                flexDirection: 'column', 
-                alignItems: 'center', 
-                gap: 3 
+            <Box sx={{
+                mb: 4,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 3
             }}>
-                <Typography 
-                    variant="h1" 
-                    sx={{ 
-                        color: 'white', 
-                        fontWeight: 900, 
-                        textTransform: 'uppercase', 
-                        letterSpacing: { xs: 1, md: 2 }, 
+                <Typography
+                    variant="h1"
+                    sx={{
+                        color: 'white',
+                        fontWeight: 900,
+                        textTransform: 'uppercase',
+                        letterSpacing: { xs: 1, md: 2 },
                         textAlign: 'center',
                         fontSize: { xs: '1.5rem', sm: '2rem', md: '2.5rem' },
                         textShadow: '0 2px 4px rgba(0,0,0,0.3)'
@@ -149,20 +149,20 @@ const StationRainSummary = () => {
                     Trạm đo lượng mưa tự động
                 </Typography>
 
-                <Stack 
-                    direction={{ xs: 'column', sm: 'row' }} 
-                    spacing={2} 
+                <Stack
+                    direction={{ xs: 'column', sm: 'row' }}
+                    spacing={2}
                     sx={{ width: '100%', justifyContent: 'center' }}
                 >
-                    <Box sx={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: 2, 
-                        bgcolor: 'rgba(76, 175, 80, 0.9)', 
+                    <Box sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 2,
+                        bgcolor: 'rgba(76, 175, 80, 0.9)',
                         backdropFilter: 'blur(4px)',
-                        px: 3, 
-                        py: 1.5, 
-                        borderRadius: 3, 
+                        px: 3,
+                        py: 1.5,
+                        borderRadius: 3,
                         boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                         border: '1px solid rgba(255,255,255,0.2)'
                     }}>
@@ -172,15 +172,15 @@ const StationRainSummary = () => {
                         </Typography>
                     </Box>
 
-                    <Box sx={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: 2, 
-                        bgcolor: 'rgba(255, 255, 255, 0.9)', 
+                    <Box sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 2,
+                        bgcolor: 'rgba(255, 255, 255, 0.9)',
                         backdropFilter: 'blur(4px)',
-                        px: 3, 
-                        py: 1.5, 
-                        borderRadius: 3, 
+                        px: 3,
+                        py: 1.5,
+                        borderRadius: 3,
                         boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                         border: '1px solid rgba(255,255,255,0.2)'
                     }}>
@@ -201,24 +201,24 @@ const StationRainSummary = () => {
                     <Typography variant="h4" sx={{ color: 'white', fontWeight: 600 }}>Không có dữ liệu</Typography>
                 </Box>
             ) : (
-                <Box 
+                <Box
                     sx={{
                         display: 'grid',
                         gridTemplateColumns: {
                             xs: 'repeat(2, 1fr)',      // 2 cards per row on mobile
                             sm: 'repeat(3, 1fr)',      // 3 cards per row on small tablets
-                            md: 'repeat(5, 1fr)',      // 5 cards per row exactly on desktop
+                            md: 'repeat(6, 1fr)',      // 6 cards per row on desktop
                         },
-                        gap: { xs: 2, md: 3 },
+                        gap: { xs: 1, md: 1.5 },
                         alignItems: 'stretch',
                         width: '100%'
                     }}
                 >
                     {tableData.map((row) => (
                         <Card key={row.id} sx={{
-                            display: 'flex', 
+                            display: 'flex',
                             flexDirection: 'column',
-                            height: '100%', 
+                            height: '100%',
                             width: '100%',
                             borderRadius: 4,
                             boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
@@ -230,24 +230,24 @@ const StationRainSummary = () => {
                                 boxShadow: '0 12px 24px rgba(0,0,0,0.2)',
                             }
                         }}>
-                            <CardContent sx={{ 
-                                textAlign: 'center', 
-                                p: { xs: 1.5, sm: 2, md: 3 }, 
-                                flexGrow: 1, 
-                                display: 'flex', 
-                                flexDirection: 'column', 
+                            <CardContent sx={{
+                                textAlign: 'center',
+                                p: { xs: 1, sm: 1.5, md: 2 },
+                                flexGrow: 1,
+                                display: 'flex',
+                                flexDirection: 'column',
                                 justifyContent: 'space-between'
                             }}>
                                 <Box>
-                                    <Typography 
-                                        variant="h5" 
-                                        sx={{ 
-                                            color: '#0288d1', 
-                                            fontWeight: 800, 
-                                            mb: 0.5, 
-                                            textTransform: 'uppercase', 
+                                    <Typography
+                                        variant="h5"
+                                        sx={{
+                                            color: '#0288d1',
+                                            fontWeight: 800,
+                                            mb: 0.5,
+                                            textTransform: 'uppercase',
                                             lineHeight: 1.2,
-                                            fontSize: { xs: '0.9rem', sm: '1.2rem' },
+                                            fontSize: { xs: '0.8rem', sm: '1rem' },
                                             minHeight: '2.4em',
                                             display: '-webkit-box',
                                             WebkitLineClamp: 2,
@@ -258,12 +258,12 @@ const StationRainSummary = () => {
                                         {row.name}
                                     </Typography>
 
-                                    <Typography 
-                                        variant="caption" 
-                                        sx={{ 
-                                            color: 'text.secondary', 
+                                    <Typography
+                                        variant="caption"
+                                        sx={{
+                                            color: 'text.secondary',
                                             display: 'block',
-                                            mb: 2, 
+                                            mb: 2,
                                             fontWeight: 500,
                                             fontStyle: 'italic',
                                             minHeight: '2.8em',
@@ -273,27 +273,27 @@ const StationRainSummary = () => {
                                         {row.address}
                                     </Typography>
 
-                                    <Box sx={{ 
-                                        display: 'inline-flex', 
-                                        alignItems: 'center', 
-                                        gap: 1, 
-                                        px: 1.5, 
-                                        py: 0.5, 
-                                        borderRadius: 2, 
+                                    <Box sx={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: 1,
+                                        px: 1.5,
+                                        py: 0.5,
+                                        borderRadius: 2,
                                         bgcolor: row.isRaining ? 'rgba(76, 175, 80, 0.1)' : 'rgba(0,0,0,0.05)',
-                                        mb: 2
+                                        mb: 1
                                     }}>
-                                        <Box sx={{ 
-                                            width: 8, 
-                                            height: 8, 
-                                            borderRadius: '50%', 
+                                        <Box sx={{
+                                            width: 8,
+                                            height: 8,
+                                            borderRadius: '50%',
                                             bgcolor: row.isRaining ? '#4caf50' : '#9e9e9e',
                                             boxShadow: row.isRaining ? '0 0 8px #4caf50' : 'none'
                                         }} />
-                                        <Typography 
-                                            variant="caption" 
-                                            sx={{ 
-                                                fontWeight: 700, 
+                                        <Typography
+                                            variant="caption"
+                                            sx={{
+                                                fontWeight: 700,
                                                 color: row.isRaining ? '#2e7d32' : 'text.secondary',
                                                 textTransform: 'uppercase'
                                             }}
@@ -303,27 +303,24 @@ const StationRainSummary = () => {
                                     </Box>
                                 </Box>
 
-                                <Box sx={{ my: 2 }}>
-                                    <Typography 
-                                        variant="h2" 
-                                        sx={{ 
-                                            color: row.isRaining ? '#d32f2f' : '#1b5e20', 
-                                            fontWeight: 900, 
-                                            fontSize: { xs: '2.5rem', md: '3rem' }, 
+                                <Box sx={{ my: 1 }}>
+                                    <Typography
+                                        variant="h2"
+                                        sx={{
+                                            color: row.isRaining ? '#d32f2f' : '#1b5e20',
+                                            fontWeight: 900,
+                                            fontSize: { xs: '1.8rem', md: '2.2rem' },
                                             lineHeight: 1,
                                             fontFamily: '"Outfit", "Roboto", "Helvetica", "Arial", sans-serif'
                                         }}
                                     >
-                                        {row.rainSession.toFixed(1)}
-                                    </Typography>
-                                    <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', textTransform: 'uppercase' }}>
-                                        mm
+                                        {row.rainSession > 0 ? row.rainSession.toFixed(1) : '...'}
                                     </Typography>
                                 </Box>
 
-                                <Box sx={{ 
-                                    mt: 'auto', 
-                                    pt: 2, 
+                                <Box sx={{
+                                    mt: 'auto',
+                                    pt: 2,
                                     borderTop: '1px dashed rgba(0,0,0,0.1)',
                                     display: 'flex',
                                     flexDirection: 'column',

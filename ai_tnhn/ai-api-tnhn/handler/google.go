@@ -8,6 +8,7 @@ import (
 	"ai-api-tnhn/internal/service/googleapi"
 	"ai-api-tnhn/internal/service/googledrive"
 	"ai-api-tnhn/internal/service/water"
+	"ai-api-tnhn/internal/service/weather"
 	"ai-api-tnhn/utils/web"
 	"encoding/json"
 	"fmt"
@@ -19,7 +20,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-resty/resty/v2"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -28,13 +28,14 @@ type GoogleHandler struct {
 	geminiSvc   gemini.Service
 	driveSvc    googledrive.Service
 	waterSvc    water.Service
+	weatherSvc  weather.Service
 	emailSvc    email.Service
 	contextWith web.ContextWith
 	config      config.GoogleDriveConfig
 	log         logger.Logger
 }
 
-func NewGoogleHandler(googleSvc googleapi.Service, geminiSvc gemini.Service, driveSvc googledrive.Service, waterSvc water.Service, emailSvc email.Service, contextWith web.ContextWith, conf config.GoogleDriveConfig, log logger.Logger) *GoogleHandler {
+func NewGoogleHandler(googleSvc googleapi.Service, geminiSvc gemini.Service, driveSvc googledrive.Service, waterSvc water.Service, emailSvc email.Service, contextWith web.ContextWith, conf config.GoogleDriveConfig, log logger.Logger, weatherSvc weather.Service) *GoogleHandler {
 	return &GoogleHandler{
 		googleSvc:   googleSvc,
 		geminiSvc:   geminiSvc,
@@ -44,6 +45,7 @@ func NewGoogleHandler(googleSvc googleapi.Service, geminiSvc gemini.Service, dri
 		contextWith: contextWith,
 		config:      conf,
 		log:         log,
+		weatherSvc:  weatherSvc,
 	}
 }
 
@@ -222,11 +224,7 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 
 	h.log.GetLogger().Infof(">>> Generating report V3 for %s-%s-%s %s", dd, mm, yyyy, hh)
 
-	waterURL := "https://noibo.thoatnuochanoi.vn/api/thuytri/getallmucnuoc?id=3a1a672f-c56f-4752-b86c-455e30427b87"
-	rainURL := "https://noibo.thoatnuochanoi.vn/api/thuytri/getallrain?id=3a1a672f-c56f-4752-b86c-455e30427b87"
-
 	g, gCtx := errgroup.WithContext(ctx)
-	client := resty.New()
 	var waterResp, rainResp struct {
 		Content struct {
 			Tram []map[string]interface{} `json:"tram"`
@@ -236,18 +234,51 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 
 	// 1. Fetch Water Data
 	g.Go(func() error {
-		wResp, err := client.R().SetContext(gCtx).SetResult(&waterResp).Get(waterURL)
-		if err != nil || wResp.IsError() {
-			h.log.GetLogger().Warnf("Failed to fetch water data: %v", err)
+		wData, err := h.weatherSvc.GetRawWaterData(gCtx)
+		if err != nil {
+			h.log.GetLogger().Warnf("Failed to fetch water data via weatherSvc: %v", err)
+			return nil
+		}
+		// Map back to waterResp for compatibility with existing code
+		for _, t := range wData.Content.Tram {
+			waterResp.Content.Tram = append(waterResp.Content.Tram, map[string]interface{}{
+				"Id":      t.Id,
+				"TenTram": t.TenTram,
+				"Loai":    t.Loai,
+			})
+		}
+		for _, d := range wData.Content.Data {
+			waterResp.Content.Data = append(waterResp.Content.Data, map[string]interface{}{
+				"TramId":       d.TramId,
+				"ThuongLuu_HT": d.ThuongLuu_HT,
+				"Loai":         float64(d.Loai),
+			})
 		}
 		return nil
 	})
 
 	// 2. Fetch Rain Data
 	g.Go(func() error {
-		rResp, err := client.R().SetContext(gCtx).SetResult(&rainResp).Get(rainURL)
-		if err != nil || rResp.IsError() {
-			h.log.GetLogger().Warnf("Failed to fetch rain data: %v", err)
+		rData, err := h.weatherSvc.GetRawRainData(gCtx)
+		if err != nil {
+			h.log.GetLogger().Warnf("Failed to fetch rain data via weatherSvc: %v", err)
+			return nil
+		}
+		// Map back to rainResp for compatibility
+		for _, t := range rData.Content.Tram {
+			rainResp.Content.Tram = append(rainResp.Content.Tram, map[string]interface{}{
+				"Id":        t.Id,
+				"TenPhuong": t.TenPhuong,
+				"TenTram":   t.TenTram,
+			})
+		}
+		for _, d := range rData.Content.Data {
+			rainResp.Content.Data = append(rainResp.Content.Data, map[string]interface{}{
+				"TramId":      d.TramId,
+				"LuongMua_HT": d.LuongMua_HT,
+				"ThoiGian_BD": d.ThoiGian_BD,
+				"ThoiGian_HT": d.ThoiGian_HT,
+			})
 		}
 		return nil
 	})
@@ -432,9 +463,7 @@ func (h *GoogleHandler) GenerateQuickReportText(c *gin.Context) {
 	reportTime := now.Format("15h04")
 	reportDate := now.Format("02/01/2006")
 
-	rainURL := "https://noibo.thoatnuochanoi.vn/api/thuytri/getallrain?id=3a1a672f-c56f-4752-b86c-455e30427b87"
 	g, gCtx := errgroup.WithContext(ctx)
-	client := resty.New()
 	var rainResp struct {
 		Content struct {
 			Tram []map[string]interface{} `json:"tram"`
@@ -444,7 +473,26 @@ func (h *GoogleHandler) GenerateQuickReportText(c *gin.Context) {
 
 	// 1. Fetch Rain Data
 	g.Go(func() error {
-		client.R().SetContext(gCtx).SetResult(&rainResp).Get(rainURL)
+		rData, err := h.weatherSvc.GetRawRainData(gCtx)
+		if err != nil {
+			h.log.GetLogger().Warnf("Failed to fetch rain data via weatherSvc: %v", err)
+			return nil
+		}
+		for _, t := range rData.Content.Tram {
+			rainResp.Content.Tram = append(rainResp.Content.Tram, map[string]interface{}{
+				"Id":        t.Id,
+				"TenPhuong": t.TenPhuong,
+				"TenTram":   t.TenTram,
+			})
+		}
+		for _, d := range rData.Content.Data {
+			rainResp.Content.Data = append(rainResp.Content.Data, map[string]interface{}{
+				"TramId":      d.TramId,
+				"LuongMua_HT": d.LuongMua_HT,
+				"ThoiGian_BD": d.ThoiGian_BD,
+				"ThoiGian_HT": d.ThoiGian_HT,
+			})
+		}
 		return nil
 	})
 

@@ -146,9 +146,9 @@ func (s *service) GetRawWaterData(ctx context.Context) (*WaterDataResponse, erro
 	}
 
 	// Convert UTC timestamps to Vietnam timezone (UTC+7)
-	for i := range waterData.Content.Data {
-		waterData.Content.Data[i].ThoiGian_HT = convertUTCToVietnam(waterData.Content.Data[i].ThoiGian_HT)
-	}
+	// for i := range waterData.Content.Data {
+	// 	waterData.Content.Data[i].ThoiGian_HT = convertUTCToVietnam(waterData.Content.Data[i].ThoiGian_HT)
+	// }
 
 	return &waterData, nil
 }

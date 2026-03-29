@@ -699,11 +699,40 @@ func (h *GoogleHandler) GenerateAIDynamicReport(c *gin.Context) {
 	ctx := c.Request.Context()
 	userID, _ := h.contextWith.GetUserID(c)
 
-	prompt := `Dựa trên dữ liệu thực tế hiện tại từ hệ thống, hãy thực hiện các bước sau:
+	g, gCtx := errgroup.WithContext(ctx)
+
+	// 1. OCR: Extract weather forecast from latest email PDF (Page 1)
+	emailContent := ""
+	g.Go(func() error {
+		if h.emailSvc != nil {
+			raw, _, err := h.emailSvc.GetLatestEmailAttachmentRaw(gCtx)
+			if err == nil && len(raw) > 0 {
+				if ocrText, geminiErr := h.geminiSvc.ExtractTextFromPDF(gCtx, raw); geminiErr == nil && ocrText != "" {
+					emailContent = ocrText
+					h.log.GetLogger().Infof("DynamicReport: Gemini OCR successful (Page 1), %d characters", len(ocrText))
+				}
+			}
+		}
+		return nil
+	})
+
+	_ = g.Wait()
+
+	emailSection := ""
+	if emailContent != "" {
+		emailSection = fmt.Sprintf(`
+4. Dưới đây là nội dung bản tin dự báo/cảnh báo thời tiết mới nhất (Trang 1):
+---
+%s
+---
+Hãy phân tích nguyên nhân gây mưa (hình thế thời tiết) và dự báo tiếp theo từ nội dung trên.`, emailContent)
+	}
+
+	prompt := fmt.Sprintf(`Dựa trên dữ liệu thực tế hiện tại từ hệ thống, hãy thực hiện các bước sau:
 1. Tổng hợp tình hình mưa hiện tại (lượng mưa lớn nhất ở đâu, bao nhiêu điểm đang có mưa).
 2. Kiểm tra tình hình ngập lụt (có bao nhiêu điểm đang ngập, vị trí cụ thể và XÍ NGHIỆP đang quản lý/ứng trực tại đó).
 3. Kiểm tra mực nước sông và hồ hiện tại (trình trạng hạ mực nước để đón mưa).
-4. (Nếu có) Đọc nội dung email cảnh báo/dự báo thời tiết gần nhất để biết nguyên nhân và dự báo tiếp theo.
+%s
 
 Từ các dữ liệu trên, hãy viết một bản BÁO CÁO TỔNG HỢP TÌNH HÌNH THOÁT NƯỚC VÀ PHÒNG CHỐNG ÚNG NGẬP tại Hà Nội ngay lúc này. 
 
@@ -713,7 +742,7 @@ YÊU CẦU:
 - Hiển thị rõ tên XÍ NGHIỆP quản lý cho từng điểm ngập để lãnh đạo nắm được đơn vị chịu trách nhiệm.
 - Làm nổi bật những vấn đề cấp bách (nếu có).
 - Kết cấu báo cáo rõ ràng bằng tiếng Việt.
-- Không sử dụng ngôn ngữ quá máy móc, hãy viết như một chuyên gia đang báo cáo cho lãnh đạo.`
+- Không sử dụng ngôn ngữ quá máy móc, hãy viết như một chuyên gia đang báo cáo cho lãnh đạo.`, emailSection)
 
 	aiResult, err := h.geminiSvc.Chat(ctx, prompt, nil, userID)
 	if err != nil {

@@ -414,16 +414,23 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 	sort.Slice(phuongs, func(i, j int) bool { return phuongs[i].val > phuongs[j].val })
 	sort.Slice(xas, func(i, j int) bool { return xas[i].val > xas[j].val })
 
-	for _, v := range lakes {
+	limit := func(vals []itemVal, n int) []itemVal {
+		if len(vals) > n {
+			return vals[:n]
+		}
+		return vals
+	}
+
+	for _, v := range limit(lakes, 5) {
 		lakeDataRaw = append(lakeDataRaw, []string{v.name, fmt.Sprintf("%.2fm", v.val/100.0)})
 	}
-	for _, v := range rivers {
+	for _, v := range limit(rivers, 5) {
 		riverDataRaw = append(riverDataRaw, []string{v.name, fmt.Sprintf("%.2fm", v.val/100.0)})
 	}
-	for _, v := range phuongs {
+	for _, v := range limit(phuongs, 10) {
 		phuongDataRaw = append(phuongDataRaw, []string{v.name, fmt.Sprintf("%.1f", v.val)})
 	}
-	for _, v := range xas {
+	for _, v := range limit(xas, 10) {
 		xaDataRaw = append(xaDataRaw, []string{v.name, fmt.Sprintf("%.1f", v.val)})
 	}
 
@@ -756,7 +763,13 @@ func (h *GoogleHandler) GenerateAIDynamicReport(c *gin.Context) {
 			key := fmt.Sprintf("%v", t.Id)
 			stations[key] = name
 		}
-		var lines []string
+		type rainItem struct {
+			name string
+			val  float64
+			bd   string
+			ht   string
+		}
+		var items []rainItem
 		rainyCount := 0
 		for _, d := range rData.Content.Data {
 			if d.LuongMua_HT > 0 {
@@ -766,9 +779,15 @@ func (h *GoogleHandler) GenerateAIDynamicReport(c *gin.Context) {
 				if name == "" {
 					name = fmt.Sprintf("Trạm %v", d.TramId)
 				}
-				lines = append(lines, fmt.Sprintf("  - %s: %.1fmm (từ %s đến %s)", name, d.LuongMua_HT, d.ThoiGian_BD, d.ThoiGian_HT))
+				items = append(items, rainItem{name, d.LuongMua_HT, d.ThoiGian_BD, d.ThoiGian_HT})
 			}
 		}
+		sort.Slice(items, func(i, j int) bool { return items[i].val > items[j].val })
+		var lines []string
+		for _, it := range items {
+			lines = append(lines, fmt.Sprintf("  - %s: %.1fmm (từ %s đến %s)", it.name, it.val, it.bd, it.ht))
+		}
+
 		if rainyCount > 0 {
 			rainSummary = fmt.Sprintf("Tổng số điểm đang có mưa: %d/%d trạm\nChi tiết:\n%s", rainyCount, len(rData.Content.Data), strings.Join(lines, "\n"))
 		} else {
@@ -784,7 +803,12 @@ func (h *GoogleHandler) GenerateAIDynamicReport(c *gin.Context) {
 		if err != nil || wData == nil {
 			return nil
 		}
-		var lakeLines, riverLines []string
+		type waterItem struct {
+			name string
+			val  float64
+			loai int
+		}
+		var lakes []waterItem
 		for _, d := range wData.Content.Data {
 			name := ""
 			for _, t := range wData.Content.Tram {
@@ -796,9 +820,14 @@ func (h *GoogleHandler) GenerateAIDynamicReport(c *gin.Context) {
 			if name == "" {
 				continue
 			}
-			valM := float64(d.ThuongLuu_HT) / 100.0
-			line := fmt.Sprintf("  - %s: %.2fm", name, valM)
-			if d.Loai == 2 {
+			lakes = append(lakes, waterItem{name, float64(d.ThuongLuu_HT), d.Loai})
+		}
+		sort.Slice(lakes, func(i, j int) bool { return lakes[i].val > lakes[j].val })
+
+		var lakeLines, riverLines []string
+		for _, it := range lakes {
+			line := fmt.Sprintf("  - %s: %.2fm", it.name, it.val/100.0)
+			if it.loai == 2 {
 				lakeLines = append(lakeLines, line)
 			} else {
 				riverLines = append(riverLines, line)

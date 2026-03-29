@@ -279,31 +279,37 @@ const adminPages = {
       ]
     },
     {
-      id: 'ai-contract',
-      title: 'AI Hợp đồng',
-      type: 'item',
-      url: '/admin/ai-contract',
-      icon: icons.IconMessageChatbot,
-      breadcrumbs: false,
-      roles: ['super_admin', 'manager']
-    },
-    {
-      id: 'contract-category',
-      title: 'Danh mục hợp đồng',
-      type: 'item',
-      url: '/admin/contract-category',
+      id: 'contract-management',
+      title: 'Hợp đồng',
+      type: 'collapse',
       icon: icons.IconClipboardList,
-      breadcrumbs: false,
-      roles: ['super_admin', 'manager']
-    },
-    {
-      id: 'contract',
-      title: 'Quản lý hợp đồng',
-      type: 'item',
-      url: '/admin/contract',
-      icon: icons.IconClipboardList,
-      breadcrumbs: false,
-      roles: ['super_admin', 'manager']
+      roles: ['super_admin', 'manager'],
+      children: [
+        {
+          id: 'ai-contract',
+          title: 'AI Trợ lý',
+          type: 'item',
+          url: '/admin/ai-contract',
+          icon: icons.IconMessageChatbot,
+          breadcrumbs: false
+        },
+        {
+          id: 'contract',
+          title: 'Danh sách HĐ',
+          type: 'item',
+          url: '/admin/contract',
+          icon: icons.IconList,
+          breadcrumbs: false
+        },
+        {
+          id: 'contract-category',
+          title: 'Danh mục',
+          type: 'item',
+          url: '/admin/contract-category',
+          icon: icons.IconList,
+          breadcrumbs: false
+        }
+      ]
     },
   ]
 };

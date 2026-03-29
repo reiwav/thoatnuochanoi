@@ -698,10 +698,11 @@ func (h *GoogleHandler) GenerateAIDynamicReport(c *gin.Context) {
 
 	ctx := c.Request.Context()
 	userID, _ := h.contextWith.GetUserID(c)
+	now := time.Now()
 
 	g, gCtx := errgroup.WithContext(ctx)
 
-	// 1. OCR: Extract weather forecast from latest email PDF (Page 1)
+	// === Goroutine 1: OCR email forecast ===
 	emailContent := ""
 	g.Go(func() error {
 		if h.emailSvc != nil {
@@ -709,40 +710,153 @@ func (h *GoogleHandler) GenerateAIDynamicReport(c *gin.Context) {
 			if err == nil && len(raw) > 0 {
 				if ocrText, geminiErr := h.geminiSvc.ExtractTextFromPDF(gCtx, raw); geminiErr == nil && ocrText != "" {
 					emailContent = ocrText
-					h.log.GetLogger().Infof("DynamicReport: Gemini OCR successful (Page 1), %d characters", len(ocrText))
+					h.log.GetLogger().Infof("DynamicReport: OCR OK, %d chars", len(ocrText))
 				}
 			}
 		}
 		return nil
 	})
 
+	// === Goroutine 2: Rain data ===
+	rainSummary := ""
+	g.Go(func() error {
+		rData, err := h.weatherSvc.GetRawRainData(gCtx)
+		if err != nil || rData == nil {
+			return nil
+		}
+		stations := make(map[string]string)
+		for _, t := range rData.Content.Tram {
+			name := t.TenPhuong
+			if name == "" {
+				name = t.TenTram
+			}
+			key := fmt.Sprintf("%v", t.Id)
+			stations[key] = name
+		}
+		var lines []string
+		rainyCount := 0
+		for _, d := range rData.Content.Data {
+			if d.LuongMua_HT > 0 {
+				rainyCount++
+				key := fmt.Sprintf("%v", d.TramId)
+				name := stations[key]
+				if name == "" {
+					name = fmt.Sprintf("Trạm %v", d.TramId)
+				}
+				lines = append(lines, fmt.Sprintf("  - %s: %.1fmm (từ %s đến %s)", name, d.LuongMua_HT, d.ThoiGian_BD, d.ThoiGian_HT))
+			}
+		}
+		if rainyCount > 0 {
+			rainSummary = fmt.Sprintf("Tổng số điểm đang có mưa: %d/%d trạm\nChi tiết:\n%s", rainyCount, len(rData.Content.Data), strings.Join(lines, "\n"))
+		} else {
+			rainSummary = "Hiện tại không có mưa trên toàn thành phố."
+		}
+		return nil
+	})
+
+	// === Goroutine 3: Water data (rivers + lakes) ===
+	waterSummary := ""
+	g.Go(func() error {
+		wData, err := h.weatherSvc.GetRawWaterData(gCtx)
+		if err != nil || wData == nil {
+			return nil
+		}
+		var lakeLines, riverLines []string
+		for _, d := range wData.Content.Data {
+			name := ""
+			for _, t := range wData.Content.Tram {
+				if t.Id == d.TramId {
+					name = t.TenTram
+					break
+				}
+			}
+			if name == "" {
+				continue
+			}
+			valM := float64(d.ThuongLuu_HT) / 100.0
+			line := fmt.Sprintf("  - %s: %.2fm", name, valM)
+			if d.Loai == 2 {
+				lakeLines = append(lakeLines, line)
+			} else {
+				riverLines = append(riverLines, line)
+			}
+		}
+		var parts []string
+		if len(lakeLines) > 0 {
+			parts = append(parts, fmt.Sprintf("Hồ (%d trạm):\n%s", len(lakeLines), strings.Join(lakeLines, "\n")))
+		}
+		if len(riverLines) > 0 {
+			parts = append(parts, fmt.Sprintf("Sông (%d trạm):\n%s", len(riverLines), strings.Join(riverLines, "\n")))
+		}
+		waterSummary = strings.Join(parts, "\n\n")
+		return nil
+	})
+
+	// === Goroutine 4: Inundation status ===
+	inundationSummary := ""
+	g.Go(func() error {
+		summary, err := h.googleSvc.GetInundationSummary(gCtx)
+		if err != nil || summary == nil {
+			inundationSummary = "Không có dữ liệu."
+			return nil
+		}
+		if summary.ActivePoints == 0 {
+			inundationSummary = "Hiện tại không có điểm ngập nào trên toàn thành phố."
+			return nil
+		}
+		var details []string
+		for _, pt := range summary.OngoingPoints {
+			depth := pt.Depth
+			if depth == "" {
+				depth = "chưa rõ"
+			}
+			org := pt.OrgName
+			if org == "" {
+				org = "chưa xác định"
+			}
+			details = append(details, fmt.Sprintf("  - %s (ngập %s, XN quản lý: %s)", pt.StreetName, depth, org))
+		}
+		inundationSummary = fmt.Sprintf("Tổng số điểm đang ngập: %d\nChi tiết:\n%s", summary.ActivePoints, strings.Join(details, "\n"))
+		return nil
+	})
+
+	// === Wait for all goroutines ===
 	_ = g.Wait()
 
+	// === Build prompt with pre-fetched data ===
 	emailSection := ""
 	if emailContent != "" {
 		emailSection = fmt.Sprintf(`
-4. Dưới đây là nội dung bản tin dự báo/cảnh báo thời tiết mới nhất (Trang 1):
----
-%s
----
-Hãy phân tích nguyên nhân gây mưa (hình thế thời tiết) và dự báo tiếp theo từ nội dung trên.`, emailContent)
+### 4. BẢN TIN DỰ BÁO THỜI TIẾT (Trích xuất từ email, Trang 1):
+%s`, emailContent)
 	}
 
-	prompt := fmt.Sprintf(`Dựa trên dữ liệu thực tế hiện tại từ hệ thống, hãy thực hiện các bước sau:
-1. Tổng hợp tình hình mưa hiện tại (lượng mưa lớn nhất ở đâu, bao nhiêu điểm đang có mưa).
-2. Kiểm tra tình hình ngập lụt (có bao nhiêu điểm đang ngập, vị trí cụ thể và XÍ NGHIỆP đang quản lý/ứng trực tại đó).
-3. Kiểm tra mực nước sông và hồ hiện tại (trình trạng hạ mực nước để đón mưa).
+	prompt := fmt.Sprintf(`Thời điểm báo cáo: %s ngày %s
+
+Dưới đây là DỮ LIỆU THU THẬP THỰC TẾ từ hệ thống giám sát thoát nước Hà Nội:
+
+### 1. TÌNH HÌNH MƯA:
 %s
 
-Từ các dữ liệu trên, hãy viết một bản BÁO CÁO TỔNG HỢP TÌNH HÌNH THOÁT NƯỚC VÀ PHÒNG CHỐNG ÚNG NGẬP tại Hà Nội ngay lúc này. 
+### 2. MỰC NƯỚC SÔNG VÀ HỒ:
+%s
+
+### 3. TÌNH HÌNH ÚNG NGẬP:
+%s
+%s
+
+Dựa trên DỮ LIỆU THỰC TẾ ở trên, hãy viết một bản BÁO CÁO TỔNG HỢP TÌNH HÌNH THOÁT NƯỚC VÀ PHÒNG CHỐNG ÚNG NGẬP tại Hà Nội.
 
 YÊU CẦU:
 - Văn phong chuyên nghiệp, súc tích, chính xác.
-- Sử dụng các thông số kỹ thuật thực tế thu thập được.
-- Hiển thị rõ tên XÍ NGHIỆP quản lý cho từng điểm ngập để lãnh đạo nắm được đơn vị chịu trách nhiệm.
-- Làm nổi bật những vấn đề cấp bách (nếu có).
+- Sử dụng ĐÚNG các thông số kỹ thuật đã cung cấp ở trên, KHÔNG tự bịa số liệu.
+- Hiển thị rõ tên XÍ NGHIỆP quản lý cho từng điểm ngập.
+- Phân tích nguyên nhân mưa dựa trên bản tin dự báo (nếu có).
+- Làm nổi bật các vấn đề cấp bách.
 - Kết cấu báo cáo rõ ràng bằng tiếng Việt.
-- Không sử dụng ngôn ngữ quá máy móc, hãy viết như một chuyên gia đang báo cáo cho lãnh đạo.`, emailSection)
+- Viết như một chuyên gia đang báo cáo cho lãnh đạo.`,
+		now.Format("15h04"), now.Format("02/01/2006"),
+		rainSummary, waterSummary, inundationSummary, emailSection)
 
 	aiResult, err := h.geminiSvc.Chat(ctx, prompt, nil, userID)
 	if err != nil {

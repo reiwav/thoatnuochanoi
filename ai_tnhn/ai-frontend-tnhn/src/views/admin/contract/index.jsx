@@ -3,11 +3,11 @@ import {
     Button, Table, TableBody,
     TableCell, TableContainer, TableHead, TableRow, Paper,
     IconButton, CircularProgress, Typography, Collapse,
-    Box, useTheme, useMediaQuery, Stack
+    Box, useTheme, useMediaQuery, Stack, TextField, InputAdornment
 } from '@mui/material';
 import { 
     IconTrash, IconPlus, IconEdit, IconRefresh, 
-    IconFileText, IconChevronDown, IconChevronUp, IconCash
+    IconFileText, IconChevronDown, IconChevronUp, IconCash, IconSearch
 } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 import MainCard from 'ui-component/cards/MainCard';
@@ -151,11 +151,16 @@ const ContractList = () => {
     const [contracts, setContracts] = useState([]);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingContract, setEditingContract] = useState(null);
+    const [filter, setFilter] = useState({
+        name: ''
+    });
 
     const loadContracts = async () => {
         setLoading(true);
         try {
-            const res = await contractApi.getAll();
+            const res = await contractApi.getAll({
+                name: filter.name
+            });
             console.log('Contracts API response:', res.data);
             if (res.data?.status === 'success') {
                 const dataArray = res.data.data?.data || res.data.data;
@@ -174,6 +179,16 @@ const ContractList = () => {
     useEffect(() => {
         loadContracts();
     }, []);
+
+    const handleSearchChange = (event) => {
+        setFilter({ ...filter, name: event.target.value });
+    };
+
+    const handleKeyDown = (event) => {
+        if (event.key === 'Enter') {
+            loadContracts();
+        }
+    };
 
     const handleOpenCreate = () => {
         setEditingContract(null);
@@ -225,22 +240,43 @@ const ContractList = () => {
         <MainCard
             title="Quản lý hợp đồng"
             secondary={
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                    <AnimateButton>
-                        <IconButton color="primary" onClick={loadContracts} disabled={loading}>
-                            <IconRefresh size={20} />
-                        </IconButton>
-                    </AnimateButton>
-                    <AnimateButton>
-                        <Button
-                            variant="contained"
-                            color="secondary"
-                            startIcon={<IconPlus size={18} />}
-                            onClick={handleOpenCreate}
-                        >
-                            Thêm hợp đồng
-                        </Button>
-                    </AnimateButton>
+                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                    <TextField
+                        size="small"
+                        placeholder="Tìm tên hợp đồng..."
+                        value={filter.name}
+                        onChange={handleSearchChange}
+                        onKeyDown={handleKeyDown}
+                        InputProps={{
+                            endAdornment: (
+                                <InputAdornment position="end">
+                                    <IconButton size="small" color="primary" onClick={loadContracts} edge="end">
+                                        <IconSearch size={18} />
+                                    </IconButton>
+                                </InputAdornment>
+                            ),
+                            sx: { borderRadius: '12px', bgcolor: 'grey.50', pr: 1 }
+                        }}
+                        sx={{ width: isMobile ? '180px' : '280px' }}
+                    />
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                        <AnimateButton>
+                            <IconButton color="primary" onClick={loadContracts} disabled={loading}>
+                                <IconRefresh size={20} />
+                            </IconButton>
+                        </AnimateButton>
+                        <AnimateButton>
+                            <Button
+                                variant="contained"
+                                color="secondary"
+                                startIcon={<IconPlus size={18} />}
+                                onClick={handleOpenCreate}
+                                sx={{ whiteSpace: 'nowrap' }}
+                            >
+                                {!isMobile && 'Thêm hợp đồng'}
+                            </Button>
+                        </AnimateButton>
+                    </Box>
                 </Box>
             }
         >

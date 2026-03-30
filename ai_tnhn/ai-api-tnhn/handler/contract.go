@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"ai-api-tnhn/internal/base/mgo/filter"
+	"ai-api-tnhn/handler/filters"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/service/auth"
 	"ai-api-tnhn/internal/service/contract"
@@ -67,13 +67,19 @@ func (h *ContractHandler) GetByID(c *gin.Context) {
 }
 
 func (h *ContractHandler) List(c *gin.Context) {
-	f := filter.NewPaginationFilter()
-	if err := c.ShouldBindQuery(f); err != nil {
+	req := filters.NewContractListRequest()
+	if err := c.ShouldBindQuery(req); err != nil {
 		web.AssertNil(web.BadRequest(err.Error()))
 		return
 	}
 
-	items, total, err := h.service.List(c.Request.Context(), f)
+	// Force OrgID from context
+	orgID, err := h.contextWith.GetOrgId(c)
+	if err == nil && orgID != "" && orgID != "all" {
+		req.OrgID = orgID
+	}
+
+	items, total, err := h.service.List(c.Request.Context(), req)
 	web.AssertNil(err)
 	h.SendData(c, gin.H{
 		"data":  items,

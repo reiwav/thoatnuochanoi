@@ -6,6 +6,24 @@ import * as serviceWorker from 'serviceWorker';
 import reportWebVitals from 'reportWebVitals';
 import { ConfigProvider } from 'contexts/ConfigContext';
 
+// Disable console and debugger in production
+if (import.meta.env.PROD) {
+  console.log = () => {};
+  console.debug = () => {};
+  console.info = () => {};
+  console.warn = () => {};
+  console.error = () => {};
+
+  // Debugger trap to deter inspection
+  setInterval(() => {
+    (function () {
+      return false;
+    }
+      ['constructor']('debugger')
+      ['call']());
+  }, 1000);
+}
+
 // style + assets
 import 'assets/scss/style.scss';
 

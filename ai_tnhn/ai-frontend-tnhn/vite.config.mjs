@@ -17,7 +17,11 @@ export default defineConfig(({ mode }) => {
       host: true
     },
     build: {
-      chunkSizeWarningLimit: 1600
+      chunkSizeWarningLimit: 1600,
+      sourcemap: false
+    },
+    esbuild: {
+      drop: mode === 'production' ? ['console', 'debugger'] : []
     },
     preview: {
       open: true,

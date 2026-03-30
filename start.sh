@@ -15,6 +15,11 @@ echo -e "${BLUE}===============================================${NC}"
 echo -e "${BLUE}   Starting Thoat Nuoc Ha Noi Application...   ${NC}"
 echo -e "${BLUE}===============================================${NC}"
 
+# Kill existing processes on ports
+echo -e "${RED}[Cleanup] Killing existing processes on port 8089...${NC}"
+lsof -i :8089 -t 2>/dev/null | xargs kill -9 2>/dev/null
+sleep 1
+
 # Function to kill child processes on exit
 cleanup() {
     echo -e "\n${RED}Stopping services...${NC}"

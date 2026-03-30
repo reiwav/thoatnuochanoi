@@ -168,7 +168,7 @@ func main() {
 	weatherHandler := handler.NewWeatherHandler(weatherService)
 	contractCategoryHandler := handler.NewContractCategoryHandler(contractCategoryService, authService, contextWith)
 	contractHandler := handler.NewContractHandler(contractService, authService, contextWith)
-	googleHandler := handler.NewGoogleHandler(googleApiService, geminiService, driveService, waterService, emailService, contextWith, confg.GoogleDriveConfig, log)
+	googleHandler := handler.NewGoogleHandler(googleApiService, geminiService, driveService, waterService, emailService, contextWith, confg.GoogleDriveConfig, log, weatherService)
 	mid := middleware.NewMiddleware(confg, tokenRepo, contextWith, log)
 	handlers := router.HandlerFuncs{
 		Logger:                         log,

@@ -125,26 +125,26 @@ const StationWaterSummary = () => {
     );
 
     return (
-        <Box sx={{ 
-            width: '100%', 
-            background: 'linear-gradient(135deg, #1a237e 0%, #4fc3f7 100%)', 
-            minHeight: '100vh', 
-            p: { xs: 2, md: 4 } 
+        <Box sx={{
+            width: '100%',
+            background: 'linear-gradient(135deg, #1a237e 0%, #4fc3f7 100%)',
+            minHeight: '100vh',
+            p: { xs: 2, md: 4 }
         }}>
-            <Box sx={{ 
-                mb: 4, 
-                display: 'flex', 
-                flexDirection: 'column', 
-                alignItems: 'center', 
-                gap: 3 
+            <Box sx={{
+                mb: 4,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 3
             }}>
-                <Typography 
-                    variant="h1" 
-                    sx={{ 
-                        color: 'white', 
-                        fontWeight: 900, 
-                        textTransform: 'uppercase', 
-                        letterSpacing: { xs: 1, md: 2 }, 
+                <Typography
+                    variant="h1"
+                    sx={{
+                        color: 'white',
+                        fontWeight: 900,
+                        textTransform: 'uppercase',
+                        letterSpacing: { xs: 1, md: 2 },
                         textAlign: 'center',
                         fontSize: { xs: '1.5rem', sm: '2rem', md: '2.5rem' },
                         textShadow: '0 2px 4px rgba(0,0,0,0.3)'
@@ -209,24 +209,24 @@ const StationWaterSummary = () => {
                     <Typography variant="h4" sx={{ color: 'white', fontWeight: 600 }}>Không có dữ liệu</Typography>
                 </Box>
             ) : (
-                <Box 
+                <Box
                     sx={{
                         display: 'grid',
                         gridTemplateColumns: {
                             xs: 'repeat(2, 1fr)',      // 2 cards per row on mobile
                             sm: 'repeat(3, 1fr)',      // 3 cards per row on small tablets
-                            md: 'repeat(5, 1fr)',      // 5 cards per row exactly on desktop
+                            md: 'repeat(6, 1fr)',      // 6 cards per row on desktop
                         },
-                        gap: { xs: 2, md: 3 },
+                        gap: { xs: 1, md: 1.5 },
                         alignItems: 'stretch',
                         width: '100%'
                     }}
                 >
                     {activeData.map((row) => (
                         <Card key={row.id} sx={{
-                            display: 'flex', 
+                            display: 'flex',
                             flexDirection: 'column',
-                            height: '100%', 
+                            height: '100%',
                             width: '100%',
                             borderRadius: 4,
                             boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
@@ -238,24 +238,24 @@ const StationWaterSummary = () => {
                                 boxShadow: '0 12px 24px rgba(0,0,0,0.2)',
                             }
                         }}>
-                            <CardContent sx={{ 
-                                textAlign: 'center', 
-                                p: { xs: 1.5, sm: 2, md: 3 }, 
-                                flexGrow: 1, 
-                                display: 'flex', 
-                                flexDirection: 'column', 
+                            <CardContent sx={{
+                                textAlign: 'center',
+                                p: { xs: 1, sm: 1.5, md: 2 },
+                                flexGrow: 1,
+                                display: 'flex',
+                                flexDirection: 'column',
                                 justifyContent: 'space-between'
                             }}>
                                 <Box>
-                                    <Typography 
-                                        variant="h5" 
-                                        sx={{ 
-                                            color: '#1a237e', 
-                                            fontWeight: 800, 
-                                            mb: 2, 
-                                            textTransform: 'uppercase', 
+                                    <Typography
+                                        variant="h5"
+                                        sx={{
+                                            color: '#1a237e',
+                                            fontWeight: 800,
+                                            mb: 1,
+                                            textTransform: 'uppercase',
                                             lineHeight: 1.2,
-                                            fontSize: { xs: '0.9rem', sm: '1.2rem' },
+                                            fontSize: { xs: '0.8rem', sm: '1rem' },
                                             minHeight: '2.4em',
                                             display: 'flex',
                                             alignItems: 'center',
@@ -266,35 +266,30 @@ const StationWaterSummary = () => {
                                     </Typography>
                                 </Box>
 
-                                <Box sx={{ my: 2 }}>
-                                    <Typography 
-                                        variant="h2" 
-                                        sx={{ 
-                                            color: '#1b5e20', 
-                                            fontWeight: 900, 
-                                            fontSize: { xs: '2.5rem', md: '3rem' }, 
+                                <Box sx={{ my: 1 }}>
+                                    <Typography
+                                        variant="h2"
+                                        sx={{
+                                            color: '#1b5e20',
+                                            fontWeight: 900,
+                                            fontSize: { xs: '1.8rem', md: '2.2rem' },
                                             lineHeight: 1,
                                             fontFamily: '"Outfit", "Roboto", "Helvetica", "Arial", sans-serif'
                                         }}
                                     >
-                                        {row.level.toFixed(2)}
-                                    </Typography>
-                                    <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', textTransform: 'uppercase' }}>
-                                        m
+                                        {row.level > 0 ? row.level.toFixed(2) : '...'}
                                     </Typography>
                                 </Box>
 
-                                <Box sx={{ 
-                                    mt: 'auto', 
-                                    pt: 2, 
+                                <Box sx={{
+                                    mt: 'auto',
+                                    pt: 2,
                                     borderTop: '1px dashed rgba(0,0,0,0.1)',
                                     display: 'flex',
                                     flexDirection: 'column',
                                     gap: 0.5
                                 }}>
-                                    <Typography variant="caption" sx={{ display: 'flex', justifyContent: 'center', color: 'text.secondary', fontWeight: 600 }}>
-                                        Cập nhật:
-                                    </Typography>
+
                                     <Typography variant="caption" sx={{ fontWeight: 700, color: '#333' }}>
                                         {row.time}
                                     </Typography>

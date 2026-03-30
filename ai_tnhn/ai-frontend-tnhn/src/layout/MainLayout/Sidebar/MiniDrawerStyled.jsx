@@ -12,6 +12,7 @@ function openedMixin(theme) {
     zIndex: 1099,
     background: theme.vars.palette.background.default,
     overflowX: 'hidden',
+    overflowY: 'hidden',
     boxShadow: 'none',
     transition: theme.transitions.create('width', {
       easing: theme.transitions.easing.sharp,
@@ -26,6 +27,7 @@ function closedMixin(theme) {
     zIndex: 1099,
     background: theme.vars.palette.background.default,
     overflowX: 'hidden',
+    overflowY: 'hidden',
     width: 72,
     transition: theme.transitions.create('width', {
       easing: theme.transitions.easing.sharp,

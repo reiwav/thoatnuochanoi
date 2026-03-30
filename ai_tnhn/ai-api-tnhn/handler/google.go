@@ -8,6 +8,7 @@ import (
 	"ai-api-tnhn/internal/service/googleapi"
 	"ai-api-tnhn/internal/service/googledrive"
 	"ai-api-tnhn/internal/service/water"
+	"ai-api-tnhn/internal/service/weather"
 	"ai-api-tnhn/utils/web"
 	"encoding/json"
 	"fmt"
@@ -15,11 +16,11 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-resty/resty/v2"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -28,13 +29,14 @@ type GoogleHandler struct {
 	geminiSvc   gemini.Service
 	driveSvc    googledrive.Service
 	waterSvc    water.Service
+	weatherSvc  weather.Service
 	emailSvc    email.Service
 	contextWith web.ContextWith
 	config      config.GoogleDriveConfig
 	log         logger.Logger
 }
 
-func NewGoogleHandler(googleSvc googleapi.Service, geminiSvc gemini.Service, driveSvc googledrive.Service, waterSvc water.Service, emailSvc email.Service, contextWith web.ContextWith, conf config.GoogleDriveConfig, log logger.Logger) *GoogleHandler {
+func NewGoogleHandler(googleSvc googleapi.Service, geminiSvc gemini.Service, driveSvc googledrive.Service, waterSvc water.Service, emailSvc email.Service, contextWith web.ContextWith, conf config.GoogleDriveConfig, log logger.Logger, weatherSvc weather.Service) *GoogleHandler {
 	return &GoogleHandler{
 		googleSvc:   googleSvc,
 		geminiSvc:   geminiSvc,
@@ -44,6 +46,7 @@ func NewGoogleHandler(googleSvc googleapi.Service, geminiSvc gemini.Service, dri
 		contextWith: contextWith,
 		config:      conf,
 		log:         log,
+		weatherSvc:  weatherSvc,
 	}
 }
 
@@ -222,11 +225,7 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 
 	h.log.GetLogger().Infof(">>> Generating report V3 for %s-%s-%s %s", dd, mm, yyyy, hh)
 
-	waterURL := "https://noibo.thoatnuochanoi.vn/api/thuytri/getallmucnuoc?id=3a1a672f-c56f-4752-b86c-455e30427b87"
-	rainURL := "https://noibo.thoatnuochanoi.vn/api/thuytri/getallrain?id=3a1a672f-c56f-4752-b86c-455e30427b87"
-
 	g, gCtx := errgroup.WithContext(ctx)
-	client := resty.New()
 	var waterResp, rainResp struct {
 		Content struct {
 			Tram []map[string]interface{} `json:"tram"`
@@ -236,29 +235,74 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 
 	// 1. Fetch Water Data
 	g.Go(func() error {
-		wResp, err := client.R().SetContext(gCtx).SetResult(&waterResp).Get(waterURL)
-		if err != nil || wResp.IsError() {
-			h.log.GetLogger().Warnf("Failed to fetch water data: %v", err)
+		wData, err := h.weatherSvc.GetRawWaterData(gCtx)
+		if err != nil {
+			h.log.GetLogger().Warnf("Failed to fetch water data via weatherSvc: %v", err)
+			return nil
+		}
+		// Map back to waterResp for compatibility with existing code
+		for _, t := range wData.Content.Tram {
+			waterResp.Content.Tram = append(waterResp.Content.Tram, map[string]interface{}{
+				"Id":      t.Id,
+				"TenTram": t.TenTram,
+				"Loai":    t.Loai,
+			})
+		}
+		for _, d := range wData.Content.Data {
+			waterResp.Content.Data = append(waterResp.Content.Data, map[string]interface{}{
+				"TramId":       d.TramId,
+				"ThuongLuu_HT": d.ThuongLuu_HT,
+				"Loai":         float64(d.Loai),
+			})
 		}
 		return nil
 	})
 
 	// 2. Fetch Rain Data
 	g.Go(func() error {
-		rResp, err := client.R().SetContext(gCtx).SetResult(&rainResp).Get(rainURL)
-		if err != nil || rResp.IsError() {
-			h.log.GetLogger().Warnf("Failed to fetch rain data: %v", err)
+		rData, err := h.weatherSvc.GetRawRainData(gCtx)
+		if err != nil {
+			h.log.GetLogger().Warnf("Failed to fetch rain data via weatherSvc: %v", err)
+			return nil
+		}
+		// Map back to rainResp for compatibility
+		for _, t := range rData.Content.Tram {
+			rainResp.Content.Tram = append(rainResp.Content.Tram, map[string]interface{}{
+				"Id":        t.Id,
+				"TenPhuong": t.TenPhuong,
+				"TenTram":   t.TenTram,
+			})
+		}
+		for _, d := range rData.Content.Data {
+			rainResp.Content.Data = append(rainResp.Content.Data, map[string]interface{}{
+				"TramId":      d.TramId,
+				"LuongMua_HT": d.LuongMua_HT,
+				"ThoiGian_BD": d.ThoiGian_BD,
+				"ThoiGian_HT": d.ThoiGian_HT,
+			})
 		}
 		return nil
 	})
 
-	// 3. Fetch Email Attachment
+	// 3. Fetch Email Attachment (OCR first, standard fallback)
 	extractedContent := ""
 	g.Go(func() error {
 		if h.emailSvc != nil {
-			if content, err := h.emailSvc.GetLatestEmailAttachmentPage1(gCtx); err == nil && content != "" {
-				extractedContent = content
+			// Try Gemini OCR first (handles image-based PDFs)
+			raw, _, ocrErr := h.emailSvc.GetLatestEmailAttachmentRaw(gCtx)
+			if ocrErr == nil && len(raw) > 0 {
+				ocrText, geminiErr := h.geminiSvc.ExtractTextFromPDF(gCtx, raw)
+				if geminiErr == nil && ocrText != "" {
+					extractedContent = ocrText
+					h.log.GetLogger().Infof("Gemini OCR successful (Page 1), %d characters", len(ocrText))
+					return nil
+				}
+				h.log.GetLogger().Warnf("Gemini OCR failed: %v. Falling back to standard extraction...", geminiErr)
 			}
+			// Fallback to standard extraction
+			// if content, err := h.emailSvc.GetLatestEmailAttachmentPage1(gCtx); err == nil && content != "" {
+			// 	extractedContent = content
+			// }
 		}
 		return nil
 	})
@@ -320,22 +364,49 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 	}
 	var lakes, rivers, phuongs, xas []itemVal
 
+	parseNum := func(v interface{}) float64 {
+		if f, ok := v.(float64); ok {
+			return f
+		}
+		if s, ok := v.(string); ok {
+			f, _ := strconv.ParseFloat(s, 64)
+			return f
+		}
+		return 0
+	}
+
 	for _, d := range waterResp.Content.Data {
 		tid, _ := d["TramId"].(string)
-		val, _ := d["ThuongLuu_HT"].(float64)
-		loai, _ := d["Loai"].(float64)
+		val := parseNum(d["ThuongLuu_HT"])
+		loai := parseNum(d["Loai"])
 		name := waterStations[tid]
-		if name == "" { continue }
-		if loai == 2 { lakes = append(lakes, itemVal{name, val}) } else { rivers = append(rivers, itemVal{name, val}) }
+		if name == "" {
+			continue
+		}
+		if loai == 2 {
+			lakes = append(lakes, itemVal{name, val})
+		} else {
+			rivers = append(rivers, itemVal{name, val})
+		}
 	}
 
 	for _, d := range rainResp.Content.Data {
 		var tidStr string
-		if tid, ok := d["TramId"].(float64); ok { tidStr = fmt.Sprintf("%.0f", tid) } else if tid, ok := d["TramId"].(string); ok { tidStr = tid }
-		val, _ := d["LuongMua_HT"].(float64)
-		name := rainStations[tidStr]
-		if name == "" { continue }
-		if strings.Contains(strings.ToLower(name), "xã") { xas = append(xas, itemVal{name, val}) } else { phuongs = append(phuongs, itemVal{name, val}) }
+		if tid, ok := d["TramId"].(float64); ok {
+			tidStr = fmt.Sprintf("%.0f", tid)
+		} else if tid, ok := d["TramId"].(string); ok {
+			tidStr = tid
+		}
+		val := parseNum(d["LuongMua_HT"])
+		name := strings.TrimSpace(rainStations[tidStr])
+		if name == "" {
+			continue
+		}
+		if strings.Contains(strings.ToLower(name), "xã") {
+			xas = append(xas, itemVal{name, val})
+		} else {
+			phuongs = append(phuongs, itemVal{name, val})
+		}
 	}
 
 	sort.Slice(lakes, func(i, j int) bool { return lakes[i].val > lakes[j].val })
@@ -344,23 +415,37 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 	sort.Slice(xas, func(i, j int) bool { return xas[i].val > xas[j].val })
 
 	limit := func(vals []itemVal, n int) []itemVal {
-		if len(vals) > n { return vals[:n] }
+		if len(vals) > n {
+			return vals[:n]
+		}
 		return vals
 	}
 
-	for _, v := range limit(lakes, 5) { lakeDataRaw = append(lakeDataRaw, []string{v.name, fmt.Sprintf("%.2fm", v.val/100.0)}) }
-	for _, v := range limit(rivers, 5) { riverDataRaw = append(riverDataRaw, []string{v.name, fmt.Sprintf("%.2fm", v.val/100.0)}) }
-	for _, v := range limit(phuongs, 10) { phuongDataRaw = append(phuongDataRaw, []string{v.name, fmt.Sprintf("%.1f", v.val)}) }
-	for _, v := range limit(xas, 10) { xaDataRaw = append(xaDataRaw, []string{v.name, fmt.Sprintf("%.1f", v.val)}) }
+	for _, v := range limit(lakes, 5) {
+		lakeDataRaw = append(lakeDataRaw, []string{v.name, fmt.Sprintf("%.2fm", v.val/100.0)})
+	}
+	for _, v := range limit(rivers, 5) {
+		riverDataRaw = append(riverDataRaw, []string{v.name, fmt.Sprintf("%.2fm", v.val/100.0)})
+	}
+	for _, v := range limit(phuongs, 10) {
+		phuongDataRaw = append(phuongDataRaw, []string{v.name, fmt.Sprintf("%.1f", v.val)})
+	}
+	for _, v := range limit(xas, 10) {
+		xaDataRaw = append(xaDataRaw, []string{v.name, fmt.Sprintf("%.1f", v.val)})
+	}
 
 	timeMua := ""
 	var minStart, maxEnd time.Time
 	parseT := func(s interface{}) time.Time {
-		if s == nil { return time.Time{} }
+		if s == nil {
+			return time.Time{}
+		}
 		sStr := fmt.Sprintf("%v", s)
 		layouts := []string{"02/01/2006 15:04:05", "02/01/2006 15:04", "2006-01-02 15:04:05", "2006-01-02 15:04", time.RFC3339}
 		for _, layout := range layouts {
-			if t, err := time.ParseInLocation(layout, sStr, time.Local); err == nil { return t }
+			if t, err := time.ParseInLocation(layout, sStr, time.Local); err == nil {
+				return t
+			}
 		}
 		return time.Time{}
 	}
@@ -369,28 +454,61 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 		if lmht, _ := d["LuongMua_HT"].(float64); lmht > 0 {
 			tbd := parseT(d["ThoiGian_BD"])
 			tht := parseT(d["ThoiGian_HT"])
-			if !tbd.IsZero() && (minStart.IsZero() || tbd.Before(minStart)) { minStart = tbd }
-			if !tht.IsZero() && (maxEnd.IsZero() || tht.After(maxEnd)) { maxEnd = tht }
+			if !tbd.IsZero() && (minStart.IsZero() || tbd.Before(minStart)) {
+				minStart = tbd
+			}
+			if !tht.IsZero() && (maxEnd.IsZero() || tht.After(maxEnd)) {
+				maxEnd = tht
+			}
 		}
 	}
-	if !minStart.IsZero() && !maxEnd.IsZero() { timeMua = fmt.Sprintf("%s đến %s", minStart.Format("15h04'"), maxEnd.Format("15h04'")) }
+	if !minStart.IsZero() && !maxEnd.IsZero() {
+		timeMua = fmt.Sprintf("%s đến %s", minStart.Format("15h04'"), maxEnd.Format("15h04'"))
+	}
 
 	noidung := "Báo cáo tình hình mưa"
 	if h.geminiSvc != nil && extractedContent != "" {
-		prompt := fmt.Sprintf(`hãy phân tích và viết nội dung báo cáo thật ngắn gọn (1-2 câu), tập trung vào nguyên nhân gây mưa (nếu có) dựa trên: số điểm đang có mưa (%d), và nội dung từ email dự báo/cảnh báo: [%s]. Tuân thủ quy tắc: Nếu < 5 điểm là "Mưa vùng", 5-10: "Mưa rải rác trên diện rộng", > 10: "Mưa trên diện rộng". KHÔNG bao gồm thông tin nhiệt độ, gió, độ ẩm hay các dự báo thời tiết chi tiết về con người/giao thông.`, len(phuongs)+len(xas), extractedContent)
-		if aiResult, err := h.geminiSvc.Chat(ctx, prompt, nil, "system_report"); err == nil && aiResult != "" { 
-			noidung = aiResult 
+		prompt := fmt.Sprintf(`Dựa trên nội dung bản tin dự báo thời tiết sau:
+---
+%s
+---
+Và số liệu: có %d điểm đang ghi nhận mưa.
+
+Hãy viết tóm tắt 1-2 câu ngắn gọn về tình hình mưa, bao gồm:
+- Hình thế thời tiết gây mưa (ví dụ: rãnh áp thấp, không khí lạnh, hội tụ gió...)
+- Mức độ mưa: Nếu < 5 điểm là "Mưa vùng", 5-10: "Mưa rải rác trên diện rộng", > 10: "Mưa trên diện rộng"
+KHÔNG bao gồm thông tin nhiệt độ, gió, độ ẩm hay khuyến cáo.`, extractedContent, len(phuongs)+len(xas))
+		if aiResult, err := h.geminiSvc.Chat(ctx, prompt, nil, "system_report"); err == nil && aiResult != "" {
+			noidung = aiResult
 		}
 	}
 
-	payload := map[string]interface{}{
-		"dd": dd, "mm": mm, "yyyy": yyyy, "hh": hh, "noidung": noidung, "time_mua": timeMua,
-		"so_luong_ung_ngap": soLuongUngNgap, "chi_tiet_cac_diem": chiTietCacDiem, "table_mua_phuong": phuongDataRaw, "table_mua_xa": xaDataRaw,
-		"table_song_ho": map[string]interface{}{"river": riverDataRaw, "lake": lakeDataRaw},
+	// Split tables into halves for 2-column layout
+	splitTable := func(data [][]string) ([][]string, [][]string) {
+		if len(data) <= 1 {
+			return data, [][]string{data[0]} // header only
+		}
+		header := data[0]
+		items := data[1:]
+		half := (len(items) + 1) / 2
+		t1 := append([][]string{header}, items[:half]...)
+		t2 := append([][]string{header}, items[half:]...)
+		return t1, t2
 	}
 
-	targetFilename := fmt.Sprintf("Báo cáo mưa ngày %s-%s-%s thời điểm %s.docx", dd, mm, yyyy, shortHour)
-	localTemplate := filepath.Join("doc", "Báo cáo mưa ngày {dd}-{mm}-{yyyy} thời điểm {hh}.docx")
+	phuong1, phuong2 := splitTable(phuongDataRaw)
+	xa1, xa2 := splitTable(xaDataRaw)
+
+	payload := map[string]interface{}{
+		"dd": dd, "mm": mm, "yyyy": yyyy, "hh": hh, "noidung": noidung, "time_mua": timeMua,
+		"so_luong_ung_ngap": soLuongUngNgap, "chi_tiet_cac_diem": chiTietCacDiem,
+		"table1_mua_phuong": phuong1, "table2_mua_phuong": phuong2,
+		"table1_mua_xa": xa1, "table2_mua_xa": xa2,
+		"table_song": riverDataRaw, "table_ho": lakeDataRaw,
+	}
+
+	targetFilename := fmt.Sprintf("Bao cao mua ngay %s-%s-%s thoi diem %s.docx", dd, mm, yyyy, shortHour)
+	localTemplate := filepath.Join("doc", "Bao cao mua ngay {dd}-{mm}-{yyyy} thoi diem {hh}.docx")
 	fileData, err := os.Open(localTemplate)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Template document not found"})
@@ -399,7 +517,9 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 	defer fileData.Close()
 
 	reportsFolderID, err := h.driveSvc.FindOrCreateFolder(ctx, h.config.RootFolderID, "REPORTS")
-	if err != nil { reportsFolderID = h.config.RootFolderID }
+	if err != nil {
+		reportsFolderID = h.config.RootFolderID
+	}
 
 	templateFileID, err := h.driveSvc.UploadFile(ctx, reportsFolderID, targetFilename, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", fileData, true)
 	if err != nil {
@@ -414,7 +534,9 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 	}
 
 	resLink := h.extractReportLink(reportResp)
-	if resLink == "" { resLink = fmt.Sprintf("https://docs.google.com/document/d/%s/edit", templateFileID) }
+	if resLink == "" {
+		resLink = fmt.Sprintf("https://docs.google.com/document/d/%s/edit", templateFileID)
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success", "data": gin.H{"report_url": resLink, "docID": templateFileID},
@@ -432,9 +554,7 @@ func (h *GoogleHandler) GenerateQuickReportText(c *gin.Context) {
 	reportTime := now.Format("15h04")
 	reportDate := now.Format("02/01/2006")
 
-	rainURL := "https://noibo.thoatnuochanoi.vn/api/thuytri/getallrain?id=3a1a672f-c56f-4752-b86c-455e30427b87"
 	g, gCtx := errgroup.WithContext(ctx)
-	client := resty.New()
 	var rainResp struct {
 		Content struct {
 			Tram []map[string]interface{} `json:"tram"`
@@ -444,7 +564,26 @@ func (h *GoogleHandler) GenerateQuickReportText(c *gin.Context) {
 
 	// 1. Fetch Rain Data
 	g.Go(func() error {
-		client.R().SetContext(gCtx).SetResult(&rainResp).Get(rainURL)
+		rData, err := h.weatherSvc.GetRawRainData(gCtx)
+		if err != nil {
+			h.log.GetLogger().Warnf("Failed to fetch rain data via weatherSvc: %v", err)
+			return nil
+		}
+		for _, t := range rData.Content.Tram {
+			rainResp.Content.Tram = append(rainResp.Content.Tram, map[string]interface{}{
+				"Id":        t.Id,
+				"TenPhuong": t.TenPhuong,
+				"TenTram":   t.TenTram,
+			})
+		}
+		for _, d := range rData.Content.Data {
+			rainResp.Content.Data = append(rainResp.Content.Data, map[string]interface{}{
+				"TramId":      d.TramId,
+				"LuongMua_HT": d.LuongMua_HT,
+				"ThoiGian_BD": d.ThoiGian_BD,
+				"ThoiGian_HT": d.ThoiGian_HT,
+			})
+		}
 		return nil
 	})
 
@@ -468,33 +607,67 @@ func (h *GoogleHandler) GenerateQuickReportText(c *gin.Context) {
 	rainStations := make(map[string]string)
 	for _, t := range rainResp.Content.Tram {
 		var idStr string
-		if id, ok := t["Id"].(float64); ok { idStr = fmt.Sprintf("%.0f", id) } else if id, ok := t["Id"].(string); ok { idStr = id }
+		if id, ok := t["Id"].(float64); ok {
+			idStr = fmt.Sprintf("%.0f", id)
+		} else if id, ok := t["Id"].(string); ok {
+			idStr = id
+		}
 		name, _ := t["TenPhuong"].(string)
-		if name == "" { name, _ = t["TenTram"].(string) }
+		if name == "" {
+			name, _ = t["TenTram"].(string)
+		}
 		rainStations[idStr] = name
 	}
 
-	var minStart time.Time
+	var minStart, maxEnd time.Time
 	var maxRain float64
 	var maxRainStationName string
 	var totalRainyPoints int
 	var minRainVal, maxRainVal float64 = 9999, 0
 
+	parseT := func(s interface{}) time.Time {
+		if s == nil {
+			return time.Time{}
+		}
+		sStr := fmt.Sprintf("%v", s)
+		layouts := []string{"02/01/2006 15:04:05", "02/01/2006 15:04", "2006-01-02 15:04:05", "2006-01-02 15:04", time.RFC3339, "2006-01-02T15:04:05"}
+		for _, layout := range layouts {
+			if t, err := time.ParseInLocation(layout, sStr, time.Local); err == nil {
+				return t
+			}
+		}
+		return time.Time{}
+	}
+
 	for _, d := range rainResp.Content.Data {
 		val, _ := d["LuongMua_HT"].(float64)
 		if val > 0 {
 			totalRainyPoints++
-			if val < minRainVal { minRainVal = val }
-			if val > maxRainVal { maxRainVal = val }
+			if val < minRainVal {
+				minRainVal = val
+			}
+			if val > maxRainVal {
+				maxRainVal = val
+			}
 			var tidStr string
-			if tid, ok := d["TramId"].(float64); ok { tidStr = fmt.Sprintf("%.0f", tid) } else if tid, ok := d["TramId"].(string); ok { tidStr = tid }
-			if val > maxRain { maxRain = val; maxRainStationName = rainStations[tidStr] }
-			layouts := []string{"02/01/2006 15:04:05", "02/01/2006 15:04", "2006-01-02 15:04:05", "2006-01-02 15:04", time.RFC3339}
-			for _, l := range layouts {
-				if t, err := time.ParseInLocation(l, fmt.Sprintf("%v", d["ThoiGian_BD"]), time.Local); err == nil {
-					if minStart.IsZero() || t.Before(minStart) { minStart = t }
-					break
-				}
+			if tid, ok := d["TramId"].(float64); ok {
+				tidStr = fmt.Sprintf("%.0f", tid)
+			} else if tid, ok := d["TramId"].(string); ok {
+				tidStr = tid
+			}
+			if val > maxRain {
+				maxRain = val
+				maxRainStationName = rainStations[tidStr]
+			}
+
+			tBD := parseT(d["ThoiGian_BD"])
+			tHT := parseT(d["ThoiGian_HT"])
+
+			if !tBD.IsZero() && (minStart.IsZero() || tBD.Before(minStart)) {
+				minStart = tBD
+			}
+			if !tHT.IsZero() && (maxEnd.IsZero() || tHT.After(maxEnd)) {
+				maxEnd = tHT
 			}
 		}
 	}
@@ -506,20 +679,33 @@ func (h *GoogleHandler) GenerateQuickReportText(c *gin.Context) {
 	}
 
 	rainStartTime := "rạng sáng"
-	if !minStart.IsZero() { rainStartTime = minStart.Format("15h04") }
+	if !minStart.IsZero() {
+		rainStartTime = minStart.Format("15h04")
+	}
+
+	rainEndTime := "thời điểm hiện tại"
+	if !maxEnd.IsZero() && time.Since(maxEnd) > 5*time.Minute {
+		rainEndTime = maxEnd.Format("15h04")
+	}
+
 	rainIntensity := "nhỏ"
-	if maxRainVal > 100 { rainIntensity = "rất lớn" } else if maxRainVal > 50 { rainIntensity = "lớn" }
+	if maxRainVal > 100 {
+		rainIntensity = "rất lớn"
+	} else if maxRainVal > 50 {
+		rainIntensity = "lớn"
+	}
 	rainSpread := totalRainyPoints > 20
 
 	rawSummary := fmt.Sprintf(`- Thời điểm báo cáo: %s ngày %s
 - Thời điểm bắt đầu mưa: %s
+- Thời điểm kết thúc mưa: %s
 - Cường độ mưa: %s
 - Diện mưa: %v (%d điểm đo)
 - Lượng mưa phổ biến: %.1f đến %.1f mm
 - Điểm mưa lớn nhất: %s (%.1f mm)
 - Tình trạng úng ngập: %s
 - Công tác triển khai: Các trạm bơm Yên Sở, Cổ Nhuế, Đồng Bông 1, Hầm chui... vận hành từ khi xuất hiện mưa để hạ mực nước hệ thống, đảm bảo giao thông.`,
-		reportTime, reportDate, rainStartTime, rainIntensity, map[bool]string{true: "diện rộng", false: "diện hẹp"}[rainSpread], totalRainyPoints, minRainVal, maxRainVal, maxRainStationName, maxRain, inundationInfo)
+		reportTime, reportDate, rainStartTime, rainEndTime, rainIntensity, map[bool]string{true: "diện rộng", false: "diện hẹp"}[rainSpread], totalRainyPoints, minRainVal, maxRainVal, maxRainStationName, maxRain, inundationInfo)
 
 	prompt := fmt.Sprintf(`Vai trò: Trợ lý tổng hợp báo cáo kỹ thuật. 
 Nhiệm vụ: Dựa vào DỮ LIỆU THÔ bên dưới, hãy viết lại thành một đoạn văn báo cáo CHÍNH XÁC theo MẪU BÁO CÁO yêu cầu.
@@ -528,7 +714,7 @@ DỮ LIỆU THÔ:
 [%s]
 
 MẪU BÁO CÁO YÊU CẦU:
-Công ty Thoát nước Hà Nội báo cáo UBND Thành phố tình hình PCUN đô thị thời điểm: “[Giờ] ngày [Ngày]”: Trên địa bàn thành phố xuất hiện mưa từ [Thời điểm bắt đầu mưa] đến thời điểm hiện tại. Mưa cường độ [Cường độ mưa], [Diện rộng hay hẹp], lượng mưa phổ biến [Số mm] đến [Số mm]mm, riêng phường: [Tên trạm/phường lớn nhất] có lượng mưa lớn hơn [Số mm]mm; [Tình trạng úng ngập]; Công ty Thoát nước Hà Nội đã triển khai ứng trực tại các vị trí có khả năng ngập từ [Thời điểm bắt đầu mưa]; các trạm bơm Yên Sở, cổ nhuế, đồng bông 1, hầm chui... vận hành từ khi xuất hiện mưa để hạ mực nước hệ thống, đảm bảo giao thông ở hầm chui, các cửa phai vận hành theo quy định. Công ty sẽ tiếp tục báo cáo khi có diễn biến mưa trong thời gian tới. TRân trọng./.`, rawSummary)
+Công ty Thoát nước Hà Nội báo cáo UBND Thành phố tình hình PCUN đô thị thời điểm: “[Giờ] ngày [Ngày]”: Trên địa bàn thành phố xuất hiện mưa từ [Thời điểm bắt đầu mưa] đến [Thời điểm kết thúc mưa]. Mưa cường độ [Cường độ mưa], [Diện rộng hay hẹp], lượng mưa phổ biến [Số mm] đến [Số mm]mm, riêng khu vực: [Tên trạm/phường lớn nhất] có lượng mưa lớn hơn [Số mm]mm; [Tình trạng úng ngập]; Công ty Thoát nước Hà Nội đã triển khai ứng trực tại các vị trí có khả năng ngập từ [Thời điểm bắt đầu mưa]; các trạm bơm Yên Sở, cổ nhuế, đồng bông 1, hầm chui... vận hành từ khi xuất hiện mưa để hạ mực nước hệ thống, đảm bảo giao thông ở hầm chui, các cửa phai vận hành theo quy định. Công ty sẽ tiếp tục báo cáo khi có diễn biến mưa trong thời gian tới. TRân trọng./.`, rawSummary)
 
 	aiResult, _ := h.geminiSvc.Chat(ctx, prompt, nil, "system_report_text")
 	c.JSON(http.StatusOK, gin.H{"status": "success", "data": aiResult})
@@ -542,22 +728,187 @@ func (h *GoogleHandler) GenerateAIDynamicReport(c *gin.Context) {
 
 	ctx := c.Request.Context()
 	userID, _ := h.contextWith.GetUserID(c)
+	now := time.Now()
 
-	prompt := `Dựa trên dữ liệu thực tế hiện tại từ hệ thống, hãy thực hiện các bước sau:
-1. Tổng hợp tình hình mưa hiện tại (lượng mưa lớn nhất ở đâu, bao nhiêu điểm đang có mưa).
-2. Kiểm tra tình hình ngập lụt (có bao nhiêu điểm đang ngập, vị trí cụ thể và XÍ NGHIỆP đang quản lý/ứng trực tại đó).
-3. Kiểm tra mực nước sông và hồ hiện tại (trình trạng hạ mực nước để đón mưa).
-4. (Nếu có) Đọc nội dung email cảnh báo/dự báo thời tiết gần nhất để biết nguyên nhân và dự báo tiếp theo.
+	g, gCtx := errgroup.WithContext(ctx)
 
-Từ các dữ liệu trên, hãy viết một bản BÁO CÁO TỔNG HỢP TÌNH HÌNH THOÁT NƯỚC VÀ PHÒNG CHỐNG ÚNG NGẬP tại Hà Nội ngay lúc này. 
+	// === Goroutine 1: OCR email forecast ===
+	emailContent := ""
+	g.Go(func() error {
+		if h.emailSvc != nil {
+			raw, _, err := h.emailSvc.GetLatestEmailAttachmentRaw(gCtx)
+			if err == nil && len(raw) > 0 {
+				if ocrText, geminiErr := h.geminiSvc.ExtractTextFromPDF(gCtx, raw); geminiErr == nil && ocrText != "" {
+					emailContent = ocrText
+					h.log.GetLogger().Infof("DynamicReport: OCR OK, %d chars", len(ocrText))
+				}
+			}
+		}
+		return nil
+	})
+
+	// === Goroutine 2: Rain data ===
+	rainSummary := ""
+	g.Go(func() error {
+		rData, err := h.weatherSvc.GetRawRainData(gCtx)
+		if err != nil || rData == nil {
+			return nil
+		}
+		stations := make(map[string]string)
+		for _, t := range rData.Content.Tram {
+			name := t.TenPhuong
+			if name == "" {
+				name = t.TenTram
+			}
+			key := fmt.Sprintf("%v", t.Id)
+			stations[key] = name
+		}
+		type rainItem struct {
+			name string
+			val  float64
+			bd   string
+			ht   string
+		}
+		var items []rainItem
+		rainyCount := 0
+		for _, d := range rData.Content.Data {
+			if d.LuongMua_HT > 0 {
+				rainyCount++
+				key := fmt.Sprintf("%v", d.TramId)
+				name := stations[key]
+				if name == "" {
+					name = fmt.Sprintf("Trạm %v", d.TramId)
+				}
+				items = append(items, rainItem{name, d.LuongMua_HT, d.ThoiGian_BD, d.ThoiGian_HT})
+			}
+		}
+		sort.Slice(items, func(i, j int) bool { return items[i].val > items[j].val })
+		var lines []string
+		for _, it := range items {
+			lines = append(lines, fmt.Sprintf("  - %s: %.1fmm (từ %s đến %s)", it.name, it.val, it.bd, it.ht))
+		}
+
+		if rainyCount > 0 {
+			rainSummary = fmt.Sprintf("Tổng số điểm đang có mưa: %d/%d trạm\nChi tiết:\n%s", rainyCount, len(rData.Content.Data), strings.Join(lines, "\n"))
+		} else {
+			rainSummary = "Hiện tại không có mưa trên toàn thành phố."
+		}
+		return nil
+	})
+
+	// === Goroutine 3: Water data (rivers + lakes) ===
+	waterSummary := ""
+	g.Go(func() error {
+		wData, err := h.weatherSvc.GetRawWaterData(gCtx)
+		if err != nil || wData == nil {
+			return nil
+		}
+		type waterItem struct {
+			name string
+			val  float64
+			loai int
+		}
+		var lakes []waterItem
+		for _, d := range wData.Content.Data {
+			name := ""
+			for _, t := range wData.Content.Tram {
+				if t.Id == d.TramId {
+					name = t.TenTram
+					break
+				}
+			}
+			if name == "" {
+				continue
+			}
+			lakes = append(lakes, waterItem{name, float64(d.ThuongLuu_HT), d.Loai})
+		}
+		sort.Slice(lakes, func(i, j int) bool { return lakes[i].val > lakes[j].val })
+
+		var lakeLines, riverLines []string
+		for _, it := range lakes {
+			line := fmt.Sprintf("  - %s: %.2fm", it.name, it.val/100.0)
+			if it.loai == 2 {
+				lakeLines = append(lakeLines, line)
+			} else {
+				riverLines = append(riverLines, line)
+			}
+		}
+		var parts []string
+		if len(lakeLines) > 0 {
+			parts = append(parts, fmt.Sprintf("Hồ (%d trạm):\n%s", len(lakeLines), strings.Join(lakeLines, "\n")))
+		}
+		if len(riverLines) > 0 {
+			parts = append(parts, fmt.Sprintf("Sông (%d trạm):\n%s", len(riverLines), strings.Join(riverLines, "\n")))
+		}
+		waterSummary = strings.Join(parts, "\n\n")
+		return nil
+	})
+
+	// === Goroutine 4: Inundation status ===
+	inundationSummary := ""
+	g.Go(func() error {
+		summary, err := h.googleSvc.GetInundationSummary(gCtx)
+		if err != nil || summary == nil {
+			inundationSummary = "Không có dữ liệu."
+			return nil
+		}
+		if summary.ActivePoints == 0 {
+			inundationSummary = "Hiện tại không có điểm ngập nào trên toàn thành phố."
+			return nil
+		}
+		var details []string
+		for _, pt := range summary.OngoingPoints {
+			depth := pt.Depth
+			if depth == "" {
+				depth = "chưa rõ"
+			}
+			org := pt.OrgName
+			if org == "" {
+				org = "chưa xác định"
+			}
+			details = append(details, fmt.Sprintf("  - %s (ngập %s, XN quản lý: %s)", pt.StreetName, depth, org))
+		}
+		inundationSummary = fmt.Sprintf("Tổng số điểm đang ngập: %d\nChi tiết:\n%s", summary.ActivePoints, strings.Join(details, "\n"))
+		return nil
+	})
+
+	// === Wait for all goroutines ===
+	_ = g.Wait()
+
+	// === Build prompt with pre-fetched data ===
+	emailSection := ""
+	if emailContent != "" {
+		emailSection = fmt.Sprintf(`
+### 4. BẢN TIN DỰ BÁO THỜI TIẾT (Trích xuất từ email, Trang 1):
+%s`, emailContent)
+	}
+
+	prompt := fmt.Sprintf(`Thời điểm báo cáo: %s ngày %s
+
+Dưới đây là DỮ LIỆU THU THẬP THỰC TẾ từ hệ thống giám sát thoát nước Hà Nội:
+
+### 1. TÌNH HÌNH MƯA:
+%s
+
+### 2. MỰC NƯỚC SÔNG VÀ HỒ:
+%s
+
+### 3. TÌNH HÌNH ÚNG NGẬP:
+%s
+%s
+
+Dựa trên DỮ LIỆU THỰC TẾ ở trên, hãy viết một bản BÁO CÁO TỔNG HỢP TÌNH HÌNH THOÁT NƯỚC VÀ PHÒNG CHỐNG ÚNG NGẬP tại Hà Nội.
 
 YÊU CẦU:
 - Văn phong chuyên nghiệp, súc tích, chính xác.
-- Sử dụng các thông số kỹ thuật thực tế thu thập được.
-- Hiển thị rõ tên XÍ NGHIỆP quản lý cho từng điểm ngập để lãnh đạo nắm được đơn vị chịu trách nhiệm.
-- Làm nổi bật những vấn đề cấp bách (nếu có).
+- Sử dụng ĐÚNG các thông số kỹ thuật đã cung cấp ở trên, KHÔNG tự bịa số liệu.
+- Hiển thị rõ tên XÍ NGHIỆP quản lý cho từng điểm ngập.
+- Phân tích nguyên nhân mưa dựa trên bản tin dự báo (nếu có).
+- Làm nổi bật các vấn đề cấp bách.
 - Kết cấu báo cáo rõ ràng bằng tiếng Việt.
-- Không sử dụng ngôn ngữ quá máy móc, hãy viết như một chuyên gia đang báo cáo cho lãnh đạo.`
+- Viết như một chuyên gia đang báo cáo cho lãnh đạo.`,
+		now.Format("15h04"), now.Format("02/01/2006"),
+		rainSummary, waterSummary, inundationSummary, emailSection)
 
 	aiResult, err := h.geminiSvc.Chat(ctx, prompt, nil, userID)
 	if err != nil {
@@ -570,15 +921,33 @@ YÊU CẦU:
 
 func (h *GoogleHandler) extractReportLink(resp string) string {
 	var data map[string]interface{}
-	if err := json.Unmarshal([]byte(resp), &data); err != nil { return "" }
+	if err := json.Unmarshal([]byte(resp), &data); err != nil {
+		return ""
+	}
 	keys := []string{"newDocId", "docID", "docId", "file_id", "fileId"}
-	for _, k := range keys { if v, ok := data[k].(string); ok && v != "" { return fmt.Sprintf("https://docs.google.com/document/d/%s/edit", v) } }
+	for _, k := range keys {
+		if v, ok := data[k].(string); ok && v != "" {
+			return fmt.Sprintf("https://docs.google.com/document/d/%s/edit", v)
+		}
+	}
 	if nested, ok := data["data"].(map[string]interface{}); ok {
-		for _, k := range keys { if v, ok := nested[k].(string); ok && v != "" { return fmt.Sprintf("https://docs.google.com/document/d/%s/edit", v) } }
+		for _, k := range keys {
+			if v, ok := nested[k].(string); ok && v != "" {
+				return fmt.Sprintf("https://docs.google.com/document/d/%s/edit", v)
+			}
+		}
 		urlKeys := []string{"report_url", "file_url", "report_link", "fileUrl"}
-		for _, k := range urlKeys { if v, ok := nested[k].(string); ok && v != "" { return v } }
+		for _, k := range urlKeys {
+			if v, ok := nested[k].(string); ok && v != "" {
+				return v
+			}
+		}
 	}
 	urlKeys := []string{"report_url", "file_url", "fileUrl", "report_link"}
-	for _, k := range urlKeys { if v, ok := data[k].(string); ok && v != "" { return v } }
+	for _, k := range urlKeys {
+		if v, ok := data[k].(string); ok && v != "" {
+			return v
+		}
+	}
 	return ""
 }

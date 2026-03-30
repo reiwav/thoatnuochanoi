@@ -279,37 +279,21 @@ func (s *service) GetRainSummary(ctx context.Context) (*RainSummaryData, error) 
 				tBD = tBD[11:16]
 			}
 
-			isFresh := true
-			tHTStr := d.ThoiGian_HT
-			if tHTStr != "" {
-				tHT, err := time.ParseInLocation("02/01/2006 15:04:05", tHTStr, time.Local)
-				if err != nil {
-					tHT, err = time.ParseInLocation("02/01/2006 15:04", tHTStr, time.Local)
-				}
-				if err == nil {
-					if time.Since(tHT) > 5*time.Minute {
-						isFresh = false
-					}
-				}
+			tHT := d.ThoiGian_HT
+			if len(tHT) > 16 {
+				tHT = tHT[11:16]
 			}
-
-			if isFresh {
-				sessionRain := d.LuongMua_HT - d.LuongMua_BD
-				if sessionRain < 0 {
-					sessionRain = 0
-				}
-				tHT := d.ThoiGian_HT
-				if len(tHT) > 16 {
-					tHT = tHT[11:16]
-				}
-				measurements = append(measurements, RainStationStat{
-					Name:        stationMap[id],
-					TotalRain:   d.LuongMua_HT,
-					SessionRain: sessionRain,
-					StartTime:   tBD,
-					EndTime:     tHT,
-				})
+			sessionRain := d.LuongMua_HT - d.LuongMua_BD
+			if sessionRain < 0 {
+				sessionRain = 0
 			}
+			measurements = append(measurements, RainStationStat{
+				Name:        stationMap[id],
+				TotalRain:   d.LuongMua_HT,
+				SessionRain: sessionRain,
+				StartTime:   tBD,
+				EndTime:     tHT,
+			})
 		}
 	}
 

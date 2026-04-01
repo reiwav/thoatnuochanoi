@@ -19,12 +19,12 @@ type Service interface {
 	CreateReport(ctx context.Context, report *models.InundationReport, images []ImageContent) error
 	AddUpdate(ctx context.Context, reportID string, update *models.InundationUpdate, userID string, userEmail string, images []ImageContent) error
 	ListReports(ctx context.Context, orgID string) ([]*models.InundationReport, int64, error)
-	ListReportsWithFilter(ctx context.Context, orgID, status, trafficStatus, query string, page, size int) ([]*models.InundationReport, int64, error)
+	ListReportsWithFilter(ctx context.Context, orgID, status, trafficStatus, query string, pointIDs []string, page, size int) ([]*models.InundationReport, int64, error)
 	GetReport(ctx context.Context, reportID string) (*models.InundationReport, error)
 	Resolve(ctx context.Context, reportID string, endTime int64) error
 
 	// Points management
-	GetPointsStatus(ctx context.Context, orgID string) ([]PointStatus, error)
+	GetPointsStatus(ctx context.Context, orgID string, pointIDs []string) ([]PointStatus, error)
 	GetPointByID(ctx context.Context, id string) (*models.InundationPoint, error)
 	CreatePoint(ctx context.Context, point models.InundationPoint) (string, error)
 	UpdatePoint(ctx context.Context, id string, point models.InundationPoint) error
@@ -246,13 +246,16 @@ func (s *service) ListReports(ctx context.Context, orgID string) ([]*models.Inun
 	return s.inundationRepo.List(ctx, f)
 }
 
-func (s *service) ListReportsWithFilter(ctx context.Context, orgID, status, trafficStatus, query string, page, size int) ([]*models.InundationReport, int64, error) {
+func (s *service) ListReportsWithFilter(ctx context.Context, orgID, status, trafficStatus, query string, pointIDs []string, page, size int) ([]*models.InundationReport, int64, error) {
 	f := filter.NewPaginationFilter()
 	f.Page = int64(page + 1) // filter uses 1-based page
 	f.PerPage = int64(size)
 
 	if orgID != "" {
 		f.AddWhere("org_id", "org_id", orgID)
+	}
+	if len(pointIDs) > 0 {
+		f.AddWhere("point_id", "point_id", bson.M{"$in": pointIDs})
 	}
 	if status != "" {
 		f.AddWhere("status", "status", status)
@@ -340,11 +343,23 @@ func (s *service) CreatePoint(ctx context.Context, point models.InundationPoint)
 	return s.inundationPointRepo.Create(ctx, point)
 }
 
-func (s *service) GetPointsStatus(ctx context.Context, orgID string) ([]PointStatus, error) {
+func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []string) ([]PointStatus, error) {
 	// 1. Get all managed points
-	points, err := s.inundationPointRepo.ListByOrg(ctx, orgID)
-	if err != nil {
-		return nil, err
+	var points []models.InundationPoint
+	var err error
+	if len(pointIDs) > 0 {
+		points = make([]models.InundationPoint, 0, len(pointIDs))
+		for _, pid := range pointIDs {
+			p, err := s.inundationPointRepo.GetByID(ctx, pid)
+			if err == nil && p != nil {
+				points = append(points, *p)
+			}
+		}
+	} else {
+		points, err = s.inundationPointRepo.ListByOrg(ctx, orgID)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// 1.5 Get all organizations for mapping names

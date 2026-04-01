@@ -90,6 +90,21 @@ func (h *InundationHandler) CreateReport(c *gin.Context) {
 		TrafficStatus: trafficStatus,
 	}
 
+	// 4.1 Permission Check for Employee
+	if user.Role == constant.ROLE_EMPLOYEE {
+		isAssigned := false
+		for _, pid := range user.AssignedInundationPointIDs {
+			if pid == pointID {
+				isAssigned = true
+				break
+			}
+		}
+		if !isAssigned {
+			h.SendError(c, web.Forbidden("Bạn không có quyền gửi báo cáo cho địa điểm này"))
+			return
+		}
+	}
+
 	err = h.service.CreateReport(c.Request.Context(), report, images)
 	if err != nil {
 		h.SendError(c, err)
@@ -149,6 +164,24 @@ func (h *InundationHandler) AddUpdateSituation(c *gin.Context) {
 		Width:         width,
 		TrafficStatus: trafficStatus,
 		Timestamp:     time.Now().Unix(),
+	}
+
+	// 3.1 Permission Check for Employee
+	if user.Role == constant.ROLE_EMPLOYEE {
+		report, err := h.service.GetReport(c.Request.Context(), reportID)
+		if err == nil && report != nil {
+			isAssigned := false
+			for _, pid := range user.AssignedInundationPointIDs {
+				if pid == report.PointID {
+					isAssigned = true
+					break
+				}
+			}
+			if !isAssigned {
+				h.SendError(c, web.Forbidden("Bạn không có quyền cập nhật cho địa điểm này"))
+				return
+			}
+		}
 	}
 
 	err = h.service.AddUpdate(c.Request.Context(), reportID, update, user.ID, user.Email, images)
@@ -220,7 +253,20 @@ func (h *InundationHandler) ListReports(c *gin.Context) {
 	trafficStatus := c.Query("traffic_status")
 	query := c.Query("query")
 
-	reports, total, err := h.service.ListReportsWithFilter(c.Request.Context(), orgID, status, trafficStatus, query, page, size)
+	var pointIDs []string
+	if user.Role == constant.ROLE_EMPLOYEE {
+		pointIDs = user.AssignedInundationPointIDs
+		if len(pointIDs) == 0 {
+			// If no points assigned, return empty result
+			h.SendData(c, gin.H{
+				"data":  []interface{}{},
+				"total": 0,
+			})
+			return
+		}
+	}
+
+	reports, total, err := h.service.ListReportsWithFilter(c.Request.Context(), orgID, status, trafficStatus, query, pointIDs, page, size)
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -252,7 +298,12 @@ func (h *InundationHandler) GetPointsStatus(c *gin.Context) {
 		}
 	}
 
-	res, err := h.service.GetPointsStatus(c.Request.Context(), orgID)
+	var pointIDs []string
+	if user.Role == constant.ROLE_EMPLOYEE {
+		pointIDs = user.AssignedInundationPointIDs
+	}
+
+	res, err := h.service.GetPointsStatus(c.Request.Context(), orgID, pointIDs)
 	if err != nil {
 		h.SendError(c, err)
 		return

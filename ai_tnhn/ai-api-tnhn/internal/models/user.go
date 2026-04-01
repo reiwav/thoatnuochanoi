@@ -14,4 +14,8 @@ type User struct {
 	Password        hash.Password `bson:"password" json:"password"`
 	Role            string        `bson:"role" json:"role"`
 	Active          bool          `bson:"active" json:"active"`
+
+	// RBAC for Employee
+	AssignedInundationPointIDs       []string `bson:"assigned_inundation_point_ids" json:"assigned_inundation_point_ids"`
+	AssignedEmergencyConstructionIDs []string `bson:"assigned_emergency_construction_ids" json:"assigned_emergency_construction_ids"`
 }

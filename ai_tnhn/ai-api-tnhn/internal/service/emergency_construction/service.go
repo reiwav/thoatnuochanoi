@@ -50,6 +50,7 @@ type Service interface {
 	ExportProgressToExcel(ctx context.Context, progressID string) (string, error)
 	GetUnfinishedProgressHistory(ctx context.Context) ([]*models.EmergencyConstructionProgress, error)
 	TestExcelImageImport(ctx context.Context, driveLink string) (string, error)
+	GetUserByID(ctx context.Context, id string) (*models.User, error)
 }
 
 type service struct {
@@ -794,4 +795,8 @@ func (s *service) TestExcelImageImport(ctx context.Context, driveLink string) (s
 	}
 
 	return CreateExcelWithImage(content, fileID, driveLink)
+}
+
+func (s *service) GetUserByID(ctx context.Context, id string) (*models.User, error) {
+	return s.userRepo.GetByID(ctx, id)
 }

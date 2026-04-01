@@ -16,6 +16,7 @@ import { toast } from 'react-hot-toast';
 import emergencyConstructionApi from 'api/emergencyConstruction';
 import MainCard from 'ui-component/cards/MainCard';
 import { getInundationImageUrl } from 'utils/imageHelper';
+import { processAndWatermark } from 'utils/imageProcessor';
 import { InputAdornment } from '@mui/material';
 
 const TabSwitcher = ({ tab, setTab, visibleTabs }) => {
@@ -60,6 +61,8 @@ const ConstructionForm = () => {
     const [fetching, setFetching] = useState(false);
     const [history, setHistory] = useState([]);
     const [viewer, setViewer] = useState({ open: false, images: [], index: 0 });
+    const [constructions, setConstructions] = useState([]);
+    const [selectedConstructionId, setSelectedConstructionId] = useState(constructionId || '');
 
     // Form states
     const [workDone, setWorkDone] = useState('');
@@ -77,7 +80,24 @@ const ConstructionForm = () => {
     const basePath = userRole === 'employee' ? '/company' : '/admin';
 
     useEffect(() => {
-        if (!constructionId) {
+        if (!selectedConstructionId && userRole === 'employee') {
+            fetchConstructions();
+        }
+    }, [selectedConstructionId]);
+
+    const fetchConstructions = async () => {
+        try {
+            const res = await emergencyConstructionApi.getAll({ per_page: 1000 });
+            if (res.data?.status === 'success') {
+                setConstructions(res.data.data?.data || []);
+            }
+        } catch (err) {
+            console.error('Lỗi tải danh sách công trình:', err);
+        }
+    };
+
+    useEffect(() => {
+        if (!selectedConstructionId && userRole !== 'employee') {
             navigate(`${basePath}/emergency-construction/dashboard`);
             return;
         }
@@ -89,10 +109,10 @@ const ConstructionForm = () => {
             }
             loadReportDetails();
         }
-        if (tabValue === 0) {
+        if (tabValue === 0 && selectedConstructionId) {
             loadHistory();
         }
-    }, [constructionId, tabValue, editReportId]);
+    }, [selectedConstructionId, tabValue, editReportId]);
 
     const loadReportDetails = async () => {
         setFetching(true);
@@ -117,9 +137,10 @@ const ConstructionForm = () => {
     };
 
     const loadHistory = async () => {
+        if (!selectedConstructionId) return;
         setLoading(true);
         try {
-            const res = await emergencyConstructionApi.getProgressHistory(constructionId);
+            const res = await emergencyConstructionApi.getProgressHistory(selectedConstructionId);
             if (res.data?.status === 'success') {
                 const data = res.data.data || [];
                 // Sort descending by date
@@ -184,12 +205,22 @@ const ConstructionForm = () => {
         setTabValue(newValue);
     };
 
-    const handleImageChange = (e) => {
+    const handleImageChange = async (e) => {
         const files = Array.from(e.target.files);
-        setImages([...images, ...files]);
+        if (files.length === 0) return;
 
-        const newPreviews = files.map(file => URL.createObjectURL(file));
-        setImagePreviews([...imagePreviews, ...newPreviews]);
+        try {
+            const processedFiles = await Promise.all(files.map(file => processAndWatermark(file, location)));
+            setImages([...images, ...processedFiles]);
+
+            const newPreviews = processedFiles.map(file => URL.createObjectURL(file));
+            setImagePreviews([...imagePreviews, ...newPreviews]);
+        } catch (error) {
+            console.error('Error processing images:', error);
+            toast.error('Lỗi khi xử lý ảnh');
+        } finally {
+            e.target.value = '';
+        }
     };
 
     const removeImage = (index) => {
@@ -215,7 +246,7 @@ const ConstructionForm = () => {
         setLoading(true);
         try {
             const formData = new FormData();
-            formData.append('construction_id', constructionId);
+            formData.append('construction_id', selectedConstructionId);
             formData.append('work_done', workDone);
             formData.append('tasks', JSON.stringify([]));
             formData.append('progress_percentage', 0);
@@ -265,6 +296,21 @@ const ConstructionForm = () => {
 
     const renderForm = () => (
         <Stack spacing={2.5} sx={{ p: { xs: 2, md: 3 } }}>
+            {!constructionId && (
+                <TextField
+                    select fullWidth label="Chọn công trình" value={selectedConstructionId}
+                    onChange={(e) => setSelectedConstructionId(e.target.value)}
+                    required
+                    sx={{ mb: 1 }}
+                    InputProps={{
+                        sx: { borderRadius: 3, fontWeight: 700 }
+                    }}
+                >
+                    {constructions.map((c) => (
+                        <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>
+                    ))}
+                </TextField>
+            )}
             <TextField
                 select fullWidth label="Lệnh số" value={order}
                 onChange={(e) => setOrder(e.target.value)}
@@ -411,7 +457,9 @@ const ConstructionForm = () => {
             {/* Header section similar to InundationDetail */}
             <Paper sx={{ mb: 3, p: isMobile ? 1.5 : 2, bgcolor: 'secondary.lighter', borderRadius: 3, boxShadow: 'none', border: '1px solid', borderColor: 'secondary.light' }}>
                 <Stack spacing={1}>
-                    <Typography variant={isMobile ? "h4" : "h3"} color="secondary.dark" sx={{ fontWeight: 900, lineHeight: 1.2 }}>{constructionName}</Typography>
+                    <Typography variant={isMobile ? "h4" : "h3"} color="secondary.dark" sx={{ fontWeight: 900, lineHeight: 1.2 }}>
+                        {selectedConstructionId ? (constructions.find(c => c.id === selectedConstructionId)?.name || constructionName) : 'Vui lòng chọn công trình'}
+                    </Typography>
                     <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 600 }}> Cập nhật theo dõi tiến độ chi tiết</Typography>
                 </Stack>
             </Paper>
@@ -571,7 +619,7 @@ const ConstructionForm = () => {
 
     return (
         <MainCard
-            title={constructionName}
+            title={selectedConstructionId ? (constructions.find(c => c.id === selectedConstructionId)?.name || constructionName) : "Báo cáo tiến độ"}
             secondary={<Button variant="outlined" size="small" startIcon={<IconArrowLeft size={16} />} onClick={() => navigate(-1)}>Quay lại</Button>}
         >
             <Box sx={{ maxWidth: 640, mx: 'auto' }}>{renderContent()}</Box>

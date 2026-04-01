@@ -7,7 +7,7 @@ import reportWebVitals from 'reportWebVitals';
 import { ConfigProvider } from 'contexts/ConfigContext';
 
 // Disable console and debugger in production
-if (import.meta.env.PROD) {
+if (import.meta.env.MODE === 'production') {
   console.log = () => {};
   console.debug = () => {};
   console.info = () => {};

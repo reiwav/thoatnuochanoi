@@ -4,6 +4,9 @@ const useDevToolsDetector = () => {
     const [isDevToolsOpen, setIsDevToolsOpen] = useState(false);
 
     useEffect(() => {
+        // Allow debugging in non-production environments
+        if (import.meta.env.MODE !== 'production') return;
+
         // Disable detection on mobile devices (they don't have DevTools anyway)
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
@@ -43,6 +46,9 @@ const useDevToolsDetector = () => {
     }, [isDevToolsOpen]);
 
     useEffect(() => {
+        // Allow debugging in non-production environments
+        if (import.meta.env.MODE !== 'production') return;
+
         // Prevent right click
         const handleContextMenu = (e) => e.preventDefault();
 

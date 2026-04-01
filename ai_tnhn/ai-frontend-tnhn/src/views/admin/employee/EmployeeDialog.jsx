@@ -97,6 +97,8 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
 
     const roleLabels = {
         admin_org: 'Quản lý',
+        manager_contract: 'Quản lý Hợp đồng',
+        reviewer: 'Kiểm tra rà soát',
         employee: 'Nhân viên'
     };
 
@@ -132,6 +134,8 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                                 sx={{ borderRadius: '12px', bgcolor: '#f8fafc' }}
                             >
                                 <MenuItem value="admin_org">Quản lý</MenuItem>
+                                {userRole === 'super_admin' && <MenuItem value="manager_contract">Quản lý Hợp đồng</MenuItem>}
+                                <MenuItem value="reviewer">Kiểm tra rà soát</MenuItem>
                                 <MenuItem value="employee">Nhân viên</MenuItem>
                             </Select>
                         </FormControl>

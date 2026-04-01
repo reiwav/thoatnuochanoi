@@ -34,6 +34,20 @@ const inundationApi = {
     },
     createPoint: (data) => {
         return axiosClient.post('/inundation/points', data);
+    },
+    updatePoint: (id, data) => {
+        return axiosClient.put(`/inundation/points/${id}`, data);
+    },
+    deletePoint: (id) => {
+        return axiosClient.delete(`/inundation/points/${id}`);
+    },
+    reviewUpdate: (id, comment) => {
+        return axiosClient.post(`/inundation/update/${id}/review`, { comment });
+    },
+    updateUpdateContent: (id, formData) => {
+        return axiosClient.put(`/inundation/update/${id}`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
     }
 };
 

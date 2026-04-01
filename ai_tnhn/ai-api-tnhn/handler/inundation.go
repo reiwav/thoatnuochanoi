@@ -403,3 +403,59 @@ func (h *InundationHandler) DeletePoint(c *gin.Context) {
 	}
 	h.SendData(c, true)
 }
+func (h *InundationHandler) ReviewUpdate(c *gin.Context) {
+	updateID := c.Param("id")
+	var req struct {
+		Comment string `json:"comment"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.SendError(c, web.BadRequest("Invalid request body"))
+		return
+	}
+
+	token := h.contextWith.GetToken(c.Request)
+	user, _ := h.authService.GetProfile(c.Request.Context(), token)
+
+	err := h.service.ReviewUpdate(c.Request.Context(), updateID, req.Comment, user.ID)
+	if err != nil {
+		h.SendError(c, err)
+		return
+	}
+	h.SendData(c, true)
+}
+
+func (h *InundationHandler) UpdateSituationUpdateContent(c *gin.Context) {
+	updateID := c.Param("id")
+	form, _ := c.MultipartForm()
+
+	updatedUpdate := &models.InundationUpdate{
+		Description:   c.PostForm("description"),
+		Depth:         c.PostForm("depth"),
+		Length:        c.PostForm("length"),
+		Width:         c.PostForm("width"),
+		TrafficStatus: c.PostForm("traffic_status"),
+	}
+
+	var images []inundation.ImageContent
+	if form != nil {
+		files := form.File["images"]
+		for _, fileHeader := range files {
+			file, err := fileHeader.Open()
+			if err == nil {
+				images = append(images, inundation.ImageContent{
+					Name:     fileHeader.Filename,
+					MimeType: fileHeader.Header.Get("Content-Type"),
+					Reader:   file,
+				})
+				defer file.Close()
+			}
+		}
+	}
+
+	err := h.service.UpdateUpdateContent(c.Request.Context(), updateID, updatedUpdate, images)
+	if err != nil {
+		h.SendError(c, err)
+		return
+	}
+	h.SendData(c, true)
+}

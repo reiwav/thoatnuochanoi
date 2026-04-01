@@ -11,7 +11,7 @@ import (
 func (h *HandlerFuncs) ContractRoutes(r *gin.RouterGroup, mid middleware.Middleware, handler *handler.ContractHandler) {
 	group := r.Group("/contracts")
 	// Accessible by Super Admin and Manager
-	group.Use(mid.MidBasicType(constant.ROLE_SUPER_ADMIN, constant.ROLE_MANAGER))
+	group.Use(mid.MidBasicType(constant.ROLE_SUPER_ADMIN, constant.ROLE_MANAGER_CONTRACT))
 	{
 		group.GET("", handler.List)
 		group.GET("/:id", handler.GetByID)

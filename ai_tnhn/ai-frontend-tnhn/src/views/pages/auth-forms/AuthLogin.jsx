@@ -58,7 +58,7 @@ export default function AuthLogin() {
       // Immediate redirection based on role
       if (userRole === 'employee' || userRole === 'technician') {
         navigate('/company/inundation', { replace: true });
-      } else if (userRole === 'manager') {
+      } else if (userRole === 'manager_contract') {
         navigate('/admin/ai-contract', { replace: true });
       } else {
         navigate('/admin/ai-support', { replace: true });
@@ -103,7 +103,7 @@ export default function AuthLogin() {
         // Redirect based on role
         if (role === 'employee' || role === 'technician') {
           navigate('/company/inundation');
-        } else if (role === 'manager') {
+        } else if (role === 'manager_contract') {
           navigate('/admin/ai-contract');
         } else {
           navigate('/admin/ai-support');

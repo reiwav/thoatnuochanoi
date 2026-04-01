@@ -16,6 +16,9 @@ type InundationUpdate struct {
 	Width           string   `bson:"width" json:"width"`
 	TrafficStatus   string   `bson:"traffic_status" json:"traffic_status"`
 	Images          []string `bson:"images,omitempty" json:"images,omitempty"` // Google Drive File IDs
+	ReviewComment   string   `bson:"review_comment,omitempty" json:"review_comment,omitempty"`
+	ReviewerId      string   `bson:"reviewer_id,omitempty" json:"reviewer_id,omitempty"`
+	NeedsCorrection bool     `bson:"needs_correction,omitempty" json:"needs_correction,omitempty"`
 }
 
 type InundationReport struct {

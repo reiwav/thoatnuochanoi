@@ -23,6 +23,10 @@ type Service interface {
 	GetReport(ctx context.Context, reportID string) (*models.InundationReport, error)
 	Resolve(ctx context.Context, reportID string, endTime int64) error
 
+	// Review and Correction
+	ReviewUpdate(ctx context.Context, updateID, comment, reviewerID string) error
+	UpdateUpdateContent(ctx context.Context, updateID string, update *models.InundationUpdate, images []ImageContent) error
+
 	// Points management
 	GetPointsStatus(ctx context.Context, orgID string, pointIDs []string) ([]PointStatus, error)
 	GetPointByID(ctx context.Context, id string) (*models.InundationPoint, error)
@@ -330,6 +334,74 @@ func (s *service) Resolve(ctx context.Context, reportID string, endTime int64) e
 		endTime = time.Now().Unix()
 	}
 	return s.inundationRepo.Resolve(ctx, reportID, endTime)
+}
+
+func (s *service) ReviewUpdate(ctx context.Context, updateID, comment, reviewerID string) error {
+	update, err := s.inundationUpdateRepo.GetByID(ctx, updateID)
+	if err != nil {
+		return err
+	}
+	update.ReviewComment = comment
+	update.ReviewerId = reviewerID
+	update.NeedsCorrection = true
+	return s.inundationUpdateRepo.Update(ctx, update)
+}
+
+func (s *service) UpdateUpdateContent(ctx context.Context, updateID string, updatedData *models.InundationUpdate, images []ImageContent) error {
+	update, err := s.inundationUpdateRepo.GetByID(ctx, updateID)
+	if err != nil {
+		return err
+	}
+
+	update.Description = updatedData.Description
+	update.Depth = updatedData.Depth
+	update.Length = updatedData.Length
+	update.Width = updatedData.Width
+	update.TrafficStatus = updatedData.TrafficStatus
+	update.NeedsCorrection = false
+
+	if len(images) > 0 {
+		report, _ := s.inundationRepo.GetByID(ctx, update.ReportID)
+		org, _ := s.orgRepo.GetByID(ctx, report.OrgID)
+		folderID, _ := s.resolveUploadFolder(ctx, org, "FLOOD", report.PointID)
+
+		g, gCtx := errgroup.WithContext(ctx)
+		imageIDs := make([]string, len(images))
+		for i, img := range images {
+			i, img := i, img
+			g.Go(func() error {
+				id, err := s.driveSvc.UploadFileSimple(gCtx, folderID, img.Name, img.MimeType, img.Reader)
+				if err == nil { imageIDs[i] = id }
+				return err
+			})
+		}
+		_ = g.Wait()
+
+		newImages := []string{}
+		for _, id := range imageIDs {
+			if id != "" { newImages = append(newImages, id) }
+		}
+		if len(newImages) > 0 {
+			update.Images = newImages
+		}
+	}
+
+	err = s.inundationUpdateRepo.Update(ctx, update)
+	if err != nil {
+		return err
+	}
+
+	// Sync back to main report if this was the latest info
+	mainReport, err := s.inundationRepo.GetByID(ctx, update.ReportID)
+	if err == nil {
+		mainReport.Depth = update.Depth
+		mainReport.Length = update.Length
+		mainReport.Width = update.Width
+		mainReport.TrafficStatus = update.TrafficStatus
+		_ = s.inundationRepo.Update(ctx, mainReport)
+	}
+
+	return nil
 }
 
 func (s *service) GetPointByID(ctx context.Context, id string) (*models.InundationPoint, error) {

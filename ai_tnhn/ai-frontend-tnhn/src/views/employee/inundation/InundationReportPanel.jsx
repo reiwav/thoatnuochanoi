@@ -15,7 +15,7 @@ import { toast } from 'react-hot-toast';
 import inundationApi from 'api/inundation';
 import { processAndWatermark } from 'utils/imageProcessor';
 
-const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onSuccess }) => {
+const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onSuccess, isCorrectionMode = false }) => {
     const theme = useTheme();
     const [loading, setLoading] = useState(false);
     const [values, setValues] = useState({
@@ -114,15 +114,24 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
             if (values.width) fd.append('width', values.width);
             if (values.depth) fd.append('depth', values.depth);
             if (values.traffic_status) fd.append('traffic_status', values.traffic_status);
-            if (resolveOnUpdate) fd.append('resolve', 'true');
-            images.forEach(img => fd.append('images', img));
-            const res = await inundationApi.updateSituation(selectedReport.id, fd);
-            if (res.data?.status === 'success') {
-                toast.success(resolveOnUpdate ? 'Đã kết thúc đợt ngập' : 'Cập nhật thành công');
-                setValues(v => ({ ...v, description: '', traffic_status: 'Đi lại bình thường' }));
-                setImages([]); setPreviews([]); setResolveOnUpdate(false);
-                if (onSuccess) onSuccess();
+            
+            if (isCorrectionMode) {
+                // If correction mode, we are editing an EXISTING UPDATE record
+                await inundationApi.updateUpdateContent(selectedReport.id, fd);
+                toast.success('Đã lưu thay đổi chỉnh sửa');
+            } else {
+                // Normal update (adding a new record to the history)
+                if (resolveOnUpdate) fd.append('resolve', 'true');
+                images.forEach(img => fd.append('images', img));
+                const res = await inundationApi.updateSituation(selectedReport.id, fd);
+                if (res.data?.status === 'success') {
+                    toast.success(resolveOnUpdate ? 'Đã kết thúc đợt ngập' : 'Cập nhật thành công');
+                }
             }
+
+            setValues(v => ({ ...v, description: '', traffic_status: 'Đi lại bình thường' }));
+            setImages([]); setPreviews([]); setResolveOnUpdate(false);
+            if (onSuccess) onSuccess();
         } catch (err) { toast.error(err.response?.data?.error || 'Đã có lỗi xảy ra'); }
         finally { setLoading(false); }
     };
@@ -277,12 +286,12 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
 
             <Button
                 fullWidth size="large" variant="contained"
-                color={resolveOnUpdate ? 'error' : 'secondary'}
+                color={isCorrectionMode ? 'error' : (resolveOnUpdate ? 'error' : 'secondary')}
                 onClick={handleSubmit} disabled={loading}
                 startIcon={loading ? <CircularProgress size={17} color="inherit" /> : <IconSend size={17} />}
                 sx={{ borderRadius: 100, py: 1.4, fontWeight: 700, mt: 1 }}
             >
-                {loading ? 'Đang xử lý...' : (resolveOnUpdate ? 'Xác nhận Kết thúc đợt ngập' : (selectedReport ? 'Cập nhật tình hình' : 'Gửi báo cáo'))}
+                {loading ? 'Đang xử lý...' : (isCorrectionMode ? 'Lưu thay đổi chỉnh sửa' : (resolveOnUpdate ? 'Xác nhận Kết thúc đợt ngập' : (selectedReport ? 'Cập nhật tình hình' : 'Gửi báo cáo')))}
             </Button>
         </Stack>
     );

@@ -173,7 +173,7 @@ File: `router/google.go` (hoặc nơi đăng ký routes)
 group.POST("/contract-chat", handler.ChatContract)
 ```
 > Route: `POST /admin/google/contract-chat`
-> Middleware phân quyền: `ROLE_SUPER_ADMIN`, `ROLE_MANAGER`
+> Middleware phân quyền: `ROLE_SUPER_ADMIN`, `ROLE_MANAGER_CONTRACT`
 
 ---
 

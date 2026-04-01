@@ -18,7 +18,7 @@ func (h *HandlerFuncs) ContractCategoryRoutes(r *gin.RouterGroup, mid middleware
 		group.GET("/:id", handler.GetByID)
 
 		mgrGroup := group.Group("")
-		mgrGroup.Use(mid.MidBasicType(constant.ROLE_SUPER_ADMIN, constant.ROLE_MANAGER))
+		mgrGroup.Use(mid.MidBasicType(constant.ROLE_SUPER_ADMIN, constant.ROLE_MANAGER_CONTRACT))
 		{
 			mgrGroup.POST("", handler.Create)
 			mgrGroup.PUT("/:id", handler.Update)

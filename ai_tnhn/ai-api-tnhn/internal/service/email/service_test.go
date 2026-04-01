@@ -91,8 +91,8 @@ func TestListRecentEmails_Manual(t *testing.T) {
 
 	fmt.Printf("\n--- LAST 20 EMAILS ---\n")
 	for msg := range messages {
-		fmt.Printf("ID: %d | Date: %s | From: %s | Subject: %s\n", 
-			msg.SeqNum, 
+		fmt.Printf("ID: %d | Date: %s | From: %s | Subject: %s\n",
+			msg.SeqNum,
 			msg.Envelope.Date.Format("02-01 15:04"),
 			msg.Envelope.From[0].Address(),
 			msg.Envelope.Subject,

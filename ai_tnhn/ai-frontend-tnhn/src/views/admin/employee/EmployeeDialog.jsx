@@ -277,6 +277,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                 labelField="name"
                 initialSelectedIds={formData.assigned_inundation_point_ids}
                 onConfirm={(newIds) => handleChange('assigned_inundation_point_ids', newIds)}
+                singleSelect={true}
             />
 
             <SelectionDialog
@@ -287,6 +288,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                 labelField="name"
                 initialSelectedIds={formData.assigned_emergency_construction_ids}
                 onConfirm={(newIds) => handleChange('assigned_emergency_construction_ids', newIds)}
+                singleSelect={true}
             />
         </Dialog>
     );

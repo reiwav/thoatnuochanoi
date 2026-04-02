@@ -7,7 +7,7 @@ import {
 } from '@mui/material';
 import { IconSearch, IconX, IconCheck, IconSquare, IconCheckbox } from '@tabler/icons-react';
 
-const SelectionDialog = ({ open, onClose, onConfirm, title, items = [], initialSelectedIds = [], labelField = 'name' }) => {
+const SelectionDialog = ({ open, onClose, onConfirm, title, items = [], initialSelectedIds = [], labelField = 'name', singleSelect = false }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedIds, setSelectedIds] = useState([]);
 
@@ -27,6 +27,10 @@ const SelectionDialog = ({ open, onClose, onConfirm, title, items = [], initialS
     }, [items, searchTerm, labelField]);
 
     const handleToggle = (id) => {
+        if (singleSelect) {
+            setSelectedIds(prev => prev.includes(id) ? [] : [id]);
+            return;
+        }
         const currentIndex = selectedIds.indexOf(id);
         const newSelected = [...selectedIds];
 
@@ -84,11 +88,13 @@ const SelectionDialog = ({ open, onClose, onConfirm, title, items = [], initialS
                     />
                     <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mt: 1.5 }}>
                         <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600 }}>
-                            Đã chọn: {selectedIds.length} / {items.length}
+                            Đã chọn: {selectedIds.length} {singleSelect ? '/ 1' : `/ ${items.length}`}
                         </Typography>
-                        <Button size="small" onClick={handleSelectAll} sx={{ fontWeight: 700 }}>
-                            {selectedIds.length === items.length ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
-                        </Button>
+                        {!singleSelect && (
+                            <Button size="small" onClick={handleSelectAll} sx={{ fontWeight: 700 }}>
+                                {selectedIds.length === items.length ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
+                            </Button>
+                        )}
                     </Stack>
                 </Box>
                 <List sx={{ pt: 0 }}>

@@ -10,6 +10,8 @@ import (
 	"ai-api-tnhn/utils/web"
 	"context"
 	"errors"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Service interface {
@@ -46,6 +48,11 @@ func (s *service) Create(ctx context.Context, input *models.User) (*models.User,
 	}
 	input.Active = true // Default to active
 
+	// Validate assignments
+	if err := s.validateAssignments(ctx, "", input.OrgID, input.AssignedInundationPointIDs, input.AssignedEmergencyConstructionIDs); err != nil {
+		return nil, err
+	}
+
 	// Password will be hashed by userRepo.Create, so we don't hash it here
 	user, err := s.userRepo.Create(ctx, input)
 	if err != nil {
@@ -80,7 +87,56 @@ func (s *service) Update(ctx context.Context, id string, input *models.User) err
 		str, _ := input.Password.GererateHashedPassword()
 		input.Password = hash.NewPassword(str)
 	}
+
+	// Validate assignments for update
+	if err := s.validateAssignments(ctx, id, input.OrgID, input.AssignedInundationPointIDs, input.AssignedEmergencyConstructionIDs); err != nil {
+		return err
+	}
+
 	return s.userRepo.Update(ctx, id, input)
+}
+
+func (s *service) validateAssignments(ctx context.Context, userID string, orgID string, pointIDs []string, constructionIDs []string) error {
+	if len(pointIDs) > 1 {
+		return web.BadRequest("Chỉ được phép gán tối đa 1 điểm ngập")
+	}
+	if len(constructionIDs) > 1 {
+		return web.BadRequest("Chỉ được phép gán tối đa 1 công trình khẩn")
+	}
+
+	// Check if inundation point is already assigned to another user in the same org
+	if len(pointIDs) > 0 {
+		pid := pointIDs[0]
+		f := filter.NewBasicFilter()
+		f.AddWhere("org_id", "org_id", orgID)
+		f.AddWhere("assigned_inundation_point_ids", "assigned_inundation_point_ids", pid)
+		if userID != "" {
+			f.AddWhere("_id", "_id", primitive.M{"$ne": userID})
+		}
+
+		users, _, err := s.userRepo.List(ctx, f)
+		if err == nil && len(users) > 0 {
+			return web.BadRequest("Điểm ngập này đã được gán cho nhân viên: " + users[0].Name)
+		}
+	}
+
+	// Check if emergency construction is already assigned to another user in the same org
+	if len(constructionIDs) > 0 {
+		cid := constructionIDs[0]
+		f := filter.NewBasicFilter()
+		f.AddWhere("org_id", "org_id", orgID)
+		f.AddWhere("assigned_emergency_construction_ids", "assigned_emergency_construction_ids", cid)
+		if userID != "" {
+			f.AddWhere("_id", "_id", primitive.M{"$ne": userID})
+		}
+
+		users, _, err := s.userRepo.List(ctx, f)
+		if err == nil && len(users) > 0 {
+			return web.BadRequest("Công trình khẩn này đã được gán cho nhân viên: " + users[0].Name)
+		}
+	}
+
+	return nil
 }
 
 func (s *service) Delete(ctx context.Context, id string) error {

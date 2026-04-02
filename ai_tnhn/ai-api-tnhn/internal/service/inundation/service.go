@@ -22,9 +22,11 @@ type Service interface {
 	ListReportsWithFilter(ctx context.Context, orgID, status, trafficStatus, query string, pointIDs []string, page, size int) ([]*models.InundationReport, int64, error)
 	GetReport(ctx context.Context, reportID string) (*models.InundationReport, error)
 	Resolve(ctx context.Context, reportID string, endTime int64) error
+	UpdateReport(ctx context.Context, id string, report *models.InundationReport, images []ImageContent) error
 
 	// Review and Correction
-	ReviewUpdate(ctx context.Context, updateID, comment, reviewerID string) error
+	ReviewReport(ctx context.Context, reportID, comment, reviewerID, reviewerEmail, reviewerName string) error
+	ReviewUpdate(ctx context.Context, updateID, comment, reviewerID, reviewerEmail, reviewerName string) error
 	UpdateUpdateContent(ctx context.Context, updateID string, update *models.InundationUpdate, images []ImageContent) error
 
 	// Points management
@@ -336,13 +338,67 @@ func (s *service) Resolve(ctx context.Context, reportID string, endTime int64) e
 	return s.inundationRepo.Resolve(ctx, reportID, endTime)
 }
 
-func (s *service) ReviewUpdate(ctx context.Context, updateID, comment, reviewerID string) error {
+func (s *service) UpdateReport(ctx context.Context, id string, report *models.InundationReport, images []ImageContent) error {
+	existing, err := s.inundationRepo.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	existing.Depth = report.Depth
+	existing.Length = report.Length
+	existing.Width = report.Width
+	existing.Description = report.Description
+	existing.TrafficStatus = report.TrafficStatus
+	existing.NeedsCorrection = false
+
+	if len(images) > 0 {
+		org, _ := s.orgRepo.GetByID(ctx, existing.OrgID)
+		folderID, _ := s.resolveUploadFolder(ctx, org, "FLOOD", existing.PointID)
+		g, gCtx := errgroup.WithContext(ctx)
+		imageIDs := make([]string, len(images))
+		for i, img := range images {
+			i, img := i, img
+			g.Go(func() error {
+				rid, err := s.driveSvc.UploadFileSimple(gCtx, folderID, img.Name, img.MimeType, img.Reader)
+				if err == nil { imageIDs[i] = rid }
+				return err
+			})
+		}
+		_ = g.Wait()
+		newImages := []string{}
+		for _, rid := range imageIDs {
+			if rid != "" { newImages = append(newImages, rid) }
+		}
+		if len(newImages) > 0 {
+			existing.Images = newImages
+		}
+	}
+
+	return s.inundationRepo.Update(ctx, existing)
+}
+
+func (s *service) ReviewReport(ctx context.Context, reportID, comment, reviewerID, reviewerEmail, reviewerName string) error {
+	report, err := s.inundationRepo.GetByID(ctx, reportID)
+	if err != nil {
+		return err
+	}
+	report.ReviewComment = comment
+	report.ReviewerId = reviewerID
+	report.ReviewerEmail = reviewerEmail
+	report.ReviewerName = reviewerName
+	report.NeedsCorrection = true
+	return s.inundationRepo.Update(ctx, report)
+}
+
+func (s *service) ReviewUpdate(ctx context.Context, updateID, comment, reviewerID, reviewerEmail, reviewerName string) error {
 	update, err := s.inundationUpdateRepo.GetByID(ctx, updateID)
 	if err != nil {
 		return err
 	}
 	update.ReviewComment = comment
 	update.ReviewerId = reviewerID
+	update.ReviewerEmail = reviewerEmail
+	update.ReviewerName = reviewerName
 	update.NeedsCorrection = true
 	return s.inundationUpdateRepo.Update(ctx, update)
 }

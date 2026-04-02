@@ -116,9 +116,15 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
             if (values.traffic_status) fd.append('traffic_status', values.traffic_status);
             
             if (isCorrectionMode) {
-                // If correction mode, we are editing an EXISTING UPDATE record
-                await inundationApi.updateUpdateContent(selectedReport.id, fd);
-                toast.success('Đã lưu thay đổi chỉnh sửa');
+                if (selectedReport.type === 'start') {
+                    // Editing the MAIN report record
+                    await inundationApi.updateReport(selectedReport.id, fd);
+                    toast.success('Đã lưu thay đổi báo cáo chính');
+                } else {
+                    // Editing an EXISTING UPDATE record
+                    await inundationApi.updateUpdateContent(selectedReport.id, fd);
+                    toast.success('Đã lưu thay đổi chỉnh sửa');
+                }
             } else {
                 // Normal update (adding a new record to the history)
                 if (resolveOnUpdate) fd.append('resolve', 'true');

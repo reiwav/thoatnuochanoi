@@ -1,22 +1,23 @@
 import { useState } from 'react';
 import {
     Box, Typography, Stack, Chip, Divider, Paper, CircularProgress,
-    Dialog, DialogContent, IconButton as MuiIconButton, useMediaQuery
+    Dialog, DialogContent, IconButton as MuiIconButton, useMediaQuery,
+    Button, TextField
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { useSelector } from 'react-redux';
 import {
     IconClock, IconRuler, IconPlus, IconX, IconRefresh, IconUser,
     IconChevronLeft, IconChevronRight, IconCar, IconMessage2, IconEdit,
     IconAlertTriangle
 } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
+import inundationApi from 'api/inundation';
 import InundationReportPanel from './InundationReportPanel';
 
 import { getInundationImageUrl } from 'utils/imageHelper';
 import { getTrafficStatusColor } from 'utils/trafficStatusHelper';
 
-const InundationDetail = ({ selectedReport, loadingReport }) => {
+const InundationDetail = ({ selectedReport, loadingReport, user }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -24,8 +25,7 @@ const InundationDetail = ({ selectedReport, loadingReport }) => {
     const [reviewDialog, setReviewDialog] = useState({ open: false, itemId: null, type: null, comment: '' });
     const [editMode, setEditMode] = useState({ open: false, item: null });
 
-    const user = useSelector((state) => state.auth.user);
-    const userRole = user?.role;
+    const userRole = user?.role || localStorage.getItem('role');
 
     const handleOpenViewer = (imgs, idx = 0) => {
         if (!imgs || imgs.length === 0) {
@@ -55,7 +55,12 @@ const InundationDetail = ({ selectedReport, loadingReport }) => {
             length: selectedReport.length, width: selectedReport.width, depth: selectedReport.depth,
             traffic_status: selectedReport.traffic_status || selectedReport.trafficStatus,
             user: selectedReport.user_email,
-            images: selectedReport.images || []
+            images: selectedReport.images || [],
+            review_comment: selectedReport.review_comment,
+            reviewer_id: selectedReport.reviewer_id,
+            reviewer_email: selectedReport.reviewer_email,
+            reviewer_name: selectedReport.reviewer_name,
+            needs_correction: selectedReport.needs_correction
         },
         ...updates.map((u, i) => ({
             id: u.id,
@@ -71,6 +76,8 @@ const InundationDetail = ({ selectedReport, loadingReport }) => {
             images: u.images || [],
             review_comment: u.review_comment,
             reviewer_id: u.reviewer_id,
+            reviewer_email: u.reviewer_email,
+            reviewer_name: u.reviewer_name,
             needs_correction: u.needs_correction
         }))
     ].reverse();
@@ -78,7 +85,11 @@ const InundationDetail = ({ selectedReport, loadingReport }) => {
     const handleReviewSubmit = async () => {
         if (!reviewDialog.comment.trim()) return;
         try {
-            await inundationApi.reviewUpdate(reviewDialog.itemId, reviewDialog.comment);
+            if (reviewDialog.type === 'start') {
+                await inundationApi.reviewReport(reviewDialog.itemId, reviewDialog.comment);
+            } else {
+                await inundationApi.reviewUpdate(reviewDialog.itemId, reviewDialog.comment);
+            }
             toast.success('Đã gửi phản hồi');
             setReviewDialog({ open: false, itemId: null, type: null, comment: '' });
             window.location.reload(); 
@@ -168,13 +179,22 @@ const InundationDetail = ({ selectedReport, loadingReport }) => {
                             <Typography variant="body1" color="textSecondary" sx={{ mb: 1, fontWeight: 500 }}>{item.desc}</Typography>
 
                             {item.review_comment && (
-                                <Box sx={{ mb: 2, p: 1.5, bgcolor: 'error.main', borderRadius: 2, color: 'white' }}>
-                                    <Typography variant="body2" sx={{ fontWeight: 800, mb: 0.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <IconAlertTriangle size={16} /> Nhận xét rà soát:
+                                <Box sx={{ 
+                                    mb: 2, p: 2, 
+                                    bgcolor: 'error.lighter', 
+                                    borderRadius: 2, 
+                                    borderLeft: '4px solid', 
+                                    borderColor: 'error.main',
+                                    boxShadow: '0 2px 4px rgba(211, 47, 47, 0.05)'
+                                }}>
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'error.main', mb: 0.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <IconAlertTriangle size={18} /> Nhận xét rà soát:
                                     </Typography>
-                                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.review_comment}</Typography>
-                                    <Typography variant="caption" sx={{ display: 'block', mt: 0.5, opacity: 0.8, fontStyle: 'italic' }}>
-                                        — ID người rà soát: {item.reviewer_id}
+                                    <Typography variant="body2" sx={{ fontWeight: 700, color: 'error.dark', lineHeight: 1.5 }}>
+                                        {item.review_comment}
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ display: 'block', mt: 1, color: 'error.main', fontWeight: 600, fontStyle: 'italic', opacity: 0.9 }}>
+                                        — Người rà soát: {item.reviewer_name || item.reviewer_email || item.reviewer_id}
                                     </Typography>
                                 </Box>
                             )}
@@ -205,7 +225,7 @@ const InundationDetail = ({ selectedReport, loadingReport }) => {
                                     </Box>
                                 )}
 
-                                {(userRole === 'reviewer') && item.type === 'update' && (
+                                {(userRole === 'reviewer') && (
                                     <Button
                                         size="small" startIcon={<IconMessage2 size={16} />}
                                         variant="outlined" color="error"
@@ -216,7 +236,7 @@ const InundationDetail = ({ selectedReport, loadingReport }) => {
                                     </Button>
                                 )}
 
-                                {userRole === 'employee' && item.type === 'update' && item.needs_correction && (
+                                {userRole === 'employee' && item.needs_correction && (
                                     <Button
                                         size="small" startIcon={<IconEdit size={16} />}
                                         variant="contained" color="error"

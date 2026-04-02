@@ -46,7 +46,7 @@ export default function AuthLogin() {
 
     if (token) {
       localStorage.setItem(ADMIN_TOKEN, token);
-      
+
       // Store metadata if available
       let userRole = role || 'employee';
       if (userRole === 'supper_admin' || userRole === 'super_admib') {
@@ -60,6 +60,8 @@ export default function AuthLogin() {
         navigate('/company/inundation', { replace: true });
       } else if (userRole === 'manager_contract') {
         navigate('/admin/ai-contract', { replace: true });
+      } else if (userRole === 'reviewer') {
+        navigate('/admin/inundation-list', { replace: true });
       } else {
         navigate('/admin/ai-support', { replace: true });
       }
@@ -105,6 +107,8 @@ export default function AuthLogin() {
           navigate('/company/inundation');
         } else if (role === 'manager_contract') {
           navigate('/admin/ai-contract');
+        } else if (role === 'reviewer') {
+          navigate('/admin/inundation-list');
         } else {
           navigate('/admin/ai-support');
         }

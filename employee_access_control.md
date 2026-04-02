@@ -3,7 +3,12 @@
 ## 1. Mục tiêu
 Đảm bảo nhân viên (role = `employee`) chỉ có thể xem và gửi báo cáo cho các **Điểm ngập lụt** và **Công trình khẩn cấp** mà họ được giao nhiệm vụ. Các vai trò cao hơn (`super_admin`, `admin_org`, `manager`) vẫn có quyền xem toàn bộ theo phạm vi tổ chức của họ.
 
-## 2. Thay đổi Backend (Go API)
+## 2. Ràng buộc Nghiệp vụ (Quan trọng)
+- **Tính Duy nhất**: Mỗi Điểm ngập lụt (`InundationPoint`) hoặc Công trình khẩn cấp chỉ được phép gán cho **DUY NHẤT một nhân viên** tại một thời điểm.
+- **Không trùng lặp**: Hệ thống phải ngăn chặn việc gán cùng một địa điểm/công trình cho hai nhân viên khác nhau.
+- **Phạm vi**: Ràng buộc này áp dụng trong cùng một tổ chức (`org_id`).
+
+## 3. Thay đổi Backend (Go API)
 
 ### 2.1. Cập nhật Model Người dùng
 Thêm các trường danh sách ID được phân quyền vào struct `User` trong `internal/models/user.go`:
@@ -22,20 +27,19 @@ Thêm các trường danh sách ID được phân quyền vào struct `User` tro
 - **`ReportProgress`**: Validate xem `construction_id` có thuộc danh sách được giao không.
 - **`GetProgressHistory` / `ListHistory`**: Lọc theo danh sách công trình được giao.
 
-### 2.3. Cập nhật API Quản lý Nhân viên (`handler/employee.go`)
-- Bổ sung chức năng cập nhật danh sách quyền hạn (assign/unassign points/stations) cho nhân viên. Chức năng này chỉ dành cho `admin_org`.
+### 3.3. Cập nhật API Quản lý Nhân viên (`handler/employee.go`)
+- Bổ sung chức năng cập nhật danh sách quyền hạn cho nhân viên. 
+- **Validation**: Trước khi lưu, hệ thống phải kiểm tra xem các ID điểm ngập/công trình được chọn có đang thuộc về nhân viên khác (trong cùng org) hay không. Nếu có, trả về lỗi 400 và danh sách các điểm bị trùng.
 
 ## 3. Thay đổi Frontend (React AI-Frontend)
 
 ### 3.1. Quản lý Nhân viên (Dành cho Quản trị viên/Quản lý)
-- Trong trang chỉnh sửa thông tin nhân viên, thay thế MUI Select (Dropdown) bằng **Popup Selection Dialog**:
-    - Hiển thị danh sách tóm tắt (hoặc số lượng) các điểm đã chọn kèm nút "Thay đổi".
-    - Khi nhấn vào sẽ mở một Popup (Dialog) có:
-        - Thanh tìm kiếm (Search bar) để tìm nhanh địa điểm/công trình.
-        - Danh sách có tích chọn (Checkboxes).
-        - Nút "Chọn tất cả" / "Bỏ chọn tất cả".
-    - Điều này giúp quản lý dễ dàng thao tác khi danh sách có hàng chục hoặc hàng trăm mục.
-- Gọi API cập nhật mới để lưu thông tin này vào database.
+- Trong trang chỉnh sửa thông tin nhân viên, sử dụng **Popup Selection Dialog**:
+    - Hiển thị danh sách các điểm đã chọn kèm nút "Thay đổi".
+    - Khi mở Popup:
+        - **Highlight/Disable**: Các điểm ngập/công trình đã được gán cho nhân viên khác sẽ hiển thị mờ (disabled) kèm ghi chú "Đã gán cho [Tên nhân viên khác]" để tránh chọn nhầm.
+        - Tìm kiếm và lọc theo trạng thái (Chưa gán / Đã gán).
+- Gọi API cập nhật mới để lưu hệ thống.
 
 ### 3.2. Giao diện Nhân viên
 - **Dashboard/Trang chủ**: Cập nhật các component đếm số lượng hoặc danh sách để chỉ hiển thị các mục thuộc quyền hạn.

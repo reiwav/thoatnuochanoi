@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, useOutletContext } from 'react-router-dom';
 import {
     Box, Button, Typography, Stack,
     IconButton, useMediaQuery
@@ -18,6 +18,7 @@ import InundationDetail from './InundationDetail';
 const InundationForm = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const navigate = useNavigate();
+    const { userInfo: user } = useOutletContext();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -108,10 +109,41 @@ const InundationForm = () => {
         );
     };
 
-    const renderContent = () => (
-        <Box sx={{ width: '100%' }}>
-            {TabSwitcher()}
-            {tab === 0 ? (
+    const renderContent = () => {
+        const correctionUpdate = selectedReport?.updates?.find(u => u.needs_correction);
+
+        return (
+            <Box sx={{ width: '100%' }}>
+                {correctionUpdate && (
+                    <Box sx={{ 
+                        mb: 3, p: 2, 
+                        bgcolor: 'error.lighter', 
+                        borderRadius: 3, 
+                        border: '1px solid', 
+                        borderColor: 'error.light',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 1
+                    }}>
+                        <Typography variant="subtitle1" sx={{ color: 'error.main', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <IconHistory size={20} /> YÊU CẦU CHỈNH SỬA TỪ RÀ SOÁT
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: 'error.dark', fontWeight: 600 }}>
+                            "{correctionUpdate.review_comment}"
+                        </Typography>
+                        <Stack direction="row" spacing={1} sx={{ mt: 0.5 }}>
+                            <Button 
+                                size="small" variant="contained" color="error" 
+                                onClick={() => setTab(1)}
+                                sx={{ borderRadius: 10, fontWeight: 700 }}
+                            >
+                                Xem chi tiết & Sửa
+                            </Button>
+                        </Stack>
+                    </Box>
+                )}
+                {TabSwitcher()}
+                {tab === 0 ? (
                 <InundationReportPanel
                     selectedReport={selectedReport}
                     pointId={searchParams.get('point_id')}
@@ -122,10 +154,12 @@ const InundationForm = () => {
                 <InundationDetail
                     selectedReport={selectedReport}
                     loadingReport={loadingReport}
+                    user={user}
                 />
             )}
-        </Box>
-    );
+            </Box>
+        );
+    };
 
     if (isMobile) {
         return (

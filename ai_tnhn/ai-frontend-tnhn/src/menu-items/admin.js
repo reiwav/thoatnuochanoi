@@ -79,7 +79,7 @@ const adminPages = {
       title: 'Điểm ngập',
       type: 'collapse',
       icon: icons.IconTornado,
-      roles: ['super_admin', 'admin_org'],
+      roles: ['super_admin', 'admin_org', 'reviewer'],
       children: [
         {
           id: 'station-inundation-list',
@@ -96,6 +96,7 @@ const adminPages = {
           url: '/admin/inundation',
           icon: icons.IconTornado,
           breadcrumbs: false,
+          roles: ['super_admin', 'admin_org']
         },
         {
           id: 'inundation-list',
@@ -111,7 +112,8 @@ const adminPages = {
           type: 'item',
           url: '/admin/station/inundation/history',
           icon: icons.IconHistory,
-          breadcrumbs: false
+          breadcrumbs: false,
+          roles: ['super_admin', 'admin_org']
         }
       ]
     },

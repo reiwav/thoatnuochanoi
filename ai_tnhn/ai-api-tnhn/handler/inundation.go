@@ -416,7 +416,64 @@ func (h *InundationHandler) ReviewUpdate(c *gin.Context) {
 	token := h.contextWith.GetToken(c.Request)
 	user, _ := h.authService.GetProfile(c.Request.Context(), token)
 
-	err := h.service.ReviewUpdate(c.Request.Context(), updateID, req.Comment, user.ID)
+	err := h.service.ReviewUpdate(c.Request.Context(), updateID, req.Comment, user.ID, user.Email, user.Name)
+	if err != nil {
+		h.SendError(c, err)
+		return
+	}
+	h.SendData(c, true)
+}
+
+func (h *InundationHandler) ReviewReport(c *gin.Context) {
+	reportID := c.Param("id")
+	var req struct {
+		Comment string `json:"comment"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.SendError(c, web.BadRequest("Invalid request body"))
+		return
+	}
+
+	token := h.contextWith.GetToken(c.Request)
+	user, _ := h.authService.GetProfile(c.Request.Context(), token)
+
+	err := h.service.ReviewReport(c.Request.Context(), reportID, req.Comment, user.ID, user.Email, user.Name)
+	if err != nil {
+		h.SendError(c, err)
+		return
+	}
+	h.SendData(c, true)
+}
+
+func (h *InundationHandler) UpdateReport(c *gin.Context) {
+	id := c.Param("id")
+	form, _ := c.MultipartForm()
+
+	updatedField := &models.InundationReport{
+		Description:   c.PostForm("description"),
+		Depth:         c.PostForm("depth"),
+		Length:        c.PostForm("length"),
+		Width:         c.PostForm("width"),
+		TrafficStatus: c.PostForm("traffic_status"),
+	}
+
+	var images []inundation.ImageContent
+	if form != nil {
+		files := form.File["images"]
+		for _, fileHeader := range files {
+			file, err := fileHeader.Open()
+			if err == nil {
+				images = append(images, inundation.ImageContent{
+					Name:     fileHeader.Filename,
+					MimeType: fileHeader.Header.Get("Content-Type"),
+					Reader:   file,
+				})
+				defer file.Close()
+			}
+		}
+	}
+
+	err := h.service.UpdateReport(c.Request.Context(), id, updatedField, images)
 	if err != nil {
 		h.SendError(c, err)
 		return

@@ -18,6 +18,7 @@ import (
 	"ai-api-tnhn/internal/service/googledrive"
 	"ai-api-tnhn/internal/service/inundation"
 	"ai-api-tnhn/internal/service/organization"
+	"ai-api-tnhn/internal/service/pump"
 	pumpingstation "ai-api-tnhn/internal/service/pumping_station"
 	querysvc "ai-api-tnhn/internal/service/query"
 	"ai-api-tnhn/internal/service/station"
@@ -112,6 +113,10 @@ func main() {
 	contractCategoryService := contract_category.NewService(contractCategoryRepo, driveService)
 	contractService := contract.NewService(contractRepo, contractCategoryRepo, orgRepo, driveService)
 	pumpingStationService := pumpingstation.NewService(pumpingStationRepo, userRepo)
+	pumpWorker := pump.NewWorker(log, pumpingStationService)
+	pumpingStationService.SetWorker(pumpWorker)
+	pumpWorker.Start(context.Background())
+
 	queryService := querysvc.NewService(db.DB)
 	queryHandler := handler.NewQueryHandler(queryService)
 	stationDataService := stationdata.NewService(stationService, waterService)

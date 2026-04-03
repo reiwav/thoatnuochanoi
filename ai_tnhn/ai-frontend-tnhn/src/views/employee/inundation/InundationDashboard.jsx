@@ -48,8 +48,8 @@ import {
 import { toast } from 'react-hot-toast';
 import inundationApi from 'api/inundation';
 import organizationApi from 'api/organization';
-import authApi from 'api/auth';
-import { ADMIN_TOKEN } from 'constants/auth';
+import pumpingStationApi from 'api/pumpingStation';
+import PumpingStationReport from '../../admin/pumping-station/PumpingStationReport';
 import MainCard from 'ui-component/cards/MainCard';
 
 import { getInundationImageUrl } from 'utils/imageHelper';
@@ -592,6 +592,7 @@ const InundationDashboard = () => {
     const [historyTrafficStatus, setHistoryTrafficStatus] = useState('');
     const [orgFilter, setOrgFilter] = useState('');
     const [organizations, setOrganizations] = useState([]);
+    const [assignedStation, setAssignedStation] = useState(null);
 
     // Pagination for History
     const [historyPage, setHistoryPage] = useState(0);
@@ -646,6 +647,17 @@ const InundationDashboard = () => {
         }
     };
 
+    const fetchAssignedStation = async () => {
+        if (userRole === 'employee' && userInfo?.assigned_pumping_station_id) {
+            try {
+                const response = await pumpingStationApi.get(userInfo.assigned_pumping_station_id);
+                setAssignedStation(response.data.data || null);
+            } catch (error) {
+                console.error('Failed to fetch assigned station:', error);
+            }
+        }
+    };
+
     const fetchOrgReports = async () => {
         setLoadingHistory(true);
         try {
@@ -672,10 +684,11 @@ const InundationDashboard = () => {
     }, []);
     useEffect(() => {
         fetchPoints();
-    }, [orgFilter]);
+        fetchAssignedStation();
+    }, [orgFilter, userInfo]);
 
     useEffect(() => {
-        if (activeTab === 2 || !isMobile) {
+        if (activeTab === 3 || !isMobile) {
             fetchOrgReports();
         }
     }, [activeTab, historyPage, historyRowsPerPage, isMobile, historyStatus, historyTrafficStatus, searchQuery, orgFilter]);
@@ -687,7 +700,7 @@ const InundationDashboard = () => {
     }, [points]);
 
     const filteredPoints = useMemo(() => {
-        let result = activeTab === 1 ? points.filter((p) => p.status === 'active') : points;
+        let result = activeTab === 2 ? points.filter((p) => p.status === 'active') : points;
 
         if (historyStatus) {
             result = result.filter((p) => p.status === historyStatus);
@@ -1127,7 +1140,23 @@ const InundationDashboard = () => {
     }
 
     // Mobile views
-    if (activeTab === 2) {
+    if (activeTab === 1) {
+        return (
+            <Box sx={{ px: isMobile ? 1.2 : 2, pt: 2, pb: 4 }}>
+                {assignedStation ? (
+                    <PumpingStationReport station={assignedStation} />
+                ) : (
+                    <Box sx={{ p: 3, textAlign: 'center' }}>
+                        <Typography color="error" sx={{ fontWeight: 700 }}>
+                            Bạn chưa được gán vào trạm bơm nào.
+                        </Typography>
+                    </Box>
+                )}
+            </Box>
+        );
+    }
+
+    if (activeTab === 3) {
         return (
             <Box sx={{ px: 2, pt: 2, pb: 6 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
@@ -1141,7 +1170,7 @@ const InundationDashboard = () => {
         );
     }
 
-    if (activeTab === 3) {
+    if (activeTab === 4) {
         return (
             <Box sx={{ px: isMobile ? 1.2 : 2, pt: 4, textAlign: 'center' }}>
                 <Avatar sx={{ width: 96, height: 96, mx: 'auto', mb: 2, bgcolor: 'primary.main' }}>
@@ -1178,20 +1207,27 @@ const InundationDashboard = () => {
                     </Avatar>
                 </Badge>
             </Box>
-            <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
+            <Stack direction="row" spacing={1} sx={{ mb: 2, overflowX: 'auto', pb: 1, '&::-webkit-scrollbar': { display: 'none' } }}>
                 <Chip
                     label={`Tất cả (${stats.total})`}
                     variant={activeTab === 0 ? 'filled' : 'outlined'}
                     color="primary"
-                    onClick={() => navigate(`${basePath}/inundation`)}
-                    sx={{ fontWeight: 800, height: 36, fontSize: '0.95rem' }}
+                    onClick={() => navigate(`${basePath}/inundation?activeTab=0`)}
+                    sx={{ fontWeight: 800, height: 36, fontSize: '0.95rem', flexShrink: 0 }}
+                />
+                <Chip
+                    label="Trạm bơm"
+                    variant={activeTab === 1 ? 'filled' : 'outlined'}
+                    color="primary"
+                    onClick={() => navigate(`${basePath}/inundation?activeTab=1`)}
+                    sx={{ fontWeight: 800, height: 36, fontSize: '0.95rem', flexShrink: 0 }}
                 />
                 <Chip
                     label={`Đang ngập (${stats.active})`}
                     color="error"
-                    variant={activeTab === 1 ? 'filled' : 'outlined'}
-                    onClick={() => navigate(`${basePath}/inundation?activeTab=1`)}
-                    sx={{ fontWeight: 800, height: 36, fontSize: '0.95rem' }}
+                    variant={activeTab === 2 ? 'filled' : 'outlined'}
+                    onClick={() => navigate(`${basePath}/inundation?activeTab=2`)}
+                    sx={{ fontWeight: 800, height: 36, fontSize: '0.95rem', flexShrink: 0 }}
                 />
             </Stack>
             <Stack spacing={isMobile ? 2 : 1.5} sx={{ mb: 2 }}>

@@ -20,11 +20,18 @@ type Service interface {
 	// History
 	CreateHistory(ctx context.Context, user *models.User, history *models.PumpingStationHistory) (*models.PumpingStationHistory, error)
 	ListHistory(ctx context.Context, filter filter.Filter) ([]*models.PumpingStationHistory, int64, error)
+
+	SetWorker(w interface{})
+}
+
+type Worker interface {
+	Restart(ctx context.Context)
 }
 
 type service struct {
 	stationRepo repository.PumpingStation
 	userRepo    repository.User
+	worker      Worker
 }
 
 func NewService(stationRepo repository.PumpingStation, userRepo repository.User) Service {
@@ -35,11 +42,19 @@ func NewService(stationRepo repository.PumpingStation, userRepo repository.User)
 }
 
 func (s *service) Create(ctx context.Context, input *models.PumpingStation) (*models.PumpingStation, error) {
-	return s.stationRepo.Create(ctx, input)
+	res, err := s.stationRepo.Create(ctx, input)
+	if err == nil && s.worker != nil {
+		s.worker.Restart(ctx)
+	}
+	return res, err
 }
 
 func (s *service) Update(ctx context.Context, id string, input *models.PumpingStation) error {
-	return s.stationRepo.Update(ctx, id, input)
+	err := s.stationRepo.Update(ctx, id, input)
+	if err == nil && s.worker != nil {
+		s.worker.Restart(ctx)
+	}
+	return err
 }
 
 func (s *service) Delete(ctx context.Context, id string) error {
@@ -57,7 +72,7 @@ func (s *service) List(ctx context.Context, filter filter.Filter) ([]*models.Pum
 // History
 func (s *service) CreateHistory(ctx context.Context, user *models.User, history *models.PumpingStationHistory) (*models.PumpingStationHistory, error) {
 	// 1. Permission check: Employee can only update their assigned station
-	if user.Role == "employee" {
+	if user != nil && user.Role == "employee" {
 		if user.AssignedPumpingStationID == "" {
 			return nil, web.Forbidden("Bạn chưa được gán vào trạm bơm nào")
 		}
@@ -77,9 +92,33 @@ func (s *service) CreateHistory(ctx context.Context, user *models.User, history 
 		return nil, web.BadRequest("Tổng số lượng máy bơm báo cáo vượt quá số lượng thực tế của trạm")
 	}
 
-	// 3. Populate metadata
-	history.UserID = user.ID
-	history.UserName = user.Name
+	// 3. Deduplication: Check latest record
+	f := filter.NewPaginationFilter()
+	f.Page = 1
+	f.PerPage = 1
+	f.AddWhere("station_id", "station_id", history.StationID)
+	f.SetOrderBy("-timestamp")
+	latestItems, _, err := s.stationRepo.ListHistory(ctx, f)
+	if err == nil && len(latestItems) > 0 {
+		latest := latestItems[0]
+		if latest.OperatingCount == history.OperatingCount &&
+			latest.ClosedCount == history.ClosedCount &&
+			latest.MaintenanceCount == history.MaintenanceCount {
+			// No change, skip insert
+			return latest, nil
+		}
+	}
+
+	// 4. Populate metadata
+	if user != nil {
+		history.UserID = user.ID
+		history.UserName = user.Name
+	} else {
+		history.UserID = "SYSTEM"
+		history.UserName = "Hệ thống tự động"
+		history.Note = "Dữ liệu tự động từ hệ thống"
+	}
+
 	if history.Timestamp == 0 {
 		history.Timestamp = time.Now().Unix()
 	}
@@ -89,4 +128,10 @@ func (s *service) CreateHistory(ctx context.Context, user *models.User, history 
 
 func (s *service) ListHistory(ctx context.Context, filter filter.Filter) ([]*models.PumpingStationHistory, int64, error) {
 	return s.stationRepo.ListHistory(ctx, filter)
+}
+
+func (s *service) SetWorker(w interface{}) {
+	if worker, ok := w.(Worker); ok {
+		s.worker = worker
+	}
 }

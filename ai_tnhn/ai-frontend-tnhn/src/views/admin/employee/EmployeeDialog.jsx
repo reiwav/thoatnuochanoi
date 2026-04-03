@@ -132,7 +132,6 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                             fullWidth label="Email" required size="small"
                             value={formData.email}
                             onChange={(e) => handleChange('email', e.target.value)}
-                            disabled={isEdit}
                             sx={{ flex: 1, '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#f8fafc' } }}
                         />
                         <FormControl fullWidth size="small" sx={{ flex: 1 }}>

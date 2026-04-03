@@ -73,6 +73,18 @@ func (s *service) Update(ctx context.Context, id string, input *models.User) err
 		return errors.New("user not found")
 	}
 
+	// Check if email changed and if new email is already taken
+	if input.Email != "" && input.Email != existing.Email {
+		f := filter.NewBasicFilter()
+		f.AddWhere("email", "email", input.Email)
+		users, _, err := s.userRepo.List(ctx, f)
+		if err == nil && len(users) > 0 {
+			return web.BadRequest("Email này đã được sử dụng bởi người dùng khác")
+		}
+		existing.Email = input.Email
+		existing.Username = input.Email // Usually username = email in this system
+	}
+
 	// Merge changes into existing record to prevent clearing non-provided fields
 	existing.Name = input.Name
 	existing.Role = input.Role

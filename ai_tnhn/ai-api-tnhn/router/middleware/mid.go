@@ -81,6 +81,7 @@ func (m mid) MidBasicType(roles ...string) gin.HandlerFunc {
 			Role:   tok.Role,
 			Name:   tok.Name,
 		})
+		m.SetUserID(ctx, tok.UserID)
 		ctx.Next()
 	}
 }

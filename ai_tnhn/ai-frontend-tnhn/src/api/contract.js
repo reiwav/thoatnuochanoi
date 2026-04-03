@@ -14,6 +14,7 @@ const contractApi = {
         headers: { 'Content-Type': 'multipart/form-data' }
     }),
     chatContract: (data) => axiosClient.post('/admin/google/contract-chat', data),
+    getChatHistory: (chatType = 'support', limit = 50) => axiosClient.get(`/admin/google/chat/history?chat_type=${chatType}&limit=${limit}`),
     deleteFile: (fileId) => axiosClient.delete(`/admin/contracts/delete-file?file_id=${fileId}`)
 };
 

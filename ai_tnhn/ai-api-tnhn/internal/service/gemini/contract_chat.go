@@ -1,6 +1,7 @@
 package gemini
 
 import (
+	"ai-api-tnhn/internal/models"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"github.com/google/generative-ai-go/genai"
 	"golang.org/x/sync/errgroup"
 )
+
 
 // ChatContract xử lý chat AI chuyên biệt cho quản lý hợp đồng.
 // Tách riêng để phân quyền theo vai trò người dùng.
@@ -196,9 +198,44 @@ QUY TẮC QUAN TRỌNG:
 		return "Xin lỗi, tôi không thể tìm thấy câu trả lời phù hợp.", nil
 	}
 
-	var finalResult string
+	finalResult := ""
 	for _, part := range resp.Candidates[0].Content.Parts {
 		finalResult += fmt.Sprintf("%v", part)
 	}
+
+	// Save Chat Log
+	go func() {
+		if s.aiChatLogRepo != nil {
+			now := time.Now()
+			// Log User Message
+			err := s.aiChatLogRepo.Save(context.Background(), &models.AiChatLog{
+				UserID:    userID,
+				Role:      "user",
+				Content:   prompt,
+				ChatType:  "contract",
+				Timestamp: now.Add(-1 * time.Second),
+			})
+			if err != nil {
+				fmt.Printf(" [Chat Contract] Error saving user log: %v\n", err)
+			} else {
+				fmt.Printf(" [Chat Contract] Saved user log for UserID: %s\n", userID)
+			}
+			// Log Model Response
+			err = s.aiChatLogRepo.Save(context.Background(), &models.AiChatLog{
+				UserID:    userID,
+				Role:      "model",
+				Content:   finalResult,
+				ChatType:  "contract",
+				Timestamp: now,
+			})
+			if err != nil {
+				fmt.Printf(" [Chat Contract] Error saving model log: %v\n", err)
+			} else {
+				fmt.Printf(" [Chat Contract] Saved model log for UserID: %s\n", userID)
+			}
+		}
+	}()
+
+
 	return finalResult, nil
 }

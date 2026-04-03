@@ -7,9 +7,12 @@ import (
 	"ai-api-tnhn/internal/service/gemini"
 	"ai-api-tnhn/internal/service/googleapi"
 	"ai-api-tnhn/internal/service/googledrive"
+	"ai-api-tnhn/internal/repository"
 	"ai-api-tnhn/internal/service/water"
+
 	"ai-api-tnhn/internal/service/weather"
 	"ai-api-tnhn/utils/web"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -18,6 +21,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -25,29 +29,86 @@ import (
 )
 
 type GoogleHandler struct {
-	googleSvc   googleapi.Service
-	geminiSvc   gemini.Service
-	driveSvc    googledrive.Service
-	waterSvc    water.Service
-	weatherSvc  weather.Service
-	emailSvc    email.Service
-	contextWith web.ContextWith
-	config      config.GoogleDriveConfig
-	log         logger.Logger
+	googleSvc     googleapi.Service
+	geminiSvc     gemini.Service
+	driveSvc      googledrive.Service
+	waterSvc      water.Service
+	weatherSvc    weather.Service
+	emailSvc      email.Service
+	contextWith   web.ContextWith
+	aiChatLogRepo repository.AiChatLog
+	config        config.GoogleDriveConfig
+	log           logger.Logger
+	cachedOCRText string
+	cachedEmailID uint32
+	ocrMu         sync.RWMutex
 }
 
-func NewGoogleHandler(googleSvc googleapi.Service, geminiSvc gemini.Service, driveSvc googledrive.Service, waterSvc water.Service, emailSvc email.Service, contextWith web.ContextWith, conf config.GoogleDriveConfig, log logger.Logger, weatherSvc weather.Service) *GoogleHandler {
-	return &GoogleHandler{
-		googleSvc:   googleSvc,
-		geminiSvc:   geminiSvc,
-		driveSvc:    driveSvc,
-		waterSvc:    waterSvc,
-		emailSvc:    emailSvc,
-		contextWith: contextWith,
-		config:      conf,
-		log:         log,
-		weatherSvc:  weatherSvc,
+func NewGoogleHandler(googleSvc googleapi.Service, geminiSvc gemini.Service, driveSvc googledrive.Service, waterSvc water.Service, emailSvc email.Service, contextWith web.ContextWith, conf config.GoogleDriveConfig, log logger.Logger, weatherSvc weather.Service, aiChatLogRepo repository.AiChatLog) *GoogleHandler {
+	h := &GoogleHandler{
+		googleSvc:     googleSvc,
+		geminiSvc:     geminiSvc,
+		driveSvc:      driveSvc,
+		waterSvc:      waterSvc,
+		emailSvc:      emailSvc,
+		contextWith:   contextWith,
+		aiChatLogRepo: aiChatLogRepo,
+		config:        conf,
+		log:           log,
+		weatherSvc:    weatherSvc,
 	}
+
+
+	// Chạy nền khi khởi động để nạp Cache
+	go func() {
+		h.log.GetLogger().Infof("Startup: Bat dau nap cache email OCR Text doc ngay...")
+		h.getLatestOCRText(context.Background())
+	}()
+
+	return h
+}
+
+func (h *GoogleHandler) getLatestOCRText(ctx context.Context) string {
+	if h.emailSvc == nil || h.geminiSvc == nil {
+		return ""
+	}
+
+	id, err := h.emailSvc.GetLatestWeatherEmailID(ctx)
+	if err != nil {
+		h.log.GetLogger().Warnf("Failed to get latest weather email ID: %v", err)
+		return ""
+	}
+
+	h.ocrMu.RLock()
+	if id <= h.cachedEmailID && h.cachedOCRText != "" {
+		text := h.cachedOCRText
+		h.ocrMu.RUnlock()
+		h.log.GetLogger().Infof("DynamicReport: Using cached OCR text from email ID %d", id)
+		return text
+	}
+	h.ocrMu.RUnlock()
+
+	// Download and extract if new ID or cache empty
+	h.log.GetLogger().Infof("DynamicReport: Fetching new OCR text for email ID %d", id)
+	raw, _, err := h.emailSvc.GetEmailAttachmentRawByID(ctx, id)
+	if err != nil || len(raw) == 0 {
+		h.log.GetLogger().Warnf("Failed to fetch email raw attachment: %v", err)
+		return ""
+	}
+
+	ocrText, geminiErr := h.geminiSvc.ExtractTextFromPDF(ctx, raw)
+	if geminiErr == nil && ocrText != "" {
+		h.ocrMu.Lock()
+		h.cachedEmailID = id
+		h.cachedOCRText = ocrText
+		h.ocrMu.Unlock()
+		h.log.GetLogger().Infof("DynamicReport: OCR OK, %d chars, cached with Email ID %d", len(ocrText), id)
+		return ocrText
+	} else if geminiErr != nil {
+		h.log.GetLogger().Warnf("Gemini OCR failed: %v", geminiErr)
+	}
+
+	return ""
 }
 
 func (h *GoogleHandler) GetStatus(c *gin.Context) {
@@ -131,21 +192,17 @@ func (h *GoogleHandler) ChatContract(c *gin.Context) {
 }
 
 func (h *GoogleHandler) Chat(c *gin.Context) {
-	if h.geminiSvc == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Gemini AI service is not initialized. Please check GEMINI_API_KEY."})
-		return
-	}
-
 	var body struct {
 		Prompt  string               `json:"prompt"`
 		History []gemini.ChatMessage `json:"history"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "prompt is required"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	userID, _ := h.contextWith.GetUserID(c)
+	fmt.Printf(" [Chat Handler] UserID: %s, Prompt length: %d\n", userID, len(body.Prompt))
 	response, err := h.geminiSvc.Chat(c.Request.Context(), body.Prompt, body.History, userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -155,6 +212,31 @@ func (h *GoogleHandler) Chat(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
 		"data":   response,
+	})
+}
+
+func (h *GoogleHandler) GetChatHistory(c *gin.Context) {
+	userID, _ := h.contextWith.GetUserID(c)
+	chatType := c.DefaultQuery("chat_type", "support")
+	limitStr := c.DefaultQuery("limit", "50")
+	var limit int
+	fmt.Sscanf(limitStr, "%d", &limit)
+
+	fmt.Printf(" [Chat History Handler] UserID: %s, ChatType: %s, Limit: %d\n", userID, chatType, limit)
+	logs, err := h.aiChatLogRepo.FindByUser(c.Request.Context(), userID, chatType, limit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Reverse to send oldest first for the frontend to render sequentially
+	for i, j := 0, len(logs)-1; i < j; i, j = i+1, j-1 {
+		logs[i], logs[j] = logs[j], logs[i]
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": "success",
+		"data":   logs,
 	})
 }
 
@@ -287,23 +369,7 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 	// 3. Fetch Email Attachment (OCR first, standard fallback)
 	extractedContent := ""
 	g.Go(func() error {
-		if h.emailSvc != nil {
-			// Try Gemini OCR first (handles image-based PDFs)
-			raw, _, ocrErr := h.emailSvc.GetLatestEmailAttachmentRaw(gCtx)
-			if ocrErr == nil && len(raw) > 0 {
-				ocrText, geminiErr := h.geminiSvc.ExtractTextFromPDF(gCtx, raw)
-				if geminiErr == nil && ocrText != "" {
-					extractedContent = ocrText
-					h.log.GetLogger().Infof("Gemini OCR successful (Page 1), %d characters", len(ocrText))
-					return nil
-				}
-				h.log.GetLogger().Warnf("Gemini OCR failed: %v. Falling back to standard extraction...", geminiErr)
-			}
-			// Fallback to standard extraction
-			// if content, err := h.emailSvc.GetLatestEmailAttachmentPage1(gCtx); err == nil && content != "" {
-			// 	extractedContent = content
-			// }
-		}
+		extractedContent = h.getLatestOCRText(gCtx)
 		return nil
 	})
 
@@ -735,15 +801,7 @@ func (h *GoogleHandler) GenerateAIDynamicReport(c *gin.Context) {
 	// === Goroutine 1: OCR email forecast ===
 	emailContent := ""
 	g.Go(func() error {
-		if h.emailSvc != nil {
-			raw, _, err := h.emailSvc.GetLatestEmailAttachmentRaw(gCtx)
-			if err == nil && len(raw) > 0 {
-				if ocrText, geminiErr := h.geminiSvc.ExtractTextFromPDF(gCtx, raw); geminiErr == nil && ocrText != "" {
-					emailContent = ocrText
-					h.log.GetLogger().Infof("DynamicReport: OCR OK, %d chars", len(ocrText))
-				}
-			}
-		}
+		emailContent = h.getLatestOCRText(gCtx)
 		return nil
 	})
 

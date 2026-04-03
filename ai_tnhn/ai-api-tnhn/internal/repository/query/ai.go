@@ -15,9 +15,19 @@ type aiUsageRepository struct {
 	*db.Table
 }
 
+type aiChatLogRepository struct {
+	*db.Table
+}
+
+
 func NewAiUsageRepo(dbc *mongo.Database, name, prefix string, l logger.Logger) repository.AiUsage {
 	return aiUsageRepository{db.NewTable(name, prefix, dbc, l)}
 }
+
+func NewAiChatLogRepo(dbc *mongo.Database, name, prefix string, l logger.Logger) repository.AiChatLog {
+	return aiChatLogRepository{db.NewTable(name, prefix, dbc, l)}
+}
+
 
 func (p aiUsageRepository) Save(ctx context.Context, usage *models.AiUsage) error {
 	return p.R_Create(ctx, usage)
@@ -57,3 +67,21 @@ func (p aiUsageRepository) GetAggregateStats(ctx context.Context, filter bson.M)
 
 	return results[0], nil
 }
+
+func (p aiChatLogRepository) Save(ctx context.Context, log *models.AiChatLog) error {
+	return p.R_Create(ctx, log)
+}
+
+func (p aiChatLogRepository) FindByUser(ctx context.Context, userID string, chatType string, limit int) ([]models.AiChatLog, error) {
+	if limit == 0 {
+		limit = 50
+	}
+	f := bson.M{"user_id": userID}
+	if chatType != "" {
+		f["chat_type"] = chatType
+	}
+	var results []models.AiChatLog
+	err := p.R_SelectAndSort(ctx, f, bson.M{"timestamp": -1}, 0, int64(limit), &results)
+	return results, err
+}
+

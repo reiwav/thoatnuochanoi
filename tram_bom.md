@@ -10,10 +10,10 @@ Xây dựng tính năng quản lý danh sách trạm bơm và theo dõi lịch s
 - **Các trường thông tin**:
     - `name` (string): Tên trạm bơm.
     - `address` (string): Địa chỉ.
-    - `pump_count` (int): Tổng số lượng máy bơm.
+    - `pump_count` (int): Tổng số lượng máy bơm (Bao gồm thường và khẩn cấp).
     - `active` (bool): Trạng thái hoạt động.
-    - `link` (string): Link đến trang web/hệ thống quản lý của trạm (Yên Sở là Auto, còn lại manual).
-    - `is_auto` (bool): Trạng thái tự động.
+    - `link` (string): Link SignalR kết nối lấy dữ liệu (Ví dụ: `https://thoatnuochanoi.vn/pump/signalr`).
+    - `is_auto` (bool): Trạng thái tự động lấy dữ liệu.
 - **Phân quyền**: 
     - `super_admin`: Toàn quyền CRUD.
     - `employee`: Xem thông tin trạm được gán.
@@ -22,15 +22,12 @@ Xây dựng tính năng quản lý danh sách trạm bơm và theo dõi lịch s
 - **Mục tiêu**: Theo dõi số lượng máy bơm đang hoạt động, đóng hoặc bảo dưỡng.
 - **Các trường thông tin**:
     - `station_id` (string): ID trạm bơm.
-    - `user_id` (string): ID nhân viên thực hiện báo cáo.
+    - `user_id` (string): ID nhân viên hoặc "SYSTEM" (nếu lấy tự động).
     - `operating_count` (int): Số lượng máy bơm đang vận hành.
     - `closed_count` (int): Số lượng máy bơm đang đóng.
     - `maintenance_count` (int): Số lượng máy bơm đang bảo dưỡng.
-    - `note` (string): Ghi chú thêm.
+    - `note` (string): Ghi chú thêm (Ví dụ: "Dữ liệu tự động từ hệ thống").
     - `timestamp` (int64): Thời gian báo cáo.
-- **Ràng buộc**: 
-    - Mỗi nhân viên (`employee`) chỉ được gán cho **DUY NHẤT 1** trạm bơm.
-    - Nhân viên chỉ có quyền cập nhật lịch sử cho trạm bơm mà mình được giao.
 
 ## 3. Các bước thực hiện (Backend - Go API)
 
@@ -38,65 +35,66 @@ Xây dựng tính năng quản lý danh sách trạm bơm và theo dõi lịch s
 - Tạo file `internal/models/pumping_station.go`:
     - Struct `PumpingStation`.
     - Struct `PumpingStationHistory`.
-- Cập nhật struct `User` trong `internal/models/user.go`:
-    - Thêm `AssignedPumpingStationID string` (BSON/JSON: `assigned_pumping_station_id`).
+- Cập nhật struct `User` trong `internal/models/user.go`: Thêm `AssignedPumpingStationID`.
 
 ### Bước 2: Xây dựng Repository
-- Tạo `internal/repository/pumping_station.go`:
-    - Interface cho cả `PumpingStation` và `PumpingStationHistory`.
-- Implement các phương thức: `Create`, `Update`, `Delete`, `GetByID`, `List` cho Station.
-- Implement các phương thức: `CreateHistory`, `ListHistory` cho History.
+- Implement các phương thức: `Create`, `Update`, `Delete`, `GetByID`, `List` cho Station & History.
 
-### Bước 3: Xây dựng Service
-- Tạo `internal/service/pumping_station/service.go`:
-    - Logic nghiệp vụ cho Station và History.
-    - **Validation**: Đảm bảo tổng `operating_count + closed_count + maintenance_count` hợp lệ so với `pump_count` của trạm (Optional - tùy yêu cầu kiểm soát).
-    - Logic gán nhân viên vào trạm: Cập nhật `AssignedPumpingStationID` của User.
-
-### Bước 4: Xây dựng Handler
-- Tạo `handler/pumping_station.go`:
-    - `CreateReport`: Endpoint cho nhân viên gửi báo cáo tình trạng trạm.
-    - `ListHistory`: Xem lịch sử báo cáo của một trạm (dành cho Admin).
-    - Quản lý metadata trạm (CRUD).
-
-### Bước 5: Đăng ký Router
-- Cập nhật file `router/station.go`:
-    - Thêm group `/pumping` trong `/stations`.
-    - Đăng ký các route:
-        - `GET /stations/pumping`: List trạm bơm.
-        - `POST /stations/pumping/report`: Gửi báo cáo lịch sử máy bơm (Role: Employee).
-        - `GET /stations/pumping/:id/history`: Xem lịch sử máy bơm của trạm (Role: Admin/Super Admin).
+### Bước 3: Xây dựng Service & Background Worker
+- Tạo logic quản lý trạm bơm.
+- **Background Worker**:
+    - Quét các trạm có `is_auto = true`.
+    - Duy trì kết nối SignalR SSE tới `link` của trạm.
+    - Chạy chu kỳ **10 giây/lần**.
+    - **Deduplication Logic**: So sánh kết quả vừa lấy được với bản ghi `History` mới nhất trong Database. Nếu trùng khớp cả 3 chỉ số bơm (`operating`, `closed`, `maintenance`) và `station_id` thì **BỎ QUA**, không ghi thêm dữ liệu.
 
 ## 4. Các bước thực hiện (Frontend - React)
 
-### Bước 1: Khai báo API
-- Cập nhật `src/api/pumpingStation.js`:
-    - Các hàm gọi API CRUD trạm bơm.
-    - Các hàm gọi API báo cáo lịch sử và xem lịch sử.
+### Bước 1: Khai báo API & UI Quản lý
+- CRUD Trạm bơm và Gán nhân viên.
 
-### Bước 2: Quản lý Nhân viên (Admin UI)
-- Cập nhật `EmployeeDialog.jsx`: 
-    - Thêm dropdown chọn Trạm bơm được giao (giới hạn chọn 1).
+### Bước 2: Giao diện Báo cáo (Employee)
+- Form nhập báo cáo thủ công (dành cho các trạm `is_auto = false`).
+- Xem lịch sử trạm được giao.
 
-### Bước 3: Giao diện Báo cáo (Employee UI)
-- Tạo component `PumpingStationReport.jsx`: 
-    - Form nhập 3 chỉ số: Vận hành, Đóng, Bảo dưỡng.
-    - Hiển thị thông tin trạm bơm hiện tại của nhân viên.
+### Bước 3: Giao diện Lịch sử (Admin)
+- Xem bảng lịch sử tổng hợp (Bao gồm cả dữ liệu nhập tay và dữ liệu tự động).
 
-### Bước 4: Giao diện Quản lý & Lịch sử (Admin UI)
-- Tạo component `PumpingStationList.jsx`: Quản lý danh sách trạm.
-- Tạo component `PumpingStationHistory.jsx`: Hiển thị bảng/biểu đồ lịch sử vận hành các máy bơm.
+## 5. Tích hợp Dữ liệu Tự động (Background Job)
 
-### Bước 5: Cập nhật Routing & Menu
-- Cập nhật `src/routes/MainRoutes.jsx`: Map các path mới.
-- Cập nhật `src/menu-items/admin.js`: Thêm phân quyền cho các mục menu liên quan.
-- **Tích hợp Mobile Dashboard (Employee)**: Thêm Tab "Trạm bơm" vào giao diện `/company/inundation` dành cho nhân viên trong `MainLayout.jsx`.
+### A. Phân tích gói tin SignalR (`rcvPumpStatus`)
+Mỗi máy bơm được đại diện bởi **6 tham số liên tiếp** trong mảng 120 đối số. Trong đó có **5 chỉ số nhị phân (Binary)** và 1 chỉ số giá trị (Numeric):
 
-## 5. Danh sách công việc (Checklist)
-- [ ] Backend: Model `PumpingStation` & `History`.
-- [ ] Backend: Cập nhật Model `User` (trường assigned).
-- [ ] Backend: Service & Handlers (CRUD + Reorting logic).
-- [ ] Backend: API Routes & Role Permission.
-- [ ] Frontend: API client & Employee assignment UI.
-- [ ] Frontend: Employee reporting form.
-- [ ] Frontend: Admin history management view UI.
+| Thứ tự | Vai trò | Kiểu dữ liệu | Giải thích |
+| :--- | :--- | :--- | :--- |
+| **1** | **Pump On** | Binary (0/1) | 1 = Máy đang chạy, 0 = Máy tắt |
+| **2** | **Pump Fault** | Binary (0/1) | 1 = Máy đang lỗi/bảo trì (Ưu tiên cao nhất) |
+| **3** | **Current** | Numeric | Giá trị dòng điện (Amperes) |
+| **4** | **Valve Open** | Binary (0/1) | 1 = Van đang mở |
+| **5** | **Valve Close** | Binary (0/1) | 1 = Van đang đóng |
+| **6** | **Valve Fault** | Binary (0/1) | 1 = Van đang lỗi |
+
+### B. Thuật toán tổng hợp trạng thái
+Với mỗi cụm 6 số, hệ thống sẽ phân loại máy bơm vào 1 trong 3 trạng thái:
+1.  **Maintenance (Bảo dưỡng)**: Nếu **Tham số 2 (Fault) == 1**.
+2.  **Operating (Vận hành)**: Nếu **Tham số 2 == 0** (Không lỗi) **VÀ** **Tham số 1 (On) == 1**.
+3.  **Closed (Đang đóng)**: Nếu **Tham số 2 == 0** (Không lỗi) **VÀ** **Tham số 1 (On) == 0**.
+
+### C. Quy trình lưu trữ & Vòng đời
+1. Kết nối SignalR qua link cấu hình trong `PumpingStation`.
+2. Sau mỗi 10 giây, parse 120 đối số -> Tính tổng `operating`, `closed`, `maintenance`.
+3. So sánh với bản ghi `History` gần nhất. Chỉ `INSERT` nếu có sự thay đổi ở ít nhất 1 trong 3 chỉ số.
+4. Tự động Start/Restart/Stop job khi dữ liệu trạm bơm trong DB thay đổi.
+
+## 6. Danh sách công việc (Checklist)
+- [x] Backend: Model `PumpingStation` & `History`.
+- [x] Backend: Cập nhật Model `User` (trường assigned).
+- [x] Backend: Service & Handlers (CRUD + Reporting logic).
+- [x] Backend: API Routes & Role Permission.
+- [x] Frontend: API client & Employee assignment UI.
+- [x] Frontend: Employee reporting form (Bao gồm nút Xem lịch sử).
+- [x] Frontend: Admin history management view UI.
+- [x] Frontend: Tích hợp Tab Mobile "Trạm bơm" cho nhân viên.
+- [ ] Backend Proxy: Implement SignalR Client (10s interval, Parsing to History).
+- [ ] Backend Logic: Deduplication logic (Only insert if data changes).
+- [ ] Backend Worker: Lifecycle management (Start/Restart job on Station update).

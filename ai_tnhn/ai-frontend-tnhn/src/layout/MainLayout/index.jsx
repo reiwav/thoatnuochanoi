@@ -256,38 +256,41 @@ export default function MainLayout() {
                 value={(() => {
                   if (pathname === `${basePath}/inundation/form`) {
                     const p = new URLSearchParams(window.location.search);
-                    return p.get('tab') === '1' ? 1 : -1;
+                    return p.get('tab') === '1' ? 2 : -1;
                   }
                   const p = new URLSearchParams(window.location.search);
                   const activeTab = p.get('activeTab');
-                  if (activeTab === '1') return 1;
-                  if (activeTab === '2') return 2;
-                  if (activeTab === '3') return 3;
+                  if (activeTab === '1') return 1; // Trạm bơm
+                  if (activeTab === '2') return 2; // Đang ngập
+                  if (activeTab === '3') return 3; // Lịch sử
+                  if (activeTab === '4') return 4; // Tài khoản
                   return 0;
                 })()}
                 onChange={(_, val) => {
-                  if (val === 0) navigate(`${basePath}/inundation`);
+                  if (val === 0) navigate(`${basePath}/inundation?activeTab=0`);
                   else if (val === 1) navigate(`${basePath}/inundation?activeTab=1`);
                   else if (val === 2) navigate(`${basePath}/inundation?activeTab=2`);
                   else if (val === 3) navigate(`${basePath}/inundation?activeTab=3`);
+                  else if (val === 4) navigate(`${basePath}/inundation?activeTab=4`);
                 }}
                 sx={{
                   height: 72,
-                  '& .MuiBottomNavigationAction-root': { py: 1 },
-                  '& .MuiBottomNavigationAction-label': { fontWeight: 700, fontSize: '0.85rem', mt: 0.3 }
+                  '& .MuiBottomNavigationAction-root': { py: 1, minWidth: 'auto' },
+                  '& .MuiBottomNavigationAction-label': { fontWeight: 700, fontSize: '0.7rem', mt: 0.3 }
                 }}
               >
-                <BottomNavigationAction label="Tổng quan" icon={<DashboardIcon sx={{ fontSize: '1.6rem' }} />} />
+                <BottomNavigationAction label="Tổng quan" icon={<DashboardIcon sx={{ fontSize: '1.4rem' }} />} />
+                <BottomNavigationAction label="Trạm bơm" icon={< EngineeringIcon sx={{ fontSize: '1.4rem' }} />} />
                 <BottomNavigationAction
                   label="Đang ngập"
                   icon={
                     <Badge badgeContent={activeFloodCount} color="error" max={99}>
-                      <WarningIcon sx={{ fontSize: '1.6rem' }} />
+                      <WarningIcon sx={{ fontSize: '1.4rem' }} />
                     </Badge>
                   }
                 />
-                <BottomNavigationAction label="Lịch sử" icon={<HistoryIcon sx={{ fontSize: '1.6rem' }} />} />
-                <BottomNavigationAction label="Tài khoản" icon={<PersonIcon sx={{ fontSize: '1.6rem' }} />} />
+                <BottomNavigationAction label="Lịch sử" icon={<HistoryIcon sx={{ fontSize: '1.4rem' }} />} />
+                <BottomNavigationAction label="Tài khoản" icon={<PersonIcon sx={{ fontSize: '1.4rem' }} />} />
               </BottomNavigation>
             )}
           </Paper>

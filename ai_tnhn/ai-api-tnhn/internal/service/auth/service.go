@@ -36,15 +36,17 @@ func NewService(tokenRepo repository.Token, userRepo repository.User) Service {
 		Name:     "Long Tran",
 		Username: "admin23@gmail.com",
 		Email:    "admin23@gmail.com",
-		Password: hash.NewPassword("vietnam@"),
+		Password: hash.NewPassword("vietnam@2026@!"),
 		Role:     constant.ROLE_SUPER_ADMIN,
+		Active:   true,
 	})
 	userRepo.Create(context.Background(), &models.User{
 		Name:     "Nam Nguyen",
 		Username: "namnguyenminh8686@gmail.com",
 		Email:    "namnguyenminh8686@gmail.com",
-		Password: hash.NewPassword("vietnam@"),
+		Password: hash.NewPassword("vietnam@2026@!"),
 		Role:     constant.ROLE_SUPER_ADMIN,
+		Active:   true,
 	})
 	return &service{
 		userRepo:  userRepo,

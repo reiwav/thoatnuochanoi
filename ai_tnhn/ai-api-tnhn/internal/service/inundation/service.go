@@ -19,12 +19,18 @@ type Service interface {
 	CreateReport(ctx context.Context, report *models.InundationReport, images []ImageContent) error
 	AddUpdate(ctx context.Context, reportID string, update *models.InundationUpdate, userID string, userEmail string, images []ImageContent) error
 	ListReports(ctx context.Context, orgID string) ([]*models.InundationReport, int64, error)
-	ListReportsWithFilter(ctx context.Context, orgID, status, trafficStatus, query string, page, size int) ([]*models.InundationReport, int64, error)
+	ListReportsWithFilter(ctx context.Context, orgID, status, trafficStatus, query string, pointIDs []string, page, size int) ([]*models.InundationReport, int64, error)
 	GetReport(ctx context.Context, reportID string) (*models.InundationReport, error)
 	Resolve(ctx context.Context, reportID string, endTime int64) error
+	UpdateReport(ctx context.Context, id string, report *models.InundationReport, images []ImageContent) error
+
+	// Review and Correction
+	ReviewReport(ctx context.Context, reportID, comment, reviewerID, reviewerEmail, reviewerName string) error
+	ReviewUpdate(ctx context.Context, updateID, comment, reviewerID, reviewerEmail, reviewerName string) error
+	UpdateUpdateContent(ctx context.Context, updateID string, update *models.InundationUpdate, images []ImageContent) error
 
 	// Points management
-	GetPointsStatus(ctx context.Context, orgID string) ([]PointStatus, error)
+	GetPointsStatus(ctx context.Context, orgID string, pointIDs []string) ([]PointStatus, error)
 	GetPointByID(ctx context.Context, id string) (*models.InundationPoint, error)
 	CreatePoint(ctx context.Context, point models.InundationPoint) (string, error)
 	UpdatePoint(ctx context.Context, id string, point models.InundationPoint) error
@@ -246,13 +252,16 @@ func (s *service) ListReports(ctx context.Context, orgID string) ([]*models.Inun
 	return s.inundationRepo.List(ctx, f)
 }
 
-func (s *service) ListReportsWithFilter(ctx context.Context, orgID, status, trafficStatus, query string, page, size int) ([]*models.InundationReport, int64, error) {
+func (s *service) ListReportsWithFilter(ctx context.Context, orgID, status, trafficStatus, query string, pointIDs []string, page, size int) ([]*models.InundationReport, int64, error) {
 	f := filter.NewPaginationFilter()
 	f.Page = int64(page + 1) // filter uses 1-based page
 	f.PerPage = int64(size)
 
 	if orgID != "" {
 		f.AddWhere("org_id", "org_id", orgID)
+	}
+	if len(pointIDs) > 0 {
+		f.AddWhere("point_id", "point_id", bson.M{"$in": pointIDs})
 	}
 	if status != "" {
 		f.AddWhere("status", "status", status)
@@ -329,6 +338,128 @@ func (s *service) Resolve(ctx context.Context, reportID string, endTime int64) e
 	return s.inundationRepo.Resolve(ctx, reportID, endTime)
 }
 
+func (s *service) UpdateReport(ctx context.Context, id string, report *models.InundationReport, images []ImageContent) error {
+	existing, err := s.inundationRepo.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	existing.Depth = report.Depth
+	existing.Length = report.Length
+	existing.Width = report.Width
+	existing.Description = report.Description
+	existing.TrafficStatus = report.TrafficStatus
+	existing.NeedsCorrection = false
+
+	if len(images) > 0 {
+		org, _ := s.orgRepo.GetByID(ctx, existing.OrgID)
+		folderID, _ := s.resolveUploadFolder(ctx, org, "FLOOD", existing.PointID)
+		g, gCtx := errgroup.WithContext(ctx)
+		imageIDs := make([]string, len(images))
+		for i, img := range images {
+			i, img := i, img
+			g.Go(func() error {
+				rid, err := s.driveSvc.UploadFileSimple(gCtx, folderID, img.Name, img.MimeType, img.Reader)
+				if err == nil { imageIDs[i] = rid }
+				return err
+			})
+		}
+		_ = g.Wait()
+		newImages := []string{}
+		for _, rid := range imageIDs {
+			if rid != "" { newImages = append(newImages, rid) }
+		}
+		if len(newImages) > 0 {
+			existing.Images = newImages
+		}
+	}
+
+	return s.inundationRepo.Update(ctx, existing)
+}
+
+func (s *service) ReviewReport(ctx context.Context, reportID, comment, reviewerID, reviewerEmail, reviewerName string) error {
+	report, err := s.inundationRepo.GetByID(ctx, reportID)
+	if err != nil {
+		return err
+	}
+	report.ReviewComment = comment
+	report.ReviewerId = reviewerID
+	report.ReviewerEmail = reviewerEmail
+	report.ReviewerName = reviewerName
+	report.NeedsCorrection = true
+	return s.inundationRepo.Update(ctx, report)
+}
+
+func (s *service) ReviewUpdate(ctx context.Context, updateID, comment, reviewerID, reviewerEmail, reviewerName string) error {
+	update, err := s.inundationUpdateRepo.GetByID(ctx, updateID)
+	if err != nil {
+		return err
+	}
+	update.ReviewComment = comment
+	update.ReviewerId = reviewerID
+	update.ReviewerEmail = reviewerEmail
+	update.ReviewerName = reviewerName
+	update.NeedsCorrection = true
+	return s.inundationUpdateRepo.Update(ctx, update)
+}
+
+func (s *service) UpdateUpdateContent(ctx context.Context, updateID string, updatedData *models.InundationUpdate, images []ImageContent) error {
+	update, err := s.inundationUpdateRepo.GetByID(ctx, updateID)
+	if err != nil {
+		return err
+	}
+
+	update.Description = updatedData.Description
+	update.Depth = updatedData.Depth
+	update.Length = updatedData.Length
+	update.Width = updatedData.Width
+	update.TrafficStatus = updatedData.TrafficStatus
+	update.NeedsCorrection = false
+
+	if len(images) > 0 {
+		report, _ := s.inundationRepo.GetByID(ctx, update.ReportID)
+		org, _ := s.orgRepo.GetByID(ctx, report.OrgID)
+		folderID, _ := s.resolveUploadFolder(ctx, org, "FLOOD", report.PointID)
+
+		g, gCtx := errgroup.WithContext(ctx)
+		imageIDs := make([]string, len(images))
+		for i, img := range images {
+			i, img := i, img
+			g.Go(func() error {
+				id, err := s.driveSvc.UploadFileSimple(gCtx, folderID, img.Name, img.MimeType, img.Reader)
+				if err == nil { imageIDs[i] = id }
+				return err
+			})
+		}
+		_ = g.Wait()
+
+		newImages := []string{}
+		for _, id := range imageIDs {
+			if id != "" { newImages = append(newImages, id) }
+		}
+		if len(newImages) > 0 {
+			update.Images = newImages
+		}
+	}
+
+	err = s.inundationUpdateRepo.Update(ctx, update)
+	if err != nil {
+		return err
+	}
+
+	// Sync back to main report if this was the latest info
+	mainReport, err := s.inundationRepo.GetByID(ctx, update.ReportID)
+	if err == nil {
+		mainReport.Depth = update.Depth
+		mainReport.Length = update.Length
+		mainReport.Width = update.Width
+		mainReport.TrafficStatus = update.TrafficStatus
+		_ = s.inundationRepo.Update(ctx, mainReport)
+	}
+
+	return nil
+}
+
 func (s *service) GetPointByID(ctx context.Context, id string) (*models.InundationPoint, error) {
 	return s.inundationPointRepo.GetByID(ctx, id)
 }
@@ -340,11 +471,23 @@ func (s *service) CreatePoint(ctx context.Context, point models.InundationPoint)
 	return s.inundationPointRepo.Create(ctx, point)
 }
 
-func (s *service) GetPointsStatus(ctx context.Context, orgID string) ([]PointStatus, error) {
+func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []string) ([]PointStatus, error) {
 	// 1. Get all managed points
-	points, err := s.inundationPointRepo.ListByOrg(ctx, orgID)
-	if err != nil {
-		return nil, err
+	var points []models.InundationPoint
+	var err error
+	if len(pointIDs) > 0 {
+		points = make([]models.InundationPoint, 0, len(pointIDs))
+		for _, pid := range pointIDs {
+			p, err := s.inundationPointRepo.GetByID(ctx, pid)
+			if err == nil && p != nil {
+				points = append(points, *p)
+			}
+		}
+	} else {
+		points, err = s.inundationPointRepo.ListByOrg(ctx, orgID)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// 1.5 Get all organizations for mapping names

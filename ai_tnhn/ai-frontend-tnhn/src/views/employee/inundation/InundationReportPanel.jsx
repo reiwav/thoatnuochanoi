@@ -13,8 +13,9 @@ import {
 import { toast } from 'react-hot-toast';
 
 import inundationApi from 'api/inundation';
+import { processAndWatermark } from 'utils/imageProcessor';
 
-const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onSuccess }) => {
+const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onSuccess, isCorrectionMode = false }) => {
     const theme = useTheme();
     const [loading, setLoading] = useState(false);
     const [values, setValues] = useState({
@@ -29,6 +30,28 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
     const [images, setImages] = useState([]);
     const [previews, setPreviews] = useState([]);
     const [resolveOnUpdate, setResolveOnUpdate] = useState(false);
+    const [points, setPoints] = useState([]);
+    const [fetchingPoints, setFetchingPoints] = useState(false);
+
+    useEffect(() => {
+        if (!pointId && !selectedReport) {
+            fetchPoints();
+        }
+    }, [pointId, selectedReport]);
+
+    const fetchPoints = async () => {
+        setFetchingPoints(true);
+        try {
+            const res = await inundationApi.getPointsStatus({ per_page: 1000 });
+            if (res.data?.status === 'success') {
+                setPoints(res.data.data || []);
+            }
+        } catch (err) {
+            console.error('Lỗi tải danh sách điểm ngập:', err);
+        } finally {
+            setFetchingPoints(false);
+        }
+    };
 
     useEffect(() => {
         if (selectedReport) {
@@ -63,43 +86,11 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
             return;
         }
 
-        const resizeImage = (file) => {
-            return new Promise((resolve, reject) => {
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    let width = img.width;
-                    let height = img.height;
-                    const MAX_WIDTH = 1024;
-
-                    if (width > MAX_WIDTH) {
-                        height = Math.round((height * MAX_WIDTH) / width);
-                        width = MAX_WIDTH;
-                    }
-
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-
-                    canvas.toBlob((blob) => {
-                        if (blob) {
-                            const resizedFile = new File([blob], file.name, { type: 'image/jpeg', lastModified: Date.now() });
-                            resolve(resizedFile);
-                        } else {
-                            reject(new Error('Canvas to Blob failed'));
-                        }
-                    }, 'image/jpeg', 0.8);
-                };
-                img.onerror = reject;
-                img.src = URL.createObjectURL(file);
-            });
-        };
-
         try {
-            const resizedFiles = await Promise.all(pickedFiles.map(resizeImage));
-            setImages(prev => [...prev, ...resizedFiles]);
-            setPreviews(prev => [...prev, ...resizedFiles.map(file => URL.createObjectURL(file))]);
+            const watermarkText = values.street_name || (points.find(p => p.id === values.point_id)?.street_name) || '';
+            const processedFiles = await Promise.all(pickedFiles.map(file => processAndWatermark(file, watermarkText)));
+            setImages(prev => [...prev, ...processedFiles]);
+            setPreviews(prev => [...prev, ...processedFiles.map(file => URL.createObjectURL(file))]);
         } catch (error) {
             console.error('Error resizing images:', error);
             toast.error('Lỗi khi xử lý ảnh, vui lòng thử lại');
@@ -123,15 +114,30 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
             if (values.width) fd.append('width', values.width);
             if (values.depth) fd.append('depth', values.depth);
             if (values.traffic_status) fd.append('traffic_status', values.traffic_status);
-            if (resolveOnUpdate) fd.append('resolve', 'true');
-            images.forEach(img => fd.append('images', img));
-            const res = await inundationApi.updateSituation(selectedReport.id, fd);
-            if (res.data?.status === 'success') {
-                toast.success(resolveOnUpdate ? 'Đã kết thúc đợt ngập' : 'Cập nhật thành công');
-                setValues(v => ({ ...v, description: '', traffic_status: 'Đi lại bình thường' }));
-                setImages([]); setPreviews([]); setResolveOnUpdate(false);
-                if (onSuccess) onSuccess();
+            
+            if (isCorrectionMode) {
+                if (selectedReport.type === 'start') {
+                    // Editing the MAIN report record
+                    await inundationApi.updateReport(selectedReport.id, fd);
+                    toast.success('Đã lưu thay đổi báo cáo chính');
+                } else {
+                    // Editing an EXISTING UPDATE record
+                    await inundationApi.updateUpdateContent(selectedReport.id, fd);
+                    toast.success('Đã lưu thay đổi chỉnh sửa');
+                }
+            } else {
+                // Normal update (adding a new record to the history)
+                if (resolveOnUpdate) fd.append('resolve', 'true');
+                images.forEach(img => fd.append('images', img));
+                const res = await inundationApi.updateSituation(selectedReport.id, fd);
+                if (res.data?.status === 'success') {
+                    toast.success(resolveOnUpdate ? 'Đã kết thúc đợt ngập' : 'Cập nhật thành công');
+                }
             }
+
+            setValues(v => ({ ...v, description: '', traffic_status: 'Đi lại bình thường' }));
+            setImages([]); setPreviews([]); setResolveOnUpdate(false);
+            if (onSuccess) onSuccess();
         } catch (err) { toast.error(err.response?.data?.error || 'Đã có lỗi xảy ra'); }
         finally { setLoading(false); }
     };
@@ -148,7 +154,8 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
             if (values.depth) fd.append('depth', values.depth);
             fd.append('description', values.description);
             if (values.traffic_status) fd.append('traffic_status', values.traffic_status);
-            if (pointId) fd.append('point_id', pointId);
+            const pId = pointId || values.point_id;
+            if (pId) fd.append('point_id', pId);
             fd.append('start_time', Math.floor(Date.now() / 1000));
             images.forEach(img => fd.append('images', img));
             const res = await inundationApi.createReport(fd);
@@ -168,15 +175,39 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
             '& .MuiInputBase-input': { fontSize: '1rem' },
             '& .MuiFormHelperText-root': { fontSize: '0.875rem' },
         }}>
-            <TextField
-                fullWidth label="Tên tuyến đường / Vị trí" name="street_name"
-                value={values.street_name} onChange={handleChange} required
-                disabled={!!pointId || !!selectedReport}
-                helperText={!!pointId || !!selectedReport ? '📍 Vị trí từ hệ thống' : ''}
-                InputProps={{
-                    startAdornment: <InputAdornment position="start"><IconMapPin size={17} color={theme.palette.text.secondary} /></InputAdornment>
-                }}
-            />
+            {!pointId && !selectedReport && points.length > 0 ? (
+                <TextField
+                    select
+                    fullWidth label="Chọn điểm ngập" name="point_id"
+                    value={values.point_id || ''} 
+                    onChange={(e) => {
+                        const p = points.find(p => p.id === e.target.value);
+                        setValues(prev => ({ 
+                            ...prev, 
+                            point_id: e.target.value,
+                            street_name: p ? p.street_name : ''
+                        }));
+                    }}
+                    required
+                    InputProps={{
+                        startAdornment: <InputAdornment position="start"><IconMapPin size={17} color={theme.palette.text.secondary} /></InputAdornment>
+                    }}
+                >
+                    {points.map((p) => (
+                        <MenuItem key={p.id} value={p.id}>{p.street_name}</MenuItem>
+                    ))}
+                </TextField>
+            ) : (
+                <TextField
+                    fullWidth label="Tên tuyến đường / Vị trí" name="street_name"
+                    value={values.street_name} onChange={handleChange} required
+                    disabled={!!pointId || !!selectedReport}
+                    helperText={!!pointId || !!selectedReport ? '📍 Vị trí từ hệ thống' : ''}
+                    InputProps={{
+                        startAdornment: <InputAdornment position="start"><IconMapPin size={17} color={theme.palette.text.secondary} /></InputAdornment>
+                    }}
+                />
+            )}
 
             {selectedReport && (
                 <FormControlLabel
@@ -261,12 +292,12 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
 
             <Button
                 fullWidth size="large" variant="contained"
-                color={resolveOnUpdate ? 'error' : 'secondary'}
+                color={isCorrectionMode ? 'error' : (resolveOnUpdate ? 'error' : 'secondary')}
                 onClick={handleSubmit} disabled={loading}
                 startIcon={loading ? <CircularProgress size={17} color="inherit" /> : <IconSend size={17} />}
                 sx={{ borderRadius: 100, py: 1.4, fontWeight: 700, mt: 1 }}
             >
-                {loading ? 'Đang xử lý...' : (resolveOnUpdate ? 'Xác nhận Kết thúc đợt ngập' : (selectedReport ? 'Cập nhật tình hình' : 'Gửi báo cáo'))}
+                {loading ? 'Đang xử lý...' : (isCorrectionMode ? 'Lưu thay đổi chỉnh sửa' : (resolveOnUpdate ? 'Xác nhận Kết thúc đợt ngập' : (selectedReport ? 'Cập nhật tình hình' : 'Gửi báo cáo')))}
             </Button>
         </Stack>
     );

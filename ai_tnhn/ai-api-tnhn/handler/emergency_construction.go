@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/gin-gonic/gin"
 )
@@ -78,6 +79,23 @@ func (h *EmergencyConstructionHandler) List(c *gin.Context) {
 		req.OrgID = client.OrgId
 	}
 
+	if client.Role == "employee" {
+		// Fetch full user profile to get assigned IDs
+		user, err := h.service.GetUserByID(c.Request.Context(), client.UserID)
+		if err == nil && user != nil {
+			if len(user.AssignedEmergencyConstructionIDs) > 0 {
+				req.AddWhere("id", "_id", bson.M{"$in": user.AssignedEmergencyConstructionIDs})
+			} else {
+				// Empty result if nothing assigned
+				h.SendData(c, gin.H{
+					"data":  []interface{}{},
+					"total": 0,
+				})
+				return
+			}
+		}
+	}
+
 	items, total, err := h.service.List(c.Request.Context(), req)
 	web.AssertNil(err)
 	h.SendData(c, gin.H{
@@ -97,6 +115,21 @@ func (h *EmergencyConstructionHandler) ListHistory(c *gin.Context) {
 	client := h.GetTokenFromContext(c)
 	if client.Role != "super_admin" {
 		req.OrgID = client.OrgId
+	}
+
+	if client.Role == "employee" {
+		user, err := h.service.GetUserByID(c.Request.Context(), client.UserID)
+		if err == nil && user != nil {
+			if len(user.AssignedEmergencyConstructionIDs) > 0 {
+				req.AddWhere("construction_id", "construction_id", bson.M{"$in": user.AssignedEmergencyConstructionIDs})
+			} else {
+				h.SendData(c, gin.H{
+					"data":  []interface{}{},
+					"total": 0,
+				})
+				return
+			}
+		}
 	}
 
 	req.SetOrderBy("-report_date")
@@ -130,6 +163,25 @@ func (h *EmergencyConstructionHandler) GetProgressByID(c *gin.Context) {
 }
 
 func (h *EmergencyConstructionHandler) ReportProgress(c *gin.Context) {
+	// Security: check if employee is assigned to this construction
+	client := h.GetTokenFromContext(c)
+	if client.Role == "employee" {
+		constructionID := c.PostForm("construction_id")
+		user, err := h.service.GetUserByID(c.Request.Context(), client.UserID)
+		if err == nil && user != nil {
+			isAssigned := false
+			for _, cid := range user.AssignedEmergencyConstructionIDs {
+				if cid == constructionID {
+					isAssigned = true
+					break
+				}
+			}
+			if !isAssigned {
+				web.AssertNil(web.Forbidden("Bạn không có quyền báo cáo cho công trình này"))
+				return
+			}
+		}
+	}
 	h.handleProgress(c, "")
 }
 

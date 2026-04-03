@@ -25,6 +25,16 @@ func (r *inundationUpdateRepo) Create(ctx context.Context, update *models.Inunda
 	return r.R_Create(ctx, update)
 }
 
+func (r *inundationUpdateRepo) GetByID(ctx context.Context, id string) (*models.InundationUpdate, error) {
+	var update models.InundationUpdate
+	err := r.R_SelectByID(ctx, id, &update)
+	return &update, err
+}
+
+func (r *inundationUpdateRepo) Update(ctx context.Context, update *models.InundationUpdate) error {
+	return r.R_Update(ctx, update)
+}
+
 func (r *inundationUpdateRepo) ListByReportID(ctx context.Context, reportID string) ([]*models.InundationUpdate, error) {
 	var updates []*models.InundationUpdate
 	f := filter.NewPaginationFilter()

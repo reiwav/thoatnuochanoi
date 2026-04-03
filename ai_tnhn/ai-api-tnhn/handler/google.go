@@ -847,7 +847,11 @@ func (h *GoogleHandler) GenerateAIDynamicReport(c *gin.Context) {
 		}
 
 		if rainyCount > 0 {
-			rainSummary = fmt.Sprintf("Tổng số điểm đang có mưa: %d/%d trạm\nChi tiết:\n%s", rainyCount, len(rData.Content.Data), strings.Join(lines, "\n"))
+			displayCount := 15
+			if len(items) < displayCount {
+				displayCount = len(items)
+			}
+			rainSummary = fmt.Sprintf("Tổng số điểm đang có mưa: %d/%d trạm\nChi tiết %d điểm mưa lớn nhất:\n%s", rainyCount, len(rData.Content.Data), displayCount, strings.Join(lines[:displayCount], "\n"))
 		} else {
 			rainSummary = "Hiện tại không có mưa trên toàn thành phố."
 		}
@@ -955,14 +959,13 @@ Dưới đây là DỮ LIỆU THU THẬP THỰC TẾ từ hệ thống giám sá
 %s
 %s
 
-Dựa trên DỮ LIỆU THỰC TẾ ở trên, hãy viết một bản BÁO CÁO TỔNG HỢP TÌNH HÌNH THOÁT NƯỚC VÀ PHÒNG CHỐNG ÚNG NGẬP tại Hà Nội.
+Dựa trên DỮ LIỆU THỰC TẾ ở trên, hãy viết 01 bản BÁO CÁO TỔNG HỢP TÌNH HÌNH THOÁT NƯỚC VÀ PHÒNG CHỐNG ÚNG NGẬP tại Hà Nội.
 
 YÊU CẦU:
-- Văn phong chuyên nghiệp, súc tích, chính xác.
-- Sử dụng ĐÚNG các thông số kỹ thuật đã cung cấp ở trên, KHÔNG tự bịa số liệu.
+- Văn phong chuyên nghiệp, súc tích (độ dài vừa phải).
+- Sử dụng ĐÚNG các thông số kỹ thuật đã cung cấp ở trên.
 - Hiển thị rõ tên XÍ NGHIỆP quản lý cho từng điểm ngập.
 - Phân tích nguyên nhân mưa dựa trên bản tin dự báo (nếu có).
-- Làm nổi bật các vấn đề cấp bách.
 - Kết cấu báo cáo rõ ràng bằng tiếng Việt.
 - Viết như một chuyên gia đang báo cáo cho lãnh đạo.`,
 		now.Format("15h04"), now.Format("02/01/2006"),
@@ -970,7 +973,8 @@ YÊU CẦU:
 
 	aiResult, err := h.geminiSvc.Chat(ctx, prompt, nil, userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate dynamic report"})
+		h.log.GetLogger().Errorf("[GenerateAIDynamicReport] Gemini Chat Error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate dynamic report: " + err.Error()})
 		return
 	}
 

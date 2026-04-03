@@ -20,5 +20,7 @@ type Inundation interface {
 type InundationUpdate interface {
 	mgo.BaseTable
 	Create(ctx context.Context, update *models.InundationUpdate) error
+	GetByID(ctx context.Context, id string) (*models.InundationUpdate, error)
+	Update(ctx context.Context, update *models.InundationUpdate) error
 	ListByReportID(ctx context.Context, reportID string) ([]*models.InundationUpdate, error)
 }

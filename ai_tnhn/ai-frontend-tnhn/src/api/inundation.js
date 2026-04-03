@@ -19,6 +19,11 @@ const inundationApi = {
     getReport: (id) => {
         return axiosClient.get(`/inundation/report/${id}`);
     },
+    updateReport: (id, formData) => {
+        return axiosClient.put(`/inundation/report/${id}`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+    },
     updateSituation: (id, formData) => {
         return axiosClient.post(`/inundation/${id}/update`, formData, {
             headers: {
@@ -34,6 +39,23 @@ const inundationApi = {
     },
     createPoint: (data) => {
         return axiosClient.post('/inundation/points', data);
+    },
+    updatePoint: (id, data) => {
+        return axiosClient.put(`/inundation/points/${id}`, data);
+    },
+    deletePoint: (id) => {
+        return axiosClient.delete(`/inundation/points/${id}`);
+    },
+    reviewReport: (id, comment) => {
+        return axiosClient.post(`/inundation/report/${id}/review`, { comment });
+    },
+    reviewUpdate: (id, comment) => {
+        return axiosClient.post(`/inundation/update/${id}/review`, { comment });
+    },
+    updateUpdateContent: (id, formData) => {
+        return axiosClient.put(`/inundation/update/${id}`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
     }
 };
 

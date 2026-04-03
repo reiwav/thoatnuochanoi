@@ -93,7 +93,7 @@ func (t service) Login(ctx context.Context, input LoginRequest) (*models.Token, 
 
 	// 2. Verify password
 	if err := u.Password.ComparePassword(input.Password); err != nil {
-		return nil, web.BadRequest("invalid email or password")
+		return nil, web.BadRequest("invalid email or password ")
 	}
 
 	// 3. Tạo token

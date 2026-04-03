@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import {
     Button, Grid, TextField, Table, TableBody, Box,
     TableCell, TableContainer, TableHead, TableRow, Paper,
@@ -14,7 +15,7 @@ import AnimateButton from 'ui-component/extended/AnimateButton';
 import stationApi from 'api/station';
 import StationDialog from './StationDialog';
 
-const StationRow = ({ row, handleOpenEdit, handleDelete, isMobile }) => {
+const StationRow = ({ row, handleOpenEdit, handleDelete, isMobile, canEdit }) => {
     const [open, setOpen] = useState(false);
 
     return (
@@ -36,18 +37,20 @@ const StationRow = ({ row, handleOpenEdit, handleDelete, isMobile }) => {
                         <Chip label={row.Active ? 'Hoạt động' : 'Ngừng'} color={row.Active ? 'success' : 'default'} size="small" variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem', height: 24 }} />
                     </TableCell>
                 )}
-                <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                    <Tooltip title="Chỉnh sửa">
-                        <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>
-                            <IconEdit size={20} />
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Xóa">
-                        <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}>
-                            <IconTrash size={20} />
-                        </IconButton>
-                    </Tooltip>
-                </TableCell>
+                {canEdit && (
+                    <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+                        <Tooltip title="Chỉnh sửa">
+                            <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>
+                                <IconEdit size={20} />
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Xóa">
+                            <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}>
+                                <IconTrash size={20} />
+                            </IconButton>
+                        </Tooltip>
+                    </TableCell>
+                )}
             </TableRow>
             {isMobile && (
                 <TableRow>
@@ -91,6 +94,10 @@ const StationRow = ({ row, handleOpenEdit, handleDelete, isMobile }) => {
 const StationRainList = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const { userInfo } = useOutletContext();
+    const userRole = userInfo?.role || localStorage.getItem('role');
+    const canEdit = userRole === 'super_admin';
+
     const [loading, setLoading] = useState(false);
     const [stations, setStations] = useState([]);
     const [page, setPage] = useState(0);
@@ -157,13 +164,13 @@ const StationRainList = () => {
     return (
         <MainCard
             title="Quản lý trạm đo mưa"
-            secondary={
+            secondary={canEdit && (
                 <AnimateButton>
                     <Button variant="contained" color="secondary" startIcon={<IconPlus size={20} />} onClick={handleOpenCreate} sx={{ fontWeight: 700, fontSize: '1rem', px: 2, py: 1 }}>
                         Thêm trạm mới
                     </Button>
                 </AnimateButton>
-            }
+            )}
         >
             <Grid container spacing={2} sx={{ mb: 3 }} alignItems="center">
                 <Grid item xs={12} sm={6}>
@@ -193,7 +200,7 @@ const StationRainList = () => {
                             {!isMobile && <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Tọa độ</TableCell>}
                             {!isMobile && <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Ngưỡng</TableCell>}
                             {!isMobile && <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Trạng thái</TableCell>}
-                            <TableCell align="right" sx={{ fontWeight: 800, fontSize: '1rem' }}>Thao tác</TableCell>
+                            {canEdit && <TableCell align="right" sx={{ fontWeight: 800, fontSize: '1rem' }}>Thao tác</TableCell>}
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -209,6 +216,7 @@ const StationRainList = () => {
                                     handleOpenEdit={handleOpenEdit}
                                     handleDelete={handleDelete}
                                     isMobile={isMobile}
+                                    canEdit={canEdit}
                                 />
                             ))
                         )}

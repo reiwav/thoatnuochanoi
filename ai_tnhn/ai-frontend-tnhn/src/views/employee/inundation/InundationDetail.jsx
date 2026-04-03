@@ -1,23 +1,31 @@
 import { useState } from 'react';
 import {
     Box, Typography, Stack, Chip, Divider, Paper, CircularProgress,
-    Dialog, DialogContent, IconButton as MuiIconButton, useMediaQuery
+    Dialog, DialogContent, IconButton as MuiIconButton, useMediaQuery,
+    Button, TextField
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import {
     IconClock, IconRuler, IconPlus, IconX, IconRefresh, IconUser,
-    IconChevronLeft, IconChevronRight, IconCar
+    IconChevronLeft, IconChevronRight, IconCar, IconMessage2, IconEdit,
+    IconAlertTriangle
 } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
+import inundationApi from 'api/inundation';
+import InundationReportPanel from './InundationReportPanel';
 
 import { getInundationImageUrl } from 'utils/imageHelper';
 import { getTrafficStatusColor } from 'utils/trafficStatusHelper';
 
-const InundationDetail = ({ selectedReport, loadingReport }) => {
+const InundationDetail = ({ selectedReport, loadingReport, user }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
     const [viewer, setViewer] = useState({ open: false, images: [], index: 0 });
+    const [reviewDialog, setReviewDialog] = useState({ open: false, itemId: null, type: null, comment: '' });
+    const [editMode, setEditMode] = useState({ open: false, item: null });
+
+    const userRole = user?.role || localStorage.getItem('role');
 
     const handleOpenViewer = (imgs, idx = 0) => {
         if (!imgs || imgs.length === 0) {
@@ -42,13 +50,20 @@ const InundationDetail = ({ selectedReport, loadingReport }) => {
     const updates = selectedReport.updates || [];
     const timelineData = [
         {
+            id: selectedReport.id,
             type: 'start', title: 'Bắt đầu đợt ngập', ts: selectedReport.start_time, desc: selectedReport.description || 'Ghi nhận bắt đầu',
             length: selectedReport.length, width: selectedReport.width, depth: selectedReport.depth,
             traffic_status: selectedReport.traffic_status || selectedReport.trafficStatus,
             user: selectedReport.user_email,
-            images: selectedReport.images || []
+            images: selectedReport.images || [],
+            review_comment: selectedReport.review_comment,
+            reviewer_id: selectedReport.reviewer_id,
+            reviewer_email: selectedReport.reviewer_email,
+            reviewer_name: selectedReport.reviewer_name,
+            needs_correction: selectedReport.needs_correction
         },
         ...updates.map((u, i) => ({
+            id: u.id,
             type: 'update',
             title: (u.status === 'resolved') ? 'Kết thúc đợt ngập' : `Cập nhật #${i + 1}`,
             ts: u.timestamp,
@@ -58,9 +73,30 @@ const InundationDetail = ({ selectedReport, loadingReport }) => {
             depth: u.depth,
             traffic_status: u.traffic_status || u.trafficStatus,
             user: u.user_email,
-            images: u.images || []
+            images: u.images || [],
+            review_comment: u.review_comment,
+            reviewer_id: u.reviewer_id,
+            reviewer_email: u.reviewer_email,
+            reviewer_name: u.reviewer_name,
+            needs_correction: u.needs_correction
         }))
     ].reverse();
+
+    const handleReviewSubmit = async () => {
+        if (!reviewDialog.comment.trim()) return;
+        try {
+            if (reviewDialog.type === 'start') {
+                await inundationApi.reviewReport(reviewDialog.itemId, reviewDialog.comment);
+            } else {
+                await inundationApi.reviewUpdate(reviewDialog.itemId, reviewDialog.comment);
+            }
+            toast.success('Đã gửi phản hồi');
+            setReviewDialog({ open: false, itemId: null, type: null, comment: '' });
+            window.location.reload(); 
+        } catch (err) {
+            toast.error('Lỗi khi gửi phản hồi');
+        }
+    };
 
     const latest = timelineData[0] || {};
     const latestLength = latest.length || selectedReport.length || '0';
@@ -111,7 +147,11 @@ const InundationDetail = ({ selectedReport, loadingReport }) => {
                         key={idx}
                         sx={{
                             display: 'flex', gap: isMobile ? 1.5 : 2, position: 'relative',
-                            p: 1, borderRadius: 2
+                            p: 1.5, borderRadius: 3,
+                            bgcolor: item.needs_correction ? 'error.lighter' : 'transparent',
+                            border: item.needs_correction ? '1px dashed' : 'none',
+                            borderColor: 'error.light',
+                            mb: 1
                         }}
                     >
                         {idx < arr.length - 1 && (
@@ -128,12 +168,36 @@ const InundationDetail = ({ selectedReport, loadingReport }) => {
 
                         <Box sx={{ pb: 3, flex: 1, minWidth: 0 }}>
                             <Stack direction={isMobile ? "column" : "row"} justifyContent="space-between" alignItems={isMobile ? "flex-start" : "center"} sx={{ mb: 0.5, gap: isMobile ? 0.3 : 1 }}>
-                                <Typography variant="h6" sx={{ fontWeight: 800, flex: 1, fontSize: isMobile ? '0.9rem' : 'inherit', lineHeight: 1.3, wordBreak: 'break-word' }}>{item.title}</Typography>
+                                <Typography variant="h6" sx={{ fontWeight: 800, flex: 1, fontSize: isMobile ? '0.9rem' : 'inherit', lineHeight: 1.3, wordBreak: 'break-word', display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    {item.title}
+                                    {item.needs_correction && <Chip label="Cần sửa" size="small" color="error" variant="filled" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 900 }} />}
+                                </Typography>
                                 <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 600, whiteSpace: 'nowrap', opacity: 0.8, fontSize: isMobile ? '0.75rem' : '0.875rem' }}>
                                     {new Date(item.ts * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })} • {new Date(item.ts * 1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                                 </Typography>
                             </Stack>
-                            <Typography variant="body1" color="textSecondary" sx={{ mb: 1.5 }}>{item.desc}</Typography>
+                            <Typography variant="body1" color="textSecondary" sx={{ mb: 1, fontWeight: 500 }}>{item.desc}</Typography>
+
+                            {item.review_comment && (
+                                <Box sx={{ 
+                                    mb: 2, p: 2, 
+                                    bgcolor: 'error.lighter', 
+                                    borderRadius: 2, 
+                                    borderLeft: '4px solid', 
+                                    borderColor: 'error.main',
+                                    boxShadow: '0 2px 4px rgba(211, 47, 47, 0.05)'
+                                }}>
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'error.main', mb: 0.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <IconAlertTriangle size={18} /> Nhận xét rà soát:
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 700, color: 'error.dark', lineHeight: 1.5 }}>
+                                        {item.review_comment}
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ display: 'block', mt: 1, color: 'error.main', fontWeight: 600, fontStyle: 'italic', opacity: 0.9 }}>
+                                        — Người rà soát: {item.reviewer_name || item.reviewer_email || item.reviewer_id}
+                                    </Typography>
+                                </Box>
+                            )}
 
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
                                 {(item.depth || item.length || item.width) && (
@@ -159,6 +223,28 @@ const InundationDetail = ({ selectedReport, loadingReport }) => {
                                             {item.user.split('@')[0]}
                                         </Typography>
                                     </Box>
+                                )}
+
+                                {(userRole === 'reviewer') && (
+                                    <Button
+                                        size="small" startIcon={<IconMessage2 size={16} />}
+                                        variant="outlined" color="error"
+                                        onClick={() => setReviewDialog({ open: true, itemId: item.id, type: item.type, comment: item.review_comment || '' })}
+                                        sx={{ height: 26, borderRadius: 10, fontSize: '0.75rem', fontWeight: 700 }}
+                                    >
+                                        Nhận xét
+                                    </Button>
+                                )}
+
+                                {userRole === 'employee' && item.needs_correction && (
+                                    <Button
+                                        size="small" startIcon={<IconEdit size={16} />}
+                                        variant="contained" color="error"
+                                        onClick={() => setEditMode({ open: true, item: item })}
+                                        sx={{ height: 26, borderRadius: 10, fontSize: '0.75rem', fontWeight: 700 }}
+                                    >
+                                        Chỉnh sửa lại
+                                    </Button>
                                 )}
                             </Box>
 
@@ -208,6 +294,53 @@ const InundationDetail = ({ selectedReport, loadingReport }) => {
                         </Typography>
                     </Box>
                 </DialogContent>
+            </Dialog>
+
+            {/* Review Dialog */}
+            <Dialog open={reviewDialog.open} onClose={() => setReviewDialog({ ...reviewDialog, open: false })} fullWidth maxWidth="xs">
+                <Box sx={{ p: 2.5 }}>
+                    <Typography variant="h4" sx={{ mb: 2, fontWeight: 800 }}>Gửi nhận xét rà soát</Typography>
+                    <TextField
+                        fullWidth multiline rows={4} autoFocus
+                        placeholder="Nhập nội dung cần nhân viên chỉnh sửa lại..."
+                        value={reviewDialog.comment}
+                        onChange={(e) => setReviewDialog({ ...reviewDialog, comment: e.target.value })}
+                        sx={{ mb: 2 }}
+                    />
+                    <Stack direction="row" spacing={1} justifyContent="flex-end">
+                        <Button onClick={() => setReviewDialog({ ...reviewDialog, open: false })} color="inherit">Hủy</Button>
+                        <Button
+                            variant="contained" color="error" startIcon={<IconMessage2 size={18} />}
+                            disabled={!reviewDialog.comment.trim()}
+                            onClick={handleReviewSubmit}
+                        >
+                            Gửi yêu cầu sửa
+                        </Button>
+                    </Stack>
+                </Box>
+            </Dialog>
+
+            {/* Correction Edit Dialog */}
+            <Dialog open={editMode.open} onClose={() => setEditMode({ open: false, item: null })} fullWidth maxWidth="sm">
+                <Box sx={{ p: 2, position: 'relative' }}>
+                    <MuiIconButton onClick={() => setEditMode({ open: false, item: null })} sx={{ position: 'absolute', top: 12, right: 12, zIndex: 10 }}>
+                        <IconX size={20} />
+                    </MuiIconButton>
+                    <Typography variant="h4" sx={{ mb: 2, fontWeight: 800, color: 'error.main', pr: 4 }}>
+                        Chỉnh sửa báo cáo theo yêu cầu
+                    </Typography>
+                    <InundationReportPanel
+                        selectedReport={editMode.item}
+                        pointId={selectedReport.point_id}
+                        initialStreetName={selectedReport.street_name}
+                        onSuccess={() => {
+                            setEditMode({ open: false, item: null });
+                            toast.success('Chỉnh sửa đã được lưu');
+                            window.location.reload();
+                        }}
+                    />
+                </Box>
+
             </Dialog>
 
             <style>{`

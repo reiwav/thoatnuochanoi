@@ -46,7 +46,7 @@ export default function AuthLogin() {
 
     if (token) {
       localStorage.setItem(ADMIN_TOKEN, token);
-      
+
       // Store metadata if available
       let userRole = role || 'employee';
       if (userRole === 'supper_admin' || userRole === 'super_admib') {
@@ -58,8 +58,10 @@ export default function AuthLogin() {
       // Immediate redirection based on role
       if (userRole === 'employee' || userRole === 'technician') {
         navigate('/company/inundation', { replace: true });
-      } else if (userRole === 'manager') {
+      } else if (userRole === 'manager_contract') {
         navigate('/admin/ai-contract', { replace: true });
+      } else if (userRole === 'reviewer') {
+        navigate('/admin/inundation-list', { replace: true });
       } else {
         navigate('/admin/ai-support', { replace: true });
       }
@@ -103,8 +105,10 @@ export default function AuthLogin() {
         // Redirect based on role
         if (role === 'employee' || role === 'technician') {
           navigate('/company/inundation');
-        } else if (role === 'manager') {
+        } else if (role === 'manager_contract') {
           navigate('/admin/ai-contract');
+        } else if (role === 'reviewer') {
+          navigate('/admin/inundation-list');
         } else {
           navigate('/admin/ai-support');
         }

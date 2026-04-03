@@ -32,6 +32,14 @@ const adminPages = {
       roles: ['super_admin'],
       children: [
         {
+          id: 'station-rain-list',
+          title: 'Danh sách',
+          type: 'item',
+          url: '/admin/station/rain/list',
+          icon: icons.IconList,
+          breadcrumbs: false
+        },
+        {
           id: 'station-rain-summary',
           title: 'Bảng mưa',
           type: 'item',
@@ -55,15 +63,6 @@ const adminPages = {
           icon: icons.IconHistory,
           breadcrumbs: false
         },
-        {
-          id: 'station-rain-list',
-          title: 'Danh sách',
-          type: 'item',
-          url: '/admin/station/rain/list',
-          icon: icons.IconList,
-          breadcrumbs: false
-        },
-
       ]
     },
     {
@@ -73,15 +72,23 @@ const adminPages = {
       url: '/admin/inundation',
       icon: icons.IconTornado,
       breadcrumbs: false,
-      roles: ['employee', 'admin_org']
+      roles: ['employee']
     },
     {
       id: 'inundation-management',
       title: 'Điểm ngập',
       type: 'collapse',
       icon: icons.IconTornado,
-      roles: ['super_admin', 'admin_org'],
+      roles: ['super_admin', 'admin_org', 'reviewer'],
       children: [
+        {
+          id: 'station-inundation-list',
+          title: 'Danh sách',
+          type: 'item',
+          url: '/admin/station/inundation/list',
+          icon: icons.IconList,
+          breadcrumbs: false
+        },
         {
           id: 'inundation',
           title: 'Điểm ngập',
@@ -89,6 +96,7 @@ const adminPages = {
           url: '/admin/inundation',
           icon: icons.IconTornado,
           breadcrumbs: false,
+          roles: ['super_admin', 'admin_org']
         },
         {
           id: 'inundation-list',
@@ -104,15 +112,9 @@ const adminPages = {
           type: 'item',
           url: '/admin/station/inundation/history',
           icon: icons.IconHistory,
-          breadcrumbs: false
-        }, {
-          id: 'station-inundation-list',
-          title: 'Danh sách',
-          type: 'item',
-          url: '/admin/station/inundation/list',
-          icon: icons.IconList,
-          breadcrumbs: false
-        },
+          breadcrumbs: false,
+          roles: ['super_admin', 'admin_org']
+        }
       ]
     },
     {
@@ -199,6 +201,14 @@ const adminPages = {
       roles: ['super_admin', 'admin_org'],
       children: [
         {
+          id: 'emergency-construction-list',
+          title: 'Danh sách',
+          type: 'item',
+          url: '/admin/emergency-construction',
+          icon: icons.IconList,
+          breadcrumbs: false
+        },
+        {
           id: 'emergency-construction-report-child',
           title: 'Báo cáo',
           type: 'item',
@@ -214,14 +224,6 @@ const adminPages = {
           icon: icons.IconHistory,
           breadcrumbs: false
         },
-        {
-          id: 'emergency-construction-list',
-          title: 'Danh sách',
-          type: 'item',
-          url: '/admin/emergency-construction',
-          icon: icons.IconList,
-          breadcrumbs: false
-        }
       ]
     },
     {
@@ -283,7 +285,7 @@ const adminPages = {
       title: 'Hợp đồng',
       type: 'collapse',
       icon: icons.IconClipboardList,
-      roles: ['super_admin', 'manager'],
+      roles: ['super_admin', 'manager_contract'],
       children: [
         {
           id: 'ai-contract',

@@ -23,4 +23,5 @@ type InundationUpdate interface {
 	GetByID(ctx context.Context, id string) (*models.InundationUpdate, error)
 	Update(ctx context.Context, update *models.InundationUpdate) error
 	ListByReportID(ctx context.Context, reportID string) ([]*models.InundationUpdate, error)
+	List(ctx context.Context, filter filter.Filter) ([]*models.InundationUpdate, int64, error)
 }

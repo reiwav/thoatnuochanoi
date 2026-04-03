@@ -12,7 +12,8 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"golang.org/x/sync/errgroup"
+	"os"
+	"path/filepath"
 )
 
 type Service interface {
@@ -71,6 +72,7 @@ type service struct {
 	driveSvc             googledrive.Service
 	folderCache          map[string]string
 	cacheMu              sync.RWMutex
+	syncWorker           *SyncWorker
 }
 
 func NewService(
@@ -80,7 +82,7 @@ func NewService(
 	orgRepo repository.Organization,
 	driveSvc googledrive.Service,
 ) Service {
-	return &service{
+	svc := &service{
 		inundationRepo:       inundationRepo,
 		inundationUpdateRepo: inundationUpdateRepo,
 		inundationPointRepo:  inundationPointRepo,
@@ -88,49 +90,32 @@ func NewService(
 		driveSvc:             driveSvc,
 		folderCache:          make(map[string]string),
 	}
+
+	// 1. Initialize background sync worker
+	svc.syncWorker = NewSyncWorker(
+		inundationRepo,
+		inundationUpdateRepo,
+		orgRepo,
+		driveSvc,
+		svc.resolveUploadFolder, // Pass helper function
+	)
+
+	// 2. Start the worker loop (Startup scan + channel listener)
+	svc.syncWorker.Start()
+
+	return svc
 }
 
 func (s *service) CreateReport(ctx context.Context, report *models.InundationReport, images []ImageContent) error {
 	// 1. Get Org to find Drive Folder
-	org, err := s.orgRepo.GetByID(ctx, report.OrgID)
-	if err != nil {
-		return fmt.Errorf("failed to get organization for report: %w", err)
-	}
-
-	// 2. Resolve Dynamic Upload Folder
-	folderID, err := s.resolveUploadFolder(ctx, org, "FLOOD", report.PointID)
-	if err != nil {
-		fmt.Printf("Warning: failed to resolve upload folder, falling back to org folder: %v\n", err)
-		folderID, err = s.getOrgFolderID(ctx, org)
-		if err != nil {
-			return err
-		}
-	}
-
-	// 3. Upload images to Google Drive in parallel
+	// 3. Save images locally for async upload
 	if len(images) > 0 {
-		g, gCtx := errgroup.WithContext(ctx)
-		imageIDs := make([]string, len(images))
-
-		for i, img := range images {
-			i, img := i, img // closure capture
-			g.Go(func() error {
-				id, err := s.driveSvc.UploadFileSimple(gCtx, folderID, img.Name, img.MimeType, img.Reader)
-				if err == nil {
-					imageIDs[i] = id
-				}
-				return err
-			})
+		savedPaths, err := s.saveLocalImages(report.ID, images)
+		if err != nil {
+			fmt.Printf("Warning: failed to save some images locally: %v\n", err)
 		}
-
-		if err := g.Wait(); err != nil {
-			// Some might fail, we continue with what we have for robustness
-		}
-
-		for _, id := range imageIDs {
-			if id != "" {
-				report.Images = append(report.Images, id)
-			}
+		for _, path := range savedPaths {
+			report.Images = append(report.Images, "local:"+path)
 		}
 	}
 
@@ -143,7 +128,17 @@ func (s *service) CreateReport(ctx context.Context, report *models.InundationRep
 	}
 
 	// 3. Save report to DB
-	return s.inundationRepo.Create(ctx, report)
+	err := s.inundationRepo.Create(ctx, report)
+	if err != nil {
+		return err
+	}
+
+	// Trigger immediate sync task
+	if len(images) > 0 {
+		s.syncWorker.Enqueue(report.ID, TaskTypeReport)
+	}
+
+	return nil
 }
 
 func (s *service) AddUpdate(ctx context.Context, reportID string, update *models.InundationUpdate, userID string, userEmail string, images []ImageContent) error {
@@ -153,52 +148,14 @@ func (s *service) AddUpdate(ctx context.Context, reportID string, update *models
 		return err
 	}
 
-	var org *models.Organization
-	if report.OrgID != "" {
-		org, err = s.orgRepo.GetByID(ctx, report.OrgID)
-	} else {
-		org, err = s.orgRepo.GetByCode(ctx, "TNHN")
-		if err != nil {
-			org, err = s.orgRepo.GetByCode(ctx, "tnhn")
-		}
-	}
-
-	if err != nil {
-		return fmt.Errorf("failed to get organization for report update: %w", err)
-	}
-
-	// 2. Resolve Dynamic Upload Folder
-	folderID, err := s.resolveUploadFolder(ctx, org, "FLOOD", report.PointID)
-	if err != nil {
-		fmt.Printf("Warning: failed to resolve upload folder, falling back to org folder: %v\n", err)
-		folderID, err = s.getOrgFolderID(ctx, org)
-		if err != nil {
-			return err
-		}
-	}
-
-	// 3. Upload images in parallel
+	// 3. Save images locally
 	if len(images) > 0 {
-		g, gCtx := errgroup.WithContext(ctx)
-		imageIDs := make([]string, len(images))
-
-		for i, img := range images {
-			i, img := i, img // closure capture
-			g.Go(func() error {
-				id, err := s.driveSvc.UploadFileSimple(gCtx, folderID, img.Name, img.MimeType, img.Reader)
-				if err == nil {
-					imageIDs[i] = id
-				}
-				return err
-			})
+		savedPaths, err := s.saveLocalImages(fmt.Sprintf("%s_%d", reportID, time.Now().Unix()), images)
+		if err != nil {
+			fmt.Printf("Warning: failed to save some update images locally: %v\n", err)
 		}
-
-		_ = g.Wait()
-
-		for _, id := range imageIDs {
-			if id != "" {
-				update.Images = append(update.Images, id)
-			}
+		for _, path := range savedPaths {
+			update.Images = append(update.Images, "local:"+path)
 		}
 	}
 
@@ -239,7 +196,17 @@ func (s *service) AddUpdate(ctx context.Context, reportID string, update *models
 		report.TrafficStatus = ""
 	}
 
-	return s.inundationRepo.Update(ctx, report)
+	err = s.inundationRepo.Update(ctx, report)
+	if err != nil {
+		return err
+	}
+
+	// Trigger immediate sync task
+	if len(images) > 0 {
+		s.syncWorker.Enqueue(update.ID, TaskTypeUpdate)
+	}
+
+	return nil
 }
 
 func (s *service) ListReports(ctx context.Context, orgID string) ([]*models.InundationReport, int64, error) {
@@ -352,29 +319,30 @@ func (s *service) UpdateReport(ctx context.Context, id string, report *models.In
 	existing.NeedsCorrection = false
 
 	if len(images) > 0 {
-		org, _ := s.orgRepo.GetByID(ctx, existing.OrgID)
-		folderID, _ := s.resolveUploadFolder(ctx, org, "FLOOD", existing.PointID)
-		g, gCtx := errgroup.WithContext(ctx)
-		imageIDs := make([]string, len(images))
-		for i, img := range images {
-			i, img := i, img
-			g.Go(func() error {
-				rid, err := s.driveSvc.UploadFileSimple(gCtx, folderID, img.Name, img.MimeType, img.Reader)
-				if err == nil { imageIDs[i] = rid }
-				return err
-			})
+		savedPaths, err := s.saveLocalImages(id, images)
+		if err != nil {
+			fmt.Printf("Warning: failed to save some update images locally: %v\n", err)
 		}
-		_ = g.Wait()
 		newImages := []string{}
-		for _, rid := range imageIDs {
-			if rid != "" { newImages = append(newImages, rid) }
+		for _, path := range savedPaths {
+			newImages = append(newImages, "local:"+path)
 		}
 		if len(newImages) > 0 {
 			existing.Images = newImages
 		}
 	}
 
-	return s.inundationRepo.Update(ctx, existing)
+	err = s.inundationRepo.Update(ctx, existing)
+	if err != nil {
+		return err
+	}
+
+	// Trigger immediate sync task
+	if len(images) > 0 {
+		s.syncWorker.Enqueue(id, TaskTypeReport)
+	}
+
+	return nil
 }
 
 func (s *service) ReviewReport(ctx context.Context, reportID, comment, reviewerID, reviewerEmail, reviewerName string) error {
@@ -417,25 +385,13 @@ func (s *service) UpdateUpdateContent(ctx context.Context, updateID string, upda
 	update.NeedsCorrection = false
 
 	if len(images) > 0 {
-		report, _ := s.inundationRepo.GetByID(ctx, update.ReportID)
-		org, _ := s.orgRepo.GetByID(ctx, report.OrgID)
-		folderID, _ := s.resolveUploadFolder(ctx, org, "FLOOD", report.PointID)
-
-		g, gCtx := errgroup.WithContext(ctx)
-		imageIDs := make([]string, len(images))
-		for i, img := range images {
-			i, img := i, img
-			g.Go(func() error {
-				id, err := s.driveSvc.UploadFileSimple(gCtx, folderID, img.Name, img.MimeType, img.Reader)
-				if err == nil { imageIDs[i] = id }
-				return err
-			})
+		savedPaths, err := s.saveLocalImages(updateID, images)
+		if err != nil {
+			fmt.Printf("Warning: failed to save some content update images locally: %v\n", err)
 		}
-		_ = g.Wait()
-
 		newImages := []string{}
-		for _, id := range imageIDs {
-			if id != "" { newImages = append(newImages, id) }
+		for _, path := range savedPaths {
+			newImages = append(newImages, "local:"+path)
 		}
 		if len(newImages) > 0 {
 			update.Images = newImages
@@ -445,6 +401,11 @@ func (s *service) UpdateUpdateContent(ctx context.Context, updateID string, upda
 	err = s.inundationUpdateRepo.Update(ctx, update)
 	if err != nil {
 		return err
+	}
+
+	// Trigger immediate sync task
+	if len(images) > 0 {
+		s.syncWorker.Enqueue(updateID, TaskTypeUpdate)
 	}
 
 	// Sync back to main report if this was the latest info
@@ -637,7 +598,7 @@ func (s *service) getOrgFolderID(ctx context.Context, org *models.Organization) 
 	return folderID, nil
 }
 
-// resolveUploadFolder dynamically determines the target Google Drive folder: Org -> Type -> Station -> Date
+// resolveUploadFolder dynamically determines the target Google Drive folder: Org -> FLOOD -> Station -> Year -> Month -> Day
 func (s *service) resolveUploadFolder(ctx context.Context, org *models.Organization, dataType string, pointID string) (string, error) {
 	// 1. Get Base Org Folder
 	orgFolderID, err := s.getOrgFolderID(ctx, org)
@@ -645,8 +606,13 @@ func (s *service) resolveUploadFolder(ctx context.Context, org *models.Organizat
 		return "", err
 	}
 
-	dateFolderName := time.Now().Format("2006-01-02")
-	dateKey := fmt.Sprintf("%s_%s_%s_%s", org.ID, dataType, pointID, dateFolderName)
+	now := time.Now()
+	yearStr := now.Format("2006")
+	monthStr := now.Format("01")
+	dayStr := now.Format("02")
+
+	// Use a hierarchical cache key to reflect the new structure
+	dateKey := fmt.Sprintf("%s_%s_%s_%s_%s_%s", org.ID, dataType, pointID, yearStr, monthStr, dayStr)
 
 	s.cacheMu.RLock()
 	cachedID, ok := s.folderCache[dateKey]
@@ -661,7 +627,7 @@ func (s *service) resolveUploadFolder(ctx context.Context, org *models.Organizat
 		return "", fmt.Errorf("failed to handle type folder '%s': %w", dataType, err)
 	}
 
-	// 3. Get/Create Station Folder
+	// 3. Get/Create Station Folder (e.g., Ngõ 123_ID...)
 	stationFolderName := "UNKNOWN_STATION"
 	if pointID != "" {
 		point, err := s.inundationPointRepo.GetByID(ctx, pointID)
@@ -676,22 +642,34 @@ func (s *service) resolveUploadFolder(ctx context.Context, org *models.Organizat
 		return "", fmt.Errorf("failed to handle station folder '%s': %w", stationFolderName, err)
 	}
 
-	// 4. Get/Create Date Folder
-	dateFolderID, err := s.driveSvc.FindOrCreateFolder(ctx, stationFolderID, dateFolderName)
+	// 4. Get/Create Year Folder
+	yearFolderID, err := s.driveSvc.FindOrCreateFolder(ctx, stationFolderID, yearStr)
 	if err != nil {
-		return "", fmt.Errorf("failed to handle date folder '%s': %w", dateFolderName, err)
+		return "", fmt.Errorf("failed to handle year folder '%s': %w", yearStr, err)
 	}
 
-	if dateFolderID != "" {
+	// 5. Get/Create Month Folder
+	monthFolderID, err := s.driveSvc.FindOrCreateFolder(ctx, yearFolderID, monthStr)
+	if err != nil {
+		return "", fmt.Errorf("failed to handle month folder '%s': %w", monthStr, err)
+	}
+
+	// 6. Get/Create Date (Day) Folder
+	dayFolderID, err := s.driveSvc.FindOrCreateFolder(ctx, monthFolderID, dayStr)
+	if err != nil {
+		return "", fmt.Errorf("failed to handle day folder '%s': %w", dayStr, err)
+	}
+
+	if dayFolderID != "" {
 		s.cacheMu.Lock()
-		s.folderCache[dateKey] = dateFolderID
+		s.folderCache[dateKey] = dayFolderID
 		s.cacheMu.Unlock()
 
-		// Make the date folder public so files inside inherit the permission
-		_ = s.driveSvc.SetPublic(ctx, dateFolderID)
+		// Make the day folder public so files inside inherit the permission
+		_ = s.driveSvc.SetPublic(ctx, dayFolderID)
 	}
 
-	return dateFolderID, nil
+	return dayFolderID, nil
 }
 
 func (s *service) GetOrgByCode(ctx context.Context, code string) (*models.Organization, error) {
@@ -707,4 +685,40 @@ func (s *service) ListOrganizations(ctx context.Context) ([]*models.Organization
 	f.PerPage = 1000
 	orgs, _, err := s.orgRepo.List(ctx, f)
 	return orgs, err
+}
+
+// saveLocalImages saves images to a temporary directory on disk and returns the relative paths
+func (s *service) saveLocalImages(prefix string, images []ImageContent) ([]string, error) {
+	baseDir := "uploads/inundation_tmp"
+	if _, err := os.Stat(baseDir); os.IsNotExist(err) {
+		_ = os.MkdirAll(baseDir, 0755)
+	}
+
+	var savedPaths []string
+	for i, img := range images {
+		// Use a unique name to avoid collisions
+		fileName := fmt.Sprintf("%s_%d_%d%s", prefix, time.Now().Unix(), i, filepath.Ext(img.Name))
+		if filepath.Ext(img.Name) == "" {
+			// Fallback extension if missing
+			fileName += ".jpg"
+		}
+		
+		relPath := filepath.Join("inundation_tmp", fileName)
+		fullPath := filepath.Join("uploads", relPath)
+
+		out, err := os.Create(fullPath)
+		if err != nil {
+			return savedPaths, fmt.Errorf("failed to create local file: %w", err)
+		}
+
+		_, err = io.Copy(out, img.Reader)
+		out.Close()
+		if err != nil {
+			return savedPaths, fmt.Errorf("failed to save local file content: %w", err)
+		}
+
+		savedPaths = append(savedPaths, relPath)
+	}
+
+	return savedPaths, nil
 }

@@ -177,9 +177,13 @@ const EmployeeList = () => {
 
     const handleSubmit = async (values) => {
         try {
+            const dataToSubmit = { ...values };
+            if (editingEmployee && !dataToSubmit.password) {
+                delete dataToSubmit.password;
+            }
             const res = editingEmployee
-                ? await employeeApi.update(editingEmployee.id, values)
-                : await employeeApi.create(values);
+                ? await employeeApi.update(editingEmployee.id, dataToSubmit)
+                : await employeeApi.create(dataToSubmit);
             if (res.data?.status === 'success') {
                 toast.success(editingEmployee ? 'Cập nhật thành công' : 'Thêm mới thành công');
                 setDialogOpen(false);

@@ -9,6 +9,8 @@ import (
 	"ai-api-tnhn/utils/hash"
 	"ai-api-tnhn/utils/web"
 	"context"
+	"fmt"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -42,8 +44,26 @@ func (p userRepository) Create(ctx context.Context, input *models.User) (*models
 }
 
 func (p userRepository) Update(ctx context.Context, id string, input *models.User) error {
-	input.ID = id
-	return p.R_Update(ctx, input)
+	updateData := bson.M{
+		"name":                                input.Name,
+		"role":                                input.Role,
+		"active":                              input.Active,
+		"org_id":                              input.OrgID,
+		"updated_at":                          time.Now().Unix(),
+		"assigned_inundation_point_ids":       input.AssignedInundationPointIDs,
+		"assigned_emergency_construction_ids": input.AssignedEmergencyConstructionIDs,
+		"assigned_pumping_station_id":         input.AssignedPumpingStationID,
+	}
+
+	// Only update password if it's not empty
+	fmt.Println(input.Password)
+	if input.Password != "" {
+		updateData["password"] = input.Password
+		fmt.Println("update password")
+	}
+
+	_, err := p.UpdateOne(ctx, bson.M{"_id": id, "deleted_at": 0}, bson.M{"$set": updateData})
+	return err
 }
 
 func (p userRepository) Delete(ctx context.Context, id string) error {

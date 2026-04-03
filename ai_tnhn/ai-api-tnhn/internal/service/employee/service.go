@@ -10,6 +10,7 @@ import (
 	"ai-api-tnhn/utils/web"
 	"context"
 	"errors"
+	"strings"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -49,7 +50,7 @@ func (s *service) Create(ctx context.Context, input *models.User) (*models.User,
 	input.Active = true // Default to active
 
 	// Validate assignments
-	if err := s.validateAssignments(ctx, "", input.OrgID, input.AssignedInundationPointIDs, input.AssignedEmergencyConstructionIDs); err != nil {
+	if err := s.validateAssignments(ctx, "", input.OrgID, input.AssignedInundationPointIDs, input.AssignedEmergencyConstructionIDs, input.AssignedPumpingStationID); err != nil {
 		return nil, err
 	}
 
@@ -72,31 +73,32 @@ func (s *service) Update(ctx context.Context, id string, input *models.User) err
 		return errors.New("user not found")
 	}
 
-	// Update Role if provided, otherwise keep existing
-	if input.Role == "" {
-		input.Role = existing.Role
+	// Merge changes into existing record to prevent clearing non-provided fields
+	existing.Name = input.Name
+	existing.Role = input.Role
+	// OrgID usually shouldn't change for employee management, but if it does:
+	if input.OrgID != "" {
+		existing.OrgID = input.OrgID
 	}
+	existing.Active = input.Active
+	existing.AssignedInundationPointIDs = input.AssignedInundationPointIDs
+	existing.AssignedEmergencyConstructionIDs = input.AssignedEmergencyConstructionIDs
+	existing.AssignedPumpingStationID = input.AssignedPumpingStationID
 
-	// Prevent changing OrgID? Assuming Employee stays in Org.
-	// If input.OrgID is empty, maybe keep existing.
-	// For simplicity, force OrgID to match existing or input must match.
-	if input.OrgID == "" {
-		input.OrgID = existing.OrgID
-	}
-	if input.Password != "" {
+	if input.Password != "" && strings.TrimSpace(string(input.Password)) != "" {
 		str, _ := input.Password.GererateHashedPassword()
-		input.Password = hash.NewPassword(str)
+		existing.Password = hash.NewPassword(str)
 	}
 
-	// Validate assignments for update
-	if err := s.validateAssignments(ctx, id, input.OrgID, input.AssignedInundationPointIDs, input.AssignedEmergencyConstructionIDs); err != nil {
+	// Validate assignments on the merged record
+	if err := s.validateAssignments(ctx, id, existing.OrgID, existing.AssignedInundationPointIDs, existing.AssignedEmergencyConstructionIDs, existing.AssignedPumpingStationID); err != nil {
 		return err
 	}
 
-	return s.userRepo.Update(ctx, id, input)
+	return s.userRepo.Update(ctx, id, existing)
 }
 
-func (s *service) validateAssignments(ctx context.Context, userID string, orgID string, pointIDs []string, constructionIDs []string) error {
+func (s *service) validateAssignments(ctx context.Context, userID string, orgID string, pointIDs []string, constructionIDs []string, stationID string) error {
 	if len(pointIDs) > 1 {
 		return web.BadRequest("Chỉ được phép gán tối đa 1 điểm ngập")
 	}
@@ -133,6 +135,21 @@ func (s *service) validateAssignments(ctx context.Context, userID string, orgID 
 		users, _, err := s.userRepo.List(ctx, f)
 		if err == nil && len(users) > 0 {
 			return web.BadRequest("Công trình khẩn này đã được gán cho nhân viên: " + users[0].Name)
+		}
+	}
+
+	// Check if pumping station is already assigned to another user in the same org
+	if stationID != "" {
+		f := filter.NewBasicFilter()
+		f.AddWhere("org_id", "org_id", orgID)
+		f.AddWhere("assigned_pumping_station_id", "assigned_pumping_station_id", stationID)
+		if userID != "" {
+			f.AddWhere("_id", "_id", primitive.M{"$ne": userID})
+		}
+
+		users, _, err := s.userRepo.List(ctx, f)
+		if err == nil && len(users) > 0 {
+			return web.BadRequest("Trạm bơm này đã được gán cho nhân viên: " + users[0].Name)
 		}
 	}
 

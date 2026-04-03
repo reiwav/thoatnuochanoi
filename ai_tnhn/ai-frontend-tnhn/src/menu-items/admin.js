@@ -236,13 +236,13 @@ const adminPages = {
       roles: ['super_admin']
     },
     {
-      id: 'tram-bo',
+      id: 'tram-bom',
       title: 'Trạm bơm',
       type: 'item',
-      url: '/admin/tram-bo',
+      url: '/admin/tram-bom',
       icon: icons.IconEngine,
       breadcrumbs: false,
-      roles: ['super_admin']
+      roles: ['super_admin', 'employee']
     },
     {
       id: 'sa-hinh-ngap',

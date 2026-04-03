@@ -14,7 +14,7 @@ import (
 )
 
 // Create handlers
-func (h *HandlerFuncs) Create(mid middleware.Middleware, orgHandler *handler.OrganizationHandler, empHandler *handler.EmployeeHandler, stationHandler *handler.StationHandler, inuHandler *handler.InundationHandler, waterHandler *handler.WaterHandler, googleHandler *handler.GoogleHandler, queryHandler *handler.QueryHandler, emConstructionHandler *handler.EmergencyConstructionHandler, weatherHandler *handler.WeatherHandler, contractCategoryHandler *handler.ContractCategoryHandler, contractHandler *handler.ContractHandler) *gin.Engine {
+func (h *HandlerFuncs) Create(mid middleware.Middleware, orgHandler *handler.OrganizationHandler, empHandler *handler.EmployeeHandler, stationHandler *handler.StationHandler, inuHandler *handler.InundationHandler, waterHandler *handler.WaterHandler, googleHandler *handler.GoogleHandler, queryHandler *handler.QueryHandler, emConstructionHandler *handler.EmergencyConstructionHandler, weatherHandler *handler.WeatherHandler, contractCategoryHandler *handler.ContractCategoryHandler, contractHandler *handler.ContractHandler, pumpingHandler *handler.PumpingStationHandler) *gin.Engine {
 	r := gin.Default()
 	// ... (cors omitted for brevity in replace_file_content if I were using it, but I'll include enough context)
 	r.Use(
@@ -74,7 +74,7 @@ func (h *HandlerFuncs) Create(mid middleware.Middleware, orgHandler *handler.Org
 
 	h.OrganizationRoutes(apiAdmin, mid, orgHandler)
 	h.EmployeeRoutes(apiAdmin, mid, empHandler)
-	h.StationRoutes(apiAdmin, mid, stationHandler)
+	h.StationRoutes(apiAdmin, mid, stationHandler, pumpingHandler)
 	h.WaterRoutes(apiAdmin, mid, waterHandler)
 	h.InundationRoutes(api, mid, inuHandler)
 	h.GoogleRoutes(apiAdmin, mid, googleHandler)

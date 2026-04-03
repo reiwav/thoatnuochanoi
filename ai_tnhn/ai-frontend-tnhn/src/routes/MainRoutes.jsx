@@ -28,6 +28,7 @@ const ConstructionProgressHistoryPage = Loadable(lazy(() => import('views/admin/
 const InundationAdminList = Loadable(lazy(() => import('views/admin/inundation/InundationAdminList')));
 const ContractCategoryPage = Loadable(lazy(() => import('views/admin/contract-category')));
 const ContractPage = Loadable(lazy(() => import('views/admin/contract')));
+const PumpingStationPage = Loadable(lazy(() => import('views/admin/pumping-station')));
 const UnderDevelopment = Loadable(lazy(() => import('views/pages/under-development')));
 
 // ==============================|| MAIN ROUTING ||============================== //
@@ -65,7 +66,7 @@ const MainRoutes = {
         { path: 'station/inundation/list', element: <StationInundationList /> },
         { path: 'station/inundation/history', element: <InundationStationHistory /> },
         { path: 'cua-pai', element: <UnderDevelopment /> },
-        { path: 'tram-bo', element: <UnderDevelopment /> },
+        { path: 'tram-bom', element: <PumpingStationPage /> },
         { path: 'sa-hinh-ngap', element: <UnderDevelopment /> },
         { path: 'ai-support', element: <AiSupportPage /> },
         { path: 'ai-contract', element: <AiContractPage /> },
@@ -84,7 +85,8 @@ const MainRoutes = {
         { path: 'emergency-construction/form', element: <ConstructionFormPage /> },
         { path: 'station/rain/summary', element: <StationRainSummary /> },
         { path: 'station/water/summary', element: <StationWaterSummary /> },
-        { path: 'station/rain/compare', element: <StationRainCompare /> }
+        { path: 'station/rain/compare', element: <StationRainCompare /> },
+        { path: 'tram-bom', element: <PumpingStationPage /> }
       ]
     }
   ]

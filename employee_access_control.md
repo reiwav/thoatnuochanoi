@@ -4,9 +4,10 @@
 Đảm bảo nhân viên (role = `employee`) chỉ có thể xem và gửi báo cáo cho các **Điểm ngập lụt** và **Công trình khẩn cấp** mà họ được giao nhiệm vụ. Các vai trò cao hơn (`super_admin`, `admin_org`, `manager`) vẫn có quyền xem toàn bộ theo phạm vi tổ chức của họ.
 
 ## 2. Ràng buộc Nghiệp vụ (Quan trọng)
-- **Tính Duy nhất**: Mỗi Điểm ngập lụt (`InundationPoint`) hoặc Công trình khẩn cấp chỉ được phép gán cho **DUY NHẤT một nhân viên** tại một thời điểm.
+- **Số lượng gán tối đa**: Mỗi nhân viên (`role = employee`) chỉ được phép gán **TỐI ĐA 1** Điểm ngập lụt (`InundationPoint`) và **TỐI ĐA 1** Công trình khẩn cấp.
+- **Kiểu dữ liệu**: Vẫn sử dụng kiểu mảng (`string[]`) để linh hoạt cho tương lai, nhưng logic validation tại backend và UI tại frontend sẽ giới hạn chỉ cho phép chọn 1 phần tử.
+- **Tính Duy nhất**: Mỗi Điểm ngập lụt hoặc Công trình khẩn cấp chỉ được phép gán cho **DUY NHẤT một nhân viên** tại một thời điểm trong cùng một tổ chức (`org_id`).
 - **Không trùng lặp**: Hệ thống phải ngăn chặn việc gán cùng một địa điểm/công trình cho hai nhân viên khác nhau.
-- **Phạm vi**: Ràng buộc này áp dụng trong cùng một tổ chức (`org_id`).
 
 ## 3. Thay đổi Backend (Go API)
 
@@ -29,7 +30,9 @@ Thêm các trường danh sách ID được phân quyền vào struct `User` tro
 
 ### 3.3. Cập nhật API Quản lý Nhân viên (`handler/employee.go`)
 - Bổ sung chức năng cập nhật danh sách quyền hạn cho nhân viên. 
-- **Validation**: Trước khi lưu, hệ thống phải kiểm tra xem các ID điểm ngập/công trình được chọn có đang thuộc về nhân viên khác (trong cùng org) hay không. Nếu có, trả về lỗi 400 và danh sách các điểm bị trùng.
+- **Validation**: 
+    - Giới hạn số lượng ID trong mảng `AssignedInundationPointIDs` và `AssignedEmergencyConstructionIDs` không được vượt quá 1.
+    - Trước khi lưu, hệ thống phải kiểm tra xem các ID điểm ngập/công trình được chọn có đang thuộc về nhân viên khác (trong cùng org) hay không. Nếu có, trả về lỗi 400 và thông báo điểm đã được gán.
 
 ## 3. Thay đổi Frontend (React AI-Frontend)
 

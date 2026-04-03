@@ -130,8 +130,9 @@ export default function MainLayout() {
 
   const isConstructionPath = pathname.includes('/emergency-construction');
   const isInundationPath = pathname === '/' || pathname.startsWith('/admin/inundation') || pathname.startsWith('/company/inundation');
+  const isPumpingPath = pathname.includes('/tram-bom');
   const isAiSupportPath = pathname === '/admin/ai-support';
-  const showMobileAppLayout = isEmployee && (isInundationPath || isConstructionPath);
+  const showMobileAppLayout = isEmployee && (isInundationPath || isConstructionPath || isPumpingPath);
 
   // Auto-collapse sidebar on AI Support page (only for mobile)
   useEffect(() => {
@@ -150,6 +151,8 @@ export default function MainLayout() {
   const handleTopTabChange = (event, newValue) => {
     if (newValue === 0) {
       navigate(`${basePath}/inundation`);
+    } else if (newValue === 1) {
+      navigate(`${basePath}/tram-bom`);
     } else {
       navigate(`${basePath}/emergency-construction/dashboard`);
     }
@@ -195,13 +198,14 @@ export default function MainLayout() {
             elevation={0}
           >
             <Tabs
-              value={isConstructionPath ? 1 : 0}
+              value={isConstructionPath ? 2 : isPumpingPath ? 1 : 0}
               onChange={handleTopTabChange}
               variant="fullWidth"
               indicatorColor="primary"
               textColor="primary"
             >
               <Tab label="Điểm ngập" sx={{ fontWeight: 700, fontSize: '0.95rem' }} />
+              <Tab label="Trạm bơm" sx={{ fontWeight: 700, fontSize: '0.95rem' }} />
               <Tab label="Công trình khẩn" sx={{ fontWeight: 700, fontSize: '0.95rem' }} />
             </Tabs>
           </Paper>

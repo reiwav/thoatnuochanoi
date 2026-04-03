@@ -8,11 +8,13 @@ import { IconX } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 import inundationApi from 'api/inundation';
 import emergencyConstructionApi from 'api/emergencyConstruction';
+import pumpingStationApi from 'api/pumpingStation';
 import SelectionDialog from './SelectionDialog';
 
 const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizations = [], defaultOrgId = '', userRole = '' }) => {
     const [points, setPoints] = useState([]);
     const [constructions, setConstructions] = useState([]);
+    const [pumpingStations, setPumpingStations] = useState([]);
     const [fetchingData, setFetchingData] = useState(false);
     const [pointSelectionOpen, setPointSelectionOpen] = useState(false);
     const [constructionSelectionOpen, setConstructionSelectionOpen] = useState(false);
@@ -24,6 +26,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
         org_id: '',
         assigned_inundation_point_ids: [],
         assigned_emergency_construction_ids: [],
+        assigned_pumping_station_id: '',
         active: true
     });
 
@@ -38,6 +41,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                     org_id: employee.org_id || defaultOrgId,
                     assigned_inundation_point_ids: employee.assigned_inundation_point_ids || [],
                     assigned_emergency_construction_ids: employee.assigned_emergency_construction_ids || [],
+                    assigned_pumping_station_id: employee.assigned_pumping_station_id || '',
                     active: employee.active !== undefined ? employee.active : true
                 });
             } else {
@@ -49,6 +53,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                     org_id: defaultOrgId,
                     assigned_inundation_point_ids: [],
                     assigned_emergency_construction_ids: [],
+                    assigned_pumping_station_id: '',
                     active: true
                 });
             }
@@ -61,9 +66,10 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
             const orgIdToUse = formData.org_id || defaultOrgId;
             setFetchingData(true);
             try {
-                const [pointsRes, consRes] = await Promise.all([
+                const [pointsRes, consRes, pumpRes] = await Promise.all([
                     inundationApi.getPointsStatus({ per_page: 1000, org_id: orgIdToUse }),
-                    emergencyConstructionApi.getAll({ per_page: 1000, org_id: orgIdToUse })
+                    emergencyConstructionApi.getAll({ per_page: 1000, org_id: orgIdToUse }),
+                    pumpingStationApi.list({ per_page: 1000 })
                 ]);
 
                 if (pointsRes.data?.status === 'success') {
@@ -72,6 +78,10 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
 
                 if (consRes.data?.status === 'success') {
                     setConstructions(Array.isArray(consRes.data.data?.data) ? consRes.data.data.data : []);
+                }
+
+                if (pumpRes.data?.status === 'success') {
+                    setPumpingStations(Array.isArray(pumpRes.data.data?.data) ? pumpRes.data.data.data : []);
                 }
             } catch (err) {
                 console.error('Lỗi tải dữ liệu địa điểm:', err);
@@ -238,6 +248,24 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                                     )}
                                 </Box>
                             </Box>
+
+                            <Box>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'primary.main', mb: 1 }}>Trạm bơm được giao</Typography>
+                                <FormControl fullWidth size="small">
+                                    <InputLabel>Chọn trạm bơm</InputLabel>
+                                    <Select
+                                        value={formData.assigned_pumping_station_id}
+                                        label="Chọn trạm bơm"
+                                        onChange={(e) => handleChange('assigned_pumping_station_id', e.target.value)}
+                                        sx={{ borderRadius: '12px', bgcolor: '#f8fafc' }}
+                                    >
+                                        <MenuItem value=""><em>Không gán</em></MenuItem>
+                                        {(pumpingStations || []).map((station) => (
+                                            <MenuItem key={station.id} value={station.id}>{station.name}</MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                            </Box>
                         </>
                     )}
 
@@ -277,6 +305,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                 labelField="name"
                 initialSelectedIds={formData.assigned_inundation_point_ids}
                 onConfirm={(newIds) => handleChange('assigned_inundation_point_ids', newIds)}
+                singleSelect={true}
             />
 
             <SelectionDialog
@@ -287,6 +316,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                 labelField="name"
                 initialSelectedIds={formData.assigned_emergency_construction_ids}
                 onConfirm={(newIds) => handleChange('assigned_emergency_construction_ids', newIds)}
+                singleSelect={true}
             />
         </Dialog>
     );

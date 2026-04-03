@@ -18,11 +18,11 @@ import (
 	"ai-api-tnhn/internal/service/googledrive"
 	"ai-api-tnhn/internal/service/inundation"
 	"ai-api-tnhn/internal/service/organization"
+	"ai-api-tnhn/internal/service/pump"
+	pumpingstation "ai-api-tnhn/internal/service/pumping_station"
 	querysvc "ai-api-tnhn/internal/service/query"
 	"ai-api-tnhn/internal/service/station"
 	"ai-api-tnhn/internal/service/stationdata"
-	"ai-api-tnhn/internal/service/pumping_station"
-	"ai-api-tnhn/internal/service/pump"
 	"ai-api-tnhn/internal/service/storage"
 	"ai-api-tnhn/internal/service/telegram"
 	"ai-api-tnhn/internal/service/token"
@@ -56,6 +56,7 @@ func main() {
 	inuUpdateRepo := query.NewInundationUpdateRepository(db.DB, "inundation_updates", "inuup", log)
 	inuPointRepo := query.NewInundationPointRepository(db.DB, "inundation_stations", "inpt", log)
 	aiUsageRepo := query.NewAiUsageRepo(db.DB, "ai_usage_records", "aiu", log)
+	aiChatLogRepo := query.NewAiChatLogRepo(db.DB, "ai_chat_logs", "ach", log)
 	emConstructionRepo := query.NewEmergencyConstructionRepository(db.DB, "emergency_constructions", "emc", log)
 	emConstructionHistoryRepo := query.NewEmergencyConstructionHistoryRepository(db.DB, "emergency_construction_histories", "emch", log)
 	emConstructionProgressRepo := query.NewEmergencyConstructionProgressRepository(db.DB, "emergency_construction_progress", "emcp", log)
@@ -119,7 +120,7 @@ func main() {
 	queryService := querysvc.NewService(db.DB)
 	queryHandler := handler.NewQueryHandler(queryService)
 	stationDataService := stationdata.NewService(stationService, waterService)
-	geminiService, err := gemini.NewService(confg.GeminiAPIKey, confg.GeminiAPIKeyContract, waterService, googleApiService, inuService, queryService, stationDataService, emConstructionService, contractService, aiUsageRepo)
+	geminiService, err := gemini.NewService(confg.GeminiAPIKey, confg.GeminiAPIKeyContract, waterService, googleApiService, inuService, queryService, stationDataService, emConstructionService, contractService, aiUsageRepo, aiChatLogRepo)
 	if err != nil {
 		log.GetLogger().Errorf("Failed to initialize Gemini service: %v", err)
 	} else {
@@ -177,7 +178,8 @@ func main() {
 	contractCategoryHandler := handler.NewContractCategoryHandler(contractCategoryService, authService, contextWith)
 	contractHandler := handler.NewContractHandler(contractService, authService, contextWith)
 	pumpingStationHandler := handler.NewPumpingStationHandler(pumpingStationService, authService, contextWith)
-	googleHandler := handler.NewGoogleHandler(googleApiService, geminiService, driveService, waterService, emailService, contextWith, confg.GoogleDriveConfig, log, weatherService)
+	googleHandler := handler.NewGoogleHandler(googleApiService, geminiService, driveService, waterService, emailService, contextWith, confg.GoogleDriveConfig, log, weatherService, aiChatLogRepo)
+
 	mid := middleware.NewMiddleware(confg, tokenRepo, contextWith, log)
 	handlers := router.HandlerFuncs{
 		Logger:                         log,
@@ -194,6 +196,7 @@ func main() {
 		GoogleInundationSummaryHandler: googleHandler.GetInundationSummary,
 		GoogleChatHandler:              googleHandler.Chat,
 		GoogleContractChatHandler:      googleHandler.ChatContract,
+		GoogleChatHistoryHandler:       googleHandler.GetChatHistory,
 		GoogleEmailDetailHandler:       googleHandler.GetEmailDetail,
 		GoogleRecentEmailsHandler:      googleHandler.GetRecentEmails,
 		GoogleUnreadEmailsHandler:      googleHandler.GetUnreadEmails,

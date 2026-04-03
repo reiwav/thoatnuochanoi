@@ -45,10 +45,17 @@ const xQrcodeID = "x-qrcode-id"
 func (c *ClientCache) GetUserID(ctx *gin.Context) (string, error) {
 	uID := ctx.GetString(xUserID)
 	if uID == "" {
+		cache := c.GetTokenFromContext(ctx)
+		if cache != nil {
+			uID = cache.UserID
+		}
+	}
+	if uID == "" {
 		return uID, BadRequest("user-id not found")
 	}
 	return uID, nil
 }
+
 
 func (c *ClientCache) GetOrgId(ctx *gin.Context) (string, error) {
 	uID := c.GetTokenFromContext(ctx).OrgId

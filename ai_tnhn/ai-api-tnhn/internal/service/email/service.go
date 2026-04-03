@@ -51,6 +51,8 @@ type Service interface {
 	GetLatestEmailByFilter(ctx context.Context) (*EmailInfo, error)
 	GetLatestEmailAttachmentPage1(ctx context.Context) (string, error)
 	GetLatestEmailAttachmentRaw(ctx context.Context) ([]byte, string, error)
+	GetLatestWeatherEmailID(ctx context.Context) (uint32, error)
+	GetEmailAttachmentRawByID(ctx context.Context, id uint32) ([]byte, string, error)
 }
 
 type service struct {
@@ -888,7 +890,36 @@ func (s *service) GetLatestEmailAttachmentPage1(ctx context.Context) (string, er
 	return "", fmt.Errorf("no readable weather report found in the latest emails")
 }
 
-func (s *service) GetLatestEmailAttachmentRaw(ctx context.Context) ([]byte, string, error) {
+func (s *service) GetLatestWeatherEmailID(ctx context.Context) (uint32, error) {
+	c, err := s.connectIMAP()
+	if err != nil {
+		return 0, err
+	}
+	defer c.Logout()
+
+	_, err = c.Select("INBOX", true)
+	if err != nil {
+		return 0, err
+	}
+
+	includeWords := []string{"mưa", "thời tiết", "Bản tin"}
+	excludeWords := []string{"THỦY VĂN", "CẢNH BÁO THUỶ VĂN"}
+
+	criteria := CreateAdvancedCriteria(includeWords, excludeWords, s.conf.FromFilter)
+	ids, err := c.Search(criteria)
+	if err != nil {
+		return 0, err
+	}
+	sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
+
+	if len(ids) == 0 {
+		return 0, fmt.Errorf("no matching weather emails found")
+	}
+
+	return ids[len(ids)-1], nil
+}
+
+func (s *service) GetEmailAttachmentRawByID(ctx context.Context, id uint32) ([]byte, string, error) {
 	c, err := s.connectIMAP()
 	if err != nil {
 		return nil, "", err
@@ -900,30 +931,23 @@ func (s *service) GetLatestEmailAttachmentRaw(ctx context.Context) ([]byte, stri
 		return nil, "", err
 	}
 
-	includeWords := []string{"mưa", "thời tiết", "Bản tin"}
-	excludeWords := []string{"THỦY VĂN", "CẢNH BÁO THUỶ VĂN"}
-
-	criteria := CreateAdvancedCriteria(includeWords, excludeWords, s.conf.FromFilter)
-	ids, err := c.Search(criteria)
+	_, raw, filename, err := s.fetchAndParseEmailExtended(c, id, true)
 	if err != nil {
-		return nil, "", err
-	}
-	sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
-
-	if len(ids) == 0 {
-		return nil, "", fmt.Errorf("no matching emails found")
-	}
-
-	latestID := ids[len(ids)-1]
-	_, raw, filename, err := s.fetchAndParseEmailExtended(c, latestID, true)
-	if err != nil {
-		return nil, "", fmt.Errorf("failed to fetch email %d: %w", latestID, err)
+		return nil, "", fmt.Errorf("failed to fetch email %d: %w", id, err)
 	}
 	if len(raw) == 0 {
-		return nil, "", fmt.Errorf("email %d has no PDF attachment", latestID)
+		return nil, "", fmt.Errorf("email %d has no PDF attachment", id)
 	}
 
 	return raw, filename, nil
+}
+
+func (s *service) GetLatestEmailAttachmentRaw(ctx context.Context) ([]byte, string, error) {
+	id, err := s.GetLatestWeatherEmailID(ctx)
+	if err != nil {
+		return nil, "", err
+	}
+	return s.GetEmailAttachmentRawByID(ctx, id)
 }
 
 func (s *service) fetchAndParseEmailExtended(c *client.Client, id uint32, returnRaw bool) (string, []byte, string, error) {

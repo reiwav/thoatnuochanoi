@@ -8,11 +8,17 @@ import contractApi from 'api/contract';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useNavigate } from 'react-router-dom';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import 'dayjs/locale/vi';
+
+dayjs.extend(relativeTime);
+dayjs.locale('vi');
+
 
 const AiContract = () => {
-    const [messages, setMessages] = useState([
-        { id: 1, role: 'ai', text: 'Xin chào, tôi là trợ lý AI quản lý hợp đồng. Bạn cần tôi giúp gì?' }
-    ]);
+    const [messages, setMessages] = useState([]);
+
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const scrollRef = useRef(null);
@@ -20,21 +26,52 @@ const AiContract = () => {
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const navigate = useNavigate();
 
+    const fetchHistory = async () => {
+        try {
+            console.log('Fetching contract chat history...');
+            const res = await contractApi.getChatHistory('contract', 50);
+            console.log('Contract chat history response:', res.data);
+            if (res.data?.status === 'success' && Array.isArray(res.data.data)) {
+                const historyLogs = res.data.data.map(log => ({
+                    id: log.id,
+                    role: log.role === 'model' ? 'ai' : 'user',
+                    text: log.content,
+                    timestamp: log.timestamp
+                }));
+                if (historyLogs.length > 0) {
+                    setMessages(historyLogs);
+                } else {
+                    setMessages([{ id: 'welcome', role: 'ai', text: 'Xin chào, tôi là trợ lý AI quản lý hợp đồng. Bạn cần tôi giúp gì?', timestamp: new Date() }]);
+                }
+            }
+        } catch (error) {
+            console.error('Failed to fetch contract chat history:', error);
+            setMessages([{ id: 'welcome', role: 'ai', text: 'Xin chào, tôi là trợ lý AI quản lý hợp đồng. Bạn cần tôi giúp gì?', timestamp: new Date() }]);
+        }
+    };
+
+
+    useEffect(() => {
+        fetchHistory();
+    }, []);
+
     useEffect(() => {
         if (scrollRef.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
     }, [messages]);
 
+
     const handleSend = async (directText = null) => {
         const textToSend = directText || input;
         if (!textToSend.trim()) return;
 
-        const userMsg = { id: Date.now(), role: 'user', text: textToSend };
+        const userMsg = { id: Date.now(), role: 'user', text: textToSend, timestamp: new Date() };
         const history = messages.map(m => ({
             role: m.role === 'ai' ? 'model' : 'user',
             content: m.text
         }));
+
 
         setMessages(prev => [...prev, userMsg]);
         if (!directText) setInput('');
@@ -48,8 +85,10 @@ const AiContract = () => {
             const aiMsg = {
                 id: Date.now() + 1,
                 role: 'ai',
-                text: res.data?.data || 'Xin lỗi, tôi gặp trục trặc khi xử lý câu hỏi này.'
+                text: res.data?.data || 'Xin lỗi, tôi gặp trục trặc khi xử lý câu hỏi này.',
+                timestamp: new Date()
             };
+
             setMessages(prev => [...prev, aiMsg]);
         } catch (error) {
             console.error('Chat failed:', error);
@@ -107,10 +146,12 @@ const AiContract = () => {
                                 bgcolor: msg.role === 'user' ? 'primary.main' : '#f8fafc',
                                 color: msg.role === 'user' ? 'white' : 'text.primary',
                                 boxShadow: 'none',
-                                border: msg.role === 'ai' ? '1px solid #e2e8f0' : 'none'
+                                borderColor: msg.role === 'ai' ? '1px solid #e2e8f0' : 'none',
+                                position: 'relative'
                             }}>
                                 <Box sx={{
                                     '& p': { m: 0, '&:not(:last-child)': { mb: 1.5 } },
+
                                     '& a': { color: msg.role === 'user' ? 'white' : 'primary.main', textDecoration: 'underline' },
                                     '& table': {
                                         width: '100%',
@@ -175,7 +216,23 @@ const AiContract = () => {
                                         {typeof msg.text === 'string' ? msg.text : JSON.stringify(msg.text)}
                                     </ReactMarkdown>
                                 </Box>
+                                {msg.timestamp && (
+                                    <Typography 
+                                        variant="caption" 
+                                        sx={{ 
+                                            display: 'block', 
+                                            mt: 0.5, 
+                                            textAlign: msg.role === 'user' ? 'right' : 'left',
+                                            opacity: 0.7,
+                                            fontSize: '10px',
+                                            color: msg.role === 'user' ? 'rgba(255,255,255,0.8)' : 'text.secondary'
+                                        }}
+                                    >
+                                        {dayjs(msg.timestamp).fromNow()} ({dayjs(msg.timestamp).format('HH:mm')})
+                                    </Typography>
+                                )}
                             </Paper>
+
                         </Box>
                     ))}
                     {loading && (

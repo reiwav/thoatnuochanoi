@@ -75,9 +75,11 @@ type service struct {
 	emcSvc                emergency_construction.Service
 	contractSvc           contract.Service
 	aiUsageRepo           repository.AiUsage
+	aiChatLogRepo         repository.AiChatLog
 }
 
-func NewService(apiKey string, apiKeyContract string, waterSvc water.Service, googleApiSvc googleapi.Service, inuSvc inundation.Service, querySvc querysvc.Service, stationDataSvc stationdata.Service, emcSvc emergency_construction.Service, contractSvc contract.Service, aiUsageRepo repository.AiUsage) (Service, error) {
+
+func NewService(apiKey string, apiKeyContract string, waterSvc water.Service, googleApiSvc googleapi.Service, inuSvc inundation.Service, querySvc querysvc.Service, stationDataSvc stationdata.Service, emcSvc emergency_construction.Service, contractSvc contract.Service, aiUsageRepo repository.AiUsage, aiChatLogRepo repository.AiChatLog) (Service, error) {
 	if apiKey == "" {
 		return nil, fmt.Errorf("gemini api key is required")
 	}
@@ -129,8 +131,10 @@ func NewService(apiKey string, apiKeyContract string, waterSvc water.Service, go
 		emcSvc:          emcSvc,
 		contractSvc:     contractSvc,
 		aiUsageRepo:     aiUsageRepo,
+		aiChatLogRepo:   aiChatLogRepo,
 	}, nil
 }
+
 
 func (s *service) getClient() *genai.Client {
 	s.mu.Lock()
@@ -549,10 +553,45 @@ func (s *service) Chat(ctx context.Context, prompt string, history []ChatMessage
 		return "Xin lỗi, tôi không thể tìm thấy câu trả lời phù hợp.", nil
 	}
 
-	var finalResult string
+	finalResult := ""
 	for _, part := range resp.Candidates[0].Content.Parts {
 		finalResult += fmt.Sprintf("%v", part)
 	}
+
+	// Save Chat Log
+	go func() {
+		if s.aiChatLogRepo != nil {
+			now := time.Now()
+			// Log User Message
+			err := s.aiChatLogRepo.Save(context.Background(), &models.AiChatLog{
+				UserID:    userID,
+				Role:      "user",
+				Content:   prompt,
+				ChatType:  "support",
+				Timestamp: now.Add(-1 * time.Second),
+			})
+			if err != nil {
+				fmt.Printf(" [Gemini Chat] Error saving user log: %v\n", err)
+			} else {
+				fmt.Printf(" [Gemini Chat] Saved user log for UserID: %s\n", userID)
+			}
+			// Log Model Response
+			err = s.aiChatLogRepo.Save(context.Background(), &models.AiChatLog{
+				UserID:    userID,
+				Role:      "model",
+				Content:   finalResult,
+				ChatType:  "support",
+				Timestamp: now,
+			})
+			if err != nil {
+				fmt.Printf(" [Gemini Chat] Error saving model log: %v\n", err)
+			} else {
+				fmt.Printf(" [Gemini Chat] Saved model log for UserID: %s\n", userID)
+			}
+		}
+	}()
+
+
 	return finalResult, nil
 }
 

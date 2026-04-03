@@ -21,6 +21,7 @@ type HandlerFuncs struct {
 	GoogleInundationSummaryHandler gin.HandlerFunc
 	GoogleChatHandler              gin.HandlerFunc
 	GoogleContractChatHandler      gin.HandlerFunc
+	GoogleChatHistoryHandler       gin.HandlerFunc
 	GoogleEmailDetailHandler       gin.HandlerFunc
 	GoogleRecentEmailsHandler      gin.HandlerFunc
 	GoogleUnreadEmailsHandler      gin.HandlerFunc

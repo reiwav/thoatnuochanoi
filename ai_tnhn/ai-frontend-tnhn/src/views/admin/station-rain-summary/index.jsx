@@ -84,7 +84,7 @@ const StationRainSummary = () => {
 
             const rainCurrent = wd?.LuongMua_HT ?? 0;
             const rainStart = wd?.LuongMua_BD ?? 0;
-            const rainSession = Math.max(0, rainCurrent - rainStart);
+            const rainSession = rainCurrent;
 
             let isRaining = rainSession > 0;
             if (isRaining && currentTime !== '-') {

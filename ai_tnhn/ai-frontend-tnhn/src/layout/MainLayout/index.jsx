@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Outlet, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -141,6 +141,74 @@ export default function MainLayout() {
     }
   }, [isAiSupportPath, downSM]);
 
+  const availableTabs = useMemo(() => {
+    if (!userInfo) return [];
+    
+    const tabs = [
+      {
+        id: 'inundation',
+        label: 'Điểm ngập',
+        path: `${basePath}/inundation`,
+        active: isInundationPath,
+        show: !isEmployee || (userInfo?.assigned_inundation_point_ids?.length > 0)
+      },
+      {
+        id: 'pumping',
+        label: 'Trạm bơm',
+        path: `${basePath}/tram-bom`,
+        active: isPumpingPath,
+        show: !isEmployee || (userInfo?.assigned_pumping_station_id !== "")
+      },
+      {
+        id: 'construction',
+        label: 'Công trình khẩn',
+        path: `${basePath}/emergency-construction/dashboard`,
+        active: isConstructionPath,
+        show: !isEmployee || (userInfo?.assigned_emergency_construction_ids?.length > 0)
+      }
+    ];
+
+    return tabs.filter(tab => tab.show);
+  }, [userInfo, isEmployee, basePath, isInundationPath, isPumpingPath, isConstructionPath]);
+
+  const inundationNavItems = useMemo(() => {
+    const items = [
+      { id: 'all', label: 'Tổng quan', icon: <DashboardIcon sx={{ fontSize: '1.4rem' }} />, tab: '0' },
+      { 
+        id: 'pumping', 
+        label: 'Trạm bơm', 
+        icon: <EngineeringIcon sx={{ fontSize: '1.4rem' }} />, 
+        tab: '1',
+        show: !isEmployee || (userInfo?.assigned_pumping_station_id !== "")
+      },
+      { 
+        id: 'active', 
+        label: 'Đang ngập', 
+        icon: (
+          <Badge badgeContent={activeFloodCount} color="error" max={99}>
+            <WarningIcon sx={{ fontSize: '1.4rem' }} />
+          </Badge>
+        ), 
+        tab: '2' 
+      },
+      { id: 'history', label: 'Lịch sử', icon: <HistoryIcon sx={{ fontSize: '1.4rem' }} />, tab: '3' },
+      { id: 'profile', label: 'Tài khoản', icon: <PersonIcon sx={{ fontSize: '1.4rem' }} />, tab: '4' }
+    ];
+    return items.filter(i => i.show !== false);
+  }, [isEmployee, userInfo, activeFloodCount]);
+
+  // Redirect if no tabs available (for employee)
+  useEffect(() => {
+    if (isEmployee && !isChecking && userInfo && availableTabs.length === 0) {
+      if (isInundationPath || isPumpingPath || isConstructionPath) {
+        const activeTab = searchParams.get('activeTab');
+        if (activeTab !== '4') {
+          navigate(`${basePath}/inundation?activeTab=4`, { replace: true });
+        }
+      }
+    }
+  }, [isEmployee, isChecking, userInfo, availableTabs.length, isInundationPath, isPumpingPath, isConstructionPath, navigate, basePath, searchParams]);
+
   // Always open sidebar on desktop/tablet
   useEffect(() => {
     if (!downSM && !drawerOpen) {
@@ -149,12 +217,8 @@ export default function MainLayout() {
   }, [drawerOpen, downSM]);
 
   const handleTopTabChange = (event, newValue) => {
-    if (newValue === 0) {
-      navigate(`${basePath}/inundation`);
-    } else if (newValue === 1) {
-      navigate(`${basePath}/tram-bom`);
-    } else {
-      navigate(`${basePath}/emergency-construction/dashboard`);
+    if (availableTabs[newValue]) {
+      navigate(availableTabs[newValue].path);
     }
   };
   // Determine which bottom nav tab is active
@@ -198,15 +262,18 @@ export default function MainLayout() {
             elevation={0}
           >
             <Tabs
-              value={isConstructionPath ? 2 : isPumpingPath ? 1 : 0}
+              value={(() => {
+                const index = availableTabs.findIndex(tab => tab.active);
+                return index !== -1 ? index : 0;
+              })()}
               onChange={handleTopTabChange}
               variant="fullWidth"
               indicatorColor="primary"
               textColor="primary"
             >
-              <Tab label="Điểm ngập" sx={{ fontWeight: 700, fontSize: '0.95rem' }} />
-              <Tab label="Trạm bơm" sx={{ fontWeight: 700, fontSize: '0.95rem' }} />
-              <Tab label="Công trình khẩn" sx={{ fontWeight: 700, fontSize: '0.95rem' }} />
+              {availableTabs.map((tab) => (
+                <Tab key={tab.id} label={tab.label} sx={{ fontWeight: 700, fontSize: '0.95rem' }} />
+              ))}
             </Tabs>
           </Paper>
 
@@ -259,19 +326,15 @@ export default function MainLayout() {
                     return p.get('tab') === '1' ? 2 : -1;
                   }
                   const p = new URLSearchParams(window.location.search);
-                  const activeTab = p.get('activeTab');
-                  if (activeTab === '1') return 1; // Trạm bơm
-                  if (activeTab === '2') return 2; // Đang ngập
-                  if (activeTab === '3') return 3; // Lịch sử
-                  if (activeTab === '4') return 4; // Tài khoản
-                  return 0;
+                  const activeTab = p.get('activeTab') || '0';
+                  const index = inundationNavItems.findIndex(item => item.tab === activeTab);
+                  return index !== -1 ? index : 0;
                 })()}
                 onChange={(_, val) => {
-                  if (val === 0) navigate(`${basePath}/inundation?activeTab=0`);
-                  else if (val === 1) navigate(`${basePath}/inundation?activeTab=1`);
-                  else if (val === 2) navigate(`${basePath}/inundation?activeTab=2`);
-                  else if (val === 3) navigate(`${basePath}/inundation?activeTab=3`);
-                  else if (val === 4) navigate(`${basePath}/inundation?activeTab=4`);
+                  const targetTab = inundationNavItems[val]?.tab;
+                  if (targetTab) {
+                    navigate(`${basePath}/inundation?activeTab=${targetTab}`);
+                  }
                 }}
                 sx={{
                   height: 72,
@@ -279,18 +342,9 @@ export default function MainLayout() {
                   '& .MuiBottomNavigationAction-label': { fontWeight: 700, fontSize: '0.7rem', mt: 0.3 }
                 }}
               >
-                <BottomNavigationAction label="Tổng quan" icon={<DashboardIcon sx={{ fontSize: '1.4rem' }} />} />
-                <BottomNavigationAction label="Trạm bơm" icon={< EngineeringIcon sx={{ fontSize: '1.4rem' }} />} />
-                <BottomNavigationAction
-                  label="Đang ngập"
-                  icon={
-                    <Badge badgeContent={activeFloodCount} color="error" max={99}>
-                      <WarningIcon sx={{ fontSize: '1.4rem' }} />
-                    </Badge>
-                  }
-                />
-                <BottomNavigationAction label="Lịch sử" icon={<HistoryIcon sx={{ fontSize: '1.4rem' }} />} />
-                <BottomNavigationAction label="Tài khoản" icon={<PersonIcon sx={{ fontSize: '1.4rem' }} />} />
+                {inundationNavItems.map((item) => (
+                  <BottomNavigationAction key={item.id} label={item.label} icon={item.icon} />
+                ))}
               </BottomNavigation>
             )}
           </Paper>

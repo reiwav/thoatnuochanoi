@@ -96,18 +96,20 @@ export const processAndWatermark = async (file, address) => {
           ctx.fillText(line, padding, addressY + (index * addressFontSize * 1.3));
         });
 
-        // Convert back to File
+        // Convert back to File as WebP (30-50% smaller than JPEG)
         canvas.toBlob((blob) => {
           if (!blob) {
             reject(new Error('Canvas to Blob conversion failed'));
             return;
           }
-          const processedFile = new File([blob], file.name, {
-            type: 'image/jpeg',
+          // Replace extension with .webp
+          const fileName = file.name.replace(/\.[^/.]+$/, "") + ".webp";
+          const processedFile = new File([blob], fileName, {
+            type: 'image/webp',
             lastModified: Date.now(),
           });
           resolve(processedFile);
-        }, 'image/jpeg', 0.9);
+        }, 'image/webp', 0.8);
       };
 
       img.onerror = (e) => reject(e);

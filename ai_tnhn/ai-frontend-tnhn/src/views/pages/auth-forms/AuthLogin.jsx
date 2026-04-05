@@ -180,9 +180,9 @@ export default function AuthLogin() {
         </AnimateButton>
       </Box>
 
-      <Divider sx={{ my: 2 }}>OR</Divider>
+      {/* <Divider sx={{ my: 2 }}>OR</Divider> */}
 
-      <Box sx={{ mt: 2 }}>
+      {/* <Box sx={{ mt: 2 }}>
         <AnimateButton>
           <Button
             fullWidth
@@ -196,7 +196,7 @@ export default function AuthLogin() {
             Đăng nhập bằng Google
           </Button>
         </AnimateButton>
-      </Box>
+      </Box> */}
     </form>
   );
 }

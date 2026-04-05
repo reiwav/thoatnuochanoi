@@ -23,7 +23,6 @@ dayjs.locale('vi');
 
 const AiSupport = () => {
     const [messages, setMessages] = useState([]);
-
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [stats, setStats] = useState({
@@ -32,6 +31,9 @@ const AiSupport = () => {
         ai_usage: { total_tokens: 0, total_cost_usd: 0, request_count: 0 }
     });
     const [statsLoading, setStatsLoading] = useState(true);
+    const [hasMore, setHasMore] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const shouldScrollToBottom = useRef(true);
     const scrollRef = useRef(null);
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -58,11 +60,21 @@ const AiSupport = () => {
         }
     };
 
-    const fetchHistory = async () => {
+    const fetchHistory = async (before = null) => {
+        if (before) {
+            setLoadingMore(true);
+            shouldScrollToBottom.current = false;
+        } else {
+            setLoading(true);
+            shouldScrollToBottom.current = true;
+        }
+
         try {
             console.log('Fetching chat history...');
-            const res = await axiosClient.get('/admin/google/chat/history?chat_type=support&limit=50');
-            console.log('Chat history response:', res.data);
+            const limit = 50;
+            const beforeParam = before ? `&before=${before}` : '';
+            const res = await axiosClient.get(`/admin/google/chat/history?chat_type=support&limit=${limit}${beforeParam}`);
+            
             if (res.data?.status === 'success' && Array.isArray(res.data.data)) {
                 const historyLogs = res.data.data.map(log => ({
                     id: log.id,
@@ -70,15 +82,54 @@ const AiSupport = () => {
                     text: log.content,
                     timestamp: log.timestamp
                 }));
-                if (historyLogs.length > 0) {
-                    setMessages(historyLogs);
+
+                if (before) {
+                    // Prepend older history
+                    const prevScrollHeight = scrollRef.current?.scrollHeight || 0;
+                    setMessages(prev => [...historyLogs, ...prev]);
+                    
+                    // Maintain scroll position after state update
+                    setTimeout(() => {
+                        if (scrollRef.current) {
+                            scrollRef.current.scrollTop = scrollRef.current.scrollHeight - prevScrollHeight;
+                        }
+                    }, 0);
+                    
+                    if (historyLogs.length < limit) {
+                        setHasMore(false);
+                    }
                 } else {
-                    setMessages([{ id: 'welcome', role: 'ai', text: 'Xin chào! Tôi có thể giúp gì cho bạn hôm nay?', timestamp: new Date() }]);
+                    // Initial load
+                    if (historyLogs.length > 0) {
+                        setMessages(historyLogs);
+                        if (historyLogs.length < limit) {
+                            setHasMore(false);
+                        }
+                    } else {
+                        setMessages([{ id: 'welcome', role: 'ai', text: 'Bắt đầu làm việc!', timestamp: new Date() }]);
+                        setHasMore(false);
+                    }
                 }
             }
         } catch (error) {
             console.error('Failed to fetch chat history:', error);
-            setMessages([{ id: 'welcome', role: 'ai', text: 'Xin chào! Tôi có thể giúp gì cho bạn hôm nay?', timestamp: new Date() }]);
+            if (!before) {
+                setMessages([{ id: 'welcome', role: 'ai', text: 'Bắt đầu làm việc!', timestamp: new Date() }]);
+            }
+        } finally {
+            setLoading(false);
+            setLoadingMore(false);
+        }
+    };
+
+    const handleScroll = () => {
+        if (!scrollRef.current || loadingMore || !hasMore) return;
+        
+        if (scrollRef.current.scrollTop === 0) {
+            const oldestMsg = messages.find(m => m.id !== 'welcome');
+            if (oldestMsg && oldestMsg.timestamp) {
+                fetchHistory(oldestMsg.timestamp);
+            }
         }
     };
 
@@ -90,7 +141,7 @@ const AiSupport = () => {
 
 
     useEffect(() => {
-        if (scrollRef.current) {
+        if (scrollRef.current && shouldScrollToBottom.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
     }, [messages]);
@@ -107,6 +158,7 @@ const AiSupport = () => {
 
 
         setMessages(prev => [...prev, userMsg]);
+        shouldScrollToBottom.current = true;
         if (!directText) setInput('');
         setLoading(true);
 
@@ -123,6 +175,7 @@ const AiSupport = () => {
             };
 
             setMessages(prev => [...prev, aiMsg]);
+            shouldScrollToBottom.current = true;
         } catch (error) {
             console.error('Chat failed:', error);
             const aiMsg = {
@@ -131,6 +184,7 @@ const AiSupport = () => {
                 text: 'Có lỗi kết nối đến máy chủ AI. Vui lòng thử lại sau.'
             };
             setMessages(prev => [...prev, aiMsg]);
+            shouldScrollToBottom.current = true;
         } finally {
             setLoading(false);
         }
@@ -144,6 +198,7 @@ const AiSupport = () => {
         const text = 'Tình hình mưa đang như thế nào?';
         const userMsg = { id: Date.now(), role: 'user', text };
         setMessages(prev => [...prev, userMsg]);
+        shouldScrollToBottom.current = true;
         setLoading(true);
 
         try {
@@ -157,13 +212,11 @@ const AiSupport = () => {
                 if (data.rainy_stations === 0) {
                     displayText = 'Hiện tại ghi nhận không có mưa tại tất cả các trạm.';
                 } else {
-                    // displayText = `Tình hình mưa hiện tại:\n- Tổng số trạm: ${data.total_stations}\n- Số trạm đang có mưa: ${data.rainy_stations}\n- Trạm mưa lớn nhất: ${data.max_rain_station?.name} (${data.max_rain_station?.total_rain}mm)\n\nChi tiết một số trạm mưa lớn:\n` +
                     displayText = `Tình hình mưa hiện tại:\n` +
                         `- Tổng số trạm: ${data.total_stations}\n` +
                         `- Số trạm đang có mưa: ${data.rainy_stations}\n` +
                         `- Trạm mưa lớn nhất: ${data.max_rain_station?.name} (${data.max_rain_station?.total_rain}mm)\n\n` +
                         `Chi tiết danh sách các trạm mưa:\n` +
-                        // Loại bỏ .slice(0, 5) để lấy toàn bộ mảng measurements
                         data.measurements.map(m =>
                             `- ${m.name}: ${m.total_rain}mm (${m.start_time} - ${m.end_time || 'Đang mưa'})`
                         ).join('\n');
@@ -178,6 +231,7 @@ const AiSupport = () => {
                 text: displayText
             };
             setMessages(prev => [...prev, aiMsg]);
+            shouldScrollToBottom.current = true;
         } catch (error) {
             const aiMsg = {
                 id: Date.now() + 1,
@@ -185,6 +239,7 @@ const AiSupport = () => {
                 text: 'Có lỗi xảy ra khi truy vấn dữ liệu mưa. Vui lòng thử lại sau.'
             };
             setMessages(prev => [...prev, aiMsg]);
+            shouldScrollToBottom.current = true;
         } finally {
             setLoading(false);
         }
@@ -206,7 +261,12 @@ const AiSupport = () => {
                     role: 'ai',
                     text: `### ${detail.subject}\n**Từ:** ${detail.from}\n**Ngày:** ${detail.date}\n\n${detail.body}${attachmentsText}`
                 };
-                setMessages(prev => [...prev, aiMsg]);
+                
+                // Add User Message for context
+                const userMsg = { id: Date.now() - 1, role: 'user', text: `Xem chi tiết email: ${detail.subject}` };
+                setMessages(prev => [...prev, userMsg, aiMsg]);
+                shouldScrollToBottom.current = true;
+                
                 // Refresh stats to update unread count
                 fetchStats();
             }
@@ -218,14 +278,18 @@ const AiSupport = () => {
                 text: 'Không thể lấy thông tin chi tiết email này. Vui lòng thử lại sau.'
             };
             setMessages(prev => [...prev, aiMsg]);
+            shouldScrollToBottom.current = true;
         } finally {
             setLoading(false);
         }
     };
 
     const handleListEmails = async (type) => {
-        setLoading(true);
         const label = type === 'recent' ? '10 email gần đây' : '10 email mới nhất';
+        const userMsg = { id: Date.now(), role: 'user', text: `Xem danh sách ${label}` };
+        setMessages(prev => [...prev, userMsg]);
+        shouldScrollToBottom.current = true;
+        setLoading(true);
         const url = type === 'recent' ? '/admin/google/emails/recent' : '/admin/google/emails/unread';
 
         try {
@@ -250,6 +314,7 @@ const AiSupport = () => {
                     text: tableText
                 };
                 setMessages(prev => [...prev, aiMsg]);
+                shouldScrollToBottom.current = true;
             }
         } catch (error) {
             console.error('Failed to list emails:', error);
@@ -259,12 +324,16 @@ const AiSupport = () => {
                 text: 'Không thể lấy danh sách email lúc này. Vui lòng thử lại sau.'
             };
             setMessages(prev => [...prev, aiMsg]);
+            shouldScrollToBottom.current = true;
         } finally {
             setLoading(false);
         }
     };
 
     const handleListConstructions = async () => {
+        const userMsg = { id: Date.now(), role: 'user', text: 'Xem danh sách công trình khẩn' };
+        setMessages(prev => [...prev, userMsg]);
+        shouldScrollToBottom.current = true;
         setLoading(true);
         try {
             const res = await axiosClient.get('/admin/emergency-constructions');
@@ -288,6 +357,7 @@ const AiSupport = () => {
                     text: tableText
                 };
                 setMessages(prev => [...prev, aiMsg]);
+                shouldScrollToBottom.current = true;
             }
         } catch (error) {
             console.error('Failed to list constructions:', error);
@@ -297,12 +367,16 @@ const AiSupport = () => {
                 text: 'Không thể lấy danh sách công trình lúc này. Vui lòng thử lại sau.'
             };
             setMessages(prev => [...prev, aiMsg]);
+            shouldScrollToBottom.current = true;
         } finally {
             setLoading(false);
         }
     };
 
     const handleEmcHistory = async (id) => {
+        const userMsg = { id: Date.now(), role: 'user', text: 'Xem lịch sử thi công' };
+        setMessages(prev => [...prev, userMsg]);
+        shouldScrollToBottom.current = true;
         setLoading(true);
         try {
             const res = await axiosClient.get(`/admin/emergency-constructions/${id}/progress`);
@@ -346,6 +420,7 @@ const AiSupport = () => {
                     text: historyText
                 };
                 setMessages(prev => [...prev, aiMsg]);
+                shouldScrollToBottom.current = true;
             }
         } catch (error) {
             console.error('Failed to fetch emc history:', error);
@@ -355,6 +430,7 @@ const AiSupport = () => {
                 text: 'Không thể lấy lịch sử thi công này. Vui lòng thử lại sau.'
             };
             setMessages(prev => [...prev, aiMsg]);
+            shouldScrollToBottom.current = true;
         } finally {
             setLoading(false);
         }
@@ -376,6 +452,7 @@ const AiSupport = () => {
         const text = 'Tạo báo cáo nhanh';
         const userMsg = { id: Date.now(), role: 'user', text };
         setMessages(prev => [...prev, userMsg]);
+        shouldScrollToBottom.current = true;
         setLoading(true);
 
         axiosClient.post('/admin/google/quick-report', { data: {} })
@@ -392,6 +469,7 @@ const AiSupport = () => {
                     text: msgText
                 };
                 setMessages(prev => [...prev, aiMsg]);
+                shouldScrollToBottom.current = true;
             })
             .catch(err => {
                 const aiMsg = {
@@ -400,11 +478,15 @@ const AiSupport = () => {
                     text: 'Có lỗi xảy ra khi tạo báo cáo nhanh. Vui lòng thử lại sau.'
                 };
                 setMessages(prev => [...prev, aiMsg]);
+                shouldScrollToBottom.current = true;
             })
             .finally(() => setLoading(false));
     };
 
     const handleQuickReportText = async () => {
+        const userMsg = { id: Date.now(), role: 'user', text: 'Tạo tin nhắn báo cáo' };
+        setMessages(prev => [...prev, userMsg]);
+        shouldScrollToBottom.current = true;
         setLoading(true);
         try {
             const res = await axiosClient.post('/admin/google/quick-report-text');
@@ -415,6 +497,7 @@ const AiSupport = () => {
                     text: res.data.data
                 };
                 setMessages(prev => [...prev, aiMsg]);
+                shouldScrollToBottom.current = true;
             }
         } catch (error) {
             console.error('Failed to generate quick report text:', error);
@@ -424,6 +507,7 @@ const AiSupport = () => {
                 text: 'Có lỗi xảy ra khi tổng hợp báo cáo. Vui lòng thử lại sau.'
             };
             setMessages(prev => [...prev, aiMsg]);
+            shouldScrollToBottom.current = true;
         } finally {
             setLoading(false);
         }
@@ -433,6 +517,7 @@ const AiSupport = () => {
         setLoading(true);
         const userMsg = { id: Date.now(), role: 'user', text: 'Hãy phân tích và tạo báo cáo tổng hợp AI mới nhất.' };
         setMessages(prev => [...prev, userMsg]);
+        shouldScrollToBottom.current = true;
 
         try {
             const res = await axiosClient.post('/admin/google/dynamic-report');
@@ -443,6 +528,7 @@ const AiSupport = () => {
                     text: res.data.data
                 };
                 setMessages(prev => [...prev, aiMsg]);
+                shouldScrollToBottom.current = true;
             }
         } catch (error) {
             console.error('Failed to generate dynamic AI report:', error);
@@ -452,6 +538,7 @@ const AiSupport = () => {
                 text: 'Có lỗi xảy ra khi Gemini đang phân tích dữ liệu. Vui lòng thử lại sau.'
             };
             setMessages(prev => [...prev, aiMsg]);
+            shouldScrollToBottom.current = true;
         } finally {
             setLoading(false);
         }
@@ -477,6 +564,7 @@ const AiSupport = () => {
                     text: `### Đã tạo xong báo cáo công trình ${titleText}\n\nBạn có thể xem và tải về tại đây:\n[${url}](${url})`
                 };
                 setMessages(prev => [...prev, aiMsg]);
+                shouldScrollToBottom.current = true;
                 setOpenReportDialog(false);
             }
         } catch (error) {
@@ -487,6 +575,7 @@ const AiSupport = () => {
                 text: 'Có lỗi xảy ra khi xuất báo cáo. Vui lòng thử lại sau.'
             };
             setMessages(prev => [...prev, aiMsg]);
+            shouldScrollToBottom.current = true;
         } finally {
             setExporting(false);
             setLoading(false);
@@ -581,7 +670,16 @@ const AiSupport = () => {
                 </Box>
 
                 {/* Messages List */}
-                <Box ref={scrollRef} sx={{ flex: 1, p: 3, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 3, scrollBehavior: 'smooth' }}>
+                <Box 
+                    ref={scrollRef} 
+                    onScroll={handleScroll}
+                    sx={{ flex: 1, p: 3, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 3, scrollBehavior: 'smooth' }}
+                >
+                    {loadingMore && (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                            <CircularProgress size={24} />
+                        </Box>
+                    )}
                     {messages.map((msg) => (
                         <Box key={msg.id} sx={{
                             display: 'flex',
@@ -707,11 +805,11 @@ const AiSupport = () => {
                                     </ReactMarkdown>
                                 </Box>
                                 {msg.timestamp && (
-                                    <Typography 
-                                        variant="caption" 
-                                        sx={{ 
-                                            display: 'block', 
-                                            mt: 0.5, 
+                                    <Typography
+                                        variant="caption"
+                                        sx={{
+                                            display: 'block',
+                                            mt: 0.5,
                                             textAlign: msg.role === 'user' ? 'right' : 'left',
                                             opacity: 0.7,
                                             fontSize: '10px',

@@ -10,6 +10,7 @@ import (
 	"ai-api-tnhn/internal/repository"
 	"ai-api-tnhn/internal/service/water"
 
+	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/service/weather"
 	"ai-api-tnhn/utils/web"
 	"context"
@@ -131,6 +132,33 @@ func (h *GoogleHandler) GetRainSummary(c *gin.Context) {
 		return
 	}
 
+	// Persist to chat history
+	userID, _ := h.contextWith.GetUserID(c)
+	if h.aiChatLogRepo != nil && userID != "" {
+		now := time.Now()
+		// Save User Query
+		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
+			UserID: userID, Role: "user", Content: "Tình hình mưa đang như thế nào?", ChatType: "support", Timestamp: now.Add(-1 * time.Second),
+		})
+
+		// Format AI Response
+		displayText := ""
+		if summary.RainyStations == 0 {
+			displayText = "Hiện tại ghi nhận không có mưa tại tất cả các trạm."
+		} else {
+			displayText = fmt.Sprintf("Tình hình mưa hiện tại:\n- Tổng số trạm: %d\n- Số trạm đang có mưa: %d\n- Trạm mưa lớn nhất: %s (%.1fmm)\n\nChi tiết danh sách các trạm mưa:\n",
+				summary.TotalStations, summary.RainyStations, summary.MaxRainStation.Name, summary.MaxRainStation.TotalRain)
+			for _, m := range summary.Measurements {
+				displayText += fmt.Sprintf("- %s: %.1fmm (%s - %s)\n", m.Name, m.TotalRain, m.StartTime, m.EndTime)
+			}
+		}
+
+		// Save AI Response
+		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
+			UserID: userID, Role: "model", Content: displayText, ChatType: "support", Timestamp: now,
+		})
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
 		"data":   summary,
@@ -144,6 +172,36 @@ func (h *GoogleHandler) GetWaterSummary(c *gin.Context) {
 		return
 	}
 
+	// Persist to chat history
+	userID, _ := h.contextWith.GetUserID(c)
+	if h.aiChatLogRepo != nil && userID != "" {
+		now := time.Now()
+		// Save User Query
+		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
+			UserID: userID, Role: "user", Content: "Tình hình mực nước sông, hồ?", ChatType: "support", Timestamp: now.Add(-1 * time.Second),
+		})
+
+		// Format AI Response
+		displayText := "### Tình hình mực nước hiện tại\n\n"
+		if len(summary.LakeStations) > 0 {
+			displayText += "#### Hồ:\n"
+			for _, s := range summary.LakeStations {
+				displayText += fmt.Sprintf("- %s: %.2fm (%s)\n", s.Name, s.Level/100.0, s.ThoiGian)
+			}
+		}
+		if len(summary.RiverStations) > 0 {
+			displayText += "\n#### Sông:\n"
+			for _, s := range summary.RiverStations {
+				displayText += fmt.Sprintf("- %s: %.2fm (%s)\n", s.Name, s.Level/100.0, s.ThoiGian)
+			}
+		}
+
+		// Save AI Response
+		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
+			UserID: userID, Role: "model", Content: displayText, ChatType: "support", Timestamp: now,
+		})
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
 		"data":   summary,
@@ -155,6 +213,35 @@ func (h *GoogleHandler) GetInundationSummary(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+
+	// Persist to chat history
+	userID, _ := h.contextWith.GetUserID(c)
+	if h.aiChatLogRepo != nil && userID != "" {
+		now := time.Now()
+		// Save User Query
+		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
+			UserID: userID, Role: "user", Content: "Những điểm đang ngập?", ChatType: "support", Timestamp: now.Add(-1 * time.Second),
+		})
+
+		// Format AI Response
+		displayText := ""
+		if summary.ActivePoints == 0 {
+			displayText = "Hiện tại không có điểm ngập nào trên toàn thành phố."
+		} else {
+			displayText = fmt.Sprintf("Hiện có **%d** điểm đang ngập:\n\n", summary.ActivePoints)
+			for _, p := range summary.OngoingPoints {
+				displayText += fmt.Sprintf("- **%s**: %s (quản lý: %s)\n  *Bắt đầu:* %s\n", p.StreetName, p.Depth, p.OrgName, p.StartTime)
+				if p.Description != "" {
+					displayText += fmt.Sprintf("  *Mô tả:* %s\n", p.Description)
+				}
+			}
+		}
+
+		// Save AI Response
+		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
+			UserID: userID, Role: "model", Content: displayText, ChatType: "support", Timestamp: now,
+		})
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -179,7 +266,7 @@ func (h *GoogleHandler) ChatContract(c *gin.Context) {
 	}
 
 	userID, _ := h.contextWith.GetUserID(c)
-	response, err := h.geminiSvc.ChatContract(c.Request.Context(), body.Prompt, body.History, userID)
+	response, err := h.geminiSvc.ChatContract(c.Request.Context(), body.Prompt, body.History, userID, "")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -203,7 +290,7 @@ func (h *GoogleHandler) Chat(c *gin.Context) {
 
 	userID, _ := h.contextWith.GetUserID(c)
 	fmt.Printf(" [Chat Handler] UserID: %s, Prompt length: %d\n", userID, len(body.Prompt))
-	response, err := h.geminiSvc.Chat(c.Request.Context(), body.Prompt, body.History, userID)
+	response, err := h.geminiSvc.Chat(c.Request.Context(), body.Prompt, body.History, userID, "")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -219,11 +306,28 @@ func (h *GoogleHandler) GetChatHistory(c *gin.Context) {
 	userID, _ := h.contextWith.GetUserID(c)
 	chatType := c.DefaultQuery("chat_type", "support")
 	limitStr := c.DefaultQuery("limit", "50")
+	beforeStr := c.Query("before")
+
 	var limit int
 	fmt.Sscanf(limitStr, "%d", &limit)
 
-	fmt.Printf(" [Chat History Handler] UserID: %s, ChatType: %s, Limit: %d\n", userID, chatType, limit)
-	logs, err := h.aiChatLogRepo.FindByUser(c.Request.Context(), userID, chatType, limit)
+	var before time.Time
+	if beforeStr != "" {
+		// Attempt to parse RFC3339
+		parsed, err := time.Parse(time.RFC3339, beforeStr)
+		if err == nil {
+			before = parsed
+		} else {
+			// Fallback to Unix timestamp if it's numeric
+			var unix int64
+			if _, err := fmt.Sscanf(beforeStr, "%d", &unix); err == nil {
+				before = time.Unix(unix, 0)
+			}
+		}
+	}
+
+	fmt.Printf(" [Chat History Handler] UserID: %s, ChatType: %s, Limit: %d, Before: %v\n", userID, chatType, limit, before)
+	logs, err := h.aiChatLogRepo.FindByUser(c.Request.Context(), userID, chatType, limit, before)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -255,6 +359,24 @@ func (h *GoogleHandler) GetEmailDetail(c *gin.Context) {
 		return
 	}
 
+	// Persist to chat history as an AI response (since this is a detail view action)
+	userID, _ := h.contextWith.GetUserID(c)
+	if h.aiChatLogRepo != nil && userID != "" {
+		now := time.Now()
+		attachmentsText := ""
+		if len(detail.Attachments) > 0 {
+			attachmentsText = "\n\n**File đính kèm:**\n"
+			for _, a := range detail.Attachments {
+				attachmentsText += fmt.Sprintf("- [%s](%s)\n", a.Filename, a.URL)
+			}
+		}
+		content := fmt.Sprintf("### %s\n**Từ:** %s\n**Ngày:** %s\n\n%s%s", detail.Subject, detail.From, detail.Date, detail.Body, attachmentsText)
+
+		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
+			UserID: userID, Role: "model", Content: content, ChatType: "support", Timestamp: now,
+		})
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
 		"data":   detail,
@@ -268,6 +390,33 @@ func (h *GoogleHandler) GetRecentEmails(c *gin.Context) {
 		return
 	}
 
+	// Persist to chat history
+	userID, _ := h.contextWith.GetUserID(c)
+	if h.aiChatLogRepo != nil && userID != "" {
+		now := time.Now()
+		// Save User Query
+		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
+			UserID: userID, Role: "user", Content: "Xem 10 email gần đây", ChatType: "support", Timestamp: now.Add(-1 * time.Second),
+		})
+
+		// Build table text similar to index.jsx
+		tableText := "### Danh sách 10 email gần đây\n\n"
+		if len(emails) == 0 {
+			tableText += "Không tìm thấy email nào."
+		} else {
+			tableText += "| Người gửi | Tiêu đề | Thời gian | Thao tác |\n"
+			tableText += "| :--- | :--- | :--- | :--- |\n"
+			for _, m := range emails {
+				tableText += fmt.Sprintf("| %s | %s | %s | [Xem chi tiết](#email-detail-%d) |\n", m.From, m.Subject, m.Date, m.ID)
+			}
+		}
+
+		// Save AI Response
+		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
+			UserID: userID, Role: "model", Content: tableText, ChatType: "support", Timestamp: now,
+		})
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
 		"data":   emails,
@@ -279,6 +428,33 @@ func (h *GoogleHandler) GetUnreadEmails(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+
+	// Persist to chat history
+	userID, _ := h.contextWith.GetUserID(c)
+	if h.aiChatLogRepo != nil && userID != "" {
+		now := time.Now()
+		// Save User Query
+		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
+			UserID: userID, Role: "user", Content: "Xem 10 email mới nhất", ChatType: "support", Timestamp: now.Add(-1 * time.Second),
+		})
+
+		// Build table text
+		tableText := "### Danh sách 10 email mới nhất\n\n"
+		if len(emails) == 0 {
+			tableText += "Không tìm thấy email nào."
+		} else {
+			tableText += "| Người gửi | Tiêu đề | Thời gian | Thao tác |\n"
+			tableText += "| :--- | :--- | :--- | :--- |\n"
+			for _, m := range emails {
+				tableText += fmt.Sprintf("| %s | %s | %s | [Xem chi tiết](#email-detail-%d) |\n", m.From, m.Subject, m.Date, m.ID)
+			}
+		}
+
+		// Save AI Response
+		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
+			UserID: userID, Role: "model", Content: tableText, ChatType: "support", Timestamp: now,
+		})
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -544,7 +720,7 @@ Hãy viết tóm tắt 1-2 câu ngắn gọn về tình hình mưa, bao gồm:
 - Hình thế thời tiết gây mưa (ví dụ: rãnh áp thấp, không khí lạnh, hội tụ gió...)
 - Mức độ mưa: Nếu < 5 điểm là "Mưa vùng", 5-10: "Mưa rải rác trên diện rộng", > 10: "Mưa trên diện rộng"
 KHÔNG bao gồm thông tin nhiệt độ, gió, độ ẩm hay khuyến cáo.`, extractedContent, len(phuongs)+len(xas))
-		if aiResult, err := h.geminiSvc.Chat(ctx, prompt, nil, "system_report"); err == nil && aiResult != "" {
+		if aiResult, err := h.geminiSvc.Chat(ctx, prompt, nil, "system_report", "SKIP_LOG"); err == nil && aiResult != "" {
 			noidung = aiResult
 		}
 	}
@@ -602,6 +778,22 @@ KHÔNG bao gồm thông tin nhiệt độ, gió, độ ẩm hay khuyến cáo.`,
 	resLink := h.extractReportLink(reportResp)
 	if resLink == "" {
 		resLink = fmt.Sprintf("https://docs.google.com/document/d/%s/edit", templateFileID)
+	}
+
+	// Persist to chat history
+	userID, _ := h.contextWith.GetUserID(c)
+	if h.aiChatLogRepo != nil && userID != "" {
+		now := time.Now()
+		// Save User Query
+		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
+			UserID: userID, Role: "user", Content: "Tạo báo cáo nhanh", ChatType: "support", Timestamp: now.Add(-1 * time.Second),
+		})
+
+		msgText := fmt.Sprintf("Đã tạo xong báo cáo nhanh! Bạn có thể xem và tải về tại đây:\n%s", resLink)
+		// Save AI Response
+		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
+			UserID: userID, Role: "model", Content: msgText, ChatType: "support", Timestamp: now,
+		})
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -740,6 +932,21 @@ func (h *GoogleHandler) GenerateQuickReportText(c *gin.Context) {
 
 	if totalRainyPoints == 0 {
 		report := fmt.Sprintf("Công ty Thoát nước Hà Nội báo cáo UBND Thành phố tình hình PCUN đô thị thời điểm: “%s ngày %s”: Hiện tại trên địa bàn Thành phố không có mưa; %s. Công ty sẽ tiếp tục theo dõi và báo cáo khi có diễn biến mới. Trân trọng./.", reportTime, reportDate, inundationInfo)
+
+		// Persist to chat history
+		userID, _ := h.contextWith.GetUserID(c)
+		if h.aiChatLogRepo != nil && userID != "" {
+			now := time.Now()
+			// Save User Query
+			_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
+				UserID: userID, Role: "user", Content: "Báo cáo nhanh (Văn bản)", ChatType: "support", Timestamp: now.Add(-1 * time.Second),
+			})
+			// Save AI Response
+			_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
+				UserID: userID, Role: "model", Content: report, ChatType: "support", Timestamp: now,
+			})
+		}
+
 		c.JSON(http.StatusOK, gin.H{"status": "success", "data": report})
 		return
 	}
@@ -782,7 +989,8 @@ DỮ LIỆU THÔ:
 MẪU BÁO CÁO YÊU CẦU:
 Công ty Thoát nước Hà Nội báo cáo UBND Thành phố tình hình PCUN đô thị thời điểm: “[Giờ] ngày [Ngày]”: Trên địa bàn thành phố xuất hiện mưa từ [Thời điểm bắt đầu mưa] đến [Thời điểm kết thúc mưa]. Mưa cường độ [Cường độ mưa], [Diện rộng hay hẹp], lượng mưa phổ biến [Số mm] đến [Số mm]mm, riêng khu vực: [Tên trạm/phường lớn nhất] có lượng mưa lớn hơn [Số mm]mm; [Tình trạng úng ngập]; Công ty Thoát nước Hà Nội đã triển khai ứng trực tại các vị trí có khả năng ngập từ [Thời điểm bắt đầu mưa]; các trạm bơm Yên Sở, cổ nhuế, đồng bông 1, hầm chui... vận hành từ khi xuất hiện mưa để hạ mực nước hệ thống, đảm bảo giao thông ở hầm chui, các cửa phai vận hành theo quy định. Công ty sẽ tiếp tục báo cáo khi có diễn biến mưa trong thời gian tới. TRân trọng./.`, rawSummary)
 
-	aiResult, _ := h.geminiSvc.Chat(ctx, prompt, nil, "system_report_text")
+	userID, _ := h.contextWith.GetUserID(c)
+	aiResult, _ := h.geminiSvc.Chat(ctx, prompt, nil, userID, "Báo cáo nhanh (Văn bản)")
 	c.JSON(http.StatusOK, gin.H{"status": "success", "data": aiResult})
 }
 
@@ -971,7 +1179,7 @@ YÊU CẦU:
 		now.Format("15h04"), now.Format("02/01/2006"),
 		rainSummary, waterSummary, inundationSummary, emailSection)
 
-	aiResult, err := h.geminiSvc.Chat(ctx, prompt, nil, userID)
+	aiResult, err := h.geminiSvc.Chat(ctx, prompt, nil, userID, "Tổng hợp tình hình hệ thống")
 	if err != nil {
 		h.log.GetLogger().Errorf("[GenerateAIDynamicReport] Gemini Chat Error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate dynamic report: " + err.Error()})

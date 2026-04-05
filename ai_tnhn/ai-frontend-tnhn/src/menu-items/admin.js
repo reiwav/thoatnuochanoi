@@ -32,19 +32,19 @@ const adminPages = {
       roles: ['super_admin'],
       children: [
         {
-          id: 'station-rain-list',
-          title: 'Danh sách',
-          type: 'item',
-          url: '/admin/station/rain/list',
-          icon: icons.IconList,
-          breadcrumbs: false
-        },
-        {
           id: 'station-rain-summary',
           title: 'Bảng mưa',
           type: 'item',
           url: '/admin/station/rain/summary',
           icon: icons.IconTable,
+          breadcrumbs: false
+        },
+        {
+          id: 'station-rain-list',
+          title: 'Danh sách',
+          type: 'item',
+          url: '/admin/station/rain/list',
+          icon: icons.IconList,
           breadcrumbs: false
         },
         {

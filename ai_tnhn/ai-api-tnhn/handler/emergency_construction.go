@@ -6,8 +6,11 @@ import (
 	"ai-api-tnhn/internal/service/emergency_construction"
 	"ai-api-tnhn/utils/web"
 	"encoding/json"
+	"ai-api-tnhn/internal/repository"
 	"fmt"
 	"strconv"
+	"time"
+
 	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/gin-gonic/gin"
@@ -16,12 +19,14 @@ import (
 type EmergencyConstructionHandler struct {
 	web.JsonRender
 	web.ClientCache
-	service emergency_construction.Service
+	service       emergency_construction.Service
+	aiChatLogRepo repository.AiChatLog
 }
 
-func NewEmergencyConstructionHandler(service emergency_construction.Service) *EmergencyConstructionHandler {
+func NewEmergencyConstructionHandler(service emergency_construction.Service, aiChatLogRepo repository.AiChatLog) *EmergencyConstructionHandler {
 	return &EmergencyConstructionHandler{
-		service: service,
+		service:       service,
+		aiChatLogRepo: aiChatLogRepo,
 	}
 }
 
@@ -98,6 +103,34 @@ func (h *EmergencyConstructionHandler) List(c *gin.Context) {
 
 	items, total, err := h.service.List(c.Request.Context(), req)
 	web.AssertNil(err)
+
+	// Persist to chat history if it's a list request (from AI Support)
+	userID := h.GetTokenFromContext(c).UserID
+	if h.aiChatLogRepo != nil && userID != "" {
+		now := time.Now()
+		// Save User Query
+		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
+			UserID: userID, Role: "user", Content: "Xem danh sách công trình khẩn", ChatType: "support", Timestamp: now.Add(-1 * time.Second),
+		})
+
+		// Build table text
+		tableText := "### Danh sách Công trình khẩn\n\n"
+		if total == 0 {
+			tableText += "Không tìm thấy công trình nào."
+		} else {
+			tableText += "| Tên công trình | Địa điểm | Trạng thái | Thao tác |\n"
+			tableText += "| :--- | :--- | :--- | :--- |\n"
+			for _, item := range items {
+				tableText += fmt.Sprintf("| %s | %s | %s | [Xem chi tiết](#emc-history-%s) |\n", item.Name, item.Location, item.Status, item.ID)
+			}
+		}
+
+		// Save AI Response
+		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
+			UserID: userID, Role: "model", Content: tableText, ChatType: "support", Timestamp: now,
+		})
+	}
+
 	h.SendData(c, gin.H{
 		"data":  items,
 		"total": total,
@@ -277,6 +310,47 @@ func (h *EmergencyConstructionHandler) GetProgressHistory(c *gin.Context) {
 	id := c.Param("id")
 	history, err := h.service.GetProgressHistory(c.Request.Context(), id)
 	web.AssertNil(err)
+
+	// Persist to chat history as an AI response (since this is a history lookup action)
+	userID := h.GetTokenFromContext(c).UserID
+	if h.aiChatLogRepo != nil && userID != "" {
+		now := time.Now()
+		// Save User Query (implicit when clicking "Xem lịch sử")
+		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
+			UserID: userID, Role: "user", Content: "Xem lịch sử thi công", ChatType: "support", Timestamp: now.Add(-1 * time.Second),
+		})
+
+		// Build formatted text similar to index.jsx
+		historyText := "### Lịch sử thi công\n\n"
+		if len(history) == 0 {
+			historyText += "Chưa có báo cáo tiến độ nào cho công trình này."
+		} else {
+			for _, m := range history {
+				date := time.Unix(m.ReportDate, 0).Format("15:04 02/01/2006")
+				historyText += fmt.Sprintf("**Ngày:** %s\n", date)
+				historyText += fmt.Sprintf("**Công việc:** %s\n", m.WorkDone)
+				if m.ProgressPercentage > 0 {
+					historyText += fmt.Sprintf("**Tiến độ:** %d%%\n", m.ProgressPercentage)
+				}
+				if m.Issues != "" {
+					historyText += fmt.Sprintf("**Khó khăn/Vướng mắc:** %s\n", m.Issues)
+				}
+				if m.IsCompleted {
+					historyText += "**Trạng thái:** ✅ Đã hoàn thành\n"
+				} else if m.ExpectedCompletionDate > 0 {
+					expDate := time.Unix(m.ExpectedCompletionDate, 0).Format("02/01/2006")
+					historyText += fmt.Sprintf("**Dự kiến xong:** %s\n", expDate)
+				}
+				historyText += "---\n"
+			}
+		}
+
+		// Save AI Response
+		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
+			UserID: userID, Role: "model", Content: historyText, ChatType: "support", Timestamp: now,
+		})
+	}
+
 	h.SendData(c, history)
 }
 

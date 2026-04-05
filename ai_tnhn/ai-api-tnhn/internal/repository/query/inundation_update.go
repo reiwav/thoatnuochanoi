@@ -44,3 +44,9 @@ func (r *inundationUpdateRepo) ListByReportID(ctx context.Context, reportID stri
 	_, err := r.R_SearchAndCount(ctx, f, &updates)
 	return updates, err
 }
+
+func (r *inundationUpdateRepo) List(ctx context.Context, f filter.Filter) ([]*models.InundationUpdate, int64, error) {
+	var updates []*models.InundationUpdate
+	total, err := r.R_SearchAndCount(ctx, f, &updates)
+	return updates, total, err
+}

@@ -10,6 +10,13 @@ export const getInundationImageUrl = (img) => {
     const apiUrl = import.meta.env?.VITE_APP_API_URL || '';
     const base = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
 
+    // Support local temporary storage for async inundation reports
+    if (img.startsWith('local:')) {
+        const path = img.split(':')[1];
+        const normalizedPath = path.startsWith('/') ? path : '/' + path;
+        return base + '/api/storage/file' + normalizedPath;
+    }
+
     // Support various local storage path formats
     if (img.startsWith('/api/storage/file/')) {
         return base + img;

@@ -15,7 +15,7 @@ import (
 
 // ChatContract xử lý chat AI chuyên biệt cho quản lý hợp đồng.
 // Tách riêng để phân quyền theo vai trò người dùng.
-func (s *service) ChatContract(ctx context.Context, prompt string, history []ChatMessage, userID string) (string, error) {
+func (s *service) ChatContract(ctx context.Context, prompt string, history []ChatMessage, userID string, logPrompt string) (string, error) {
 	// 1. Lấy luân phiên client bằng getContractClient()
 	client := s.getContractClient()
 	model := client.GenerativeModel("gemini-2.5-flash")
@@ -94,13 +94,15 @@ QUY TẮC QUAN TRỌNG:
 	session := model.StartChat()
 	session.History = genaiHistory
 
+	// Keep raw prompt for logging
+	rawPrompt := prompt
 	// Add current time context
-	prompt = fmt.Sprintf("[Hệ thống]: Thời gian hiện tại là %s\n\n[Câu hỏi của người dùng]: %s",
+	augmentedPrompt := fmt.Sprintf("[Hệ thống]: Thời gian hiện tại là %s\n\n[Câu hỏi của người dùng]: %s",
 		time.Now().Format("2006-01-02 15:04:05"), prompt)
 
-	fmt.Printf("\n=== [Gemini Contract Chat] User Prompt ===\n%s\n==========================================\n", prompt)
+	fmt.Printf("\n=== [Gemini Contract Chat] User Prompt ===\n%s\n==========================================\n", augmentedPrompt)
 
-	resp, err := session.SendMessage(ctx, genai.Text(prompt))
+	resp, err := session.SendMessage(ctx, genai.Text(augmentedPrompt))
 	if err != nil {
 		return "", fmt.Errorf("failed to send gemini message: %w", err)
 	}
@@ -208,10 +210,21 @@ QUY TẮC QUAN TRỌNG:
 		if s.aiChatLogRepo != nil {
 			now := time.Now()
 			// Log User Message
+			// Decide what content to save for the user message
+			saveContent := rawPrompt
+			if logPrompt != "" {
+				saveContent = logPrompt
+			}
+
+			// Special case to skip logging if requested
+			if logPrompt == "SKIP_LOG" {
+				return
+			}
+
 			err := s.aiChatLogRepo.Save(context.Background(), &models.AiChatLog{
 				UserID:    userID,
 				Role:      "user",
-				Content:   prompt,
+				Content:   saveContent,
 				ChatType:  "contract",
 				Timestamp: now.Add(-1 * time.Second),
 			})

@@ -6,6 +6,7 @@ import (
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/repository"
 	"context"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -72,13 +73,16 @@ func (p aiChatLogRepository) Save(ctx context.Context, log *models.AiChatLog) er
 	return p.R_Create(ctx, log)
 }
 
-func (p aiChatLogRepository) FindByUser(ctx context.Context, userID string, chatType string, limit int) ([]models.AiChatLog, error) {
+func (p aiChatLogRepository) FindByUser(ctx context.Context, userID string, chatType string, limit int, before time.Time) ([]models.AiChatLog, error) {
 	if limit == 0 {
 		limit = 50
 	}
 	f := bson.M{"user_id": userID}
 	if chatType != "" {
 		f["chat_type"] = chatType
+	}
+	if !before.IsZero() {
+		f["timestamp"] = bson.M{"$lt": before}
 	}
 	var results []models.AiChatLog
 	err := p.R_SelectAndSort(ctx, f, bson.M{"timestamp": -1}, 0, int64(limit), &results)

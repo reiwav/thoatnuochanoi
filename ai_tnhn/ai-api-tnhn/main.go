@@ -173,7 +173,7 @@ func main() {
 	stationHandler := handler.NewStationHandler(stationService)
 	inuHandler := handler.NewInundationHandler(inuService, authService, contextWith)
 	waterHandler := handler.NewWaterHandler(waterService)
-	emConstructionHandler := handler.NewEmergencyConstructionHandler(emConstructionService)
+	emConstructionHandler := handler.NewEmergencyConstructionHandler(emConstructionService, aiChatLogRepo)
 	weatherHandler := handler.NewWeatherHandler(weatherService)
 	contractCategoryHandler := handler.NewContractCategoryHandler(contractCategoryService, authService, contextWith)
 	contractHandler := handler.NewContractHandler(contractService, authService, contextWith)

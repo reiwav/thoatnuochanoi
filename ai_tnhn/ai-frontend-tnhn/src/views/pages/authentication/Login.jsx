@@ -36,7 +36,7 @@ export default function Login() {
                     Thoát nước Hà Nội
                   </Typography>
                   <Typography variant="caption" sx={{ fontSize: downMD ? '20px' : '16px', textAlign: { xs: 'center', md: 'inherit' } }}>
-                    Hệ thống tích hợp AI thông minh
+                    Hệ thống tích hợp AI thông minh (Thử nghiệm)
                   </Typography>
                 </Stack>
                 <Box sx={{ width: 1 }}>

@@ -56,8 +56,8 @@ type ChatMessage struct {
 }
 
 type Service interface {
-	Chat(ctx context.Context, prompt string, history []ChatMessage, userID string) (string, error)
-	ChatContract(ctx context.Context, prompt string, history []ChatMessage, userID string) (string, error)
+	Chat(ctx context.Context, prompt string, history []ChatMessage, userID string, logPrompt string) (string, error)
+	ChatContract(ctx context.Context, prompt string, history []ChatMessage, userID string, logPrompt string) (string, error)
 	ExtractTextFromPDF(ctx context.Context, pdfBytes []byte) (string, error)
 }
 
@@ -152,7 +152,11 @@ func (s *service) getContractClient() *genai.Client {
 	return client
 }
 
-func (s *service) Chat(ctx context.Context, prompt string, history []ChatMessage, userID string) (string, error) {
+func (s *service) Chat(ctx context.Context, prompt string, history []ChatMessage, userID string, logPrompt string) (string, error) {
+	// Keep raw prompt for logging
+	rawPrompt := prompt
+	augmentedPrompt := prompt
+
 	// Pre-process prompt for special keywords (mưa 3 ngày trước)
 	lowerPrompt := strings.ToLower(prompt)
 	if strings.Contains(lowerPrompt, "mưa") && (strings.Contains(lowerPrompt, "3 ngày trước") || strings.Contains(lowerPrompt, "ba ngày trước")) {
@@ -163,12 +167,12 @@ func (s *service) Chat(ctx context.Context, prompt string, history []ChatMessage
 		rainData, err := s.waterSvc.GetRainDataByDate(ctx, dateStr)
 		if err == nil {
 			dataJSON, _ := json.Marshal(rainData)
-			prompt = fmt.Sprintf("[Hệ thống cung cấp thêm context]: Dữ liệu lượng mưa thực tế ngày %s (3 ngày trước tính từ %s): %s\n\n[Câu hỏi của người dùng]: %s",
+			augmentedPrompt = fmt.Sprintf("[Hệ thống cung cấp thêm context]: Dữ liệu lượng mưa thực tế ngày %s (3 ngày trước tính từ %s): %s\n\n[Câu hỏi của người dùng]: %s",
 				dateStr, now.Format("2006-01-02"), string(dataJSON), prompt)
 		}
 	} else {
 		// Always add current time for context
-		prompt = fmt.Sprintf("[Hệ thống]: Thời gian hiện tại là %s\n\n[Câu hỏi của người dùng]: %s",
+		augmentedPrompt = fmt.Sprintf("[Hệ thống]: Thời gian hiện tại là %s\n\n[Câu hỏi của người dùng]: %s",
 			time.Now().Format("2006-01-02 15:04:05"), prompt)
 	}
 
@@ -369,9 +373,9 @@ func (s *service) Chat(ctx context.Context, prompt string, history []ChatMessage
 	session := model.StartChat()
 	session.History = genaiHistory
 
-	fmt.Printf("\n=== [Gemini Chat] User Prompt ===\n%s\n=================================\n", prompt)
+	fmt.Printf("\n=== [Gemini Chat] User Prompt ===\n%s\n=================================\n", augmentedPrompt)
 
-	resp, err := session.SendMessage(ctx, genai.Text(prompt))
+	resp, err := session.SendMessage(ctx, genai.Text(augmentedPrompt))
 	if err != nil {
 		return "", fmt.Errorf("failed to send gemini message: %w", err)
 	}
@@ -563,10 +567,21 @@ func (s *service) Chat(ctx context.Context, prompt string, history []ChatMessage
 		if s.aiChatLogRepo != nil {
 			now := time.Now()
 			// Log User Message
+			// Decide what content to save for the user message
+			saveContent := rawPrompt
+			if logPrompt != "" {
+				saveContent = logPrompt
+			}
+
+			// Special case to skip logging if requested
+			if logPrompt == "SKIP_LOG" {
+				return
+			}
+
 			err := s.aiChatLogRepo.Save(context.Background(), &models.AiChatLog{
 				UserID:    userID,
 				Role:      "user",
-				Content:   prompt,
+				Content:   saveContent,
 				ChatType:  "support",
 				Timestamp: now.Add(-1 * time.Second),
 			})

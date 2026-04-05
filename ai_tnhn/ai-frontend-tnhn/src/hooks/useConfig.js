@@ -1,12 +1,14 @@
-import { use } from 'react';
-import { ConfigContext } from 'contexts/ConfigContext';
+// project imports
+import useConfigStore from 'store/useConfigStore';
 
 // ==============================|| CONFIG - HOOKS ||============================== //
 
 export default function useConfig() {
-  const context = use(ConfigContext);
+  const config = useConfigStore();
 
-  if (!context) throw new Error('useSConfig must be use inside ConfigProvider');
-
-  return context;
+  return {
+    state: config,
+    setField: config.setField,
+    resetState: config.resetConfig
+  };
 }

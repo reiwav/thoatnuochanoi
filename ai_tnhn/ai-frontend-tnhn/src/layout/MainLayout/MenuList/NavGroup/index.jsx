@@ -12,8 +12,9 @@ import NavCollapse from '../NavCollapse';
 import NavItem from '../NavItem';
 
 import { useGetMenuMaster } from 'api/menu';
+import useAuthStore from 'store/useAuthStore';
 
-// ==============================|| SIDEBAR MENU LIST GROUP ||============================== //
+// ============================== || SIDEBAR MENU LIST GROUP || ============================== //
 
 export default function NavGroup({ item, lastItem, remItems, lastItemId, setSelectedID }) {
   const { pathname } = useLocation();
@@ -74,7 +75,7 @@ export default function NavGroup({ item, lastItem, remItems, lastItemId, setSele
   }, [pathname, currentItem]);
 
   // menu list collapse & items
-  const userRole = localStorage.getItem('role');
+  const { role: userRole } = useAuthStore();
 
   const items = currentItem.children?.map((menu) => {
     // Role based filtering

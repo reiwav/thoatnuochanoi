@@ -14,12 +14,14 @@ import ListItemText from '@mui/material/ListItemText';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 
-// project imports
 import { handlerDrawerOpen, useGetMenuMaster } from 'api/menu';
 import useConfig from 'hooks/useConfig';
+import useAuthStore from 'store/useAuthStore';
 
 // assets
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
+
+// ==============================|| NAV ITEM ||============================== //
 
 export default function NavItem({ item, level, isParents = false, setSelectedID }) {
   const theme = useTheme();
@@ -35,7 +37,7 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
   const drawerOpen = menuMaster.isDashboardDrawerOpened;
   const isSelected = !!matchPath({ path: item?.link ? item.link : item.url, end: true }, pathname);
 
-  const userRole = localStorage.getItem('role');
+  const { role: userRole } = useAuthStore();
   if (item?.roles && !item.roles.includes(userRole)) {
     return null;
   }

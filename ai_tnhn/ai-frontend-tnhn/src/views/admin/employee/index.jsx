@@ -15,6 +15,7 @@ import AnimateButton from 'ui-component/extended/AnimateButton';
 import employeeApi from 'api/employee';
 import organizationApi from 'api/organization';
 import EmployeeDialog from './EmployeeDialog';
+import useAuthStore from 'store/useAuthStore';
 
 const EmployeeRow = ({ row, handleOpenEdit, handleDelete, roleLabel, orgName, userRole, isMobile }) => {
     const [open, setOpen] = useState(false);
@@ -103,8 +104,11 @@ const EmployeeRow = ({ row, handleOpenEdit, handleDelete, roleLabel, orgName, us
 const EmployeeList = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-    const userRole = localStorage.getItem('role');
-    const userOrgId = localStorage.getItem('org_id') || '';
+    
+    // Get auth state from Zustand
+    const { role: userRole, user: userInfo } = useAuthStore();
+    const userOrgId = userInfo?.org_id || '';
+    
     const [searchParams] = useSearchParams();
     const urlOrgId = searchParams.get('org_id') || userOrgId;
     const urlOrgName = searchParams.get('org_name') || '';

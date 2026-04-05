@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate, useLocation, useOutletContext } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import React from 'react';
 import {
     Box,
@@ -51,7 +51,7 @@ import organizationApi from 'api/organization';
 import pumpingStationApi from 'api/pumpingStation';
 import PumpingStationReport from '../../admin/pumping-station/PumpingStationReport';
 import MainCard from 'ui-component/cards/MainCard';
-import { ADMIN_TOKEN } from 'constants/auth';
+import useAuthStore from 'store/useAuthStore';
 import authApi from 'api/auth';
 
 import { getInundationImageUrl } from 'utils/imageHelper';
@@ -579,11 +579,11 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenVi
 const InundationDashboard = () => {
     const navigate = useNavigate();
     const { search } = useLocation();
-    const { userInfo } = useOutletContext();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-    const userRole = localStorage.getItem('role') || 'employee';
+    // Get auth state from Zustand
+    const { role: userRole, user: userInfo, logout } = useAuthStore();
     const basePath = userRole === 'employee' ? '/company' : '/admin';
 
     const [points, setPoints] = useState([]);
@@ -746,8 +746,7 @@ const InundationDashboard = () => {
         } catch (err) {
             console.error('Logout failed:', err);
         } finally {
-            localStorage.removeItem(ADMIN_TOKEN);
-            localStorage.removeItem('role');
+            logout();
             navigate('/pages/login', { replace: true });
         }
     };

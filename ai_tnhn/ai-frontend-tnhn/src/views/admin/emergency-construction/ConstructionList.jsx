@@ -11,6 +11,7 @@ import { toast } from 'react-hot-toast';
 import emergencyConstructionApi from 'api/emergencyConstruction';
 import ConstructionDialog from './ConstructionDialog';
 import organizationApi from 'api/organization';
+import useAuthStore from 'store/useAuthStore';
 
 const CollapsibleConstructionRow = ({ row, handleOpenEdit, handleDelete, orgs, getStatusChip, isMobile, userRole, navigate }) => {
     const [open, setOpen] = useState(false);
@@ -115,8 +116,11 @@ const ConstructionList = () => {
     const navigate = useNavigate();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-    const userRole = localStorage.getItem('role');
-    const userOrgId = localStorage.getItem('org_id');
+    
+    // Get auth state from Zustand
+    const { role: userRole, user: userInfo } = useAuthStore();
+    const userOrgId = userInfo?.org_id || '';
+    
     const [loading, setLoading] = useState(false);
     const [items, setItems] = useState([]);
     const [page, setPage] = useState(0);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate, useLocation, useOutletContext } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
     Box, Typography, Paper, Table, TableBody,
     TableCell, TableContainer, TableHead, TableRow,
@@ -12,6 +12,7 @@ import { useTheme } from '@mui/material/styles';
 import { IconChevronRight, IconUser, IconLogout, IconSearch, IconX, IconRefresh, IconMapPin, IconChevronLeft, IconChevronDown, IconSquare, IconCheckbox, IconChevronUp } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 import emergencyConstructionApi from 'api/emergencyConstruction';
+import useAuthStore from 'store/useAuthStore';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -104,7 +105,9 @@ const ConstructionReporting = () => {
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const navigate = useNavigate();
     const { search } = useLocation();
-    const { userInfo } = useOutletContext();
+    
+    // Get auth state from Zustand
+    const { role: userRole, user: userInfo, logout } = useAuthStore();
 
     // Read activeTab from URL query (for mobile bottom nav)
     const params = new URLSearchParams(search);
@@ -122,7 +125,6 @@ const ConstructionReporting = () => {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
 
-    const userRole = localStorage.getItem('role') || 'employee';
     const isEmployee = userRole === 'employee' || userRole === 'technician';
     const basePath = isEmployee ? '/company' : '/admin';
 
@@ -222,7 +224,10 @@ const ConstructionReporting = () => {
         navigate(`${basePath}/emergency-construction/form?id=${row.id}&name=${encodeURIComponent(row.name)}`);
     };
 
-    const handleLogout = () => { localStorage.removeItem('token'); localStorage.removeItem('role'); navigate('/pages/login'); };
+    const handleLogout = () => {
+        logout();
+        navigate('/pages/login');
+    };
 
     // ─── Render Logic ─────────────────────────────────────────────────────────
 

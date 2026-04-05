@@ -18,6 +18,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import { getInundationImageUrl } from 'utils/imageHelper';
 import { processAndWatermark } from 'utils/imageProcessor';
 import { InputAdornment } from '@mui/material';
+import useAuthStore from 'store/useAuthStore';
 
 const TabSwitcher = ({ tab, setTab, visibleTabs }) => {
     if (visibleTabs.length <= 1) return null;
@@ -76,7 +77,7 @@ const ConstructionForm = () => {
     const [imagePreviews, setImagePreviews] = useState([]);
     const [existingImages, setExistingImages] = useState([]);
 
-    const userRole = localStorage.getItem('role') || 'employee';
+    const { role: userRole } = useAuthStore();
     const basePath = userRole === 'employee' ? '/company' : '/admin';
 
     useEffect(() => {

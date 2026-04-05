@@ -16,6 +16,7 @@ import {
 import emergencyConstructionApi from 'api/emergencyConstruction';
 import { getInundationImageUrl } from 'utils/imageHelper';
 import { toast } from 'react-hot-toast';
+import useAuthStore from 'store/useAuthStore';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -137,7 +138,9 @@ const ConstructionProgressHistory = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const navigate = useNavigate();
-    const userRole = localStorage.getItem('role');
+    
+    // Get auth state from Zustand
+    const { role: userRole } = useAuthStore();
 
     const [loading, setLoading] = useState(false);
     const [reports, setReports] = useState([]);

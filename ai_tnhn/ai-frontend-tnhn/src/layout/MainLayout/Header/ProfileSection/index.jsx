@@ -29,7 +29,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import Transitions from 'ui-component/extended/Transitions';
 import useConfig from 'hooks/useConfig';
 import authApi from 'api/auth';
-import { ADMIN_TOKEN } from 'constants/auth';
+import useAuthStore from 'store/useAuthStore';
 
 // assets
 import User1 from 'assets/images/users/user-round.svg';
@@ -48,14 +48,15 @@ export default function ProfileSection({ userInfo }) {
   const [value, setValue] = useState('');
   const [notification, setNotification] = useState(false);
   const [open, setOpen] = useState(false);
+  const { logout } = useAuthStore();
 
   const handleLogout = async () => {
     try {
       await authApi.logout();
-      localStorage.removeItem(ADMIN_TOKEN);
-      navigate('/pages/login', { replace: true });
     } catch (err) {
-      localStorage.removeItem(ADMIN_TOKEN);
+      console.error('Logout failed:', err);
+    } finally {
+      logout();
       navigate('/pages/login', { replace: true });
     }
   };

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import {  } from 'react-router-dom';
 import {
     Button, Grid, TextField, Table, TableBody, Box,
     TableCell, TableContainer, TableHead, TableRow, Paper,
@@ -14,6 +14,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import AnimateButton from 'ui-component/extended/AnimateButton';
 import stationApi from 'api/station';
 import StationDialog from './StationDialog';
+import useAuthStore from 'store/useAuthStore';
 
 const StationRow = ({ row, handleOpenEdit, handleDelete, isMobile, canEdit }) => {
     const [open, setOpen] = useState(false);
@@ -94,8 +95,7 @@ const StationRow = ({ row, handleOpenEdit, handleDelete, isMobile, canEdit }) =>
 const StationRainList = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-    const { userInfo } = useOutletContext();
-    const userRole = userInfo?.role || localStorage.getItem('role');
+    const { role: userRole } = useAuthStore();
     const canEdit = userRole === 'super_admin';
 
     const [loading, setLoading] = useState(false);

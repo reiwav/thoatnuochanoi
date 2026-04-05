@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import {  } from 'react-router-dom';
 import {
     Button, Stack, TextField, Table, TableBody,
     TableCell, TableContainer, TableHead, TableRow, Paper,
@@ -15,6 +15,7 @@ import AnimateButton from 'ui-component/extended/AnimateButton';
 import stationApi from 'api/station';
 import organizationApi from 'api/organization';
 import StationDialog from './StationDialog';
+import useAuthStore from 'store/useAuthStore';
 
 const CollapsibleStationRow = ({ row, handleOpenEdit, handleDelete, isMobile, canEdit }) => {
     const [open, setOpen] = useState(false);
@@ -100,8 +101,7 @@ const CollapsibleStationRow = ({ row, handleOpenEdit, handleDelete, isMobile, ca
 const StationInundationList = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-    const { userInfo } = useOutletContext();
-    const userRole = userInfo?.role || localStorage.getItem('role');
+    const { role: userRole } = useAuthStore();
     const canEdit = userRole === 'super_admin';
     const [loading, setLoading] = useState(false);
     const [points, setPoints] = useState([]);

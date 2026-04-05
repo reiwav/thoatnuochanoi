@@ -16,11 +16,11 @@ import PumpingStationDialog from './PumpingStationDialog';
 import PumpingStationHistoryDialog from './PumpingStationHistoryDialog';
 import PumpingStationReport from './PumpingStationReport';
 import { toast } from 'react-hot-toast';
-import { useOutletContext } from 'react-router-dom';
 import { CircularProgress, Box, Typography } from '@mui/material';
+import useAuthStore from 'store/useAuthStore';
 
 const PumpingStationPage = () => {
-    const { userInfo } = useOutletContext();
+    const { user: userInfo } = useAuthStore();
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [assignedStation, setAssignedStation] = useState(null);

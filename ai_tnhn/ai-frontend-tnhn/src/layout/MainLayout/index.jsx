@@ -32,6 +32,7 @@ import { handlerDrawerOpen, useGetMenuMaster } from 'api/menu';
 import authApi from 'api/auth';
 import { ADMIN_TOKEN } from 'constants/auth';
 import inundationApi from 'api/inundation';
+import useAuthStore from 'store/useAuthStore';
 
 export default function MainLayout() {
   const theme = useTheme();
@@ -41,12 +42,13 @@ export default function MainLayout() {
   const { pathname } = useLocation();
 
   const [isChecking, setIsChecking] = useState(true);
-  const [userInfo, setUserInfo] = useState(null);
   const [activeFloodCount, setActiveFloodCount] = useState(0);
 
-  const { state: { borderRadius, miniDrawer } } = useConfig();
+  const { state: { borderRadius } } = useConfig();
   const { menuMaster, menuMasterLoading } = useGetMenuMaster();
   const drawerOpen = menuMaster?.isDashboardDrawerOpened;
+
+  const { role: userRole, user: userInfo, login: storeLogin, logout: storeLogout } = useAuthStore();
 
   // Auth check
   useEffect(() => {
@@ -67,27 +69,26 @@ export default function MainLayout() {
           if (user.role === 'supper_admin' || user.role === 'supper_admin' || user.role === 'super_admib') {
             user.role = 'super_admin';
           }
-          setUserInfo(user);
-          if (user.role) localStorage.setItem('role', user.role);
+          storeLogin(user, token, user.role);
           setIsChecking(false);
         } else {
-          localStorage.removeItem(ADMIN_TOKEN);
+          storeLogout();
           navigate('/pages/login', { replace: true });
         }
       } catch (error) {
         console.error('Auth error:', error);
-        localStorage.removeItem(ADMIN_TOKEN);
+        storeLogout();
         navigate('/pages/login', { replace: true });
       }
     };
     checkAuth();
-  }, [navigate]);
+  }, [navigate, searchParams, storeLogin, storeLogout]);
 
   // Role-based redirection
   useEffect(() => {
     if (isChecking || !userInfo) return;
 
-    const role = userInfo.role || localStorage.getItem('role') || 'employee';
+    const role = userRole || 'employee';
     const isEmployee = role === 'employee' || role === 'technician';
     const basePath = isEmployee ? '/company' : '/admin';
 
@@ -105,9 +106,8 @@ export default function MainLayout() {
       const newPath = pathname.replace('/company', '/admin');
       navigate(newPath, { replace: true });
     }
-  }, [isChecking, userInfo, pathname, navigate]);
+  }, [isChecking, userInfo, pathname, navigate, userRole]);
 
-  const userRole = userInfo?.role || localStorage.getItem('role') || 'employee';
   const isEmployee = userRole === 'employee' || userRole === 'technician';
   const basePath = isEmployee ? '/company' : '/admin';
 

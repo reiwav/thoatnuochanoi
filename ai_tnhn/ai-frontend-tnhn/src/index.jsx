@@ -4,7 +4,6 @@ import { createRoot } from 'react-dom/client';
 import App from 'App';
 import * as serviceWorker from 'serviceWorker';
 import reportWebVitals from 'reportWebVitals';
-import { ConfigProvider } from 'contexts/ConfigContext';
 
 // Disable console and debugger in production
 if (import.meta.env.MODE === 'production') {
@@ -48,9 +47,7 @@ import '@fontsource/poppins/700.css';
 const container = document.getElementById('root');
 const root = createRoot(container);
 root.render(
-  <ConfigProvider>
-    <App />
-  </ConfigProvider>
+  <App />
 );
 
 // If you want your app to work offline and load faster, you can change

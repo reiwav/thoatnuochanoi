@@ -17,8 +17,9 @@ import Divider from '@mui/material/Divider';
 // project imports
 import AnimateButton from 'ui-component/extended/AnimateButton';
 import CustomFormControl from 'ui-component/extended/Form/CustomFormControl';
-import authApi from 'api/auth';// Đảm bảo bạn đã có file này
+import authApi from 'api/auth';
 import { ADMIN_TOKEN } from 'constants/auth';
+import useAuthStore from 'store/useAuthStore';
 
 // assets
 import Visibility from '@mui/icons-material/Visibility';
@@ -27,6 +28,7 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 export default function AuthLogin() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { login: storeLogin } = useAuthStore();
 
   // --- 1. Quản lý State ---
   const [values, setValues] = useState({
@@ -37,7 +39,6 @@ export default function AuthLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(''); // Lưu thông báo lỗi API
 
-  // --- 1.5. Check token from Google ---
   // --- 1.5. Check token and metadata from Google OAuth ---
   useEffect(() => {
     const token = searchParams.get('token');
@@ -45,15 +46,14 @@ export default function AuthLogin() {
     const name = searchParams.get('name');
 
     if (token) {
-      localStorage.setItem(ADMIN_TOKEN, token);
-
-      // Store metadata if available
+      // Store metadata via Zustand
       let userRole = role || 'employee';
       if (userRole === 'supper_admin' || userRole === 'super_admib') {
         userRole = 'super_admin';
       }
-      localStorage.setItem('role', userRole);
-      if (name) localStorage.setItem('name', name);
+      
+      storeLogin({ name }, token, userRole);
+      localStorage.setItem(ADMIN_TOKEN, token); // Keep for legacy API calls if needed
 
       // Immediate redirection based on role
       if (userRole === 'employee' || userRole === 'technician') {
@@ -66,7 +66,7 @@ export default function AuthLogin() {
         navigate('/admin/ai-support', { replace: true });
       }
     }
-  }, [searchParams, navigate]);
+  }, [searchParams, navigate, storeLogin]);
 
   // --- 2. Xử lý sự kiện ---
   const handleChange = (event) => {
@@ -92,15 +92,15 @@ export default function AuthLogin() {
       // 2. Kiểm tra status từ server trả về
       if (result.status === 'success') {
         const tokenData = result.data;
-        // Lưu token ID
-        localStorage.setItem(ADMIN_TOKEN, tokenData.id);
-
-        // Store role
+        
         let role = tokenData.role || 'employee';
-        if (role === 'supper_admin' || role === 'supper_admin' || role === 'super_admib') {
+        if (role === 'supper_admin' || role === 'super_admib') {
           role = 'super_admin';
         }
-        localStorage.setItem('role', role);
+
+        // Store via Zustand
+        storeLogin({ name: tokenData.name, email: values.email }, tokenData.id, role);
+        localStorage.setItem(ADMIN_TOKEN, tokenData.id); // for compatibility
 
         // Redirect based on role
         if (role === 'employee' || role === 'technician') {

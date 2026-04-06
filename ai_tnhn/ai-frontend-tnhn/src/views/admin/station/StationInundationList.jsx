@@ -106,9 +106,9 @@ const StationInundationList = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const { hasPermission } = useAuthStore();
-    const canCreate = hasPermission('station:create');
-    const canEdit = hasPermission('station:edit');
-    const canDelete = hasPermission('station:delete');
+    const canCreate = hasPermission('inundation:create');
+    const canEdit = hasPermission('inundation:edit');
+    const canDelete = hasPermission('inundation:delete');
     const [loading, setLoading] = useState(false);
     const [points, setPoints] = useState([]);
     const [organizations, setOrganizations] = useState([]);

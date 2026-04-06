@@ -606,7 +606,7 @@ const InundationDashboard = () => {
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
     // Get auth state from Zustand
-    const { role: userRole, user: userInfo, logout } = useAuthStore();
+    const { role: userRole, user: userInfo, logout, hasPermission } = useAuthStore();
     const basePath = userRole === 'employee' ? '/company' : '/admin';
 
     const [points, setPoints] = useState([]);

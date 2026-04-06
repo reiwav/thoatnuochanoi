@@ -9,6 +9,8 @@ type Permission struct {
 	Code            string `bson:"code" json:"code"`
 	Title           string `bson:"title" json:"title"`
 	Group           string `bson:"group" json:"group"`
+	Type            string `bson:"type" json:"type"`
+	Description     string `bson:"description" json:"description"`
 }
 
 type RolePermission struct {

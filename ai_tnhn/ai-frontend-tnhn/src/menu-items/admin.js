@@ -237,7 +237,7 @@ const adminPages = {
           breadcrumbs: false
         },
         {
-          id: 'role:view',
+          id: 'role-matrix:view',
           title: 'Ma trận quyền',
           type: 'item',
           url: '/admin/role-matrix',
@@ -260,7 +260,7 @@ const adminPages = {
       icon: icons.IconClipboardList,
       children: [
         {
-          id: 'ai:chat',
+          id: 'contract-ai:chat',
           title: 'AI Trợ lý',
           type: 'item',
           url: '/admin/ai-contract',
@@ -276,7 +276,7 @@ const adminPages = {
           breadcrumbs: false
         },
         {
-          id: 'contract:view',
+          id: 'contract-category:view',
           title: 'Danh mục',
           type: 'item',
           url: '/admin/contract-category',

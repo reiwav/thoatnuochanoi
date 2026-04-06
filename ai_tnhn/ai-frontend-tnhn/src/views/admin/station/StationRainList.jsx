@@ -100,9 +100,9 @@ const StationRainList = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const { hasPermission } = useAuthStore();
-    const canCreate = hasPermission('station:create');
-    const canEdit = hasPermission('station:edit');
-    const canDelete = hasPermission('station:delete');
+    const canCreate = hasPermission('rain:create');
+    const canEdit = hasPermission('rain:edit');
+    const canDelete = hasPermission('rain:delete');
 
     const [loading, setLoading] = useState(false);
     const [stations, setStations] = useState([]);

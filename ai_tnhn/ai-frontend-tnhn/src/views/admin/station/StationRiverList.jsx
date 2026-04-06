@@ -16,9 +16,9 @@ import useAuthStore from 'store/useAuthStore';
 
 const StationRiverList = () => {
     const { hasPermission } = useAuthStore();
-    const canCreate = hasPermission('station:create');
-    const canEdit = hasPermission('station:edit');
-    const canDelete = hasPermission('station:delete');
+    const canCreate = hasPermission('water:create');
+    const canEdit = hasPermission('water:edit');
+    const canDelete = hasPermission('water:delete');
     
     const [loading, setLoading] = useState(false);
     const [stations, setStations] = useState([]);

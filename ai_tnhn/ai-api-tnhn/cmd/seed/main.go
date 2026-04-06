@@ -41,71 +41,88 @@ func main() {
 
 	log.Info("Starting database seeding (Role-Permission Matrix)...")
 
-	// 1. Define all permissions based on granular business actions
+	// 1. Define all permissions — Group = Menu, Title = Action/Feature
 	initialPermissions := []models.Permission{
-		// Rainfall
-		{Code: "rain:view", Title: "Xem Lượng mưa", Group: "VẬN HÀNH"},
-		{Code: "rain:create", Title: "Nhập Lượng mưa", Group: "VẬN HÀNH"},
-		{Code: "rain:export", Title: "Xuất dữ liệu mưa", Group: "VẬN HÀNH"},
-		
-		// Inundation
-		{Code: "inundation:view", Title: "Xem Điểm ngập", Group: "VẬN HÀNH"},
-		{Code: "inundation:create", Title: "Báo cáo Điểm ngập", Group: "VẬN HÀNH"},
-		{Code: "inundation:edit", Title: "Sửa Điểm ngập", Group: "VẬN HÀNH"},
-		{Code: "inundation:delete", Title: "Xóa Điểm ngập", Group: "VẬN HÀNH"},
-		{Code: "sa-hinh-ngap:view", Title: "Xem Sa hình ngập", Group: "VẬN HÀNH"},
+		// ─── HTBC mùa mưa ───
+		{Code: "ai:chat", Title: "Trợ lý AI", Group: "HTBC mùa mưa", Type: "button", Description: "Chat tự do hỗ trợ báo cáo mùa mưa"},
+		{Code: "ai:report", Title: "Báo cáo AI", Group: "HTBC mùa mưa", Type: "button", Description: "Tạo tin nhắn báo cáo / BC CT KC"},
+		{Code: "ai:synthesis", Title: "Tổng hợp AI", Group: "HTBC mùa mưa", Type: "button", Description: "Báo cáo tổng hợp"},
+		{Code: "ai:post-rain", Title: "Sau mưa AI", Group: "HTBC mùa mưa", Type: "button", Description: "Báo cáo sau mưa (Words)"},
 
-		// Water/River/Lake
-		{Code: "water:view", Title: "Xem Mực nước", Group: "VẬN HÀNH"},
-		{Code: "water:create", Title: "Nhập Mực nước", Group: "VẬN HÀNH"},
-		{Code: "water:edit", Title: "Sửa Mực nước", Group: "VẬN HÀNH"},
+		// ─── Lượng mưa ───
+		{Code: "rain:view", Title: "Xem", Group: "Lượng mưa", Type: "child_menu", Description: "Bảng mưa, phần xem của danh sách, so sánh, lịch sử"},
+		{Code: "rain:create", Title: "Nhập liệu", Group: "Lượng mưa", Type: "button", Description: "Nút thêm mới lượng mưa"},
+		{Code: "rain:edit", Title: "Sửa", Group: "Lượng mưa", Type: "button", Description: "Nút chỉnh sửa lượng mưa"},
+		{Code: "rain:delete", Title: "Xóa", Group: "Lượng mưa", Type: "button", Description: "Nút xóa lượng mưa"},
+		{Code: "rain:export", Title: "Xuất dữ liệu", Group: "Lượng mưa", Type: "button", Description: "Nút xuất Excel trong danh sách và báo cáo"},
 
-		// Hardware Control
-		{Code: "cuapai:view", Title: "Xem Cửa phai", Group: "VẬN HÀNH"},
-		{Code: "cuapai:control", Title: "Điều khiển Cửa phai", Group: "VẬN HÀNH"},
-		{Code: "trambom:view", Title: "Xem Trạm bơm", Group: "VẬN HÀNH"},
-		{Code: "trambom:edit", Title: "Quản lý Trạm bơm", Group: "VẬN HÀNH"},
-		{Code: "trambom:delete", Title: "Xóa Trạm bơm", Group: "VẬN HÀNH"},
-		{Code: "trambom:control", Title: "Điều khiển Trạm bơm", Group: "VẬN HÀNH"},
-		
-		// Station Management
-		{Code: "station:view", Title: "Xem Trạm đo", Group: "VẬN HÀNH"},
-		{Code: "station:create", Title: "Thêm Trạm đo", Group: "VẬN HÀNH"},
-		{Code: "station:edit", Title: "Sửa Trạm đo", Group: "VẬN HÀNH"},
-		{Code: "station:delete", Title: "Xóa Trạm đo", Group: "VẬN HÀNH"},
-		
-		// Emergency Construction
-		{Code: "emergency:view", Title: "Xem CT Khẩn cấp", Group: "VẬN HÀNH"},
-		{Code: "emergency:create", Title: "Tạo CT Khẩn cấp", Group: "VẬN HÀNH"},
-		{Code: "emergency:edit", Title: "Sửa CT Khẩn cấp", Group: "VẬN HÀNH"},
-		{Code: "emergency:delete", Title: "Xóa CT Khẩn cấp", Group: "VẬN HÀNH"},
+		// ─── Điểm ngập ───
+		{Code: "inundation:view", Title: "Xem", Group: "Điểm ngập", Type: "child_menu", Description: "Quyền xem danh sách, bản đồ, lịch sử và dashboard điểm ngập"},
+		{Code: "inundation:create", Title: "Báo cáo", Group: "Điểm ngập", Type: "button", Description: "Nút báo cáo ngập tại Dashboard"},
+		{Code: "inundation:edit", Title: "Sửa", Group: "Điểm ngập", Type: "button", Description: "Chỉnh sửa trạng thái ngập"},
+		{Code: "inundation:delete", Title: "Xóa", Group: "Điểm ngập", Type: "button", Description: "Xóa báo cáo ngập"},
 
-		// AI
-		{Code: "ai:chat", Title: "AI: Trợ lý", Group: "AI"},
-		{Code: "ai:report", Title: "AI: Báo cáo", Group: "AI"},
-		{Code: "ai:synthesis", Title: "AI: Tổng hợp", Group: "AI"},
-		{Code: "ai:post-rain", Title: "AI: Sau mưa", Group: "AI"},
+		// ─── Mực nước ───
+		{Code: "water:view", Title: "Xem", Group: "Mực nước", Type: "child_menu", Description: "Xem bảng sông hồ, lịch sử, danh sách"},
+		{Code: "water:create", Title: "Nhập liệu", Group: "Mực nước", Type: "button", Description: "Nút thêm mới dữ liệu mực nước"},
+		{Code: "water:edit", Title: "Sửa", Group: "Mực nước", Type: "button", Description: "Nút chỉnh sửa dữ liệu mực nước"},
+		{Code: "water:delete", Title: "Xóa", Group: "Mực nước", Type: "button", Description: "Nút xóa dữ liệu mực nước"},
+		{Code: "water:export", Title: "Xuất dữ liệu", Group: "Mực nước", Type: "button", Description: "Nút xuất dữ liệu ra Excel"},
 
-		// Administration
-		{Code: "employee:view", Title: "Xem Nhân viên", Group: "QUẢN TRỊ"},
-		{Code: "employee:create", Title: "Thêm Nhân viên", Group: "QUẢN TRỊ"},
-		{Code: "employee:edit", Title: "Sửa Nhân viên", Group: "QUẢN TRỊ"},
-		{Code: "employee:delete", Title: "Xóa Nhân viên", Group: "QUẢN TRỊ"},
-		{Code: "organization:view", Title: "Xem Chi nhánh", Group: "QUẢN TRỊ"},
-		{Code: "organization:create", Title: "Thêm Chi nhánh", Group: "QUẢN TRỊ"},
-		{Code: "organization:edit", Title: "Sửa Chi nhánh", Group: "QUẢN TRỊ"},
-		{Code: "organization:delete", Title: "Xóa Chi nhánh", Group: "QUẢN TRỊ"},
-		{Code: "role:view", Title: "Xem Quyền hạn (Matrix)", Group: "QUẢN TRỊ"},
-		{Code: "role:edit", Title: "Sửa Quyền hạn (Matrix)", Group: "QUẢN TRỊ"},
-		
-		// Contracts
-		{Code: "contract:view", Title: "Xem Hợp đồng", Group: "QUẢN TRỊ"},
-		{Code: "contract:create", Title: "Thêm Hợp đồng", Group: "QUẢN TRỊ"},
-		{Code: "contract:edit", Title: "Sửa Hợp đồng", Group: "QUẢN TRỊ"},
-		{Code: "contract:delete", Title: "Xóa Hợp đồng", Group: "QUẢN TRỊ"},
+		// ─── BC CT Khẩn cấp ───
+		{Code: "emergency:view", Title: "Xem", Group: "BC CT Khẩn cấp", Type: "child_menu", Description: "Xem danh sách, báo cáo, lịch sử"},
+		{Code: "emergency:create", Title: "Tạo mới", Group: "BC CT Khẩn cấp", Type: "button", Description: "Nút tạo công trình khẩn cấp mới"},
+		{Code: "emergency:edit", Title: "Sửa", Group: "BC CT Khẩn cấp", Type: "button", Description: "Nút cập nhật thông tin"},
+		{Code: "emergency:delete", Title: "Xóa", Group: "BC CT Khẩn cấp", Type: "button", Description: "Nút xóa công trình"},
+		{Code: "emergency:export", Title: "Xuất báo cáo", Group: "BC CT Khẩn cấp", Type: "button", Description: "Nút xuất danh sách báo cáo"},
+
+		// ─── Cửa phai ───
+		{Code: "cuapai:view", Title: "Xem", Group: "Cửa phai", Type: "menu", Description: "Màn hình cửa phai"},
+		{Code: "cuapai:control", Title: "Điều khiển", Group: "Cửa phai", Type: "button", Description: "Chức năng đóng/mở cửa phai"},
+
+		// ─── Trạm bơm ───
+		{Code: "trambom:view", Title: "Xem", Group: "Trạm bơm", Type: "menu", Description: "Màn hình trạm bơm"},
+		{Code: "trambom:create", Title: "Thêm", Group: "Trạm bơm", Type: "button", Description: "Thêm trạm bơm mới"},
+		{Code: "trambom:edit", Title: "Sửa", Group: "Trạm bơm", Type: "button", Description: "Sửa thông tin trạm bơm"},
+		{Code: "trambom:delete", Title: "Xóa", Group: "Trạm bơm", Type: "button", Description: "Xóa trạm bơm"},
+		{Code: "trambom:control", Title: "Điều khiển", Group: "Trạm bơm", Type: "button", Description: "Bật/tắt trạng thái trạm bơm"},
+
+		// ─── Sa hình ngập ───
+		{Code: "sa-hinh-ngap:view", Title: "Xem", Group: "Sa hình ngập", Type: "menu", Description: "Xem bản đồ sa hình ngập"},
+
+		// ─── Hệ thống → Tài khoản ───
+		{Code: "employee:view", Title: "Xem", Group: "Hệ thống", Type: "child_menu", Description: "Xem danh sách tài khoản"},
+		{Code: "employee:create", Title: "Thêm", Group: "Hệ thống", Type: "button", Description: "Thêm tài khoản mới"},
+		{Code: "employee:edit", Title: "Sửa", Group: "Hệ thống", Type: "button", Description: "Sửa tài khoản"},
+		{Code: "employee:delete", Title: "Xóa", Group: "Hệ thống", Type: "button", Description: "Xóa tài khoản"},
+		// ─── Hệ thống → Chi nhánh ───
+		{Code: "organization:view", Title: "Xem", Group: "Hệ thống", Type: "child_menu", Description: "Xem danh sách chi nhánh"},
+		{Code: "organization:create", Title: "Thêm", Group: "Hệ thống", Type: "button", Description: "Thêm chi nhánh mới"},
+		{Code: "organization:edit", Title: "Sửa", Group: "Hệ thống", Type: "button", Description: "Sửa chi nhánh"},
+		{Code: "organization:delete", Title: "Xóa", Group: "Hệ thống", Type: "button", Description: "Xóa chi nhánh"},
+		// ─── Hệ thống → Quyền hạn ───
+		{Code: "role-matrix:view", Title: "Xem", Group: "Hệ thống", Type: "child_menu", Description: "Xem ma trận quyền"},
+		{Code: "role-matrix:edit", Title: "Sửa", Group: "Hệ thống", Type: "button", Description: "Lưu cấu hình quyền"},
+		{Code: "role:view", Title: "Xem", Group: "Hệ thống", Type: "child_menu", Description: "Xem danh sách role"},
+		{Code: "role:edit", Title: "Sửa", Group: "Hệ thống", Type: "button", Description: "Sửa vai trò"},
+
+		// ─── Hợp đồng ───
+		{Code: "contract-ai:chat", Title: "AI Trợ lý", Group: "Hợp đồng", Type: "child_menu", Description: "Chat AI trợ lý hợp đồng"},
+		{Code: "contract:view", Title: "Xem", Group: "Hợp đồng", Type: "child_menu", Description: "Danh sách hợp đồng"},
+		{Code: "contract:create", Title: "Thêm", Group: "Hợp đồng", Type: "button", Description: "Tạo hợp đồng mới"},
+		{Code: "contract:edit", Title: "Sửa", Group: "Hợp đồng", Type: "button", Description: "Chỉnh sửa hợp đồng"},
+		{Code: "contract:delete", Title: "Xóa", Group: "Hợp đồng", Type: "button", Description: "Xóa hợp đồng"},
+		{Code: "contract-category:view", Title: "Xem", Group: "Hợp đồng", Type: "child_menu", Description: "Danh mục hợp đồng"},
+		{Code: "contract-category:edit", Title: "Sửa", Group: "Hợp đồng", Type: "button", Description: "Sửa danh mục"},
+		{Code: "contract-category:delete", Title: "Xóa", Group: "Hợp đồng", Type: "button", Description: "Xóa danh mục"},
 	}
 
-	log.Info("Seeding permission definitions (module:action)...")
+	log.Info("Dropping old permissions collection for clean re-seed...")
+	if err := mgo.DB.Collection("permissions").Drop(ctx); err != nil {
+		log.Errorf("Failed to drop permissions collection: %v", err)
+	}
+
+	log.Info("Seeding permission definitions (menu:action)...")
 	if err := permService.SeedPermissions(ctx, initialPermissions); err != nil {
 		log.Fatalf("Failed to seed permissions: %v", err)
 	}
@@ -155,34 +172,41 @@ func main() {
 	}
 
 	// 5. Phòng Kỹ thuật chất lượng (phong_kt_cl)
-	// Full Ops View + AI Reports + Basic Admin View
+	// Theo DB: Xem/Nhập tất cả VH + AI báo cáo + Xem quản trị cơ bản
 	_ = permService.UpdateMatrix(ctx, constant.ROLE_PHONG_KT_CL, []string{
-		"rain:view", "rain:create", "rain:export",
+		"rain:view", "rain:create", "rain:edit", "rain:export", "rain:delete",
 		"inundation:view", "inundation:create", "inundation:edit", "inundation:delete",
-		"water:view", "water:create", "water:edit",
-		"cuapai:view", "trambom:view",
-		"ai:report", "ai:post-rain",
-		"employee:view", "organization:view", "role:view",
+		"water:view", "water:create", "water:edit", "water:export", "water:delete",
+		"cuapai:view", "trambom:view", "trambom:create", "trambom:edit", "trambom:delete",
+		"ai:chat", "ai:report", "ai:synthesis", "ai:post-rain",
+		"emergency:view", "emergency:create", "emergency:edit", "emergency:export",
+		"employee:view", "organization:view", "role:view", "role-matrix:view", 
+		"contract:view", "contract-category:view", "contract-ai:chat",
 	})
 	log.Info("✓ Seeded granular role: phong_kt_cl")
 
 	// 6 & 7. Giám đốc xí nghiệp & Trưởng phòng kỹ thuật (giam_doc_xn, truong_phong_kt)
-	// Focus on local operational input
+	// Theo DB: Xem/Nhập mưa, ngập + Xem trạm bơm + CT khẩn cấp + Xem NV
 	enterpriseManagerPerms := []string{
-		"rain:view", "rain:create",
+		"rain:view", "rain:create", "rain:edit", "rain:export",
 		"inundation:view", "inundation:create", "inundation:edit",
 		"trambom:view",
-		"employee:view", "emergency:view", "emergency:create", "emergency:update",
+		"employee:view", 
+		"emergency:view", "emergency:create", "emergency:edit", "emergency:export",
 	}
 	_ = permService.UpdateMatrix(ctx, constant.ROLE_GIAM_DOC_XN, enterpriseManagerPerms)
 	_ = permService.UpdateMatrix(ctx, constant.ROLE_TRUONG_PHONG_KT, enterpriseManagerPerms)
 	log.Info("✓ Seeded granular enterprise management roles")
 
 	// 8. Công nhân công ty (cong_nhan_cty)
-	// View only + Field Report creation
+	// Theo DB: Xem mưa/ngập/nước/cửa phai/trạm bơm + Báo cáo ngập + CT khẩn cấp
 	_ = permService.UpdateMatrix(ctx, constant.ROLE_CONG_NHAN_CTY, []string{
-		"rain:view", "inundation:view", "inundation:create",
-		"water:view", "cuapai:view", "trambom:view", "emergency:view", "emergency:update",
+		"rain:view", 
+		"inundation:view", "inundation:create",
+		"water:view", 
+		"cuapai:view", 
+		"trambom:view", 
+		"emergency:view", "emergency:create",
 	})
 	log.Info("✓ Seeded granular role: cong_nhan_cty")
 

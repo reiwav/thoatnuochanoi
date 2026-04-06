@@ -79,7 +79,7 @@ const getLatestData = (report) => {
     return data;
 };
 
-const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, handleOpenViewer, navigate, isMobile, basePath }) => {
+const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, handleOpenViewer, navigate, isMobile, basePath, hasPermission }) => {
     const [open, setOpen] = useState(point.status === 'active');
     const latest = useMemo(() => getLatestData(point.active_report || point.last_report), [point]);
 
@@ -87,13 +87,23 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
         <Paper elevation={0} sx={{ p: 2, mb: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 3, bgcolor: 'background.paper' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1, gap: 1 }}>
                 <Box sx={{ flex: 1 }}>
-                    <Typography 
-                        variant="h5" 
-                        onClick={() => navigate(point.status === 'active' 
-                            ? `${basePath}/inundation/form?tab=1&id=${point.active_report.id}&name=${encodeURIComponent(point.name)}`
-                            : `${basePath}/inundation/form?tab=0&point_id=${point.id}&name=${encodeURIComponent(point.name)}`
-                        )}
-                        sx={{ fontWeight: 900, color: 'primary.dark', mb: 1, lineHeight: 1.2, cursor: 'pointer', '&:hover': { color: 'primary.main' } }}
+                    <Typography
+                        variant="h5"
+                        onClick={() => {
+                            if (point.status === 'active') {
+                                if (hasPermission('inundation:edit')) navigate(`${basePath}/inundation/form?tab=1&id=${point.active_report.id}&name=${encodeURIComponent(point.name)}`);
+                            } else {
+                                if (hasPermission('inundation:create')) navigate(`${basePath}/inundation/form?tab=0&point_id=${point.id}&name=${encodeURIComponent(point.name)}`);
+                            }
+                        }}
+                        sx={{
+                            fontWeight: 900,
+                            color: 'primary.dark',
+                            mb: 1,
+                            lineHeight: 1.2,
+                            cursor: (point.status === 'active' ? hasPermission('inundation:edit') : hasPermission('inundation:create')) ? 'pointer' : 'default',
+                            '&:hover': { color: (point.status === 'active' ? hasPermission('inundation:edit') : hasPermission('inundation:create')) ? 'primary.main' : 'primary.dark' }
+                        }}
                     >
                         {point.name}
                     </Typography>
@@ -170,21 +180,25 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                     </Box>
 
                     {point.status === 'active' ? (
-                        <Button
-                            fullWidth variant="contained" color="error" size="large"
-                            onClick={() => navigate(`${basePath}/inundation/form?tab=1&id=${point.active_report.id}&name=${encodeURIComponent(point.name)}`)}
-                            sx={{ borderRadius: 2, fontWeight: 800, py: 1.5 }}
-                        >
-                            Cập nhật tình hình
-                        </Button>
+                        hasPermission('inundation:edit') && (
+                            <Button
+                                fullWidth variant="contained" color="error" size="large"
+                                onClick={() => navigate(`${basePath}/inundation/form?tab=1&id=${point.active_report.id}&name=${encodeURIComponent(point.name)}`)}
+                                sx={{ borderRadius: 2, fontWeight: 800, py: 1.5 }}
+                            >
+                                Cập nhật tình hình
+                            </Button>
+                        )
                     ) : (
-                        <Button
-                            fullWidth variant="contained" color="primary" size="large"
-                            onClick={() => navigate(`${basePath}/inundation/form?tab=0&point_id=${point.id}&name=${encodeURIComponent(point.name)}`)}
-                            sx={{ borderRadius: 2, fontWeight: 800, py: 1.5 }}
-                        >
-                            Báo cáo điểm ngập
-                        </Button>
+                        hasPermission('inundation:create') && (
+                            <Button
+                                fullWidth variant="contained" color="primary" size="large"
+                                onClick={() => navigate(`${basePath}/inundation/form?tab=0&point_id=${point.id}&name=${encodeURIComponent(point.name)}`)}
+                                sx={{ borderRadius: 2, fontWeight: 800, py: 1.5 }}
+                            >
+                                Báo cáo điểm ngập
+                            </Button>
+                        )
                     )}
                 </Stack>
             </Collapse>
@@ -202,10 +216,10 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                     </IconButton>
                 </TableCell>
                 <TableCell sx={{ p: 2 }}>
-                    <Typography 
+                    <Typography
                         variant="body2"
                         sx={{ fontWeight: 800, cursor: 'pointer', '&:hover': { color: 'primary.main' }, color: 'primary.dark' }}
-                        onClick={() => navigate(point.status === 'active' 
+                        onClick={() => navigate(point.status === 'active'
                             ? `${basePath}/inundation/form?tab=1&id=${point.active_report.id}&name=${encodeURIComponent(point.name)}`
                             : `${basePath}/inundation/form?tab=0&point_id=${point.id}&name=${encodeURIComponent(point.name)}`
                         )}
@@ -238,20 +252,29 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                     )}
                 </TableCell>
                 <TableCell align="center" sx={{ p: 2, width: 120 }}>
-                    <Button
-                        variant="contained"
-                        color={point.status === 'active' ? 'error' : 'primary'}
-                        size="small"
-                        onClick={() =>
-                            navigate(
-                                point.status === 'active'
-                                    ? `${basePath}/inundation/form?tab=1&id=${point.active_report.id}&name=${encodeURIComponent(point.name)}`
-                                    : `${basePath}/inundation/form?tab=0&point_id=${point.id}&name=${encodeURIComponent(point.name)}`
-                            )
-                        }
-                    >
-                        {point.status === 'active' ? 'Cập nhật' : 'Báo cáo'}
-                    </Button>
+                    {point.status === 'active' ? (
+                        hasPermission('inundation:edit') && (
+                            <Button
+                                variant="contained"
+                                color="error"
+                                size="small"
+                                onClick={() => navigate(`${basePath}/inundation/form?tab=1&id=${point.active_report.id}&name=${encodeURIComponent(point.name)}`)}
+                            >
+                                Cập nhật
+                            </Button>
+                        )
+                    ) : (
+                        hasPermission('inundation:create') && (
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                size="small"
+                                onClick={() => navigate(`${basePath}/inundation/form?tab=0&point_id=${point.id}&name=${encodeURIComponent(point.name)}`)}
+                            >
+                                Báo cáo
+                            </Button>
+                        )
+                    )}
                 </TableCell>
             </TableRow>
             <TableRow>
@@ -340,8 +363,8 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenVi
         <Paper elevation={0} sx={{ p: 2, mb: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 3, bgcolor: 'background.paper' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5, gap: 1 }}>
                 <Box sx={{ flex: 1 }}>
-                    <Typography 
-                        variant="h5" 
+                    <Typography
+                        variant="h5"
                         onClick={() => navigate(`${basePath}/inundation/form?id=${report.id}&tab=1&readonly=true`)}
                         sx={{ fontWeight: 900, color: 'primary.dark', mb: 1, lineHeight: 1.2, cursor: 'pointer', '&:hover': { color: 'primary.main' } }}
                     >
@@ -451,7 +474,7 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenVi
                     </IconButton>
                 </TableCell>
                 <TableCell sx={{ p: 2 }}>
-                    <Typography 
+                    <Typography
                         variant="body2"
                         sx={{ fontWeight: 800, cursor: 'pointer', '&:hover': { color: 'primary.main' }, color: 'primary.dark' }}
                         onClick={() => navigate(`${basePath}/inundation/form?id=${report.id}&tab=1&readonly=true`)}
@@ -1128,6 +1151,7 @@ const InundationDashboard = () => {
                                                 navigate={navigate}
                                                 isMobile={isMobile}
                                                 basePath={basePath}
+                                                hasPermission={hasPermission}
                                             />
                                         ))}
                                 </TableBody>
@@ -1323,6 +1347,7 @@ const InundationDashboard = () => {
                                 navigate={navigate}
                                 isMobile={isMobile}
                                 basePath={basePath}
+                                hasPermission={hasPermission}
                             />
                         ))}
                 </Stack>
@@ -1359,6 +1384,7 @@ const InundationDashboard = () => {
                                         navigate={navigate}
                                         isMobile={isMobile}
                                         basePath={basePath}
+                                        hasPermission={hasPermission}
                                     />
                                 ))}
                         </TableBody>

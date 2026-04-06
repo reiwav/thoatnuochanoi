@@ -1,59 +1,67 @@
-# Bảng Ma trận Chức năng (Function-based Permission Matrix)
+# Tài liệu Hệ thống: Phân quyền Chi tiết (Granular RBAC)
 
-Tài liệu này định nghĩa các chức năng (Menu/Quyền) và các Role được phép truy cập ("tích chọn"). 
-Cấu trúc này giúp dễ dàng nâng cấp hệ thống khi muốn thêm chức năng hoặc Role mới.
+Tài liệu này định nghĩa cấu trúc và cách vận hành của hệ thống phân quyền hành động (Action-based RBAC) đã được triển khai.
 
-| Chức năng / Module | SA | AO | MC | RE | EM | Ghi chú |
-| :--- | :---: | :---: | :---: | :---: | :---: | :--- |
-| **HTBC mùa mưa (AI)** | ✅ | ❌ | ❌ | ❌ | ❌ | Hệ thống trợ lý AI |
-| **Lượng mưa** | ✅ | ✅ | ❌ | ✅ | ✅ | Phân theo Xí nghiệp (OrgID) |
-| **Điểm ngập** | ✅ | ✅ | ❌ | ✅ | ❌ | Báo cáo & Giám sát |
-| **Mực nước** | ✅ | ❌ | ❌ | ❌ | ✅ | Sông hồ & Cống |
-| **Cửa phai** | ✅ | ❌ | ❌ | ❌ | ✅ | Điều hành trạm |
-| **Trạm bơm** | ✅ | ✅ | ❌ | ✅ | ✅ | Giám sát vận hành |
-| **Phân quyền** | ✅ | ✅ | ❌ | ❌ | ❌ | Quản lý User/Org |
-| **Hợp đồng** | ✅ | ❌ | ✅ | ❌ | ❌ | Quản lý AI Contract |
-| **Tin nhắn báo cáo** | ✅ | ❌ | ❌ | ❌ | ❌ | Gửi thông báo tự động |
-| **Báo cáo tổng hợp** | ✅ | ❌ | ❌ | ❌ | ❌ | Xuất file báo cáo |
+## 1. Nguyên tắc Phân quyền
+- **Mã quyền (Permission Code)**: Định dạng `module:action` (ví dụ: `inundation:create`).
+- **Phân loại hành động**:
+    - `view`: Quyền xem danh sách, chi tiết và hiển thị mục menu.
+    - `create`: Quyền thêm mới bản ghi.
+    - `edit`: Quyền chỉnh sửa thông tin.
+    - `delete`: Quyền xóa bản ghi.
+    - `control`: Quyền điều khiển thiết bị (Cửa phai, Trạm bơm).
 
----
+## 2. Danh mục Quyền chi tiết (Đã triển khai)
 
-### Chú thích Role:
-- **SA**: Super Admin (Kỹ thuật hệ thống)
-- **AO**: Admin Org (Giám đốc/Quản lý Xí nghiệp)
-- **MC**: Manager Contract (Quản lý Hợp đồng)
-- **RE**: Reviewer (Trưởng phòng kỹ thuật/Kiểm duyệt)
-- **EM**: Employee (Công nhân hiện trường)
+Hệ thống hiện tại hỗ trợ hơn 60 mã quyền chi tiết. Dưới đây là các đầu mục chính:
 
-✅: Role đã được "tích" (Có quyền)
-❌: Role chưa có quyền
+| Nhóm / Module | Xem (view) | Thêm (create) | Sửa (edit) | Xóa (delete) | Khác |
+| :--- | :---: | :---: | :---: | :---: | :--- |
+| **VẬN HÀNH** | | | | | |
+| Lượng mưa | `rain:view` | `rain:create` | - | - | `rain:export` |
+| Điểm ngập | `inundation:view`| `inundation:create`| `inundation:edit` | `inundation:delete` | `sa-hinh-ngap:view` |
+| Mực nước | `water:view` | `water:create` | `water:edit` | - | |
+| Trạm đo (Setup) | `station:view` | `station:create` | `station:edit` | `station:delete` | |
+| Cửa phai | `cuapai:view` | - | - | - | `cuapai:control` |
+| Trạm bơm | `trambom:view` | - | `trambom:edit` | `trambom:delete` | `trambom:control` |
+| BC CT Khẩn cấp | `emergency:view` | `emergency:create`| `emergency:edit` | `emergency:delete` | |
+| **QUẢN TRỊ** | | | | | |
+| Nhân sự | `employee:view` | `employee:create` | `employee:edit` | `employee:delete` | |
+| Đơn vị (Org) | `organization:view`| `organization:create`| `organization:edit` | `organization:delete` | |
+| Hợp đồng | `contract:view` | `contract:create` | `contract:edit` | `contract:delete` | |
+| Phân quyền | `role:view` | - | `role:edit` | - | |
+| **AI** | `ai:chat` | - | - | - | `ai:report`, `ai:synthesis` |
 
----
+## 3. Cách thức Vận hành
 
-## Phương hướng xử lý (Handling Plan - Nâng cấp)
+### 3.1. Đồng bộ Cơ sở dữ liệu (Seeding)
+Mọi thay đổi về danh mục quyền hoặc gán quyền mặc định cho Role (Admin, PGĐ, Công nhân...) đều được định nghĩa trong file seeder.
+- **Lệnh thực thi**:
+  ```bash
+  cd ai_tnhn/ai-api-tnhn
+  go run cmd/seed/main.go
+  ```
 
-Để hệ thống có thể nâng cấp và mở rộng linh hoạt "bằng cách tích từng Role cho chức năng", ta sẽ thực hiện các bước sau:
+### 3.2. Hiển thị trên Frontend
+Sử dụng hook `hasPermission` từ `useAuthStore` để kiểm tra quyền trước khi render UI.
 
-### 1. Đồng bộ Menu với Role (Frontend)
-Trong `src/menu-items/admin.js`, chúng ta sẽ ánh xạ trực tiếp các Role từ bảng trên vào thuộc tính `roles` của từng menu item.
-*Ví dụ:*
 ```javascript
-{
-  id: 'inundation-management',
-  roles: ['super_admin', 'admin_org', 'reviewer'] // Các role đã được "tích"
-}
+import useAuthStore from 'store/useAuthStore';
+
+const { hasPermission } = useAuthStore();
+
+// 1. Kiểm tra quyền hành động
+{hasPermission('contract:delete') && (
+    <IconButton onClick={handleDelete}><IconTrash /></IconButton>
+)}
+
+// 2. Sidebar Menu (Tự động)
+// Các mục menu trong src/menu-items/admin.js có ID trùng với mã quyền :view 
+// sẽ tự động ẩn/hiện dựa trên quyền của người dùng.
 ```
 
-### 2. Kiểm soát Chức năng bằng `PermissionGuard`
-Tạo một component chung để bao bọc các module hoặc nút bấm:
-```jsx
-<PermissionGuard roles={['super_admin', 'employee']}>
-  <SluiceGateControl />
-</PermissionGuard>
-```
+### 3.3. Bảo mật Sidebar
+Logic trong `NavGroup` và `NavCollapse` đã được cập nhật để **ẩn toàn bộ nhóm menu** nến người dùng không có quyền xem bất kỳ mục nào bên trong nhóm đó.
 
-### 3. (Upgrade) Dynamic Authorization Service
-Trong tương lai, thay vì hardcode mảng `roles` trong JS, chúng ta có thể:
-1. Tạo một API trả về cấu hình: `GET /api/v1/permissions/matrix`.
-2. Frontend lưu cấu hình này vào Redux.
-3. Menu sẽ được render động theo dữ liệu từ API này, cho phép Admin "tích chọn" Role ngay trên giao diện mà không cần chỉnh sửa code.
+## 4. Quản lý Ma trận Quyền (Role Matrix)
+Quản trị viên có thể thay đổi quyền chi tiết của từng Role (ví dụ: cho phép Công nhân sửa điểm ngập nhưng không được xóa) trực tiếp trên giao diện Dashboard tại mục **Hệ thống > Ma trận quyền**.

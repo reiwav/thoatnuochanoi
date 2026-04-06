@@ -16,7 +16,7 @@ import stationApi from 'api/station';
 import StationDialog from './StationDialog';
 import useAuthStore from 'store/useAuthStore';
 
-const StationRow = ({ row, handleOpenEdit, handleDelete, isMobile, canEdit }) => {
+const StationRow = ({ row, handleOpenEdit, handleDelete, isMobile, canEdit, canDelete }) => {
     const [open, setOpen] = useState(false);
 
     return (
@@ -38,18 +38,22 @@ const StationRow = ({ row, handleOpenEdit, handleDelete, isMobile, canEdit }) =>
                         <Chip label={row.Active ? 'Hoạt động' : 'Ngừng'} color={row.Active ? 'success' : 'default'} size="small" variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem', height: 24 }} />
                     </TableCell>
                 )}
-                {canEdit && (
+                {(canEdit || canDelete) && (
                     <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                        <Tooltip title="Chỉnh sửa">
-                            <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>
-                                <IconEdit size={20} />
-                            </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Xóa">
-                            <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}>
-                                <IconTrash size={20} />
-                            </IconButton>
-                        </Tooltip>
+                        {canEdit && (
+                            <Tooltip title="Chỉnh sửa">
+                                <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>
+                                    <IconEdit size={20} />
+                                </IconButton>
+                            </Tooltip>
+                        )}
+                        {canDelete && (
+                            <Tooltip title="Xóa">
+                                <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}>
+                                    <IconTrash size={20} />
+                                </IconButton>
+                            </Tooltip>
+                        )}
                     </TableCell>
                 )}
             </TableRow>
@@ -95,8 +99,10 @@ const StationRow = ({ row, handleOpenEdit, handleDelete, isMobile, canEdit }) =>
 const StationRainList = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-    const { role: userRole } = useAuthStore();
-    const canEdit = userRole === 'super_admin';
+    const { hasPermission } = useAuthStore();
+    const canCreate = hasPermission('station:create');
+    const canEdit = hasPermission('station:edit');
+    const canDelete = hasPermission('station:delete');
 
     const [loading, setLoading] = useState(false);
     const [stations, setStations] = useState([]);
@@ -164,7 +170,7 @@ const StationRainList = () => {
     return (
         <MainCard
             title="Quản lý trạm đo mưa"
-            secondary={canEdit && (
+            secondary={canCreate && (
                 <AnimateButton>
                     <Button variant="contained" color="secondary" startIcon={<IconPlus size={20} />} onClick={handleOpenCreate} sx={{ fontWeight: 700, fontSize: '1rem', px: 2, py: 1 }}>
                         Thêm trạm mới
@@ -200,7 +206,7 @@ const StationRainList = () => {
                             {!isMobile && <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Tọa độ</TableCell>}
                             {!isMobile && <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Ngưỡng</TableCell>}
                             {!isMobile && <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Trạng thái</TableCell>}
-                            {canEdit && <TableCell align="right" sx={{ fontWeight: 800, fontSize: '1rem' }}>Thao tác</TableCell>}
+                            {(canEdit || canDelete) && <TableCell align="right" sx={{ fontWeight: 800, fontSize: '1rem' }}>Thao tác</TableCell>}
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -217,6 +223,7 @@ const StationRainList = () => {
                                     handleDelete={handleDelete}
                                     isMobile={isMobile}
                                     canEdit={canEdit}
+                                    canDelete={canDelete}
                                 />
                             ))
                         )}

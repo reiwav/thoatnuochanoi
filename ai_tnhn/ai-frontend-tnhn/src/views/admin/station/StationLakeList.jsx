@@ -15,9 +15,13 @@ import StationDialog from './StationDialog';
 import useAuthStore from 'store/useAuthStore';
 
 const StationLakeList = () => {
-    const { role: userRole } = useAuthStore();
-    const canEdit = userRole === 'super_admin';
+    const { hasPermission } = useAuthStore();
+    const canCreate = hasPermission('station:create');
+    const canEdit = hasPermission('station:edit');
+    const canDelete = hasPermission('station:delete');
+
     const [loading, setLoading] = useState(false);
+    // ... rest of the state
     const [stations, setStations] = useState([]);
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);

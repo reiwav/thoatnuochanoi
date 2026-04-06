@@ -107,7 +107,7 @@ const ConstructionReporting = () => {
     const { search } = useLocation();
     
     // Get auth state from Zustand
-    const { role: userRole, user: userInfo, logout } = useAuthStore();
+    const { role: userRole, user: userInfo, hasPermission, logout } = useAuthStore();
 
     // Read activeTab from URL query (for mobile bottom nav)
     const params = new URLSearchParams(search);
@@ -221,6 +221,10 @@ const ConstructionReporting = () => {
     }, [constructions]);
 
     const handleCardClick = (row) => {
+        if (!hasPermission('emergency:edit')) {
+            toast.error('Bạn không có quyền báo cáo tiến độ');
+            return;
+        }
         navigate(`${basePath}/emergency-construction/form?id=${row.id}&name=${encodeURIComponent(row.name)}`);
     };
 
@@ -486,7 +490,19 @@ const ConstructionReporting = () => {
                     ) : isMobile ? (
                         <Stack spacing={2}>
                             {filteredConstructions.map((row) => (
-                                <Card key={row.id} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '12px', cursor: 'pointer', transition: 'all .2s', '&:hover': { borderColor: 'primary.main' } }} onClick={() => handleCardClick(row)}>
+                                <Card 
+                                    key={row.id} 
+                                    elevation={0} 
+                                    sx={{ 
+                                        border: '1px solid', 
+                                        borderColor: 'divider', 
+                                        borderRadius: '12px', 
+                                        cursor: hasPermission('emergency:edit') ? 'pointer' : 'default', 
+                                        transition: 'all .2s', 
+                                        '&:hover': { borderColor: hasPermission('emergency:edit') ? 'primary.main' : 'divider' } 
+                                    }} 
+                                    onClick={() => handleCardClick(row)}
+                                >
                                     <CardContent sx={{ p: '16px !important' }}>
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1, alignItems: 'flex-start' }}>
                                             <Typography variant="subtitle1" fontWeight={800} sx={{ lineHeight: 1.3, pr: 1, fontSize: '1.2rem' }}>{row.name}</Typography>
@@ -527,9 +543,16 @@ const ConstructionReporting = () => {
                                             </TableCell>
                                             <TableCell>{getStatusChip(row.status)}</TableCell>
                                             <TableCell align="right">
-                                                <Button size="small" variant="contained" color="secondary" endIcon={<IconChevronRight size={16} />} sx={{ borderRadius: '8px', boxShadow: 'none', fontWeight: 700, px: 2, bgcolor: 'secondary.light', color: 'secondary.dark', '&:hover': { bgcolor: 'secondary.main', color: '#fff' } }}>
-                                                    Chi tiết
-                                                </Button>
+                                                {hasPermission('emergency:edit') && (
+                                                    <Button size="small" variant="contained" color="secondary" endIcon={<IconChevronRight size={16} />} sx={{ borderRadius: '8px', boxShadow: 'none', fontWeight: 700, px: 2, bgcolor: 'secondary.light', color: 'secondary.dark', '&:hover': { bgcolor: 'secondary.main', color: '#fff' } }}>
+                                                        Báo cáo
+                                                    </Button>
+                                                )}
+                                                {!hasPermission('emergency:edit') && (
+                                                    <Button size="small" variant="outlined" disabled sx={{ borderRadius: '8px', fontWeight: 700 }}>
+                                                        Xem
+                                                    </Button>
+                                                )}
                                             </TableCell>
                                         </TableRow>
                                     ))}

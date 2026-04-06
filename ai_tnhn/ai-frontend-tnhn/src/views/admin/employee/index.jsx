@@ -17,7 +17,7 @@ import organizationApi from 'api/organization';
 import EmployeeDialog from './EmployeeDialog';
 import useAuthStore from 'store/useAuthStore';
 
-const EmployeeRow = ({ row, handleOpenEdit, handleDelete, roleLabel, orgName, userRole, isMobile }) => {
+const EmployeeRow = ({ row, handleOpenEdit, handleDelete, roleLabel, orgName, userRole, isMobile, hasPermission }) => {
     const [open, setOpen] = useState(false);
 
     return (
@@ -48,12 +48,16 @@ const EmployeeRow = ({ row, handleOpenEdit, handleDelete, roleLabel, orgName, us
                     </TableCell>
                 )}
                 <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                    <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>
-                        <IconEdit size={20} />
-                    </IconButton>
-                    <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}>
-                        <IconTrash size={20} />
-                    </IconButton>
+                    {hasPermission('employee:edit') && (
+                        <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>
+                            <IconEdit size={20} />
+                        </IconButton>
+                    )}
+                    {hasPermission('employee:delete') && (
+                        <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}>
+                            <IconTrash size={20} />
+                        </IconButton>
+                    )}
                 </TableCell>
             </TableRow>
             {isMobile && (
@@ -106,7 +110,7 @@ const EmployeeList = () => {
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     
     // Get auth state from Zustand
-    const { role: userRole, user: userInfo } = useAuthStore();
+    const { role: userRole, user: userInfo, hasPermission } = useAuthStore();
     const userOrgId = userInfo?.org_id || '';
     
     const [searchParams] = useSearchParams();
@@ -213,11 +217,13 @@ const EmployeeList = () => {
         <MainCard
             title={urlOrgName ? `Người dùng của: ${urlOrgName}` : 'Quản lý người dùng'}
             secondary={
-                <AnimateButton>
-                    <Button variant="contained" color="secondary" startIcon={<IconPlus size={18} />} onClick={handleOpenCreate}>
-                        Thêm người dùng
-                    </Button>
-                </AnimateButton>
+                hasPermission('employee:create') && (
+                    <AnimateButton>
+                        <Button variant="contained" color="secondary" startIcon={<IconPlus size={18} />} onClick={handleOpenCreate}>
+                            Thêm người dùng
+                        </Button>
+                    </AnimateButton>
+                )
             }
         >
             {urlOrgName && (
@@ -252,7 +258,7 @@ const EmployeeList = () => {
                             {isMobile && <TableCell width="40px" />}
                             <TableCell sx={{ fontWeight: 700 }}>Tên</TableCell>
                             {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>}
-                            {!isMobile && userRole === 'super_admin' && <TableCell sx={{ fontWeight: 700 }}>Công ty</TableCell>}
+                            {!isMobile && hasPermission('organization:view') && <TableCell sx={{ fontWeight: 700 }}>Công ty</TableCell>}
                             {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Vai trò</TableCell>}
                             {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>}
                             <TableCell align="right" sx={{ fontWeight: 700 }}>Thao tác</TableCell>
@@ -260,9 +266,9 @@ const EmployeeList = () => {
                     </TableHead>
                     <TableBody>
                         {loading ? (
-                            <TableRow><TableCell colSpan={isMobile ? 3 : (userRole === 'admin_org' ? 5 : 6)} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
+                            <TableRow><TableCell colSpan={isMobile ? 3 : (hasPermission('organization:view') ? 6 : 5)} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
                         ) : employees.length === 0 ? (
-                            <TableRow><TableCell colSpan={isMobile ? 3 : (userRole === 'admin_org' ? 5 : 6)} align="center" sx={{ py: 3 }}>Không tìm thấy người dùng</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={isMobile ? 3 : (hasPermission('organization:view') ? 6 : 5)} align="center" sx={{ py: 3 }}>Không tìm thấy người dùng</TableCell></TableRow>
                         ) : (
                             employees.map((row) => (
                                 <EmployeeRow
@@ -274,6 +280,7 @@ const EmployeeList = () => {
                                     orgName={orgName}
                                     userRole={userRole}
                                     isMobile={isMobile}
+                                    hasPermission={hasPermission}
                                 />
                             ))
                         )}

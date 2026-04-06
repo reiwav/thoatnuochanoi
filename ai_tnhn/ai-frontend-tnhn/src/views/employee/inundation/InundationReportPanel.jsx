@@ -14,9 +14,11 @@ import { toast } from 'react-hot-toast';
 
 import inundationApi from 'api/inundation';
 import { processAndWatermark } from 'utils/imageProcessor';
+import useAuthStore from 'store/useAuthStore';
 
 const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onSuccess, isCorrectionMode = false }) => {
     const theme = useTheme();
+    const { hasPermission } = useAuthStore();
     const [loading, setLoading] = useState(false);
     const [values, setValues] = useState({
         street_name: initialStreetName || '',
@@ -293,11 +295,16 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
             <Button
                 fullWidth size="large" variant="contained"
                 color={isCorrectionMode ? 'error' : (resolveOnUpdate ? 'error' : 'secondary')}
-                onClick={handleSubmit} disabled={loading}
+                onClick={handleSubmit} 
+                disabled={loading || (selectedReport || isCorrectionMode ? !hasPermission('inundation:edit') : !hasPermission('inundation:create'))}
                 startIcon={loading ? <CircularProgress size={17} color="inherit" /> : <IconSend size={17} />}
                 sx={{ borderRadius: 100, py: 1.4, fontWeight: 700, mt: 1 }}
             >
-                {loading ? 'Đang xử lý...' : (isCorrectionMode ? 'Lưu thay đổi chỉnh sửa' : (resolveOnUpdate ? 'Xác nhận Kết thúc đợt ngập' : (selectedReport ? 'Cập nhật tình hình' : 'Gửi báo cáo')))}
+                {loading ? 'Đang xử lý...' : (
+                    !(selectedReport || isCorrectionMode ? hasPermission('inundation:edit') : hasPermission('inundation:create')) 
+                    ? 'Không có quyền thực hiện' 
+                    : (isCorrectionMode ? 'Lưu thay đổi chỉnh sửa' : (resolveOnUpdate ? 'Xác nhận Kết thúc đợt ngập' : (selectedReport ? 'Cập nhật tình hình' : 'Gửi báo cáo')))
+                )}
             </Button>
         </Stack>
     );

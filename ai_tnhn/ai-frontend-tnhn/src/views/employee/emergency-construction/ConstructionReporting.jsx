@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate, useLocation, useOutletContext } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
     Box, Typography, Paper, Table, TableBody,
     TableCell, TableContainer, TableHead, TableRow,
@@ -12,6 +12,7 @@ import { useTheme } from '@mui/material/styles';
 import { IconChevronRight, IconUser, IconLogout, IconSearch, IconX, IconRefresh, IconMapPin, IconChevronLeft, IconChevronDown, IconSquare, IconCheckbox, IconChevronUp } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 import emergencyConstructionApi from 'api/emergencyConstruction';
+import useAuthStore from 'store/useAuthStore';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -104,7 +105,9 @@ const ConstructionReporting = () => {
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const navigate = useNavigate();
     const { search } = useLocation();
-    const { userInfo } = useOutletContext();
+    
+    // Get auth state from Zustand
+    const { role: userRole, user: userInfo, hasPermission, logout } = useAuthStore();
 
     // Read activeTab from URL query (for mobile bottom nav)
     const params = new URLSearchParams(search);
@@ -122,7 +125,6 @@ const ConstructionReporting = () => {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
 
-    const userRole = localStorage.getItem('role') || 'employee';
     const isEmployee = userRole === 'employee' || userRole === 'technician';
     const basePath = isEmployee ? '/company' : '/admin';
 
@@ -219,10 +221,17 @@ const ConstructionReporting = () => {
     }, [constructions]);
 
     const handleCardClick = (row) => {
+        if (!hasPermission('emergency:edit')) {
+            toast.error('Bạn không có quyền báo cáo tiến độ');
+            return;
+        }
         navigate(`${basePath}/emergency-construction/form?id=${row.id}&name=${encodeURIComponent(row.name)}`);
     };
 
-    const handleLogout = () => { localStorage.removeItem('token'); localStorage.removeItem('role'); navigate('/pages/login'); };
+    const handleLogout = () => {
+        logout();
+        navigate('/pages/login');
+    };
 
     // ─── Render Logic ─────────────────────────────────────────────────────────
 
@@ -481,7 +490,19 @@ const ConstructionReporting = () => {
                     ) : isMobile ? (
                         <Stack spacing={2}>
                             {filteredConstructions.map((row) => (
-                                <Card key={row.id} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '12px', cursor: 'pointer', transition: 'all .2s', '&:hover': { borderColor: 'primary.main' } }} onClick={() => handleCardClick(row)}>
+                                <Card 
+                                    key={row.id} 
+                                    elevation={0} 
+                                    sx={{ 
+                                        border: '1px solid', 
+                                        borderColor: 'divider', 
+                                        borderRadius: '12px', 
+                                        cursor: hasPermission('emergency:edit') ? 'pointer' : 'default', 
+                                        transition: 'all .2s', 
+                                        '&:hover': { borderColor: hasPermission('emergency:edit') ? 'primary.main' : 'divider' } 
+                                    }} 
+                                    onClick={() => handleCardClick(row)}
+                                >
                                     <CardContent sx={{ p: '16px !important' }}>
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1, alignItems: 'flex-start' }}>
                                             <Typography variant="subtitle1" fontWeight={800} sx={{ lineHeight: 1.3, pr: 1, fontSize: '1.2rem' }}>{row.name}</Typography>
@@ -522,9 +543,16 @@ const ConstructionReporting = () => {
                                             </TableCell>
                                             <TableCell>{getStatusChip(row.status)}</TableCell>
                                             <TableCell align="right">
-                                                <Button size="small" variant="contained" color="secondary" endIcon={<IconChevronRight size={16} />} sx={{ borderRadius: '8px', boxShadow: 'none', fontWeight: 700, px: 2, bgcolor: 'secondary.light', color: 'secondary.dark', '&:hover': { bgcolor: 'secondary.main', color: '#fff' } }}>
-                                                    Chi tiết
-                                                </Button>
+                                                {hasPermission('emergency:edit') && (
+                                                    <Button size="small" variant="contained" color="secondary" endIcon={<IconChevronRight size={16} />} sx={{ borderRadius: '8px', boxShadow: 'none', fontWeight: 700, px: 2, bgcolor: 'secondary.light', color: 'secondary.dark', '&:hover': { bgcolor: 'secondary.main', color: '#fff' } }}>
+                                                        Báo cáo
+                                                    </Button>
+                                                )}
+                                                {!hasPermission('emergency:edit') && (
+                                                    <Button size="small" variant="outlined" disabled sx={{ borderRadius: '8px', fontWeight: 700 }}>
+                                                        Xem
+                                                    </Button>
+                                                )}
                                             </TableCell>
                                         </TableRow>
                                     ))}

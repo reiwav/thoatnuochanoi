@@ -16,11 +16,11 @@ import PumpingStationDialog from './PumpingStationDialog';
 import PumpingStationHistoryDialog from './PumpingStationHistoryDialog';
 import PumpingStationReport from './PumpingStationReport';
 import { toast } from 'react-hot-toast';
-import { useOutletContext } from 'react-router-dom';
 import { CircularProgress, Box, Typography } from '@mui/material';
+import useAuthStore from 'store/useAuthStore';
 
 const PumpingStationPage = () => {
-    const { userInfo } = useOutletContext();
+    const { user: userInfo, hasPermission } = useAuthStore();
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [assignedStation, setAssignedStation] = useState(null);
@@ -28,7 +28,7 @@ const PumpingStationPage = () => {
     const [openHistory, setOpenHistory] = useState(false);
     const [selected, setSelected] = useState(null);
 
-    const isAdmin = userInfo?.role === 'super_admin';
+    const isAdmin = hasPermission('trambom:view');
 
     const loadData = async () => {
         try {
@@ -87,9 +87,11 @@ const PumpingStationPage = () => {
 
     return (
         <MainCard title="QUẢN LÝ TRẠM BƠM" secondary={
-            <Button variant="contained" startIcon={<IconPlus />} onClick={handleAdd}>
-                Thêm trạm bơm
-            </Button>
+            hasPermission('trambom:edit') && (
+                <Button variant="contained" startIcon={<IconPlus />} onClick={handleAdd}>
+                    Thêm trạm bơm
+                </Button>
+            )
         }>
             <TableContainer>
                 <Table>
@@ -118,16 +120,20 @@ const PumpingStationPage = () => {
                                                 <IconHistory size="20" />
                                             </IconButton>
                                         </Tooltip>
-                                        <Tooltip title="Chỉnh sửa">
-                                            <IconButton color="primary" onClick={() => handleEdit(item)}>
-                                                <IconEdit size="20" />
-                                            </IconButton>
-                                        </Tooltip>
-                                        <Tooltip title="Xóa">
-                                            <IconButton color="error" onClick={() => handleDelete(item.id)}>
-                                                <IconTrash size="20" />
-                                            </IconButton>
-                                        </Tooltip>
+                                        {hasPermission('trambom:edit') && (
+                                            <Tooltip title="Chỉnh sửa">
+                                                <IconButton color="primary" onClick={() => handleEdit(item)}>
+                                                    <IconEdit size="20" />
+                                                </IconButton>
+                                            </Tooltip>
+                                        )}
+                                        {hasPermission('trambom:delete') && (
+                                            <Tooltip title="Xóa">
+                                                <IconButton color="error" onClick={() => handleDelete(item.id)}>
+                                                    <IconTrash size={20} />
+                                                </IconButton>
+                                            </Tooltip>
+                                        )}
                                     </Stack>
                                 </TableCell>
                             </TableRow>

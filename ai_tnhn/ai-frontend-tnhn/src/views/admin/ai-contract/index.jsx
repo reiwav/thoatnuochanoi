@@ -5,6 +5,7 @@ import {
 import { useTheme } from '@mui/material/styles';
 import { IconSend, IconRobot, IconUser, IconClipboardList, IconEye } from '@tabler/icons-react';
 import contractApi from 'api/contract';
+import useAuthStore from 'store/useAuthStore';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useNavigate } from 'react-router-dom';
@@ -17,6 +18,7 @@ dayjs.locale('vi');
 
 
 const AiContract = () => {
+    const { user: userInfo } = useAuthStore();
     const [messages, setMessages] = useState([]);
 
     const [input, setInput] = useState('');
@@ -135,9 +137,10 @@ const AiContract = () => {
                             <Avatar sx={{
                                 bgcolor: msg.role === 'user' ? 'primary.light' : 'secondary.light',
                                 color: msg.role === 'user' ? 'primary.main' : 'secondary.main',
-                                width: 32, height: 32
+                                width: 32, height: 32,
+                                fontSize: '0.875rem', fontWeight: 700
                             }}>
-                                {msg.role === 'user' ? <IconUser size={18} /> : <IconRobot size={18} />}
+                                {msg.role === 'user' ? (userInfo?.name?.charAt(0) || <IconUser size={18} />) : <IconRobot size={18} />}
                             </Avatar>
                             <Paper sx={{
                                 p: 2,

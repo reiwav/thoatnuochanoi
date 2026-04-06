@@ -54,22 +54,29 @@ export default function MainLayout() {
   useEffect(() => {
     const checkAuth = async () => {
       const urlToken = searchParams.get('token');
-      if (urlToken) {
-        localStorage.setItem(ADMIN_TOKEN, urlToken);
-        window.history.replaceState({}, document.title, window.location.pathname);
+      const storeState = useAuthStore.getState();
+      const currentToken = urlToken || storeState.token || localStorage.getItem(ADMIN_TOKEN);
+
+      if (!currentToken) {
+        navigate('/pages/login', { replace: true });
+        return;
       }
-      const token = localStorage.getItem(ADMIN_TOKEN);
-      if (!token) { navigate('/pages/login', { replace: true }); return; }
+
       try {
+        if (urlToken) {
+          localStorage.setItem(ADMIN_TOKEN, urlToken);
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+
         const response = await authApi.getProfile();
         const result = response.data;
         if (result.status === 'success') {
           const user = result.data;
           // Normalize role typo
-          if (user.role === 'supper_admin' || user.role === 'supper_admin' || user.role === 'super_admib') {
+          if (user.role === 'supper_admin' || user.role === 'super_admib') {
             user.role = 'super_admin';
           }
-          storeLogin(user, token, user.role);
+          storeLogin(user, currentToken, user.role);
           setIsChecking(false);
         } else {
           storeLogout();

@@ -16,23 +16,20 @@ const adminPages = {
   type: 'group',
   children: [
     {
-      id: 'ai-support',
+      id: 'ai:chat',
       title: 'HTBC mùa mưa',
       type: 'item',
       url: '/admin/ai-support',
       icon: icons.IconMessageChatbot,
-      breadcrumbs: false,
-      roles: ['super_admin']
+      breadcrumbs: false
     },
     {
-      id: 'rain-management',
       title: 'Lượng mưa',
       type: 'collapse',
       icon: icons.IconCloudRain,
-      roles: ['super_admin'],
       children: [
         {
-          id: 'station-rain-summary',
+          id: 'rain:view',
           title: 'Bảng mưa',
           type: 'item',
           url: '/admin/station/rain/summary',
@@ -40,7 +37,7 @@ const adminPages = {
           breadcrumbs: false
         },
         {
-          id: 'station-rain-list',
+          id: 'rain:view',
           title: 'Danh sách',
           type: 'item',
           url: '/admin/station/rain/list',
@@ -48,7 +45,7 @@ const adminPages = {
           breadcrumbs: false
         },
         {
-          id: 'station-rain-compare',
+          id: 'rain:view',
           title: 'So sánh mưa',
           type: 'item',
           url: '/admin/station/rain/compare',
@@ -56,7 +53,7 @@ const adminPages = {
           breadcrumbs: false
         },
         {
-          id: 'station-rain-history',
+          id: 'rain:view',
           title: 'Lịch sử',
           type: 'item',
           url: '/admin/station/rain/history',
@@ -66,23 +63,12 @@ const adminPages = {
       ]
     },
     {
-      id: 'inundation-report',
-      title: 'Điểm ngập',
-      type: 'item',
-      url: '/admin/inundation',
-      icon: icons.IconTornado,
-      breadcrumbs: false,
-      roles: ['employee']
-    },
-    {
-      id: 'inundation-management',
       title: 'Điểm ngập',
       type: 'collapse',
       icon: icons.IconTornado,
-      roles: ['super_admin', 'admin_org', 'reviewer'],
       children: [
         {
-          id: 'station-inundation-list',
+          id: 'inundation:view',
           title: 'Danh sách',
           type: 'item',
           url: '/admin/station/inundation/list',
@@ -90,16 +76,15 @@ const adminPages = {
           breadcrumbs: false
         },
         {
-          id: 'inundation',
+          id: 'inundation:view',
           title: 'Điểm ngập',
           type: 'item',
           url: '/admin/inundation',
           icon: icons.IconTornado,
-          breadcrumbs: false,
-          roles: ['super_admin', 'admin_org']
+          breadcrumbs: false
         },
         {
-          id: 'inundation-list',
+          id: 'inundation:view',
           title: 'Quản lý báo cáo',
           type: 'item',
           url: '/admin/inundation-list',
@@ -107,34 +92,22 @@ const adminPages = {
           breadcrumbs: false,
         },
         {
-          id: 'station-inundation-history',
+          id: 'inundation:view',
           title: 'Lịch sử',
           type: 'item',
           url: '/admin/station/inundation/history',
           icon: icons.IconHistory,
-          breadcrumbs: false,
-          roles: ['super_admin', 'admin_org']
+          breadcrumbs: false
         }
       ]
     },
     {
-      id: 'emergency-construction-report',
-      title: 'BC CT KC',
-      type: 'item',
-      url: '/admin/emergency-construction/dashboard',
-      icon: icons.IconAlertTriangle,
-      breadcrumbs: false,
-      roles: ['employee']
-    },
-    {
-      id: 'river-management',
       title: 'Mực nước',
       type: 'collapse',
       icon: icons.IconRipple,
-      roles: ['super_admin'],
       children: [
         {
-          id: 'station-water-summary',
+          id: 'water:view',
           title: 'Bảng sông hồ',
           type: 'item',
           url: '/admin/station/water/summary',
@@ -142,14 +115,12 @@ const adminPages = {
           breadcrumbs: false
         },
         {
-          id: 'lake-management',
           title: 'Mực nước hồ',
           type: 'collapse',
           icon: icons.IconDroplets,
-          roles: ['super_admin'],
           children: [
             {
-              id: 'station-lake-list',
+              id: 'water:view',
               title: 'Danh sách',
               type: 'item',
               url: '/admin/station/lake/list',
@@ -157,7 +128,7 @@ const adminPages = {
               breadcrumbs: false
             },
             {
-              id: 'station-lake-history',
+              id: 'water:view',
               title: 'Lịch sử',
               type: 'item',
               url: '/admin/station/lake/history',
@@ -167,13 +138,11 @@ const adminPages = {
           ]
         },
         {
-          id: 'river-management',
           title: 'Mực nước sông',
           type: 'collapse',
           icon: icons.IconDroplets,
-          roles: ['super_admin'],
           children: [{
-            id: 'station-river-list',
+            id: 'water:view',
             title: 'Danh sách',
             type: 'item',
             url: '/admin/station/river/list',
@@ -181,7 +150,7 @@ const adminPages = {
             breadcrumbs: false
           },
           {
-            id: 'station-river-history',
+            id: 'water:view',
             title: 'Lịch sử',
             type: 'item',
             url: '/admin/station/river/history',
@@ -191,17 +160,13 @@ const adminPages = {
         }
       ]
     },
-
-
     {
-      id: 'emergency-construction',
       title: 'BC CT KC',
       type: 'collapse',
       icon: icons.IconAlertTriangle,
-      roles: ['super_admin', 'admin_org'],
       children: [
         {
-          id: 'emergency-construction-list',
+          id: 'emergency:view',
           title: 'Danh sách',
           type: 'item',
           url: '/admin/emergency-construction',
@@ -209,7 +174,7 @@ const adminPages = {
           breadcrumbs: false
         },
         {
-          id: 'emergency-construction-report-child',
+          id: 'emergency:view',
           title: 'Báo cáo',
           type: 'item',
           url: '/admin/emergency-construction/dashboard',
@@ -217,7 +182,7 @@ const adminPages = {
           breadcrumbs: false
         },
         {
-          id: 'emergency-construction-report-history',
+          id: 'emergency:view',
           title: 'Lịch sử báo cáo',
           type: 'item',
           url: '/admin/emergency-construction/report-history',
@@ -227,68 +192,75 @@ const adminPages = {
       ]
     },
     {
-      id: 'cua-pai',
+      id: 'cuapai:view',
       title: 'Cửa phai',
       type: 'item',
       url: '/admin/cua-pai',
       icon: icons.IconDoor,
-      breadcrumbs: false,
-      roles: ['super_admin']
+      breadcrumbs: false
     },
     {
-      id: 'tram-bom',
+      id: 'trambom:view',
       title: 'Trạm bơm',
       type: 'item',
       url: '/admin/tram-bom',
       icon: icons.IconEngine,
-      breadcrumbs: false,
-      roles: ['super_admin', 'employee']
+      breadcrumbs: false
     },
     {
-      id: 'sa-hinh-ngap',
+      id: 'sa-hinh-ngap:view',
       title: 'Sa hình ngập',
       type: 'item',
       url: '/admin/sa-hinh-ngap',
       icon: icons.IconMap,
-      breadcrumbs: false,
-      roles: ['super_admin']
+      breadcrumbs: false
     },
     {
-      id: 'tai-khoan-phan-quyen',
-      title: 'Tài khoản',
+      title: 'Hệ thống',
       type: 'collapse',
       icon: icons.IconUsers,
-      roles: ['super_admin', 'admin_org'],
       children: [
         {
-          id: 'employee-list',
+          id: 'employee:view',
           title: 'Tài khoản',
           type: 'item',
           url: '/admin/employee',
           icon: icons.IconUsers,
-          breadcrumbs: false,
-          roles: ['super_admin', 'admin_org']
+          breadcrumbs: false
         },
         {
-          id: 'organization-list',
-          title: 'Phân quyền',
+          id: 'organization:view',
+          title: 'Chi nhánh',
           type: 'item',
           url: '/admin/organization',
           icon: icons.IconBuilding,
-          breadcrumbs: false,
-          roles: ['super_admin']
+          breadcrumbs: false
+        },
+        {
+          id: 'role-matrix:view',
+          title: 'Ma trận quyền',
+          type: 'item',
+          url: '/admin/role-matrix',
+          icon: icons.IconList,
+          breadcrumbs: false
+        },
+        {
+          id: 'role:view',
+          title: 'Danh sách Role',
+          type: 'item',
+          url: '/admin/role',
+          icon: icons.IconUsers,
+          breadcrumbs: false
         }
       ]
     },
     {
-      id: 'contract-management',
       title: 'Hợp đồng',
       type: 'collapse',
       icon: icons.IconClipboardList,
-      roles: ['super_admin', 'manager_contract'],
       children: [
         {
-          id: 'ai-contract',
+          id: 'contract-ai:chat',
           title: 'AI Trợ lý',
           type: 'item',
           url: '/admin/ai-contract',
@@ -296,7 +268,7 @@ const adminPages = {
           breadcrumbs: false
         },
         {
-          id: 'contract',
+          id: 'contract:view',
           title: 'Danh sách HĐ',
           type: 'item',
           url: '/admin/contract',
@@ -304,7 +276,7 @@ const adminPages = {
           breadcrumbs: false
         },
         {
-          id: 'contract-category',
+          id: 'contract-category:view',
           title: 'Danh mục',
           type: 'item',
           url: '/admin/contract-category',

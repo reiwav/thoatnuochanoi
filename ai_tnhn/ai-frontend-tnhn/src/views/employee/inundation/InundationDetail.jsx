@@ -13,6 +13,7 @@ import {
 import { toast } from 'react-hot-toast';
 import inundationApi from 'api/inundation';
 import InundationReportPanel from './InundationReportPanel';
+import useAuthStore from 'store/useAuthStore';
 
 import { getInundationImageUrl } from 'utils/imageHelper';
 import { getTrafficStatusColor } from 'utils/trafficStatusHelper';
@@ -25,7 +26,7 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
     const [reviewDialog, setReviewDialog] = useState({ open: false, itemId: null, type: null, comment: '' });
     const [editMode, setEditMode] = useState({ open: false, item: null });
 
-    const userRole = user?.role || localStorage.getItem('role');
+    const { role: userRole } = useAuthStore();
 
     const handleOpenViewer = (imgs, idx = 0) => {
         if (!imgs || imgs.length === 0) {

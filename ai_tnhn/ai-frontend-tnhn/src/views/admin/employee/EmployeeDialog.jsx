@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
     Dialog, DialogTitle, DialogContent, DialogActions,
     TextField, Button, Grid, IconButton, Stack, FormControlLabel, Switch,
-    FormControl, InputLabel, Select, MenuItem, CircularProgress, Box, Chip, Typography
+    FormControl, InputLabel, Select, MenuItem, CircularProgress, Box, Chip, Typography, ListSubheader
 } from '@mui/material';
 import { IconX } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
@@ -10,11 +10,15 @@ import inundationApi from 'api/inundation';
 import emergencyConstructionApi from 'api/emergencyConstruction';
 import pumpingStationApi from 'api/pumpingStation';
 import SelectionDialog from './SelectionDialog';
+import useAuthStore from 'store/useAuthStore';
+import axiosClient from 'api/axiosClient';
 
-const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizations = [], defaultOrgId = '', userRole = '' }) => {
+const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizations = [], defaultOrgId = '', canSelectOrg }) => {
+    const { hasPermission, role: userRole } = useAuthStore();
     const [points, setPoints] = useState([]);
     const [constructions, setConstructions] = useState([]);
     const [pumpingStations, setPumpingStations] = useState([]);
+    const [roles, setRoles] = useState([]);
     const [fetchingData, setFetchingData] = useState(false);
     const [pointSelectionOpen, setPointSelectionOpen] = useState(false);
     const [constructionSelectionOpen, setConstructionSelectionOpen] = useState(false);
@@ -62,14 +66,15 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
 
     useEffect(() => {
         const fetchLocationData = async () => {
-            if (!open || formData.role !== 'employee') return;
+            if (!open) return;
             const orgIdToUse = formData.org_id || defaultOrgId;
             setFetchingData(true);
             try {
-                const [pointsRes, consRes, pumpRes] = await Promise.all([
+                const [pointsRes, consRes, pumpRes, rolesRes] = await Promise.all([
                     inundationApi.getPointsStatus({ per_page: 1000, org_id: orgIdToUse }),
                     emergencyConstructionApi.getAll({ per_page: 1000, org_id: orgIdToUse }),
-                    pumpingStationApi.list({ per_page: 1000 })
+                    pumpingStationApi.list({ per_page: 1000 }),
+                    axiosClient.get('/admin/roles')
                 ]);
 
                 if (pointsRes.data?.status === 'success') {
@@ -83,15 +88,21 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                 if (pumpRes.data?.status === 'success') {
                     setPumpingStations(Array.isArray(pumpRes.data.data?.data) ? pumpRes.data.data.data : []);
                 }
+
+                if (rolesRes.data?.status === 'success') {
+                    let rls = rolesRes.data.data || [];
+                    rls = rls.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'vi', { sensitivity: 'base' }));
+                    setRoles(rls);
+                }
             } catch (err) {
-                console.error('Lỗi tải dữ liệu địa điểm:', err);
+                console.error('Lỗi tải dữ liệu:', err);
             } finally {
                 setFetchingData(false);
             }
         };
 
         fetchLocationData();
-    }, [open, formData.org_id, formData.role, defaultOrgId]);
+    }, [open, formData.org_id, defaultOrgId]);
 
     const handleChange = (field, value) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -103,13 +114,6 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
         if (userRole !== 'admin_org' && !formData.org_id) return toast.error('Vui lòng chọn công ty');
         if (!isEdit && !formData.password) return toast.error('Vui lòng nhập mật khẩu');
         onSubmit(formData);
-    };
-
-    const roleLabels = {
-        admin_org: 'Quản lý',
-        manager_contract: 'Quản lý Hợp đồng',
-        reviewer: 'Kiểm tra rà soát',
-        employee: 'Nhân viên'
     };
 
     return (
@@ -142,24 +146,34 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                                 onChange={(e) => handleChange('role', e.target.value)}
                                 sx={{ borderRadius: '12px', bgcolor: '#f8fafc' }}
                             >
-                                <MenuItem value="admin_org">Quản lý</MenuItem>
-                                {userRole === 'super_admin' && <MenuItem value="manager_contract">Quản lý Hợp đồng</MenuItem>}
-                                <MenuItem value="reviewer">Kiểm tra rà soát</MenuItem>
-                                <MenuItem value="employee">Nhân viên</MenuItem>
+                                {roles.length === 0 ? (
+                                    <MenuItem value={formData.role}>
+                                        <CircularProgress size={14} sx={{ mr: 1 }} /> Đang tải...
+                                    </MenuItem>
+                                ) : (
+                                    roles.map((r) => (
+                                        <MenuItem key={r.code} value={r.code}>
+                                            {r.name}
+                                        </MenuItem>
+                                    ))
+                                )}
+
+                                {!roles.find(r => r.code === 'employee') && (
+                                    <MenuItem value="employee">Employee (Legacy)</MenuItem>
+                                )}
                             </Select>
                         </FormControl>
                     </Box>
 
-                    {/* Org selector dropdown - Only for Super Admin */}
-                    {userRole === 'super_admin' && (
+                    {/* Org selector dropdown - Only for privileged roles */}
+                    {canSelectOrg && (
                         <FormControl fullWidth size="small">
                             <InputLabel>Công ty / Xí nghiệp *</InputLabel>
                             <Select
                                 value={formData.org_id}
                                 label="Công ty / Xí nghiệp *"
                                 onChange={(e) => handleChange('org_id', e.target.value)}
-                                disabled={!!defaultOrgId} // disable if came from org page
-                                sx={{ borderRadius: '12px', bgcolor: defaultOrgId ? '#f0f0f0' : '#f8fafc' }}
+                                sx={{ borderRadius: '12px', bgcolor: '#f8fafc' }}
                             >
                                 {organizations.map((org) => (
                                     <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>

@@ -21,6 +21,7 @@ import NavItem from '../NavItem';
 import Transitions from 'ui-component/extended/Transitions';
 
 import { useGetMenuMaster } from 'api/menu';
+import useAuthStore from 'store/useAuthStore';
 import useConfig from 'hooks/useConfig';
 import useMenuCollapse from 'hooks/useMenuCollapse';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -30,6 +31,9 @@ import { IconChevronDown, IconChevronRight, IconChevronUp } from '@tabler/icons-
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 
 export default function NavCollapse({ menu, level, parentId }) {
+  const { hasPermission } = useAuthStore();
+  if (menu?.id && !hasPermission(menu.id)) return null;
+
   const theme = useTheme();
   const downMD = useMediaQuery(theme.breakpoints.down('md'));
   const ref = useRef(null);
@@ -98,6 +102,16 @@ export default function NavCollapse({ menu, level, parentId }) {
   }, [pathname, menu]);
 
   // menu collapse & item
+  const filteredChildren = menu.children?.filter((item) => {
+    if (item.id && !hasPermission(item.id)) return false;
+    return true;
+  });
+
+  // If No children are visible, hide the whole collapse
+  if ((!filteredChildren || filteredChildren.length === 0) && !menu.url) {
+    return null;
+  }
+
   const menus = menu.children?.map((item) => {
     switch (item.type) {
       case 'collapse':

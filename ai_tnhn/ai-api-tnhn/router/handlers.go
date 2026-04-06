@@ -31,4 +31,7 @@ type HandlerFuncs struct {
 	GenerateAIDynamicReportHandler gin.HandlerFunc
 	GetRainDataByDate              gin.HandlerFunc
 	DatabaseQueryHandler           gin.HandlerFunc
+	GetPermissionMatrixHandler    gin.HandlerFunc
+	UpdatePermissionMatrixHandler gin.HandlerFunc
+	GetMyPermissionsHandler       gin.HandlerFunc
 }

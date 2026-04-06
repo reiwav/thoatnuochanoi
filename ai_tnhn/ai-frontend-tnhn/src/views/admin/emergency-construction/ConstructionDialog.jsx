@@ -7,8 +7,10 @@ import {
 import { IconX } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 import organizationApi from 'api/organization';
+import useAuthStore from 'store/useAuthStore';
 
 const ConstructionDialog = ({ open, onClose, onSubmit, item, isEdit, userRole = '', defaultOrgId = '' }) => {
+    const { hasPermission } = useAuthStore();
     const [formData, setFormData] = useState({
         name: '',
         description: '',
@@ -151,7 +153,7 @@ const ConstructionDialog = ({ open, onClose, onSubmit, item, isEdit, userRole = 
                             />
                         </Grid>
                     </Grid>
-                    {userRole === 'super_admin' && (
+                    {hasPermission('organization:view') && (
                         <TextField
                             fullWidth select label="Đơn vị quản lý" required size="small"
                             value={formData.org_id}

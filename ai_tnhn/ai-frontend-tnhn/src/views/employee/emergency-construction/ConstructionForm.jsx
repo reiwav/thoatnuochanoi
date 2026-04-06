@@ -18,6 +18,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import { getInundationImageUrl } from 'utils/imageHelper';
 import { processAndWatermark } from 'utils/imageProcessor';
 import { InputAdornment } from '@mui/material';
+import useAuthStore from 'store/useAuthStore';
 
 const TabSwitcher = ({ tab, setTab, visibleTabs }) => {
     if (visibleTabs.length <= 1) return null;
@@ -76,7 +77,7 @@ const ConstructionForm = () => {
     const [imagePreviews, setImagePreviews] = useState([]);
     const [existingImages, setExistingImages] = useState([]);
 
-    const userRole = localStorage.getItem('role') || 'employee';
+    const { role: userRole } = useAuthStore();
     const basePath = userRole === 'employee' ? '/company' : '/admin';
 
     useEffect(() => {
@@ -552,17 +553,19 @@ const ConstructionForm = () => {
             />
             {tabValue === 0 && (
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', px: { xs: 1, md: 2 }, mb: -1, position: 'relative', zIndex: 10 }}>
-                    <Button
-                        variant="outlined"
-                        color="primary"
-                        size="small"
-                        startIcon={<IconDownload size={16} />}
-                        onClick={handleExportExcel}
-                        disabled={history.length === 0}
-                        sx={{ borderRadius: 2, bgcolor: 'background.paper' }}
-                    >
-                        Xuất Excel
-                    </Button>
+                    {useAuthStore().hasPermission('emergency:export') && (
+                        <Button
+                            variant="outlined"
+                            color="primary"
+                            size="small"
+                            startIcon={<IconDownload size={16} />}
+                            onClick={handleExportExcel}
+                            disabled={history.length === 0}
+                            sx={{ borderRadius: 2, bgcolor: 'background.paper' }}
+                        >
+                            Xuất Excel
+                        </Button>
+                    )}
                 </Box>
             )}
             {tabValue === 0 ? renderHistory() : renderForm()}

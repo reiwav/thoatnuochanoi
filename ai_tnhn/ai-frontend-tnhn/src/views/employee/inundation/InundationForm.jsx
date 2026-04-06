@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useSearchParams, useNavigate, useOutletContext } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
     Box, Button, Typography, Stack,
     IconButton, useMediaQuery
@@ -14,15 +14,17 @@ import MainCard from 'ui-component/cards/MainCard';
 import inundationApi from 'api/inundation';
 import InundationReportPanel from './InundationReportPanel';
 import InundationDetail from './InundationDetail';
+import useAuthStore from 'store/useAuthStore';
 
 const InundationForm = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const navigate = useNavigate();
-    const { userInfo: user } = useOutletContext();
+    
+    // Get auth state from Zustand
+    const { role: userRole, user } = useAuthStore();
+    
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-
-    const userRole = localStorage.getItem('role') || 'employee';
     const basePath = userRole === 'employee' ? '/company' : '/admin';
 
     const [tab, setTab] = useState(0); // 0 = Báo mới/Cập nhật, 1 = Chi tiết

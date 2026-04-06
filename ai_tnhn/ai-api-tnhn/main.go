@@ -20,6 +20,7 @@ import (
 	"ai-api-tnhn/internal/service/organization"
 	"ai-api-tnhn/internal/service/pump"
 	pumpingstation "ai-api-tnhn/internal/service/pumping_station"
+	"ai-api-tnhn/internal/service/permission"
 	querysvc "ai-api-tnhn/internal/service/query"
 	"ai-api-tnhn/internal/service/station"
 	"ai-api-tnhn/internal/service/stationdata"
@@ -28,6 +29,7 @@ import (
 	"ai-api-tnhn/internal/service/token"
 	"ai-api-tnhn/internal/service/water"
 	"ai-api-tnhn/internal/service/weather"
+	"ai-api-tnhn/internal/service/role"
 	"ai-api-tnhn/router"
 	"ai-api-tnhn/router/middleware"
 	"ai-api-tnhn/utils/web"
@@ -63,6 +65,9 @@ func main() {
 	contractCategoryRepo := query.NewContractCategoryRepository(db.DB, "contract_categories", "ctc", log)
 	contractRepo := query.NewContractRepository(db.DB, "contracts", "ctr", log)
 	pumpingStationRepo := query.NewPumpingStationRepo(db.DB, log)
+	permRepo := query.NewPermissionRepo(db.DB, "permissions", "perm", log)
+	rolePermRepo := query.NewRolePermissionRepo(db.DB, "role_permissions", "rp", log)
+	roleRepo := query.NewRoleRepo(db.DB, "roles", "role", log)
 
 	rainStationRepo := query.NewRainStationRepo(db.DB, "rain_stations", "rst", log)
 	lakeStationRepo := query.NewLakeStationRepo(db.DB, "lake_stations", "lst", log)
@@ -113,6 +118,8 @@ func main() {
 	contractCategoryService := contract_category.NewService(contractCategoryRepo, driveService)
 	contractService := contract.NewService(contractRepo, contractCategoryRepo, orgRepo, driveService)
 	pumpingStationService := pumpingstation.NewService(pumpingStationRepo, userRepo)
+	permService := permission.NewService(permRepo, rolePermRepo)
+	roleService := role.NewService(roleRepo)
 	pumpWorker := pump.NewWorker(log, pumpingStationService)
 	pumpingStationService.SetWorker(pumpWorker)
 	pumpWorker.Start(context.Background())
@@ -178,6 +185,8 @@ func main() {
 	contractCategoryHandler := handler.NewContractCategoryHandler(contractCategoryService, authService, contextWith)
 	contractHandler := handler.NewContractHandler(contractService, authService, contextWith)
 	pumpingStationHandler := handler.NewPumpingStationHandler(pumpingStationService, authService, contextWith)
+	permHandler := handler.NewPermissionHandler(permService, contextWith)
+	roleHandler := handler.NewRoleHandler(roleService, contextWith)
 	googleHandler := handler.NewGoogleHandler(googleApiService, geminiService, driveService, waterService, emailService, contextWith, confg.GoogleDriveConfig, log, weatherService, aiChatLogRepo)
 
 	mid := middleware.NewMiddleware(confg, tokenRepo, contextWith, log)
@@ -206,8 +215,11 @@ func main() {
 		GenerateAIDynamicReportHandler: googleHandler.GenerateAIDynamicReport,
 		GetRainDataByDate:              waterHandler.GetRainDataByDate,
 		DatabaseQueryHandler:           queryHandler.Query,
+		GetPermissionMatrixHandler:    permHandler.GetMatrix,
+		UpdatePermissionMatrixHandler: permHandler.UpdateMatrix,
+		GetMyPermissionsHandler:       permHandler.GetMyPermissions,
 	}
 
-	r := handlers.Create(mid, orgHandler, empHandler, stationHandler, inuHandler, waterHandler, googleHandler, queryHandler, emConstructionHandler, weatherHandler, contractCategoryHandler, contractHandler, pumpingStationHandler)
+	r := handlers.Create(mid, orgHandler, empHandler, stationHandler, inuHandler, waterHandler, googleHandler, queryHandler, emConstructionHandler, weatherHandler, contractCategoryHandler, contractHandler, pumpingStationHandler, permHandler, roleHandler)
 	r.Run(confg.Port)
 }

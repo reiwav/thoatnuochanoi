@@ -75,11 +75,11 @@ export default function NavGroup({ item, lastItem, remItems, lastItemId, setSele
   }, [pathname, currentItem]);
 
   // menu list collapse & items
-  const { role: userRole } = useAuthStore();
+  const { hasPermission } = useAuthStore();
 
   const items = currentItem.children?.map((menu) => {
-    // Role based filtering
-    if (menu?.roles && !menu.roles.includes(userRole)) {
+    // Permission based filtering
+    if (menu?.id && !hasPermission(menu.id)) {
       return null;
     }
 
@@ -96,6 +96,11 @@ export default function NavGroup({ item, lastItem, remItems, lastItemId, setSele
         );
     }
   });
+
+  // Hide group if no items are visible
+  if (items.every(item => item === null)) {
+    return null;
+  }
 
   return (
     <>

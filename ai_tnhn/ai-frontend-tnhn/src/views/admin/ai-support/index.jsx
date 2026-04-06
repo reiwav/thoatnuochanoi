@@ -11,6 +11,7 @@ import {
     IconLayoutSidebarRightExpand, IconLayoutSidebarRightCollapse
 } from '@tabler/icons-react';
 import axiosClient from 'api/axiosClient';
+import useAuthStore from 'store/useAuthStore';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import dayjs from 'dayjs';
@@ -22,6 +23,7 @@ dayjs.locale('vi');
 
 
 const AiSupport = () => {
+    const { user: userInfo, hasPermission } = useAuthStore();
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
@@ -600,61 +602,82 @@ const AiSupport = () => {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, md: 1.5 } }}>
                         {!isMobile && (
                             <>
-                                <Button
-                                    variant="contained"
-                                    color="success"
-                                    startIcon={<IconRefresh size={18} />}
-                                    onClick={handleQuickReportText}
-                                    sx={{ borderRadius: '8px', boxShadow: 'none' }}
-                                >
-                                    Tin nhắn báo cáo
-                                </Button>
-                                <Button
-                                    variant="contained"
-                                    color="secondary"
-                                    startIcon={<IconRobot size={18} />}
-                                    onClick={handleAIDynamicReport}
-                                    sx={{ borderRadius: '8px', boxShadow: 'none' }}
-                                >
-                                    Báo cáo tổng hợp
-                                </Button>
-                                <Button
-                                    variant="outlined"
-                                    color="primary"
-                                    startIcon={<IconBolt size={18} />}
-                                    onClick={handleQuickReport}
-                                    sx={{ borderRadius: '8px', boxShadow: 'none', borderColor: 'divider' }}
-                                >
-                                    Báo cáo sau mưa (Words)
-                                </Button>
-                                <Button
-                                    variant="outlined"
-                                    color="secondary"
-                                    startIcon={<IconDatabase size={18} />}
-                                    onClick={() => handleConstructionReport('')}
-                                    sx={{ borderRadius: '8px', borderColor: 'divider', color: 'text.primary', '&:hover': { borderColor: 'primary.main', color: 'primary.main', bgcolor: 'transparent' } }}
-                                >
-                                    BC CT KC
-                                </Button>
+                                {hasPermission('ai:report') && (
+                                    <Button
+                                        variant="contained"
+                                        color="success"
+                                        startIcon={<IconRefresh size={18} />}
+                                        onClick={handleQuickReportText}
+                                        sx={{ borderRadius: '8px', boxShadow: 'none' }}
+                                    >
+                                        Tin nhắn báo cáo
+                                    </Button>
+                                )}
+                                {hasPermission('ai:synthesis') && (
+                                    <Button
+                                        variant="contained"
+                                        color="secondary"
+                                        startIcon={<IconRobot size={18} />}
+                                        onClick={handleAIDynamicReport}
+                                        sx={{ borderRadius: '8px', boxShadow: 'none' }}
+                                    >
+                                        Báo cáo tổng hợp
+                                    </Button>
+                                )}
+                                {hasPermission('ai:post-rain') && (
+                                    <Button
+                                        variant="outlined"
+                                        color="primary"
+                                        startIcon={<IconBolt size={18} />}
+                                        onClick={handleQuickReport}
+                                        sx={{ borderRadius: '8px', boxShadow: 'none', borderColor: 'divider' }}
+                                    >
+                                        Báo cáo sau mưa (Words)
+                                    </Button>
+                                )}
+                                {hasPermission('ai:report-emergency') && (
+                                    <Button
+                                        variant="outlined"
+                                        color="secondary"
+                                        startIcon={<IconDatabase size={18} />}
+                                        onClick={() => handleConstructionReport('')}
+                                        sx={{ borderRadius: '8px', borderColor: 'divider', color: 'text.primary', '&:hover': { borderColor: 'primary.main', color: 'primary.main', bgcolor: 'transparent' } }}
+                                    >
+                                        BC CT KC
+                                    </Button>
+                                )}
                             </>
                         )}
                         {isMobile && (
                             <>
-                                <Tooltip title="Tin nhắn báo cáo">
-                                    <IconButton color="success" onClick={handleQuickReportText} sx={{ bgcolor: 'success.light', borderRadius: '8px' }}>
-                                        <IconRefresh size={20} />
-                                    </IconButton>
-                                </Tooltip>
-                                <Tooltip title="Báo cáo tổng hợp">
-                                    <IconButton color="secondary" onClick={handleAIDynamicReport} sx={{ bgcolor: 'secondary.light', borderRadius: '8px', ml: 1 }}>
-                                        <IconRobot size={20} />
-                                    </IconButton>
-                                </Tooltip>
-                                <Tooltip title="Báo cáo sau mưa (Words)">
-                                    <IconButton color="primary" onClick={handleQuickReport} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px' }}>
-                                        <IconBolt size={20} />
-                                    </IconButton>
-                                </Tooltip>
+                                {hasPermission('ai:report') && (
+                                    <Tooltip title="Tin nhắn báo cáo">
+                                        <IconButton color="success" onClick={handleQuickReportText} sx={{ bgcolor: 'success.light', borderRadius: '8px' }}>
+                                            <IconRefresh size={20} />
+                                        </IconButton>
+                                    </Tooltip>
+                                )}
+                                {hasPermission('ai:synthesis') && (
+                                    <Tooltip title="Báo cáo tổng hợp">
+                                        <IconButton color="secondary" onClick={handleAIDynamicReport} sx={{ bgcolor: 'secondary.light', borderRadius: '8px', ml: 1 }}>
+                                            <IconRobot size={20} />
+                                        </IconButton>
+                                    </Tooltip>
+                                )}
+                                {hasPermission('ai:post-rain') && (
+                                    <Tooltip title="Báo cáo sau mưa (Words)">
+                                        <IconButton color="primary" onClick={handleQuickReport} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', ml: 1 }}>
+                                            <IconBolt size={20} />
+                                        </IconButton>
+                                    </Tooltip>
+                                )}
+                                {hasPermission('ai:report-emergency') && (
+                                    <Tooltip title="BC CT KC">
+                                        <IconButton color="secondary" onClick={() => handleConstructionReport('')} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', ml: 1 }}>
+                                            <IconDatabase size={20} />
+                                        </IconButton>
+                                    </Tooltip>
+                                )}
                             </>
                         )}
                         <Tooltip title={showStats ? "Ẩn trạng thái" : "Xem trạng thái hệ thống"}>
@@ -690,9 +713,10 @@ const AiSupport = () => {
                             <Avatar sx={{
                                 bgcolor: msg.role === 'user' ? 'primary.light' : 'secondary.light',
                                 color: msg.role === 'user' ? 'primary.main' : 'secondary.main',
-                                width: 32, height: 32
+                                width: 32, height: 32,
+                                fontSize: '0.875rem', fontWeight: 700
                             }}>
-                                {msg.role === 'user' ? <IconUser size={18} /> : <IconRobot size={18} />}
+                                {msg.role === 'user' ? (userInfo?.name?.charAt(0) || <IconUser size={18} />) : <IconRobot size={18} />}
                             </Avatar>
                             <Paper sx={{
                                 p: 2,
@@ -869,14 +893,14 @@ const AiSupport = () => {
                 <Box sx={{ p: 3, borderTop: '1px solid', borderColor: 'divider' }}>
                     <TextField
                         fullWidth
-                        placeholder="Nhập câu hỏi của bạn tại đây..."
+                        placeholder={hasPermission('ai:chat') ? "Nhập câu hỏi của bạn tại đây..." : "Tài khoản của bạn không có quyền chat tự do"}
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                        disabled={loading}
+                        onKeyPress={(e) => e.key === 'Enter' && hasPermission('ai:chat') && handleSend()}
+                        disabled={loading || !hasPermission('ai:chat')}
                         InputProps={{
                             endAdornment: (
-                                <IconButton color="primary" onClick={handleSend} disabled={!input.trim() || loading}>
+                                <IconButton color="primary" onClick={handleSend} disabled={!hasPermission('ai:chat') || !input.trim() || loading}>
                                     <IconSend size={24} />
                                 </IconButton>
                             ),

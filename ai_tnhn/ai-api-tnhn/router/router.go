@@ -14,7 +14,7 @@ import (
 )
 
 // Create handlers
-func (h *HandlerFuncs) Create(mid middleware.Middleware, orgHandler *handler.OrganizationHandler, empHandler *handler.EmployeeHandler, stationHandler *handler.StationHandler, inuHandler *handler.InundationHandler, waterHandler *handler.WaterHandler, googleHandler *handler.GoogleHandler, queryHandler *handler.QueryHandler, emConstructionHandler *handler.EmergencyConstructionHandler, weatherHandler *handler.WeatherHandler, contractCategoryHandler *handler.ContractCategoryHandler, contractHandler *handler.ContractHandler, pumpingHandler *handler.PumpingStationHandler) *gin.Engine {
+func (h *HandlerFuncs) Create(mid middleware.Middleware, orgHandler *handler.OrganizationHandler, empHandler *handler.EmployeeHandler, stationHandler *handler.StationHandler, inuHandler *handler.InundationHandler, waterHandler *handler.WaterHandler, googleHandler *handler.GoogleHandler, queryHandler *handler.QueryHandler, emConstructionHandler *handler.EmergencyConstructionHandler, weatherHandler *handler.WeatherHandler, contractCategoryHandler *handler.ContractCategoryHandler, contractHandler *handler.ContractHandler, pumpingHandler *handler.PumpingStationHandler, permHandler *handler.PermissionHandler, roleHandler *handler.RoleHandler) *gin.Engine {
 	r := gin.Default()
 	// ... (cors omitted for brevity in replace_file_content if I were using it, but I'll include enough context)
 	r.Use(
@@ -82,6 +82,8 @@ func (h *HandlerFuncs) Create(mid middleware.Middleware, orgHandler *handler.Org
 	h.WeatherRoutes(apiAdmin, mid, weatherHandler)
 	h.ContractCategoryRoutes(apiAdmin, mid, contractCategoryHandler)
 	h.ContractRoutes(apiAdmin, mid, contractHandler)
+	h.PermissionRoutes(apiAdmin, mid, permHandler)
+	h.RoleRoutes(apiAdmin, mid, roleHandler)
 	apiAdmin.GET("/weather/rain/compare", mid.MidBasicType(), weatherHandler.GetComparisonReport)
 
 	apiAdmin.POST("/database/query", mid.MidBasicType(), h.DatabaseQueryHandler)

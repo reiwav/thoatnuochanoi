@@ -11,8 +11,9 @@ import { toast } from 'react-hot-toast';
 import emergencyConstructionApi from 'api/emergencyConstruction';
 import ConstructionDialog from './ConstructionDialog';
 import organizationApi from 'api/organization';
+import useAuthStore from 'store/useAuthStore';
 
-const CollapsibleConstructionRow = ({ row, handleOpenEdit, handleDelete, orgs, getStatusChip, isMobile, userRole, navigate }) => {
+const CollapsibleConstructionRow = ({ row, handleOpenEdit, handleDelete, orgs, getStatusChip, isMobile, userRole, navigate, hasPermission }) => {
     const [open, setOpen] = useState(false);
 
     if (isMobile) {
@@ -57,8 +58,12 @@ const CollapsibleConstructionRow = ({ row, handleOpenEdit, handleDelete, orgs, g
 
 
                             <Stack direction="row" justifyContent="flex-end" spacing={1} sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-                                <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}><IconEdit size={20} /></IconButton>
-                                <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}><IconTrash size={20} /></IconButton>
+                                {hasPermission('emergency:edit') && (
+                                    <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}><IconEdit size={20} /></IconButton>
+                                )}
+                                {hasPermission('emergency:delete') && (
+                                    <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}><IconTrash size={20} /></IconButton>
+                                )}
                             </Stack>
                         </Box>
                     </Collapse>
@@ -84,8 +89,12 @@ const CollapsibleConstructionRow = ({ row, handleOpenEdit, handleDelete, orgs, g
                 <TableCell align="center">{getStatusChip(row.status)}</TableCell>
                 <TableCell align="right">
                     <Stack direction="row" spacing={1} justifyContent="flex-end">
-                        <Tooltip title="Chỉnh sửa"><IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}><IconEdit size={18} /></IconButton></Tooltip>
-                        <Tooltip title="Xóa"><IconButton color="error" size="small" onClick={() => handleDelete(row.id)}><IconTrash size={18} /></IconButton></Tooltip>
+                        {hasPermission('emergency:edit') && (
+                            <Tooltip title="Chỉnh sửa"><IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}><IconEdit size={18} /></IconButton></Tooltip>
+                        )}
+                        {hasPermission('emergency:delete') && (
+                            <Tooltip title="Xóa"><IconButton color="error" size="small" onClick={() => handleDelete(row.id)}><IconTrash size={18} /></IconButton></Tooltip>
+                        )}
                     </Stack>
                 </TableCell>
             </TableRow>
@@ -115,8 +124,11 @@ const ConstructionList = () => {
     const navigate = useNavigate();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-    const userRole = localStorage.getItem('role');
-    const userOrgId = localStorage.getItem('org_id');
+    
+    // Get auth state from Zustand
+    const { role: userRole, user: userInfo, hasPermission } = useAuthStore();
+    const userOrgId = userInfo?.org_id || '';
+    
     const [loading, setLoading] = useState(false);
     const [items, setItems] = useState([]);
     const [page, setPage] = useState(0);
@@ -211,9 +223,11 @@ const ConstructionList = () => {
     return (
         <Box>
             <Stack direction="row" justifyContent="flex-end" sx={{ mb: 2 }}>
-                <Button variant="contained" color="secondary" startIcon={<IconPlus size={18} />} onClick={handleOpenCreate}>
-                    Thêm công trình
-                </Button>
+                {hasPermission('emergency:create') && (
+                    <Button variant="contained" color="secondary" startIcon={<IconPlus size={18} />} onClick={handleOpenCreate}>
+                        Thêm công trình
+                    </Button>
+                )}
             </Stack>
 
             <Stack direction={isMobile ? "column" : "row"} spacing={1.5} sx={{ mb: 3 }}>
@@ -267,6 +281,7 @@ const ConstructionList = () => {
                                     isMobile={isMobile}
                                     userRole={userRole}
                                     navigate={navigate}
+                                    hasPermission={hasPermission}
                                 />
                             ))
                     }
@@ -299,8 +314,8 @@ const ConstructionList = () => {
                                         orgs={orgs}
                                         getStatusChip={getStatusChip}
                                         isMobile={isMobile}
-                                        userRole={userRole}
                                         navigate={navigate}
+                                        hasPermission={hasPermission}
                                     />
                                 ))
                             )}
@@ -312,7 +327,7 @@ const ConstructionList = () => {
             <ConstructionDialog
                 open={dialogOpen} onClose={() => setDialogOpen(false)}
                 onSubmit={handleSubmit} item={editingItem} isEdit={!!editingItem}
-                userRole={userRole} defaultOrgId={userOrgId}
+                defaultOrgId={userOrgId}
             />
         </Box>
     );

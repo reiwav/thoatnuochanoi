@@ -4,7 +4,7 @@ import {
     Button, Grid, TextField, Table, TableBody,
     TableCell, TableContainer, TableHead, TableRow, Paper,
     IconButton, CircularProgress, TablePagination, Typography, Chip, Box, Alert,
-    Collapse, useTheme, useMediaQuery
+    Collapse, useTheme, useMediaQuery, FormControl, InputLabel, Select, MenuItem
 } from '@mui/material';
 import { IconTrash, IconPlus, IconEdit, IconSearch, IconBuilding, IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
@@ -14,10 +14,11 @@ import MainCard from 'ui-component/cards/MainCard';
 import AnimateButton from 'ui-component/extended/AnimateButton';
 import employeeApi from 'api/employee';
 import organizationApi from 'api/organization';
+import axiosClient from 'api/axiosClient';
 import EmployeeDialog from './EmployeeDialog';
 import useAuthStore from 'store/useAuthStore';
 
-const EmployeeRow = ({ row, handleOpenEdit, handleDelete, roleLabel, orgName, userRole, isMobile }) => {
+const EmployeeRow = ({ row, handleOpenEdit, handleDelete, roleLabel, orgName, userRole, isMobile, hasPermission }) => {
     const [open, setOpen] = useState(false);
 
     return (
@@ -47,13 +48,25 @@ const EmployeeRow = ({ row, handleOpenEdit, handleDelete, roleLabel, orgName, us
                         <Chip label={row.active ? 'Hoạt động' : 'Ngừng hoạt động'} color={row.active ? 'success' : 'default'} size="small" variant="outlined" />
                     </TableCell>
                 )}
-                <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                    <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>
-                        <IconEdit size={20} />
-                    </IconButton>
-                    <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}>
-                        <IconTrash size={20} />
-                    </IconButton>
+                <TableCell align="right" sx={{ 
+                    whiteSpace: 'nowrap',
+                    position: 'sticky',
+                    right: 0,
+                    bgcolor: 'background.paper',
+                    zIndex: 1,
+                    borderLeft: '1px solid',
+                    borderColor: 'divider'
+                }}>
+                    {hasPermission('employee:edit') && (
+                        <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>
+                            <IconEdit size={20} />
+                        </IconButton>
+                    )}
+                    {hasPermission('employee:delete') && (
+                        <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}>
+                            <IconTrash size={20} />
+                        </IconButton>
+                    )}
                 </TableCell>
             </TableRow>
             {isMobile && (
@@ -104,18 +117,20 @@ const EmployeeRow = ({ row, handleOpenEdit, handleDelete, roleLabel, orgName, us
 const EmployeeList = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-    
+
     // Get auth state from Zustand
-    const { role: userRole, user: userInfo } = useAuthStore();
+    const { role: userRole, user: userInfo, hasPermission } = useAuthStore();
     const userOrgId = userInfo?.org_id || '';
-    
+    const canSelectOrg = ['super_admin', 'chu_tich_cty', 'giam_doc_cty', 'pho_giam_doc_cty', 'phong_ht_mt_cds'].includes(userRole);
+
     const [searchParams] = useSearchParams();
-    const urlOrgId = searchParams.get('org_id') || userOrgId;
+    const urlOrgId = searchParams.get('org_id') || (canSelectOrg ? '' : userOrgId);
     const urlOrgName = searchParams.get('org_name') || '';
 
     const [loading, setLoading] = useState(false);
     const [employees, setEmployees] = useState([]);
     const [organizations, setOrganizations] = useState([]);
+    const [roles, setRoles] = useState([]);
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [totalItems, setTotalItems] = useState(0);
@@ -129,12 +144,21 @@ const EmployeeList = () => {
     // Fetch all orgs for the dialog dropdown
     const loadOrganizations = async () => {
         try {
-            const res = await organizationApi.getAll({ per_page: 1000 });
-            if (res.data?.status === 'success') {
-                setOrganizations(Array.isArray(res.data.data?.data) ? res.data.data.data : []);
+            const [orgRes, roleRes] = await Promise.all([
+                organizationApi.getAll({ per_page: 1000 }),
+                axiosClient.get('/admin/roles')
+            ]);
+            
+            if (orgRes.data?.status === 'success') {
+                let orgs = Array.isArray(orgRes.data.data?.data) ? orgRes.data.data.data : [];
+                orgs = orgs.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'vi', { sensitivity: 'base' }));
+                setOrganizations(orgs);
+            }
+            if (roleRes.data?.status === 'success') {
+                setRoles(roleRes.data.data || []);
             }
         } catch (err) {
-            console.error('Lỗi tải danh sách công ty:', err);
+            console.error('Lỗi tải danh sách cấu hình:', err);
         }
     };
 
@@ -199,8 +223,10 @@ const EmployeeList = () => {
     };
 
     const roleLabel = (role) => {
-        if (role === 'admin_org') return 'Quản lý';
-        if (role === 'employee') return 'Nhân viên';
+        const found = roles.find(r => r.code === role);
+        if (found) return found.name;
+        if (role === 'admin_org') return 'Quản lý (Legacy)';
+        if (role === 'employee') return 'Nhân viên (Legacy)';
         return role;
     };
 
@@ -213,11 +239,13 @@ const EmployeeList = () => {
         <MainCard
             title={urlOrgName ? `Người dùng của: ${urlOrgName}` : 'Quản lý người dùng'}
             secondary={
-                <AnimateButton>
-                    <Button variant="contained" color="secondary" startIcon={<IconPlus size={18} />} onClick={handleOpenCreate}>
-                        Thêm người dùng
-                    </Button>
-                </AnimateButton>
+                hasPermission('employee:create') && (
+                    <AnimateButton>
+                        <Button variant="contained" color="secondary" startIcon={<IconPlus size={18} />} onClick={handleOpenCreate}>
+                            Thêm người dùng
+                        </Button>
+                    </AnimateButton>
+                )
             }
         >
             {urlOrgName && (
@@ -227,16 +255,34 @@ const EmployeeList = () => {
             )}
 
             <Grid container spacing={2} sx={{ mb: 3 }} alignItems="center">
-                <Grid item xs={12} sm={4}>
+                <Grid item xs={12} sm={canSelectOrg ? 3 : 4}>
                     <TextField fullWidth label="Tên người dùng" value={filterInputs.name}
                         onChange={(e) => setFilterInputs({ ...filterInputs, name: e.target.value })}
                         size="small" sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }} />
                 </Grid>
-                <Grid item xs={12} sm={4}>
+                <Grid item xs={12} sm={canSelectOrg ? 3 : 4}>
                     <TextField fullWidth label="Email" value={filterInputs.email}
                         onChange={(e) => setFilterInputs({ ...filterInputs, email: e.target.value })}
                         size="small" sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }} />
                 </Grid>
+                {canSelectOrg && (
+                    <Grid item xs={12} sm={4}>
+                        <FormControl fullWidth size="small">
+                            <InputLabel>Chi nhánh / Xí nghiệp</InputLabel>
+                            <Select
+                                value={filterInputs.org_id}
+                                label="Chi nhánh / Xí nghiệp"
+                                onChange={(e) => setFilterInputs({ ...filterInputs, org_id: e.target.value })}
+                                sx={{ borderRadius: '12px', minWidth: '200px' }}
+                            >
+                                <MenuItem value="">Tất cả con/đơn vị</MenuItem>
+                                {organizations.map(org => (
+                                    <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </Grid>
+                )}
                 <Grid item xs={12} sm={2}>
                     <Button fullWidth variant="contained" color="primary" startIcon={<IconSearch size={20} />}
                         onClick={handleSearch} sx={{ borderRadius: '10px' }}>
@@ -252,17 +298,25 @@ const EmployeeList = () => {
                             {isMobile && <TableCell width="40px" />}
                             <TableCell sx={{ fontWeight: 700 }}>Tên</TableCell>
                             {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>}
-                            {!isMobile && userRole === 'super_admin' && <TableCell sx={{ fontWeight: 700 }}>Công ty</TableCell>}
+                            {!isMobile && hasPermission('organization:view') && <TableCell sx={{ fontWeight: 700 }}>Công ty</TableCell>}
                             {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Vai trò</TableCell>}
                             {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>}
-                            <TableCell align="right" sx={{ fontWeight: 700 }}>Thao tác</TableCell>
+                            <TableCell align="right" sx={{ 
+                                fontWeight: 700,
+                                position: 'sticky',
+                                right: 0,
+                                bgcolor: 'grey.50',
+                                zIndex: 2,
+                                borderLeft: '1px solid',
+                                borderColor: 'divider'
+                            }}>Thao tác</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {loading ? (
-                            <TableRow><TableCell colSpan={isMobile ? 3 : (userRole === 'admin_org' ? 5 : 6)} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
+                            <TableRow><TableCell colSpan={isMobile ? 3 : (hasPermission('organization:view') ? 6 : 5)} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
                         ) : employees.length === 0 ? (
-                            <TableRow><TableCell colSpan={isMobile ? 3 : (userRole === 'admin_org' ? 5 : 6)} align="center" sx={{ py: 3 }}>Không tìm thấy người dùng</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={isMobile ? 3 : (hasPermission('organization:view') ? 6 : 5)} align="center" sx={{ py: 3 }}>Không tìm thấy người dùng</TableCell></TableRow>
                         ) : (
                             employees.map((row) => (
                                 <EmployeeRow
@@ -274,6 +328,7 @@ const EmployeeList = () => {
                                     orgName={orgName}
                                     userRole={userRole}
                                     isMobile={isMobile}
+                                    hasPermission={hasPermission}
                                 />
                             ))
                         )}
@@ -297,6 +352,7 @@ const EmployeeList = () => {
                 organizations={organizations}
                 defaultOrgId={urlOrgId || userOrgId}
                 userRole={userRole}
+                canSelectOrg={canSelectOrg}
             />
         </MainCard>
     );

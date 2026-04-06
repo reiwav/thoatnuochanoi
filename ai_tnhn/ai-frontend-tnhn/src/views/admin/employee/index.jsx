@@ -108,12 +108,12 @@ const EmployeeRow = ({ row, handleOpenEdit, handleDelete, roleLabel, orgName, us
 const EmployeeList = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-    
+
     // Get auth state from Zustand
     const { role: userRole, user: userInfo, hasPermission } = useAuthStore();
     const userOrgId = userInfo?.org_id || '';
     const canSelectOrg = ['super_admin', 'chu_tich_cty', 'giam_doc_cty', 'pho_giam_doc_cty', 'phong_ht_mt_cds'].includes(userRole);
-    
+
     const [searchParams] = useSearchParams();
     const urlOrgId = searchParams.get('org_id') || (canSelectOrg ? '' : userOrgId);
     const urlOrgName = searchParams.get('org_name') || '';
@@ -256,7 +256,7 @@ const EmployeeList = () => {
                                 value={filterInputs.org_id}
                                 label="Chi nhánh / Xí nghiệp"
                                 onChange={(e) => setFilterInputs({ ...filterInputs, org_id: e.target.value })}
-                                sx={{ borderRadius: '12px' }}
+                                sx={{ borderRadius: '12px', minWidth: '200px' }}
                             >
                                 <MenuItem value="">Tất cả con/đơn vị</MenuItem>
                                 {organizations.map(org => (

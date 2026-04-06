@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ADMIN_TOKEN } from 'constants/auth';
+import useAuthStore from 'store/useAuthStore';
 
 const axiosClient = axios.create({
   baseURL: (import.meta.env?.VITE_APP_API_URL || '') + '/api',
@@ -7,7 +7,7 @@ const axiosClient = axios.create({
 
 // Gắn token vào header trước mỗi request
 axiosClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem(ADMIN_TOKEN);
+  const token = useAuthStore.getState().token;
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;

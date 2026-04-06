@@ -13,8 +13,9 @@ import MainCard from 'ui-component/cards/MainCard';
 import AnimateButton from 'ui-component/extended/AnimateButton';
 import contractCategoryApi from 'api/contractCategory';
 import ContractCategoryDialog from './ContractCategoryDialog';
+import useAuthStore from 'store/useAuthStore';
 
-const CategoryRow = ({ row, handleOpenEdit, handleDelete, isMobile }) => {
+const CategoryRow = ({ row, handleOpenEdit, handleDelete, isMobile, hasPermission }) => {
     return (
         <TableRow hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
             <TableCell sx={{ 
@@ -51,16 +52,20 @@ const CategoryRow = ({ row, handleOpenEdit, handleDelete, isMobile }) => {
             )}
             {!isMobile && <TableCell align="center">{row.order}</TableCell>}
             <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                <Tooltip title="Chỉnh sửa">
-                    <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>
-                        <IconEdit size={20} />
-                    </IconButton>
-                </Tooltip>
-                <Tooltip title="Xóa">
-                    <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}>
-                        <IconTrash size={20} />
-                    </IconButton>
-                </Tooltip>
+                {hasPermission('contract:edit') && (
+                    <Tooltip title="Chỉnh sửa">
+                        <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>
+                            <IconEdit size={20} />
+                        </IconButton>
+                    </Tooltip>
+                )}
+                {hasPermission('contract:edit') && (
+                    <Tooltip title="Xóa">
+                        <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}>
+                            <IconTrash size={20} />
+                        </IconButton>
+                    </Tooltip>
+                )}
             </TableCell>
         </TableRow>
     );
@@ -69,6 +74,7 @@ const CategoryRow = ({ row, handleOpenEdit, handleDelete, isMobile }) => {
 const ContractCategoryList = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const { hasPermission } = useAuthStore();
     const [loading, setLoading] = useState(false);
     const [categories, setCategories] = useState([]);
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -141,16 +147,18 @@ const ContractCategoryList = () => {
                             <IconRefresh size={20} />
                         </IconButton>
                     </AnimateButton>
-                    <AnimateButton>
-                        <Button
-                            variant="contained"
-                            color="secondary"
-                            startIcon={<IconPlus size={18} />}
-                            onClick={handleOpenCreate}
-                        >
-                            Thêm danh mục
-                        </Button>
-                    </AnimateButton>
+                    {hasPermission('contract:edit') && (
+                        <AnimateButton>
+                            <Button
+                                variant="contained"
+                                color="secondary"
+                                startIcon={<IconPlus size={18} />}
+                                onClick={handleOpenCreate}
+                            >
+                                Thêm danh mục
+                            </Button>
+                        </AnimateButton>
+                    )}
                 </Box>
             }
         >
@@ -186,6 +194,7 @@ const ContractCategoryList = () => {
                                     handleOpenEdit={handleOpenEdit}
                                     handleDelete={handleDelete}
                                     isMobile={isMobile}
+                                    hasPermission={hasPermission}
                                 />
                             ))
                         )}

@@ -16,8 +16,9 @@ import MainCard from 'ui-component/cards/MainCard';
 import AnimateButton from 'ui-component/extended/AnimateButton';
 import organizationApi from 'api/organization';
 import OrganizationDialog from './OrganizationDialog';
+import useAuthStore from 'store/useAuthStore';
 
-const OrgRow = ({ row, handleManageUsers, handleOpenEdit, handleDelete, totals, isMobile }) => {
+const OrgRow = ({ row, handleManageUsers, handleOpenEdit, handleDelete, totals, isMobile, hasPermission }) => {
     const [open, setOpen] = useState(false);
 
     return (
@@ -70,21 +71,27 @@ const OrgRow = ({ row, handleManageUsers, handleOpenEdit, handleDelete, totals, 
                     </TableCell>
                 )}
                 <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                    <Tooltip title="Quản lý người dùng">
-                        <IconButton color="secondary" size="small" onClick={() => handleManageUsers(row)}>
-                            <IconUsers size={20} />
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Chỉnh sửa">
-                        <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>
-                            <IconEdit size={20} />
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Xóa">
-                        <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}>
-                            <IconTrash size={20} />
-                        </IconButton>
-                    </Tooltip>
+                    {hasPermission('employee:view') && (
+                        <Tooltip title="Quản lý người dùng">
+                            <IconButton color="secondary" size="small" onClick={() => handleManageUsers(row)}>
+                                <IconUsers size={20} />
+                            </IconButton>
+                        </Tooltip>
+                    )}
+                    {hasPermission('organization:edit') && (
+                        <Tooltip title="Chỉnh sửa">
+                            <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>
+                                <IconEdit size={20} />
+                            </IconButton>
+                        </Tooltip>
+                    )}
+                    {hasPermission('organization:delete') && (
+                        <Tooltip title="Xóa">
+                            <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}>
+                                <IconTrash size={20} />
+                            </IconButton>
+                        </Tooltip>
+                    )}
                 </TableCell>
             </TableRow>
             {isMobile && (
@@ -153,6 +160,7 @@ const OrganizationList = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const navigate = useNavigate();
+    const { hasPermission } = useAuthStore();
     const [loading, setLoading] = useState(false);
     const [organizations, setOrganizations] = useState([]);
     const [page, setPage] = useState(0);
@@ -246,11 +254,13 @@ const OrganizationList = () => {
         <MainCard
             title="Quản lý đơn vị"
             secondary={
-                <AnimateButton>
-                    <Button variant="contained" color="secondary" startIcon={<IconPlus size={18} />} onClick={handleOpenCreate}>
-                        Thêm đơn vị
-                    </Button>
-                </AnimateButton>
+                hasPermission('organization:create') && (
+                    <AnimateButton>
+                        <Button variant="contained" color="secondary" startIcon={<IconPlus size={18} />} onClick={handleOpenCreate}>
+                            Thêm đơn vị
+                        </Button>
+                    </AnimateButton>
+                )
             }
         >
             <Grid container spacing={2} sx={{ mb: 3 }} alignItems="center">
@@ -301,6 +311,7 @@ const OrganizationList = () => {
                                     handleDelete={handleDelete}
                                     totals={totals}
                                     isMobile={isMobile}
+                                    hasPermission={hasPermission}
                                 />
                             ))
                         )}

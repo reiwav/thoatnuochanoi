@@ -15,8 +15,9 @@ import AnimateButton from 'ui-component/extended/AnimateButton';
 import contractApi from 'api/contract';
 import ContractDialog from './ContractDialog';
 import dayjs from 'dayjs';
+import useAuthStore from 'store/useAuthStore';
 
-const Row = ({ row, handleOpenEdit, handleDelete, isMobile, formatPrice, getTotalPrice }) => {
+const Row = ({ row, handleOpenEdit, handleDelete, isMobile, formatPrice, getTotalPrice, hasPermission }) => {
     const [open, setOpen] = useState(false);
 
     return (
@@ -52,12 +53,16 @@ const Row = ({ row, handleOpenEdit, handleDelete, isMobile, formatPrice, getTota
                 )}
                 <TableCell align="right">
                     <Stack direction="row" spacing={1} justifyContent="flex-end">
-                        <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>
-                            <IconEdit size={20} />
-                        </IconButton>
-                        <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}>
-                            <IconTrash size={20} />
-                        </IconButton>
+                        {hasPermission('contract:edit') && (
+                            <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>
+                                <IconEdit size={20} />
+                            </IconButton>
+                        )}
+                        {hasPermission('contract:delete') && (
+                            <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}>
+                                <IconTrash size={20} />
+                            </IconButton>
+                        )}
                     </Stack>
                 </TableCell>
             </TableRow>
@@ -147,6 +152,7 @@ const Row = ({ row, handleOpenEdit, handleDelete, isMobile, formatPrice, getTota
 const ContractList = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const { hasPermission } = useAuthStore();
     const [loading, setLoading] = useState(false);
     const [contracts, setContracts] = useState([]);
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -265,17 +271,19 @@ const ContractList = () => {
                                 <IconRefresh size={20} />
                             </IconButton>
                         </AnimateButton>
-                        <AnimateButton>
-                            <Button
-                                variant="contained"
-                                color="secondary"
-                                startIcon={<IconPlus size={18} />}
-                                onClick={handleOpenCreate}
-                                sx={{ whiteSpace: 'nowrap' }}
-                            >
-                                {!isMobile && 'Thêm hợp đồng'}
-                            </Button>
-                        </AnimateButton>
+                        {hasPermission('contract:create') && (
+                            <AnimateButton>
+                                <Button
+                                    variant="contained"
+                                    color="secondary"
+                                    startIcon={<IconPlus size={18} />}
+                                    onClick={handleOpenCreate}
+                                    sx={{ whiteSpace: 'nowrap' }}
+                                >
+                                    {!isMobile && 'Thêm hợp đồng'}
+                                </Button>
+                            </AnimateButton>
+                        )}
                     </Box>
                 </Box>
             }
@@ -306,6 +314,7 @@ const ContractList = () => {
                                     isMobile={isMobile}
                                     formatPrice={formatPrice}
                                     getTotalPrice={getTotalPrice}
+                                    hasPermission={hasPermission}
                                 />
                             ))
                         )}

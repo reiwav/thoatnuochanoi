@@ -16,13 +16,15 @@ import {
 import emergencyConstructionApi from 'api/emergencyConstruction';
 import { getInundationImageUrl } from 'utils/imageHelper';
 import { toast } from 'react-hot-toast';
+import useAuthStore from 'store/useAuthStore';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 
-const CollapsibleProgressRow = ({ row, handleOpenViewer, isMobile, userRole }) => {
+const CollapsibleProgressRow = ({ row, handleOpenViewer, isMobile }) => {
+    const { hasPermission } = useAuthStore();
     const [open, setOpen] = useState(true);
     const navigate = useNavigate();
 
@@ -30,8 +32,6 @@ const CollapsibleProgressRow = ({ row, handleOpenViewer, isMobile, userRole }) =
         e.stopPropagation();
         navigate(`/admin/emergency-construction/form?id=${row.construction_id}&edit_id=${row.id}&name=${encodeURIComponent(row.construction_name || 'Báo cáo')}`);
     };
-
-    const isAdmin = userRole === 'super_admin' || userRole === 'admin_org';
 
     return (
         <React.Fragment>
@@ -50,7 +50,7 @@ const CollapsibleProgressRow = ({ row, handleOpenViewer, isMobile, userRole }) =
                 </TableCell>
                 <TableCell align="right">
                     <Stack direction="row" spacing={1} justifyContent="flex-end">
-                        {isAdmin && (
+                        {hasPermission('emergency:edit') && (
                             <Button
                                 size="small"
                                 variant="outlined"
@@ -137,7 +137,9 @@ const ConstructionProgressHistory = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const navigate = useNavigate();
-    const userRole = localStorage.getItem('role');
+    
+    // Get auth state from Zustand
+    const { role: userRole } = useAuthStore();
 
     const [loading, setLoading] = useState(false);
     const [reports, setReports] = useState([]);

@@ -52,9 +52,8 @@ export default function AuthLogin() {
         userRole = 'super_admin';
       }
       
-      storeLogin({ name }, token, userRole);
-      localStorage.setItem(ADMIN_TOKEN, token); // Keep for legacy API calls if needed
-
+      storeLogin({ name, email: searchParams.get('email') }, token, userRole);
+      
       // Immediate redirection based on role
       if (userRole === 'employee' || userRole === 'technician') {
         navigate('/company/inundation', { replace: true });
@@ -100,7 +99,6 @@ export default function AuthLogin() {
 
         // Store via Zustand
         storeLogin({ name: tokenData.name, email: values.email }, tokenData.id, role);
-        localStorage.setItem(ADMIN_TOKEN, tokenData.id); // for compatibility
 
         // Redirect based on role
         if (role === 'employee' || role === 'technician') {

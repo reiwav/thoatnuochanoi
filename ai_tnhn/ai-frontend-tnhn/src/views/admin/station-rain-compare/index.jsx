@@ -5,10 +5,12 @@ import {
     FormControl, Select, MenuItem, Button, Stack, Fade, Divider
 } from '@mui/material';
 import axiosClient from 'api/axiosClient';
+import useAuthStore from 'store/useAuthStore';
 import { IconFileSpreadsheet, IconChartBar, IconRefresh } from '@tabler/icons-react';
 import * as XLSX from 'xlsx';
 
 const StationRainCompare = () => {
+    const { hasPermission } = useAuthStore();
     const [loading, setLoading] = useState(false);
     const [year1, setYear1] = useState(new Date().getFullYear());
     const [year2, setYear2] = useState(new Date().getFullYear() - 1);
@@ -135,6 +137,7 @@ const StationRainCompare = () => {
                         >
                             Duyệt báo cáo
                         </Button>
+                        {hasPermission('rain:export') && (
                         <Button
                             variant="outlined"
                             disabled={loading || !reportData}
@@ -144,6 +147,7 @@ const StationRainCompare = () => {
                         >
                             Xuất Excel
                         </Button>
+                        )}
                     </Stack>
                 </Paper>
             </Box>

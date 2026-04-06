@@ -28,6 +28,8 @@ const ConstructionProgressHistoryPage = Loadable(lazy(() => import('views/admin/
 const InundationAdminList = Loadable(lazy(() => import('views/admin/inundation/InundationAdminList')));
 const ContractCategoryPage = Loadable(lazy(() => import('views/admin/contract-category')));
 const ContractPage = Loadable(lazy(() => import('views/admin/contract')));
+const RoleMatrixPage = Loadable(lazy(() => import('views/admin/role-matrix')));
+const RoleListPage = Loadable(lazy(() => import('views/admin/role/RoleList')));
 const PumpingStationPage = Loadable(lazy(() => import('views/admin/pumping-station')));
 const UnderDevelopment = Loadable(lazy(() => import('views/pages/under-development')));
 
@@ -71,7 +73,9 @@ const MainRoutes = {
         { path: 'ai-support', element: <AiSupportPage /> },
         { path: 'ai-contract', element: <AiContractPage /> },
         { path: 'contract-category', element: <ContractCategoryPage /> },
-        { path: 'contract', element: <ContractPage /> }
+        { path: 'contract', element: <ContractPage /> },
+        { path: 'role-matrix', element: <RoleMatrixPage /> },
+        { path: 'role', element: <RoleListPage /> }
       ]
     },
     {

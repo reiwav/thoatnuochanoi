@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import {  } from 'react-router-dom';
 import {
     Button, Stack, TextField, Table, TableBody,
     TableCell, TableContainer, TableHead, TableRow, Paper,
@@ -15,8 +15,9 @@ import AnimateButton from 'ui-component/extended/AnimateButton';
 import stationApi from 'api/station';
 import organizationApi from 'api/organization';
 import StationDialog from './StationDialog';
+import useAuthStore from 'store/useAuthStore';
 
-const CollapsibleStationRow = ({ row, handleOpenEdit, handleDelete, isMobile, canEdit }) => {
+const CollapsibleStationRow = ({ row, handleOpenEdit, handleDelete, isMobile, canEdit, canDelete }) => {
     const [open, setOpen] = useState(false);
     return (
         <React.Fragment>
@@ -47,18 +48,22 @@ const CollapsibleStationRow = ({ row, handleOpenEdit, handleDelete, isMobile, ca
                         </TableCell>
                     </>
                 )}
-                {!isMobile && canEdit && (
+                {!isMobile && (canEdit || canDelete) && (
                     <TableCell align="right" sx={{ p: { xs: 1, md: 2 } }}>
-                        <Tooltip title="Chỉnh sửa">
-                            <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>
-                                <IconEdit size={20} />
-                            </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Xóa">
-                            <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}>
-                                <IconTrash size={20} />
-                            </IconButton>
-                        </Tooltip>
+                        {canEdit && (
+                            <Tooltip title="Chỉnh sửa">
+                                <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>
+                                    <IconEdit size={20} />
+                                </IconButton>
+                            </Tooltip>
+                        )}
+                        {canDelete && (
+                            <Tooltip title="Xóa">
+                                <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}>
+                                    <IconTrash size={20} />
+                                </IconButton>
+                            </Tooltip>
+                        )}
                     </TableCell>
                 )}
             </TableRow>
@@ -82,10 +87,10 @@ const CollapsibleStationRow = ({ row, handleOpenEdit, handleDelete, isMobile, ca
                                         <Typography variant="body2" sx={{ fontWeight: 600 }}>{row.lat}, {row.lng}</Typography>
                                     </Grid>
                                 </Grid>
-                                {isMobile && canEdit && (
+                                {isMobile && (canEdit || canDelete) && (
                                     <Box sx={{ mt: 1, textAlign: 'right', display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                                        <Button size="small" color="primary" variant="contained" startIcon={<IconEdit size={16} />} onClick={() => handleOpenEdit(row)}>Chỉnh sửa</Button>
-                                        <Button size="small" color="error" variant="outlined" startIcon={<IconTrash size={16} />} onClick={() => handleDelete(row.id)}>Xóa</Button>
+                                        {canEdit && <Button size="small" color="primary" variant="contained" startIcon={<IconEdit size={16} />} onClick={() => handleOpenEdit(row)}>Chỉnh sửa</Button>}
+                                        {canDelete && <Button size="small" color="error" variant="outlined" startIcon={<IconTrash size={16} />} onClick={() => handleDelete(row.id)}>Xóa</Button>}
                                     </Box>
                                 )}
                             </Stack>
@@ -100,9 +105,10 @@ const CollapsibleStationRow = ({ row, handleOpenEdit, handleDelete, isMobile, ca
 const StationInundationList = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-    const { userInfo } = useOutletContext();
-    const userRole = userInfo?.role || localStorage.getItem('role');
-    const canEdit = userRole === 'super_admin';
+    const { hasPermission } = useAuthStore();
+    const canCreate = hasPermission('inundation:create');
+    const canEdit = hasPermission('inundation:edit');
+    const canDelete = hasPermission('inundation:delete');
     const [loading, setLoading] = useState(false);
     const [points, setPoints] = useState([]);
     const [organizations, setOrganizations] = useState([]);
@@ -202,7 +208,7 @@ const StationInundationList = () => {
     return (
         <MainCard
             title="Quản lý điểm ngập úng"
-            secondary={canEdit && (
+            secondary={canCreate && (
                 <AnimateButton>
                     <Button variant="contained" color="secondary" startIcon={<IconPlus size={20} />} onClick={handleOpenCreate} sx={{ fontWeight: 700, fontSize: '1rem', px: 2, py: 1 }}>
                         Thêm điểm mới
@@ -245,7 +251,7 @@ const StationInundationList = () => {
                                 <>
                                     <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Đơn vị quản lý</TableCell>
                                     <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Trạng thái</TableCell>
-                                    {canEdit && <TableCell align="right" sx={{ fontWeight: 800, fontSize: '1rem' }}>Thao tác</TableCell>}
+                                    {(canEdit || canDelete) && <TableCell align="right" sx={{ fontWeight: 800, fontSize: '1rem' }}>Thao tác</TableCell>}
                                 </>
                             )}
                         </TableRow>
@@ -264,6 +270,7 @@ const StationInundationList = () => {
                                     handleDelete={handleDelete}
                                     isMobile={isMobile}
                                     canEdit={canEdit}
+                                    canDelete={canDelete}
                                 />
                             ))
                         )}

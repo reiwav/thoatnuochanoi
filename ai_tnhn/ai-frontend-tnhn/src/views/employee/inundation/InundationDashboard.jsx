@@ -318,6 +318,21 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                                                         )}
                                                     </Stack>
                                                     <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>{upd.description || 'Không có mô tả'}</Typography>
+                                                    {upd.review_comment && (
+                                                        <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'error.main', fontStyle: 'italic', fontWeight: 600 }}>
+                                                            Reviewer: {upd.review_comment}
+                                                        </Typography>
+                                                    )}
+                                                    {upd.old_data?.length > 0 && (
+                                                        <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
+                                                            <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary' }}>Dữ liệu cũ:</Typography>
+                                                            {upd.old_data.map((old, oIdx) => (
+                                                                <Typography key={oIdx} variant="caption" sx={{ display: 'block', fontSize: '0.65rem' }}>
+                                                                    • {old.description || 'N/A'} ({old.depth}m)
+                                                                </Typography>
+                                                            ))}
+                                                        </Box>
+                                                    )}
                                                 </Box>
                                             ))}
                                         </Stack>
@@ -430,6 +445,21 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenVi
                                         <Typography variant="body2" sx={{ fontSize: '0.9rem', lineHeight: 1.4 }}>
                                             {upd.description || 'Không có mô tả'}
                                         </Typography>
+                                        {upd.review_comment && (
+                                            <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'error.main', fontStyle: 'italic', fontWeight: 700 }}>
+                                                Reviewer: {upd.review_comment}
+                                            </Typography>
+                                        )}
+                                        {upd.old_data?.length > 0 && (
+                                            <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
+                                                <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary' }}>Dữ liệu cũ:</Typography>
+                                                {upd.old_data.map((old, oIdx) => (
+                                                    <Typography key={oIdx} variant="caption" sx={{ display: 'block', fontSize: '0.75rem' }}>
+                                                        • {old.description || 'N/A'} ({old.depth}m)
+                                                    </Typography>
+                                                ))}
+                                            </Box>
+                                        )}
                                     </Box>
                                 ))}
                             </Stack>
@@ -527,6 +557,14 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenVi
                                         )}
                                     </Grid>
                                 </Grid>
+
+                                {latest?.review_comment && (
+                                    <Box sx={{ mt: 1, p: 1.5, bgcolor: '#fff5f5', borderRadius: 2, border: '1px solid', borderColor: '#ffc1c1' }}>
+                                        <Typography variant="caption" sx={{ fontWeight: 800, color: 'error.main', display: 'block', mb: 0.5 }}>NHẬN XÉT CỦA REVIEWER:</Typography>
+                                        <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'error.dark', fontWeight: 600 }}>{latest.review_comment}</Typography>
+                                    </Box>
+                                )}
+
                                 <Box>
                                     <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>Ảnh liên quan:</Typography>
                                     {latest?.images?.length > 0 ? (
@@ -562,6 +600,21 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenVi
                                                         )}
                                                     </Stack>
                                                     <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>{upd.description || 'Không có mô tả'}</Typography>
+                                                    {upd.review_comment && (
+                                                        <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'error.main', fontStyle: 'italic', fontWeight: 600 }}>
+                                                            Reviewer: {upd.review_comment}
+                                                        </Typography>
+                                                    )}
+                                                    {upd.old_data?.length > 0 && (
+                                                        <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
+                                                            <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary' }}>Dữ liệu cũ:</Typography>
+                                                            {upd.old_data.map((old, oIdx) => (
+                                                                <Typography key={oIdx} variant="caption" sx={{ display: 'block', fontSize: '0.65rem' }}>
+                                                                    • {old.description || 'N/A'} ({old.depth}m)
+                                                                </Typography>
+                                                            ))}
+                                                        </Box>
+                                                    )}
                                                 </Box>
                                             ))}
                                         </Stack>

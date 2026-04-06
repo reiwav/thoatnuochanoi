@@ -350,6 +350,9 @@ func (s *service) ReviewReport(ctx context.Context, reportID, comment, reviewerI
 	if err != nil {
 		return err
 	}
+	if report.Status != "active" {
+		return fmt.Errorf("chỉ được phép nhận xét khi báo cáo đang ở trạng thái active")
+	}
 	report.ReviewComment = comment
 	report.ReviewerId = reviewerID
 	report.ReviewerEmail = reviewerEmail
@@ -363,6 +366,12 @@ func (s *service) ReviewUpdate(ctx context.Context, updateID, comment, reviewerI
 	if err != nil {
 		return err
 	}
+
+	report, err := s.inundationRepo.GetByID(ctx, update.ReportID)
+	if err == nil && report != nil && report.Status != "active" {
+		return fmt.Errorf("chỉ được phép nhận xét khi báo cáo đang ở trạng thái active")
+	}
+
 	update.ReviewComment = comment
 	update.ReviewerId = reviewerID
 	update.ReviewerEmail = reviewerEmail
@@ -376,6 +385,18 @@ func (s *service) UpdateUpdateContent(ctx context.Context, updateID string, upda
 	if err != nil {
 		return err
 	}
+
+	// Lưu lịch sử bản cũ trước khi cập nhật
+	snapshot := map[string]interface{}{
+		"description":    update.Description,
+		"depth":          update.Depth,
+		"length":         update.Length,
+		"width":          update.Width,
+		"traffic_status": update.TrafficStatus,
+		"images":         update.Images,
+		"timestamp":      update.Timestamp,
+	}
+	update.OldData = append(update.OldData, snapshot)
 
 	update.Description = updatedData.Description
 	update.Depth = updatedData.Depth

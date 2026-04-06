@@ -13,7 +13,7 @@ import SelectionDialog from './SelectionDialog';
 import useAuthStore from 'store/useAuthStore';
 import axiosClient from 'api/axiosClient';
 
-const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizations = [], defaultOrgId = '' }) => {
+const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizations = [], defaultOrgId = '', canSelectOrg }) => {
     const { hasPermission, role: userRole } = useAuthStore();
     const [points, setPoints] = useState([]);
     const [constructions, setConstructions] = useState([]);
@@ -90,7 +90,9 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                 }
 
                 if (rolesRes.data?.status === 'success') {
-                    setRoles(rolesRes.data.data || []);
+                    let rls = rolesRes.data.data || [];
+                    rls = rls.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'vi', { sensitivity: 'base' }));
+                    setRoles(rls);
                 }
             } catch (err) {
                 console.error('Lỗi tải dữ liệu:', err);
@@ -163,16 +165,15 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                         </FormControl>
                     </Box>
 
-                    {/* Org selector dropdown - Only for Super Admin */}
-                    {hasPermission('organization:view') && (
+                    {/* Org selector dropdown - Only for privileged roles */}
+                    {canSelectOrg && (
                         <FormControl fullWidth size="small">
                             <InputLabel>Công ty / Xí nghiệp *</InputLabel>
                             <Select
                                 value={formData.org_id}
                                 label="Công ty / Xí nghiệp *"
                                 onChange={(e) => handleChange('org_id', e.target.value)}
-                                disabled={!!defaultOrgId} // disable if came from org page
-                                sx={{ borderRadius: '12px', bgcolor: defaultOrgId ? '#f0f0f0' : '#f8fafc' }}
+                                sx={{ borderRadius: '12px', bgcolor: '#f8fafc' }}
                             >
                                 {organizations.map((org) => (
                                     <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>

@@ -4,7 +4,7 @@ import {
     Button, Grid, TextField, Table, TableBody,
     TableCell, TableContainer, TableHead, TableRow, Paper,
     IconButton, CircularProgress, TablePagination, Typography, Chip, Box, Alert,
-    Collapse, useTheme, useMediaQuery
+    Collapse, useTheme, useMediaQuery, FormControl, InputLabel, Select, MenuItem
 } from '@mui/material';
 import { IconTrash, IconPlus, IconEdit, IconSearch, IconBuilding, IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
@@ -112,9 +112,10 @@ const EmployeeList = () => {
     // Get auth state from Zustand
     const { role: userRole, user: userInfo, hasPermission } = useAuthStore();
     const userOrgId = userInfo?.org_id || '';
+    const canSelectOrg = ['super_admin', 'chu_tich_cty', 'giam_doc_cty', 'pho_giam_doc_cty', 'phong_ht_mt_cds'].includes(userRole);
     
     const [searchParams] = useSearchParams();
-    const urlOrgId = searchParams.get('org_id') || userOrgId;
+    const urlOrgId = searchParams.get('org_id') || (canSelectOrg ? '' : userOrgId);
     const urlOrgName = searchParams.get('org_name') || '';
 
     const [loading, setLoading] = useState(false);
@@ -135,7 +136,9 @@ const EmployeeList = () => {
         try {
             const res = await organizationApi.getAll({ per_page: 1000 });
             if (res.data?.status === 'success') {
-                setOrganizations(Array.isArray(res.data.data?.data) ? res.data.data.data : []);
+                let orgs = Array.isArray(res.data.data?.data) ? res.data.data.data : [];
+                orgs = orgs.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'vi', { sensitivity: 'base' }));
+                setOrganizations(orgs);
             }
         } catch (err) {
             console.error('Lỗi tải danh sách công ty:', err);
@@ -148,7 +151,9 @@ const EmployeeList = () => {
             const res = await employeeApi.getAll({ ...params, page: page + 1, per_page: rowsPerPage });
             if (res.data?.status === 'success') {
                 const result = res.data.data;
-                setEmployees(Array.isArray(result.data) ? result.data : []);
+                let emps = Array.isArray(result.data) ? result.data : [];
+                emps = emps.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'vi', { sensitivity: 'base' }));
+                setEmployees(emps);
                 setTotalItems(result.total || 0);
             } else {
                 setEmployees([]);
@@ -233,16 +238,34 @@ const EmployeeList = () => {
             )}
 
             <Grid container spacing={2} sx={{ mb: 3 }} alignItems="center">
-                <Grid item xs={12} sm={4}>
+                <Grid item xs={12} sm={canSelectOrg ? 3 : 4}>
                     <TextField fullWidth label="Tên người dùng" value={filterInputs.name}
                         onChange={(e) => setFilterInputs({ ...filterInputs, name: e.target.value })}
                         size="small" sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }} />
                 </Grid>
-                <Grid item xs={12} sm={4}>
+                <Grid item xs={12} sm={canSelectOrg ? 3 : 4}>
                     <TextField fullWidth label="Email" value={filterInputs.email}
                         onChange={(e) => setFilterInputs({ ...filterInputs, email: e.target.value })}
                         size="small" sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }} />
                 </Grid>
+                {canSelectOrg && (
+                    <Grid item xs={12} sm={4}>
+                        <FormControl fullWidth size="small">
+                            <InputLabel>Chi nhánh / Xí nghiệp</InputLabel>
+                            <Select
+                                value={filterInputs.org_id}
+                                label="Chi nhánh / Xí nghiệp"
+                                onChange={(e) => setFilterInputs({ ...filterInputs, org_id: e.target.value })}
+                                sx={{ borderRadius: '12px' }}
+                            >
+                                <MenuItem value="">Tất cả con/đơn vị</MenuItem>
+                                {organizations.map(org => (
+                                    <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </Grid>
+                )}
                 <Grid item xs={12} sm={2}>
                     <Button fullWidth variant="contained" color="primary" startIcon={<IconSearch size={20} />}
                         onClick={handleSearch} sx={{ borderRadius: '10px' }}>
@@ -304,6 +327,7 @@ const EmployeeList = () => {
                 organizations={organizations}
                 defaultOrgId={urlOrgId || userOrgId}
                 userRole={userRole}
+                canSelectOrg={canSelectOrg}
             />
         </MainCard>
     );

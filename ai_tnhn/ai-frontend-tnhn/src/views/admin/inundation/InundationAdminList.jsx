@@ -51,9 +51,28 @@ const getLatestData = (report) => {
     return data;
 };
 
-const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, handleOpenViewer, navigate, isMobile }) => {
+const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, handleOpenViewer, navigate, isMobile, fetchPoints }) => {
     const [open, setOpen] = useState(point.status === 'active');
     const latest = useMemo(() => getLatestData(point.active_report || point.last_report), [point]);
+    const [commentInput, setCommentInput] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const role = localStorage.getItem('role');
+
+    const handleReview = async () => {
+        if (!commentInput.trim()) return;
+        setIsSubmitting(true);
+        try {
+            const reportId = point.active_report?.id || point.last_report_id;
+            await inundationApi.reviewReport(reportId, commentInput);
+            toast.success('Gửi nhận xét thành công');
+            setCommentInput('');
+            if (fetchPoints) fetchPoints();
+        } catch (error) {
+            toast.error('Lỗi khi gửi nhận xét');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     if (isMobile) {
         return (
@@ -127,9 +146,31 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                                                     )}
                                                 </Stack>
                                                 <Typography variant="body2" sx={{ fontSize: '0.75rem', lineHeight: 1.3 }}>{upd.description || 'Không có mô tả'}</Typography>
+                                                {upd.review_comment && (
+                                                    <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'error.main', fontStyle: 'italic', fontWeight: 600 }}>
+                                                        Reviewer: {upd.review_comment}
+                                                    </Typography>
+                                                )}
+                                                {upd.old_data?.length > 0 && (
+                                                    <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
+                                                        <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary' }}>Dữ liệu cũ:</Typography>
+                                                        {upd.old_data.map((old, oIdx) => (
+                                                            <Typography key={oIdx} variant="caption" sx={{ display: 'block', fontSize: '0.65rem' }}>
+                                                                • {old.description || 'N/A'} ({old.depth}m)
+                                                            </Typography>
+                                                        ))}
+                                                    </Box>
+                                                )}
                                             </Box>
                                         ))}
                                     </Stack>
+                                </Box>
+                            )}
+
+                            {latest?.review_comment && (
+                                <Box sx={{ mb: 2, p: 1, bgcolor: 'error.lighter', borderRadius: 1.5, border: '1px solid', borderColor: 'error.light' }}>
+                                    <Typography variant="caption" sx={{ fontWeight: 800, color: 'error.main', display: 'block', mb: 0.5 }}>NHẬN XÉT TỪ REVIEWER:</Typography>
+                                    <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'error.dark', fontWeight: 500 }}>{latest.review_comment}</Typography>
                                 </Box>
                             )}
 
@@ -217,6 +258,41 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                                         </Typography>
                                     </Grid>
                                 </Grid>
+
+                                {latest?.review_comment && (
+                                    <Box sx={{ mt: 1, p: 1.5, bgcolor: '#fff5f5', borderRadius: 2, border: '1px solid', borderColor: '#ffc1c1' }}>
+                                        <Typography variant="caption" sx={{ fontWeight: 800, color: 'error.main', display: 'block', mb: 0.5 }}>NHẬN XÉT CỦA REVIEWER:</Typography>
+                                        <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'error.dark', fontWeight: 600 }}>{latest.review_comment}</Typography>
+                                    </Box>
+                                )}
+
+                                {role === 'reviewer' && point.status === 'active' && (
+                                    <Box sx={{ mt: 2, p: 2, bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: 'primary.main' }}>Gửi nhận xét cho nhân viên:</Typography>
+                                        <TextField
+                                            fullWidth
+                                            multiline
+                                            rows={2}
+                                            placeholder="Nhập nội dung cần yêu cầu sửa đổi..."
+                                            value={commentInput}
+                                            onChange={(e) => setCommentInput(e.target.value)}
+                                            sx={{ mb: 1.5, '& .MuiOutlinedInput-root': { bgcolor: 'grey.50' } }}
+                                        />
+                                        <Stack direction="row" justifyContent="flex-end">
+                                            <Button
+                                                variant="contained"
+                                                color="primary"
+                                                size="small"
+                                                onClick={handleReview}
+                                                disabled={isSubmitting || !commentInput.trim()}
+                                                startIcon={isSubmitting ? <CircularProgress size={16} /> : null}
+                                            >
+                                                Gửi nhận xét
+                                            </Button>
+                                        </Stack>
+                                    </Box>
+                                )}
+
                                 {latest?.updates?.length > 0 && (
                                     <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
                                         <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>Lịch sử cập nhật:</Typography>
@@ -238,6 +314,21 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                                                         )}
                                                     </Stack>
                                                     <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>{upd.description || 'Không có mô tả'}</Typography>
+                                                    {upd.review_comment && (
+                                                        <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'error.main', fontStyle: 'italic', fontWeight: 600 }}>
+                                                            Reviewer: {upd.review_comment}
+                                                        </Typography>
+                                                    )}
+                                                    {upd.old_data?.length > 0 && (
+                                                        <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
+                                                            <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary' }}>Dữ liệu cũ:</Typography>
+                                                            {upd.old_data.map((old, oIdx) => (
+                                                                <Typography key={oIdx} variant="caption" sx={{ display: 'block', fontSize: '0.65rem' }}>
+                                                                    • {old.description || 'N/A'} ({old.depth}m)
+                                                                </Typography>
+                                                            ))}
+                                                        </Box>
+                                                    )}
                                                 </Box>
                                             ))}
                                         </Stack>
@@ -267,8 +358,27 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
     );
 };
 
-const CollapsibleHistoryRow = ({ report, organizations, formatTime, getDuration, handleOpenViewer, navigate, isMobile }) => {
+const CollapsibleHistoryRow = ({ report, organizations, formatTime, getDuration, handleOpenViewer, navigate, isMobile, fetchHistory }) => {
     const [open, setOpen] = useState(report.status === 'active');
+    const [commentInput, setCommentInput] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const role = localStorage.getItem('role');
+
+    const handleReview = async () => {
+        if (!commentInput.trim()) return;
+        setIsSubmitting(true);
+        try {
+            await inundationApi.reviewReport(report.id, commentInput);
+            toast.success('Gửi nhận xét thành công');
+            setCommentInput('');
+            if (fetchHistory) fetchHistory();
+        } catch (error) {
+            toast.error('Lỗi khi gửi nhận xét');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     if (isMobile) {
         return (
             <Box sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 3, border: '1px solid', borderColor: 'divider', mb: 2 }}>
@@ -408,6 +518,21 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, getDuration,
                                                         )}
                                                     </Stack>
                                                     <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>{upd.description || 'Không có mô tả'}</Typography>
+                                                    {upd.review_comment && (
+                                                        <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'error.main', fontStyle: 'italic', fontWeight: 600 }}>
+                                                            Reviewer: {upd.review_comment}
+                                                        </Typography>
+                                                    )}
+                                                    {upd.old_data?.length > 0 && (
+                                                        <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
+                                                            <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary' }}>Dữ liệu cũ:</Typography>
+                                                            {upd.old_data.map((old, oIdx) => (
+                                                                <Typography key={oIdx} variant="caption" sx={{ display: 'block', fontSize: '0.65rem' }}>
+                                                                    • {old.description || 'N/A'} ({old.depth}m)
+                                                                </Typography>
+                                                            ))}
+                                                        </Box>
+                                                    )}
                                                 </Box>
                                             ))}
                                         </Stack>
@@ -686,6 +811,7 @@ const InundationAdminList = () => {
                                             handleOpenViewer={handleOpenViewer}
                                             navigate={navigate}
                                             isMobile={isMobile}
+                                            fetchPoints={fetchPoints}
                                         />
                                     ))
                             }
@@ -716,6 +842,7 @@ const InundationAdminList = () => {
                                                     handleOpenViewer={handleOpenViewer}
                                                     navigate={navigate}
                                                     isMobile={isMobile}
+                                                    fetchPoints={fetchPoints}
                                                 />
                                             ))
                                     }
@@ -744,6 +871,7 @@ const InundationAdminList = () => {
                                             handleOpenViewer={handleOpenViewer}
                                             navigate={navigate}
                                             isMobile={isMobile}
+                                            fetchHistory={fetchHistory}
                                         />
                                     ))
                             }
@@ -786,6 +914,7 @@ const InundationAdminList = () => {
                                                     handleOpenViewer={handleOpenViewer}
                                                     navigate={navigate}
                                                     isMobile={isMobile}
+                                                    fetchHistory={fetchHistory}
                                                 />
                                             ))
                                     }

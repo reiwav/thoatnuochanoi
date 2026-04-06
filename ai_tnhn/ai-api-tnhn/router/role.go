@@ -11,8 +11,8 @@ import (
 func (h *HandlerFuncs) RoleRoutes(r *gin.RouterGroup, mid middleware.Middleware, roleHandler *handler.RoleHandler) {
 	roleGroup := r.Group("/roles")
 	{
-		// Only super_admin can manage roles
-		roleGroup.GET("", mid.MidBasicType(constant.ROLE_SUPER_ADMIN), roleHandler.List)
+		// Anyone authenticated can list roles for assignment
+		roleGroup.GET("", mid.MidBasicType(), roleHandler.List)
 		roleGroup.POST("", mid.MidBasicType(constant.ROLE_SUPER_ADMIN), roleHandler.Create)
 		roleGroup.PUT("/:id", mid.MidBasicType(constant.ROLE_SUPER_ADMIN), roleHandler.Update)
 		roleGroup.DELETE("/:id", mid.MidBasicType(constant.ROLE_SUPER_ADMIN), roleHandler.Delete)

@@ -83,7 +83,7 @@ func (s *service) Create(ctx context.Context, org *models.Organization) error {
 		Email:    org.Email,
 		Username: org.Email,
 		Password: hash.NewPassword(org.PhoneNumber),
-		Role:     constant.ROLE_ADMIN_ORG,
+		Role:     constant.ROLE_GIAM_DOC_XN,
 		OrgID:    org.ID,
 		Active:   true,
 	}

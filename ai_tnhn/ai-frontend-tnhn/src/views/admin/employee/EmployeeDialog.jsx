@@ -26,7 +26,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
         name: '',
         email: '',
         password: '',
-        role: 'employee',
+        role: 'cong_nhan_cty',
         org_id: '',
         assigned_inundation_point_ids: [],
         assigned_emergency_construction_ids: [],
@@ -41,7 +41,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                     name: employee.name || '',
                     email: employee.email || '',
                     password: '',
-                    role: employee.role || 'employee',
+                    role: employee.role || 'cong_nhan_cty',
                     org_id: employee.org_id || defaultOrgId,
                     assigned_inundation_point_ids: employee.assigned_inundation_point_ids || [],
                     assigned_emergency_construction_ids: employee.assigned_emergency_construction_ids || [],
@@ -53,7 +53,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                     name: '',
                     email: '',
                     password: '',
-                    role: 'employee',
+                    role: 'cong_nhan_cty',
                     org_id: defaultOrgId,
                     assigned_inundation_point_ids: [],
                     assigned_emergency_construction_ids: [],
@@ -146,21 +146,33 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                                 onChange={(e) => handleChange('role', e.target.value)}
                                 sx={{ borderRadius: '12px', bgcolor: '#f8fafc' }}
                             >
-                                {roles.length === 0 ? (
+                                {roles
+                                    .filter(r => {
+                                        if (userRole === 'giam_doc_xn') {
+                                            return ['truong_phong_kt', 'cong_nhan_cty'].includes(r.code);
+                                        }
+                                        return true; // Other roles see all (or we can restrict more if needed)
+                                    })
+                                    .length === 0 ? (
                                     <MenuItem value={formData.role}>
                                         <CircularProgress size={14} sx={{ mr: 1 }} /> Đang tải...
                                     </MenuItem>
                                 ) : (
-                                    roles.map((r) => (
-                                        <MenuItem key={r.code} value={r.code}>
-                                            {r.name}
-                                        </MenuItem>
-                                    ))
+                                    roles
+                                        .filter(r => {
+                                            if (userRole === 'giam_doc_xn') {
+                                                return ['truong_phong_kt', 'cong_nhan_cty'].includes(r.code);
+                                            }
+                                            return true;
+                                        })
+                                        .map((r) => (
+                                            <MenuItem key={r.code} value={r.code}>
+                                                {r.name}
+                                            </MenuItem>
+                                        ))
                                 )}
 
-                                {!roles.find(r => r.code === 'employee') && (
-                                    <MenuItem value="employee">Employee (Legacy)</MenuItem>
-                                )}
+
                             </Select>
                         </FormControl>
                     </Box>
@@ -182,7 +194,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                         </FormControl>
                     )}
 
-                    {formData.role === 'employee' && (
+                    {['employee', 'cong_nhan_cty'].includes(formData.role) && (
                         <>
                             <Box>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>

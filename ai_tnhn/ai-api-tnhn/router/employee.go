@@ -1,7 +1,6 @@
 package router
 
 import (
-	"ai-api-tnhn/constant"
 	"ai-api-tnhn/handler"
 	"ai-api-tnhn/router/middleware"
 
@@ -13,7 +12,7 @@ func (h *HandlerFuncs) EmployeeRoutes(g *gin.RouterGroup, mid middleware.Middlew
 	// Assuming MidBasicType checks for valid token.
 	// Role check can be here or in handler.
 	// We allow SUPER_ADMIN and ADMIN_ORG (if exists) to manage employees.
-	grp := g.Group("/employees", mid.MidBasicType(constant.ROLE_SUPER_ADMIN, constant.ROLE_ADMIN_ORG))
+	grp := g.Group("/employees", mid.MidBasicType())
 	{
 		grp.POST("", empHandler.Create)
 		grp.PUT("/:id", empHandler.Update)

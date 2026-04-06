@@ -121,7 +121,7 @@ const EmployeeList = () => {
     // Get auth state from Zustand
     const { role: userRole, user: userInfo, hasPermission } = useAuthStore();
     const userOrgId = userInfo?.org_id || '';
-    const canSelectOrg = ['super_admin', 'chu_tich_cty', 'giam_doc_cty', 'pho_giam_doc_cty', 'phong_ht_mt_cds'].includes(userRole);
+    const canSelectOrg = ['super_admin', 'chu_tich_cty', 'giam_doc_cty', 'pho_giam_doc_cty', 'phong_ht_mt_cds', 'giam_doc_xn'].includes(userRole);
 
     const [searchParams] = useSearchParams();
     const urlOrgId = searchParams.get('org_id') || (canSelectOrg ? '' : userOrgId);

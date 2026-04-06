@@ -218,11 +218,19 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                 <TableCell sx={{ p: 2 }}>
                     <Typography
                         variant="body2"
-                        sx={{ fontWeight: 800, cursor: 'pointer', '&:hover': { color: 'primary.main' }, color: 'primary.dark' }}
-                        onClick={() => navigate(point.status === 'active'
-                            ? `${basePath}/inundation/form?tab=1&id=${point.active_report.id}&name=${encodeURIComponent(point.name)}`
-                            : `${basePath}/inundation/form?tab=0&point_id=${point.id}&name=${encodeURIComponent(point.name)}`
-                        )}
+                        sx={{ 
+                            fontWeight: 800, 
+                            cursor: (point.status === 'active' ? hasPermission('inundation:edit') : hasPermission('inundation:create')) ? 'pointer' : 'default', 
+                            '&:hover': { color: (point.status === 'active' ? hasPermission('inundation:edit') : hasPermission('inundation:create')) ? 'primary.main' : 'primary.dark' }, 
+                            color: 'primary.dark' 
+                        }}
+                        onClick={() => {
+                            if (point.status === 'active') {
+                                if (hasPermission('inundation:edit')) navigate(`${basePath}/inundation/form?tab=1&id=${point.active_report.id}&name=${encodeURIComponent(point.name)}`);
+                            } else {
+                                if (hasPermission('inundation:create')) navigate(`${basePath}/inundation/form?tab=0&point_id=${point.id}&name=${encodeURIComponent(point.name)}`);
+                            }
+                        }}
                     >
                         {point.name}
                     </Typography>

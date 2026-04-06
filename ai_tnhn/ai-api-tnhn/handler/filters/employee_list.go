@@ -14,15 +14,16 @@ type EmployeeListRequest struct {
 }
 
 func NewEmployeeListRequest() *EmployeeListRequest {
-	return &EmployeeListRequest{
+	req := &EmployeeListRequest{
 		PaginationFilter: *filter.NewPaginationFilter(),
 	}
+	req.SetOrderBy("org_id", "name")
+	return req
 }
 
 func (f *EmployeeListRequest) GetWhere() filter.Where {
-	// Filter roles: by default show both employee and admin_org
-	// If we want to allow filtering by a specific role in the future, we can add it to the struct
-	f.AddWhere("role", "role", primitive.M{"$in": []string{"employee", "admin_org"}})
+	// Show all roles by default unless explicitly filtered by a new field in the future
+
 
 	if f.OrgID != "" && f.OrgID != "all" {
 		f.AddWhere("org_id", "org_id", f.OrgID)

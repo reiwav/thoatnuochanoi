@@ -553,17 +553,19 @@ const ConstructionForm = () => {
             />
             {tabValue === 0 && (
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', px: { xs: 1, md: 2 }, mb: -1, position: 'relative', zIndex: 10 }}>
-                    <Button
-                        variant="outlined"
-                        color="primary"
-                        size="small"
-                        startIcon={<IconDownload size={16} />}
-                        onClick={handleExportExcel}
-                        disabled={history.length === 0}
-                        sx={{ borderRadius: 2, bgcolor: 'background.paper' }}
-                    >
-                        Xuất Excel
-                    </Button>
+                    {useAuthStore().hasPermission('emergency:export') && (
+                        <Button
+                            variant="outlined"
+                            color="primary"
+                            size="small"
+                            startIcon={<IconDownload size={16} />}
+                            onClick={handleExportExcel}
+                            disabled={history.length === 0}
+                            sx={{ borderRadius: 2, bgcolor: 'background.paper' }}
+                        >
+                            Xuất Excel
+                        </Button>
+                    )}
                 </Box>
             )}
             {tabValue === 0 ? renderHistory() : renderForm()}

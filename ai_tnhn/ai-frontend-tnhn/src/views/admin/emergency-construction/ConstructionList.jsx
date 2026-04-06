@@ -61,7 +61,7 @@ const CollapsibleConstructionRow = ({ row, handleOpenEdit, handleDelete, orgs, g
                                 {hasPermission('emergency:edit') && (
                                     <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}><IconEdit size={20} /></IconButton>
                                 )}
-                                {hasPermission('emergency:edit') && (
+                                {hasPermission('emergency:delete') && (
                                     <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}><IconTrash size={20} /></IconButton>
                                 )}
                             </Stack>
@@ -92,7 +92,7 @@ const CollapsibleConstructionRow = ({ row, handleOpenEdit, handleDelete, orgs, g
                         {hasPermission('emergency:edit') && (
                             <Tooltip title="Chỉnh sửa"><IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}><IconEdit size={18} /></IconButton></Tooltip>
                         )}
-                        {hasPermission('emergency:edit') && (
+                        {hasPermission('emergency:delete') && (
                             <Tooltip title="Xóa"><IconButton color="error" size="small" onClick={() => handleDelete(row.id)}><IconTrash size={18} /></IconButton></Tooltip>
                         )}
                     </Stack>
@@ -223,7 +223,7 @@ const ConstructionList = () => {
     return (
         <Box>
             <Stack direction="row" justifyContent="flex-end" sx={{ mb: 2 }}>
-                {hasPermission('emergency:edit') && (
+                {hasPermission('emergency:create') && (
                     <Button variant="contained" color="secondary" startIcon={<IconPlus size={18} />} onClick={handleOpenCreate}>
                         Thêm công trình
                     </Button>

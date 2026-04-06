@@ -14,6 +14,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import AnimateButton from 'ui-component/extended/AnimateButton';
 import employeeApi from 'api/employee';
 import organizationApi from 'api/organization';
+import axiosClient from 'api/axiosClient';
 import EmployeeDialog from './EmployeeDialog';
 import useAuthStore from 'store/useAuthStore';
 
@@ -47,7 +48,15 @@ const EmployeeRow = ({ row, handleOpenEdit, handleDelete, roleLabel, orgName, us
                         <Chip label={row.active ? 'Hoạt động' : 'Ngừng hoạt động'} color={row.active ? 'success' : 'default'} size="small" variant="outlined" />
                     </TableCell>
                 )}
-                <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+                <TableCell align="right" sx={{ 
+                    whiteSpace: 'nowrap',
+                    position: 'sticky',
+                    right: 0,
+                    bgcolor: 'background.paper',
+                    zIndex: 1,
+                    borderLeft: '1px solid',
+                    borderColor: 'divider'
+                }}>
                     {hasPermission('employee:edit') && (
                         <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>
                             <IconEdit size={20} />
@@ -121,6 +130,7 @@ const EmployeeList = () => {
     const [loading, setLoading] = useState(false);
     const [employees, setEmployees] = useState([]);
     const [organizations, setOrganizations] = useState([]);
+    const [roles, setRoles] = useState([]);
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [totalItems, setTotalItems] = useState(0);
@@ -134,14 +144,21 @@ const EmployeeList = () => {
     // Fetch all orgs for the dialog dropdown
     const loadOrganizations = async () => {
         try {
-            const res = await organizationApi.getAll({ per_page: 1000 });
-            if (res.data?.status === 'success') {
-                let orgs = Array.isArray(res.data.data?.data) ? res.data.data.data : [];
+            const [orgRes, roleRes] = await Promise.all([
+                organizationApi.getAll({ per_page: 1000 }),
+                axiosClient.get('/admin/roles')
+            ]);
+            
+            if (orgRes.data?.status === 'success') {
+                let orgs = Array.isArray(orgRes.data.data?.data) ? orgRes.data.data.data : [];
                 orgs = orgs.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'vi', { sensitivity: 'base' }));
                 setOrganizations(orgs);
             }
+            if (roleRes.data?.status === 'success') {
+                setRoles(roleRes.data.data || []);
+            }
         } catch (err) {
-            console.error('Lỗi tải danh sách công ty:', err);
+            console.error('Lỗi tải danh sách cấu hình:', err);
         }
     };
 
@@ -151,9 +168,7 @@ const EmployeeList = () => {
             const res = await employeeApi.getAll({ ...params, page: page + 1, per_page: rowsPerPage });
             if (res.data?.status === 'success') {
                 const result = res.data.data;
-                let emps = Array.isArray(result.data) ? result.data : [];
-                emps = emps.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'vi', { sensitivity: 'base' }));
-                setEmployees(emps);
+                setEmployees(Array.isArray(result.data) ? result.data : []);
                 setTotalItems(result.total || 0);
             } else {
                 setEmployees([]);
@@ -208,8 +223,10 @@ const EmployeeList = () => {
     };
 
     const roleLabel = (role) => {
-        if (role === 'admin_org') return 'Quản lý';
-        if (role === 'employee') return 'Nhân viên';
+        const found = roles.find(r => r.code === role);
+        if (found) return found.name;
+        if (role === 'admin_org') return 'Quản lý (Legacy)';
+        if (role === 'employee') return 'Nhân viên (Legacy)';
         return role;
     };
 
@@ -284,7 +301,15 @@ const EmployeeList = () => {
                             {!isMobile && hasPermission('organization:view') && <TableCell sx={{ fontWeight: 700 }}>Công ty</TableCell>}
                             {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Vai trò</TableCell>}
                             {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>}
-                            <TableCell align="right" sx={{ fontWeight: 700 }}>Thao tác</TableCell>
+                            <TableCell align="right" sx={{ 
+                                fontWeight: 700,
+                                position: 'sticky',
+                                right: 0,
+                                bgcolor: 'grey.50',
+                                zIndex: 2,
+                                borderLeft: '1px solid',
+                                borderColor: 'divider'
+                            }}>Thao tác</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>

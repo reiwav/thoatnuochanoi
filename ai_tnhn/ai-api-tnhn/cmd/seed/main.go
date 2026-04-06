@@ -44,10 +44,11 @@ func main() {
 	// 1. Define all permissions — Group = Menu, Title = Action/Feature
 	initialPermissions := []models.Permission{
 		// ─── HTBC mùa mưa ───
-		{Code: "ai:chat", Title: "Trợ lý AI", Group: "HTBC mùa mưa", Type: "button", Description: "Chat tự do hỗ trợ báo cáo mùa mưa"},
-		{Code: "ai:report", Title: "Báo cáo AI", Group: "HTBC mùa mưa", Type: "button", Description: "Tạo tin nhắn báo cáo / BC CT KC"},
+		{Code: "ai:chat", Title: "Xem & Chat", Group: "HTBC mùa mưa", Type: "menu", Description: "Menu tính năng & Nhập liệu Chat tự do"},
+		{Code: "ai:report", Title: "Tin nhắn báo cáo", Group: "HTBC mùa mưa", Type: "button", Description: "Tạo tin nhắn báo cáo nhanh"},
 		{Code: "ai:synthesis", Title: "Tổng hợp AI", Group: "HTBC mùa mưa", Type: "button", Description: "Báo cáo tổng hợp"},
 		{Code: "ai:post-rain", Title: "Sau mưa AI", Group: "HTBC mùa mưa", Type: "button", Description: "Báo cáo sau mưa (Words)"},
+		{Code: "ai:report-emergency", Title: "BC CT KC", Group: "HTBC mùa mưa", Type: "button", Description: "Nút tạo báo cáo công trình khẩn cấp"},
 
 		// ─── Lượng mưa ───
 		{Code: "rain:view", Title: "Xem", Group: "Lượng mưa", Type: "child_menu", Description: "Bảng mưa, phần xem của danh sách, so sánh, lịch sử"},
@@ -178,7 +179,7 @@ func main() {
 		"inundation:view", "inundation:create", "inundation:edit", "inundation:delete",
 		"water:view", "water:create", "water:edit", "water:export", "water:delete",
 		"cuapai:view", "trambom:view", "trambom:create", "trambom:edit", "trambom:delete",
-		"ai:chat", "ai:report", "ai:synthesis", "ai:post-rain",
+		"ai:chat", "ai:report", "ai:synthesis", "ai:post-rain", "ai:report-emergency",
 		"emergency:view", "emergency:create", "emergency:edit", "emergency:export",
 		"employee:view", "organization:view", "role:view", "role-matrix:view", 
 		"contract:view", "contract-category:view", "contract-ai:chat",

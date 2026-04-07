@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
     Button, Grid, TextField, Table, TableBody,
     TableCell, TableContainer, TableHead, TableRow, Paper,
-    IconButton, CircularProgress, Typography, Tooltip, Box, useTheme, Stack
+    IconButton, CircularProgress, Typography, Tooltip, Box, useTheme, Stack, Chip
 } from '@mui/material';
 import { IconTrash, IconPlus, IconEdit, IconSearch, IconShieldCheck } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
@@ -128,28 +128,47 @@ const RoleList = () => {
                 <Table>
                     <TableHead sx={{ bgcolor: 'grey.50' }}>
                         <TableRow>
-                            <TableCell sx={{ fontWeight: 800, py: 2 }}>Tên Vai trò</TableCell>
+                            <TableCell sx={{ fontWeight: 800, py: 2, pl: 3 }}>Tên Vai trò</TableCell>
                             <TableCell sx={{ fontWeight: 800 }}>Mã (Code)</TableCell>
+                            <TableCell sx={{ fontWeight: 800 }}>Cấp</TableCell>
                             <TableCell sx={{ fontWeight: 800 }}>Mô tả</TableCell>
-                            <TableCell align="right" sx={{ fontWeight: 800 }}>Thao tác</TableCell>
+                            <TableCell align="right" sx={{ fontWeight: 800, pr: 3 }}>Thao tác</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {loading ? (
-                            <TableRow><TableCell colSpan={4} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
+                            <TableRow><TableCell colSpan={5} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
                         ) : filteredRoles.length === 0 ? (
-                            <TableRow><TableCell colSpan={4} align="center" sx={{ py: 3 }}>Không tìm thấy vai trò nào</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={5} align="center" sx={{ py: 3 }}>Không tìm thấy vai trò nào</TableCell></TableRow>
                         ) : (
                             filteredRoles.map((row) => (
                                 <TableRow key={row.id} hover>
-                                    <TableCell sx={{ fontWeight: 600 }}>{row.name}</TableCell>
+                                    <TableCell sx={{ fontWeight: 600, pl: 3 }}>{row.name}</TableCell>
                                     <TableCell>
                                         <Typography variant="body2" sx={{ fontFamily: 'monospace', color: 'primary.main', fontWeight: 700, bgcolor: 'primary.lighter', px: 1, py: 0.5, borderRadius: 1.5, display: 'inline-block' }}>
                                             {row.code}
                                         </Typography>
                                     </TableCell>
-                                    <TableCell sx={{ color: 'text.secondary' }}>{row.description || '-'}</TableCell>
-                                    <TableCell align="right">
+                                    <TableCell>
+                                        <Chip 
+                                            label={row.is_company ? 'Công ty' : 'Xí nghiệp'} 
+                                            color={row.is_company ? 'primary' : 'default'}
+                                            size="small"
+                                            variant="outlined"
+                                            sx={{ fontWeight: 600 }}
+                                        />
+                                    </TableCell>
+                                    <TableCell sx={{ color: 'text.secondary' }}>
+                                        <Typography variant="body2" sx={{ 
+                                            maxWidth: 250, 
+                                            overflow: 'hidden', 
+                                            textOverflow: 'ellipsis', 
+                                            whiteSpace: 'nowrap' 
+                                        }}>
+                                            {row.description || '-'}
+                                        </Typography>
+                                    </TableCell>
+                                    <TableCell align="right" sx={{ pr: 3 }}>
                                         {hasPermission('role:edit') && (
                                             <Stack direction="row" spacing={0.5} justifyContent="flex-end">
                                                 <Tooltip title="Chỉnh sửa">

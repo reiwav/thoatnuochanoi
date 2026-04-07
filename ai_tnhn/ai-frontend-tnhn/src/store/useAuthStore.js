@@ -14,7 +14,9 @@ const useAuthStore = create(
       
       // Actions
       login: (userData, token, role) => {
-        set({ user: userData, token, role });
+        let normalizedRole = role;
+        if (role === 'giam_doc_xi_nghiep') normalizedRole = 'giam_doc_xn';
+        set({ user: userData, token, role: normalizedRole });
         // Fetch permissions immediately after login if token exists
         get().fetchPermissions();
       },

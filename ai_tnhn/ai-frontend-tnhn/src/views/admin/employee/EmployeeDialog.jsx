@@ -105,7 +105,27 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
     }, [open, formData.org_id, defaultOrgId]);
 
     const handleChange = (field, value) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
+        setFormData(prev => {
+            const newData = { ...prev, [field]: value };
+            
+            // If changing organization, check if current role is still valid
+            if (field === 'org_id' && value) {
+                const selectedOrg = organizations.find(o => o.id === value);
+                const isCompany = selectedOrg?.code?.toUpperCase() === 'TNHN';
+                
+                // Find if current role is valid for the new org type
+                const selectedRole = roles.find(r => r.code === prev.role);
+                const isCurrentRoleValid = selectedRole ? selectedRole.is_company === isCompany : false;
+                
+                if (!isCurrentRoleValid) {
+                    // Default fallback: Find first valid role for this org type
+                    const defaultRole = roles.find(r => r.is_company === isCompany);
+                    newData.role = defaultRole ? defaultRole.code : (isCompany ? 'giam_doc_cty' : 'cong_nhan_cty');
+                }
+            }
+            
+            return newData;
+        });
     };
 
     const handleSave = () => {
@@ -148,10 +168,20 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                             >
                                 {roles
                                     .filter(r => {
+                                        // 1. Filter by current user permission (giam_doc_xn restriction)
                                         if (userRole === 'giam_doc_xn') {
-                                            return ['truong_phong_kt', 'cong_nhan_cty'].includes(r.code);
+                                            if (!['truong_phong_kt', 'cong_nhan_cty'].includes(r.code)) return false;
                                         }
-                                        return true; // Other roles see all (or we can restrict more if needed)
+
+                                        // 2. Filter by selected organization type
+                                        const selectedOrg = organizations.find(o => o.id === formData.org_id);
+                                        const isCompany = selectedOrg?.code?.toUpperCase() === 'TNHN';
+                                        
+                                        if (formData.org_id) {
+                                            return r.is_company === isCompany;
+                                        }
+
+                                        return true;
                                     })
                                     .length === 0 ? (
                                     <MenuItem value={formData.role}>
@@ -160,9 +190,19 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                                 ) : (
                                     roles
                                         .filter(r => {
+                                            // 1. Filter by current user permission (giam_doc_xn restriction)
                                             if (userRole === 'giam_doc_xn') {
-                                                return ['truong_phong_kt', 'cong_nhan_cty'].includes(r.code);
+                                                if (!['truong_phong_kt', 'cong_nhan_cty'].includes(r.code)) return false;
                                             }
+
+                                            // 2. Filter by selected organization type
+                                            const selectedOrg = organizations.find(o => o.id === formData.org_id);
+                                            const isCompany = selectedOrg?.code?.toUpperCase() === 'TNHN';
+                                            
+                                            if (formData.org_id) {
+                                                return r.is_company === isCompany;
+                                            }
+
                                             return true;
                                         })
                                         .map((r) => (

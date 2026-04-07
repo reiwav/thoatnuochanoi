@@ -154,6 +154,9 @@ func (h *AuthHandler) GoogleCallbackHandler(c *gin.Context) {
 	if role == "supper_admin" || role == "supper_admib" || role == "super_admin " {
 		role = "super_admin"
 	}
+	if role == "giam_doc_xi_nghiep" {
+		role = "giam_doc_xn"
+	}
 
 	// 5. Redirect to frontend with token, role, and name
 	redirectURL := fmt.Sprintf("%s/?token=%s&role=%s&name=%s",

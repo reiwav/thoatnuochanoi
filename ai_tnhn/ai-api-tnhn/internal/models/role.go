@@ -9,4 +9,5 @@ type Role struct {
 	Name            string `bson:"name" json:"name"`
 	Code            string `bson:"code" json:"code"`
 	Description     string `bson:"description" json:"description"`
+	IsCompany       bool   `bson:"is_company" json:"is_company"`
 }

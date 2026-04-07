@@ -62,6 +62,7 @@ func main() {
 		{Code: "inundation:create", Title: "Báo cáo", Group: "Điểm ngập", Type: "button", Description: "Nút báo cáo ngập tại Dashboard"},
 		{Code: "inundation:edit", Title: "Sửa", Group: "Điểm ngập", Type: "button", Description: "Chỉnh sửa trạng thái ngập"},
 		{Code: "inundation:delete", Title: "Xóa", Group: "Điểm ngập", Type: "button", Description: "Xóa báo cáo ngập"},
+		{Code: "inundation:review", Title: "Nhận xét", Group: "Điểm ngập", Type: "button", Description: "Quyền rà soát và gửi nhận xét cho nhân viên"},
 
 		// ─── Mực nước ───
 		{Code: "water:view", Title: "Xem", Group: "Mực nước", Type: "child_menu", Description: "Xem bảng sông hồ, lịch sử, danh sách"},
@@ -176,7 +177,7 @@ func main() {
 	// Theo DB: Xem/Nhập tất cả VH + AI báo cáo + Xem quản trị cơ bản
 	_ = permService.UpdateMatrix(ctx, constant.ROLE_PHONG_KT_CL, []string{
 		"rain:view", "rain:create", "rain:edit", "rain:export", "rain:delete",
-		"inundation:view", "inundation:create", "inundation:edit", "inundation:delete",
+		"inundation:view", "inundation:create", "inundation:edit", "inundation:delete", "inundation:review",
 		"water:view", "water:create", "water:edit", "water:export", "water:delete",
 		"cuapai:view", "trambom:view", "trambom:create", "trambom:edit", "trambom:delete",
 		"ai:chat", "ai:report", "ai:synthesis", "ai:post-rain", "ai:report-emergency",
@@ -203,7 +204,7 @@ func main() {
 	// Theo DB: Xem mưa/ngập/nước/cửa phai/trạm bơm + Báo cáo ngập + CT khẩn cấp
 	_ = permService.UpdateMatrix(ctx, constant.ROLE_CONG_NHAN_CTY, []string{
 		"rain:view", 
-		"inundation:view", "inundation:create",
+		"inundation:view", "inundation:create", "inundation:edit",
 		"water:view", 
 		"cuapai:view", 
 		"trambom:view", 

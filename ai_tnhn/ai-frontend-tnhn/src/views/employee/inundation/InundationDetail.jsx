@@ -26,7 +26,7 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
     const [reviewDialog, setReviewDialog] = useState({ open: false, itemId: null, type: null, comment: '' });
     const [editMode, setEditMode] = useState({ open: false, item: null });
 
-    const { role: userRole } = useAuthStore();
+    const { role: userRole, hasPermission } = useAuthStore();
 
     const handleOpenViewer = (imgs, idx = 0) => {
         if (!imgs || imgs.length === 0) {
@@ -226,7 +226,7 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
                                     </Box>
                                 )}
 
-                                {['reviewer', 'phong_kt_cl', 'super_admin', 'phong_ht_mt_cds'].includes(userRole) && (
+                                {hasPermission('inundation:review') && (
                                     <Button
                                         size="small" startIcon={<IconMessage2 size={16} />}
                                         variant="outlined" color="error"
@@ -237,7 +237,7 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
                                     </Button>
                                 )}
 
-                                {userRole === 'employee' && item.needs_correction && (
+                                {hasPermission('inundation:edit') && item.needs_correction && (
                                     <Button
                                         size="small" startIcon={<IconEdit size={16} />}
                                         variant="contained" color="error"

@@ -55,7 +55,8 @@ export default function AuthLogin() {
       storeLogin({ name, email: searchParams.get('email') }, token, userRole);
       
       // Immediate redirection based on role
-      if (userRole === 'employee' || userRole === 'technician') {
+      const isEmployee = userRole === 'employee' || userRole === 'technician' || userRole === 'cong_nhan_cty';
+      if (isEmployee) {
         navigate('/company/inundation', { replace: true });
       } else if (userRole === 'manager_contract') {
         navigate('/admin/ai-contract', { replace: true });
@@ -101,7 +102,8 @@ export default function AuthLogin() {
         storeLogin({ name: tokenData.name, email: values.email }, tokenData.id, role);
 
         // Redirect based on role
-        if (role === 'employee' || role === 'technician') {
+        const isEmployee = role === 'employee' || role === 'technician' || role === 'cong_nhan_cty';
+        if (isEmployee) {
           navigate('/company/inundation');
         } else if (role === 'manager_contract') {
           navigate('/admin/ai-contract');

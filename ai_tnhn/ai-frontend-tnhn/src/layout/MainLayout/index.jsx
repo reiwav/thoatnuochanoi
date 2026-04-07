@@ -96,7 +96,7 @@ export default function MainLayout() {
     if (isChecking || !userInfo) return;
 
     const role = userRole || 'employee';
-    const isEmployee = role === 'employee' || role === 'technician';
+    const isEmployee = role === 'employee' || role === 'technician' || role === 'cong_nhan_cty';
     const basePath = isEmployee ? '/company' : '/admin';
 
     // If at root, redirect to respective dashboard
@@ -115,7 +115,7 @@ export default function MainLayout() {
     }
   }, [isChecking, userInfo, pathname, navigate, userRole]);
 
-  const isEmployee = userRole === 'employee' || userRole === 'technician';
+  const isEmployee = userRole === 'employee' || userRole === 'technician' || userRole === 'cong_nhan_cty';
   const basePath = isEmployee ? '/company' : '/admin';
 
   // Fetch active flood count for badge

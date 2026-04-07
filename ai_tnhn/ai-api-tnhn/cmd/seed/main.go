@@ -17,13 +17,13 @@ import (
 func main() {
 	// Load environment variables from .env file if it exists
 	_ = godotenv.Load()
-	
+
 	conf := config.LoadEnv()
 	logSvc := logger.NewLogger(conf.LoggerConfig)
 	log := logSvc.GetLogger()
 
 	ctx := context.Background()
-	
+
 	log.Info("Connecting to database...")
 	mgo, err := db.ConnectMongo(conf.DB)
 	if err != nil {
@@ -35,7 +35,7 @@ func main() {
 	permRepo := query.NewPermissionRepo(mgo.DB, "permissions", "perm", logSvc)
 	rolePermRepo := query.NewRolePermissionRepo(mgo.DB, "role_permissions", "rp", logSvc)
 	permService := permission.NewService(permRepo, rolePermRepo)
-	
+
 	roleRepo := query.NewRoleRepo(mgo.DB, "roles", "role", logSvc)
 	roleService := role.NewService(roleRepo)
 
@@ -44,11 +44,11 @@ func main() {
 	// 1. Define all permissions — Group = Menu, Title = Action/Feature
 	initialPermissions := []models.Permission{
 		// ─── HTBC mùa mưa ───
-		{Code: "ai:chat", Title: "Xem & Chat", Group: "HTBC mùa mưa", Type: "menu", Description: "Menu tính năng & Nhập liệu Chat tự do"},
-		{Code: "ai:report", Title: "Tin nhắn báo cáo", Group: "HTBC mùa mưa", Type: "button", Description: "Tạo tin nhắn báo cáo nhanh"},
-		{Code: "ai:synthesis", Title: "Tổng hợp AI", Group: "HTBC mùa mưa", Type: "button", Description: "Báo cáo tổng hợp"},
-		{Code: "ai:post-rain", Title: "Sau mưa AI", Group: "HTBC mùa mưa", Type: "button", Description: "Báo cáo sau mưa (Words)"},
-		{Code: "ai:report-emergency", Title: "BC CT KC", Group: "HTBC mùa mưa", Type: "button", Description: "Nút tạo báo cáo công trình khẩn cấp"},
+		{Code: "ai:chat", Title: "Xem & Chat", Group: "Hệ thống báo cáo", Type: "menu", Description: "Menu tính năng & Nhập liệu Chat tự do"},
+		{Code: "ai:report", Title: "Tin nhắn báo cáo", Group: "Hệ thống báo cáo", Type: "button", Description: "Tạo tin nhắn báo cáo nhanh"},
+		{Code: "ai:synthesis", Title: "Tổng hợp AI", Group: "Hệ thống báo cáo", Type: "button", Description: "Báo cáo tổng hợp"},
+		{Code: "ai:post-rain", Title: "Sau mưa AI", Group: "Hệ thống báo cáo", Type: "button", Description: "Báo cáo sau mưa (Words)"},
+		{Code: "ai:report-emergency", Title: "BC CT KC", Group: "Hệ thống báo cáo", Type: "button", Description: "Nút tạo báo cáo công trình khẩn cấp"},
 
 		// ─── Lượng mưa ───
 		{Code: "rain:view", Title: "Xem", Group: "Lượng mưa", Type: "child_menu", Description: "Bảng mưa, phần xem của danh sách, so sánh, lịch sử"},
@@ -97,16 +97,16 @@ func main() {
 		{Code: "employee:create", Title: "Thêm", Group: "Hệ thống", Type: "button", Description: "Thêm tài khoản mới"},
 		{Code: "employee:edit", Title: "Sửa", Group: "Hệ thống", Type: "button", Description: "Sửa tài khoản"},
 		{Code: "employee:delete", Title: "Xóa", Group: "Hệ thống", Type: "button", Description: "Xóa tài khoản"},
-		// ─── Hệ thống → Chi nhánh ───
-		{Code: "organization:view", Title: "Xem", Group: "Hệ thống", Type: "child_menu", Description: "Xem danh sách chi nhánh"},
-		{Code: "organization:create", Title: "Thêm", Group: "Hệ thống", Type: "button", Description: "Thêm chi nhánh mới"},
-		{Code: "organization:edit", Title: "Sửa", Group: "Hệ thống", Type: "button", Description: "Sửa chi nhánh"},
-		{Code: "organization:delete", Title: "Xóa", Group: "Hệ thống", Type: "button", Description: "Xóa chi nhánh"},
+		// ─── Hệ thống → Đơn vị ───
+		{Code: "organization:view", Title: "Xem", Group: "Hệ thống", Type: "child_menu", Description: "Xem danh sách đơn vị"},
+		{Code: "organization:create", Title: "Thêm", Group: "Hệ thống", Type: "button", Description: "Thêm đơn vị mới"},
+		{Code: "organization:edit", Title: "Sửa", Group: "Hệ thống", Type: "button", Description: "Sửa đơn vị"},
+		{Code: "organization:delete", Title: "Xóa", Group: "Hệ thống", Type: "button", Description: "Xóa đơn vị"},
 		// ─── Hệ thống → Quyền hạn ───
-		{Code: "role-matrix:view", Title: "Xem", Group: "Hệ thống", Type: "child_menu", Description: "Xem ma trận quyền"},
-		{Code: "role-matrix:edit", Title: "Sửa", Group: "Hệ thống", Type: "button", Description: "Lưu cấu hình quyền"},
-		{Code: "role:view", Title: "Xem", Group: "Hệ thống", Type: "child_menu", Description: "Xem danh sách role"},
-		{Code: "role:edit", Title: "Sửa", Group: "Hệ thống", Type: "button", Description: "Sửa vai trò"},
+		{Code: "role-matrix:view", Title: "Xem", Group: "Hệ thống", Type: "child_menu", Description: "Xem phân quyền"},
+		{Code: "role-matrix:edit", Title: "Sửa", Group: "Hệ thống", Type: "button", Description: "Lưu cấu hình phân quyền"},
+		{Code: "role:view", Title: "Xem", Group: "Hệ thống", Type: "child_menu", Description: "Xem danh sách chức vụ"},
+		{Code: "role:edit", Title: "Sửa", Group: "Hệ thống", Type: "button", Description: "Sửa chức vụ"},
 
 		// ─── Hợp đồng ───
 		{Code: "contract-ai:chat", Title: "AI Trợ lý", Group: "Hợp đồng", Type: "child_menu", Description: "Chat AI trợ lý hợp đồng"},
@@ -135,7 +135,7 @@ func main() {
 	}
 
 	// 2. Map Permissions to Roles based on Organizational Matrix
-	
+
 	// Roles with Full Access (Company Level + System Admin)
 	fullAccessRoles := []string{
 		constant.ROLE_SUPER_ADMIN,
@@ -182,7 +182,7 @@ func main() {
 		"cuapai:view", "trambom:view", "trambom:create", "trambom:edit", "trambom:delete",
 		"ai:chat", "ai:report", "ai:synthesis", "ai:post-rain", "ai:report-emergency",
 		"emergency:view", "emergency:create", "emergency:edit", "emergency:export",
-		"employee:view", "organization:view", "role:view", "role-matrix:view", 
+		"employee:view", "organization:view", "role:view", "role-matrix:view",
 		"contract:view", "contract-category:view", "contract-ai:chat",
 	})
 	log.Info("✓ Seeded granular role: phong_kt_cl")
@@ -193,7 +193,7 @@ func main() {
 		"rain:view", "rain:create", "rain:edit", "rain:export",
 		"inundation:view", "inundation:create", "inundation:edit",
 		"trambom:view",
-		"employee:view", 
+		"employee:view",
 		"emergency:view", "emergency:create", "emergency:edit", "emergency:export",
 	}
 	_ = permService.UpdateMatrix(ctx, constant.ROLE_GIAM_DOC_XN, enterpriseManagerPerms)
@@ -203,11 +203,11 @@ func main() {
 	// 8. Công nhân công ty (cong_nhan_cty)
 	// Theo DB: Xem mưa/ngập/nước/cửa phai/trạm bơm + Báo cáo ngập + CT khẩn cấp
 	_ = permService.UpdateMatrix(ctx, constant.ROLE_CONG_NHAN_CTY, []string{
-		"rain:view", 
+		"rain:view",
 		"inundation:view", "inundation:create", "inundation:edit",
-		"water:view", 
-		"cuapai:view", 
-		"trambom:view", 
+		"water:view",
+		"cuapai:view",
+		"trambom:view",
 		"emergency:view", "emergency:create",
 	})
 	log.Info("✓ Seeded granular role: cong_nhan_cty")
@@ -215,7 +215,7 @@ func main() {
 	// 3. Seed Mock Users for Testing
 	log.Info("Seeding mock users for testing...")
 	userRepo := query.NewUserRepo(mgo.DB, "users", "usr", logSvc)
-	
+
 	mockUsers := []models.User{
 		{Name: "Chủ tịch Công ty", Username: "ct_tnhn", Email: "ct@tnhn.vn", Role: constant.ROLE_CHU_TICH_CTY, Active: true, Password: "tnhn@2026"},
 		{Name: "Giám đốc Công ty", Username: "gd_tnhn", Email: "gd@tnhn.vn", Role: constant.ROLE_GIAM_DOC_CTY, Active: true, Password: "tnhn@2026"},

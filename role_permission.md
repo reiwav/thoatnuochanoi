@@ -181,7 +181,7 @@ Quản trị viên có thể thay đổi quyền chi tiết của từng Role tr
 
 ---- MENU HỆ THỐNG VÀ QUẢN TRỊ ----
 
-1. [MENU] HTBC mùa mưa — 1 trang chat AI
+1. [MENU] Hệ thống báo cáo — 1 trang chat AI
    [BUTTON] Tin nhắn báo cáo (ai:report)
    [BUTTON] Báo cáo tổng hợp (ai:synthesis)
    [BUTTON] Báo cáo sau mưa - Words (ai:post-rain)
@@ -199,12 +199,13 @@ Quản trị viên có thể thay đổi quyền chi tiết của từng Role tr
       [BUTTON] xem
 
 3. [MENU] Điểm ngập
+   
+   [CHILD MENU] Cập nhật điểm ngập (dashboard)
+      [BUTTON] xem, cập nhật (edit), báo cáo (create)
+   [CHILD MENU] Giám sát ngập úng
+      [BUTTON] xem, sửa, xoá
    [CHILD MENU] Danh sách (trạm đo ngập)
       [BUTTON] xem, tạo, sửa, xoá
-   [CHILD MENU] Điểm ngập (dashboard)
-      [BUTTON] xem, cập nhật (edit), báo cáo (create)
-   [CHILD MENU] Quản lý báo cáo
-      [BUTTON] xem, sửa, xoá
    [CHILD MENU] Lịch sử
       [BUTTON] xem
 
@@ -240,11 +241,11 @@ Quản trị viên có thể thay đổi quyền chi tiết của từng Role tr
 9. [MENU] Hệ thống
    [CHILD MENU] Tài khoản
       [BUTTON] xem, tạo, sửa, xoá
-   [CHILD MENU] Chi nhánh
+   [CHILD MENU] Tạo đơn vị
       [BUTTON] xem, tạo, sửa, xoá
-   [CHILD MENU] Ma trận quyền
+   [CHILD MENU] Phân quyền
       [BUTTON] xem, sửa
-   [CHILD MENU] Danh sách role
+   [CHILD MENU] Chức vụ
       [BUTTON] xem, sửa
 
 10. [MENU] Hợp đồng

@@ -76,7 +76,7 @@ const AiSupport = () => {
             const limit = 50;
             const beforeParam = before ? `&before=${before}` : '';
             const res = await axiosClient.get(`/admin/google/chat/history?chat_type=support&limit=${limit}${beforeParam}`);
-            
+
             if (res.data?.status === 'success' && Array.isArray(res.data.data)) {
                 const historyLogs = res.data.data.map(log => ({
                     id: log.id,
@@ -89,14 +89,14 @@ const AiSupport = () => {
                     // Prepend older history
                     const prevScrollHeight = scrollRef.current?.scrollHeight || 0;
                     setMessages(prev => [...historyLogs, ...prev]);
-                    
+
                     // Maintain scroll position after state update
                     setTimeout(() => {
                         if (scrollRef.current) {
                             scrollRef.current.scrollTop = scrollRef.current.scrollHeight - prevScrollHeight;
                         }
                     }, 0);
-                    
+
                     if (historyLogs.length < limit) {
                         setHasMore(false);
                     }
@@ -126,7 +126,7 @@ const AiSupport = () => {
 
     const handleScroll = () => {
         if (!scrollRef.current || loadingMore || !hasMore) return;
-        
+
         if (scrollRef.current.scrollTop === 0) {
             const oldestMsg = messages.find(m => m.id !== 'welcome');
             if (oldestMsg && oldestMsg.timestamp) {
@@ -263,12 +263,12 @@ const AiSupport = () => {
                     role: 'ai',
                     text: `### ${detail.subject}\n**Từ:** ${detail.from}\n**Ngày:** ${detail.date}\n\n${detail.body}${attachmentsText}`
                 };
-                
+
                 // Add User Message for context
                 const userMsg = { id: Date.now() - 1, role: 'user', text: `Xem chi tiết email: ${detail.subject}` };
                 setMessages(prev => [...prev, userMsg, aiMsg]);
                 shouldScrollToBottom.current = true;
-                
+
                 // Refresh stats to update unread count
                 fetchStats();
             }
@@ -595,7 +595,7 @@ const AiSupport = () => {
                             <IconRobot size={24} />
                         </Avatar>
                         <Box>
-                            <Typography variant="h4" fontWeight={800}>HTBC mùa mưa</Typography>
+                            <Typography variant="h4" fontWeight={800}>Hệ thống báo cáo</Typography>
                             <Typography variant="caption" color="text.secondary">Thoát nước Hà Nội</Typography>
                         </Box>
                     </Box>
@@ -693,8 +693,8 @@ const AiSupport = () => {
                 </Box>
 
                 {/* Messages List */}
-                <Box 
-                    ref={scrollRef} 
+                <Box
+                    ref={scrollRef}
                     onScroll={handleScroll}
                     sx={{ flex: 1, p: 3, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 3, scrollBehavior: 'smooth' }}
                 >

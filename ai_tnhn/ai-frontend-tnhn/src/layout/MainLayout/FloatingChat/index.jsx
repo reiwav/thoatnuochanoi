@@ -112,7 +112,7 @@ const FloatingChat = () => {
                                 <IconRobot size={24} />
                             </Avatar>
                             <Box>
-                                <Typography variant="h5" color="inherit" fontWeight={800}>HTBC mùa mưa</Typography>
+                                <Typography variant="h5" color="inherit" fontWeight={800}>Hệ thống báo cáo</Typography>
                                 <Typography variant="caption" color="inherit" sx={{ opacity: 0.8 }}>Dành cho Super Admin</Typography>
                             </Box>
                         </Stack>

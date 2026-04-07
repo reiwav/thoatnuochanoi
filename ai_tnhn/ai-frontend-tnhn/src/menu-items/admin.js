@@ -17,7 +17,7 @@ const adminPages = {
   children: [
     {
       id: 'ai:chat',
-      title: 'HTBC mùa mưa',
+      title: 'Hệ thống báo cáo',
       type: 'item',
       url: '/admin/ai-support',
       icon: icons.IconMessageChatbot,
@@ -69,15 +69,7 @@ const adminPages = {
       children: [
         {
           id: 'inundation:view',
-          title: 'Danh sách',
-          type: 'item',
-          url: '/admin/station/inundation/list',
-          icon: icons.IconList,
-          breadcrumbs: false
-        },
-        {
-          id: 'inundation:view',
-          title: 'Điểm ngập',
+          title: 'Cập nhật điểm ngập',
           type: 'item',
           url: '/admin/inundation',
           icon: icons.IconTornado,
@@ -85,11 +77,19 @@ const adminPages = {
         },
         {
           id: 'inundation:view',
-          title: 'Quản lý báo cáo',
+          title: 'Giám sát úng ngập',
           type: 'item',
           url: '/admin/inundation-list',
           icon: icons.IconList,
           breadcrumbs: false,
+        },
+        {
+          id: 'inundation:view',
+          title: 'Danh sách',
+          type: 'item',
+          url: '/admin/station/inundation/list',
+          icon: icons.IconList,
+          breadcrumbs: false
         },
         {
           id: 'inundation:view',
@@ -230,7 +230,7 @@ const adminPages = {
         },
         {
           id: 'organization:view',
-          title: 'Chi nhánh',
+          title: 'Tạo đơn vị',
           type: 'item',
           url: '/admin/organization',
           icon: icons.IconBuilding,
@@ -238,7 +238,7 @@ const adminPages = {
         },
         {
           id: 'role-matrix:view',
-          title: 'Ma trận quyền',
+          title: 'Phân quyền',
           type: 'item',
           url: '/admin/role-matrix',
           icon: icons.IconList,
@@ -246,7 +246,7 @@ const adminPages = {
         },
         {
           id: 'role:view',
-          title: 'Danh sách Role',
+          title: 'Chức vụ',
           type: 'item',
           url: '/admin/role',
           icon: icons.IconUsers,

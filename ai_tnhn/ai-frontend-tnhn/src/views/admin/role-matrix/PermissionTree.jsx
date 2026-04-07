@@ -13,7 +13,7 @@ import { IconSquare, IconCheckbox, IconMinus } from '@tabler/icons-react';
 
 // Thứ tự groups theo menu sidebar (không sort A-Z)
 const GROUP_ORDER = [
-    'HTBC mùa mưa',
+    'Hệ thống báo cáo',
     'Lượng mưa',
     'Điểm ngập',
     'Mực nước',
@@ -28,9 +28,9 @@ const GROUP_ORDER = [
 // Label hiển thị cho sub-module trong groups phức tạp (nhiều prefix code khác nhau)
 const MODULE_LABELS = {
     employee: 'Tài khoản',
-    organization: 'Chi nhánh',
-    role: 'Danh sách Role',
-    'role-matrix': 'Ma trận quyền',
+    organization: 'Đơn vị',
+    role: 'Chức vụ',
+    'role-matrix': 'Phân quyền',
     contract: 'Danh sách HĐ',
     'contract-category': 'Danh mục',
     'contract-ai': 'AI Trợ lý',

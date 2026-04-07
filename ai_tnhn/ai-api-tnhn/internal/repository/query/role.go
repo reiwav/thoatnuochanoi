@@ -38,7 +38,16 @@ func (r roleRepository) Create(ctx context.Context, role *models.Role) error {
 
 func (r roleRepository) Update(ctx context.Context, id string, role *models.Role) error {
 	role.BeforeUpdate()
-	_, err := r.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": role})
+	update := bson.M{
+		"$set": bson.M{
+			"name":        role.Name,
+			"code":        role.Code,
+			"description": role.Description,
+			"is_company":  role.IsCompany,
+			"updated_at":  role.MTime,
+		},
+	}
+	_, err := r.UpdateOne(ctx, bson.M{"_id": id}, update)
 	return err
 }
 

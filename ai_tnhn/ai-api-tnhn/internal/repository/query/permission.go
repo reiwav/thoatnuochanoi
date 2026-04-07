@@ -36,7 +36,16 @@ func (r permissionRepository) Upsert(ctx context.Context, p *models.Permission) 
 		p.ID = existing.ID
 		p.CTime = existing.CTime
 		p.BeforeUpdate()
-		_, err = r.UpdateOne(ctx, filter, bson.M{"$set": p})
+		update := bson.M{
+			"$set": bson.M{
+				"title":       p.Title,
+				"group":       p.Group,
+				"type":        p.Type,
+				"description": p.Description,
+				"updated_at":  p.MTime,
+			},
+		}
+		_, err = r.UpdateOne(ctx, filter, update)
 		return err
 	}
 	p.BeforeCreate("perm")
@@ -67,7 +76,13 @@ func (r rolePermissionRepository) Update(ctx context.Context, role string, permi
 	if existing != nil {
 		existing.Permissions = permissions
 		existing.BeforeUpdate()
-		_, err = r.UpdateOne(ctx, filter, bson.M{"$set": existing})
+		update := bson.M{
+			"$set": bson.M{
+				"permissions": existing.Permissions,
+				"updated_at":  existing.MTime,
+			},
+		}
+		_, err = r.UpdateOne(ctx, filter, update)
 		return err
 	}
 	rp := &models.RolePermission{

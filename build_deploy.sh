@@ -26,12 +26,25 @@ echo "API build complete."
 # 2. Build the Frontend
 echo "Building Frontend (Vite)..."
 cd "$BASE_DIR/ai_tnhn/ai-frontend-tnhn"
-# Build the project with production API URL
-export VITE_APP_API_URL="https://hsdc.reiway.vn"
-export VITE_APP_PHOTO_URL="https://hsdc.reiway.vn"
-export VITE_APP_IMAGE_URL="https://hsdc.reiway.vn"
 
-npm run build
+# Handle environment argument
+ENV=${1:-prod}
+if [ "$ENV" == "dev" ]; then
+    API_URL="https://hsdc.reiway.vn"
+    VITE_MODE="development"
+    echo "Environment: DEV ($API_URL) - Mode: $VITE_MODE"
+else
+    API_URL="https://htbc.thoatnuochanoi.vn"
+    VITE_MODE="production"
+    echo "Environment: PRODUCTION ($API_URL) - Mode: $VITE_MODE"
+fi
+
+# Build the project with selected API URL and mode
+export VITE_APP_API_URL="$API_URL"
+export VITE_APP_PHOTO_URL="$API_URL"
+export VITE_APP_IMAGE_URL="$API_URL"
+
+npm run build -- --mode "$VITE_MODE"
 
 # Copy frontend build to deploy folder
 if [ -d "dist" ]; then

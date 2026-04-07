@@ -7,19 +7,19 @@ import reportWebVitals from 'reportWebVitals';
 
 // Disable console and debugger in production
 if (import.meta.env.MODE === 'production') {
-  console.log = () => {};
-  console.debug = () => {};
-  console.info = () => {};
-  console.warn = () => {};
-  console.error = () => {};
+  console.log = () => { };
+  console.debug = () => { };
+  console.info = () => { };
+  console.warn = () => { };
+  console.error = () => { };
 
   // Debugger trap to deter inspection
   setInterval(() => {
     (function () {
       return false;
     }
-      ['constructor']('debugger')
-      ['call']());
+    ['constructor']('debugger')
+    ['call']());
   }, 1000);
 }
 

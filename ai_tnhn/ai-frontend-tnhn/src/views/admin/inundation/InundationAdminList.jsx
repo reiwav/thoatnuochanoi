@@ -718,7 +718,7 @@ const InundationAdminList = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
                     <Stack direction="row" alignItems="center" spacing={1}>
                         <IconAlertTriangle size={24} color="red" />
-                        <Typography variant="h3" sx={{ fontWeight: 800 }}>## Điểm ngập</Typography>
+                        <Typography variant="h3" sx={{ fontWeight: 800 }}>## Cập nhật điểm ngập</Typography>
                     </Stack>
                     <Stack direction="row" spacing={1}>
                         <Chip label="Điểm trực" variant={activeTab === 0 ? 'filled' : 'outlined'} color="primary" onClick={() => setActiveTab(0)} sx={{ fontWeight: 700, cursor: 'pointer' }} />

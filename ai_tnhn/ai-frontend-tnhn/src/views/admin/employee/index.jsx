@@ -48,7 +48,7 @@ const EmployeeRow = ({ row, handleOpenEdit, handleDelete, roleLabel, orgName, us
                         <Chip label={row.active ? 'Hoạt động' : 'Ngừng hoạt động'} color={row.active ? 'success' : 'default'} size="small" variant="outlined" />
                     </TableCell>
                 )}
-                <TableCell align="right" sx={{ 
+                <TableCell align="right" sx={{
                     whiteSpace: 'nowrap',
                     position: 'sticky',
                     right: 0,
@@ -148,7 +148,7 @@ const EmployeeList = () => {
                 organizationApi.getAll({ per_page: 1000 }),
                 axiosClient.get('/admin/roles')
             ]);
-            
+
             if (orgRes.data?.status === 'success') {
                 let orgs = Array.isArray(orgRes.data.data?.data) ? orgRes.data.data.data : [];
                 orgs = orgs.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'vi', { sensitivity: 'base' }));
@@ -268,10 +268,10 @@ const EmployeeList = () => {
                 {canSelectOrg && (
                     <Grid item xs={12} sm={4}>
                         <FormControl fullWidth size="small">
-                            <InputLabel>Chi nhánh / Xí nghiệp</InputLabel>
+                            <InputLabel>Đơn vị / Xí nghiệp</InputLabel>
                             <Select
                                 value={filterInputs.org_id}
-                                label="Chi nhánh / Xí nghiệp"
+                                label="Đơn vị / Xí nghiệp"
                                 onChange={(e) => setFilterInputs({ ...filterInputs, org_id: e.target.value })}
                                 sx={{ borderRadius: '12px', minWidth: '200px' }}
                             >
@@ -301,7 +301,7 @@ const EmployeeList = () => {
                             {!isMobile && hasPermission('organization:view') && <TableCell sx={{ fontWeight: 700 }}>Công ty</TableCell>}
                             {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Vai trò</TableCell>}
                             {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>}
-                            <TableCell align="right" sx={{ 
+                            <TableCell align="right" sx={{
                                 fontWeight: 700,
                                 position: 'sticky',
                                 right: 0,

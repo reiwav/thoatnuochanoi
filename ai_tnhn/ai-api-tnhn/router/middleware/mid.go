@@ -56,6 +56,9 @@ func (m mid) MidBasicType(roles ...string) gin.HandlerFunc {
 		if tok.Role == "supper_admib" || tok.Role == "supper_admin" || tok.Role == "super_admin " {
 			tok.Role = constant.ROLE_SUPER_ADMIN
 		}
+		if tok.Role == "giam_doc_xi_nghiep" {
+			tok.Role = constant.ROLE_GIAM_DOC_XN
+		}
 		fmt.Println("tok.Role: ", tok.Role)
 		fmt.Println("tokenID: ", tokenID)
 		if len(roles) > 0 {

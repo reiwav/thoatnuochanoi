@@ -1,7 +1,6 @@
 package employee
 
 import (
-	"ai-api-tnhn/constant"
 	"ai-api-tnhn/internal/base/mgo/filter"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/repository"
@@ -39,9 +38,9 @@ func NewService(userRepo repository.User, orgRepo repository.Organization, drive
 
 func (s *service) Create(ctx context.Context, input *models.User) (*models.User, error) {
 	// Set Role from input or default to Employee
-	if input.Role == "" {
-		input.Role = constant.ROLE_EMPLOYEE
-	}
+	// if input.Role == "" {
+	// 	input.Role = constant.ROLE_EMPLOYEE
+	// }
 
 	// OrgID should have been set by handler from context, verify it exists
 	if input.OrgID == "" {

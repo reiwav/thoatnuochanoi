@@ -26,7 +26,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
         name: '',
         email: '',
         password: '',
-        role: 'employee',
+        role: 'cong_nhan_cty',
         org_id: '',
         assigned_inundation_point_ids: [],
         assigned_emergency_construction_ids: [],
@@ -41,7 +41,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                     name: employee.name || '',
                     email: employee.email || '',
                     password: '',
-                    role: employee.role || 'employee',
+                    role: employee.role || 'cong_nhan_cty',
                     org_id: employee.org_id || defaultOrgId,
                     assigned_inundation_point_ids: employee.assigned_inundation_point_ids || [],
                     assigned_emergency_construction_ids: employee.assigned_emergency_construction_ids || [],
@@ -53,7 +53,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                     name: '',
                     email: '',
                     password: '',
-                    role: 'employee',
+                    role: 'cong_nhan_cty',
                     org_id: defaultOrgId,
                     assigned_inundation_point_ids: [],
                     assigned_emergency_construction_ids: [],
@@ -105,7 +105,27 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
     }, [open, formData.org_id, defaultOrgId]);
 
     const handleChange = (field, value) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
+        setFormData(prev => {
+            const newData = { ...prev, [field]: value };
+            
+            // If changing organization, check if current role is still valid
+            if (field === 'org_id' && value) {
+                const selectedOrg = organizations.find(o => o.id === value);
+                const isCompany = selectedOrg?.code?.toUpperCase() === 'TNHN';
+                
+                // Find if current role is valid for the new org type
+                const selectedRole = roles.find(r => r.code === prev.role);
+                const isCurrentRoleValid = selectedRole ? selectedRole.is_company === isCompany : false;
+                
+                if (!isCurrentRoleValid) {
+                    // Default fallback: Find first valid role for this org type
+                    const defaultRole = roles.find(r => r.is_company === isCompany);
+                    newData.role = defaultRole ? defaultRole.code : (isCompany ? 'giam_doc_cty' : 'cong_nhan_cty');
+                }
+            }
+            
+            return newData;
+        });
     };
 
     const handleSave = () => {
@@ -146,21 +166,53 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                                 onChange={(e) => handleChange('role', e.target.value)}
                                 sx={{ borderRadius: '12px', bgcolor: '#f8fafc' }}
                             >
-                                {roles.length === 0 ? (
+                                {roles
+                                    .filter(r => {
+                                        // 1. Filter by current user permission (giam_doc_xn restriction)
+                                        if (userRole === 'giam_doc_xn') {
+                                            if (!['truong_phong_kt', 'cong_nhan_cty'].includes(r.code)) return false;
+                                        }
+
+                                        // 2. Filter by selected organization type
+                                        const selectedOrg = organizations.find(o => o.id === formData.org_id);
+                                        const isCompany = selectedOrg?.code?.toUpperCase() === 'TNHN';
+                                        
+                                        if (formData.org_id) {
+                                            return r.is_company === isCompany;
+                                        }
+
+                                        return true;
+                                    })
+                                    .length === 0 ? (
                                     <MenuItem value={formData.role}>
                                         <CircularProgress size={14} sx={{ mr: 1 }} /> Đang tải...
                                     </MenuItem>
                                 ) : (
-                                    roles.map((r) => (
-                                        <MenuItem key={r.code} value={r.code}>
-                                            {r.name}
-                                        </MenuItem>
-                                    ))
+                                    roles
+                                        .filter(r => {
+                                            // 1. Filter by current user permission (giam_doc_xn restriction)
+                                            if (userRole === 'giam_doc_xn') {
+                                                if (!['truong_phong_kt', 'cong_nhan_cty'].includes(r.code)) return false;
+                                            }
+
+                                            // 2. Filter by selected organization type
+                                            const selectedOrg = organizations.find(o => o.id === formData.org_id);
+                                            const isCompany = selectedOrg?.code?.toUpperCase() === 'TNHN';
+                                            
+                                            if (formData.org_id) {
+                                                return r.is_company === isCompany;
+                                            }
+
+                                            return true;
+                                        })
+                                        .map((r) => (
+                                            <MenuItem key={r.code} value={r.code}>
+                                                {r.name}
+                                            </MenuItem>
+                                        ))
                                 )}
 
-                                {!roles.find(r => r.code === 'employee') && (
-                                    <MenuItem value="employee">Employee (Legacy)</MenuItem>
-                                )}
+
                             </Select>
                         </FormControl>
                     </Box>
@@ -182,7 +234,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                         </FormControl>
                     )}
 
-                    {formData.role === 'employee' && (
+                    {['employee', 'cong_nhan_cty'].includes(formData.role) && (
                         <>
                             <Box>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>

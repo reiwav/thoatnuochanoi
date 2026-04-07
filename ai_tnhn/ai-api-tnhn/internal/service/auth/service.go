@@ -73,6 +73,9 @@ func (t service) GetProfile(ctx context.Context, tokenID string) (*models.User, 
 	if user.Role == "supper_admib" || user.Role == "supper_admin" || user.Role == "super_admin " {
 		user.Role = constant.ROLE_SUPER_ADMIN
 	}
+	if user.Role == "giam_doc_xi_nghiep" {
+		user.Role = constant.ROLE_GIAM_DOC_XN
+	}
 	return user, nil
 }
 
@@ -98,12 +101,18 @@ func (t service) Login(ctx context.Context, input LoginRequest) (*models.Token, 
 		return nil, web.BadRequest("invalid email or password ")
 	}
 
+	// Normalize role
+	role := u.Role
+	if role == "giam_doc_xi_nghiep" {
+		role = constant.ROLE_GIAM_DOC_XN
+	}
+
 	// 3. Tạo token
 	tk := &models.Token{
 		UserID: u.ID,
 		Name:   u.Name,
 		OrgID:  u.OrgID,
-		Role:   u.Role,
+		Role:   role,
 	}
 	err = t.tokenRepo.R_Create(ctx, tk)
 
@@ -163,12 +172,18 @@ func (t service) OAuthLogin(ctx context.Context, email string) (*models.Token, e
 		return nil, web.BadRequest("Account is disabled")
 	}
 
+	// Normalize role
+	role := u.Role
+	if role == "giam_doc_xi_nghiep" {
+		role = constant.ROLE_GIAM_DOC_XN
+	}
+
 	// Create system token
 	tk := &models.Token{
 		UserID: u.ID,
 		Name:   u.Name,
 		OrgID:  u.OrgID,
-		Role:   u.Role,
+		Role:   role,
 	}
 	err = t.tokenRepo.R_Create(ctx, tk)
 

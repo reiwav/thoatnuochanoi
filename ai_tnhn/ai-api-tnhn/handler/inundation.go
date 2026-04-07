@@ -91,7 +91,7 @@ func (h *InundationHandler) CreateReport(c *gin.Context) {
 	}
 
 	// 4.1 Permission Check for Employee
-	if user.Role == constant.ROLE_EMPLOYEE {
+	if user.Role == constant.ROLE_CONG_NHAN_CTY {
 		isAssigned := false
 		for _, pid := range user.AssignedInundationPointIDs {
 			if pid == pointID {
@@ -167,7 +167,7 @@ func (h *InundationHandler) AddUpdateSituation(c *gin.Context) {
 	}
 
 	// 3.1 Permission Check for Employee
-	if user.Role == constant.ROLE_EMPLOYEE {
+	if user.Role == constant.ROLE_CONG_NHAN_CTY {
 		report, err := h.service.GetReport(c.Request.Context(), reportID)
 		if err == nil && report != nil {
 			isAssigned := false
@@ -237,7 +237,7 @@ func (h *InundationHandler) ListReports(c *gin.Context) {
 
 	// If User is Super Admin or TNHN, show all (allow filtering by org_id)
 	orgID := user.OrgID
-	if user.Role == constant.ROLE_SUPER_ADMIN || user.Role == "supper_admin" || user.Role == "supper_admib" || user.Role == "super_admin " {
+	if user.Role == constant.ROLE_SUPER_ADMIN || user.Role == constant.ROLE_GIAM_DOC_XN || user.Role == constant.ROLE_GIAM_DOC_CTY || user.Role == constant.ROLE_PHONG_KT_CL || user.Role == constant.ROLE_PHONG_HT_MT_CDS || user.Role == "supper_admin" || user.Role == "supper_admib" || user.Role == "super_admin " {
 		orgID = c.Query("org_id")
 	} else {
 		// Fetch org to check code
@@ -254,7 +254,7 @@ func (h *InundationHandler) ListReports(c *gin.Context) {
 	query := c.Query("query")
 
 	var pointIDs []string
-	if user.Role == constant.ROLE_EMPLOYEE {
+	if user.Role == constant.ROLE_CONG_NHAN_CTY {
 		pointIDs = user.AssignedInundationPointIDs
 		if len(pointIDs) == 0 {
 			// If no points assigned, return empty result
@@ -288,7 +288,7 @@ func (h *InundationHandler) GetPointsStatus(c *gin.Context) {
 
 	// If User is Super Admin or TNHN, show all (allow filtering by org_id)
 	orgID := user.OrgID
-	if user.Role == constant.ROLE_SUPER_ADMIN || user.Role == "supper_admin" || user.Role == "supper_admib" || user.Role == "super_admin " {
+	if user.Role == constant.ROLE_SUPER_ADMIN || user.Role == constant.ROLE_GIAM_DOC_XN || user.Role == constant.ROLE_GIAM_DOC_CTY || user.Role == constant.ROLE_PHONG_KT_CL || user.Role == constant.ROLE_PHONG_HT_MT_CDS || user.Role == "supper_admin" || user.Role == "supper_admib" || user.Role == "super_admin " {
 		orgID = c.Query("org_id")
 	} else {
 		// Fetch org to check code
@@ -299,7 +299,7 @@ func (h *InundationHandler) GetPointsStatus(c *gin.Context) {
 	}
 
 	var pointIDs []string
-	if user.Role == constant.ROLE_EMPLOYEE {
+	if user.Role == constant.ROLE_CONG_NHAN_CTY {
 		pointIDs = user.AssignedInundationPointIDs
 	}
 
@@ -365,7 +365,7 @@ func (h *InundationHandler) UpdatePoint(c *gin.Context) {
 	}
 
 	canAssignOrg := false
-	if user.Role == constant.ROLE_SUPER_ADMIN || user.Role == "supper_admin" || user.Role == "supper_admib" || user.Role == "super_admin " {
+	if user.Role == constant.ROLE_SUPER_ADMIN || user.Role == constant.ROLE_GIAM_DOC_XN || user.Role == "supper_admin" || user.Role == "supper_admib" || user.Role == "super_admin " {
 		canAssignOrg = true
 	} else {
 		org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)

@@ -1,7 +1,6 @@
 package router
 
 import (
-	"ai-api-tnhn/constant"
 	"ai-api-tnhn/handler"
 	"ai-api-tnhn/router/middleware"
 
@@ -18,7 +17,7 @@ func (h *HandlerFuncs) ContractCategoryRoutes(r *gin.RouterGroup, mid middleware
 		group.GET("/:id", handler.GetByID)
 
 		mgrGroup := group.Group("")
-		mgrGroup.Use(mid.MidBasicType(constant.ROLE_SUPER_ADMIN, constant.ROLE_MANAGER_CONTRACT))
+		mgrGroup.Use(mid.MidBasicType())
 		{
 			mgrGroup.POST("", handler.Create)
 			mgrGroup.PUT("/:id", handler.Update)

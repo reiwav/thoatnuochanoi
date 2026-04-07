@@ -1,7 +1,6 @@
 package router
 
 import (
-	"ai-api-tnhn/constant"
 	"ai-api-tnhn/handler"
 	"ai-api-tnhn/router/middleware"
 
@@ -18,7 +17,7 @@ func (h HandlerFuncs) GoogleRoutes(api *gin.RouterGroup, mid middleware.Middlewa
 		google.GET("/inundation-summary", h.GoogleInundationSummaryHandler)
 		google.POST("/chat", h.GoogleChatHandler)
 		google.GET("/chat/history", h.GoogleChatHistoryHandler)
-		google.POST("/contract-chat", mid.MidBasicType(constant.ROLE_SUPER_ADMIN, constant.ROLE_MANAGER_CONTRACT), h.GoogleContractChatHandler)
+		google.POST("/contract-chat", mid.MidBasicType(), h.GoogleContractChatHandler)
 		google.GET("/email/:id", h.GoogleEmailDetailHandler)
 		google.GET("/emails/recent", h.GoogleRecentEmailsHandler)
 		google.GET("/emails/unread", h.GoogleUnreadEmailsHandler)

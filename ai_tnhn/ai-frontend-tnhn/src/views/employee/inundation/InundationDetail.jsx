@@ -226,7 +226,7 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
                                     </Box>
                                 )}
 
-                                {(userRole === 'reviewer') && (
+                                {['reviewer', 'phong_kt_cl', 'super_admin', 'phong_ht_mt_cds'].includes(userRole) && (
                                     <Button
                                         size="small" startIcon={<IconMessage2 size={16} />}
                                         variant="outlined" color="error"

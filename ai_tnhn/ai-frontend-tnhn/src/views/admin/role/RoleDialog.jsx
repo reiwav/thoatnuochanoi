@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import {
     Dialog, DialogTitle, DialogContent, DialogActions,
-    Button, TextField, Grid, Typography, Box, useTheme
+    Button, TextField, Grid, Typography, Box, useTheme,
+    FormControlLabel, Switch
 } from '@mui/material';
 import { IconShieldCheck } from '@tabler/icons-react';
 
@@ -10,7 +11,8 @@ const RoleDialog = ({ open, onClose, onSubmit, role, isEdit }) => {
     const [values, setValues] = useState({
         name: '',
         code: '',
-        description: ''
+        description: '',
+        is_company: false
     });
     const [errors, setErrors] = useState({});
 
@@ -19,21 +21,23 @@ const RoleDialog = ({ open, onClose, onSubmit, role, isEdit }) => {
             setValues({
                 name: role.name || '',
                 code: role.code || '',
-                description: role.description || ''
+                description: role.description || '',
+                is_company: role.is_company || false
             });
         } else {
             setValues({
                 name: '',
                 code: '',
-                description: ''
+                description: '',
+                is_company: false
             });
         }
         setErrors({});
     }, [role, open]);
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
-        setValues({ ...values, [name]: value });
+        const { name, value, checked, type } = e.target;
+        setValues({ ...values, [name]: type === 'checkbox' ? checked : value });
         if (errors[name]) {
             setErrors({ ...errors, [name]: '' });
         }
@@ -118,6 +122,35 @@ const RoleDialog = ({ open, onClose, onSubmit, role, isEdit }) => {
                             rows={3}
                             variant="outlined"
                             sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
+                        />
+                    </Grid>
+                    <Grid item xs={12}>
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    checked={values.is_company}
+                                    onChange={handleChange}
+                                    name="is_company"
+                                    color="primary"
+                                />
+                            }
+                            label={
+                                <Box>
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Vai trò cấp Công ty</Typography>
+                                    <Typography variant="caption" color="textSecondary">
+                                        Bật nếu vai trò này thuộc văn phòng Tổng công ty (TNHN). Tắt nếu thuộc Xí nghiệp.
+                                    </Typography>
+                                </Box>
+                            }
+                            sx={{ 
+                                width: '100%', 
+                                ml: 0, p: 1.5, 
+                                borderRadius: '12px', 
+                                border: '1px solid', 
+                                borderColor: values.is_company ? 'primary.main' : 'divider',
+                                bgcolor: values.is_company ? 'primary.lighter' : 'transparent',
+                                transition: 'all 0.3s ease'
+                            }}
                         />
                     </Grid>
                 </Grid>

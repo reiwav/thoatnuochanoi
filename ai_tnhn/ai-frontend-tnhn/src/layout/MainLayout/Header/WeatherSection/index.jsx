@@ -110,7 +110,7 @@ const WeatherSection = () => {
                     letterSpacing: '0.05em'
                   }}
                 >
-                  DỰ BÁO THỜI TIẾT 3 NGÀY TỚI: {forecast}
+                  {forecast}
                 </Typography>
               </Stack>
               {/* Thêm khoảng trống và icon phân cách cho dải chạy liên tục */}

@@ -251,7 +251,7 @@ func (s *service) GetForecast(ctx context.Context) (string, error) {
 	}
 
 	now := time.Now().In(vietnamTZ)
-	prompt := fmt.Sprintf("Dựa trên số liệu thời tiết thực tế từ API sau đây cho Hà Nội:\n%s\n\nThời gian hiện tại: %s. Hãy liệt kê dự báo chi tiết cho từng ngày trong 3 ngày tới (bắt đầu từ ngày mai). Mỗi ngày một mô tả ngắn (khoảng 15 từ), phân cách rõ ràng bằng ký tự '|'. Ví dụ: 'Ngày 09/04: Nắng nóng, 25-37°C. Trời khô ráo | Ngày 10/04: Có mưa dông rải rác, 24-30°C | Ngày 11/04: Nhiều mây, có lúc mưa rào, 22-28°C'. Thông tin phải mang tính chất thông báo cho cán bộ thoát nước.", meteoData, now.Format("02/01/2006 15:04"))
+	prompt := fmt.Sprintf("Dựa trên số liệu thời tiết thực tế từ API sau đây cho Hà Nội:\n%s\n\nThời gian hiện tại: %s. Hãy liệt kê dự báo chi tiết cho 3 ngày gần nhất (bao gồm hôm nay) theo định dạng: 'Dự báo thời tiết 3 ngày tới: Ngày 09/04: Mô tả, Nhiệt độ | Ngày 10/04: ... | Ngày 11/04: ...'. Chú ý: TRẢ VỀ DUY NHẤT nội dung theo định dạng này, không thêm câu chào, không thêm lời dẫn hay bất kỳ nội dung nào khác.", meteoData, now.Format("02/01/2006 15:04"))
 
 	resp, err := s.forecastFunc(ctx, prompt)
 	if err != nil {
@@ -268,7 +268,7 @@ func (s *service) GetForecast(ctx context.Context) (string, error) {
 
 func (s *service) generateManualForecast(meteoData string) string {
 	if meteoData == "" {
-		return "DỰ BÁO 3 NGÀY TỚI: Thời tiết Hà Nội ổn định, nhiệt độ 25-35°C. Cán bộ chú ý theo dõi."
+		return "Dự báo thời tiết 3 ngày tới: Hiện không có dữ liệu thời tiết."
 	}
 
 	var data struct {
@@ -281,7 +281,7 @@ func (s *service) generateManualForecast(meteoData string) string {
 	}
 
 	if err := json.Unmarshal([]byte(meteoData), &data); err != nil {
-		return "DỰ BÁO 3 NGÀY TỚI: Hà Nội có mây rải rác, nhiệt độ từ 24-34°C. Cán bộ trực ban theo kế hoạch."
+		return "Dự báo thời tiết 3 ngày tới: Lỗi phân tích dữ liệu thời tiết."
 	}
 
 	getWeatherDesc := func(code int) string {
@@ -303,8 +303,9 @@ func (s *service) generateManualForecast(meteoData string) string {
 		}
 	}
 
-	result := "DỰ BÁO THỜI TIẾT 3 NGÀY TỚI: "
-	for i := 1; i < len(data.Daily.Time) && i <= 3; i++ {
+	result := "Dự báo thời tiết 3 ngày tới: "
+	count := 0
+	for i := 0; i < len(data.Daily.Time) && count < 3; i++ {
 		t, _ := time.Parse("2006-01-02", data.Daily.Time[i])
 		dateStr := t.Format("02/01")
 		dayInfo := fmt.Sprintf("Ngày %s: %s, %.0f-%.0f°C",
@@ -313,10 +314,11 @@ func (s *service) generateManualForecast(meteoData string) string {
 			data.Daily.Temperature2mMin[i],
 			data.Daily.Temperature2mMax[i],
 		)
-		result += dayInfo
-		if i < 3 {
+		if count > 0 {
 			result += " | "
 		}
+		result += dayInfo
+		count++
 	}
 
 	return result

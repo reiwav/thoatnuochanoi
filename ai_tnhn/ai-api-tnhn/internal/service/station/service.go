@@ -28,19 +28,22 @@ type Service interface {
 	UpdateRiverStation(ctx context.Context, id string, input *models.RiverStation) error
 	DeleteRiverStation(ctx context.Context, id string) error
 	ListRiverStations(ctx context.Context, filter filter.Filter) ([]*models.RiverStation, int64, error)
+	GetOrgByID(ctx context.Context, id string) (*models.Organization, error)
 }
 
 type service struct {
 	rainRepo  repository.RainStation
 	lakeRepo  repository.LakeStation
 	riverRepo repository.RiverStation
+	orgRepo   repository.Organization
 }
 
-func NewService(rain repository.RainStation, lake repository.LakeStation, river repository.RiverStation) Service {
+func NewService(rain repository.RainStation, lake repository.LakeStation, river repository.RiverStation, org repository.Organization) Service {
 	return &service{
 		rainRepo:  rain,
 		lakeRepo:  lake,
 		riverRepo: river,
+		orgRepo:   org,
 	}
 }
 
@@ -93,4 +96,8 @@ func (s *service) DeleteRiverStation(ctx context.Context, id string) error {
 }
 func (s *service) ListRiverStations(ctx context.Context, filter filter.Filter) ([]*models.RiverStation, int64, error) {
 	return s.riverRepo.List(ctx, filter)
+}
+
+func (s *service) GetOrgByID(ctx context.Context, id string) (*models.Organization, error) {
+	return s.orgRepo.GetByID(ctx, id)
 }

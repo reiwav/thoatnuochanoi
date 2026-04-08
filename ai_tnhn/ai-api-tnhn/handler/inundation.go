@@ -216,13 +216,7 @@ func (h *InundationHandler) GetReport(c *gin.Context) {
 			user.Role == "supper_admib" ||
 			user.Role == "super_admin "
 
-		isTNHN := false
-		org, errOrg := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
-		if errOrg == nil && org != nil && (org.Code == "TNHN" || org.Code == "tnhn") {
-			isTNHN = true
-		}
-
-		if !isSuperAdmin && !isTNHN && report.OrgID != user.OrgID {
+		if !isSuperAdmin && report.OrgID != user.OrgID {
 			h.SendError(c, web.Unauthorized("Access denied: You do not have permission to view this report"))
 			return
 		}
@@ -257,29 +251,19 @@ func (h *InundationHandler) ListReports(c *gin.Context) {
 		return
 	}
 
-	// Check if user is Super Admin or belongs to Headquarters (TNHN)
+	// Check if user is Super Admin
 	isSuperAdmin := user.Role == constant.ROLE_SUPER_ADMIN ||
 		user.Role == "supper_admin" ||
 		user.Role == "supper_admib" ||
 		user.Role == "super_admin "
 
-	isTNHN := false
-	if user.OrgID != "" {
-		org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
-		if err == nil && org != nil && (org.Code == "TNHN" || org.Code == "tnhn") {
-			isTNHN = true
-		}
-	}
-
-	canSeeAll := isSuperAdmin || isTNHN
-
 	orgID := user.OrgID
-	if canSeeAll {
+	if isSuperAdmin {
 		// Privileged users can filter by any org_id from query
 		if qOrg := c.Query("org_id"); qOrg != "" {
 			orgID = qOrg
 		} else {
-			orgID = "" // Default to all for HQ/SuperAdmin if no filter provided
+			orgID = "" // Default to all for SuperAdmin if no filter provided
 		}
 	} else {
 		// Restricted users always stick to their own OrgID, query param is ignored
@@ -295,16 +279,25 @@ func (h *InundationHandler) ListReports(c *gin.Context) {
 	// Determine which points to show
 	var pointIDs []string
 	
-	queryOrgID := c.Query("org_id")
-	if queryOrgID != "" {
-		org, err := h.service.GetOrgByID(c.Request.Context(), queryOrgID)
+	// Use target organization's configured InundationIDs if available
+	targetOrgID := ""
+	if qOrg := c.Query("org_id"); qOrg != "" && isSuperAdmin {
+		targetOrgID = qOrg
+	} else if !isSuperAdmin {
+		targetOrgID = user.OrgID
+	}
+
+	if targetOrgID != "" {
+		org, err := h.service.GetOrgByID(c.Request.Context(), targetOrgID)
 		if err == nil && org != nil && len(org.InundationIDs) > 0 {
 			pointIDs = org.InundationIDs
 		}
-	} else if user.IsEmployee && !canSeeAll {
+	}
+
+	if len(pointIDs) == 0 && user.IsEmployee && !isSuperAdmin {
 		pointIDs = user.AssignedInundationPointIDs
 		if len(pointIDs) == 0 {
-			// If no points assigned, return empty result
+			// If no points assigned to employee, return empty result
 			h.SendData(c, gin.H{
 				"data":  []interface{}{},
 				"total": 0,
@@ -333,29 +326,19 @@ func (h *InundationHandler) GetPointsStatus(c *gin.Context) {
 		return
 	}
 
-	// Check if user is Super Admin or belongs to Headquarters (TNHN)
+	// Check if user is Super Admin
 	isSuperAdmin := user.Role == constant.ROLE_SUPER_ADMIN ||
 		user.Role == "supper_admin" ||
 		user.Role == "supper_admib" ||
 		user.Role == "super_admin "
 
-	isTNHN := false
-	if user.OrgID != "" {
-		org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
-		if err == nil && org != nil && (org.Code == "TNHN" || org.Code == "tnhn") {
-			isTNHN = true
-		}
-	}
-
-	canSeeAll := isSuperAdmin || isTNHN
-
-	// 1. Determine base orgID and if user has elevated permissions
+	// 1. Determine base orgID
 	orgID := user.OrgID
-	if canSeeAll {
+	if isSuperAdmin {
 		if qOrg := c.Query("org_id"); qOrg != "" {
 			orgID = qOrg
 		} else {
-			orgID = "" // Default to all for HQ
+			orgID = "" // Default to all for SuperAdmin
 		}
 	} else {
 		orgID = user.OrgID
@@ -364,15 +347,22 @@ func (h *InundationHandler) GetPointsStatus(c *gin.Context) {
 	// 2. Determine which points to show
 	var pointIDs []string
 	
-	// If an explicit org_id is requested (admin/selection view), 
-	// use the organization's configured InundationIDs.
-	queryOrgID := c.Query("org_id")
-	if queryOrgID != "" {
-		org, err := h.service.GetOrgByID(c.Request.Context(), queryOrgID)
+	// Use target organization's configured InundationIDs if available
+	targetOrgID := ""
+	if qOrg := c.Query("org_id"); qOrg != "" && isSuperAdmin {
+		targetOrgID = qOrg
+	} else if !isSuperAdmin {
+		targetOrgID = user.OrgID
+	}
+
+	if targetOrgID != "" {
+		org, err := h.service.GetOrgByID(c.Request.Context(), targetOrgID)
 		if err == nil && org != nil && len(org.InundationIDs) > 0 {
 			pointIDs = org.InundationIDs
 		}
-	} else if user.IsEmployee && !canSeeAll {
+	}
+
+	if len(pointIDs) == 0 && user.IsEmployee && !isSuperAdmin {
 		// Default mobile app view for employees: only their assigned points
 		pointIDs = user.AssignedInundationPointIDs
 	}
@@ -400,23 +390,13 @@ func (h *InundationHandler) CreatePoint(c *gin.Context) {
 		return
 	}
 
-	// Check if user is Super Admin or belongs to Headquarters (TNHN)
+	// Check if user is Super Admin
 	isSuperAdmin := user.Role == constant.ROLE_SUPER_ADMIN ||
 		user.Role == "supper_admin" ||
 		user.Role == "supper_admib" ||
 		user.Role == "super_admin "
 
-	isTNHN := false
-	if user.OrgID != "" {
-		org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
-		if err == nil && org != nil && (org.Code == "TNHN" || org.Code == "tnhn") {
-			isTNHN = true
-		}
-	}
-
-	canAssignOrg := isSuperAdmin || isTNHN
-
-	if !canAssignOrg || req.OrgID == "" {
+	if !isSuperAdmin || req.OrgID == "" {
 		req.OrgID = user.OrgID
 	}
 
@@ -449,14 +429,6 @@ func (h *InundationHandler) UpdatePoint(c *gin.Context) {
 		user.Role == "supper_admib" ||
 		user.Role == "super_admin "
 
-	isTNHN := false
-	org, errOrg := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
-	if errOrg == nil && org != nil && (org.Code == "TNHN" || org.Code == "tnhn") {
-		isTNHN = true
-	}
-
-	canAssignOrg := isSuperAdmin || isTNHN
-
 	// Fetch current point to retain org ID if not provided, or if user is not authorized
 	currentPoint, err := h.service.GetPointByID(c.Request.Context(), id)
 	if err != nil || currentPoint == nil {
@@ -465,12 +437,12 @@ func (h *InundationHandler) UpdatePoint(c *gin.Context) {
 	}
 
 	// Ownership check
-	if !canAssignOrg && currentPoint.OrgID != user.OrgID {
+	if !isSuperAdmin && currentPoint.OrgID != user.OrgID {
 		h.SendError(c, web.Unauthorized("Access denied: You do not have permission to modify this point"))
 		return
 	}
 
-	if !canAssignOrg {
+	if !isSuperAdmin {
 		req.OrgID = currentPoint.OrgID
 	} else if req.OrgID == "" {
 		req.OrgID = currentPoint.OrgID
@@ -500,15 +472,7 @@ func (h *InundationHandler) DeletePoint(c *gin.Context) {
 		user.Role == "supper_admib" ||
 		user.Role == "super_admin "
 
-	isTNHN := false
-	org, errOrg := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
-	if errOrg == nil && org != nil && (org.Code == "TNHN" || org.Code == "tnhn") {
-		isTNHN = true
-	}
-
-	canManageAll := isSuperAdmin || isTNHN
-
-	if !canManageAll {
+	if !isSuperAdmin {
 		currentPoint, err := h.service.GetPointByID(c.Request.Context(), id)
 		if err == nil && currentPoint != nil && currentPoint.OrgID != user.OrgID {
 			h.SendError(c, web.Unauthorized("Access denied: You do not have permission to delete this point"))
@@ -569,15 +533,8 @@ func (h *InundationHandler) ReviewReport(c *gin.Context) {
 		user.Role == "supper_admib" ||
 		user.Role == "super_admin "
 
-	isTNHN := false
-	org, errOrg := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
-	if errOrg == nil && org != nil && (org.Code == "TNHN" || org.Code == "tnhn") {
-		isTNHN = true
-	}
-	canSeeAll := isSuperAdmin || isTNHN
-
-	// Ownership Check: Only allow review if same org or canSeeAll
-	if !canSeeAll && report.OrgID != user.OrgID {
+	// Ownership Check: Only allow review if same org or isSuperAdmin
+	if !isSuperAdmin && report.OrgID != user.OrgID {
 		h.SendError(c, web.Unauthorized("You do not have permission to review this report"))
 		return
 	}

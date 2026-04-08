@@ -3,20 +3,27 @@ package handler
 import (
 	"ai-api-tnhn/handler/filters"
 	"ai-api-tnhn/internal/models"
+	"ai-api-tnhn/internal/service/auth"
 	"ai-api-tnhn/internal/service/station"
 	"ai-api-tnhn/utils/web"
+	
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/gin-gonic/gin"
 )
 
 type StationHandler struct {
 	web.JsonRender
-	service station.Service
+	service     station.Service
+	authService auth.Service
+	contextWith web.ContextWith
 }
 
-func NewStationHandler(service station.Service) *StationHandler {
+func NewStationHandler(service station.Service, authService auth.Service, contextWith web.ContextWith) *StationHandler {
 	return &StationHandler{
-		service: service,
+		service:     service,
+		authService: authService,
+		contextWith: contextWith,
 	}
 }
 
@@ -64,6 +71,21 @@ func (h *StationHandler) ListRain(c *gin.Context) {
 		web.AssertNil(web.BadRequest(err.Error()))
 		return
 	}
+
+	// Organization-based filtering
+	token := h.contextWith.GetToken(c.Request)
+	user, _ := h.authService.GetProfile(c.Request.Context(), token)
+	if user != nil && user.Role != "super_admin" && user.Role != "supper_admin" {
+		org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
+		if err == nil && org != nil && len(org.RainStationIDs) > 0 {
+			req.AddWhere("id", "_id", bson.M{"$in": org.RainStationIDs})
+		} else {
+			// If no stations assigned, return empty result
+			h.SendData(c, gin.H{"data": []interface{}{}, "total": 0})
+			return
+		}
+	}
+
 	items, total, err := h.service.ListRainStations(c.Request.Context(), req)
 	web.AssertNil(err)
 	h.SendData(c, gin.H{"data": items, "total": total})
@@ -113,6 +135,21 @@ func (h *StationHandler) ListLake(c *gin.Context) {
 		web.AssertNil(web.BadRequest(err.Error()))
 		return
 	}
+
+	// Organization-based filtering
+	token := h.contextWith.GetToken(c.Request)
+	user, _ := h.authService.GetProfile(c.Request.Context(), token)
+	if user != nil && user.Role != "super_admin" && user.Role != "supper_admin" {
+		org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
+		if err == nil && org != nil && len(org.LakeStationIDs) > 0 {
+			req.AddWhere("id", "_id", bson.M{"$in": org.LakeStationIDs})
+		} else {
+			// If no stations assigned, return empty result
+			h.SendData(c, gin.H{"data": []interface{}{}, "total": 0})
+			return
+		}
+	}
+
 	items, total, err := h.service.ListLakeStations(c.Request.Context(), req)
 	web.AssertNil(err)
 	h.SendData(c, gin.H{"data": items, "total": total})
@@ -162,6 +199,21 @@ func (h *StationHandler) ListRiver(c *gin.Context) {
 		web.AssertNil(web.BadRequest(err.Error()))
 		return
 	}
+
+	// Organization-based filtering
+	token := h.contextWith.GetToken(c.Request)
+	user, _ := h.authService.GetProfile(c.Request.Context(), token)
+	if user != nil && user.Role != "super_admin" && user.Role != "supper_admin" {
+		org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
+		if err == nil && org != nil && len(org.RiverStationIDs) > 0 {
+			req.AddWhere("id", "_id", bson.M{"$in": org.RiverStationIDs})
+		} else {
+			// If no stations assigned, return empty result
+			h.SendData(c, gin.H{"data": []interface{}{}, "total": 0})
+			return
+		}
+	}
+
 	items, total, err := h.service.ListRiverStations(c.Request.Context(), req)
 	web.AssertNil(err)
 	h.SendData(c, gin.H{"data": items, "total": total})

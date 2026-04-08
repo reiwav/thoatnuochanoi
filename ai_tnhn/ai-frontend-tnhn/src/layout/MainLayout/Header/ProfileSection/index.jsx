@@ -32,7 +32,6 @@ import authApi from 'api/auth';
 import useAuthStore from 'store/useAuthStore';
 
 // assets
-import User1 from 'assets/images/users/user-round.svg';
 import { IconLogout, IconSearch, IconSettings, IconUser } from '@tabler/icons-react';
 
 // ==============================|| PROFILE MENU ||============================== //
@@ -94,14 +93,20 @@ export default function ProfileSection({ userInfo }) {
         sx={{ ml: 2, height: '48px', alignItems: 'center', borderRadius: '27px' }}
         icon={
           <Avatar
-            src={User1}
-            alt="user-images"
-            sx={{ typography: 'mediumAvatar', margin: '8px 0 8px 8px !important', cursor: 'pointer' }}
             ref={anchorRef}
+            sx={{
+              ...theme.typography.mediumAvatar,
+              margin: '8px 0 8px 8px !important',
+              cursor: 'pointer',
+              bgcolor: theme.palette.primary.light,
+              color: theme.palette.primary.main
+            }}
             aria-controls={open ? 'menu-list-grow' : undefined}
             aria-haspopup="true"
             color="inherit"
-          />
+          >
+            <IconUser stroke={1.5} size="24px" />
+          </Avatar>
         }
         label={<IconSettings stroke={1.5} size="24px" />}
         ref={anchorRef}

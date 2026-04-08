@@ -6,7 +6,7 @@ import MainLayout from 'layout/MainLayout';
 import ContextOutlet from 'layout/ContextOutlet';
 import Loadable from 'ui-component/Loadable';
 
-const EmployeePage = Loadable(lazy(() => import('views/admin/employee')));
+const EmployeePage = Loadable(lazy(() => import('views/admin/employee/index')));
 const OrganizationPage = Loadable(lazy(() => import('views/admin/organization')));
 const InundationForm = Loadable(lazy(() => import('views/employee/inundation/InundationForm')));
 const InundationDashboard = Loadable(lazy(() => import('views/employee/inundation/InundationDashboard')));

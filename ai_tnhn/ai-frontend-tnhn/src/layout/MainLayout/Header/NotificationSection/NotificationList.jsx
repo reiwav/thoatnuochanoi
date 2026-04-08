@@ -18,8 +18,7 @@ import Box from '@mui/material/Box';
 import { withAlpha } from 'utils/colorUtils';
 
 // assets
-import { IconBrandTelegram, IconBuildingStore, IconMailbox, IconPhoto } from '@tabler/icons-react';
-import User1 from 'assets/images/users/user-round.svg';
+import { IconBrandTelegram, IconBuildingStore, IconMailbox, IconPhoto, IconUser } from '@tabler/icons-react';
 
 function ListItemWrapper({ children }) {
   const theme = useTheme();
@@ -59,7 +58,14 @@ export default function NotificationList() {
           }
         >
           <ListItemAvatar>
-            <Avatar alt="John Doe" src={User1} />
+            <Avatar
+              sx={{
+                color: 'primary.dark',
+                bgcolor: 'primary.light'
+              }}
+            >
+              <IconUser stroke={1.5} size="20px" />
+            </Avatar>
           </ListItemAvatar>
           <ListItemText primary="John Doe" />
         </ListItem>
@@ -138,7 +144,14 @@ export default function NotificationList() {
           }
         >
           <ListItemAvatar>
-            <Avatar alt="John Doe" src={User1} />
+            <Avatar
+              sx={{
+                color: 'secondary.dark',
+                bgcolor: 'secondary.light'
+              }}
+            >
+              <IconUser stroke={1.5} size="20px" />
+            </Avatar>
           </ListItemAvatar>
           <ListItemText primary={<Typography variant="subtitle1">John Doe</Typography>} />
         </ListItem>
@@ -168,7 +181,14 @@ export default function NotificationList() {
           }
         >
           <ListItemAvatar>
-            <Avatar alt="John Doe" src={User1} />
+            <Avatar
+              sx={{
+                color: 'success.dark',
+                bgcolor: 'success.light'
+              }}
+            >
+              <IconUser stroke={1.5} size="20px" />
+            </Avatar>
           </ListItemAvatar>
           <ListItemText primary={<Typography variant="subtitle1">John Doe</Typography>} />
         </ListItem>

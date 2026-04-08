@@ -138,6 +138,8 @@ const StationInundationList = () => {
                         p.address?.toLowerCase().includes(q)
                     );
                 }
+                // Sort by created_at DESC
+                data.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
                 setPoints(data);
             } else {
                 setPoints([]);
@@ -176,7 +178,10 @@ const StationInundationList = () => {
         if (!window.confirm('Bạn có chắc chắn muốn xóa điểm ngập này?')) return;
         try {
             const res = await stationApi.inundation.delete(id);
-            if (res.data?.status === 'success') { toast.success('Xóa thành công'); loadPoints(); }
+            if (res.data?.status === 'success') { 
+                toast.success('Xóa thành công'); 
+                setPoints(prev => prev.filter(p => p.id !== id));
+            }
         } catch (err) {
             toast.error(err.response?.data?.error || 'Lỗi xóa điểm ngập');
         }

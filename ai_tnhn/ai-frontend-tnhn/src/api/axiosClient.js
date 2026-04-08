@@ -1,5 +1,4 @@
 import axios from 'axios';
-import useAuthStore from 'store/useAuthStore';
 
 const axiosClient = axios.create({
   baseURL: (import.meta.env?.VITE_APP_API_URL || '') + '/api',
@@ -7,7 +6,23 @@ const axiosClient = axios.create({
 
 // Gắn token vào header trước mỗi request
 axiosClient.interceptors.request.use((config) => {
-  const token = useAuthStore.getState().token;
+  let token = null;
+  try {
+    // Break circular dependency by using a dynamic check or localStorage
+    // Since zustand-persist uses a specific key, we can use that or a cleaner way
+    const authStorage = localStorage.getItem('auth-storage');
+    if (authStorage) {
+      const state = JSON.parse(authStorage);
+      token = state?.state?.token;
+    }
+    
+    // Fallback if needed
+    if (!token) {
+      token = localStorage.getItem('admin_token');
+    }
+  } catch (error) {
+    console.error('Error fetching token from storage', error);
+  }
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;

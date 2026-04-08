@@ -63,7 +63,7 @@ const FloatingChat = () => {
 
     return (
         <>
-            <Tooltip title="AI Support Chat">
+            {/* <Tooltip title="AI Support Chat">
                 <Fab
                     component="div"
                     onClick={handleToggle}
@@ -89,7 +89,7 @@ const FloatingChat = () => {
                         </IconButton>
                     </AnimateButton>
                 </Fab>
-            </Tooltip>
+            </Tooltip> */}
 
             <Drawer
                 anchor="right"

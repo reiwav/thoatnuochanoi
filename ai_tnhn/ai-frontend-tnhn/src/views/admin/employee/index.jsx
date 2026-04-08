@@ -165,7 +165,12 @@ const EmployeeList = () => {
     const loadEmployees = async () => {
         setLoading(true);
         try {
-            const res = await employeeApi.getAll({ ...params, page: page + 1, per_page: rowsPerPage });
+            const res = await employeeApi.getAll({ 
+                ...params, 
+                page: page + 1, 
+                per_page: rowsPerPage,
+                order_by: '-created_at'
+            });
             if (res.data?.status === 'success') {
                 const result = res.data.data;
                 setEmployees(Array.isArray(result.data) ? result.data : []);
@@ -197,7 +202,11 @@ const EmployeeList = () => {
         if (!window.confirm('Bạn có chắc chắn muốn xóa người dùng này?')) return;
         try {
             const res = await employeeApi.delete(id);
-            if (res.data?.status === 'success') { toast.success('Xóa thành công'); loadEmployees(); }
+            if (res.data?.status === 'success') { 
+                toast.success('Xóa thành công'); 
+                setEmployees(prev => prev.filter(emp => emp.id !== id));
+                setTotalItems(prev => prev - 1);
+            }
         } catch (err) {
             toast.error(err.response?.data?.error || 'Lỗi xóa người dùng');
         }

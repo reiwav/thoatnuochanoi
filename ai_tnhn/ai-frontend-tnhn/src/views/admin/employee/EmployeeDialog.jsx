@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
     Dialog, DialogTitle, DialogContent, DialogActions,
     TextField, Button, Grid, IconButton, Stack, FormControlLabel, Switch,
@@ -136,6 +136,25 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
         onSubmit(formData);
     };
 
+    const filteredRoles = useMemo(() => {
+        return roles.filter(r => {
+            // 1. Filter by current user permission (giam_doc_xn restriction)
+            if (userRole === 'giam_doc_xn') {
+                if (!['truong_phong_kt', 'cong_nhan_cty'].includes(r.code)) return false;
+            }
+
+            // 2. Filter by selected organization type
+            const selectedOrg = organizations.find(o => o.id === formData.org_id);
+            const isCompany = selectedOrg?.code?.toUpperCase() === 'TNHN';
+            
+            if (formData.org_id) {
+                return r.is_company === isCompany;
+            }
+
+            return true;
+        });
+    }, [roles, userRole, organizations, formData.org_id]);
+
     return (
         <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
             <DialogTitle sx={{ fontWeight: 800, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -166,53 +185,17 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                                 onChange={(e) => handleChange('role', e.target.value)}
                                 sx={{ borderRadius: '12px', bgcolor: '#f8fafc' }}
                             >
-                                {roles
-                                    .filter(r => {
-                                        // 1. Filter by current user permission (giam_doc_xn restriction)
-                                        if (userRole === 'giam_doc_xn') {
-                                            if (!['truong_phong_kt', 'cong_nhan_cty'].includes(r.code)) return false;
-                                        }
-
-                                        // 2. Filter by selected organization type
-                                        const selectedOrg = organizations.find(o => o.id === formData.org_id);
-                                        const isCompany = selectedOrg?.code?.toUpperCase() === 'TNHN';
-                                        
-                                        if (formData.org_id) {
-                                            return r.is_company === isCompany;
-                                        }
-
-                                        return true;
-                                    })
-                                    .length === 0 ? (
+                                {fetchingData && roles.length === 0 ? (
                                     <MenuItem value={formData.role}>
                                         <CircularProgress size={14} sx={{ mr: 1 }} /> Đang tải...
                                     </MenuItem>
                                 ) : (
-                                    roles
-                                        .filter(r => {
-                                            // 1. Filter by current user permission (giam_doc_xn restriction)
-                                            if (userRole === 'giam_doc_xn') {
-                                                if (!['truong_phong_kt', 'cong_nhan_cty'].includes(r.code)) return false;
-                                            }
-
-                                            // 2. Filter by selected organization type
-                                            const selectedOrg = organizations.find(o => o.id === formData.org_id);
-                                            const isCompany = selectedOrg?.code?.toUpperCase() === 'TNHN';
-                                            
-                                            if (formData.org_id) {
-                                                return r.is_company === isCompany;
-                                            }
-
-                                            return true;
-                                        })
-                                        .map((r) => (
-                                            <MenuItem key={r.code} value={r.code}>
-                                                {r.name}
-                                            </MenuItem>
-                                        ))
+                                    filteredRoles.map((r) => (
+                                        <MenuItem key={r.code} value={r.code}>
+                                            {r.name}
+                                        </MenuItem>
+                                    ))
                                 )}
-
-
                             </Select>
                         </FormControl>
                     </Box>

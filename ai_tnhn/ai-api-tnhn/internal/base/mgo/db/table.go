@@ -41,8 +41,11 @@ func (t *Table) R_Search(ctx context.Context, f filter.Filter, val interface{}) 
 		q = append(q, bson.M{"$match": f.GetWhere()})
 	}
 
-	if len(f.GetOrderBy()) > 0 {
-		q = append(q, bson.M{"$sort": f.GetOrderBy()})
+	order := f.GetOrderBy()
+	if len(order) > 0 {
+		q = append(q, bson.M{"$sort": order})
+	} else {
+		q = append(q, bson.M{"$sort": bson.D{{Key: "created_at", Value: -1}}})
 	}
 
 	if f.GetOffset() > 0 {
@@ -74,8 +77,11 @@ func (t *Table) R_SearchAndCount(ctx context.Context, f filter.Filter, val inter
 		qCount = append(q, bson.M{"$match": f.GetWhere()})
 	}
 
-	if len(f.GetOrderBy()) > 0 {
-		q = append(q, bson.M{"$sort": f.GetOrderBy()})
+	order := f.GetOrderBy()
+	if len(order) > 0 {
+		q = append(q, bson.M{"$sort": order})
+	} else {
+		q = append(q, bson.M{"$sort": bson.D{{Key: "created_at", Value: -1}}})
 	}
 
 	if f.GetOffset() > 0 {
@@ -239,10 +245,12 @@ func (t *Table) R_SelectOneWithFields(ctx context.Context, filter bson.M, v inte
 
 func (t *Table) R_SelectManyWithFields(ctx context.Context, filter bson.M, v interface{}, fields bson.M) error {
 	filter["deleted_at"] = 0
-	var opts = options.Find().SetProjection(fields)
+	var opts = options.Find().SetProjection(fields).SetSort(bson.D{{Key: "created_at", Value: -1}})
 	var cur, err = t.Find(ctx, filter, opts)
 	if err != nil {
-		cur.Close(ctx)
+		if cur != nil {
+			cur.Close(ctx)
+		}
 		return err
 	}
 	err = cur.All(ctx, v)
@@ -262,9 +270,12 @@ func (t *Table) R_SelectByID(ctx context.Context, id string, v interface{}) erro
 func (t *Table) R_SelectMany(ctx context.Context, filter bson.M, v interface{}) error {
 
 	filter["deleted_at"] = 0
-	var cur, err = t.Find(ctx, filter)
+	var opts = options.Find().SetSort(bson.D{{Key: "created_at", Value: -1}})
+	var cur, err = t.Find(ctx, filter, opts)
 	if err != nil {
-		cur.Close(ctx)
+		if cur != nil {
+			cur.Close(ctx)
+		}
 		return err
 	}
 	err = cur.All(ctx, v)
@@ -302,11 +313,9 @@ func (t *Table) R_SelectAndSort(ctx context.Context, filter bson.M, sortFields i
 	filter["deleted_at"] = 0
 	var opts = options.Find()
 	if sortFields != nil {
-		// sort := bson.M{}
-		// for key, val := range sortFields {
-		// 	sort = append(sort, bson.E{key: val})
-		// }
 		opts.SetSort(sortFields)
+	} else {
+		opts.SetSort(bson.D{{Key: "created_at", Value: -1}})
 	}
 	if skip > 0 {
 		opts.SetSkip(skip)

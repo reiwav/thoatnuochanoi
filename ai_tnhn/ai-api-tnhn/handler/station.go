@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"ai-api-tnhn/constant"
 	"ai-api-tnhn/handler/filters"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/service/auth"
@@ -25,6 +26,22 @@ func NewStationHandler(service station.Service, authService auth.Service, contex
 		authService: authService,
 		contextWith: contextWith,
 	}
+}
+
+func (h *StationHandler) checkPermissions(c *gin.Context) (isSuperAdmin bool, isAllowedAll bool, user *models.User) {
+	token := h.contextWith.GetToken(c.Request)
+	user, err := h.authService.GetProfile(c.Request.Context(), token)
+	if err != nil || user == nil {
+		return false, false, nil
+	}
+
+	isSuperAdmin = user.Role == constant.ROLE_SUPER_ADMIN ||
+		user.Role == "supper_admin" ||
+		user.Role == "supper_admib" ||
+		user.Role == "super_admin "
+
+	isAllowedAll = isSuperAdmin || user.IsCompany
+	return isSuperAdmin, isAllowedAll, user
 }
 
 // RAIN STATIONS
@@ -72,17 +89,22 @@ func (h *StationHandler) ListRain(c *gin.Context) {
 		return
 	}
 
-	// Organization-based filtering
-	token := h.contextWith.GetToken(c.Request)
-	user, _ := h.authService.GetProfile(c.Request.Context(), token)
-	if user != nil && user.Role != "super_admin" && user.Role != "supper_admin" {
+	// Permission-based filtering
+	_, isAllowedAll, user := h.checkPermissions(c)
+	if user != nil && !isAllowedAll {
 		org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
-		if err == nil && org != nil && len(org.RainStationIDs) > 0 {
-			req.AddWhere("id", "_id", bson.M{"$in": org.RainStationIDs})
+		if err == nil && org != nil {
+			if len(org.RainStationIDs) > 0 {
+				// UNION logic: Owned by Org OR in Shared IDs list
+				req.AddWhere("org_id_or_ids", "$or", []bson.M{
+					{"org_id": user.OrgID},
+					{"_id": bson.M{"$in": org.RainStationIDs}},
+				})
+			} else {
+				req.AddWhere("org_id", "org_id", user.OrgID)
+			}
 		} else {
-			// If no stations assigned, return empty result
-			h.SendData(c, gin.H{"data": []interface{}{}, "total": 0})
-			return
+			req.AddWhere("org_id", "org_id", user.OrgID)
 		}
 	}
 
@@ -136,17 +158,22 @@ func (h *StationHandler) ListLake(c *gin.Context) {
 		return
 	}
 
-	// Organization-based filtering
-	token := h.contextWith.GetToken(c.Request)
-	user, _ := h.authService.GetProfile(c.Request.Context(), token)
-	if user != nil && user.Role != "super_admin" && user.Role != "supper_admin" {
+	// Permission-based filtering
+	_, isAllowedAll, user := h.checkPermissions(c)
+	if user != nil && !isAllowedAll {
 		org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
-		if err == nil && org != nil && len(org.LakeStationIDs) > 0 {
-			req.AddWhere("id", "_id", bson.M{"$in": org.LakeStationIDs})
+		if err == nil && org != nil {
+			if len(org.LakeStationIDs) > 0 {
+				// UNION logic: Owned by Org OR in Shared IDs list
+				req.AddWhere("org_id_or_ids", "$or", []bson.M{
+					{"org_id": user.OrgID},
+					{"_id": bson.M{"$in": org.LakeStationIDs}},
+				})
+			} else {
+				req.AddWhere("org_id", "org_id", user.OrgID)
+			}
 		} else {
-			// If no stations assigned, return empty result
-			h.SendData(c, gin.H{"data": []interface{}{}, "total": 0})
-			return
+			req.AddWhere("org_id", "org_id", user.OrgID)
 		}
 	}
 
@@ -200,17 +227,22 @@ func (h *StationHandler) ListRiver(c *gin.Context) {
 		return
 	}
 
-	// Organization-based filtering
-	token := h.contextWith.GetToken(c.Request)
-	user, _ := h.authService.GetProfile(c.Request.Context(), token)
-	if user != nil && user.Role != "super_admin" && user.Role != "supper_admin" {
+	// Permission-based filtering
+	_, isAllowedAll, user := h.checkPermissions(c)
+	if user != nil && !isAllowedAll {
 		org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
-		if err == nil && org != nil && len(org.RiverStationIDs) > 0 {
-			req.AddWhere("id", "_id", bson.M{"$in": org.RiverStationIDs})
+		if err == nil && org != nil {
+			if len(org.RiverStationIDs) > 0 {
+				// UNION logic: Owned by Org OR in Shared IDs list
+				req.AddWhere("org_id_or_ids", "$or", []bson.M{
+					{"org_id": user.OrgID},
+					{"_id": bson.M{"$in": org.RiverStationIDs}},
+				})
+			} else {
+				req.AddWhere("org_id", "org_id", user.OrgID)
+			}
 		} else {
-			// If no stations assigned, return empty result
-			h.SendData(c, gin.H{"data": []interface{}{}, "total": 0})
-			return
+			req.AddWhere("org_id", "org_id", user.OrgID)
 		}
 	}
 

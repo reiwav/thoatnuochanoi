@@ -32,7 +32,7 @@ func (h *ContractHandler) Create(c *gin.Context) {
 		return
 	}
 
-	item.OrgID = h.contextWith.GetTokenFromContext(c).OrgId
+	item.OrgID = h.contextWith.GetTokenFromContext(c).OrgID
 
 	err := h.service.Create(c.Request.Context(), &item)
 	web.AssertNil(err)
@@ -74,7 +74,7 @@ func (h *ContractHandler) List(c *gin.Context) {
 	}
 
 	// Force OrgID from context
-	orgID, err := h.contextWith.GetOrgId(c)
+	orgID, err := h.contextWith.GetOrgID(c)
 	if err == nil && orgID != "" && orgID != "all" {
 		req.OrgID = orgID
 	}
@@ -130,7 +130,7 @@ func (h *ContractHandler) PrepareFolder(c *gin.Context) {
 		return
 	}
 
-	orgID := h.contextWith.GetTokenFromContext(c).OrgId
+	orgID := h.contextWith.GetTokenFromContext(c).OrgID
 
 	folderID, link, err := h.service.PrepareDriveFolder(c.Request.Context(), orgID, body.CategoryID, body.Name)
 	web.AssertNil(err)

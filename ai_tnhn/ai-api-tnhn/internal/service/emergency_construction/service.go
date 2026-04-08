@@ -481,7 +481,17 @@ func (s *service) ExportExcelToDrive(ctx context.Context, dateStr string, orgID 
 	stt := 1
 	for _, org := range orgs {
 		// Fetch constructions for this org
-		consList, _, err := s.repo.List(ctx, filter.NewBasicFilter().AddWhere("org_id", "org_id", org.ID))
+		// Fetch constructions for this org (Union of owned and shared)
+		filterReq := filter.NewBasicFilter()
+		if len(org.EmergencyConstructionIDs) > 0 {
+			filterReq.AddWhere("org_id_or_ids", "$or", []bson.M{
+				{"org_id": org.ID},
+				{"_id": bson.M{"$in": org.EmergencyConstructionIDs}},
+			})
+		} else {
+			filterReq.AddWhere("org_id", "org_id", org.ID)
+		}
+		consList, _, err := s.repo.List(ctx, filterReq)
 		if err != nil || len(consList) == 0 {
 			continue
 		}

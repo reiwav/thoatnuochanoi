@@ -78,11 +78,13 @@ func (m mid) MidBasicType(roles ...string) gin.HandlerFunc {
 			return
 		}
 		m.ContextWithClient(ctx, &web.ClientCache{
-			UserID: tok.UserID,
-			Token:  tokenID,
-			OrgId:  tok.OrgID,
-			Role:   tok.Role,
-			Name:   tok.Name,
+			UserID:     tok.UserID,
+			Token:      tokenID,
+			OrgID:      tok.OrgID,
+			Role:       tok.Role,
+			Name:       tok.Name,
+			IsEmployee: tok.IsEmployee,
+			IsCompany:  tok.IsCompany,
 		})
 		m.SetUserID(ctx, tok.UserID)
 		ctx.Next()

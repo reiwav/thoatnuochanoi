@@ -4,7 +4,7 @@ const (
 	ROLE_SUPER_ADMIN = "super_admin"
 	// ROLE_ADMIN_ORG        = "admin_org"
 	// ROLE_MANAGER_CONTRACT = "manager_contract"
-	// ROLE_EMPLOYEE         = "employee"
+	ROLE_EMPLOYEE         = "employee"
 	// ROLE_REVIEWER         = "reviewer"
 
 	// Business Roles from Google Doc

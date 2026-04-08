@@ -64,9 +64,10 @@ func (t service) GetProfile(ctx context.Context, tokenID string) (*models.User, 
 		user.Role = constant.ROLE_GIAM_DOC_XN
 	}
 
-	// Fetch is_employee from Role
+	// Fetch is_employee and is_company from Role
 	if roleData, err := t.roleRepo.GetByCode(ctx, user.Role); err == nil && roleData != nil {
 		user.IsEmployee = roleData.IsEmployee
+		user.IsCompany = roleData.IsCompany
 	}
 
 	return user, nil
@@ -100,10 +101,12 @@ func (t service) Login(ctx context.Context, input LoginRequest) (*models.Token, 
 		role = constant.ROLE_GIAM_DOC_XN
 	}
 
-	// 3. Get is_employee from Role
+	// 3. Get Role Data
 	isEmployee := false
+	isCompany := false
 	if roleData, err := t.roleRepo.GetByCode(ctx, role); err == nil && roleData != nil {
 		isEmployee = roleData.IsEmployee
+		isCompany = roleData.IsCompany
 	}
 
 	// 4. Tạo token
@@ -113,6 +116,7 @@ func (t service) Login(ctx context.Context, input LoginRequest) (*models.Token, 
 		OrgID:      u.OrgID,
 		Role:       role,
 		IsEmployee: isEmployee,
+		IsCompany:  isCompany,
 	}
 	err = t.tokenRepo.R_Create(ctx, tk)
 
@@ -178,10 +182,12 @@ func (t service) OAuthLogin(ctx context.Context, email string) (*models.Token, e
 		role = constant.ROLE_GIAM_DOC_XN
 	}
 
-	// Get is_employee from Role
+	// Get Role Data
 	isEmployee := false
+	isCompany := false
 	if roleData, err := t.roleRepo.GetByCode(ctx, role); err == nil && roleData != nil {
 		isEmployee = roleData.IsEmployee
+		isCompany = roleData.IsCompany
 	}
 
 	// Create system token
@@ -191,6 +197,7 @@ func (t service) OAuthLogin(ctx context.Context, email string) (*models.Token, e
 		OrgID:      u.OrgID,
 		Role:       role,
 		IsEmployee: isEmployee,
+		IsCompany:  isCompany,
 	}
 	err = t.tokenRepo.R_Create(ctx, tk)
 

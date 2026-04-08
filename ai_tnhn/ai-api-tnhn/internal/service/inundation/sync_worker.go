@@ -308,8 +308,14 @@ func (w *SyncWorker) processReportSync(ctx context.Context, report *models.Inund
 
 			file, err := os.Open(fullPath)
 			if err != nil {
-				fmt.Printf("SyncWorker: Error opening local file %s: %v\n", fullPath, err)
-				newImages = append(newImages, imgPath)
+				if os.IsNotExist(err) {
+					fmt.Printf("SyncWorker: Local file %s missing, removing reference\n", fullPath)
+					modified = true
+					// Don't append to newImages, effectively removing it
+				} else {
+					fmt.Printf("SyncWorker: Error opening local file %s: %v\n", fullPath, err)
+					newImages = append(newImages, imgPath)
+				}
 				continue
 			}
 
@@ -340,7 +346,7 @@ func (w *SyncWorker) processReportSync(ctx context.Context, report *models.Inund
 	if modified {
 		report.Images = newImages
 		_ = w.inundationRepo.Update(ctx, report)
-		fmt.Printf("SyncWorker: Successfully synced images for report %s\n", report.ID)
+		fmt.Printf("SyncWorker: Successfully synced/cleaned images for report %s\n", report.ID)
 	}
 }
 
@@ -370,7 +376,12 @@ func (w *SyncWorker) processUpdateSync(ctx context.Context, update *models.Inund
 
 			file, err := os.Open(fullPath)
 			if err != nil {
-				newImages = append(newImages, imgPath)
+				if os.IsNotExist(err) {
+					fmt.Printf("SyncWorker: Local file %s missing for update, removing reference\n", fullPath)
+					modified = true
+				} else {
+					newImages = append(newImages, imgPath)
+				}
 				continue
 			}
 
@@ -400,6 +411,6 @@ func (w *SyncWorker) processUpdateSync(ctx context.Context, update *models.Inund
 	if modified {
 		update.Images = newImages
 		_ = w.inundationUpdateRepo.Update(ctx, update)
-		fmt.Printf("SyncWorker: Successfully synced images for update %s\n", update.ID)
+		fmt.Printf("SyncWorker: Successfully synced/cleaned images for update %s\n", update.ID)
 	}
 }

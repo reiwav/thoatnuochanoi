@@ -20,16 +20,15 @@ func NewEmergencyConstructionListRequest() *EmergencyConstructionListRequest {
 	}
 }
 
-func (r *EmergencyConstructionListRequest) GetFilter() bson.M {
-	f := bson.M{}
+func (r *EmergencyConstructionListRequest) GetWhere() filter.Where {
 	if r.Name != "" {
-		f["name"] = bson.M{"$regex": primitive.Regex{Pattern: r.Name, Options: "i"}}
+		r.AddWhere("name", "name", bson.M{"$regex": primitive.Regex{Pattern: r.Name, Options: "i"}})
 	}
 	if r.Status != "" {
-		f["status"] = r.Status
+		r.AddWhere("status", "status", r.Status)
 	}
 	if r.OrgID != "" {
-		f["org_id"] = r.OrgID
+		r.AddWhere("org_id", "org_id", r.OrgID)
 	}
-	return f
+	return r.PaginationFilter.GetWhere()
 }

@@ -216,7 +216,9 @@ func (h *InundationHandler) GetReport(c *gin.Context) {
 			user.Role == "supper_admib" ||
 			user.Role == "super_admin "
 
-		if !isSuperAdmin && report.OrgID != user.OrgID {
+		isAllowedAll := isSuperAdmin || user.IsCompany
+
+		if !isAllowedAll && report.OrgID != user.OrgID {
 			h.SendError(c, web.Unauthorized("Access denied: You do not have permission to view this report"))
 			return
 		}
@@ -251,22 +253,24 @@ func (h *InundationHandler) ListReports(c *gin.Context) {
 		return
 	}
 
-	// Check if user is Super Admin
+	// Check permissions
 	isSuperAdmin := user.Role == constant.ROLE_SUPER_ADMIN ||
 		user.Role == "supper_admin" ||
 		user.Role == "supper_admib" ||
 		user.Role == "super_admin "
 
+	isAllowedAll := isSuperAdmin || user.IsCompany
+
 	orgID := user.OrgID
-	if isSuperAdmin {
-		// Privileged users can filter by any org_id from query
+	if isAllowedAll {
+		// Privileged users (Super Admin or Company level) can manage all
 		if qOrg := c.Query("org_id"); qOrg != "" {
 			orgID = qOrg
 		} else {
-			orgID = "" // Default to all for SuperAdmin if no filter provided
+			orgID = "" // Default to all if no filter provided
 		}
 	} else {
-		// Restricted users always stick to their own OrgID, query param is ignored
+		// Restricted users stick to their own OrgID
 		orgID = user.OrgID
 	}
 
@@ -281,9 +285,9 @@ func (h *InundationHandler) ListReports(c *gin.Context) {
 	
 	// Use target organization's configured InundationIDs if available
 	targetOrgID := ""
-	if qOrg := c.Query("org_id"); qOrg != "" && isSuperAdmin {
+	if qOrg := c.Query("org_id"); qOrg != "" && isAllowedAll {
 		targetOrgID = qOrg
-	} else if !isSuperAdmin {
+	} else if !isAllowedAll {
 		targetOrgID = user.OrgID
 	}
 
@@ -294,7 +298,7 @@ func (h *InundationHandler) ListReports(c *gin.Context) {
 		}
 	}
 
-	if len(pointIDs) == 0 && user.IsEmployee && !isSuperAdmin {
+	if len(pointIDs) == 0 && user.IsEmployee && !isAllowedAll {
 		pointIDs = user.AssignedInundationPointIDs
 		if len(pointIDs) == 0 {
 			// If no points assigned to employee, return empty result
@@ -326,19 +330,21 @@ func (h *InundationHandler) GetPointsStatus(c *gin.Context) {
 		return
 	}
 
-	// Check if user is Super Admin
+	// Check permissions
 	isSuperAdmin := user.Role == constant.ROLE_SUPER_ADMIN ||
 		user.Role == "supper_admin" ||
 		user.Role == "supper_admib" ||
 		user.Role == "super_admin "
 
+	isAllowedAll := isSuperAdmin || user.IsCompany
+
 	// 1. Determine base orgID
 	orgID := user.OrgID
-	if isSuperAdmin {
+	if isAllowedAll {
 		if qOrg := c.Query("org_id"); qOrg != "" {
 			orgID = qOrg
 		} else {
-			orgID = "" // Default to all for SuperAdmin
+			orgID = "" // Default to all if no filter provided
 		}
 	} else {
 		orgID = user.OrgID
@@ -349,9 +355,9 @@ func (h *InundationHandler) GetPointsStatus(c *gin.Context) {
 	
 	// Use target organization's configured InundationIDs if available
 	targetOrgID := ""
-	if qOrg := c.Query("org_id"); qOrg != "" && isSuperAdmin {
+	if qOrg := c.Query("org_id"); qOrg != "" && isAllowedAll {
 		targetOrgID = qOrg
-	} else if !isSuperAdmin {
+	} else if !isAllowedAll {
 		targetOrgID = user.OrgID
 	}
 
@@ -362,7 +368,7 @@ func (h *InundationHandler) GetPointsStatus(c *gin.Context) {
 		}
 	}
 
-	if len(pointIDs) == 0 && user.IsEmployee && !isSuperAdmin {
+	if len(pointIDs) == 0 && user.IsEmployee && !isAllowedAll {
 		// Default mobile app view for employees: only their assigned points
 		pointIDs = user.AssignedInundationPointIDs
 	}
@@ -390,13 +396,15 @@ func (h *InundationHandler) CreatePoint(c *gin.Context) {
 		return
 	}
 
-	// Check if user is Super Admin
+	// Check permissions
 	isSuperAdmin := user.Role == constant.ROLE_SUPER_ADMIN ||
 		user.Role == "supper_admin" ||
 		user.Role == "supper_admib" ||
 		user.Role == "super_admin "
 
-	if !isSuperAdmin || req.OrgID == "" {
+	isAllowedAll := isSuperAdmin || user.IsCompany
+
+	if !isAllowedAll || req.OrgID == "" {
 		req.OrgID = user.OrgID
 	}
 
@@ -429,6 +437,8 @@ func (h *InundationHandler) UpdatePoint(c *gin.Context) {
 		user.Role == "supper_admib" ||
 		user.Role == "super_admin "
 
+	isAllowedAll := isSuperAdmin || user.IsCompany
+
 	// Fetch current point to retain org ID if not provided, or if user is not authorized
 	currentPoint, err := h.service.GetPointByID(c.Request.Context(), id)
 	if err != nil || currentPoint == nil {
@@ -437,12 +447,12 @@ func (h *InundationHandler) UpdatePoint(c *gin.Context) {
 	}
 
 	// Ownership check
-	if !isSuperAdmin && currentPoint.OrgID != user.OrgID {
+	if !isAllowedAll && currentPoint.OrgID != user.OrgID {
 		h.SendError(c, web.Unauthorized("Access denied: You do not have permission to modify this point"))
 		return
 	}
 
-	if !isSuperAdmin {
+	if !isAllowedAll {
 		req.OrgID = currentPoint.OrgID
 	} else if req.OrgID == "" {
 		req.OrgID = currentPoint.OrgID
@@ -472,7 +482,9 @@ func (h *InundationHandler) DeletePoint(c *gin.Context) {
 		user.Role == "supper_admib" ||
 		user.Role == "super_admin "
 
-	if !isSuperAdmin {
+	isAllowedAll := isSuperAdmin || user.IsCompany
+
+	if !isAllowedAll {
 		currentPoint, err := h.service.GetPointByID(c.Request.Context(), id)
 		if err == nil && currentPoint != nil && currentPoint.OrgID != user.OrgID {
 			h.SendError(c, web.Unauthorized("Access denied: You do not have permission to delete this point"))
@@ -533,8 +545,10 @@ func (h *InundationHandler) ReviewReport(c *gin.Context) {
 		user.Role == "supper_admib" ||
 		user.Role == "super_admin "
 
-	// Ownership Check: Only allow review if same org or isSuperAdmin
-	if !isSuperAdmin && report.OrgID != user.OrgID {
+	isAllowedAll := isSuperAdmin || user.IsCompany
+
+	// Ownership Check: Only allow review if same org or isAllowedAll
+	if !isAllowedAll && report.OrgID != user.OrgID {
 		h.SendError(c, web.Unauthorized("You do not have permission to review this report"))
 		return
 	}

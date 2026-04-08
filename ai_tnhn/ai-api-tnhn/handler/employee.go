@@ -32,7 +32,7 @@ func (h *EmployeeHandler) Create(c *gin.Context) {
 	// OrgID should be set from token/context if not provided?
 	// Or we assume Admin user passes OrgID or we force it from Admin's OrgID.
 	// Usually admin manages their own org.
-	orgID, err := h.contextWith.GetOrgId(c)
+	orgID, err := h.contextWith.GetOrgID(c)
 	if err == nil && orgID != "" && orgID != "all" {
 		req.OrgID = orgID
 	}
@@ -88,7 +88,7 @@ func (h *EmployeeHandler) List(c *gin.Context) {
 	// Force OrgID from context for security (unless Super Admin with 'all')
 	// Super Admin logic (Role check) should be here or middleware.
 	// Assuming MidBasicType middleware already sets OrgID in context.
-	orgID, err := h.contextWith.GetOrgId(c)
+	orgID, err := h.contextWith.GetOrgID(c)
 	if err == nil {
 		if orgID != "all" {
 			req.OrgID = orgID // Override request OrgID with context OrgID

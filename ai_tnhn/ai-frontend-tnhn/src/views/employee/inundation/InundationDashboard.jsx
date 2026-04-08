@@ -60,23 +60,45 @@ import { getTrafficStatusColor, getTrafficStatusLabel } from 'utils/trafficStatu
 const getLatestData = (report) => {
     if (!report) return null;
     let data = { ...report, traffic_status: report.traffic_status || report.trafficStatus };
-    if (report.updates && report.updates.length > 0) {
-        const latestUpdate = [...report.updates].sort((a, b) => b.timestamp - a.timestamp)[0];
-        data = {
+
+    const updates = report.updates && Array.isArray(report.updates) ? report.updates : [];
+    const sortedUpdates = [...updates].sort((a, b) => b.timestamp - a.timestamp);
+    
+    // Determine timestamps
+    if (sortedUpdates.length > 0) {
+        const newest = sortedUpdates[0];
+        const oldest = sortedUpdates[sortedUpdates.length - 1];
+
+        // Find most recent dimensions, traffic status, and images
+        const updateWithDimensions = sortedUpdates.find(u => u.length || u.width || u.depth);
+        const updateWithTraffic = sortedUpdates.find(u => u.traffic_status || u.trafficStatus);
+        const updateWithImages = sortedUpdates.find(u => u.images && u.images.length > 0);
+
+        return {
             ...data,
-            depth: latestUpdate.depth || data.depth,
-            length: latestUpdate.length || data.length,
-            width: latestUpdate.width || data.width,
-            traffic_status: latestUpdate.traffic_status || latestUpdate.trafficStatus || data.traffic_status,
-            images: (latestUpdate.images && latestUpdate.images.length > 0) ? latestUpdate.images : data.images,
-            description: latestUpdate.description || data.description,
-            timestamp: latestUpdate.timestamp
+            depth: updateWithDimensions?.depth || data.depth,
+            length: updateWithDimensions?.length || data.length,
+            width: updateWithDimensions?.width || data.width,
+            traffic_status: (updateWithTraffic?.traffic_status || updateWithTraffic?.trafficStatus) || data.traffic_status,
+            images: (updateWithImages?.images && updateWithImages.images.length > 0) ? updateWithImages.images : (data.images || []),
+            description: newest.description || data.description,
+            timestamp: newest.timestamp,
+            newest_ts: newest.timestamp,
+            oldest_ts: oldest.timestamp,
+            status: data.status === 'resolved' || data.status === 'normal' ? 'normal' : data.status,
+            traffic_status: (data.status === 'resolved' || data.status === 'normal') ? "" : (updateWithTraffic?.traffic_status || updateWithTraffic?.trafficStatus || data.traffic_status)
         };
     }
-    if (data.status === 'resolved' || data.status === 'normal' || (report && (report.status === 'resolved' || report.status === 'normal'))) {
-        data.traffic_status = "";
-    }
-    return data;
+
+    // Default if no updates
+    const startTime = data.start_time || data.startTime || 0;
+    return {
+        ...data,
+        timestamp: startTime,
+        newest_ts: startTime,
+        oldest_ts: startTime,
+        traffic_status: (data.status === 'resolved' || data.status === 'normal') ? "" : data.traffic_status
+    };
 };
 
 const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, handleOpenViewer, navigate, isMobile, basePath, hasPermission }) => {
@@ -152,10 +174,10 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                             <Typography variant="body1" sx={{ fontWeight: 700 }}>
                                 {latest ? formatTime(latest.start_time) : '-'}
                             </Typography>
-                            {latest && (
+                             {latest && (
                                 <Typography variant="caption" color={point.status === 'active' ? "error" : "text.secondary"} sx={{ fontWeight: 700, display: 'block', mt: 0.5, fontSize: '0.8rem' }}>
                                     {point.status === 'active'
-                                        ? `Cập nhật: ${formatTime(latest.timestamp || latest.start_time)} (${getDuration(latest.timestamp || latest.start_time)})`
+                                        ? `Cập nhật: ${formatTime(latest.newest_ts)} (${!latest.oldest_ts || Number(latest.oldest_ts) === Number(latest.newest_ts) ? '00' : getDuration(latest.oldest_ts, latest.newest_ts)})`
                                         : `Lần cuối: ${getDuration(latest.start_time)} trước`}
                                 </Typography>
                             )}
@@ -305,10 +327,10 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                                         <Typography variant="body2" sx={{ fontWeight: 600 }}>
                                             {latest ? formatTime(latest.start_time) : '-'}
                                         </Typography>
-                                        {latest && (
+                                         {latest && (
                                             <Typography variant="caption" color={point.status === 'active' ? "error" : "text.secondary"} sx={{ fontWeight: 600, display: 'block' }}>
                                                 {point.status === 'active'
-                                                    ? `Cập nhật lúc: ${formatTime(latest.timestamp || latest.start_time)} (${getDuration(latest.timestamp || latest.start_time)})`
+                                                    ? `Cập nhật lúc: ${formatTime(latest.newest_ts)} (${!latest.oldest_ts || Number(latest.oldest_ts) === Number(latest.newest_ts) ? '00' : getDuration(latest.oldest_ts, latest.newest_ts)})`
                                                     : `Lần cuối: ${getDuration(latest.start_time)} trước`}
                                             </Typography>
                                         )}
@@ -420,8 +442,18 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenVi
                             <Typography variant="body2" color="text.secondary">Thời gian ngập:</Typography>
                             <Typography variant="body1" sx={{ fontWeight: 700 }}>{`Bắt đầu: ${formatTime(report.start_time)}`}</Typography>
                             <Typography variant="body1" sx={{ fontWeight: 700 }}>{report.status === 'resolved' ? `Kết thúc: ${formatTime(report.end_time)}` : 'Đang diễn ra'}</Typography>
-                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, display: 'block', mt: 0.5, fontSize: '0.8rem' }}>
-                                Tổng thời gian: {getDuration(report.start_time, report.end_time)}
+                             <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, display: 'block', mt: 0.5, fontSize: '0.8rem' }}>
+                                Tổng thời gian: {(() => {
+                                    if (report.status === 'active') {
+                                        const sorted = report.updates && Array.isArray(report.updates) 
+                                            ? [...report.updates].sort((a, b) => b.timestamp - a.timestamp) 
+                                            : [];
+                                        const newest = sorted.length > 0 ? sorted[0].timestamp : report.start_time;
+                                        const oldest = sorted.length > 0 ? sorted[sorted.length - 1].timestamp : report.start_time;
+                                        return Number(oldest) === Number(newest) ? '00' : getDuration(oldest, newest);
+                                    }
+                                    return getDuration(report.start_time, report.end_time);
+                                })()}
                             </Typography>
                         </Grid>
                         <Grid item xs={12} sm={6}>
@@ -562,8 +594,18 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenVi
                                         <Typography variant="body2" sx={{ fontWeight: 600 }}>
                                             {report.status === 'resolved' ? `Kết thúc: ${formatTime(report.end_time)}` : 'Đang diễn ra'}
                                         </Typography>
-                                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block' }}>
-                                            Tổng thời gian: {getDuration(report.start_time, report.end_time)}
+                                         <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block' }}>
+                                            Tổng thời gian: {(() => {
+                                                if (report.status === 'active') {
+                                                    const sorted = report.updates && Array.isArray(report.updates) 
+                                                        ? [...report.updates].sort((a, b) => b.timestamp - a.timestamp) 
+                                                        : [];
+                                                    const newest = sorted.length > 0 ? sorted[0].timestamp : report.start_time;
+                                                    const oldest = sorted.length > 0 ? sorted[sorted.length - 1].timestamp : report.start_time;
+                                                    return Number(oldest) === Number(newest) ? '00' : getDuration(oldest, newest);
+                                                }
+                                                return getDuration(report.start_time, report.end_time);
+                                            })()}
                                         </Typography>
                                     </Grid>
                                     <Grid item xs={12} sm={6}>

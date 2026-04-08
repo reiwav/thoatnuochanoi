@@ -16,39 +16,49 @@ import { toast } from 'react-hot-toast';
 
 const getLatestData = (report) => {
     if (!report) return null;
-    let data = { ...report, traffic_status: report.traffic_status || report.trafficStatus };
+    let data = { 
+        ...report, 
+        traffic_status: report.traffic_status || report.trafficStatus 
+    };
 
-    // Sort updates by timestamp newest first
-    const sortedUpdates = report.updates && report.updates.length > 0
-        ? [...report.updates].sort((a, b) => b.timestamp - a.timestamp)
-        : [];
-
+    const updates = report.updates && Array.isArray(report.updates) ? report.updates : [];
+    const sortedUpdates = [...updates].sort((a, b) => b.timestamp - a.timestamp);
+    
+    // Determine timestamps
     if (sortedUpdates.length > 0) {
-        const latestUpdate = sortedUpdates[0];
+        const newest = sortedUpdates[0];
+        const oldest = sortedUpdates[sortedUpdates.length - 1];
 
-        // Find most recent dimensions
+        // Find most recent dimensions, traffic status, and images
         const updateWithDimensions = sortedUpdates.find(u => u.length || u.width || u.depth);
-        // Find most recent traffic status
         const updateWithTraffic = sortedUpdates.find(u => u.traffic_status || u.trafficStatus);
-        // Find most recent images
         const updateWithImages = sortedUpdates.find(u => u.images && u.images.length > 0);
 
-        data = {
+        return {
             ...data,
             depth: updateWithDimensions?.depth || data.depth,
             length: updateWithDimensions?.length || data.length,
             width: updateWithDimensions?.width || data.width,
             traffic_status: (updateWithTraffic?.traffic_status || updateWithTraffic?.trafficStatus) || data.traffic_status,
             images: (updateWithImages?.images && updateWithImages.images.length > 0) ? updateWithImages.images : (data.images || []),
-            description: latestUpdate.description || data.description,
-            timestamp: latestUpdate.timestamp
+            description: newest.description || data.description,
+            timestamp: newest.timestamp,
+            newest_ts: newest.timestamp,
+            oldest_ts: oldest.timestamp,
+            status: data.status === 'resolved' || data.status === 'normal' ? 'normal' : data.status,
+            traffic_status: (data.status === 'resolved' || data.status === 'normal') ? "" : (updateWithTraffic?.traffic_status || updateWithTraffic?.trafficStatus || data.traffic_status)
         };
     }
 
-    if (data.status === 'resolved' || data.status === 'normal') {
-        data.traffic_status = "";
-    }
-    return data;
+    // Default if no updates
+    const startTime = data.start_time || data.startTime || 0;
+    return {
+        ...data,
+        timestamp: startTime,
+        newest_ts: startTime,
+        oldest_ts: startTime,
+        traffic_status: (data.status === 'resolved' || data.status === 'normal') ? "" : data.traffic_status
+    };
 };
 
 const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, handleOpenViewer, navigate, isMobile, fetchPoints }) => {
@@ -127,7 +137,7 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                                     <Typography variant="caption" color="text.secondary" display="block">Cập nhật:</Typography>
                                     <Typography variant="caption" color={point.status === 'active' ? "error" : "text.secondary"} sx={{ fontWeight: 700 }}>
                                         {point.status === 'active'
-                                            ? `${formatTime(latest?.timestamp || latest?.start_time)} (${getDuration(latest?.timestamp || latest?.start_time)})`
+                                            ? `${formatTime(latest?.newest_ts)} (${!latest?.oldest_ts || Number(latest?.oldest_ts) === Number(latest?.newest_ts) ? '00' : getDuration(latest?.oldest_ts, latest?.newest_ts)})`
                                             : `${getDuration(point.start_time || latest?.start_time, point.end_time || latest?.end_time)}`}
                                     </Typography>
                                 </Grid>
@@ -253,7 +263,7 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                                         </Typography>
                                         <Typography variant="caption" color={point.status === 'active' ? "error" : "text.secondary"} sx={{ fontWeight: 600, display: 'block' }}>
                                             {point.status === 'active'
-                                                ? `Cập nhật lúc: ${formatTime(latest?.timestamp || latest?.start_time)} (${getDuration(latest?.timestamp || latest?.start_time)})`
+                                                ? `Cập nhật lúc: ${formatTime(latest?.newest_ts)} (${!latest?.oldest_ts || Number(latest?.oldest_ts) === Number(latest?.newest_ts) ? '00' : getDuration(latest?.oldest_ts, latest?.newest_ts)})`
                                                 : `Tổng thời gian: ${getDuration(point.start_time || latest?.start_time, point.end_time || latest?.end_time)}`}
                                         </Typography>
                                     </Grid>
@@ -489,7 +499,17 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, getDuration,
                                         <Typography variant="body2" sx={{ fontWeight: 600 }}>{`Bắt đầu: ${formatTime(report.start_time)}`}</Typography>
                                         <Typography variant="body2" sx={{ fontWeight: 600 }}>{report.status === 'resolved' ? `Kết thúc: ${formatTime(report.end_time)}` : 'Đang diễn ra'}</Typography>
                                         <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block' }}>
-                                            Tổng thời gian: {getDuration(report.start_time, report.end_time)}
+                                            Tổng thời gian: {(() => {
+                                                if (report.status === 'active') {
+                                                    const sortedUpdates = report.updates && report.updates.length > 0
+                                                        ? [...report.updates].sort((a, b) => b.timestamp - a.timestamp)
+                                                        : [];
+                                                    const newest = sortedUpdates.length > 0 ? sortedUpdates[0].timestamp : report.start_time;
+                                                    const oldest = sortedUpdates.length > 0 ? sortedUpdates[sortedUpdates.length - 1].timestamp : report.start_time;
+                                                    return getDuration(oldest, newest);
+                                                }
+                                                return getDuration(report.start_time, report.end_time);
+                                            })()}
                                         </Typography>
                                     </Grid>
                                     <Grid item xs={12} sm={6}>

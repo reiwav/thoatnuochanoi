@@ -3,10 +3,10 @@ package handler
 import (
 	"ai-api-tnhn/handler/filters"
 	"ai-api-tnhn/internal/models"
+	"ai-api-tnhn/internal/repository"
 	"ai-api-tnhn/internal/service/emergency_construction"
 	"ai-api-tnhn/utils/web"
 	"encoding/json"
-	"ai-api-tnhn/internal/repository"
 	"fmt"
 	"strconv"
 	"time"
@@ -105,31 +105,31 @@ func (h *EmergencyConstructionHandler) List(c *gin.Context) {
 	web.AssertNil(err)
 
 	// Persist to chat history if it's a list request (from AI Support)
-	userID := h.GetTokenFromContext(c).UserID
-	if h.aiChatLogRepo != nil && userID != "" {
-		now := time.Now()
-		// Save User Query
-		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
-			UserID: userID, Role: "user", Content: "Xem danh sách công trình khẩn", ChatType: "support", Timestamp: now.Add(-1 * time.Second),
-		})
+	// userID := h.GetTokenFromContext(c).UserID
+	// if h.aiChatLogRepo != nil && userID != "" {
+	// 	now := time.Now()
+	// 	// Save User Query
+	// 	_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
+	// 		UserID: userID, Role: "user", Content: "Xem danh sách công trình khẩn", ChatType: "support", Timestamp: now.Add(-1 * time.Second),
+	// 	})
 
-		// Build table text
-		tableText := "### Danh sách Công trình khẩn\n\n"
-		if total == 0 {
-			tableText += "Không tìm thấy công trình nào."
-		} else {
-			tableText += "| Tên công trình | Địa điểm | Trạng thái | Thao tác |\n"
-			tableText += "| :--- | :--- | :--- | :--- |\n"
-			for _, item := range items {
-				tableText += fmt.Sprintf("| %s | %s | %s | [Xem chi tiết](#emc-history-%s) |\n", item.Name, item.Location, item.Status, item.ID)
-			}
-		}
+	// 	// Build table text
+	// 	tableText := "### Danh sách Công trình khẩn\n\n"
+	// 	if total == 0 {
+	// 		tableText += "Không tìm thấy công trình nào."
+	// 	} else {
+	// 		tableText += "| Tên công trình | Địa điểm | Trạng thái | Thao tác |\n"
+	// 		tableText += "| :--- | :--- | :--- | :--- |\n"
+	// 		for _, item := range items {
+	// 			tableText += fmt.Sprintf("| %s | %s | %s | [Xem chi tiết](#emc-history-%s) |\n", item.Name, item.Location, item.Status, item.ID)
+	// 		}
+	// 	}
 
-		// Save AI Response
-		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
-			UserID: userID, Role: "model", Content: tableText, ChatType: "support", Timestamp: now,
-		})
-	}
+	// 	// Save AI Response
+	// 	_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
+	// 		UserID: userID, Role: "model", Content: tableText, ChatType: "support", Timestamp: now,
+	// 	})
+	// }
 
 	h.SendData(c, gin.H{
 		"data":  items,

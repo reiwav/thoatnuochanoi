@@ -13,6 +13,7 @@ import AnimateButton from 'ui-component/extended/AnimateButton';
 import axiosClient from 'api/axiosClient';
 import RoleDialog from './RoleDialog';
 import useAuthStore from 'store/useAuthStore';
+import * as ROLES from 'constants/role';
 
 const RoleList = () => {
     const theme = useTheme();
@@ -54,7 +55,7 @@ const RoleList = () => {
     };
 
     const handleDelete = async (id, code) => {
-        if (code === 'super_admin') {
+        if (code === ROLES.ROLE_SUPER_ADMIN) {
             toast.error('Không thể xóa vai trò Super Admin hệ thống');
             return;
         }

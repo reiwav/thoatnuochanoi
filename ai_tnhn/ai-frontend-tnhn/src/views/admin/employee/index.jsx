@@ -17,6 +17,7 @@ import organizationApi from 'api/organization';
 import axiosClient from 'api/axiosClient';
 import EmployeeDialog from './EmployeeDialog';
 import useAuthStore from 'store/useAuthStore';
+import * as ROLES from 'constants/role';
 
 const EmployeeRow = ({ row, handleOpenEdit, handleDelete, roleLabel, orgName, userRole, isMobile, hasPermission }) => {
     const [open, setOpen] = useState(false);
@@ -121,7 +122,12 @@ const EmployeeList = () => {
     // Get auth state from Zustand
     const { role: userRole, user: userInfo, hasPermission } = useAuthStore();
     const userOrgId = userInfo?.org_id || '';
-    const canSelectOrg = ['super_admin', 'chu_tich_cty', 'giam_doc_cty', 'pho_giam_doc_cty', 'phong_ht_mt_cds', 'giam_doc_xn', 'giam_doc_xi_nghiep'].includes(userRole);
+    
+    // Management roles that can see/interact with Org selector (backend will filter content)
+    const canSelectOrg = [
+        ROLES.ROLE_SUPER_ADMIN, ROLES.ROLE_CHU_TICH_CTY, ROLES.ROLE_GIAM_DOC_CTY, ROLES.ROLE_PHO_GIAM_DOC_CTY, 
+        ROLES.ROLE_PHONG_HT_MT_CDS, ROLES.ROLE_PHONG_KT_CL, ROLES.ROLE_GIAM_DOC_XN, ROLES.ROLE_TRUONG_PHONG_KT
+    ].includes(userRole);
 
     const [searchParams] = useSearchParams();
     const urlOrgId = searchParams.get('org_id') || (canSelectOrg ? '' : userOrgId);

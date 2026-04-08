@@ -183,7 +183,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                         </FormControl>
                     )}
 
-                    {([ROLES.ROLE_EMPLOYEE, ROLES.ROLE_CONG_NHAN_CTY].includes(formData.role)) && (
+                    {roles.find(r => r.code === formData.role)?.is_employee && (
                         <>
                             <Box>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>

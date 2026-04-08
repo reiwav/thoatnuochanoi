@@ -19,8 +19,34 @@ import EmployeeDialog from './EmployeeDialog';
 import useAuthStore from 'store/useAuthStore';
 import * as ROLES from 'constants/role';
 
+const stringToColor = (string) => {
+    let hash = 0;
+    let i;
+    for (i = 0; i < string.length; i += 1) {
+        hash = string.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    let color = '#';
+    for (i = 0; i < 3; i += 1) {
+        const value = (hash >> (i * 8)) & 0xff;
+        color += `00${value.toString(16)}`.slice(-2);
+    }
+    return color;
+};
+
+const getContrastText = (hexcolor) => {
+    if (!hexcolor || hexcolor.length < 7) return '#fff';
+    const r = parseInt(hexcolor.slice(1, 3), 16);
+    const g = parseInt(hexcolor.slice(3, 5), 16);
+    const b = parseInt(hexcolor.slice(5, 7), 16);
+    const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+    return yiq >= 128 ? '#000' : '#fff';
+};
+
 const EmployeeRow = ({ row, handleOpenEdit, handleDelete, roleLabel, orgName, userRole, isMobile, hasPermission }) => {
     const [open, setOpen] = useState(false);
+    const roleTxt = roleLabel(row.role);
+    const bgColor = stringToColor(roleTxt);
+    const textColor = getContrastText(bgColor);
 
     return (
         <>
@@ -41,7 +67,17 @@ const EmployeeRow = ({ row, handleOpenEdit, handleDelete, roleLabel, orgName, us
                 )}
                 {!isMobile && (
                     <TableCell>
-                        <Chip label={roleLabel(row.role)} color={row.role === 'admin_org' ? 'info' : 'default'} size="small" variant="outlined" />
+                        <Chip 
+                            label={roleTxt} 
+                            size="small" 
+                            sx={{ 
+                                bgcolor: bgColor, 
+                                color: textColor, 
+                                fontWeight: 700, 
+                                borderRadius: '8px',
+                                border: 'none'
+                            }} 
+                        />
                     </TableCell>
                 )}
                 {!isMobile && (
@@ -95,7 +131,17 @@ const EmployeeRow = ({ row, handleOpenEdit, handleDelete, roleLabel, orgName, us
                                         <TableRow>
                                             <TableCell component="th" scope="row" sx={{ fontWeight: 600, borderBottom: 'none' }}>Vai trò</TableCell>
                                             <TableCell sx={{ borderBottom: 'none' }}>
-                                                <Chip label={roleLabel(row.role)} color={row.role === 'admin_org' ? 'info' : 'default'} size="small" variant="outlined" />
+                                                <Chip 
+                                                    label={roleTxt} 
+                                                    size="small" 
+                                                    sx={{ 
+                                                        bgcolor: bgColor, 
+                                                        color: textColor, 
+                                                        fontWeight: 700, 
+                                                        borderRadius: '8px',
+                                                        border: 'none'
+                                                    }} 
+                                                />
                                             </TableCell>
                                         </TableRow>
                                         <TableRow>
@@ -313,7 +359,7 @@ const EmployeeList = () => {
                             {isMobile && <TableCell width="40px" />}
                             <TableCell sx={{ fontWeight: 700 }}>Tên</TableCell>
                             {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>}
-                            {!isMobile && hasPermission('organization:view') && <TableCell sx={{ fontWeight: 700 }}>Công ty</TableCell>}
+                            {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Công ty</TableCell>}
                             {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Vai trò</TableCell>}
                             {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>}
                             <TableCell align="right" sx={{

@@ -25,6 +25,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import axiosClient from 'api/axiosClient';
 import { toast } from 'react-hot-toast';
 import useAuthStore from 'store/useAuthStore';
+import * as ROLES from 'constants/role';
 import PermissionTree from './PermissionTree';
 
 const RoleMatrix = () => {
@@ -50,10 +51,12 @@ const RoleMatrix = () => {
             const rolesList = rolesRes.data.data || [];
 
             setPermissionsList(perms || []);
-            setRoles(rolesList);
+            // Hide SUPER_ADMIN from being configured
+            const filteredRolesList = rolesList.filter(r => r.code !== ROLES.ROLE_SUPER_ADMIN);
+            setRoles(filteredRolesList);
 
-            if (rolesList.length > 0) {
-                setSelectedRole(rolesList[0].code);
+            if (filteredRolesList.length > 0) {
+                setSelectedRole(filteredRolesList[0].code);
             }
 
             const matrix = {};
@@ -219,6 +222,7 @@ const RoleMatrix = () => {
                             selectedPermissions={roleMatrix[selectedRole] || []}
                             onToggle={handleToggle}
                             disabled={!hasPermission('role:edit')}
+                            userRole={userRole}
                         />
                     </Box>
                 </Box>

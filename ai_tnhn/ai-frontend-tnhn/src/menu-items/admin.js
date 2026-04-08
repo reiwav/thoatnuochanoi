@@ -242,7 +242,8 @@ const adminPages = {
           type: 'item',
           url: '/admin/role-matrix',
           icon: icons.IconList,
-          breadcrumbs: false
+          breadcrumbs: false,
+          roles: ['super_admin']
         },
         {
           id: 'role:view',

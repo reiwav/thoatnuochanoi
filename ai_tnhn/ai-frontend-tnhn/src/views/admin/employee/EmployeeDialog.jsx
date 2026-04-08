@@ -108,23 +108,23 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
     const handleChange = (field, value) => {
         setFormData(prev => {
             const newData = { ...prev, [field]: value };
-            
+
             // If changing organization, check if current role is still valid
             if (field === 'org_id' && value) {
                 const selectedOrg = organizations.find(o => o.id === value);
                 const isCompany = selectedOrg?.code?.toUpperCase() === 'TNHN';
-                
+
                 // Find if current role is valid for the new org type
                 const selectedRole = roles.find(r => r.code === prev.role);
                 const isCurrentRoleValid = selectedRole ? selectedRole.is_company === isCompany : false;
-                
+
                 if (!isCurrentRoleValid) {
                     // Default fallback: Find first valid role for this org type
                     const defaultRole = roles.find(r => r.is_company === isCompany);
                     newData.role = defaultRole ? defaultRole.code : (isCompany ? ROLES.ROLE_GIAM_DOC_CTY : ROLES.ROLE_CONG_NHAN_CTY);
                 }
             }
-            
+
             return newData;
         });
     };
@@ -141,20 +141,19 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
         return roles.filter(r => {
             // 1. Filter by current user permission (unit management restricted to their scope)
             if (userRole === ROLES.ROLE_GIAM_DOC_XN) {
-                // Unit Directors can create Technical Managers and Workers
                 if (![ROLES.ROLE_TRUONG_PHONG_KT, ROLES.ROLE_CONG_NHAN_CTY].includes(r.code)) return false;
-            } else if (userRole === ROLES.ROLE_TRUONG_PHONG_KT || userRole === ROLES.ROLE_PHONG_KT_CL || userRole === ROLES.ROLE_GIAM_DOC_CTY) {
-                // Technical Managers and Company Directors cannot create Workers per user request
-                if (r.code === ROLES.ROLE_CONG_NHAN_CTY) return false;
+            }
+            if (userRole === ROLES.ROLE_TRUONG_PHONG_KT || userRole === ROLES.ROLE_PHONG_KT_CL) {
+                if (![ROLES.ROLE_CONG_NHAN_CTY].includes(r.code)) return false;
             }
 
             // 2. Filter by selected organization type (HQ vs Unit)
             const selectedOrg = organizations.find(o => o.id === formData.org_id);
             const isCompany = selectedOrg?.code?.toUpperCase() === 'TNHN';
-            
+
             // Managers can only create users in their own org (Unit)
             const isUnitManager = [ROLES.ROLE_GIAM_DOC_XN, ROLES.ROLE_TRUONG_PHONG_KT, ROLES.ROLE_PHONG_KT_CL].includes(userRole);
-            
+
             if (formData.org_id) {
                 // If it's a company-wide role requester (HQ), allow all company roles
                 if ([ROLES.ROLE_SUPER_ADMIN, ROLES.ROLE_CHU_TICH_CTY, ROLES.ROLE_GIAM_DOC_CTY, ROLES.ROLE_PHO_GIAM_DOC_CTY, ROLES.ROLE_PHONG_HT_MT_CDS].includes(userRole)) {

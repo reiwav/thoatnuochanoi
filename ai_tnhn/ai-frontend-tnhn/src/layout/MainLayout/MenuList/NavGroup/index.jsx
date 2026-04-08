@@ -75,10 +75,15 @@ export default function NavGroup({ item, lastItem, remItems, lastItemId, setSele
   }, [pathname, currentItem]);
 
   // menu list collapse & items
-  const { hasPermission } = useAuthStore();
+  const { hasPermission, role: userRole } = useAuthStore();
 
   const items = currentItem.children?.map((menu) => {
-    // Permission based filtering
+    // Role-based filtering
+    if (menu?.roles && !menu.roles.includes(userRole)) {
+      return null;
+    }
+
+    // Permission-based filtering
     if (menu?.id && !hasPermission(menu.id)) {
       return null;
     }

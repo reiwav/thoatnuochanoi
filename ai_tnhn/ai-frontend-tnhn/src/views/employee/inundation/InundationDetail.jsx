@@ -334,6 +334,7 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
                         selectedReport={editMode.item}
                         pointId={selectedReport.point_id}
                         initialStreetName={selectedReport.street_name}
+                        isCorrectionMode={true}
                         onSuccess={() => {
                             setEditMode({ open: false, item: null });
                             toast.success('Chỉnh sửa đã được lưu');

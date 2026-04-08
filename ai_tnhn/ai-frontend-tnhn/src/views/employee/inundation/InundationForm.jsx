@@ -48,14 +48,17 @@ const InundationForm = () => {
         }
     }, []);
 
-    useEffect(() => {
-        const tabParam = searchParams.get('tab');
-        if (tabParam !== null) setTab(parseInt(tabParam));
+    const reportId = searchParams.get('id');
+    const tabParam = searchParams.get('tab');
 
-        const reportId = searchParams.get('id');
+    useEffect(() => {
+        if (tabParam !== null) setTab(parseInt(tabParam));
+    }, [tabParam]);
+
+    useEffect(() => {
         if (reportId) fetchReport(reportId);
         else setSelectedReport(null);
-    }, [searchParams, fetchReport]);
+    }, [reportId, fetchReport]);
 
     const handleSuccess = () => {
         const reportId = searchParams.get('id') || selectedReport?.id;

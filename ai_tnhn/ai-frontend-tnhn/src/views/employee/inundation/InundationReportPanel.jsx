@@ -296,14 +296,16 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
                 fullWidth size="large" variant="contained"
                 color={isCorrectionMode ? 'error' : (resolveOnUpdate ? 'error' : 'secondary')}
                 onClick={handleSubmit} 
-                disabled={loading || (selectedReport || isCorrectionMode ? !hasPermission('inundation:edit') : !hasPermission('inundation:create'))}
+                disabled={loading || (isCorrectionMode ? false : (selectedReport ? !hasPermission('inundation:edit') : !hasPermission('inundation:create')))}
                 startIcon={loading ? <CircularProgress size={17} color="inherit" /> : <IconSend size={17} />}
                 sx={{ borderRadius: 100, py: 1.4, fontWeight: 700, mt: 1 }}
             >
                 {loading ? 'Đang xử lý...' : (
-                    !(selectedReport || isCorrectionMode ? hasPermission('inundation:edit') : hasPermission('inundation:create')) 
-                    ? 'Không có quyền thực hiện' 
-                    : (isCorrectionMode ? 'Lưu thay đổi chỉnh sửa' : (resolveOnUpdate ? 'Xác nhận Kết thúc đợt ngập' : (selectedReport ? 'Cập nhật tình hình' : 'Gửi báo cáo')))
+                    isCorrectionMode 
+                    ? 'Lưu thay đổi chỉnh sửa'
+                    : (!(selectedReport ? hasPermission('inundation:edit') : hasPermission('inundation:create')) 
+                        ? 'Không có quyền thực hiện' 
+                        : (resolveOnUpdate ? 'Xác nhận Kết thúc đợt ngập' : (selectedReport ? 'Cập nhật tình hình' : 'Gửi báo cáo')))
                 )}
             </Button>
         </Stack>

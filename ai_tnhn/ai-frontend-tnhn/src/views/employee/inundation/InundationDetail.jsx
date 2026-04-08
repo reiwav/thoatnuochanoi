@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
     Box, Typography, Stack, Chip, Divider, Paper, CircularProgress,
     Dialog, DialogContent, IconButton as MuiIconButton, useMediaQuery,
@@ -26,7 +26,7 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
     const [reviewDialog, setReviewDialog] = useState({ open: false, itemId: null, type: null, comment: '' });
     const [editMode, setEditMode] = useState({ open: false, item: null });
 
-    const { role: userRole, hasPermission } = useAuthStore();
+    const { role: userRole, hasPermission, isEmployee } = useAuthStore();
 
     const handleOpenViewer = (imgs, idx = 0) => {
         if (!imgs || imgs.length === 0) {
@@ -40,6 +40,59 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
     const handlePrev = (e) => { e.stopPropagation(); setViewer(v => ({ ...v, index: (v.index - 1 + v.images.length) % v.images.length })); };
     const handleNext = (e) => { e.stopPropagation(); setViewer(v => ({ ...v, index: (v.index + 1) % v.images.length })); };
 
+    const timelineData = useMemo(() => {
+        if (!selectedReport) return [];
+        const updates = selectedReport.updates || [];
+        return [
+            {
+                id: selectedReport.id,
+                type: 'start', title: 'Bắt đầu đợt ngập', ts: selectedReport.start_time, desc: selectedReport.description || 'Ghi nhận bắt đầu',
+                length: selectedReport.length, width: selectedReport.width, depth: selectedReport.depth,
+                traffic_status: selectedReport.traffic_status || selectedReport.trafficStatus,
+                user: selectedReport.user_email,
+                images: selectedReport.images || [],
+                review_comment: selectedReport.review_comment,
+                reviewer_id: selectedReport.reviewer_id,
+                reviewer_email: selectedReport.reviewer_email,
+                reviewer_name: selectedReport.reviewer_name,
+                needs_correction: selectedReport.needs_correction
+            },
+            ...updates.map((u, i) => ({
+                id: u.id,
+                type: 'update',
+                title: (u.status === 'resolved') ? 'Kết thúc đợt ngập' : `Cập nhật #${i + 1}`,
+                ts: u.timestamp,
+                desc: u.description || 'Cập nhật hiện trường',
+                length: u.length,
+                width: u.width,
+                depth: u.depth,
+                traffic_status: u.traffic_status || u.trafficStatus,
+                user: u.user_email,
+                images: u.images || [],
+                review_comment: u.review_comment,
+                reviewer_id: u.reviewer_id,
+                reviewer_email: u.reviewer_email,
+                reviewer_name: u.reviewer_name,
+                needs_correction: u.needs_correction
+            }))
+        ].reverse();
+    }, [selectedReport]);
+
+    useEffect(() => {
+        if (!selectedReport) return;
+        const searchParams = new URLSearchParams(window.location.search);
+        const editId = searchParams.get('edit_update_id');
+        if (editId && timelineData.length > 0 && !editMode.open) {
+            const updToEdit = timelineData.find((t) => t.id === editId);
+            if (updToEdit) {
+                setEditMode({ open: true, item: updToEdit });
+                searchParams.delete('edit_update_id');
+                const newUrl = `${window.location.pathname}?${searchParams.toString()}`;
+                window.history.replaceState({}, '', newUrl);
+            }
+        }
+    }, [selectedReport, timelineData]);
+
     if (loadingReport) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress size={24} /></Box>;
     if (!selectedReport) return (
         <Box sx={{ p: 4, textAlign: 'center' }}>
@@ -47,41 +100,6 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
             <Typography color="textSecondary" sx={{ mt: 2, fontSize: '0.9rem' }}>Vui lòng chọn một đợt ngập từ màn hình Dashboard để xem chi tiết</Typography>
         </Box>
     );
-
-    const updates = selectedReport.updates || [];
-    const timelineData = [
-        {
-            id: selectedReport.id,
-            type: 'start', title: 'Bắt đầu đợt ngập', ts: selectedReport.start_time, desc: selectedReport.description || 'Ghi nhận bắt đầu',
-            length: selectedReport.length, width: selectedReport.width, depth: selectedReport.depth,
-            traffic_status: selectedReport.traffic_status || selectedReport.trafficStatus,
-            user: selectedReport.user_email,
-            images: selectedReport.images || [],
-            review_comment: selectedReport.review_comment,
-            reviewer_id: selectedReport.reviewer_id,
-            reviewer_email: selectedReport.reviewer_email,
-            reviewer_name: selectedReport.reviewer_name,
-            needs_correction: selectedReport.needs_correction
-        },
-        ...updates.map((u, i) => ({
-            id: u.id,
-            type: 'update',
-            title: (u.status === 'resolved') ? 'Kết thúc đợt ngập' : `Cập nhật #${i + 1}`,
-            ts: u.timestamp,
-            desc: u.description || 'Cập nhật hiện trường',
-            length: u.length,
-            width: u.width,
-            depth: u.depth,
-            traffic_status: u.traffic_status || u.trafficStatus,
-            user: u.user_email,
-            images: u.images || [],
-            review_comment: u.review_comment,
-            reviewer_id: u.reviewer_id,
-            reviewer_email: u.reviewer_email,
-            reviewer_name: u.reviewer_name,
-            needs_correction: u.needs_correction
-        }))
-    ].reverse();
 
     const handleReviewSubmit = async () => {
         if (!reviewDialog.comment.trim()) return;

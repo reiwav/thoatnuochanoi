@@ -11,9 +11,10 @@ import (
 	"sync"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
 	"os"
 	"path/filepath"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type Service interface {
@@ -327,6 +328,7 @@ func (s *service) UpdateReport(ctx context.Context, id string, report *models.In
 	existing.Description = report.Description
 	existing.TrafficStatus = report.TrafficStatus
 	existing.NeedsCorrection = false
+	existing.NeedsCorrectionUpdateID = ""
 
 	if len(images) > 0 {
 		savedPaths, err := s.saveLocalImages(id, images)
@@ -378,7 +380,10 @@ func (s *service) ReviewUpdate(ctx context.Context, updateID, comment, reviewerI
 	}
 
 	report, err := s.inundationRepo.GetByID(ctx, update.ReportID)
-	if err == nil && report != nil && report.Status != "active" {
+	if err != nil {
+		return err
+	}
+	if report.Status != "active" {
 		return fmt.Errorf("chỉ được phép nhận xét khi báo cáo đang ở trạng thái active")
 	}
 
@@ -387,7 +392,14 @@ func (s *service) ReviewUpdate(ctx context.Context, updateID, comment, reviewerI
 	update.ReviewerEmail = reviewerEmail
 	update.ReviewerName = reviewerName
 	update.NeedsCorrection = true
-	return s.inundationUpdateRepo.Update(ctx, update)
+	if err := s.inundationUpdateRepo.Update(ctx, update); err != nil {
+		return err
+	}
+
+	// Gắn cờ lên report: update nào cần sửa
+	report.NeedsCorrection = true
+	report.NeedsCorrectionUpdateID = updateID
+	return s.inundationRepo.Update(ctx, report)
 }
 
 func (s *service) GetUpdateByID(ctx context.Context, updateID string) (*models.InundationUpdate, error) {
@@ -450,6 +462,8 @@ func (s *service) UpdateUpdateContent(ctx context.Context, updateID string, upda
 		mainReport.Length = update.Length
 		mainReport.Width = update.Width
 		mainReport.TrafficStatus = update.TrafficStatus
+		mainReport.NeedsCorrection = false
+		mainReport.NeedsCorrectionUpdateID = ""
 		_ = s.inundationRepo.Update(ctx, mainReport)
 	}
 
@@ -470,7 +484,7 @@ func (s *service) CreatePoint(ctx context.Context, point models.InundationPoint)
 func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []string) ([]PointStatus, error) {
 	// 1. Get all managed points (Union of owned points and shared points)
 	allPointsMap := make(map[string]models.InundationPoint)
-	
+
 	// A. Get points owned by this organization
 	if orgID != "" {
 		ownedPoints, err := s.inundationPointRepo.ListByOrg(ctx, orgID)
@@ -493,7 +507,7 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []
 		}
 	}
 
-	// C. If both are empty and user is likely a Super Admin (orgID == "" and pointIDs empty), 
+	// C. If both are empty and user is likely a Super Admin (orgID == "" and pointIDs empty),
 	// ListByOrg("") will fetch all active points.
 	if orgID == "" && len(pointIDs) == 0 {
 		allPoints, err := s.inundationPointRepo.ListByOrg(ctx, "")
@@ -779,7 +793,7 @@ func (s *service) saveLocalImages(prefix string, images []ImageContent) ([]strin
 			// Fallback extension if missing
 			fileName += ".jpg"
 		}
-		
+
 		relPath := filepath.Join("inundation_tmp", fileName)
 		fullPath := filepath.Join("uploads", relPath)
 

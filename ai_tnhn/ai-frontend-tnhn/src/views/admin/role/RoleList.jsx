@@ -131,16 +131,17 @@ const RoleList = () => {
                         <TableRow>
                             <TableCell sx={{ fontWeight: 800, py: 2, pl: 3 }}>Tên Vai trò</TableCell>
                             <TableCell sx={{ fontWeight: 800 }}>Mã (Code)</TableCell>
-                            <TableCell sx={{ fontWeight: 800 }}>Cấp</TableCell>
+                            <TableCell sx={{ fontWeight: 800 }}>Level</TableCell>
+                            <TableCell sx={{ fontWeight: 800 }}>Phân loại</TableCell>
                             <TableCell sx={{ fontWeight: 800 }}>Mô tả</TableCell>
                             <TableCell align="right" sx={{ fontWeight: 800, pr: 3 }}>Thao tác</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {loading ? (
-                            <TableRow><TableCell colSpan={5} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
+                            <TableRow><TableCell colSpan={6} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
                         ) : filteredRoles.length === 0 ? (
-                            <TableRow><TableCell colSpan={5} align="center" sx={{ py: 3 }}>Không tìm thấy vai trò nào</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={6} align="center" sx={{ py: 3 }}>Không tìm thấy vai trò nào</TableCell></TableRow>
                         ) : (
                             filteredRoles.map((row) => (
                                 <TableRow key={row.id} hover>
@@ -148,6 +149,11 @@ const RoleList = () => {
                                     <TableCell>
                                         <Typography variant="body2" sx={{ fontFamily: 'monospace', color: 'primary.main', fontWeight: 700, bgcolor: 'primary.lighter', px: 1, py: 0.5, borderRadius: 1.5, display: 'inline-block' }}>
                                             {row.code}
+                                        </Typography>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Typography variant="body2" sx={{ fontWeight: 700, color: row.level === 0 ? 'error.main' : 'text.primary' }}>
+                                            {row.level ?? 0}
                                         </Typography>
                                     </TableCell>
                                     <TableCell>

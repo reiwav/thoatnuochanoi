@@ -13,6 +13,7 @@ const RoleDialog = ({ open, onClose, onSubmit, role, isEdit }) => {
         name: '',
         code: '',
         description: '',
+        level: 0,
         is_company: false
     });
     const [errors, setErrors] = useState({});
@@ -23,6 +24,7 @@ const RoleDialog = ({ open, onClose, onSubmit, role, isEdit }) => {
                 name: role.name || '',
                 code: role.code || '',
                 description: role.description || '',
+                level: role.level || 0,
                 is_company: role.is_company || false
             });
         } else {
@@ -30,6 +32,7 @@ const RoleDialog = ({ open, onClose, onSubmit, role, isEdit }) => {
                 name: '',
                 code: '',
                 description: '',
+                level: 0,
                 is_company: false
             });
         }
@@ -38,7 +41,9 @@ const RoleDialog = ({ open, onClose, onSubmit, role, isEdit }) => {
 
     const handleChange = (e) => {
         const { name, value, checked, type } = e.target;
-        setValues({ ...values, [name]: type === 'checkbox' ? checked : value });
+        let finalValue = type === 'checkbox' ? checked : value;
+        if (name === 'level') finalValue = parseInt(value, 10) || 0;
+        setValues({ ...values, [name]: finalValue });
         if (errors[name]) {
             setErrors({ ...errors, [name]: '' });
         }
@@ -122,6 +127,19 @@ const RoleDialog = ({ open, onClose, onSubmit, role, isEdit }) => {
                             multiline
                             rows={3}
                             variant="outlined"
+                            sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
+                        />
+                    </Grid>
+                    <Grid item xs={12}>
+                        <TextField
+                            fullWidth
+                            label="Cấp độ (Level)"
+                            name="level"
+                            type="number"
+                            value={values.level}
+                            onChange={handleChange}
+                            variant="outlined"
+                            helperText="0: Super Admin, 1, 2, ... (Số càng thấp quyền càng cao)"
                             sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
                         />
                     </Grid>

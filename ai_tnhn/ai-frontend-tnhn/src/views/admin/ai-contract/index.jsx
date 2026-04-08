@@ -31,7 +31,7 @@ const AiContract = () => {
     const fetchHistory = async () => {
         try {
             console.log('Fetching contract chat history...');
-            const res = await contractApi.getChatHistory('contract', 50);
+            const res = await contractApi.getChatHistory('contract', 3);
             console.log('Contract chat history response:', res.data);
             if (res.data?.status === 'success' && Array.isArray(res.data.data)) {
                 const historyLogs = res.data.data.map(log => ({
@@ -220,11 +220,11 @@ const AiContract = () => {
                                     </ReactMarkdown>
                                 </Box>
                                 {msg.timestamp && (
-                                    <Typography 
-                                        variant="caption" 
-                                        sx={{ 
-                                            display: 'block', 
-                                            mt: 0.5, 
+                                    <Typography
+                                        variant="caption"
+                                        sx={{
+                                            display: 'block',
+                                            mt: 0.5,
                                             textAlign: msg.role === 'user' ? 'right' : 'left',
                                             opacity: 0.7,
                                             fontSize: '10px',

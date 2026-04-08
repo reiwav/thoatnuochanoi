@@ -76,8 +76,11 @@ const InundationForm = () => {
 
         const isReadOnly = searchParams.get('readonly') === 'true';
 
-        // Hide "Cập nhật" tab if report is already resolved or in readonly mode
-        const visibleTabs = (selectedReport?.status === 'resolved' || isReadOnly)
+        const needsCorrection = selectedReport?.needs_correction || 
+                                selectedReport?.updates?.some(u => u.needs_correction);
+
+        // Hide "Cập nhật" tab if report is already resolved or in readonly mode (unless needs correction)
+        const visibleTabs = (selectedReport?.status === 'resolved' || (isReadOnly && !needsCorrection))
             ? allTabs.filter(t => t.id === 1)
             : allTabs;
 

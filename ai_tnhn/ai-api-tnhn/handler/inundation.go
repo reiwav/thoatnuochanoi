@@ -639,6 +639,57 @@ func (h *InundationHandler) ReviewReport(c *gin.Context) {
 
 func (h *InundationHandler) UpdateReport(c *gin.Context) {
 	id := c.Param("id")
+	
+	token := h.contextWith.GetToken(c.Request)
+	user, err := h.authService.GetProfile(c.Request.Context(), token)
+	if err != nil {
+		h.SendError(c, web.Unauthorized("Invalid user session"))
+		return
+	}
+
+	// Fetch existing report to check permissions
+	existing, err := h.service.GetReport(c.Request.Context(), id)
+	if err != nil {
+		h.SendError(c, err)
+		return
+	}
+
+	isSuperAdmin := user.Role == constant.ROLE_SUPER_ADMIN ||
+		user.Role == "supper_admin" ||
+		user.Role == "supper_admib" ||
+		user.Role == "super_admin "
+	isAllowedAll := isSuperAdmin || user.IsCompany
+
+	if user.IsEmployee {
+		// Employees can ONLY edit if NeedsCorrection is true AND it belongs to their org
+		if !existing.NeedsCorrection {
+			h.SendError(c, web.Forbidden("Chỉ được phép sửa thông tin khi có yêu cầu (nhận xét) từ người rà soát"))
+			return
+		}
+		if existing.OrgID != user.OrgID {
+			h.SendError(c, web.Unauthorized("Bạn không có quyền chỉnh sửa báo cáo của đơn vị khác"))
+			return
+		}
+	} else if !isAllowedAll {
+		// Non-employee manager check (Ownership or Shared)
+		isAuthorized := existing.OrgID == user.OrgID
+		if !isAuthorized && user.OrgID != "" {
+			org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
+			if err == nil && org != nil {
+				for _, pid := range org.InundationIDs {
+					if pid == existing.PointID {
+						isAuthorized = true
+						break
+					}
+				}
+			}
+		}
+		if !isAuthorized {
+			h.SendError(c, web.Unauthorized("Bạn không có quyền chỉnh sửa báo cáo này"))
+			return
+		}
+	}
+
 	form, _ := c.MultipartForm()
 
 	updatedField := &models.InundationReport{
@@ -665,7 +716,7 @@ func (h *InundationHandler) UpdateReport(c *gin.Context) {
 		}
 	}
 
-	err := h.service.UpdateReport(c.Request.Context(), id, updatedField, images)
+	err = h.service.UpdateReport(c.Request.Context(), id, updatedField, images)
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -675,6 +726,52 @@ func (h *InundationHandler) UpdateReport(c *gin.Context) {
 
 func (h *InundationHandler) UpdateSituationUpdateContent(c *gin.Context) {
 	updateID := c.Param("id")
+
+	token := h.contextWith.GetToken(c.Request)
+	user, err := h.authService.GetProfile(c.Request.Context(), token)
+	if err != nil {
+		h.SendError(c, web.Unauthorized("Invalid user session"))
+		return
+	}
+
+	// Fetch existing update to check permissions
+	existing, err := h.service.GetUpdateByID(c.Request.Context(), updateID)
+	if err != nil {
+		h.SendError(c, err)
+		return
+	}
+
+	// Fetch parent report to get OrgID
+	report, err := h.service.GetReport(c.Request.Context(), existing.ReportID)
+	if err != nil {
+		h.SendError(c, err)
+		return
+	}
+
+	isSuperAdmin := user.Role == constant.ROLE_SUPER_ADMIN ||
+		user.Role == "supper_admin" ||
+		user.Role == "supper_admib" ||
+		user.Role == "super_admin "
+	isAllowedAll := isSuperAdmin || user.IsCompany
+
+	if user.IsEmployee {
+		// Employees can ONLY edit if NeedsCorrection is true AND it belongs to their org
+		if !existing.NeedsCorrection {
+			h.SendError(c, web.Forbidden("Chỉ được phép sửa thông tin khi có yêu cầu (nhận xét) từ người rà soát"))
+			return
+		}
+		if report.OrgID != user.OrgID {
+			h.SendError(c, web.Unauthorized("Bạn không có quyền chỉnh sửa bản tin của đơn vị khác"))
+			return
+		}
+	} else if !isAllowedAll {
+		// Non-employee manager check (Ownership)
+		if report.OrgID != user.OrgID {
+			h.SendError(c, web.Unauthorized("Bạn không có quyền chỉnh sửa bản tin này"))
+			return
+		}
+	}
+
 	form, _ := c.MultipartForm()
 
 	updatedUpdate := &models.InundationUpdate{
@@ -701,7 +798,7 @@ func (h *InundationHandler) UpdateSituationUpdateContent(c *gin.Context) {
 		}
 	}
 
-	err := h.service.UpdateUpdateContent(c.Request.Context(), updateID, updatedUpdate, images)
+	err = h.service.UpdateUpdateContent(c.Request.Context(), updateID, updatedUpdate, images)
 	if err != nil {
 		h.SendError(c, err)
 		return

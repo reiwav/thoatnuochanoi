@@ -82,6 +82,10 @@ const getLatestData = (report) => {
 const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, handleOpenViewer, navigate, isMobile, basePath, hasPermission }) => {
     const [open, setOpen] = useState(point.status === 'active');
     const latest = useMemo(() => getLatestData(point.active_report || point.last_report), [point]);
+    const needsCorrection = useMemo(() => {
+        const report = point.active_report || point.last_report;
+        return report?.needs_correction || report?.updates?.some(u => u.needs_correction);
+    }, [point]);
 
     const renderCard = () => (
         <Paper elevation={0} sx={{ p: 2, mb: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 3, bgcolor: 'background.paper' }}>
@@ -118,6 +122,18 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                                 label={getTrafficStatusLabel(latest.traffic_status)}
                                 size="small" color={getTrafficStatusColor(latest.traffic_status)}
                                 variant="outlined" sx={{ fontWeight: 800 }}
+                            />
+                        )}
+                        {needsCorrection && (
+                            <Chip
+                                label="CẦN SỬA"
+                                size="small"
+                                color="error"
+                                sx={{ 
+                                    fontWeight: 900, 
+                                    animation: 'blink 1s infinite',
+                                    border: '1px solid white'
+                                }}
                             />
                         )}
                     </Stack>
@@ -184,7 +200,12 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                             <Button
                                 fullWidth variant="contained" color="error" size="large"
                                 onClick={() => navigate(`${basePath}/inundation/form?tab=1&id=${point.active_report.id}&name=${encodeURIComponent(point.name)}`)}
-                                sx={{ borderRadius: 2, fontWeight: 800, py: 1.5 }}
+                                sx={{ 
+                                    borderRadius: 2, 
+                                    fontWeight: 800, 
+                                    py: 1.5,
+                                    animation: needsCorrection ? 'pulse-red 2s infinite' : 'none'
+                                }}
                             >
                                 Cập nhật tình hình
                             </Button>
@@ -399,6 +420,18 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenVi
                             color={report.status === 'active' ? 'error' : 'success'}
                             size="small" sx={{ fontWeight: 800 }}
                         />
+                        { (report?.needs_correction || report?.updates?.some(u => u.needs_correction)) && (
+                            <Chip
+                                label="CẦN SỬA"
+                                size="small"
+                                color="error"
+                                sx={{ 
+                                    fontWeight: 900, 
+                                    animation: 'blink 1s infinite',
+                                    border: '1px solid white'
+                                }}
+                            />
+                        )}
                     </Stack>
                 </Box>
                 <IconButton size="small" onClick={() => setOpen(!open)} sx={{ mt: -0.5 }}>

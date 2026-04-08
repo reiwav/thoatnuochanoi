@@ -237,7 +237,7 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
                                     </Button>
                                 )}
 
-                                {hasPermission('inundation:edit') && item.needs_correction && (
+                                {(hasPermission('inundation:edit') || (isEmployee && item.needs_correction)) && (
                                     <Button
                                         size="small" startIcon={<IconEdit size={16} />}
                                         variant="contained" color="error"

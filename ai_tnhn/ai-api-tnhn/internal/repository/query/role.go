@@ -45,6 +45,7 @@ func (r roleRepository) Update(ctx context.Context, id string, role *models.Role
 			"description": role.Description,
 			"level":       role.Level,
 			"is_company":  role.IsCompany,
+			"is_employee": role.IsEmployee,
 			"updated_at":  role.MTime,
 		},
 	}

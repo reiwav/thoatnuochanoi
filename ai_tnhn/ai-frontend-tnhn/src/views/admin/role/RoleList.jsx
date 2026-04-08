@@ -133,15 +133,16 @@ const RoleList = () => {
                             <TableCell sx={{ fontWeight: 800 }}>Mã (Code)</TableCell>
                             <TableCell sx={{ fontWeight: 800 }}>Level</TableCell>
                             <TableCell sx={{ fontWeight: 800 }}>Phân loại</TableCell>
+                            <TableCell sx={{ fontWeight: 800 }}>Nhân sự</TableCell>
                             <TableCell sx={{ fontWeight: 800 }}>Mô tả</TableCell>
                             <TableCell align="right" sx={{ fontWeight: 800, pr: 3 }}>Thao tác</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {loading ? (
-                            <TableRow><TableCell colSpan={6} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
+                            <TableRow><TableCell colSpan={7} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
                         ) : filteredRoles.length === 0 ? (
-                            <TableRow><TableCell colSpan={6} align="center" sx={{ py: 3 }}>Không tìm thấy vai trò nào</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={7} align="center" sx={{ py: 3 }}>Không tìm thấy vai trò nào</TableCell></TableRow>
                         ) : (
                             filteredRoles.map((row) => (
                                 <TableRow key={row.id} hover>
@@ -162,6 +163,15 @@ const RoleList = () => {
                                             color={row.is_company ? 'primary' : 'default'}
                                             size="small"
                                             variant="outlined"
+                                            sx={{ fontWeight: 600 }}
+                                        />
+                                    </TableCell>
+                                    <TableCell>
+                                        <Chip 
+                                            label={row.is_employee ? 'Nhân viên' : 'Quản lý'} 
+                                            color={row.is_employee ? 'secondary' : 'info'}
+                                            size="small"
+                                            variant="filled"
                                             sx={{ fontWeight: 600 }}
                                         />
                                     </TableCell>

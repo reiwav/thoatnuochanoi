@@ -11,4 +11,5 @@ type Role struct {
 	Description     string `bson:"description" json:"description"`
 	Level           int    `bson:"level" json:"level"`
 	IsCompany       bool   `bson:"is_company" json:"is_company"`
+	IsEmployee      bool   `bson:"is_employee" json:"is_employee"`
 }

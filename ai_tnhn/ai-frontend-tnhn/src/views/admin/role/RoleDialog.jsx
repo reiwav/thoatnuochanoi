@@ -14,7 +14,8 @@ const RoleDialog = ({ open, onClose, onSubmit, role, isEdit }) => {
         code: '',
         description: '',
         level: 0,
-        is_company: false
+        is_company: false,
+        is_employee: false
     });
     const [errors, setErrors] = useState({});
 
@@ -25,7 +26,8 @@ const RoleDialog = ({ open, onClose, onSubmit, role, isEdit }) => {
                 code: role.code || '',
                 description: role.description || '',
                 level: role.level || 0,
-                is_company: role.is_company || false
+                is_company: role.is_company || false,
+                is_employee: role.is_employee || false
             });
         } else {
             setValues({
@@ -33,7 +35,8 @@ const RoleDialog = ({ open, onClose, onSubmit, role, isEdit }) => {
                 code: '',
                 description: '',
                 level: 0,
-                is_company: false
+                is_company: false,
+                is_employee: false
             });
         }
         setErrors({});
@@ -168,6 +171,34 @@ const RoleDialog = ({ open, onClose, onSubmit, role, isEdit }) => {
                                 border: '1px solid', 
                                 borderColor: values.is_company ? 'primary.main' : 'divider',
                                 bgcolor: values.is_company ? 'primary.lighter' : 'transparent',
+                            }}
+                        />
+                    </Grid>
+                    <Grid item xs={12}>
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    checked={values.is_employee}
+                                    onChange={handleChange}
+                                    name="is_employee"
+                                    color="secondary"
+                                />
+                            }
+                            label={
+                                <Box>
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Cấu hình Nhân viên / Công nhân</Typography>
+                                    <Typography variant="caption" color="textSecondary">
+                                        Bật nếu vai trò này thuộc khối thực thi (Nhân viên, Công nhân). Tắt nếu là vai trò Quản lý.
+                                    </Typography>
+                                </Box>
+                            }
+                            sx={{ 
+                                width: '100%', 
+                                ml: 0, p: 1.5, 
+                                borderRadius: '12px', 
+                                border: '1px solid', 
+                                borderColor: values.is_employee ? 'secondary.main' : 'divider',
+                                bgcolor: values.is_employee ? 'secondary.lighter' : 'transparent',
                                 transition: 'all 0.3s ease'
                             }}
                         />

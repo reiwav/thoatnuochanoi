@@ -56,6 +56,7 @@ type PointStatus struct {
 	LastReport   *models.InundationReport `json:"last_report,omitempty"`
 	LastReportID string                   `json:"last_report_id"`
 	Active       bool                     `json:"active"`
+	CreatedAt    int64                    `json:"created_at"`
 }
 
 type ImageContent struct {
@@ -587,6 +588,7 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []
 			LastReport:   lastReport,
 			LastReportID: lastID,
 			Active:       p.Active,
+			CreatedAt:    p.CTime,
 		}
 	}
 

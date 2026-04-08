@@ -91,7 +91,7 @@ func (h *InundationHandler) CreateReport(c *gin.Context) {
 	}
 
 	// 4.1 Permission Check for Employee
-	if user.Role == constant.ROLE_CONG_NHAN_CTY {
+	if user.IsEmployee {
 		isAssigned := false
 		for _, pid := range user.AssignedInundationPointIDs {
 			if pid == pointID {
@@ -167,7 +167,7 @@ func (h *InundationHandler) AddUpdateSituation(c *gin.Context) {
 	}
 
 	// 3.1 Permission Check for Employee
-	if user.Role == constant.ROLE_CONG_NHAN_CTY {
+	if user.IsEmployee {
 		report, err := h.service.GetReport(c.Request.Context(), reportID)
 		if err == nil && report != nil {
 			isAssigned := false
@@ -293,7 +293,7 @@ func (h *InundationHandler) ListReports(c *gin.Context) {
 	query := c.Query("query")
 
 	var pointIDs []string
-	if user.Role == constant.ROLE_CONG_NHAN_CTY {
+	if user.IsEmployee {
 		pointIDs = user.AssignedInundationPointIDs
 		if len(pointIDs) == 0 {
 			// If no points assigned, return empty result
@@ -353,7 +353,7 @@ func (h *InundationHandler) GetPointsStatus(c *gin.Context) {
 	}
 
 	var pointIDs []string
-	if user.Role == constant.ROLE_CONG_NHAN_CTY {
+	if user.IsEmployee {
 		pointIDs = user.AssignedInundationPointIDs
 	}
 

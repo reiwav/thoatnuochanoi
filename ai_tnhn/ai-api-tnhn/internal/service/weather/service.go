@@ -240,7 +240,7 @@ func (s *service) GetForecast(ctx context.Context) (string, error) {
 	}
 
 	// 1. Fetch real weather data from Open-Meteo (Hanoi: 21.0285, 105.8542)
-	meteoURL := "https://api.open-meteo.com/v1/forecast?latitude=21.0285&longitude=105.8542&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto"
+	meteoURL := "https://api.open-meteo.com/v1/forecast?latitude=21.0285&longitude=105.8542&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto"
 	client := &http.Client{Timeout: 10 * time.Second}
 	respMeteo, err := client.Get(meteoURL)
 	var meteoData string
@@ -251,7 +251,7 @@ func (s *service) GetForecast(ctx context.Context) (string, error) {
 	}
 
 	now := time.Now().In(vietnamTZ)
-	prompt := fmt.Sprintf("Dựa trên số liệu thời tiết thực tế từ API sau đây cho Hà Nội:\n%s\n\nThời gian hiện tại: %s. Hãy liệt kê dự báo chi tiết cho 3 ngày gần nhất (bao gồm hôm nay) theo định dạng: 'Dự báo thời tiết 3 ngày tới: Ngày 09/04: Mô tả, Nhiệt độ | Ngày 10/04: ... | Ngày 11/04: ...'. Chú ý: TRẢ VỀ DUY NHẤT nội dung theo định dạng này, không thêm câu chào, không thêm lời dẫn hay bất kỳ nội dung nào khác.", meteoData, now.Format("02/01/2006 15:04"))
+	prompt := fmt.Sprintf("Dựa trên số liệu thời tiết thực tế từ API sau đây cho Hà Nội:\n%s\n\nThời gian hiện tại: %s. Hãy tóm tắt dự báo thời tiết cho 3 ngày tới (bao gồm hôm nay) thành 1 câu ngắn gọn theo định dạng: 'Dự báo thời tiết 3 ngày tới: [Mô tả tổng quát], Tỉ lệ mưa: [Khoảng biến thiên hoặc cao nhất]%%, Nhiệt độ: [Thấp nhất-Cao nhất]°C'. Chú ý: TRẢ VỀ DUY NHẤT nội dung theo định dạng này, không thêm câu chào, không thêm lời dẫn hay bất kỳ nội dung nào khác.", meteoData, now.Format("02/01/2006 15:04"))
 
 	resp, err := s.forecastFunc(ctx, prompt)
 	if err != nil {
@@ -273,10 +273,11 @@ func (s *service) generateManualForecast(meteoData string) string {
 
 	var data struct {
 		Daily struct {
-			Time             []string  `json:"time"`
-			Weathercode      []int     `json:"weathercode"`
-			Temperature2mMax []float64 `json:"temperature_2m_max"`
-			Temperature2mMin []float64 `json:"temperature_2m_min"`
+			Time                       []string  `json:"time"`
+			Weathercode                []int     `json:"weathercode"`
+			Temperature2mMax           []float64 `json:"temperature_2m_max"`
+			Temperature2mMin           []float64 `json:"temperature_2m_min"`
+			PrecipitationProbabilityMax []int     `json:"precipitation_probability_max"`
 		} `json:"daily"`
 	}
 
@@ -303,23 +304,38 @@ func (s *service) generateManualForecast(meteoData string) string {
 		}
 	}
 
-	result := "Dự báo thời tiết 3 ngày tới: "
+	minTemp := 999.0
+	maxTemp := -999.0
+	maxRainProb := 0
+	descriptions := make(map[string]bool)
+
 	count := 0
 	for i := 0; i < len(data.Daily.Time) && count < 3; i++ {
-		t, _ := time.Parse("2006-01-02", data.Daily.Time[i])
-		dateStr := t.Format("02/01")
-		dayInfo := fmt.Sprintf("Ngày %s: %s, %.0f-%.0f°C",
-			dateStr,
-			getWeatherDesc(data.Daily.Weathercode[i]),
-			data.Daily.Temperature2mMin[i],
-			data.Daily.Temperature2mMax[i],
-		)
-		if count > 0 {
-			result += " | "
+		if data.Daily.Temperature2mMin[i] < minTemp {
+			minTemp = data.Daily.Temperature2mMin[i]
 		}
-		result += dayInfo
+		if data.Daily.Temperature2mMax[i] > maxTemp {
+			maxTemp = data.Daily.Temperature2mMax[i]
+		}
+		if i < len(data.Daily.PrecipitationProbabilityMax) && data.Daily.PrecipitationProbabilityMax[i] > maxRainProb {
+			maxRainProb = data.Daily.PrecipitationProbabilityMax[i]
+		}
+		descriptions[getWeatherDesc(data.Daily.Weathercode[i])] = true
 		count++
 	}
 
-	return result
+	descList := ""
+	for d := range descriptions {
+		if descList != "" {
+			descList += ", "
+		}
+		descList += d
+	}
+
+	return fmt.Sprintf("Dự báo thời tiết 3 ngày tới: %s, Tỉ lệ mưa: %d%%, Nhiệt độ: %.0f-%.0f°C",
+		descList,
+		maxRainProb,
+		minTemp,
+		maxTemp,
+	)
 }

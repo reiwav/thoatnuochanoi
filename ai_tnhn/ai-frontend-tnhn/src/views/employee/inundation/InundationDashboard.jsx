@@ -79,7 +79,6 @@ const getLatestData = (report) => {
             depth: updateWithDimensions?.depth || data.depth,
             length: updateWithDimensions?.length || data.length,
             width: updateWithDimensions?.width || data.width,
-            traffic_status: (updateWithTraffic?.traffic_status || updateWithTraffic?.trafficStatus) || data.traffic_status,
             images: (updateWithImages?.images && updateWithImages.images.length > 0) ? updateWithImages.images : (data.images || []),
             description: newest.description || data.description,
             timestamp: newest.timestamp,

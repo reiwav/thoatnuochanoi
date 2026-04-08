@@ -73,7 +73,7 @@ const AiSupport = () => {
 
         try {
             console.log('Fetching chat history...');
-            const limit = 50;
+            const limit = 3;
             const beforeParam = before ? `&before=${before}` : '';
             const res = await axiosClient.get(`/admin/google/chat/history?chat_type=support&limit=${limit}${beforeParam}`);
 

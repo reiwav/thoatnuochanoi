@@ -49,17 +49,22 @@ const ScrollingContent = styled(Box)(({ theme }) => ({
   }
 }));
 
+let memoizedForecast = '';
+
 const WeatherSection = () => {
   const theme = useTheme();
-  const [forecast, setForecast] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [forecast, setForecast] = useState(memoizedForecast);
+  const [loading, setLoading] = useState(!memoizedForecast);
 
   useEffect(() => {
+    if (memoizedForecast) return;
+
     const fetchWeather = async () => {
       try {
         const res = await weatherApi.getForecast();
         if (res.data?.status === 'success') {
-          setForecast(res.data.data);
+          memoizedForecast = res.data.data;
+          setForecast(memoizedForecast);
         }
       } catch (err) {
         console.error('Failed to fetch weather:', err);

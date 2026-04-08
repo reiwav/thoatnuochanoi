@@ -230,8 +230,11 @@ func (s *service) SetForecastFunc(fn ForecastFunc) {
 }
 
 func (s *service) GetForecast(ctx context.Context) (string, error) {
-	// Simple caching: 10 minutes
-	if s.forecast != "" && time.Since(s.lastFetch) < 10*time.Minute {
+	// Caching: Only fetch once per day unless app restarts
+	now := time.Now().In(vietnamTZ)
+	if s.forecast != "" && s.lastFetch.In(vietnamTZ).Year() == now.Year() &&
+		s.lastFetch.In(vietnamTZ).Month() == now.Month() &&
+		s.lastFetch.In(vietnamTZ).Day() == now.Day() {
 		return s.forecast, nil
 	}
 
@@ -250,7 +253,6 @@ func (s *service) GetForecast(ctx context.Context) (string, error) {
 		meteoData = string(body)
 	}
 
-	now := time.Now().In(vietnamTZ)
 	prompt := fmt.Sprintf("Dựa trên số liệu thời tiết thực tế từ API sau đây cho Hà Nội:\n%s\n\nThời gian hiện tại: %s. Hãy liệt kê dự báo chi tiết cho từng ngày trong 3 ngày tới (bắt đầu từ ngày mai). Mỗi ngày một mô tả ngắn (khoảng 15 từ), phân cách rõ ràng bằng ký tự '|'. Ví dụ: 'Ngày 09/04: Nắng nóng, 25-37°C. Trời khô ráo | Ngày 10/04: Có mưa dông rải rác, 24-30°C | Ngày 11/04: Nhiều mây, có lúc mưa rào, 22-28°C'. Thông tin phải mang tính chất thông báo cho cán bộ thoát nước.", meteoData, now.Format("02/01/2006 15:04"))
 
 	resp, err := s.forecastFunc(ctx, prompt)

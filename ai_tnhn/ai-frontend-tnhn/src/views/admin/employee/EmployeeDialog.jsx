@@ -139,33 +139,18 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
 
     const filteredRoles = useMemo(() => {
         return roles.filter(r => {
-            // 1. Filter by current user permission (unit management restricted to their scope)
-            if (userRole === ROLES.ROLE_GIAM_DOC_XN) {
-                if (![ROLES.ROLE_TRUONG_PHONG_KT, ROLES.ROLE_CONG_NHAN_CTY].includes(r.code)) return false;
-            }
-            if (userRole === ROLES.ROLE_TRUONG_PHONG_KT || userRole === ROLES.ROLE_PHONG_KT_CL) {
-                if (![ROLES.ROLE_CONG_NHAN_CTY].includes(r.code)) return false;
-            }
+            // 1. Exclude Super Admin from generic creation to prevent accidental elevation
+            if (r.code === ROLES.ROLE_SUPER_ADMIN) return false;
 
-            // 2. Filter by selected organization type (HQ vs Unit)
+            // 2. Dynamic Filtering: Match organization type (HQ vs Unit)
             const selectedOrg = organizations.find(o => o.id === formData.org_id);
-            const isCompany = selectedOrg?.code?.toUpperCase() === 'TNHN';
+            if (!selectedOrg) return true;
 
-            // Managers can only create users in their own org (Unit)
-            const isUnitManager = [ROLES.ROLE_GIAM_DOC_XN, ROLES.ROLE_TRUONG_PHONG_KT, ROLES.ROLE_PHONG_KT_CL].includes(userRole);
-
-            if (formData.org_id) {
-                // If it's a company-wide role requester (HQ), allow all company roles
-                if ([ROLES.ROLE_SUPER_ADMIN, ROLES.ROLE_CHU_TICH_CTY, ROLES.ROLE_GIAM_DOC_CTY, ROLES.ROLE_PHO_GIAM_DOC_CTY, ROLES.ROLE_PHONG_HT_MT_CDS].includes(userRole)) {
-                    return r.is_company === isCompany;
-                }
-                // For Unit managers, only show unit roles that match the organization type (is_company: false)
-                return r.is_company === isCompany;
-            }
-
-            return true;
+            const isCompanyHQ = selectedOrg?.code?.toUpperCase() === 'TNHN';
+            // Only show roles matching the organization's type (is_company flag from DB)
+            return r.is_company === isCompanyHQ;
         });
-    }, [roles, userRole, organizations, formData.org_id]);
+    }, [roles, organizations, formData.org_id]);
 
     return (
         <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>

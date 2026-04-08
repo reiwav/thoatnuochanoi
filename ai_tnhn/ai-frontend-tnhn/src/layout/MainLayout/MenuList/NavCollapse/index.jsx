@@ -31,12 +31,7 @@ import { IconChevronDown, IconChevronRight, IconChevronUp } from '@tabler/icons-
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 
 export default function NavCollapse({ menu, level, parentId }) {
-  const { hasPermission, role: userRole } = useAuthStore();
-
-  // Role-based visibility check
-  if (menu?.roles && !menu.roles.includes(userRole)) return null;
-
-  // Permission-based visibility check
+  const { hasPermission } = useAuthStore();
   if (menu?.id && !hasPermission(menu.id)) return null;
 
   const theme = useTheme();
@@ -108,9 +103,6 @@ export default function NavCollapse({ menu, level, parentId }) {
 
   // menu collapse & item
   const filteredChildren = menu.children?.filter((item) => {
-    // Role check for child
-    if (item.roles && !item.roles.includes(userRole)) return false;
-    // Permission check for child
     if (item.id && !hasPermission(item.id)) return false;
     return true;
   });

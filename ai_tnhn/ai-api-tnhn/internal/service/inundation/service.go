@@ -225,11 +225,10 @@ func (s *service) ListReportsWithFilter(ctx context.Context, orgID, status, traf
 	f.Page = int64(page + 1) // filter uses 1-based page
 	f.PerPage = int64(size)
 
-	if orgID != "" {
-		f.AddWhere("org_id", "org_id", orgID)
-	}
 	if len(pointIDs) > 0 {
 		f.AddWhere("point_id", "point_id", bson.M{"$in": pointIDs})
+	} else if orgID != "" {
+		f.AddWhere("org_id", "org_id", orgID)
 	}
 	if status != "" {
 		f.AddWhere("status", "status", status)
@@ -480,9 +479,11 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []
 		orgMap[o.ID] = o.Name
 	}
 
-	// 2. Get all active reports for this org (or all if orgID is empty)
+	// 2. Get all active reports for managed points (or by org if no point list provided)
 	f := filter.NewPaginationFilter()
-	if orgID != "" {
+	if len(pointIDs) > 0 {
+		f.AddWhere("point_id", "point_id", bson.M{"$in": pointIDs})
+	} else if orgID != "" {
 		f.AddWhere("org_id", "org_id", orgID)
 	}
 	f.AddWhere("status", "status", "active")
@@ -506,7 +507,9 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []
 		{"$sort": bson.M{"start_time": -1}},
 		{"$group": bson.M{"_id": "$point_id", "last_id": bson.M{"$first": "$_id"}}},
 	}
-	if orgID != "" {
+	if len(pointIDs) > 0 {
+		pipeline[0]["$match"].(bson.M)["point_id"] = bson.M{"$in": pointIDs}
+	} else if orgID != "" {
 		pipeline[0]["$match"].(bson.M)["org_id"] = orgID
 	}
 

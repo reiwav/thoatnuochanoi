@@ -6,6 +6,7 @@ export const ROLE_PHONG_HT_MT_CDS = 'phong_ht_mt_cds';
 export const ROLE_PHONG_KT_CL = 'phong_kt_cl';
 export const ROLE_GIAM_DOC_XN = 'giam_doc_xn';
 export const ROLE_TRUONG_PHONG_KT = 'truong_phong_kt';
+export const ROLE_PHO_PHONG_KT_XN = 'pho_phong_kt_xn';
 export const ROLE_CONG_NHAN_CTY = 'cong_nhan_cty';
 
 // Legacy / Other

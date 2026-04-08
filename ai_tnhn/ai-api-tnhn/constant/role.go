@@ -15,5 +15,6 @@ const (
 	ROLE_PHONG_KT_CL      = "phong_kt_cl"
 	ROLE_GIAM_DOC_XN      = "giam_doc_xn"
 	ROLE_TRUONG_PHONG_KT  = "truong_phong_kt"
+	ROLE_PHO_PHONG_KT_XN  = "pho_phong_kt_xn"
 	ROLE_CONG_NHAN_CTY    = "cong_nhan_cty"
 )

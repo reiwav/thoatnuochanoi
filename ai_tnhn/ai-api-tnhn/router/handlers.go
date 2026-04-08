@@ -34,4 +34,5 @@ type HandlerFuncs struct {
 	GetPermissionMatrixHandler    gin.HandlerFunc
 	UpdatePermissionMatrixHandler gin.HandlerFunc
 	GetMyPermissionsHandler       gin.HandlerFunc
+	GetWeatherForecastHandler     gin.HandlerFunc
 }

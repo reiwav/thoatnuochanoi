@@ -42,11 +42,6 @@ const PermissionTree = ({ permissions, selectedPermissions = [], onToggle, disab
         const groups = {};
 
         permissions.forEach(perm => {
-            // Filter by menu permission type: Only Super Admin can see/edit these
-            if (perm.type === 'menu' && userRole !== ROLES.ROLE_SUPER_ADMIN) {
-                return;
-            }
-
             const groupName = perm.group || 'Khác';
             if (!groups[groupName]) {
                 groups[groupName] = {};

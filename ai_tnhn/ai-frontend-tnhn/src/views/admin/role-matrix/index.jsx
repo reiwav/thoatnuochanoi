@@ -51,12 +51,11 @@ const RoleMatrix = () => {
             const rolesList = rolesRes.data.data || [];
 
             setPermissionsList(perms || []);
-            // Hide SUPER_ADMIN from being configured
-            const filteredRolesList = rolesList.filter(r => r.code !== ROLES.ROLE_SUPER_ADMIN);
-            setRoles(filteredRolesList);
+            // Roles are now dynamic; no hardcoded filtering
+            setRoles(rolesList);
 
-            if (filteredRolesList.length > 0) {
-                setSelectedRole(filteredRolesList[0].code);
+            if (rolesList.length > 0) {
+                setSelectedRole(rolesList[0].code);
             }
 
             const matrix = {};

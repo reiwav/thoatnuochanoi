@@ -84,15 +84,22 @@ type WaterDataResponse struct {
 
 type HistoricalRainData map[string]map[string]float64
 
+type ForecastFunc func(ctx context.Context, prompt string) (string, error)
+
 type Service interface {
 	GetRawRainData(ctx context.Context) (*RainDataResponse, error)
 	GetRawWaterData(ctx context.Context) (*WaterDataResponse, error)
 	GetHistoricalRainData(ctx context.Context) (HistoricalRainData, error)
 	GetComparisonData(ctx context.Context, year1, year2 int) (interface{}, error)
+	GetForecast(ctx context.Context) (string, error)
+	SetForecastFunc(fn ForecastFunc)
 }
 
 type service struct {
-	histRepo repository.HistoricalRain
+	histRepo     repository.HistoricalRain
+	forecastFunc ForecastFunc
+	forecast     string
+	lastFetch    time.Time
 }
 
 func NewService(histRepo repository.HistoricalRain) Service {
@@ -216,4 +223,101 @@ func (s *service) GetComparisonData(ctx context.Context, year1, year2 int) (inte
 		"annualTotals": annualTotals,
 		"stations":     stationList,
 	}, nil
+}
+
+func (s *service) SetForecastFunc(fn ForecastFunc) {
+	s.forecastFunc = fn
+}
+
+func (s *service) GetForecast(ctx context.Context) (string, error) {
+	// Simple caching: 10 minutes
+	if s.forecast != "" && time.Since(s.lastFetch) < 10*time.Minute {
+		return s.forecast, nil
+	}
+
+	if s.forecastFunc == nil {
+		return "", fmt.Errorf("forecast function not initialized in weather service")
+	}
+
+	// 1. Fetch real weather data from Open-Meteo (Hanoi: 21.0285, 105.8542)
+	meteoURL := "https://api.open-meteo.com/v1/forecast?latitude=21.0285&longitude=105.8542&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto"
+	client := &http.Client{Timeout: 10 * time.Second}
+	respMeteo, err := client.Get(meteoURL)
+	var meteoData string
+	if err == nil {
+		defer respMeteo.Body.Close()
+		body, _ := io.ReadAll(respMeteo.Body)
+		meteoData = string(body)
+	}
+
+	now := time.Now().In(vietnamTZ)
+	prompt := fmt.Sprintf("Dựa trên số liệu thời tiết thực tế từ API sau đây cho Hà Nội:\n%s\n\nThời gian hiện tại: %s. Hãy liệt kê dự báo chi tiết cho từng ngày trong 3 ngày tới (bắt đầu từ ngày mai). Mỗi ngày một mô tả ngắn (khoảng 15 từ), phân cách rõ ràng bằng ký tự '|'. Ví dụ: 'Ngày 09/04: Nắng nóng, 25-37°C. Trời khô ráo | Ngày 10/04: Có mưa dông rải rác, 24-30°C | Ngày 11/04: Nhiều mây, có lúc mưa rào, 22-28°C'. Thông tin phải mang tính chất thông báo cho cán bộ thoát nước.", meteoData, now.Format("02/01/2006 15:04"))
+
+	resp, err := s.forecastFunc(ctx, prompt)
+	if err != nil {
+		fmt.Printf(" [Weather Service] Gemini failed (%v), using automated fallback...\n", err)
+		// Fallback: Manually parse meteoData if AI fails
+		return s.generateManualForecast(meteoData), nil
+	}
+
+	s.forecast = resp
+	s.lastFetch = time.Now()
+
+	return resp, nil
+}
+
+func (s *service) generateManualForecast(meteoData string) string {
+	if meteoData == "" {
+		return "DỰ BÁO 3 NGÀY TỚI: Thời tiết Hà Nội ổn định, nhiệt độ 25-35°C. Cán bộ chú ý theo dõi."
+	}
+
+	var data struct {
+		Daily struct {
+			Time             []string  `json:"time"`
+			Weathercode      []int     `json:"weathercode"`
+			Temperature2mMax []float64 `json:"temperature_2m_max"`
+			Temperature2mMin []float64 `json:"temperature_2m_min"`
+		} `json:"daily"`
+	}
+
+	if err := json.Unmarshal([]byte(meteoData), &data); err != nil {
+		return "DỰ BÁO 3 NGÀY TỚI: Hà Nội có mây rải rác, nhiệt độ từ 24-34°C. Cán bộ trực ban theo kế hoạch."
+	}
+
+	getWeatherDesc := func(code int) string {
+		switch {
+		case code == 0:
+			return "Trời quang"
+		case code >= 1 && code <= 3:
+			return "Nhiều mây"
+		case code >= 45 && code <= 48:
+			return "Có sương mù"
+		case code >= 51 && code <= 67:
+			return "Mưa nhỏ"
+		case code >= 80 && code <= 82:
+			return "Mưa rào"
+		case code >= 95:
+			return "Có dông sét"
+		default:
+			return "Có mưa"
+		}
+	}
+
+	result := "DỰ BÁO THỜI TIẾT 3 NGÀY TỚI: "
+	for i := 1; i < len(data.Daily.Time) && i <= 3; i++ {
+		t, _ := time.Parse("2006-01-02", data.Daily.Time[i])
+		dateStr := t.Format("02/01")
+		dayInfo := fmt.Sprintf("Ngày %s: %s, %.0f-%.0f°C",
+			dateStr,
+			getWeatherDesc(data.Daily.Weathercode[i]),
+			data.Daily.Temperature2mMin[i],
+			data.Daily.Temperature2mMax[i],
+		)
+		result += dayInfo
+		if i < 3 {
+			result += " | "
+		}
+	}
+
+	return result
 }

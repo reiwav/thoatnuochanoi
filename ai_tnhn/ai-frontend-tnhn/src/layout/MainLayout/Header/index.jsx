@@ -9,6 +9,7 @@ import LogoSection from '../LogoSection';
 import SearchSection from './SearchSection';
 import ProfileSection from './ProfileSection';
 import NotificationSection from './NotificationSection';
+import WeatherSection from './WeatherSection';
 
 import { handlerDrawerOpen, useGetMenuMaster } from 'api/menu';
 
@@ -56,6 +57,7 @@ export default function Header({ userInfo, userRole }) {
       {/* header search */}
       {/* <SearchSection /> */}
       <Box sx={{ flexGrow: 1 }} />
+      <WeatherSection />
       <Box sx={{ flexGrow: 1 }} />
 
       {/* notification */}

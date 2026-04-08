@@ -51,6 +51,7 @@ type Service interface {
 	GetUnfinishedProgressHistory(ctx context.Context) ([]*models.EmergencyConstructionProgress, error)
 	TestExcelImageImport(ctx context.Context, driveLink string) (string, error)
 	GetUserByID(ctx context.Context, id string) (*models.User, error)
+	GetOrgByID(ctx context.Context, id string) (*models.Organization, error)
 }
 
 type service struct {
@@ -799,4 +800,8 @@ func (s *service) TestExcelImageImport(ctx context.Context, driveLink string) (s
 
 func (s *service) GetUserByID(ctx context.Context, id string) (*models.User, error) {
 	return s.userRepo.GetByID(ctx, id)
+}
+
+func (s *service) GetOrgByID(ctx context.Context, id string) (*models.Organization, error) {
+	return s.orgRepo.GetByID(ctx, id)
 }

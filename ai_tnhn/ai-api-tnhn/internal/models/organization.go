@@ -17,7 +17,9 @@ type Organization struct {
 	DriveFolderID   string   `bson:"drive_folder_id" json:"drive_folder_id"` // Thư mục Google Drive của xí nghiệp
 	RainStationIDs  []string `bson:"rain_station_ids" json:"rain_station_ids"`
 	LakeStationIDs  []string `bson:"lake_station_ids" json:"lake_station_ids"`
-	RiverStationIDs []string `bson:"river_station_ids" json:"river_station_ids"`
-	InundationIDs   []string `bson:"inundation_ids" json:"inundation_ids"`
-	Order           string   `bson:"order" json:"order"`
+	RiverStationIDs           []string `bson:"river_station_ids" json:"river_station_ids"`
+	InundationIDs             []string `bson:"inundation_ids" json:"inundation_ids"`
+	EmergencyConstructionIDs  []string `bson:"emergency_construction_ids" json:"emergency_construction_ids"`
+	PumpingStationIDs         []string `bson:"pumping_station_ids" json:"pumping_station_ids"`
+	Order                     string   `bson:"order" json:"order"`
 }

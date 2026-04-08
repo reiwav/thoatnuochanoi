@@ -78,14 +78,25 @@ func (h *EmergencyConstructionHandler) List(c *gin.Context) {
 		return
 	}
 
-	// Security isolation
+	// 1. Determine base OrgID filter based on role/query
 	client := h.GetTokenFromContext(c)
-	if client.Role != "super_admin" {
+	queryOrgID := c.Query("org_id")
+	
+	if queryOrgID != "" && (client.Role == "super_admin" || client.Role == "" || client.Role == "supper_admin") {
+		req.OrgID = queryOrgID
+	} else if client.Role != "super_admin" && client.Role != "supper_admin" {
 		req.OrgID = client.OrgId
 	}
 
-	if client.Role == "employee" {
-		// Fetch full user profile to get assigned IDs
+	// 2. Further restrict by specific IDs if needed (Shared points or Employee assignments)
+	if queryOrgID != "" {
+		// Admin/Contextual view: Use Organization's configured IDs
+		org, err := h.service.GetOrgByID(c.Request.Context(), queryOrgID)
+		if err == nil && org != nil && len(org.EmergencyConstructionIDs) > 0 {
+			req.AddWhere("id", "_id", bson.M{"$in": org.EmergencyConstructionIDs})
+		}
+	} else if client.Role == "employee" {
+		// Default mobile app view for employees: only their assigned items
 		user, err := h.service.GetUserByID(c.Request.Context(), client.UserID)
 		if err == nil && user != nil {
 			if len(user.AssignedEmergencyConstructionIDs) > 0 {

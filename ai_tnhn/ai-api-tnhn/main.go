@@ -117,7 +117,7 @@ func main() {
 	emConstructionService := emergency_construction.NewService(emConstructionRepo, emConstructionHistoryRepo, emConstructionProgressRepo, userRepo, orgRepo, driveService)
 	contractCategoryService := contract_category.NewService(contractCategoryRepo, driveService)
 	contractService := contract.NewService(contractRepo, contractCategoryRepo, orgRepo, driveService)
-	pumpingStationService := pumpingstation.NewService(pumpingStationRepo, userRepo)
+	pumpingStationService := pumpingstation.NewService(pumpingStationRepo, userRepo, orgRepo)
 	permService := permission.NewService(permRepo, rolePermRepo)
 	roleService := role.NewService(roleRepo)
 	pumpWorker := pump.NewWorker(log, pumpingStationService)

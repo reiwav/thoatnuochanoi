@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type PumpingStationHandler struct {
@@ -76,6 +77,31 @@ func (h *PumpingStationHandler) List(c *gin.Context) {
 	}
 	size, _ := strconv.Atoi(sizeStr)
 	f.SetOrderBy("-created_at")
+
+	// 1. Determine base filter logic
+	token := h.contextWith.GetToken(c.Request)
+	user, _ := h.authService.GetProfile(c.Request.Context(), token)
+	queryOrgID := c.Query("org_id")
+
+	if queryOrgID != "" {
+		// Admin/Contextual view: Use Organization's configured IDs
+		org, err := h.service.GetOrgByID(c.Request.Context(), queryOrgID)
+		if err == nil && org != nil && len(org.PumpingStationIDs) > 0 {
+			f.AddWhere("id", "_id", bson.M{"$in": org.PumpingStationIDs})
+		}
+	} else if user != nil && user.Role == "employee" {
+		// Employee view: Only their assigned station
+		if user.AssignedPumpingStationID != "" {
+			f.AddWhere("id", "_id", user.AssignedPumpingStationID)
+		} else {
+			// Return empty if nothing assigned
+			h.SendData(c, gin.H{
+				"data":  []interface{}{},
+				"total": 0,
+			})
+			return
+		}
+	}
 
 	res, total, err := h.service.List(c.Request.Context(), f)
 	if err != nil {

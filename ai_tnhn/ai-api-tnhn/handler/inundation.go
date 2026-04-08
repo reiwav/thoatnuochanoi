@@ -292,8 +292,16 @@ func (h *InundationHandler) ListReports(c *gin.Context) {
 	trafficStatus := c.Query("traffic_status")
 	query := c.Query("query")
 
+	// Determine which points to show
 	var pointIDs []string
-	if user.IsEmployee {
+	
+	queryOrgID := c.Query("org_id")
+	if queryOrgID != "" {
+		org, err := h.service.GetOrgByID(c.Request.Context(), queryOrgID)
+		if err == nil && org != nil && len(org.InundationIDs) > 0 {
+			pointIDs = org.InundationIDs
+		}
+	} else if user.IsEmployee && !canSeeAll {
 		pointIDs = user.AssignedInundationPointIDs
 		if len(pointIDs) == 0 {
 			// If no points assigned, return empty result
@@ -341,19 +349,31 @@ func (h *InundationHandler) GetPointsStatus(c *gin.Context) {
 
 	canSeeAll := isSuperAdmin || isTNHN
 
+	// 1. Determine base orgID and if user has elevated permissions
 	orgID := user.OrgID
 	if canSeeAll {
 		if qOrg := c.Query("org_id"); qOrg != "" {
 			orgID = qOrg
 		} else {
-			orgID = "" // Default to all points for HQ
+			orgID = "" // Default to all for HQ
 		}
 	} else {
 		orgID = user.OrgID
 	}
 
+	// 2. Determine which points to show
 	var pointIDs []string
-	if user.IsEmployee {
+	
+	// If an explicit org_id is requested (admin/selection view), 
+	// use the organization's configured InundationIDs.
+	queryOrgID := c.Query("org_id")
+	if queryOrgID != "" {
+		org, err := h.service.GetOrgByID(c.Request.Context(), queryOrgID)
+		if err == nil && org != nil && len(org.InundationIDs) > 0 {
+			pointIDs = org.InundationIDs
+		}
+	} else if user.IsEmployee && !canSeeAll {
+		// Default mobile app view for employees: only their assigned points
 		pointIDs = user.AssignedInundationPointIDs
 	}
 

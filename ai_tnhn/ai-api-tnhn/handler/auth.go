@@ -159,10 +159,11 @@ func (h *AuthHandler) GoogleCallbackHandler(c *gin.Context) {
 	}
 
 	// 5. Redirect to frontend with token, role, and name
-	redirectURL := fmt.Sprintf("%s/?token=%s&role=%s&name=%s",
+	redirectURL := fmt.Sprintf("%s/?token=%s&role=%s&is_employee=%v&name=%s",
 		h.frontendURL,
 		res.ID,
 		role,
+		res.IsEmployee,
 		res.Name,
 	)
 	c.Redirect(http.StatusTemporaryRedirect, redirectURL)

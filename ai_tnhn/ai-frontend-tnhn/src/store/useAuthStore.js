@@ -10,14 +10,15 @@ const useAuthStore = create(
       user: null,
       token: null,
       role: null,
+      isEmployee: false,
       permissions: [], // New state for dynamic permissions
       
       // Actions
-      login: (userData, token, role) => {
+      login: (userData, token, role, isEmployee = false) => {
         let normalizedRole = role;
         if (role === 'giam_doc_xi_nghiep') normalizedRole = 'giam_doc_xn';
         if (['supper_admin', 'supper_admib', 'super_admin '].includes(role)) normalizedRole = 'super_admin';
-        set({ user: userData, token, role: normalizedRole });
+        set({ user: userData, token, role: normalizedRole, isEmployee: !!isEmployee });
         // Fetch permissions immediately after login if token exists
         get().fetchPermissions();
       },

@@ -21,11 +21,11 @@ const InundationForm = () => {
     const navigate = useNavigate();
     
     // Get auth state from Zustand
-    const { role: userRole, user } = useAuthStore();
+    const { isEmployee, role: userRole, user } = useAuthStore();
     
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-    const basePath = userRole === 'employee' ? '/company' : '/admin';
+    const basePath = isEmployee ? '/company' : '/admin';
 
     const [tab, setTab] = useState(0); // 0 = Báo mới/Cập nhật, 1 = Chi tiết
     const [selectedReport, setSelectedReport] = useState(null);

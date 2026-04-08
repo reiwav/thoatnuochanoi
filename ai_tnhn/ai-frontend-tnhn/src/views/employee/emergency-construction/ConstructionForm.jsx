@@ -77,11 +77,11 @@ const ConstructionForm = () => {
     const [imagePreviews, setImagePreviews] = useState([]);
     const [existingImages, setExistingImages] = useState([]);
 
-    const { role: userRole } = useAuthStore();
-    const basePath = userRole === 'employee' ? '/company' : '/admin';
+    const { isEmployee, role: userRole } = useAuthStore();
+    const basePath = isEmployee ? '/company' : '/admin';
 
     useEffect(() => {
-        if (!selectedConstructionId && userRole === 'employee') {
+        if (!selectedConstructionId && isEmployee) {
             fetchConstructions();
         }
     }, [selectedConstructionId]);
@@ -98,12 +98,12 @@ const ConstructionForm = () => {
     };
 
     useEffect(() => {
-        if (!selectedConstructionId && userRole !== 'employee') {
+        if (!selectedConstructionId && !isEmployee) {
             navigate(`${basePath}/emergency-construction/dashboard`);
             return;
         }
         if (editReportId) {
-            if (userRole === 'employee') {
+            if (isEmployee) {
                 toast.error('Bạn không có quyền chỉnh sửa Cập nhật tiến độ');
                 navigate(`${basePath}/emergency-construction/dashboard`);
                 return;

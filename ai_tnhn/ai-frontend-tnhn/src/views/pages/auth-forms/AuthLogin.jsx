@@ -45,6 +45,7 @@ export default function AuthLogin() {
     const token = searchParams.get('token');
     const role = searchParams.get('role');
     const name = searchParams.get('name');
+    const isEmployeeVal = searchParams.get('is_employee') === 'true';
 
     if (token) {
       // Store metadata via Zustand
@@ -53,11 +54,10 @@ export default function AuthLogin() {
         userRole = ROLES.ROLE_SUPER_ADMIN;
       }
       
-      storeLogin({ name, email: searchParams.get('email') }, token, userRole);
+      storeLogin({ name, email: searchParams.get('email') }, token, userRole, isEmployeeVal);
       
-      // Immediate redirection based on role
-      const isEmployee = userRole === ROLES.ROLE_EMPLOYEE || userRole === 'technician' || userRole === ROLES.ROLE_CONG_NHAN_CTY;
-      if (isEmployee) {
+      // Immediate redirection based on is_employee flag
+      if (isEmployeeVal) {
         navigate('/company/inundation', { replace: true });
       } else if (userRole === 'manager_contract') {
         navigate('/admin/ai-contract', { replace: true });
@@ -90,7 +90,7 @@ export default function AuthLogin() {
       console.log(response);
       const result = response.data;
 
-      // 2. Kiểm tra status từ server trả về
+        // 2. Kiểm tra status từ server trả về
       if (result.status === 'success') {
         const tokenData = result.data;
         
@@ -99,11 +99,12 @@ export default function AuthLogin() {
           role = ROLES.ROLE_SUPER_ADMIN;
         }
 
-        // Store via Zustand
-        storeLogin({ name: tokenData.name, email: values.email }, tokenData.id, role);
+        const isEmployee = !!tokenData.is_employee;
 
-        // Redirect based on role
-        const isEmployee = role === ROLES.ROLE_EMPLOYEE || role === 'technician' || role === ROLES.ROLE_CONG_NHAN_CTY;
+        // Store via Zustand
+        storeLogin({ name: tokenData.name, email: values.email }, tokenData.id, role, isEmployee);
+
+        // Redirect based on isEmployee
         if (isEmployee) {
           navigate('/company/inundation');
         } else if (role === 'manager_contract') {

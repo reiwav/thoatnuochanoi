@@ -1,20 +1,58 @@
 import { useState, useEffect } from 'react';
 
 // material-ui
-import { useTheme } from '@mui/material/styles';
-import { Box, Typography, Stack, Skeleton, Tooltip, useMediaQuery } from '@mui/material';
+import { useTheme, styled } from '@mui/material/styles';
+import { Box, Typography, Stack, Skeleton, Tooltip, keyframes } from '@mui/material';
 
 // project imports
 import weatherApi from 'api/weather';
 
 // assets
-import { IconCloud, IconSun, IconCloudRain, IconBolt } from '@tabler/icons-react';
+import {
+  IconCloud,
+  IconSun,
+  IconCloudRain,
+  IconBolt,
+  IconCloudFog,
+  IconSnowflake,
+  IconWind,
+  IconCloudStorm
+} from '@tabler/icons-react';
+
+const marquee = keyframes`
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+`;
+
+const pulse = keyframes`
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+`;
+
+const WeatherContainer = styled(Box)(({ theme }) => ({
+  flexGrow: 1,
+  display: 'flex',
+  alignItems: 'center',
+  overflow: 'hidden',
+  height: '40px',
+  background: 'transparent', // Bỏ nền theo yêu cầu
+  marginRight: theme.spacing(2)
+}));
+
+const ScrollingContent = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  whiteSpace: 'nowrap',
+  animation: `${marquee} 40s linear infinite`,
+  '&:hover': {
+    animationPlayState: 'paused'
+  }
+}));
 
 const WeatherSection = () => {
   const theme = useTheme();
   const [forecast, setForecast] = useState('');
   const [loading, setLoading] = useState(true);
-  const matchDownMD = useMediaQuery(theme.breakpoints.down('md'));
 
   useEffect(() => {
     const fetchWeather = async () => {
@@ -35,57 +73,52 @@ const WeatherSection = () => {
 
   const getWeatherIcon = (text) => {
     const lower = text.toLowerCase();
-    if (lower.includes('dông') || lower.includes('sét')) return <IconBolt size={20} color={theme.palette.warning.main} />;
-    if (lower.includes('mưa')) return <IconCloudRain size={20} color={theme.palette.info.main} />;
-    if (lower.includes('nắng')) return <IconSun size={20} color={theme.palette.warning.light} />;
-    return <IconCloud size={20} color={theme.palette.primary.main} />;
+    const iconProps = { size: 24, style: { animation: `${pulse} 2s ease-in-out infinite`, marginRight: '8px' } };
+
+    if (lower.includes('dông') || lower.includes('sấm')) return <IconCloudStorm {...iconProps} color={theme.palette.warning.dark} />;
+    if (lower.includes('sét')) return <IconBolt {...iconProps} color={theme.palette.warning.main} />;
+    if (lower.includes('mưa rào') || lower.includes('mưa to')) return <IconCloudRain {...iconProps} color={theme.palette.info.dark} />;
+    if (lower.includes('mưa')) return <IconCloudRain {...iconProps} color={theme.palette.info.main} />;
+    if (lower.includes('nắng')) return <IconSun {...iconProps} color="#FF9800" />;
+    return <IconCloud {...iconProps} color={theme.palette.primary.main} />;
   };
 
   if (loading) {
     return (
-      <Box sx={{ mr: 2, display: { xs: 'none', md: 'block' } }}>
-        <Skeleton variant="text" width={120} height={30} sx={{ borderRadius: 2 }} />
+      <Box sx={{ flexGrow: 1, mr: 2 }}>
+        <Skeleton variant="text" width="100%" height={30} />
       </Box>
     );
   }
 
-  if (!forecast && !loading) return null;
+  if (!forecast) return null;
 
   return (
-    <Tooltip title="Dự báo thời tiết 3 ngày tới (Gemini AI)" arrow>
-      <Box
-        sx={{
-          mr: 2,
-          display: { xs: 'none', md: 'block' },
-          px: 1.5,
-          py: 0.5,
-          borderRadius: 2,
-          bgcolor: theme.palette.grey[50],
-          border: '1px solid',
-          borderColor: theme.palette.divider,
-          maxWidth: matchDownMD ? 200 : 400,
-          cursor: 'default',
-          '&:hover': {
-            bgcolor: theme.palette.grey[100]
-          }
-        }}
-      >
-        <Stack direction="row" spacing={1} alignItems="center">
-          {getWeatherIcon(forecast)}
-          <Typography
-            variant="caption"
-            sx={{
-              fontWeight: 500,
-              color: 'text.secondary',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis'
-            }}
-          >
-            {forecast}
-          </Typography>
-        </Stack>
-      </Box>
+    <Tooltip title="Dự báo thời tiết Hà Nội 3 ngày tới (AI)" arrow>
+      <WeatherContainer sx={{ display: { xs: 'none', lg: 'flex' } }}>
+        <Box sx={{ overflow: 'hidden', width: '100%', position: 'relative' }}>
+          <ScrollingContent>
+            <Stack direction="row" spacing={12} alignItems="center">
+              <Stack direction="row" alignItems="center">
+                {getWeatherIcon(forecast)}
+                <Typography
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: '1rem',
+                    color: theme.palette.primary.main,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em'
+                  }}
+                >
+                  DỰ BÁO THỜI TIẾT 3 NGÀY TỚI: {forecast}
+                </Typography>
+              </Stack>
+              {/* Thêm khoảng trống và icon phân cách cho dải chạy liên tục */}
+              <IconCloud size={20} color={theme.palette.grey[300]} />
+            </Stack>
+          </ScrollingContent>
+        </Box>
+      </WeatherContainer>
     </Tooltip>
   );
 };

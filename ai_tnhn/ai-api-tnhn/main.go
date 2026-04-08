@@ -132,10 +132,23 @@ func main() {
 		log.GetLogger().Errorf("Failed to initialize Gemini service: %v", err)
 	} else {
 		log.GetLogger().Info("Gemini AI service initialized successfully")
+
+		// Determine which service to use for weather forecast
+		targetWeatherSvc := geminiService
+		if confg.GeminiAPIKeyWeather != "" {
+			log.GetLogger().Info("Initializing separate Gemini service for weather forecast...")
+			weatherGeminiSvc, err := gemini.NewService(confg.GeminiAPIKeyWeather, confg.GeminiAPIKeyWeather, waterService, googleApiService, inuService, queryService, stationDataService, emConstructionService, contractService, aiUsageRepo, aiChatLogRepo)
+			if err == nil {
+				targetWeatherSvc = weatherGeminiSvc
+			} else {
+				log.GetLogger().Errorf("Failed to initialize separate weather Gemini service: %v", err)
+			}
+		}
+
 		// Inject forecast function into weatherService
 		if weatherService != nil {
 			weatherService.SetForecastFunc(func(ctx context.Context, prompt string) (string, error) {
-				return geminiService.Chat(ctx, prompt, nil, "system_weather", "SKIP_LOG")
+				return targetWeatherSvc.Chat(ctx, prompt, nil, "system_weather", "SKIP_LOG")
 			})
 		}
 	}

@@ -510,9 +510,60 @@ func (h *InundationHandler) ReviewUpdate(c *gin.Context) {
 	}
 
 	token := h.contextWith.GetToken(c.Request)
-	user, _ := h.authService.GetProfile(c.Request.Context(), token)
+	user, err := h.authService.GetProfile(c.Request.Context(), token)
+	if err != nil {
+		h.SendError(c, web.Unauthorized("Invalid user session"))
+		return
+	}
 
-	err := h.service.ReviewUpdate(c.Request.Context(), updateID, req.Comment, user.ID, user.Email, user.Name)
+	// RBAC: Block Employee
+	if user.IsEmployee {
+		h.SendError(c, web.Forbidden("Nhân viên không có quyền nhận xét bản tin"))
+		return
+	}
+
+	// RBAC: Check permissions
+	update, err := h.service.GetUpdateByID(c.Request.Context(), updateID) // Need to ensure this exists or use service check
+	if err != nil {
+		h.SendError(c, err)
+		return
+	}
+
+	report, err := h.service.GetReport(c.Request.Context(), update.ReportID)
+	if err != nil {
+		h.SendError(c, err)
+		return
+	}
+
+	isSuperAdmin := user.Role == constant.ROLE_SUPER_ADMIN ||
+		user.Role == "supper_admin" ||
+		user.Role == "supper_admib" ||
+		user.Role == "super_admin "
+
+	isAllowedAll := isSuperAdmin || user.IsCompany
+
+	if !isAllowedAll {
+		// Ownership or Shared Point check
+		isAuthorized := report.OrgID == user.OrgID
+		if !isAuthorized && user.OrgID != "" {
+			org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
+			if err == nil && org != nil {
+				for _, pid := range org.InundationIDs {
+					if pid == report.PointID {
+						isAuthorized = true
+						break
+					}
+				}
+			}
+		}
+
+		if !isAuthorized {
+			h.SendError(c, web.Unauthorized("Bạn không có quyền nhận xét bản tin này"))
+			return
+		}
+	}
+
+	err = h.service.ReviewUpdate(c.Request.Context(), updateID, req.Comment, user.ID, user.Email, user.Name)
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -531,7 +582,17 @@ func (h *InundationHandler) ReviewReport(c *gin.Context) {
 	}
 
 	token := h.contextWith.GetToken(c.Request)
-	user, _ := h.authService.GetProfile(c.Request.Context(), token)
+	user, err := h.authService.GetProfile(c.Request.Context(), token)
+	if err != nil {
+		h.SendError(c, web.Unauthorized("Invalid user session"))
+		return
+	}
+
+	// RBAC: Block Employee
+	if user.IsEmployee {
+		h.SendError(c, web.Forbidden("Nhân viên không có quyền nhận xét bản tin"))
+		return
+	}
 
 	// Check permissions
 	report, err := h.service.GetReport(c.Request.Context(), reportID)
@@ -547,10 +608,25 @@ func (h *InundationHandler) ReviewReport(c *gin.Context) {
 
 	isAllowedAll := isSuperAdmin || user.IsCompany
 
-	// Ownership Check: Only allow review if same org or isAllowedAll
-	if !isAllowedAll && report.OrgID != user.OrgID {
-		h.SendError(c, web.Unauthorized("You do not have permission to review this report"))
-		return
+	// Ownership or Shared Point Check: Only allow review if same org, shared point, or isAllowedAll
+	if !isAllowedAll {
+		isAuthorized := report.OrgID == user.OrgID
+		if !isAuthorized && user.OrgID != "" {
+			org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
+			if err == nil && org != nil {
+				for _, pid := range org.InundationIDs {
+					if pid == report.PointID {
+						isAuthorized = true
+						break
+					}
+				}
+			}
+		}
+
+		if !isAuthorized {
+			h.SendError(c, web.Unauthorized("Bạn không có quyền nhận xét bản tin này"))
+			return
+		}
 	}
 
 	err = h.service.ReviewReport(c.Request.Context(), reportID, req.Comment, user.ID, user.Email, user.Name)

@@ -13,6 +13,7 @@ import organizationApi from 'api/organization';
 import { getInundationImageUrl } from 'utils/imageHelper';
 import { getTrafficStatusColor, getTrafficStatusLabel } from 'utils/trafficStatusHelper';
 import { toast } from 'react-hot-toast';
+import useAuthStore from 'store/useAuthStore';
 
 const getLatestData = (report) => {
     if (!report) return null;
@@ -56,7 +57,28 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
     const latest = useMemo(() => getLatestData(point.active_report || point.last_report), [point]);
     const [commentInput, setCommentInput] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const role = localStorage.getItem('role');
+    
+    // Auth & Permissions
+    const { user, role, isEmployee } = useAuthStore();
+    const canReview = useMemo(() => {
+        if (isEmployee) return false;
+        
+        const isSuperAdmin = role === 'super_admin' || ['supper_admin', 'supper_admib', 'super_admin '].includes(role);
+        const isAllowedAll = isSuperAdmin || user?.is_company;
+        if (isAllowedAll) return true;
+
+        const report = point.active_report || point.last_report;
+        if (!report) return false;
+
+        // Ownership
+        if (report.org_id === user?.org_id) return true;
+
+        // Shared Points
+        const userOrg = organizations.find(o => o.id === user?.org_id);
+        if (userOrg?.inundation_ids?.includes(report.point_id)) return true;
+
+        return false;
+    }, [user, role, isEmployee, point, organizations]);
 
     const handleReview = async () => {
         if (!commentInput.trim()) return;
@@ -266,7 +288,7 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                                     </Box>
                                 )}
 
-                                {role === 'reviewer' && point.status === 'active' && (
+                                {canReview && point.status === 'active' && (
                                     <Box sx={{ mt: 2, p: 2, bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
                                         <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: 'primary.main' }}>Gửi nhận xét cho nhân viên:</Typography>
                                         <TextField
@@ -362,7 +384,27 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, getDuration,
     const [open, setOpen] = useState(report.status === 'active');
     const [commentInput, setCommentInput] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const role = localStorage.getItem('role');
+    
+    // Auth & Permissions
+    const { user, role, isEmployee } = useAuthStore();
+    const canReview = useMemo(() => {
+        if (isEmployee) return false;
+        
+        const isSuperAdmin = role === 'super_admin' || ['supper_admin', 'supper_admib', 'super_admin '].includes(role);
+        const isAllowedAll = isSuperAdmin || user?.is_company;
+        if (isAllowedAll) return true;
+
+        if (!report) return false;
+
+        // Ownership
+        if (report.org_id === user?.org_id) return true;
+
+        // Shared Points
+        const userOrg = organizations.find(o => o.id === user?.org_id);
+        if (userOrg?.inundation_ids?.includes(report.point_id)) return true;
+
+        return false;
+    }, [user, role, isEmployee, report, organizations]);
 
     const handleReview = async () => {
         if (!commentInput.trim()) return;

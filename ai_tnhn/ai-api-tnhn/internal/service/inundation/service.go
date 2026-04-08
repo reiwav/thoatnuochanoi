@@ -28,6 +28,7 @@ type Service interface {
 	// Review and Correction
 	ReviewReport(ctx context.Context, reportID, comment, reviewerID, reviewerEmail, reviewerName string) error
 	ReviewUpdate(ctx context.Context, updateID, comment, reviewerID, reviewerEmail, reviewerName string) error
+	GetUpdateByID(ctx context.Context, updateID string) (*models.InundationUpdate, error)
 	UpdateUpdateContent(ctx context.Context, updateID string, update *models.InundationUpdate, images []ImageContent) error
 
 	// Points management
@@ -387,6 +388,10 @@ func (s *service) ReviewUpdate(ctx context.Context, updateID, comment, reviewerI
 	update.ReviewerName = reviewerName
 	update.NeedsCorrection = true
 	return s.inundationUpdateRepo.Update(ctx, update)
+}
+
+func (s *service) GetUpdateByID(ctx context.Context, updateID string) (*models.InundationUpdate, error) {
+	return s.inundationUpdateRepo.GetByID(ctx, updateID)
 }
 
 func (s *service) UpdateUpdateContent(ctx context.Context, updateID string, updatedData *models.InundationUpdate, images []ImageContent) error {

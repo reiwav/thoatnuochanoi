@@ -132,6 +132,12 @@ func main() {
 		log.GetLogger().Errorf("Failed to initialize Gemini service: %v", err)
 	} else {
 		log.GetLogger().Info("Gemini AI service initialized successfully")
+		// Inject forecast function into weatherService
+		if weatherService != nil {
+			weatherService.SetForecastFunc(func(ctx context.Context, prompt string) (string, error) {
+				return geminiService.Chat(ctx, prompt, nil, "system_weather", "SKIP_LOG")
+			})
+		}
 	}
 
 	// Initialize Google Drive Storage for all Organizations
@@ -218,6 +224,7 @@ func main() {
 		GetPermissionMatrixHandler:    permHandler.GetMatrix,
 		UpdatePermissionMatrixHandler: permHandler.UpdateMatrix,
 		GetMyPermissionsHandler:       permHandler.GetMyPermissions,
+		GetWeatherForecastHandler:     googleHandler.GetWeatherForecast,
 	}
 
 	r := handlers.Create(mid, orgHandler, empHandler, stationHandler, inuHandler, waterHandler, googleHandler, queryHandler, emConstructionHandler, weatherHandler, contractCategoryHandler, contractHandler, pumpingStationHandler, permHandler, roleHandler)

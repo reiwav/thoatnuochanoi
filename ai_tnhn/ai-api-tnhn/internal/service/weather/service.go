@@ -84,15 +84,22 @@ type WaterDataResponse struct {
 
 type HistoricalRainData map[string]map[string]float64
 
+type ForecastFunc func(ctx context.Context, prompt string) (string, error)
+
 type Service interface {
 	GetRawRainData(ctx context.Context) (*RainDataResponse, error)
 	GetRawWaterData(ctx context.Context) (*WaterDataResponse, error)
 	GetHistoricalRainData(ctx context.Context) (HistoricalRainData, error)
 	GetComparisonData(ctx context.Context, year1, year2 int) (interface{}, error)
+	GetForecast(ctx context.Context) (string, error)
+	SetForecastFunc(fn ForecastFunc)
 }
 
 type service struct {
-	histRepo repository.HistoricalRain
+	histRepo     repository.HistoricalRain
+	forecastFunc ForecastFunc
+	forecast     string
+	lastFetch    time.Time
 }
 
 func NewService(histRepo repository.HistoricalRain) Service {
@@ -216,4 +223,32 @@ func (s *service) GetComparisonData(ctx context.Context, year1, year2 int) (inte
 		"annualTotals": annualTotals,
 		"stations":     stationList,
 	}, nil
+}
+
+func (s *service) SetForecastFunc(fn ForecastFunc) {
+	s.forecastFunc = fn
+}
+
+func (s *service) GetForecast(ctx context.Context) (string, error) {
+	// Simple caching: 2 hours
+	if s.forecast != "" && time.Since(s.lastFetch) < 2*time.Hour {
+		return s.forecast, nil
+	}
+
+	if s.forecastFunc == nil {
+		return "", fmt.Errorf("forecast function not initialized in weather service")
+	}
+
+	now := time.Now().In(vietnamTZ)
+	prompt := fmt.Sprintf("Thời gian hiện tại của hệ thống là: %s. Dự báo thời tiết tại Hà Nội trong 3 ngày tiếp theo như thế nào? Mô tả ngắn gọn, súc tích, mang tính chất thông báo cho cán bộ trong vòng 40 từ.", now.Format("02/01/2006 15:04"))
+
+	resp, err := s.forecastFunc(ctx, prompt)
+	if err != nil {
+		return "", err
+	}
+
+	s.forecast = resp
+	s.lastFetch = time.Now()
+
+	return resp, nil
 }

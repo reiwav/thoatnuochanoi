@@ -10,6 +10,7 @@ import {
     Tooltip
 } from '@mui/material';
 import { IconSquare, IconCheckbox, IconMinus } from '@tabler/icons-react';
+import * as ROLES from 'constants/role';
 
 // Thứ tự groups theo menu sidebar (không sort A-Z)
 const GROUP_ORDER = [
@@ -36,11 +37,16 @@ const MODULE_LABELS = {
     'contract-ai': 'AI Trợ lý',
 };
 
-const PermissionTree = ({ permissions, selectedPermissions = [], onToggle, disabled }) => {
+const PermissionTree = ({ permissions, selectedPermissions = [], onToggle, disabled, userRole }) => {
     const groupedData = useMemo(() => {
         const groups = {};
 
         permissions.forEach(perm => {
+            // Filter by menu permission type: Only Super Admin can see/edit these
+            if (perm.type === 'menu' && userRole !== ROLES.ROLE_SUPER_ADMIN) {
+                return;
+            }
+
             const groupName = perm.group || 'Khác';
             if (!groups[groupName]) {
                 groups[groupName] = {};

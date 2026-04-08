@@ -20,6 +20,7 @@ import CustomFormControl from 'ui-component/extended/Form/CustomFormControl';
 import authApi from 'api/auth';
 import { ADMIN_TOKEN } from 'constants/auth';
 import useAuthStore from 'store/useAuthStore';
+import * as ROLES from 'constants/role';
 
 // assets
 import Visibility from '@mui/icons-material/Visibility';
@@ -48,14 +49,14 @@ export default function AuthLogin() {
     if (token) {
       // Store metadata via Zustand
       let userRole = role || 'employee';
-      if (userRole === 'supper_admin' || userRole === 'super_admib') {
-        userRole = 'super_admin';
+      if (userRole === 'supper_admin' || userRole === 'super_admib' || userRole === 'super_admin ') {
+        userRole = ROLES.ROLE_SUPER_ADMIN;
       }
       
       storeLogin({ name, email: searchParams.get('email') }, token, userRole);
       
       // Immediate redirection based on role
-      const isEmployee = userRole === 'employee' || userRole === 'technician' || userRole === 'cong_nhan_cty';
+      const isEmployee = userRole === ROLES.ROLE_EMPLOYEE || userRole === 'technician' || userRole === ROLES.ROLE_CONG_NHAN_CTY;
       if (isEmployee) {
         navigate('/company/inundation', { replace: true });
       } else if (userRole === 'manager_contract') {
@@ -93,16 +94,16 @@ export default function AuthLogin() {
       if (result.status === 'success') {
         const tokenData = result.data;
         
-        let role = tokenData.role || 'employee';
-        if (role === 'supper_admin' || role === 'super_admib') {
-          role = 'super_admin';
+        let role = tokenData.role || ROLES.ROLE_EMPLOYEE;
+        if (role === 'supper_admin' || role === 'super_admib' || role === 'super_admin ') {
+          role = ROLES.ROLE_SUPER_ADMIN;
         }
 
         // Store via Zustand
         storeLogin({ name: tokenData.name, email: values.email }, tokenData.id, role);
 
         // Redirect based on role
-        const isEmployee = role === 'employee' || role === 'technician' || role === 'cong_nhan_cty';
+        const isEmployee = role === ROLES.ROLE_EMPLOYEE || role === 'technician' || role === ROLES.ROLE_CONG_NHAN_CTY;
         if (isEmployee) {
           navigate('/company/inundation');
         } else if (role === 'manager_contract') {

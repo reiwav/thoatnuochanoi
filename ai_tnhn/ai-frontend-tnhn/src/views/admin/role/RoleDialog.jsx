@@ -5,6 +5,7 @@ import {
     FormControlLabel, Switch
 } from '@mui/material';
 import { IconShieldCheck } from '@tabler/icons-react';
+import * as ROLES from 'constants/role';
 
 const RoleDialog = ({ open, onClose, onSubmit, role, isEdit }) => {
     const theme = useTheme();
@@ -103,11 +104,11 @@ const RoleDialog = ({ open, onClose, onSubmit, role, isEdit }) => {
                             name="code"
                             value={values.code}
                             onChange={handleChange}
-                            disabled={isEdit && role?.code === 'super_admin'}
+                            disabled={isEdit && role?.code === ROLES.ROLE_SUPER_ADMIN}
                             error={!!errors.code}
                             helperText={errors.code || 'Mã viết liền, không dấu, dùng để xác định trong code (ví dụ: gd_xn)'}
                             variant="outlined"
-                            placeholder="giam_doc_xn"
+                            placeholder={ROLES.ROLE_GIAM_DOC_XN}
                             sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
                         />
                     </Grid>

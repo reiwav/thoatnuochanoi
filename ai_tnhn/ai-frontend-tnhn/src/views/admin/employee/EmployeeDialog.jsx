@@ -12,6 +12,7 @@ import pumpingStationApi from 'api/pumpingStation';
 import SelectionDialog from './SelectionDialog';
 import useAuthStore from 'store/useAuthStore';
 import axiosClient from 'api/axiosClient';
+import * as ROLES from 'constants/role';
 
 const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizations = [], defaultOrgId = '', canSelectOrg }) => {
     const { hasPermission, role: userRole } = useAuthStore();
@@ -26,7 +27,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
         name: '',
         email: '',
         password: '',
-        role: 'cong_nhan_cty',
+        role: ROLES.ROLE_CONG_NHAN_CTY,
         org_id: '',
         assigned_inundation_point_ids: [],
         assigned_emergency_construction_ids: [],
@@ -41,7 +42,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                     name: employee.name || '',
                     email: employee.email || '',
                     password: '',
-                    role: employee.role || 'cong_nhan_cty',
+                    role: employee.role || ROLES.ROLE_CONG_NHAN_CTY,
                     org_id: employee.org_id || defaultOrgId,
                     assigned_inundation_point_ids: employee.assigned_inundation_point_ids || [],
                     assigned_emergency_construction_ids: employee.assigned_emergency_construction_ids || [],
@@ -53,7 +54,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                     name: '',
                     email: '',
                     password: '',
-                    role: 'cong_nhan_cty',
+                    role: ROLES.ROLE_CONG_NHAN_CTY,
                     org_id: defaultOrgId,
                     assigned_inundation_point_ids: [],
                     assigned_emergency_construction_ids: [],
@@ -120,7 +121,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                 if (!isCurrentRoleValid) {
                     // Default fallback: Find first valid role for this org type
                     const defaultRole = roles.find(r => r.is_company === isCompany);
-                    newData.role = defaultRole ? defaultRole.code : (isCompany ? 'giam_doc_cty' : 'cong_nhan_cty');
+                    newData.role = defaultRole ? defaultRole.code : (isCompany ? ROLES.ROLE_GIAM_DOC_CTY : ROLES.ROLE_CONG_NHAN_CTY);
                 }
             }
             
@@ -138,16 +139,28 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
 
     const filteredRoles = useMemo(() => {
         return roles.filter(r => {
-            // 1. Filter by current user permission (giam_doc_xn restriction)
-            if (userRole === 'giam_doc_xn') {
-                if (!['truong_phong_kt', 'cong_nhan_cty'].includes(r.code)) return false;
+            // 1. Filter by current user permission (unit management restricted to their scope)
+            if (userRole === ROLES.ROLE_GIAM_DOC_XN) {
+                // Unit Directors can create Technical Managers and Workers
+                if (![ROLES.ROLE_TRUONG_PHONG_KT, ROLES.ROLE_CONG_NHAN_CTY].includes(r.code)) return false;
+            } else if (userRole === ROLES.ROLE_TRUONG_PHONG_KT || userRole === ROLES.ROLE_PHONG_KT_CL || userRole === ROLES.ROLE_GIAM_DOC_CTY) {
+                // Technical Managers and Company Directors cannot create Workers per user request
+                if (r.code === ROLES.ROLE_CONG_NHAN_CTY) return false;
             }
 
-            // 2. Filter by selected organization type
+            // 2. Filter by selected organization type (HQ vs Unit)
             const selectedOrg = organizations.find(o => o.id === formData.org_id);
             const isCompany = selectedOrg?.code?.toUpperCase() === 'TNHN';
             
+            // Managers can only create users in their own org (Unit)
+            const isUnitManager = [ROLES.ROLE_GIAM_DOC_XN, ROLES.ROLE_TRUONG_PHONG_KT, ROLES.ROLE_PHONG_KT_CL].includes(userRole);
+            
             if (formData.org_id) {
+                // If it's a company-wide role requester (HQ), allow all company roles
+                if ([ROLES.ROLE_SUPER_ADMIN, ROLES.ROLE_CHU_TICH_CTY, ROLES.ROLE_GIAM_DOC_CTY, ROLES.ROLE_PHO_GIAM_DOC_CTY, ROLES.ROLE_PHONG_HT_MT_CDS].includes(userRole)) {
+                    return r.is_company === isCompany;
+                }
+                // For Unit managers, only show unit roles that match the organization type (is_company: false)
                 return r.is_company === isCompany;
             }
 
@@ -217,7 +230,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                         </FormControl>
                     )}
 
-                    {['employee', 'cong_nhan_cty'].includes(formData.role) && (
+                    {([ROLES.ROLE_EMPLOYEE, ROLES.ROLE_CONG_NHAN_CTY].includes(formData.role)) && (
                         <>
                             <Box>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>

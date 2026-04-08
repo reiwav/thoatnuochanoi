@@ -282,7 +282,7 @@ func (h *InundationHandler) ListReports(c *gin.Context) {
 
 	// Determine which points to show
 	var pointIDs []string
-	
+
 	// Use target organization's configured InundationIDs if available
 	targetOrgID := ""
 	if qOrg := c.Query("org_id"); qOrg != "" && isAllowedAll {
@@ -338,39 +338,30 @@ func (h *InundationHandler) GetPointsStatus(c *gin.Context) {
 
 	isAllowedAll := isSuperAdmin || user.IsCompany
 
-	// 1. Determine base orgID
-	orgID := user.OrgID
-	if isAllowedAll {
+	var orgID string
+	var pointIDs []string
+
+	if user.IsEmployee && !isAllowedAll {
+		// Employee: chỉ lấy điểm ngập đã gắn trong tài khoản
+		pointIDs = user.AssignedInundationPointIDs
+		orgID = "" // không fetch theo org
+	} else if isAllowedAll {
+		// Super admin / Company: lấy tất cả hoặc theo org_id filter
 		if qOrg := c.Query("org_id"); qOrg != "" {
 			orgID = qOrg
-		} else {
-			orgID = "" // Default to all if no filter provided
+			// Nếu org có InundationIDs thì dùng
+			org, err := h.service.GetOrgByID(c.Request.Context(), qOrg)
+			if err == nil && org != nil && len(org.InundationIDs) > 0 {
+				pointIDs = org.InundationIDs
+			}
 		}
 	} else {
+		// Manager (non-employee, non-superadmin): lấy theo org
 		orgID = user.OrgID
-	}
-
-	// 2. Determine which points to show
-	var pointIDs []string
-	
-	// Use target organization's configured InundationIDs if available
-	targetOrgID := ""
-	if qOrg := c.Query("org_id"); qOrg != "" && isAllowedAll {
-		targetOrgID = qOrg
-	} else if !isAllowedAll {
-		targetOrgID = user.OrgID
-	}
-
-	if targetOrgID != "" {
-		org, err := h.service.GetOrgByID(c.Request.Context(), targetOrgID)
+		org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
 		if err == nil && org != nil && len(org.InundationIDs) > 0 {
 			pointIDs = org.InundationIDs
 		}
-	}
-
-	if len(pointIDs) == 0 && user.IsEmployee && !isAllowedAll {
-		// Default mobile app view for employees: only their assigned points
-		pointIDs = user.AssignedInundationPointIDs
 	}
 
 	res, err := h.service.GetPointsStatus(c.Request.Context(), orgID, pointIDs)
@@ -639,7 +630,7 @@ func (h *InundationHandler) ReviewReport(c *gin.Context) {
 
 func (h *InundationHandler) UpdateReport(c *gin.Context) {
 	id := c.Param("id")
-	
+
 	token := h.contextWith.GetToken(c.Request)
 	user, err := h.authService.GetProfile(c.Request.Context(), token)
 	if err != nil {

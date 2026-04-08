@@ -67,7 +67,8 @@ func (h *RoleHandler) Delete(c *gin.Context) {
 }
 
 func (h *RoleHandler) List(c *gin.Context) {
-	list, err := h.service.GetAll(c.Request.Context())
+	currentRole, _ := h.contextWith.GetRole(c)
+	list, err := h.service.GetAll(c.Request.Context(), currentRole)
 	if err != nil {
 		h.SendError(c, err)
 		return

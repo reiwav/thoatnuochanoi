@@ -15,8 +15,8 @@ import (
 )
 
 type Service interface {
-	Create(ctx context.Context, input *models.User) (*models.User, error)
-	Update(ctx context.Context, id string, input *models.User) error
+	Create(ctx context.Context, input *models.User, currentUserRole string) (*models.User, error)
+	Update(ctx context.Context, id string, input *models.User, currentUserRole string) error
 	Delete(ctx context.Context, id string) error
 	GetByID(ctx context.Context, id string) (*models.User, error)
 	List(ctx context.Context, filter filter.Filter) ([]*models.User, int64, error)
@@ -25,18 +25,24 @@ type Service interface {
 type service struct {
 	userRepo repository.User
 	orgRepo  repository.Organization
+	roleRepo repository.Role
 	driveSvc googledrive.Service
 }
 
-func NewService(userRepo repository.User, orgRepo repository.Organization, driveSvc googledrive.Service) Service {
+func NewService(userRepo repository.User, orgRepo repository.Organization, roleRepo repository.Role, driveSvc googledrive.Service) Service {
 	return &service{
 		userRepo: userRepo,
 		orgRepo:  orgRepo,
+		roleRepo: roleRepo,
 		driveSvc: driveSvc,
 	}
 }
 
-func (s *service) Create(ctx context.Context, input *models.User) (*models.User, error) {
+func (s *service) Create(ctx context.Context, input *models.User, currentUserRole string) (*models.User, error) {
+	// Check Role level restriction
+	if err := s.checkRoleLevel(ctx, currentUserRole, input.Role); err != nil {
+		return nil, err
+	}
 	// Set Role from input or default to Employee
 	// if input.Role == "" {
 	// 	input.Role = constant.ROLE_EMPLOYEE
@@ -62,7 +68,11 @@ func (s *service) Create(ctx context.Context, input *models.User) (*models.User,
 	return user, nil
 }
 
-func (s *service) Update(ctx context.Context, id string, input *models.User) error {
+func (s *service) Update(ctx context.Context, id string, input *models.User, currentUserRole string) error {
+	// Check Role level restriction
+	if err := s.checkRoleLevel(ctx, currentUserRole, input.Role); err != nil {
+		return err
+	}
 	// Ensure we only update the specific user.
 	// Ideally we should check if user exists and belongs to OrgID if current user is Admin of that Org.
 	// But repository Update is by ID.
@@ -162,6 +172,28 @@ func (s *service) validateAssignments(ctx context.Context, userID string, orgID 
 		if err == nil && len(users) > 0 {
 			return web.BadRequest("Trạm bơm này đã được gán cho nhân viên: " + users[0].Name)
 		}
+	}
+
+	return nil
+}
+
+func (s *service) checkRoleLevel(ctx context.Context, currentUserRole, targetRole string) error {
+	if currentUserRole == "super_admin" {
+		return nil
+	}
+
+	currentInfo, err := s.roleRepo.GetByCode(ctx, currentUserRole)
+	if err != nil || currentInfo == nil {
+		return web.Forbidden("Không xác định được vai trò của bạn")
+	}
+
+	targetInfo, err := s.roleRepo.GetByCode(ctx, targetRole)
+	if err != nil || targetInfo == nil {
+		return web.BadRequest("Vai trò định gán không hợp lệ")
+	}
+
+	if targetInfo.Level < currentInfo.Level {
+		return web.Forbidden("Bạn không có quyền thực hiện thao tác này cho vai trò có cấp độ cao hơn (Level nhỏ hơn)")
 	}
 
 	return nil

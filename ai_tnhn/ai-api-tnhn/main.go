@@ -104,7 +104,7 @@ func main() {
 	tokenService := token.NewService(tokenRepo)
 	authService := auth.NewService(tokenRepo, userRepo)
 	orgService := organization.NewService(orgRepo, userRepo, driveService)
-	empService := employee.NewService(userRepo, orgRepo, driveService)
+	empService := employee.NewService(userRepo, orgRepo, roleRepo, driveService)
 	waterService := water.NewService(rainRepo, lakeRepo, riverRepo)
 	emailService := email.NewService(confg.EmailConfig)
 	stationService := station.NewService(rainStationRepo, lakeStationRepo, riverStationRepo)

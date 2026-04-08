@@ -39,7 +39,9 @@ func (h *EmployeeHandler) Create(c *gin.Context) {
 	// If OrgID is still empty (e.g. Super Admin didn't provide one in JSON),
 	// service checks it. Super Admin might provide OrgID in JSON.
 
-	res, err := h.service.Create(c.Request.Context(), &req)
+	// Get current user's role from context
+	currentRole, _ := h.contextWith.GetRole(c)
+	res, err := h.service.Create(c.Request.Context(), &req, currentRole)
 	web.AssertNil(err)
 	h.SendData(c, res)
 }
@@ -55,7 +57,9 @@ func (h *EmployeeHandler) Update(c *gin.Context) {
 	// Similar logic for OrgID if needed, but existing user has OrgID.
 	// Service handles retrieval.
 
-	err := h.service.Update(c.Request.Context(), id, &req)
+	// Get current user's role from context
+	currentRole, _ := h.contextWith.GetRole(c)
+	err := h.service.Update(c.Request.Context(), id, &req, currentRole)
 	web.AssertNil(err)
 	h.SendData(c, true)
 }

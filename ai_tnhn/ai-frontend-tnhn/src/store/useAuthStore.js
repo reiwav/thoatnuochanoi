@@ -16,6 +16,7 @@ const useAuthStore = create(
       login: (userData, token, role) => {
         let normalizedRole = role;
         if (role === 'giam_doc_xi_nghiep') normalizedRole = 'giam_doc_xn';
+        if (['supper_admin', 'supper_admib', 'super_admin '].includes(role)) normalizedRole = 'super_admin';
         set({ user: userData, token, role: normalizedRole });
         // Fetch permissions immediately after login if token exists
         get().fetchPermissions();

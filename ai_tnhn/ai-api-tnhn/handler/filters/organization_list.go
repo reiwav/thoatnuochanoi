@@ -22,7 +22,11 @@ func NewOrganizationListRequest() *OrganizationListRequest {
 
 func (f *OrganizationListRequest) GetWhere() filter.Where {
 	if f.ID != "" {
-		f.AddWhere("_id", "_id", f.ID)
+		if oid, err := primitive.ObjectIDFromHex(f.ID); err == nil {
+			f.AddWhere("_id", "_id", oid)
+		} else {
+			f.AddWhere("_id", "_id", f.ID)
+		}
 	}
 	if f.Name != "" {
 		f.AddWhere("name", "name", primitive.Regex{Pattern: f.Name, Options: "i"})

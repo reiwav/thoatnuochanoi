@@ -82,6 +82,7 @@ const WeatherSection = () => {
 
     if (lower.includes('dông') || lower.includes('sấm')) return <IconCloudStorm {...iconProps} color={theme.palette.warning.dark} />;
     if (lower.includes('sét')) return <IconBolt {...iconProps} color={theme.palette.warning.main} />;
+    if (lower.includes('sương mù') || lower.includes('mù')) return <IconCloudFog {...iconProps} color={theme.palette.info.main} />;
     if (lower.includes('mưa rào') || lower.includes('mưa to')) return <IconCloudRain {...iconProps} color={theme.palette.info.dark} />;
     if (lower.includes('mưa')) return <IconCloudRain {...iconProps} color={theme.palette.info.main} />;
     if (lower.includes('nắng')) return <IconSun {...iconProps} color="#FF9800" />;
@@ -98,33 +99,59 @@ const WeatherSection = () => {
 
   if (!forecast) return null;
 
+  const forecastLines = forecast
+    .replace(/Dự báo thời tiết 3 ngày tới:?\s*/i, '')
+    .split('\n')
+    .map(line => line.trim().replace(/^-?\s*/, '')) // Bỏ dấu - ở đầu
+    .filter(line => line.length > 0);
+
+  const getSmallWeatherIcon = (text) => {
+    // Chỉ lấy phần mô tả thời tiết (nằm trước dấu chấm phẩy đầu tiên) để tránh bắt nhầm chữ "mưa" trong "Tỉ lệ mưa"
+    const description = text.split(';')[0].toLowerCase();
+    const iconProps = { size: 14, style: { marginRight: '6px' } };
+
+    if (description.includes('dông') || description.includes('sấm')) return <IconCloudStorm {...iconProps} color={theme.palette.warning.dark} />;
+    if (description.includes('sét')) return <IconBolt {...iconProps} color={theme.palette.warning.main} />;
+    if (description.includes('sương mù') || description.includes('mù')) return <IconCloudFog {...iconProps} color={theme.palette.info.main} />;
+    if (description.includes('mưa rào') || description.includes('mưa to')) return <IconCloudRain {...iconProps} color={theme.palette.info.dark} />;
+    if (description.includes('mưa')) return <IconCloudRain {...iconProps} color={theme.palette.info.main} />;
+    if (description.includes('nắng') || description.includes('quang')) return <IconSun {...iconProps} color="#FF9800" />;
+    if (description.includes('mây')) return <IconCloud {...iconProps} color={theme.palette.primary.main} />;
+    return <IconCloud {...iconProps} color={theme.palette.primary.main} />;
+  };
+
   return (
-    <Tooltip title="Dự báo thời tiết Hà Nội 3 ngày tới (AI)" arrow>
-      <WeatherContainer sx={{ display: { xs: 'none', lg: 'flex' } }}>
-        <Box sx={{ overflow: 'hidden', width: '100%', position: 'relative' }}>
-          <ScrollingContent>
-            <Stack direction="row" spacing={12} alignItems="center">
-              <Stack direction="row" alignItems="center">
-                {getWeatherIcon(forecast)}
-                <Typography
-                  sx={{
-                    fontWeight: 700,
-                    fontSize: '1rem',
-                    color: theme.palette.primary.main,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em'
-                  }}
-                >
-                  {forecast}
-                </Typography>
-              </Stack>
-              {/* Thêm khoảng trống và icon phân cách cho dải chạy liên tục */}
-              <IconCloud size={20} color={theme.palette.grey[300]} />
+    <Box sx={{ 
+      flexGrow: 1, 
+      display: { xs: 'none', lg: 'flex' }, 
+      justifyContent: 'center', 
+      alignItems: 'center',
+      px: 1,
+      minHeight: '40px'
+    }}>
+      <Tooltip title="Dự báo thời tiết Hà Nội 3 ngày tới (AI)" arrow>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+          {forecastLines.map((line, index) => (
+            <Stack key={index} direction="row" alignItems="center">
+              {getSmallWeatherIcon(line)}
+              <Typography
+                sx={{
+                  fontWeight: 600,
+                  fontSize: '0.65rem',
+                  lineHeight: 1.1,
+                  color: theme.palette.primary.main,
+                  textTransform: 'uppercase',
+                  textAlign: 'center',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {line}
+              </Typography>
             </Stack>
-          </ScrollingContent>
+          ))}
         </Box>
-      </WeatherContainer>
-    </Tooltip>
+      </Tooltip>
+    </Box>
   );
 };
 

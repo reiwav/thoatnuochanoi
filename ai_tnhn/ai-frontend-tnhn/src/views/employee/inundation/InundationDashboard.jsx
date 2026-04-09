@@ -100,9 +100,17 @@ const getLatestData = (report) => {
     };
 };
 
-const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, handleOpenViewer, navigate, isMobile, basePath, hasPermission }) => {
+const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, handleOpenViewer, navigate, isMobile, basePath, hasPermission, isEmployee }) => {
     const [open, setOpen] = useState(point.status === 'active');
     const latest = useMemo(() => getLatestData(point.active_report || point.last_report), [point]);
+    const needsCorrection = useMemo(() => {
+        const report = point.active_report || point.last_report;
+        return report?.needs_correction || report?.updates?.some(u => u.needs_correction);
+    }, [point]);
+    const needsCorrectionUpdateId = useMemo(() => {
+        const report = point.active_report || point.last_report;
+        return report?.needs_correction_update_id || '';
+    }, [point]);
 
     const renderCard = () => (
         <Paper elevation={0} sx={{ p: 2, mb: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 3, bgcolor: 'background.paper' }}>
@@ -112,7 +120,13 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                         variant="h5"
                         onClick={() => {
                             if (point.status === 'active') {
-                                if (hasPermission('inundation:edit')) navigate(`${basePath}/inundation/form?tab=1&id=${point.active_report.id}&name=${encodeURIComponent(point.name)}`);
+                                if (hasPermission('inundation:edit') || (isEmployee && needsCorrection)) {
+                                    let url = `${basePath}/inundation/form?tab=1&id=${point.active_report.id}&name=${encodeURIComponent(point.name)}`;
+                                    if (needsCorrection && needsCorrectionUpdateId) {
+                                        url += `&edit_update_id=${needsCorrectionUpdateId}`;
+                                    }
+                                    navigate(url);
+                                }
                             } else {
                                 if (hasPermission('inundation:create')) navigate(`${basePath}/inundation/form?tab=0&point_id=${point.id}&name=${encodeURIComponent(point.name)}`);
                             }
@@ -122,8 +136,8 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                             color: 'primary.dark',
                             mb: 1,
                             lineHeight: 1.2,
-                            cursor: (point.status === 'active' ? hasPermission('inundation:edit') : hasPermission('inundation:create')) ? 'pointer' : 'default',
-                            '&:hover': { color: (point.status === 'active' ? hasPermission('inundation:edit') : hasPermission('inundation:create')) ? 'primary.main' : 'primary.dark' }
+                            cursor: (point.status === 'active' ? (hasPermission('inundation:edit') || (isEmployee && needsCorrection)) : hasPermission('inundation:create')) ? 'pointer' : 'default',
+                            '&:hover': { color: (point.status === 'active' ? (hasPermission('inundation:edit') || (isEmployee && needsCorrection)) : hasPermission('inundation:create')) ? 'primary.main' : 'primary.dark' }
                         }}
                     >
                         {point.name}
@@ -139,6 +153,18 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                                 label={getTrafficStatusLabel(latest.traffic_status)}
                                 size="small" color={getTrafficStatusColor(latest.traffic_status)}
                                 variant="outlined" sx={{ fontWeight: 800 }}
+                            />
+                        )}
+                        {needsCorrection && (
+                            <Chip
+                                label="CẦN SỬA"
+                                size="small"
+                                color="error"
+                                sx={{
+                                    fontWeight: 900,
+                                    animation: 'blink 1s infinite',
+                                    border: '1px solid white'
+                                }}
                             />
                         )}
                     </Stack>
@@ -201,13 +227,24 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                     </Box>
 
                     {point.status === 'active' ? (
-                        hasPermission('inundation:edit') && (
+                        (hasPermission('inundation:edit') || (isEmployee && needsCorrection)) && (
                             <Button
                                 fullWidth variant="contained" color="error" size="large"
-                                onClick={() => navigate(`${basePath}/inundation/form?tab=1&id=${point.active_report.id}&name=${encodeURIComponent(point.name)}`)}
-                                sx={{ borderRadius: 2, fontWeight: 800, py: 1.5 }}
+                                onClick={() => {
+                                    let url = `${basePath}/inundation/form?tab=1&id=${point.active_report.id}&name=${encodeURIComponent(point.name)}`;
+                                    if (needsCorrection && needsCorrectionUpdateId) {
+                                        url += `&edit_update_id=${needsCorrectionUpdateId}`;
+                                    }
+                                    navigate(url);
+                                }}
+                                sx={{
+                                    borderRadius: 2,
+                                    fontWeight: 800,
+                                    py: 1.5,
+                                    animation: needsCorrection ? 'pulse-red 2s infinite' : 'none'
+                                }}
                             >
-                                Cập nhật tình hình
+                                {needsCorrection ? 'Chỉnh sửa theo yêu cầu' : 'Cập nhật tình hình'}
                             </Button>
                         )
                     ) : (
@@ -239,15 +276,21 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                 <TableCell sx={{ p: 2 }}>
                     <Typography
                         variant="body2"
-                        sx={{ 
-                            fontWeight: 800, 
-                            cursor: (point.status === 'active' ? hasPermission('inundation:edit') : hasPermission('inundation:create')) ? 'pointer' : 'default', 
-                            '&:hover': { color: (point.status === 'active' ? hasPermission('inundation:edit') : hasPermission('inundation:create')) ? 'primary.main' : 'primary.dark' }, 
-                            color: 'primary.dark' 
+                        sx={{
+                            fontWeight: 800,
+                            cursor: (point.status === 'active' ? (hasPermission('inundation:edit') || (isEmployee && needsCorrection)) : hasPermission('inundation:create')) ? 'pointer' : 'default',
+                            '&:hover': { color: (point.status === 'active' ? (hasPermission('inundation:edit') || (isEmployee && needsCorrection)) : hasPermission('inundation:create')) ? 'primary.main' : 'primary.dark' },
+                            color: 'primary.dark'
                         }}
                         onClick={() => {
                             if (point.status === 'active') {
-                                if (hasPermission('inundation:edit')) navigate(`${basePath}/inundation/form?tab=1&id=${point.active_report.id}&name=${encodeURIComponent(point.name)}`);
+                                if (hasPermission('inundation:edit') || (isEmployee && needsCorrection)) {
+                                    let url = `${basePath}/inundation/form?tab=1&id=${point.active_report.id}&name=${encodeURIComponent(point.name)}`;
+                                    if (needsCorrection && needsCorrectionUpdateId) {
+                                        url += `&edit_update_id=${needsCorrectionUpdateId}`;
+                                    }
+                                    navigate(url);
+                                }
                             } else {
                                 if (hasPermission('inundation:create')) navigate(`${basePath}/inundation/form?tab=0&point_id=${point.id}&name=${encodeURIComponent(point.name)}`);
                             }
@@ -399,7 +442,7 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
     );
 };
 
-const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenViewer, navigate, isMobile, basePath, getDuration }) => {
+const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenViewer, navigate, isMobile, basePath, getDuration, hasPermission, isEmployee }) => {
     const [open, setOpen] = useState(report.status === 'active');
     const latest = useMemo(() => getLatestData(report), [report]);
 
@@ -420,6 +463,18 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenVi
                             color={report.status === 'active' ? 'error' : 'success'}
                             size="small" sx={{ fontWeight: 800 }}
                         />
+                        {(report?.needs_correction || report?.updates?.some(u => u.needs_correction)) && (
+                            <Chip
+                                label="CẦN SỬA"
+                                size="small"
+                                color="error"
+                                sx={{
+                                    fontWeight: 900,
+                                    animation: 'blink 1s infinite',
+                                    border: '1px solid white'
+                                }}
+                            />
+                        )}
                     </Stack>
                 </Box>
                 <IconButton size="small" onClick={() => setOpen(!open)} sx={{ mt: -0.5 }}>
@@ -511,6 +566,19 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenVi
                                             <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'error.main', fontStyle: 'italic', fontWeight: 700 }}>
                                                 Reviewer: {upd.review_comment}
                                             </Typography>
+                                        )}
+                                        {(hasPermission?.('inundation:edit') || (isEmployee && upd.needs_correction)) && (
+                                            <Button
+                                                size="small" startIcon={<IconEdit size={16} />}
+                                                variant="contained" color="error"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    navigate(`${basePath}/inundation/form?tab=1&id=${report.id}&name=${encodeURIComponent(report.street_name)}&edit_update_id=${upd.id}`);
+                                                }}
+                                                sx={{ borderRadius: 10, fontSize: '0.7rem', fontWeight: 700, mt: 1, py: 0.2 }}
+                                            >
+                                                Sửa nội dung
+                                            </Button>
                                         )}
                                         {upd.old_data?.length > 0 && (
                                             <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
@@ -677,6 +745,19 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenVi
                                                             Reviewer: {upd.review_comment}
                                                         </Typography>
                                                     )}
+                                                    {(hasPermission('inundation:edit') || (isEmployee && upd.needs_correction)) && (
+                                                        <Button
+                                                            size="small" startIcon={<IconEdit size={16} />}
+                                                            variant="contained" color="error"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                navigate(`${basePath}/inundation/form?tab=1&id=${point.active_report.id}&name=${encodeURIComponent(point.name)}&edit_update_id=${upd.id}`);
+                                                            }}
+                                                            sx={{ borderRadius: 10, fontSize: '0.7rem', fontWeight: 700, mt: 1, py: 0.2 }}
+                                                        >
+                                                            Sửa nội dung
+                                                        </Button>
+                                                    )}
                                                     {upd.old_data?.length > 0 && (
                                                         <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
                                                             <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary' }}>Dữ liệu cũ:</Typography>
@@ -708,8 +789,8 @@ const InundationDashboard = () => {
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
     // Get auth state from Zustand
-    const { role: userRole, user: userInfo, logout, hasPermission } = useAuthStore();
-    const basePath = userRole === 'employee' ? '/company' : '/admin';
+    const { isEmployee, role: userRole, user: userInfo, logout, hasPermission } = useAuthStore();
+    const basePath = isEmployee ? '/company' : '/admin';
 
     const [points, setPoints] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -988,6 +1069,8 @@ const InundationDashboard = () => {
                                 navigate={navigate}
                                 isMobile={isMobile}
                                 basePath={basePath}
+                                hasPermission={hasPermission}
+                                isEmployee={isEmployee}
                             />
                         ))}
                     <TablePagination
@@ -1041,6 +1124,8 @@ const InundationDashboard = () => {
                                         navigate={navigate}
                                         isMobile={isMobile}
                                         basePath={basePath}
+                                        hasPermission={hasPermission}
+                                        isEmployee={isEmployee}
                                     />
                                 ))
                             )}
@@ -1450,6 +1535,7 @@ const InundationDashboard = () => {
                                 isMobile={isMobile}
                                 basePath={basePath}
                                 hasPermission={hasPermission}
+                                isEmployee={isEmployee}
                             />
                         ))}
                 </Stack>
@@ -1487,6 +1573,7 @@ const InundationDashboard = () => {
                                         isMobile={isMobile}
                                         basePath={basePath}
                                         hasPermission={hasPermission}
+                                        isEmployee={isEmployee}
                                     />
                                 ))}
                         </TableBody>

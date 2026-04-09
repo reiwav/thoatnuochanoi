@@ -74,7 +74,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                 const [pointsRes, consRes, pumpRes, rolesRes] = await Promise.all([
                     inundationApi.getPointsStatus({ per_page: 1000, org_id: orgIdToUse }),
                     emergencyConstructionApi.getAll({ per_page: 1000, org_id: orgIdToUse }),
-                    pumpingStationApi.list({ per_page: 1000 }),
+                    pumpingStationApi.list({ per_page: 1000, org_id: orgIdToUse }),
                     axiosClient.get('/admin/roles')
                 ]);
 
@@ -91,9 +91,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                 }
 
                 if (rolesRes.data?.status === 'success') {
-                    let rls = rolesRes.data.data || [];
-                    rls = rls.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'vi', { sensitivity: 'base' }));
-                    setRoles(rls);
+                    setRoles(rolesRes.data.data || []);
                 }
             } catch (err) {
                 console.error('Lỗi tải dữ liệu:', err);
@@ -109,22 +107,6 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
         setFormData(prev => {
             const newData = { ...prev, [field]: value };
 
-            // If changing organization, check if current role is still valid
-            if (field === 'org_id' && value) {
-                const selectedOrg = organizations.find(o => o.id === value);
-                const isCompany = selectedOrg?.code?.toUpperCase() === 'TNHN';
-
-                // Find if current role is valid for the new org type
-                const selectedRole = roles.find(r => r.code === prev.role);
-                const isCurrentRoleValid = selectedRole ? selectedRole.is_company === isCompany : false;
-
-                if (!isCurrentRoleValid) {
-                    // Default fallback: Find first valid role for this org type
-                    const defaultRole = roles.find(r => r.is_company === isCompany);
-                    newData.role = defaultRole ? defaultRole.code : (isCompany ? ROLES.ROLE_GIAM_DOC_CTY : ROLES.ROLE_CONG_NHAN_CTY);
-                }
-            }
-
             return newData;
         });
     };
@@ -137,20 +119,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
         onSubmit(formData);
     };
 
-    const filteredRoles = useMemo(() => {
-        return roles.filter(r => {
-            // 1. Exclude Super Admin from generic creation to prevent accidental elevation
-            if (r.code === ROLES.ROLE_SUPER_ADMIN) return false;
-
-            // 2. Dynamic Filtering: Match organization type (HQ vs Unit)
-            const selectedOrg = organizations.find(o => o.id === formData.org_id);
-            if (!selectedOrg) return true;
-
-            const isCompanyHQ = selectedOrg?.code?.toUpperCase() === 'TNHN';
-            // Only show roles matching the organization's type (is_company flag from DB)
-            return r.is_company === isCompanyHQ;
-        });
-    }, [roles, organizations, formData.org_id]);
+    const filteredRoles = roles;
 
     return (
         <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -214,7 +183,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                         </FormControl>
                     )}
 
-                    {([ROLES.ROLE_EMPLOYEE, ROLES.ROLE_CONG_NHAN_CTY].includes(formData.role)) && (
+                    {roles.find(r => r.code === formData.role)?.is_employee && (
                         <>
                             <Box>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>

@@ -1,23 +1,47 @@
 package handler
 
 import (
+	"ai-api-tnhn/constant"
 	"ai-api-tnhn/handler/filters"
 	"ai-api-tnhn/internal/models"
+	"ai-api-tnhn/internal/service/auth"
 	"ai-api-tnhn/internal/service/station"
 	"ai-api-tnhn/utils/web"
+	
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/gin-gonic/gin"
 )
 
 type StationHandler struct {
 	web.JsonRender
-	service station.Service
+	service     station.Service
+	authService auth.Service
+	contextWith web.ContextWith
 }
 
-func NewStationHandler(service station.Service) *StationHandler {
+func NewStationHandler(service station.Service, authService auth.Service, contextWith web.ContextWith) *StationHandler {
 	return &StationHandler{
-		service: service,
+		service:     service,
+		authService: authService,
+		contextWith: contextWith,
 	}
+}
+
+func (h *StationHandler) checkPermissions(c *gin.Context) (isSuperAdmin bool, isAllowedAll bool, user *models.User) {
+	token := h.contextWith.GetToken(c.Request)
+	user, err := h.authService.GetProfile(c.Request.Context(), token)
+	if err != nil || user == nil {
+		return false, false, nil
+	}
+
+	isSuperAdmin = user.Role == constant.ROLE_SUPER_ADMIN ||
+		user.Role == "supper_admin" ||
+		user.Role == "supper_admib" ||
+		user.Role == "super_admin "
+
+	isAllowedAll = isSuperAdmin || user.IsCompany
+	return isSuperAdmin, isAllowedAll, user
 }
 
 // RAIN STATIONS
@@ -64,6 +88,26 @@ func (h *StationHandler) ListRain(c *gin.Context) {
 		web.AssertNil(web.BadRequest(err.Error()))
 		return
 	}
+
+	// Permission-based filtering
+	_, isAllowedAll, user := h.checkPermissions(c)
+	if user != nil && !isAllowedAll {
+		org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
+		if err == nil && org != nil {
+			if len(org.RainStationIDs) > 0 {
+				// UNION logic: Owned by Org OR in Shared IDs list
+				req.AddWhere("org_id_or_ids", "$or", []bson.M{
+					{"org_id": user.OrgID},
+					{"_id": bson.M{"$in": org.RainStationIDs}},
+				})
+			} else {
+				req.AddWhere("org_id", "org_id", user.OrgID)
+			}
+		} else {
+			req.AddWhere("org_id", "org_id", user.OrgID)
+		}
+	}
+
 	items, total, err := h.service.ListRainStations(c.Request.Context(), req)
 	web.AssertNil(err)
 	h.SendData(c, gin.H{"data": items, "total": total})
@@ -113,6 +157,26 @@ func (h *StationHandler) ListLake(c *gin.Context) {
 		web.AssertNil(web.BadRequest(err.Error()))
 		return
 	}
+
+	// Permission-based filtering
+	_, isAllowedAll, user := h.checkPermissions(c)
+	if user != nil && !isAllowedAll {
+		org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
+		if err == nil && org != nil {
+			if len(org.LakeStationIDs) > 0 {
+				// UNION logic: Owned by Org OR in Shared IDs list
+				req.AddWhere("org_id_or_ids", "$or", []bson.M{
+					{"org_id": user.OrgID},
+					{"_id": bson.M{"$in": org.LakeStationIDs}},
+				})
+			} else {
+				req.AddWhere("org_id", "org_id", user.OrgID)
+			}
+		} else {
+			req.AddWhere("org_id", "org_id", user.OrgID)
+		}
+	}
+
 	items, total, err := h.service.ListLakeStations(c.Request.Context(), req)
 	web.AssertNil(err)
 	h.SendData(c, gin.H{"data": items, "total": total})
@@ -162,6 +226,26 @@ func (h *StationHandler) ListRiver(c *gin.Context) {
 		web.AssertNil(web.BadRequest(err.Error()))
 		return
 	}
+
+	// Permission-based filtering
+	_, isAllowedAll, user := h.checkPermissions(c)
+	if user != nil && !isAllowedAll {
+		org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
+		if err == nil && org != nil {
+			if len(org.RiverStationIDs) > 0 {
+				// UNION logic: Owned by Org OR in Shared IDs list
+				req.AddWhere("org_id_or_ids", "$or", []bson.M{
+					{"org_id": user.OrgID},
+					{"_id": bson.M{"$in": org.RiverStationIDs}},
+				})
+			} else {
+				req.AddWhere("org_id", "org_id", user.OrgID)
+			}
+		} else {
+			req.AddWhere("org_id", "org_id", user.OrgID)
+		}
+	}
+
 	items, total, err := h.service.ListRiverStations(c.Request.Context(), req)
 	web.AssertNil(err)
 	h.SendData(c, gin.H{"data": items, "total": total})

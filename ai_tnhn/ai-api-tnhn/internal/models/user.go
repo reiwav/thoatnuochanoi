@@ -13,6 +13,8 @@ type User struct {
 	Username        string        `bson:"username" json:"username"`
 	Password        hash.Password `bson:"password" json:"password"`
 	Role            string        `bson:"role" json:"role"`
+	IsEmployee      bool          `bson:"-" json:"is_employee"`
+	IsCompany       bool          `bson:"-" json:"is_company"`
 	Active          bool          `bson:"active" json:"active"`
 
 	// RBAC for Employee

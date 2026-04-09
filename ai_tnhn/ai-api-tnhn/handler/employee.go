@@ -32,14 +32,16 @@ func (h *EmployeeHandler) Create(c *gin.Context) {
 	// OrgID should be set from token/context if not provided?
 	// Or we assume Admin user passes OrgID or we force it from Admin's OrgID.
 	// Usually admin manages their own org.
-	orgID, err := h.contextWith.GetOrgId(c)
+	orgID, err := h.contextWith.GetOrgID(c)
 	if err == nil && orgID != "" && orgID != "all" {
 		req.OrgID = orgID
 	}
 	// If OrgID is still empty (e.g. Super Admin didn't provide one in JSON),
 	// service checks it. Super Admin might provide OrgID in JSON.
 
-	res, err := h.service.Create(c.Request.Context(), &req)
+	// Get current user's role from context
+	currentRole, _ := h.contextWith.GetRole(c)
+	res, err := h.service.Create(c.Request.Context(), &req, currentRole)
 	web.AssertNil(err)
 	h.SendData(c, res)
 }
@@ -55,7 +57,9 @@ func (h *EmployeeHandler) Update(c *gin.Context) {
 	// Similar logic for OrgID if needed, but existing user has OrgID.
 	// Service handles retrieval.
 
-	err := h.service.Update(c.Request.Context(), id, &req)
+	// Get current user's role from context
+	currentRole, _ := h.contextWith.GetRole(c)
+	err := h.service.Update(c.Request.Context(), id, &req, currentRole)
 	web.AssertNil(err)
 	h.SendData(c, true)
 }
@@ -84,7 +88,7 @@ func (h *EmployeeHandler) List(c *gin.Context) {
 	// Force OrgID from context for security (unless Super Admin with 'all')
 	// Super Admin logic (Role check) should be here or middleware.
 	// Assuming MidBasicType middleware already sets OrgID in context.
-	orgID, err := h.contextWith.GetOrgId(c)
+	orgID, err := h.contextWith.GetOrgID(c)
 	if err == nil {
 		if orgID != "all" {
 			req.OrgID = orgID // Override request OrgID with context OrgID

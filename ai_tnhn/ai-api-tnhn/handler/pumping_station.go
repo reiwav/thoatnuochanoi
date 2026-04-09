@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"ai-api-tnhn/constant"
 	"ai-api-tnhn/internal/base/mgo/filter"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/service/auth"
@@ -9,6 +10,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type PumpingStationHandler struct {
@@ -24,6 +26,21 @@ func NewPumpingStationHandler(service pumpingstation.Service, authService auth.S
 		authService: authService,
 		contextWith: contextWith,
 	}
+}
+
+func (h *PumpingStationHandler) checkPermissions(c *gin.Context) (isSuperAdmin bool, isAllowedAll bool, user *web.ClientCache) {
+	user = h.contextWith.GetTokenFromContext(c)
+	if user == nil {
+		return false, false, nil
+	}
+
+	isSuperAdmin = user.Role == constant.ROLE_SUPER_ADMIN ||
+		user.Role == "supper_admin" ||
+		user.Role == "supper_admib" ||
+		user.Role == "super_admin "
+
+	isAllowedAll = isSuperAdmin || user.IsCompany
+	return isSuperAdmin, isAllowedAll, user
 }
 
 func (h *PumpingStationHandler) Create(c *gin.Context) {
@@ -76,6 +93,55 @@ func (h *PumpingStationHandler) List(c *gin.Context) {
 	}
 	size, _ := strconv.Atoi(sizeStr)
 	f.SetOrderBy("-created_at")
+
+	// Permission-based filtering
+	_, isAllowedAll, user := h.checkPermissions(c)
+	if user == nil {
+		h.SendError(c, web.Unauthorized("vui lòng đăng nhập lại"))
+		return
+	}
+
+	targetOrgID := ""
+	if isAllowedAll {
+		targetOrgID = c.Query("org_id")
+	} else {
+		targetOrgID = user.OrgID
+	}
+
+	if targetOrgID != "" {
+		org, err := h.service.GetOrgByID(c.Request.Context(), targetOrgID)
+		if err == nil && org != nil {
+			if len(org.PumpingStationIDs) > 0 {
+				// UNION logic: Owned by Org OR in Shared IDs list
+				f.AddWhere("org_id_or_ids", "$or", []bson.M{
+					{"org_id": targetOrgID},
+					{"_id": bson.M{"$in": org.PumpingStationIDs}},
+				})
+			} else {
+				f.AddWhere("org_id", "org_id", targetOrgID)
+			}
+		} else {
+			f.AddWhere("org_id", "org_id", targetOrgID)
+		}
+	} else if user.Role == constant.ROLE_EMPLOYEE || user.IsEmployee {
+		// Employee view: Only their assigned station
+		if user.UserID != "" {
+			// Fetch user details to get assignment (or we could cache it in Token but let's stick to profile for now if needed)
+			// Actually, ClientCache should have the assignment if we want to be fast, 
+			// but for now let's just use what's available.
+			// Wait, the previous logic used user.AssignedPumpingStationID.
+			// I should probably fetch the user profile if it's an employee.
+			profile, err := h.authService.GetProfile(c.Request.Context(), user.Token)
+			if err == nil && profile != nil {
+				if profile.AssignedPumpingStationID != "" {
+					f.AddWhere("id", "_id", profile.AssignedPumpingStationID)
+				} else {
+					h.SendData(c, gin.H{"data": []interface{}{}, "total": 0})
+					return
+				}
+			}
+		}
+	}
 
 	res, total, err := h.service.List(c.Request.Context(), f)
 	if err != nil {

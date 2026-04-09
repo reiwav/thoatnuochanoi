@@ -6,6 +6,7 @@ import (
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/service/auth"
 	"ai-api-tnhn/internal/service/organization"
+	"ai-api-tnhn/internal/repository"
 	"ai-api-tnhn/utils/web"
 
 	"github.com/gin-gonic/gin"
@@ -15,13 +16,15 @@ type OrganizationHandler struct {
 	web.JsonRender
 	service     organization.Service
 	authService auth.Service
+	roleRepo    repository.Role
 	contextWith web.ContextWith
 }
 
-func NewOrganizationHandler(service organization.Service, authService auth.Service, contextWith web.ContextWith) *OrganizationHandler {
+func NewOrganizationHandler(service organization.Service, authService auth.Service, roleRepo repository.Role, contextWith web.ContextWith) *OrganizationHandler {
 	return &OrganizationHandler{
 		service:     service,
 		authService: authService,
+		roleRepo:    roleRepo,
 		contextWith: contextWith,
 	}
 }
@@ -95,20 +98,22 @@ func (h *OrganizationHandler) List(c *gin.Context) {
 		return
 	}
 
-	// Security: If not Super Admin or TNHN, force filter to their own OrgID
+	// Security: If not Super Admin or Company (is_company == true), force filter to their own OrgID
 	token := h.contextWith.GetToken(c.Request)
 	user, err := h.authService.GetProfile(c.Request.Context(), token)
 	if err == nil && user != nil {
 		isSuperAdmin := user.Role == constant.ROLE_SUPER_ADMIN || user.Role == "supper_admin" || user.Role == "supper_admib" || user.Role == "super_admin "
-		isTNHN := false
+		isCompany := false
 
-		// Check if user belongs to TNHN org
-		org, errOrg := h.service.GetByID(c.Request.Context(), user.OrgID)
-		if errOrg == nil && org != nil && (org.Code == "TNHN" || org.Code == "tnhn") {
-			isTNHN = true
+		if !isSuperAdmin {
+			// Check if user's role is a company role (is_company = true)
+			roleInfo, errRole := h.roleRepo.GetByCode(c.Request.Context(), user.Role)
+			if errRole == nil && roleInfo != nil && roleInfo.IsCompany {
+				isCompany = true
+			}
 		}
 
-		if !isSuperAdmin && !isTNHN {
+		if !isSuperAdmin && !isCompany {
 			req.ID = user.OrgID
 		}
 	}

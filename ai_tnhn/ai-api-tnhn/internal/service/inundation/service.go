@@ -11,9 +11,10 @@ import (
 	"sync"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
 	"os"
 	"path/filepath"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type Service interface {
@@ -28,6 +29,7 @@ type Service interface {
 	// Review and Correction
 	ReviewReport(ctx context.Context, reportID, comment, reviewerID, reviewerEmail, reviewerName string) error
 	ReviewUpdate(ctx context.Context, updateID, comment, reviewerID, reviewerEmail, reviewerName string) error
+	GetUpdateByID(ctx context.Context, updateID string) (*models.InundationUpdate, error)
 	UpdateUpdateContent(ctx context.Context, updateID string, update *models.InundationUpdate, images []ImageContent) error
 
 	// Points management
@@ -111,7 +113,11 @@ func (s *service) CreateReport(ctx context.Context, report *models.InundationRep
 	// 1. Get Org to find Drive Folder
 	// 3. Save images locally for async upload
 	if len(images) > 0 {
-		savedPaths, err := s.saveLocalImages(report.ID, images)
+		prefix := report.ID
+		if prefix == "" {
+			prefix = fmt.Sprintf("tmp_%d", time.Now().UnixNano())
+		}
+		savedPaths, err := s.saveLocalImages(prefix, images)
 		if err != nil {
 			fmt.Printf("Warning: failed to save some images locally: %v\n", err)
 		}
@@ -151,7 +157,7 @@ func (s *service) AddUpdate(ctx context.Context, reportID string, update *models
 
 	// 3. Save images locally
 	if len(images) > 0 {
-		savedPaths, err := s.saveLocalImages(fmt.Sprintf("%s_%d", reportID, time.Now().Unix()), images)
+		savedPaths, err := s.saveLocalImages(fmt.Sprintf("%s_%d", reportID, time.Now().UnixNano()), images)
 		if err != nil {
 			fmt.Printf("Warning: failed to save some update images locally: %v\n", err)
 		}
@@ -225,11 +231,15 @@ func (s *service) ListReportsWithFilter(ctx context.Context, orgID, status, traf
 	f.Page = int64(page + 1) // filter uses 1-based page
 	f.PerPage = int64(size)
 
-	if orgID != "" {
-		f.AddWhere("org_id", "org_id", orgID)
-	}
-	if len(pointIDs) > 0 {
+	if len(pointIDs) > 0 && orgID != "" {
+		f.AddWhere("org_id_or_points", "$or", []bson.M{
+			{"org_id": orgID},
+			{"point_id": bson.M{"$in": pointIDs}},
+		})
+	} else if len(pointIDs) > 0 {
 		f.AddWhere("point_id", "point_id", bson.M{"$in": pointIDs})
+	} else if orgID != "" {
+		f.AddWhere("org_id", "org_id", orgID)
 	}
 	if status != "" {
 		f.AddWhere("status", "status", status)
@@ -318,6 +328,7 @@ func (s *service) UpdateReport(ctx context.Context, id string, report *models.In
 	existing.Description = report.Description
 	existing.TrafficStatus = report.TrafficStatus
 	existing.NeedsCorrection = false
+	existing.NeedsCorrectionUpdateID = ""
 
 	if len(images) > 0 {
 		savedPaths, err := s.saveLocalImages(id, images)
@@ -369,7 +380,10 @@ func (s *service) ReviewUpdate(ctx context.Context, updateID, comment, reviewerI
 	}
 
 	report, err := s.inundationRepo.GetByID(ctx, update.ReportID)
-	if err == nil && report != nil && report.Status != "active" {
+	if err != nil {
+		return err
+	}
+	if report.Status != "active" {
 		return fmt.Errorf("chỉ được phép nhận xét khi báo cáo đang ở trạng thái active")
 	}
 
@@ -378,7 +392,18 @@ func (s *service) ReviewUpdate(ctx context.Context, updateID, comment, reviewerI
 	update.ReviewerEmail = reviewerEmail
 	update.ReviewerName = reviewerName
 	update.NeedsCorrection = true
-	return s.inundationUpdateRepo.Update(ctx, update)
+	if err := s.inundationUpdateRepo.Update(ctx, update); err != nil {
+		return err
+	}
+
+	// Gắn cờ lên report: update nào cần sửa
+	report.NeedsCorrection = true
+	report.NeedsCorrectionUpdateID = updateID
+	return s.inundationRepo.Update(ctx, report)
+}
+
+func (s *service) GetUpdateByID(ctx context.Context, updateID string) (*models.InundationUpdate, error) {
+	return s.inundationUpdateRepo.GetByID(ctx, updateID)
 }
 
 func (s *service) UpdateUpdateContent(ctx context.Context, updateID string, updatedData *models.InundationUpdate, images []ImageContent) error {
@@ -437,6 +462,8 @@ func (s *service) UpdateUpdateContent(ctx context.Context, updateID string, upda
 		mainReport.Length = update.Length
 		mainReport.Width = update.Width
 		mainReport.TrafficStatus = update.TrafficStatus
+		mainReport.NeedsCorrection = false
+		mainReport.NeedsCorrectionUpdateID = ""
 		_ = s.inundationRepo.Update(ctx, mainReport)
 	}
 
@@ -455,22 +482,49 @@ func (s *service) CreatePoint(ctx context.Context, point models.InundationPoint)
 }
 
 func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []string) ([]PointStatus, error) {
-	// 1. Get all managed points
-	var points []models.InundationPoint
-	var err error
-	if len(pointIDs) > 0 {
-		points = make([]models.InundationPoint, 0, len(pointIDs))
-		for _, pid := range pointIDs {
-			p, err := s.inundationPointRepo.GetByID(ctx, pid)
-			if err == nil && p != nil {
-				points = append(points, *p)
+	// 1. Get all managed points (Union of owned points and shared points)
+	allPointsMap := make(map[string]models.InundationPoint)
+
+	// A. Get points owned by this organization
+	if orgID != "" {
+		ownedPoints, err := s.inundationPointRepo.ListByOrg(ctx, orgID)
+		if err == nil {
+			for _, p := range ownedPoints {
+				allPointsMap[p.ID] = p
 			}
 		}
-	} else {
-		points, err = s.inundationPointRepo.ListByOrg(ctx, orgID)
-		if err != nil {
-			return nil, err
+	}
+
+	// B. Get points explicitly shared via pointIDs list
+	if len(pointIDs) > 0 {
+		for _, pid := range pointIDs {
+			if _, exists := allPointsMap[pid]; !exists {
+				p, err := s.inundationPointRepo.GetByID(ctx, pid)
+				if err == nil && p != nil {
+					allPointsMap[p.ID] = *p
+				}
+			}
 		}
+	}
+
+	// C. If both are empty and user is likely a Super Admin (orgID == "" and pointIDs empty),
+	// ListByOrg("") will fetch all active points.
+	if orgID == "" && len(pointIDs) == 0 {
+		allPoints, err := s.inundationPointRepo.ListByOrg(ctx, "")
+		if err == nil {
+			for _, p := range allPoints {
+				allPointsMap[p.ID] = p
+			}
+		}
+	}
+
+	points := make([]models.InundationPoint, 0, len(allPointsMap))
+	for _, p := range allPointsMap {
+		points = append(points, p)
+	}
+
+	if len(points) == 0 {
+		return []PointStatus{}, nil
 	}
 
 	// 1.5 Get all organizations for mapping names
@@ -480,9 +534,16 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []
 		orgMap[o.ID] = o.Name
 	}
 
-	// 2. Get all active reports for this org (or all if orgID is empty)
+	// 2. Get all active reports for managed points (Union of owned and shared)
 	f := filter.NewPaginationFilter()
-	if orgID != "" {
+	if len(pointIDs) > 0 && orgID != "" {
+		f.AddWhere("org_id_or_points", "$or", []bson.M{
+			{"org_id": orgID},
+			{"point_id": bson.M{"$in": pointIDs}},
+		})
+	} else if len(pointIDs) > 0 {
+		f.AddWhere("point_id", "point_id", bson.M{"$in": pointIDs})
+	} else if orgID != "" {
 		f.AddWhere("org_id", "org_id", orgID)
 	}
 	f.AddWhere("status", "status", "active")
@@ -506,7 +567,14 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []
 		{"$sort": bson.M{"start_time": -1}},
 		{"$group": bson.M{"_id": "$point_id", "last_id": bson.M{"$first": "$_id"}}},
 	}
-	if orgID != "" {
+	if len(pointIDs) > 0 && orgID != "" {
+		pipeline[0]["$match"].(bson.M)["$or"] = []bson.M{
+			{"org_id": orgID},
+			{"point_id": bson.M{"$in": pointIDs}},
+		}
+	} else if len(pointIDs) > 0 {
+		pipeline[0]["$match"].(bson.M)["point_id"] = bson.M{"$in": pointIDs}
+	} else if orgID != "" {
 		pipeline[0]["$match"].(bson.M)["org_id"] = orgID
 	}
 
@@ -720,12 +788,12 @@ func (s *service) saveLocalImages(prefix string, images []ImageContent) ([]strin
 	var savedPaths []string
 	for i, img := range images {
 		// Use a unique name to avoid collisions
-		fileName := fmt.Sprintf("%s_%d_%d%s", prefix, time.Now().Unix(), i, filepath.Ext(img.Name))
+		fileName := fmt.Sprintf("%s_%d_%d%s", prefix, time.Now().UnixNano(), i, filepath.Ext(img.Name))
 		if filepath.Ext(img.Name) == "" {
 			// Fallback extension if missing
 			fileName += ".jpg"
 		}
-		
+
 		relPath := filepath.Join("inundation_tmp", fileName)
 		fullPath := filepath.Join("uploads", relPath)
 

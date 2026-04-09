@@ -1,12 +1,13 @@
 package handler
 
 import (
+	"ai-api-tnhn/constant"
 	"ai-api-tnhn/handler/filters"
 	"ai-api-tnhn/internal/models"
+	"ai-api-tnhn/internal/repository"
 	"ai-api-tnhn/internal/service/emergency_construction"
 	"ai-api-tnhn/utils/web"
 	"encoding/json"
-	"ai-api-tnhn/internal/repository"
 	"fmt"
 	"strconv"
 	"time"
@@ -28,6 +29,21 @@ func NewEmergencyConstructionHandler(service emergency_construction.Service, aiC
 		service:       service,
 		aiChatLogRepo: aiChatLogRepo,
 	}
+}
+
+func (h *EmergencyConstructionHandler) checkPermissions(c *gin.Context) (isSuperAdmin bool, isAllowedAll bool, client *web.ClientCache) {
+	client = h.GetTokenFromContext(c)
+	if client == nil {
+		return false, false, nil
+	}
+
+	isSuperAdmin = client.Role == constant.ROLE_SUPER_ADMIN ||
+		client.Role == "supper_admin" ||
+		client.Role == "supper_admib" ||
+		client.Role == "super_admin "
+
+	isAllowedAll = isSuperAdmin || client.IsCompany
+	return isSuperAdmin, isAllowedAll, client
 }
 
 func (h *EmergencyConstructionHandler) Create(c *gin.Context) {
@@ -78,14 +94,36 @@ func (h *EmergencyConstructionHandler) List(c *gin.Context) {
 		return
 	}
 
-	// Security isolation
-	client := h.GetTokenFromContext(c)
-	if client.Role != "super_admin" {
-		req.OrgID = client.OrgId
+	// Permission-based filtering
+	_, isAllowedAll, client := h.checkPermissions(c)
+	if client == nil {
+		return
 	}
 
-	if client.Role == "employee" {
-		// Fetch full user profile to get assigned IDs
+	queryOrgID := c.Query("org_id")
+	targetOrgID := ""
+	
+	if isAllowedAll {
+		targetOrgID = queryOrgID
+	} else {
+		targetOrgID = client.OrgID
+	}
+	req.OrgID = targetOrgID
+
+	// 2. Further restrict by specific IDs if needed (Shared points or Employee assignments)
+	if targetOrgID != "" {
+		// Admin/Contextual view: Use Organization's configured IDs
+		org, err := h.service.GetOrgByID(c.Request.Context(), targetOrgID)
+		if err == nil && org != nil && len(org.EmergencyConstructionIDs) > 0 {
+			// UNION logic: Owned by Org OR in Shared IDs list
+			req.AddWhere("org_id_or_ids", "$or", []bson.M{
+				{"org_id": targetOrgID},
+				{"_id": bson.M{"$in": org.EmergencyConstructionIDs}},
+			})
+			req.OrgID = "" // Clear the strict OrgID filter
+		}
+	} else if client.Role == constant.ROLE_EMPLOYEE || client.IsEmployee {
+		// Default mobile app view for employees: only their assigned items
 		user, err := h.service.GetUserByID(c.Request.Context(), client.UserID)
 		if err == nil && user != nil {
 			if len(user.AssignedEmergencyConstructionIDs) > 0 {
@@ -104,33 +142,6 @@ func (h *EmergencyConstructionHandler) List(c *gin.Context) {
 	items, total, err := h.service.List(c.Request.Context(), req)
 	web.AssertNil(err)
 
-	// Persist to chat history if it's a list request (from AI Support)
-	userID := h.GetTokenFromContext(c).UserID
-	if h.aiChatLogRepo != nil && userID != "" {
-		now := time.Now()
-		// Save User Query
-		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
-			UserID: userID, Role: "user", Content: "Xem danh sách công trình khẩn", ChatType: "support", Timestamp: now.Add(-1 * time.Second),
-		})
-
-		// Build table text
-		tableText := "### Danh sách Công trình khẩn\n\n"
-		if total == 0 {
-			tableText += "Không tìm thấy công trình nào."
-		} else {
-			tableText += "| Tên công trình | Địa điểm | Trạng thái | Thao tác |\n"
-			tableText += "| :--- | :--- | :--- | :--- |\n"
-			for _, item := range items {
-				tableText += fmt.Sprintf("| %s | %s | %s | [Xem chi tiết](#emc-history-%s) |\n", item.Name, item.Location, item.Status, item.ID)
-			}
-		}
-
-		// Save AI Response
-		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
-			UserID: userID, Role: "model", Content: tableText, ChatType: "support", Timestamp: now,
-		})
-	}
-
 	h.SendData(c, gin.H{
 		"data":  items,
 		"total": total,
@@ -145,12 +156,16 @@ func (h *EmergencyConstructionHandler) ListHistory(c *gin.Context) {
 	}
 
 	// Security isolation
-	client := h.GetTokenFromContext(c)
-	if client.Role != "super_admin" {
-		req.OrgID = client.OrgId
+	_, isAllowedAll, client := h.checkPermissions(c)
+	if client == nil {
+		return
 	}
 
-	if client.Role == "employee" {
+	if !isAllowedAll {
+		req.OrgID = client.OrgID
+	}
+
+	if client.Role == constant.ROLE_EMPLOYEE || client.IsEmployee {
 		user, err := h.service.GetUserByID(c.Request.Context(), client.UserID)
 		if err == nil && user != nil {
 			if len(user.AssignedEmergencyConstructionIDs) > 0 {
@@ -184,7 +199,7 @@ func (h *EmergencyConstructionHandler) GetHistory(c *gin.Context) {
 
 func (h *EmergencyConstructionHandler) GetProgressByID(c *gin.Context) {
 	client := h.GetTokenFromContext(c)
-	if client.Role == "employee" {
+	if client.Role == constant.ROLE_EMPLOYEE || client.IsEmployee {
 		web.AssertNil(web.Forbidden("Bạn không có quyền xem chi tiết báo cáo này"))
 		return
 	}
@@ -198,7 +213,7 @@ func (h *EmergencyConstructionHandler) GetProgressByID(c *gin.Context) {
 func (h *EmergencyConstructionHandler) ReportProgress(c *gin.Context) {
 	// Security: check if employee is assigned to this construction
 	client := h.GetTokenFromContext(c)
-	if client.Role == "employee" {
+	if client.Role == constant.ROLE_EMPLOYEE || client.IsEmployee {
 		constructionID := c.PostForm("construction_id")
 		user, err := h.service.GetUserByID(c.Request.Context(), client.UserID)
 		if err == nil && user != nil {
@@ -220,7 +235,7 @@ func (h *EmergencyConstructionHandler) ReportProgress(c *gin.Context) {
 
 func (h *EmergencyConstructionHandler) UpdateProgress(c *gin.Context) {
 	client := h.GetTokenFromContext(c)
-	if client.Role == "employee" {
+	if client.Role == constant.ROLE_EMPLOYEE || client.IsEmployee {
 		web.AssertNil(web.Forbidden("Bạn không có quyền chỉnh sửa báo cáo này"))
 		return
 	}
@@ -357,10 +372,16 @@ func (h *EmergencyConstructionHandler) GetProgressHistory(c *gin.Context) {
 func (h *EmergencyConstructionHandler) ExportExcel(c *gin.Context) {
 	date := c.Query("date")
 	orgID := c.Query("org_id")
-	// Security isolation
-	client := h.GetTokenFromContext(c)
-	if client.Role != "super_admin" && client.Role != "" { // Basic role check, super_admin can see all
-		orgID = client.OrgId
+	
+	// Permission-based isolation
+	_, isAllowedAll, client := h.checkPermissions(c)
+	if client != nil {
+		if !isAllowedAll {
+			orgID = client.OrgID
+		}
+	} else {
+		web.AssertNil(web.Unauthorized("vui lòng đăng nhập lại"))
+		return
 	}
 
 	fileID, err := h.service.ExportExcelToDrive(c.Request.Context(), date, orgID)

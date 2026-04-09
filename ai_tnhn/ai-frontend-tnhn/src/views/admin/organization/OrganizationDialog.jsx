@@ -288,7 +288,6 @@ const OrganizationDialog = ({ open, onClose, onSubmit, organization, isEdit }) =
                                     fullWidth label="Mã đơn vị" required size="small"
                                     value={formData.code}
                                     onChange={(e) => handleChange('code', e.target.value)}
-                                    disabled={isEdit}
                                     sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#f8fafc' } }}
                                 />
                                 <Grid container spacing={2}>

@@ -48,7 +48,7 @@ export default function MainLayout() {
   const { menuMaster, menuMasterLoading } = useGetMenuMaster();
   const drawerOpen = menuMaster?.isDashboardDrawerOpened;
 
-  const { role: userRole, user: userInfo, login: storeLogin, logout: storeLogout } = useAuthStore();
+  const { isEmployee, role: userRole, user: userInfo, login: storeLogin, logout: storeLogout } = useAuthStore();
 
   // Auth check
   useEffect(() => {
@@ -76,7 +76,7 @@ export default function MainLayout() {
           if (user.role === 'supper_admin' || user.role === 'super_admib') {
             user.role = 'super_admin';
           }
-          storeLogin(user, currentToken, user.role);
+          storeLogin(user, currentToken, user.role, user.is_employee);
           setIsChecking(false);
         } else {
           storeLogout();
@@ -96,7 +96,6 @@ export default function MainLayout() {
     if (isChecking || !userInfo) return;
 
     const role = userRole || 'employee';
-    const isEmployee = role === 'employee' || role === 'technician' || role === 'cong_nhan_cty';
     const basePath = isEmployee ? '/company' : '/admin';
 
     // If at root, redirect to respective dashboard
@@ -115,7 +114,6 @@ export default function MainLayout() {
     }
   }, [isChecking, userInfo, pathname, navigate, userRole]);
 
-  const isEmployee = userRole === 'employee' || userRole === 'technician' || userRole === 'cong_nhan_cty';
   const basePath = isEmployee ? '/company' : '/admin';
 
   // Fetch active flood count for badge

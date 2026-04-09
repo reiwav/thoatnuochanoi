@@ -21,11 +21,11 @@ const InundationForm = () => {
     const navigate = useNavigate();
     
     // Get auth state from Zustand
-    const { role: userRole, user } = useAuthStore();
+    const { isEmployee, role: userRole, user } = useAuthStore();
     
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-    const basePath = userRole === 'employee' ? '/company' : '/admin';
+    const basePath = isEmployee ? '/company' : '/admin';
 
     const [tab, setTab] = useState(0); // 0 = Báo mới/Cập nhật, 1 = Chi tiết
     const [selectedReport, setSelectedReport] = useState(null);
@@ -48,14 +48,17 @@ const InundationForm = () => {
         }
     }, []);
 
-    useEffect(() => {
-        const tabParam = searchParams.get('tab');
-        if (tabParam !== null) setTab(parseInt(tabParam));
+    const reportId = searchParams.get('id');
+    const tabParam = searchParams.get('tab');
 
-        const reportId = searchParams.get('id');
+    useEffect(() => {
+        if (tabParam !== null) setTab(parseInt(tabParam));
+    }, [tabParam]);
+
+    useEffect(() => {
         if (reportId) fetchReport(reportId);
         else setSelectedReport(null);
-    }, [searchParams, fetchReport]);
+    }, [reportId, fetchReport]);
 
     const handleSuccess = () => {
         const reportId = searchParams.get('id') || selectedReport?.id;
@@ -76,8 +79,11 @@ const InundationForm = () => {
 
         const isReadOnly = searchParams.get('readonly') === 'true';
 
-        // Hide "Cập nhật" tab if report is already resolved or in readonly mode
-        const visibleTabs = (selectedReport?.status === 'resolved' || isReadOnly)
+        const needsCorrection = selectedReport?.needs_correction || 
+                                selectedReport?.updates?.some(u => u.needs_correction);
+
+        // Hide "Cập nhật" tab if report is already resolved or in readonly mode (unless needs correction)
+        const visibleTabs = (selectedReport?.status === 'resolved' || (isReadOnly && !needsCorrection))
             ? allTabs.filter(t => t.id === 1)
             : allTabs;
 

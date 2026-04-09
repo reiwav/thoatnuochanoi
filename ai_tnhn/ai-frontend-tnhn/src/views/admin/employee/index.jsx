@@ -19,8 +19,34 @@ import EmployeeDialog from './EmployeeDialog';
 import useAuthStore from 'store/useAuthStore';
 import * as ROLES from 'constants/role';
 
+const stringToColor = (string) => {
+    let hash = 0;
+    let i;
+    for (i = 0; i < string.length; i += 1) {
+        hash = string.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    let color = '#';
+    for (i = 0; i < 3; i += 1) {
+        const value = (hash >> (i * 8)) & 0xff;
+        color += `00${value.toString(16)}`.slice(-2);
+    }
+    return color;
+};
+
+const getContrastText = (hexcolor) => {
+    if (!hexcolor || hexcolor.length < 7) return '#fff';
+    const r = parseInt(hexcolor.slice(1, 3), 16);
+    const g = parseInt(hexcolor.slice(3, 5), 16);
+    const b = parseInt(hexcolor.slice(5, 7), 16);
+    const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+    return yiq >= 128 ? '#000' : '#fff';
+};
+
 const EmployeeRow = ({ row, handleOpenEdit, handleDelete, roleLabel, orgName, userRole, isMobile, hasPermission }) => {
     const [open, setOpen] = useState(false);
+    const roleTxt = roleLabel(row.role);
+    const bgColor = stringToColor(roleTxt);
+    const textColor = getContrastText(bgColor);
 
     return (
         <>
@@ -41,7 +67,17 @@ const EmployeeRow = ({ row, handleOpenEdit, handleDelete, roleLabel, orgName, us
                 )}
                 {!isMobile && (
                     <TableCell>
-                        <Chip label={roleLabel(row.role)} color={row.role === 'admin_org' ? 'info' : 'default'} size="small" variant="outlined" />
+                        <Chip 
+                            label={roleTxt} 
+                            size="small" 
+                            sx={{ 
+                                bgcolor: bgColor, 
+                                color: textColor, 
+                                fontWeight: 700, 
+                                borderRadius: '8px',
+                                border: 'none'
+                            }} 
+                        />
                     </TableCell>
                 )}
                 {!isMobile && (
@@ -95,7 +131,17 @@ const EmployeeRow = ({ row, handleOpenEdit, handleDelete, roleLabel, orgName, us
                                         <TableRow>
                                             <TableCell component="th" scope="row" sx={{ fontWeight: 600, borderBottom: 'none' }}>Vai trò</TableCell>
                                             <TableCell sx={{ borderBottom: 'none' }}>
-                                                <Chip label={roleLabel(row.role)} color={row.role === 'admin_org' ? 'info' : 'default'} size="small" variant="outlined" />
+                                                <Chip 
+                                                    label={roleTxt} 
+                                                    size="small" 
+                                                    sx={{ 
+                                                        bgcolor: bgColor, 
+                                                        color: textColor, 
+                                                        fontWeight: 700, 
+                                                        borderRadius: '8px',
+                                                        border: 'none'
+                                                    }} 
+                                                />
                                             </TableCell>
                                         </TableRow>
                                         <TableRow>
@@ -122,16 +168,6 @@ const EmployeeList = () => {
     // Get auth state from Zustand
     const { role: userRole, user: userInfo, hasPermission } = useAuthStore();
     const userOrgId = userInfo?.org_id || '';
-    
-    // Management roles that can see/interact with Org selector (backend will filter content)
-    const canSelectOrg = [
-        ROLES.ROLE_SUPER_ADMIN, ROLES.ROLE_CHU_TICH_CTY, ROLES.ROLE_GIAM_DOC_CTY, ROLES.ROLE_PHO_GIAM_DOC_CTY, 
-        ROLES.ROLE_PHONG_HT_MT_CDS, ROLES.ROLE_PHONG_KT_CL, ROLES.ROLE_GIAM_DOC_XN, ROLES.ROLE_TRUONG_PHONG_KT
-    ].includes(userRole);
-
-    const [searchParams] = useSearchParams();
-    const urlOrgId = searchParams.get('org_id') || (canSelectOrg ? '' : userOrgId);
-    const urlOrgName = searchParams.get('org_name') || '';
 
     const [loading, setLoading] = useState(false);
     const [employees, setEmployees] = useState([]);
@@ -140,12 +176,15 @@ const EmployeeList = () => {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [totalItems, setTotalItems] = useState(0);
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [editingEmployee, setEditingEmployee] = useState(null);
+
+    const [searchParams] = useSearchParams();
+    const urlOrgId = searchParams.get('org_id') || (organizations.length > 1 ? '' : userOrgId);
+    const urlOrgName = searchParams.get('org_name') || '';
 
     const [filterInputs, setFilterInputs] = useState({ name: '', email: '', org_id: urlOrgId });
     const [params, setParams] = useState({ name: '', email: '', org_id: urlOrgId });
-
-    const [dialogOpen, setDialogOpen] = useState(false);
-    const [editingEmployee, setEditingEmployee] = useState(null);
 
     // Fetch all orgs for the dialog dropdown
     const loadOrganizations = async () => {
@@ -171,9 +210,9 @@ const EmployeeList = () => {
     const loadEmployees = async () => {
         setLoading(true);
         try {
-            const res = await employeeApi.getAll({ 
-                ...params, 
-                page: page + 1, 
+            const res = await employeeApi.getAll({
+                ...params,
+                page: page + 1,
                 per_page: rowsPerPage,
                 order_by: '-created_at'
             });
@@ -208,8 +247,8 @@ const EmployeeList = () => {
         if (!window.confirm('Bạn có chắc chắn muốn xóa người dùng này?')) return;
         try {
             const res = await employeeApi.delete(id);
-            if (res.data?.status === 'success') { 
-                toast.success('Xóa thành công'); 
+            if (res.data?.status === 'success') {
+                toast.success('Xóa thành công');
                 setEmployees(prev => prev.filter(emp => emp.id !== id));
                 setTotalItems(prev => prev - 1);
             }
@@ -270,17 +309,17 @@ const EmployeeList = () => {
             )}
 
             <Grid container spacing={2} sx={{ mb: 3 }} alignItems="center">
-                <Grid item xs={12} sm={canSelectOrg ? 3 : 4}>
+                <Grid item xs={12} sm={organizations.length > 1 ? 3 : 4}>
                     <TextField fullWidth label="Tên người dùng" value={filterInputs.name}
                         onChange={(e) => setFilterInputs({ ...filterInputs, name: e.target.value })}
                         size="small" sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }} />
                 </Grid>
-                <Grid item xs={12} sm={canSelectOrg ? 3 : 4}>
+                <Grid item xs={12} sm={organizations.length > 1 ? 3 : 4}>
                     <TextField fullWidth label="Email" value={filterInputs.email}
                         onChange={(e) => setFilterInputs({ ...filterInputs, email: e.target.value })}
                         size="small" sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }} />
                 </Grid>
-                {canSelectOrg && (
+                {organizations.length > 1 && (
                     <Grid item xs={12} sm={4}>
                         <FormControl fullWidth size="small">
                             <InputLabel>Đơn vị / Xí nghiệp</InputLabel>
@@ -313,7 +352,7 @@ const EmployeeList = () => {
                             {isMobile && <TableCell width="40px" />}
                             <TableCell sx={{ fontWeight: 700 }}>Tên</TableCell>
                             {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>}
-                            {!isMobile && hasPermission('organization:view') && <TableCell sx={{ fontWeight: 700 }}>Công ty</TableCell>}
+                            {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Công ty</TableCell>}
                             {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Vai trò</TableCell>}
                             {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>}
                             <TableCell align="right" sx={{
@@ -367,7 +406,7 @@ const EmployeeList = () => {
                 organizations={organizations}
                 defaultOrgId={urlOrgId || userOrgId}
                 userRole={userRole}
-                canSelectOrg={canSelectOrg}
+                canSelectOrg={organizations.length > 1}
             />
         </MainCard>
     );

@@ -1,18 +1,14 @@
 package organization
 
 import (
-	"ai-api-tnhn/constant"
 	"ai-api-tnhn/internal/base/mgo/filter"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/repository"
-	"ai-api-tnhn/utils/hash"
 	"context"
 	"errors"
 	"fmt"
 
 	"ai-api-tnhn/internal/service/googledrive"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 type Service interface {
@@ -55,13 +51,6 @@ func (s *service) Create(ctx context.Context, org *models.Organization) error {
 		}
 	}
 
-	// 3. Check if email is already used by any user
-	var existingUser *models.User
-	err := s.userRepo.R_SelectOne(ctx, bson.M{"email": org.Email}, &existingUser)
-	if err == nil && existingUser != nil {
-		return errors.New("email is already associated with another account")
-	}
-
 	// 4. Create Google Drive Folder
 	if s.driveSvc != nil {
 		folderID, err := s.driveSvc.CreateOrgFolder(ctx, org.Name)
@@ -72,23 +61,7 @@ func (s *service) Create(ctx context.Context, org *models.Organization) error {
 	}
 
 	// 5. Create Organization
-	err = s.orgRepo.Upsert(ctx, org)
-	if err != nil {
-		return err
-	}
-
-	// 6. Automatically create Admin account for this Organization
-	adminUser := &models.User{
-		Name:     org.Name + " Admin",
-		Email:    org.Email,
-		Username: org.Email,
-		Password: hash.NewPassword(org.PhoneNumber),
-		Role:     constant.ROLE_GIAM_DOC_XN,
-		OrgID:    org.ID,
-		Active:   true,
-	}
-
-	_, err = s.userRepo.Create(ctx, adminUser)
+	err := s.orgRepo.Upsert(ctx, org)
 	return err
 }
 

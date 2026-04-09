@@ -91,7 +91,7 @@ func (h *InundationHandler) CreateReport(c *gin.Context) {
 	}
 
 	// 4.1 Permission Check for Employee
-	if user.Role == constant.ROLE_CONG_NHAN_CTY {
+	if user.IsEmployee {
 		isAssigned := false
 		for _, pid := range user.AssignedInundationPointIDs {
 			if pid == pointID {
@@ -167,7 +167,7 @@ func (h *InundationHandler) AddUpdateSituation(c *gin.Context) {
 	}
 
 	// 3.1 Permission Check for Employee
-	if user.Role == constant.ROLE_CONG_NHAN_CTY {
+	if user.IsEmployee {
 		report, err := h.service.GetReport(c.Request.Context(), reportID)
 		if err == nil && report != nil {
 			isAssigned := false
@@ -216,13 +216,9 @@ func (h *InundationHandler) GetReport(c *gin.Context) {
 			user.Role == "supper_admib" ||
 			user.Role == "super_admin "
 
-		isTNHN := false
-		org, errOrg := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
-		if errOrg == nil && org != nil && (org.Code == "TNHN" || org.Code == "tnhn") {
-			isTNHN = true
-		}
+		isAllowedAll := isSuperAdmin || user.IsCompany
 
-		if !isSuperAdmin && !isTNHN && report.OrgID != user.OrgID {
+		if !isAllowedAll && report.OrgID != user.OrgID {
 			h.SendError(c, web.Unauthorized("Access denied: You do not have permission to view this report"))
 			return
 		}
@@ -257,32 +253,24 @@ func (h *InundationHandler) ListReports(c *gin.Context) {
 		return
 	}
 
-	// Check if user is Super Admin or belongs to Headquarters (TNHN)
+	// Check permissions
 	isSuperAdmin := user.Role == constant.ROLE_SUPER_ADMIN ||
 		user.Role == "supper_admin" ||
 		user.Role == "supper_admib" ||
 		user.Role == "super_admin "
 
-	isTNHN := false
-	if user.OrgID != "" {
-		org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
-		if err == nil && org != nil && (org.Code == "TNHN" || org.Code == "tnhn") {
-			isTNHN = true
-		}
-	}
-
-	canSeeAll := isSuperAdmin || isTNHN
+	isAllowedAll := isSuperAdmin || user.IsCompany
 
 	orgID := user.OrgID
-	if canSeeAll {
-		// Privileged users can filter by any org_id from query
+	if isAllowedAll {
+		// Privileged users (Super Admin or Company level) can manage all
 		if qOrg := c.Query("org_id"); qOrg != "" {
 			orgID = qOrg
 		} else {
-			orgID = "" // Default to all for HQ/SuperAdmin if no filter provided
+			orgID = "" // Default to all if no filter provided
 		}
 	} else {
-		// Restricted users always stick to their own OrgID, query param is ignored
+		// Restricted users stick to their own OrgID
 		orgID = user.OrgID
 	}
 
@@ -292,11 +280,28 @@ func (h *InundationHandler) ListReports(c *gin.Context) {
 	trafficStatus := c.Query("traffic_status")
 	query := c.Query("query")
 
+	// Determine which points to show
 	var pointIDs []string
-	if user.Role == constant.ROLE_CONG_NHAN_CTY {
+
+	// Use target organization's configured InundationIDs if available
+	targetOrgID := ""
+	if qOrg := c.Query("org_id"); qOrg != "" && isAllowedAll {
+		targetOrgID = qOrg
+	} else if !isAllowedAll {
+		targetOrgID = user.OrgID
+	}
+
+	if targetOrgID != "" {
+		org, err := h.service.GetOrgByID(c.Request.Context(), targetOrgID)
+		if err == nil && org != nil && len(org.InundationIDs) > 0 {
+			pointIDs = org.InundationIDs
+		}
+	}
+
+	if len(pointIDs) == 0 && user.IsEmployee && !isAllowedAll {
 		pointIDs = user.AssignedInundationPointIDs
 		if len(pointIDs) == 0 {
-			// If no points assigned, return empty result
+			// If no points assigned to employee, return empty result
 			h.SendData(c, gin.H{
 				"data":  []interface{}{},
 				"total": 0,
@@ -325,36 +330,38 @@ func (h *InundationHandler) GetPointsStatus(c *gin.Context) {
 		return
 	}
 
-	// Check if user is Super Admin or belongs to Headquarters (TNHN)
+	// Check permissions
 	isSuperAdmin := user.Role == constant.ROLE_SUPER_ADMIN ||
 		user.Role == "supper_admin" ||
 		user.Role == "supper_admib" ||
 		user.Role == "super_admin "
 
-	isTNHN := false
-	if user.OrgID != "" {
-		org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
-		if err == nil && org != nil && (org.Code == "TNHN" || org.Code == "tnhn") {
-			isTNHN = true
-		}
-	}
+	isAllowedAll := isSuperAdmin || user.IsCompany
 
-	canSeeAll := isSuperAdmin || isTNHN
+	var orgID string
+	var pointIDs []string
 
-	orgID := user.OrgID
-	if canSeeAll {
+	if user.IsEmployee && !isAllowedAll {
+		// Employee: chỉ lấy điểm ngập đã gắn trong tài khoản
+		pointIDs = user.AssignedInundationPointIDs
+		orgID = "" // không fetch theo org
+	} else if isAllowedAll {
+		// Super admin / Company: lấy tất cả hoặc theo org_id filter
 		if qOrg := c.Query("org_id"); qOrg != "" {
 			orgID = qOrg
-		} else {
-			orgID = "" // Default to all points for HQ
+			// Nếu org có InundationIDs thì dùng
+			org, err := h.service.GetOrgByID(c.Request.Context(), qOrg)
+			if err == nil && org != nil && len(org.InundationIDs) > 0 {
+				pointIDs = org.InundationIDs
+			}
 		}
 	} else {
+		// Manager (non-employee, non-superadmin): lấy theo org
 		orgID = user.OrgID
-	}
-
-	var pointIDs []string
-	if user.Role == constant.ROLE_CONG_NHAN_CTY {
-		pointIDs = user.AssignedInundationPointIDs
+		org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
+		if err == nil && org != nil && len(org.InundationIDs) > 0 {
+			pointIDs = org.InundationIDs
+		}
 	}
 
 	res, err := h.service.GetPointsStatus(c.Request.Context(), orgID, pointIDs)
@@ -380,23 +387,15 @@ func (h *InundationHandler) CreatePoint(c *gin.Context) {
 		return
 	}
 
-	// Check if user is Super Admin or belongs to Headquarters (TNHN)
+	// Check permissions
 	isSuperAdmin := user.Role == constant.ROLE_SUPER_ADMIN ||
 		user.Role == "supper_admin" ||
 		user.Role == "supper_admib" ||
 		user.Role == "super_admin "
 
-	isTNHN := false
-	if user.OrgID != "" {
-		org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
-		if err == nil && org != nil && (org.Code == "TNHN" || org.Code == "tnhn") {
-			isTNHN = true
-		}
-	}
+	isAllowedAll := isSuperAdmin || user.IsCompany
 
-	canAssignOrg := isSuperAdmin || isTNHN
-
-	if !canAssignOrg || req.OrgID == "" {
+	if !isAllowedAll || req.OrgID == "" {
 		req.OrgID = user.OrgID
 	}
 
@@ -429,13 +428,7 @@ func (h *InundationHandler) UpdatePoint(c *gin.Context) {
 		user.Role == "supper_admib" ||
 		user.Role == "super_admin "
 
-	isTNHN := false
-	org, errOrg := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
-	if errOrg == nil && org != nil && (org.Code == "TNHN" || org.Code == "tnhn") {
-		isTNHN = true
-	}
-
-	canAssignOrg := isSuperAdmin || isTNHN
+	isAllowedAll := isSuperAdmin || user.IsCompany
 
 	// Fetch current point to retain org ID if not provided, or if user is not authorized
 	currentPoint, err := h.service.GetPointByID(c.Request.Context(), id)
@@ -445,12 +438,12 @@ func (h *InundationHandler) UpdatePoint(c *gin.Context) {
 	}
 
 	// Ownership check
-	if !canAssignOrg && currentPoint.OrgID != user.OrgID {
+	if !isAllowedAll && currentPoint.OrgID != user.OrgID {
 		h.SendError(c, web.Unauthorized("Access denied: You do not have permission to modify this point"))
 		return
 	}
 
-	if !canAssignOrg {
+	if !isAllowedAll {
 		req.OrgID = currentPoint.OrgID
 	} else if req.OrgID == "" {
 		req.OrgID = currentPoint.OrgID
@@ -480,15 +473,9 @@ func (h *InundationHandler) DeletePoint(c *gin.Context) {
 		user.Role == "supper_admib" ||
 		user.Role == "super_admin "
 
-	isTNHN := false
-	org, errOrg := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
-	if errOrg == nil && org != nil && (org.Code == "TNHN" || org.Code == "tnhn") {
-		isTNHN = true
-	}
+	isAllowedAll := isSuperAdmin || user.IsCompany
 
-	canManageAll := isSuperAdmin || isTNHN
-
-	if !canManageAll {
+	if !isAllowedAll {
 		currentPoint, err := h.service.GetPointByID(c.Request.Context(), id)
 		if err == nil && currentPoint != nil && currentPoint.OrgID != user.OrgID {
 			h.SendError(c, web.Unauthorized("Access denied: You do not have permission to delete this point"))
@@ -514,9 +501,60 @@ func (h *InundationHandler) ReviewUpdate(c *gin.Context) {
 	}
 
 	token := h.contextWith.GetToken(c.Request)
-	user, _ := h.authService.GetProfile(c.Request.Context(), token)
+	user, err := h.authService.GetProfile(c.Request.Context(), token)
+	if err != nil {
+		h.SendError(c, web.Unauthorized("Invalid user session"))
+		return
+	}
 
-	err := h.service.ReviewUpdate(c.Request.Context(), updateID, req.Comment, user.ID, user.Email, user.Name)
+	// RBAC: Block Employee
+	if user.IsEmployee {
+		h.SendError(c, web.Forbidden("Nhân viên không có quyền nhận xét bản tin"))
+		return
+	}
+
+	// RBAC: Check permissions
+	update, err := h.service.GetUpdateByID(c.Request.Context(), updateID) // Need to ensure this exists or use service check
+	if err != nil {
+		h.SendError(c, err)
+		return
+	}
+
+	report, err := h.service.GetReport(c.Request.Context(), update.ReportID)
+	if err != nil {
+		h.SendError(c, err)
+		return
+	}
+
+	isSuperAdmin := user.Role == constant.ROLE_SUPER_ADMIN ||
+		user.Role == "supper_admin" ||
+		user.Role == "supper_admib" ||
+		user.Role == "super_admin "
+
+	isAllowedAll := isSuperAdmin || user.IsCompany
+
+	if !isAllowedAll {
+		// Ownership or Shared Point check
+		isAuthorized := report.OrgID == user.OrgID
+		if !isAuthorized && user.OrgID != "" {
+			org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
+			if err == nil && org != nil {
+				for _, pid := range org.InundationIDs {
+					if pid == report.PointID {
+						isAuthorized = true
+						break
+					}
+				}
+			}
+		}
+
+		if !isAuthorized {
+			h.SendError(c, web.Unauthorized("Bạn không có quyền nhận xét bản tin này"))
+			return
+		}
+	}
+
+	err = h.service.ReviewUpdate(c.Request.Context(), updateID, req.Comment, user.ID, user.Email, user.Name)
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -535,7 +573,17 @@ func (h *InundationHandler) ReviewReport(c *gin.Context) {
 	}
 
 	token := h.contextWith.GetToken(c.Request)
-	user, _ := h.authService.GetProfile(c.Request.Context(), token)
+	user, err := h.authService.GetProfile(c.Request.Context(), token)
+	if err != nil {
+		h.SendError(c, web.Unauthorized("Invalid user session"))
+		return
+	}
+
+	// RBAC: Block Employee
+	if user.IsEmployee {
+		h.SendError(c, web.Forbidden("Nhân viên không có quyền nhận xét bản tin"))
+		return
+	}
 
 	// Check permissions
 	report, err := h.service.GetReport(c.Request.Context(), reportID)
@@ -549,17 +597,27 @@ func (h *InundationHandler) ReviewReport(c *gin.Context) {
 		user.Role == "supper_admib" ||
 		user.Role == "super_admin "
 
-	isTNHN := false
-	org, errOrg := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
-	if errOrg == nil && org != nil && (org.Code == "TNHN" || org.Code == "tnhn") {
-		isTNHN = true
-	}
-	canSeeAll := isSuperAdmin || isTNHN
+	isAllowedAll := isSuperAdmin || user.IsCompany
 
-	// Ownership Check: Only allow review if same org or canSeeAll
-	if !canSeeAll && report.OrgID != user.OrgID {
-		h.SendError(c, web.Unauthorized("You do not have permission to review this report"))
-		return
+	// Ownership or Shared Point Check: Only allow review if same org, shared point, or isAllowedAll
+	if !isAllowedAll {
+		isAuthorized := report.OrgID == user.OrgID
+		if !isAuthorized && user.OrgID != "" {
+			org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
+			if err == nil && org != nil {
+				for _, pid := range org.InundationIDs {
+					if pid == report.PointID {
+						isAuthorized = true
+						break
+					}
+				}
+			}
+		}
+
+		if !isAuthorized {
+			h.SendError(c, web.Unauthorized("Bạn không có quyền nhận xét bản tin này"))
+			return
+		}
 	}
 
 	err = h.service.ReviewReport(c.Request.Context(), reportID, req.Comment, user.ID, user.Email, user.Name)
@@ -572,6 +630,57 @@ func (h *InundationHandler) ReviewReport(c *gin.Context) {
 
 func (h *InundationHandler) UpdateReport(c *gin.Context) {
 	id := c.Param("id")
+
+	token := h.contextWith.GetToken(c.Request)
+	user, err := h.authService.GetProfile(c.Request.Context(), token)
+	if err != nil {
+		h.SendError(c, web.Unauthorized("Invalid user session"))
+		return
+	}
+
+	// Fetch existing report to check permissions
+	existing, err := h.service.GetReport(c.Request.Context(), id)
+	if err != nil {
+		h.SendError(c, err)
+		return
+	}
+
+	isSuperAdmin := user.Role == constant.ROLE_SUPER_ADMIN ||
+		user.Role == "supper_admin" ||
+		user.Role == "supper_admib" ||
+		user.Role == "super_admin "
+	isAllowedAll := isSuperAdmin || user.IsCompany
+
+	if user.IsEmployee {
+		// Employees can ONLY edit if NeedsCorrection is true AND it belongs to their org
+		if !existing.NeedsCorrection {
+			h.SendError(c, web.Forbidden("Chỉ được phép sửa thông tin khi có yêu cầu (nhận xét) từ người rà soát"))
+			return
+		}
+		if existing.OrgID != user.OrgID {
+			h.SendError(c, web.Unauthorized("Bạn không có quyền chỉnh sửa báo cáo của đơn vị khác"))
+			return
+		}
+	} else if !isAllowedAll {
+		// Non-employee manager check (Ownership or Shared)
+		isAuthorized := existing.OrgID == user.OrgID
+		if !isAuthorized && user.OrgID != "" {
+			org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
+			if err == nil && org != nil {
+				for _, pid := range org.InundationIDs {
+					if pid == existing.PointID {
+						isAuthorized = true
+						break
+					}
+				}
+			}
+		}
+		if !isAuthorized {
+			h.SendError(c, web.Unauthorized("Bạn không có quyền chỉnh sửa báo cáo này"))
+			return
+		}
+	}
+
 	form, _ := c.MultipartForm()
 
 	updatedField := &models.InundationReport{
@@ -598,7 +707,7 @@ func (h *InundationHandler) UpdateReport(c *gin.Context) {
 		}
 	}
 
-	err := h.service.UpdateReport(c.Request.Context(), id, updatedField, images)
+	err = h.service.UpdateReport(c.Request.Context(), id, updatedField, images)
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -608,6 +717,52 @@ func (h *InundationHandler) UpdateReport(c *gin.Context) {
 
 func (h *InundationHandler) UpdateSituationUpdateContent(c *gin.Context) {
 	updateID := c.Param("id")
+
+	token := h.contextWith.GetToken(c.Request)
+	user, err := h.authService.GetProfile(c.Request.Context(), token)
+	if err != nil {
+		h.SendError(c, web.Unauthorized("Invalid user session"))
+		return
+	}
+
+	// Fetch existing update to check permissions
+	existing, err := h.service.GetUpdateByID(c.Request.Context(), updateID)
+	if err != nil {
+		h.SendError(c, err)
+		return
+	}
+
+	// Fetch parent report to get OrgID
+	report, err := h.service.GetReport(c.Request.Context(), existing.ReportID)
+	if err != nil {
+		h.SendError(c, err)
+		return
+	}
+
+	isSuperAdmin := user.Role == constant.ROLE_SUPER_ADMIN ||
+		user.Role == "supper_admin" ||
+		user.Role == "supper_admib" ||
+		user.Role == "super_admin "
+	isAllowedAll := isSuperAdmin || user.IsCompany
+
+	if user.IsEmployee {
+		// Employees can ONLY edit if NeedsCorrection is true AND it belongs to their org
+		if !existing.NeedsCorrection {
+			h.SendError(c, web.Forbidden("Chỉ được phép sửa thông tin khi có yêu cầu (nhận xét) từ người rà soát"))
+			return
+		}
+		if report.OrgID != user.OrgID {
+			h.SendError(c, web.Unauthorized("Bạn không có quyền chỉnh sửa bản tin của đơn vị khác"))
+			return
+		}
+	} else if !isAllowedAll {
+		// Non-employee manager check (Ownership)
+		if report.OrgID != user.OrgID {
+			h.SendError(c, web.Unauthorized("Bạn không có quyền chỉnh sửa bản tin này"))
+			return
+		}
+	}
+
 	form, _ := c.MultipartForm()
 
 	updatedUpdate := &models.InundationUpdate{
@@ -634,7 +789,7 @@ func (h *InundationHandler) UpdateSituationUpdateContent(c *gin.Context) {
 		}
 	}
 
-	err := h.service.UpdateUpdateContent(c.Request.Context(), updateID, updatedUpdate, images)
+	err = h.service.UpdateUpdateContent(c.Request.Context(), updateID, updatedUpdate, images)
 	if err != nil {
 		h.SendError(c, err)
 		return

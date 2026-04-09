@@ -230,8 +230,11 @@ func (s *service) SetForecastFunc(fn ForecastFunc) {
 }
 
 func (s *service) GetForecast(ctx context.Context) (string, error) {
-	// Simple caching: 10 minutes
-	if s.forecast != "" && time.Since(s.lastFetch) < 10*time.Minute {
+	// Caching: Only fetch once per day unless app restarts
+	now := time.Now().In(vietnamTZ)
+	if s.forecast != "" && s.lastFetch.In(vietnamTZ).Year() == now.Year() &&
+		s.lastFetch.In(vietnamTZ).Month() == now.Month() &&
+		s.lastFetch.In(vietnamTZ).Day() == now.Day() {
 		return s.forecast, nil
 	}
 
@@ -273,10 +276,10 @@ func (s *service) generateManualForecast(meteoData string) string {
 
 	var data struct {
 		Daily struct {
-			Time                       []string  `json:"time"`
-			Weathercode                []int     `json:"weathercode"`
-			Temperature2mMax           []float64 `json:"temperature_2m_max"`
-			Temperature2mMin           []float64 `json:"temperature_2m_min"`
+			Time                        []string  `json:"time"`
+			Weathercode                 []int     `json:"weathercode"`
+			Temperature2mMax            []float64 `json:"temperature_2m_max"`
+			Temperature2mMin            []float64 `json:"temperature_2m_min"`
 			PrecipitationProbabilityMax []int     `json:"precipitation_probability_max"`
 		} `json:"daily"`
 	}

@@ -16,6 +16,7 @@ type Service interface {
 	Delete(ctx context.Context, id string) error
 	GetByID(ctx context.Context, id string) (*models.PumpingStation, error)
 	List(ctx context.Context, filter filter.Filter) ([]*models.PumpingStation, int64, error)
+	GetOrgByID(ctx context.Context, id string) (*models.Organization, error)
 
 	// History
 	CreateHistory(ctx context.Context, user *models.User, history *models.PumpingStationHistory) (*models.PumpingStationHistory, error)
@@ -31,13 +32,15 @@ type Worker interface {
 type service struct {
 	stationRepo repository.PumpingStation
 	userRepo    repository.User
+	orgRepo     repository.Organization
 	worker      Worker
 }
 
-func NewService(stationRepo repository.PumpingStation, userRepo repository.User) Service {
+func NewService(stationRepo repository.PumpingStation, userRepo repository.User, orgRepo repository.Organization) Service {
 	return &service{
 		stationRepo: stationRepo,
 		userRepo:    userRepo,
+		orgRepo:     orgRepo,
 	}
 }
 
@@ -128,6 +131,10 @@ func (s *service) CreateHistory(ctx context.Context, user *models.User, history 
 
 func (s *service) ListHistory(ctx context.Context, filter filter.Filter) ([]*models.PumpingStationHistory, int64, error) {
 	return s.stationRepo.ListHistory(ctx, filter)
+}
+
+func (s *service) GetOrgByID(ctx context.Context, id string) (*models.Organization, error) {
+	return s.orgRepo.GetByID(ctx, id)
 }
 
 func (s *service) SetWorker(w interface{}) {

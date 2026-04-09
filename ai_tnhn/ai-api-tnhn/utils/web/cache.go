@@ -9,7 +9,7 @@ import (
 )
 
 type ContextWith interface {
-	GetOrgId(ctx *gin.Context) (string, error)
+	GetOrgID(ctx *gin.Context) (string, error)
 	SetUserID(ctx *gin.Context, uID string)
 	GetUserID(ctx *gin.Context) (string, error)
 	GetQrcodeID(ctx *gin.Context) (string, error)
@@ -29,12 +29,14 @@ func NewContextWith() ContextWith {
 }
 
 type ClientCache struct {
-	Token    string
-	UserID   string
-	Name     string
-	OrgId    string
-	DeviceID string
-	Role     string
+	Token      string
+	UserID     string
+	Name       string
+	OrgID      string
+	DeviceID   string
+	Role       string
+	IsEmployee bool
+	IsCompany  bool
 }
 
 const xCacheClient = "x-cache-client"
@@ -57,8 +59,8 @@ func (c *ClientCache) GetUserID(ctx *gin.Context) (string, error) {
 }
 
 
-func (c *ClientCache) GetOrgId(ctx *gin.Context) (string, error) {
-	uID := c.GetTokenFromContext(ctx).OrgId
+func (c *ClientCache) GetOrgID(ctx *gin.Context) (string, error) {
+	uID := c.GetTokenFromContext(ctx).OrgID
 	if uID == "" {
 		return uID, BadRequest("org-id not found")
 	}

@@ -22,7 +22,7 @@ export default defineConfig(({ mode }) => {
       minify: mode === 'production' ? true : false
     },
     esbuild: {
-      drop: mode === 'production' ? ['console', 'debugger'] : []
+      drop: mode === 'production' && env.VITE_APP_STATUS !== 'dev' ? ['console', 'debugger'] : []
     },
     preview: {
       open: true,

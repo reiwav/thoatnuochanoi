@@ -20,7 +20,7 @@ type InundationUpdate struct {
 	ReviewerId      string   `bson:"reviewer_id,omitempty" json:"reviewer_id,omitempty"`
 	ReviewerEmail   string   `bson:"reviewer_email,omitempty" json:"reviewer_email,omitempty"`
 	ReviewerName    string        `bson:"reviewer_name,omitempty" json:"reviewer_name,omitempty"`
-	NeedsCorrection bool          `bson:"needs_correction,omitempty" json:"needs_correction,omitempty"`
+	NeedsCorrection bool          `bson:"needs_correction" json:"needs_correction"`
 	OldData         []interface{} `bson:"old_data,omitempty" json:"old_data,omitempty"`
 }
 
@@ -45,5 +45,6 @@ type InundationReport struct {
 	ReviewerId      string             `bson:"reviewer_id,omitempty" json:"reviewer_id,omitempty"`
 	ReviewerEmail   string             `bson:"reviewer_email,omitempty" json:"reviewer_email,omitempty"`
 	ReviewerName    string             `bson:"reviewer_name,omitempty" json:"reviewer_name,omitempty"`
-	NeedsCorrection bool               `bson:"needs_correction,omitempty" json:"needs_correction,omitempty"`
+	NeedsCorrection         bool               `bson:"needs_correction" json:"needs_correction"`
+	NeedsCorrectionUpdateID string             `bson:"needs_correction_update_id" json:"needs_correction_update_id"`
 }

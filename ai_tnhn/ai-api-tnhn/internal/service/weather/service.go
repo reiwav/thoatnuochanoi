@@ -253,8 +253,7 @@ func (s *service) GetForecast(ctx context.Context) (string, error) {
 		meteoData = string(body)
 	}
 
-	now := time.Now().In(vietnamTZ)
-	prompt := fmt.Sprintf("Dựa trên số liệu thời tiết thực tế từ API sau đây cho Hà Nội:\n%s\n\nThời gian hiện tại: %s. Hãy tóm tắt dự báo thời tiết cho 3 ngày tới (bao gồm hôm nay) thành 1 câu ngắn gọn theo định dạng: 'Dự báo thời tiết 3 ngày tới: [Mô tả tổng quát], Tỉ lệ mưa: [Khoảng biến thiên hoặc cao nhất]%%, Nhiệt độ: [Thấp nhất-Cao nhất]°C'. Chú ý: TRẢ VỀ DUY NHẤT nội dung theo định dạng này, không thêm câu chào, không thêm lời dẫn hay bất kỳ nội dung nào khác.", meteoData, now.Format("02/01/2006 15:04"))
+	prompt := fmt.Sprintf("Dựa trên số liệu thời tiết thực tế từ API sau đây cho Hà Nội:\n%s\n\nThời gian hiện tại: %s. Hãy liệt kê dự báo chi tiết cho 3 ngày gần nhất (bao gồm hôm nay) theo định dạng sau:\nDự báo thời tiết 3 ngày tới: \n- Ngày 09/04: [Mô tả tổng quát]; Tỉ lệ mưa: [Cao nhất]%%; Nhiệt độ: [Thấp nhất-Cao nhất]°C\n- Ngày 10/04: [Mô tả tổng quát]; Tỉ lệ mưa: [Cao nhất]%%; Nhiệt độ: [Thấp nhất-Cao nhất]°C\n...\nChú ý: TRẢ VỀ DUY NHẤT nội dung theo định dạng này, không thêm câu chào, không thêm lời dẫn hay bất kỳ nội dung nào khác.", meteoData, now.Format("02/01/2006 15:04"))
 
 	resp, err := s.forecastFunc(ctx, prompt)
 	if err != nil {
@@ -307,38 +306,25 @@ func (s *service) generateManualForecast(meteoData string) string {
 		}
 	}
 
-	minTemp := 999.0
-	maxTemp := -999.0
-	maxRainProb := 0
-	descriptions := make(map[string]bool)
-
+	result := "Dự báo thời tiết 3 ngày tới: \n"
 	count := 0
 	for i := 0; i < len(data.Daily.Time) && count < 3; i++ {
-		if data.Daily.Temperature2mMin[i] < minTemp {
-			minTemp = data.Daily.Temperature2mMin[i]
+		t, _ := time.Parse("2006-01-02", data.Daily.Time[i])
+		dateStr := t.Format("02/01")
+		rainProb := 0
+		if i < len(data.Daily.PrecipitationProbabilityMax) {
+			rainProb = data.Daily.PrecipitationProbabilityMax[i]
 		}
-		if data.Daily.Temperature2mMax[i] > maxTemp {
-			maxTemp = data.Daily.Temperature2mMax[i]
-		}
-		if i < len(data.Daily.PrecipitationProbabilityMax) && data.Daily.PrecipitationProbabilityMax[i] > maxRainProb {
-			maxRainProb = data.Daily.PrecipitationProbabilityMax[i]
-		}
-		descriptions[getWeatherDesc(data.Daily.Weathercode[i])] = true
+		dayInfo := fmt.Sprintf("- Ngày %s: %s; Tỉ lệ mưa: %d%%; Nhiệt độ: %.0f-%.0f°C",
+			dateStr,
+			getWeatherDesc(data.Daily.Weathercode[i]),
+			rainProb,
+			data.Daily.Temperature2mMin[i],
+			data.Daily.Temperature2mMax[i],
+		)
+		result += dayInfo + "\n"
 		count++
 	}
 
-	descList := ""
-	for d := range descriptions {
-		if descList != "" {
-			descList += ", "
-		}
-		descList += d
-	}
-
-	return fmt.Sprintf("Dự báo thời tiết 3 ngày tới: %s, Tỉ lệ mưa: %d%%, Nhiệt độ: %.0f-%.0f°C",
-		descList,
-		maxRainProb,
-		minTemp,
-		maxTemp,
-	)
+	return result
 }

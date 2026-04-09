@@ -43,7 +43,8 @@ import {
     IconUser,
     IconChevronRight,
     IconChevronLeft,
-    IconLogout
+    IconLogout,
+    IconEdit
 } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 import inundationApi from 'api/inundation';
@@ -1410,7 +1411,7 @@ const InundationDashboard = () => {
     return (
         <Box sx={{ px: isMobile ? 1.2 : 2, pt: 2, pb: 4 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h2" sx={{ fontWeight: 900, color: 'primary.main', letterSpacing: -0.5 }}>
+                <Typography variant="h3" sx={{ fontWeight: 900, color: 'primary.main', letterSpacing: -0.5 }}>
                     Điểm ngập
                 </Typography>
                 <Badge badgeContent={stats.active} color="error" max={99} overlap="circular">

@@ -8,17 +8,15 @@ import {
 } from '@mui/material';
 import { IconTrash, IconPlus, IconEdit, IconSearch, IconUsers, IconChevronDown, IconChevronUp, IconClipboardCheck } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
-import stationApi from 'api/station';
-import { IconCloudRain, IconRipple, IconDroplet, IconAlertTriangle } from '@tabler/icons-react';
+import organizationApi from 'api/organization';
 
 // project imports
 import MainCard from 'ui-component/cards/MainCard';
 import AnimateButton from 'ui-component/extended/AnimateButton';
-import organizationApi from 'api/organization';
 import OrganizationDialog from './OrganizationDialog';
 import useAuthStore from 'store/useAuthStore';
 
-const OrgRow = ({ row, handleManageUsers, handleOpenEdit, handleDelete, totals, isMobile, hasPermission }) => {
+const OrgRow = ({ row, handleManageUsers, handleOpenEdit, handleDelete, isMobile, hasPermission }) => {
     const [open, setOpen] = useState(false);
 
     return (
@@ -45,24 +43,6 @@ const OrgRow = ({ row, handleManageUsers, handleOpenEdit, handleDelete, totals, 
                     <TableCell>
                         <Typography variant="body2" sx={{ fontWeight: 500 }}>{row.phone_number}</Typography>
                         <Typography variant="caption" color="textSecondary" sx={{ display: 'block' }}>{row.email}</Typography>
-                    </TableCell>
-                )}
-                {!isMobile && (
-                    <TableCell>
-                        <Stack direction="row" spacing={1} flexWrap="wrap">
-                            <Tooltip title={`Trạm mưa: ${row.rain_station_ids?.length || 0}/${totals.rain}`}>
-                                <Chip icon={<IconCloudRain size={14} />} label={row.rain_station_ids?.length || 0} size="small" variant="outlined" color="primary" />
-                            </Tooltip>
-                            <Tooltip title={`Mực nước hồ: ${row.lake_station_ids?.length || 0}/${totals.lake}`}>
-                                <Chip icon={<IconRipple size={14} />} label={row.lake_station_ids?.length || 0} size="small" variant="outlined" color="info" />
-                            </Tooltip>
-                            <Tooltip title={`Mực nước sông: ${row.river_station_ids?.length || 0}/${totals.river}`}>
-                                <Chip icon={<IconDroplet size={14} />} label={row.river_station_ids?.length || 0} size="small" variant="outlined" color="secondary" />
-                            </Tooltip>
-                            <Tooltip title={`Điểm ngập: ${row.inundation_ids?.length || 0}/${totals.inundation}`}>
-                                <Chip icon={<IconAlertTriangle size={14} />} label={row.inundation_ids?.length || 0} size="small" variant="outlined" color="warning" />
-                            </Tooltip>
-                        </Stack>
                     </TableCell>
                 )}
                 {!isMobile && (
@@ -120,25 +100,6 @@ const OrgRow = ({ row, handleManageUsers, handleOpenEdit, handleDelete, totals, 
                                             </TableCell>
                                         </TableRow>
                                         <TableRow>
-                                            <TableCell component="th" scope="row" sx={{ fontWeight: 600, borderBottom: 'none' }}>Trạm được gán</TableCell>
-                                            <TableCell sx={{ borderBottom: 'none' }}>
-                                                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ gap: 1 }}>
-                                                    <Tooltip title={`Trạm mưa: ${row.rain_station_ids?.length || 0}/${totals.rain}`}>
-                                                        <Chip icon={<IconCloudRain size={14} />} label={row.rain_station_ids?.length || 0} size="small" variant="outlined" color="primary" />
-                                                    </Tooltip>
-                                                    <Tooltip title={`Mực nước hồ: ${row.lake_station_ids?.length || 0}/${totals.lake}`}>
-                                                        <Chip icon={<IconRipple size={14} />} label={row.lake_station_ids?.length || 0} size="small" variant="outlined" color="info" />
-                                                    </Tooltip>
-                                                    <Tooltip title={`Mực nước sông: ${row.river_station_ids?.length || 0}/${totals.river}`}>
-                                                        <Chip icon={<IconDroplet size={14} />} label={row.river_station_ids?.length || 0} size="small" variant="outlined" color="secondary" />
-                                                    </Tooltip>
-                                                    <Tooltip title={`Điểm ngập: ${row.inundation_ids?.length || 0}/${totals.inundation}`}>
-                                                        <Chip icon={<IconAlertTriangle size={14} />} label={row.inundation_ids?.length || 0} size="small" variant="outlined" color="warning" />
-                                                    </Tooltip>
-                                                </Stack>
-                                            </TableCell>
-                                        </TableRow>
-                                        <TableRow>
                                             <TableCell component="th" scope="row" sx={{ fontWeight: 600, borderBottom: 'none' }}>Trạng thái</TableCell>
                                             <TableCell sx={{ borderBottom: 'none' }}>
                                                 <Chip label={row.status ? 'Hoạt động' : 'Ngừng hoạt động'} color={row.status ? 'success' : 'default'} size="small" variant="outlined" />
@@ -172,27 +133,7 @@ const OrganizationList = () => {
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingOrg, setEditingOrg] = useState(null);
-    const [totals, setTotals] = useState({ rain: 0, lake: 0, river: 0, inundation: 0 });
 
-    const fetchTotals = async () => {
-        try {
-            const [rainRes, lakeRes, riverRes, inundationRes] = await Promise.all([
-                stationApi.rain.getAll({ per_page: 1 }),
-                stationApi.lake.getAll({ per_page: 1 }),
-                stationApi.river.getAll({ per_page: 1 }),
-                stationApi.inundation.getAll()
-            ]);
-
-            setTotals({
-                rain: rainRes.data?.data?.total || 0,
-                lake: lakeRes.data?.data?.total || 0,
-                river: riverRes.data?.data?.total || 0,
-                inundation: inundationRes.data?.total || inundationRes.data?.length || 0
-            });
-        } catch (err) {
-            console.error('Lỗi tải tổng số trạm:', err);
-        }
-    };
 
     const loadOrganizations = async () => {
         setLoading(true);
@@ -215,7 +156,6 @@ const OrganizationList = () => {
 
     useEffect(() => {
         loadOrganizations();
-        fetchTotals();
     }, [page, rowsPerPage, params]);
 
     const handleSearch = () => { setPage(0); setParams(filterInputs); };
@@ -291,16 +231,15 @@ const OrganizationList = () => {
                             {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Mã</TableCell>}
                             {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Lệnh số</TableCell>}
                             {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Thông tin liên hệ</TableCell>}
-                            {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Trạm được gán</TableCell>}
                             {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>}
                             <TableCell align="right" sx={{ fontWeight: 700 }}>Thao tác</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {loading ? (
-                            <TableRow><TableCell colSpan={isMobile ? 3 : 7} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
+                            <TableRow><TableCell colSpan={isMobile ? 3 : 6} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
                         ) : organizations.length === 0 ? (
-                            <TableRow><TableCell colSpan={isMobile ? 3 : 7} align="center" sx={{ py: 3 }}>Không tìm thấy công ty</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={isMobile ? 3 : 6} align="center" sx={{ py: 3 }}>Không tìm thấy công ty</TableCell></TableRow>
                         ) : (
                             organizations.map((row) => (
                                 <OrgRow
@@ -309,7 +248,6 @@ const OrganizationList = () => {
                                     handleManageUsers={handleManageUsers}
                                     handleOpenEdit={handleOpenEdit}
                                     handleDelete={handleDelete}
-                                    totals={totals}
                                     isMobile={isMobile}
                                     hasPermission={hasPermission}
                                 />

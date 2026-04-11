@@ -292,9 +292,12 @@ func (h *InundationHandler) ListReports(c *gin.Context) {
 	}
 
 	if targetOrgID != "" {
-		org, err := h.service.GetOrgByID(c.Request.Context(), targetOrgID)
-		if err == nil && org != nil && len(org.InundationIDs) > 0 {
-			pointIDs = org.InundationIDs
+		// New logic: search for points owned by OR shared with targetOrgID
+		res, err := h.service.GetPointsStatus(c.Request.Context(), targetOrgID, nil) // passing nil pointIDs will fetch by org
+		if err == nil {
+			for _, p := range res {
+				pointIDs = append(pointIDs, p.ID)
+			}
 		}
 	}
 
@@ -349,19 +352,10 @@ func (h *InundationHandler) GetPointsStatus(c *gin.Context) {
 		// Super admin / Company: lấy tất cả hoặc theo org_id filter
 		if qOrg := c.Query("org_id"); qOrg != "" {
 			orgID = qOrg
-			// Nếu org có InundationIDs thì dùng
-			org, err := h.service.GetOrgByID(c.Request.Context(), qOrg)
-			if err == nil && org != nil && len(org.InundationIDs) > 0 {
-				pointIDs = org.InundationIDs
-			}
 		}
 	} else {
 		// Manager (non-employee, non-superadmin): lấy theo org
 		orgID = user.OrgID
-		org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
-		if err == nil && org != nil && len(org.InundationIDs) > 0 {
-			pointIDs = org.InundationIDs
-		}
 	}
 
 	res, err := h.service.GetPointsStatus(c.Request.Context(), orgID, pointIDs)
@@ -537,10 +531,11 @@ func (h *InundationHandler) ReviewUpdate(c *gin.Context) {
 		// Ownership or Shared Point check
 		isAuthorized := report.OrgID == user.OrgID
 		if !isAuthorized && user.OrgID != "" {
-			org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
-			if err == nil && org != nil {
-				for _, pid := range org.InundationIDs {
-					if pid == report.PointID {
+			// Check if the point itself is shared with user's org
+			point, err := h.service.GetPointByID(c.Request.Context(), report.PointID)
+			if err == nil && point != nil {
+				for _, sid := range point.SharedOrgIDs {
+					if sid == user.OrgID {
 						isAuthorized = true
 						break
 					}
@@ -603,10 +598,11 @@ func (h *InundationHandler) ReviewReport(c *gin.Context) {
 	if !isAllowedAll {
 		isAuthorized := report.OrgID == user.OrgID
 		if !isAuthorized && user.OrgID != "" {
-			org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
-			if err == nil && org != nil {
-				for _, pid := range org.InundationIDs {
-					if pid == report.PointID {
+			// Check if the point itself is shared with user's org
+			point, err := h.service.GetPointByID(c.Request.Context(), report.PointID)
+			if err == nil && point != nil {
+				for _, sid := range point.SharedOrgIDs {
+					if sid == user.OrgID {
 						isAuthorized = true
 						break
 					}
@@ -665,10 +661,10 @@ func (h *InundationHandler) UpdateReport(c *gin.Context) {
 		// Non-employee manager check (Ownership or Shared)
 		isAuthorized := existing.OrgID == user.OrgID
 		if !isAuthorized && user.OrgID != "" {
-			org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
-			if err == nil && org != nil {
-				for _, pid := range org.InundationIDs {
-					if pid == existing.PointID {
+			point, err := h.service.GetPointByID(c.Request.Context(), existing.PointID)
+			if err == nil && point != nil {
+				for _, sid := range point.SharedOrgIDs {
+					if sid == user.OrgID {
 						isAuthorized = true
 						break
 					}
@@ -756,8 +752,20 @@ func (h *InundationHandler) UpdateSituationUpdateContent(c *gin.Context) {
 			return
 		}
 	} else if !isAllowedAll {
-		// Non-employee manager check (Ownership)
-		if report.OrgID != user.OrgID {
+		// Non-employee manager check (Ownership or Shared)
+		isAuthorized := report.OrgID == user.OrgID
+		if !isAuthorized && user.OrgID != "" {
+			point, err := h.service.GetPointByID(c.Request.Context(), report.PointID)
+			if err == nil && point != nil {
+				for _, sid := range point.SharedOrgIDs {
+					if sid == user.OrgID {
+						isAuthorized = true
+						break
+					}
+				}
+			}
+		}
+		if !isAuthorized {
 			h.SendError(c, web.Unauthorized("Bạn không có quyền chỉnh sửa bản tin này"))
 			return
 		}

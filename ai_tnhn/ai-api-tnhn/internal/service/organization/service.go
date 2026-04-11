@@ -88,10 +88,6 @@ func (s *service) Update(ctx context.Context, id string, org *models.Organizatio
 	existing.PhoneNumber = org.PhoneNumber
 	existing.Email = org.Email
 	existing.Representative = org.Representative
-	existing.RainStationIDs = org.RainStationIDs
-	existing.LakeStationIDs = org.LakeStationIDs
-	existing.RiverStationIDs = org.RiverStationIDs
-	existing.InundationIDs = org.InundationIDs
 	existing.Order = org.Order
 
 	return s.orgRepo.Upsert(ctx, existing)

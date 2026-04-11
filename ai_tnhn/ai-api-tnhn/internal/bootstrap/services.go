@@ -93,7 +93,7 @@ func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log log
 	s.Water = water.NewService(repos.Rain, repos.Lake, repos.River)
 	s.Email = email.NewService(cfg.EmailConfig)
 	s.Station = station.NewService(repos.RainStation, repos.LakeStation, repos.RiverStation, repos.Organization)
-	s.Inundation = inundation.NewService(repos.Inundation, repos.InundationUpdate, repos.InundationPoint, repos.Organization, driveService)
+	s.Inundation = inundation.NewService(repos.Inundation, repos.InundationUpdate, repos.InundationStation, repos.Organization, driveService)
 	s.Weather = weather.NewService(repos.HistoricalRain)
 
 	s.GoogleApi, _ = googleapi.NewService(cfg.GoogleDriveConfig, cfg.OAuthConfig, repos.AiUsage, s.Inundation, s.Weather)

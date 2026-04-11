@@ -25,9 +25,9 @@ func (s *service) handleInundationTools(ctx context.Context, call *genai.Functio
 
 			reports, _, _ := s.inuSvc.ListReportsWithFilter(ctx, orgID, "active", "", "", assignedInuIDs, 0, 100)
 
-			var filtered []googleapi.InundationPointStat
+			var filtered []googleapi.InundationStationStat
 			for _, r := range reports {
-				filtered = append(filtered, googleapi.InundationPointStat{
+				filtered = append(filtered, googleapi.InundationStationStat{
 					StreetName:    r.StreetName,
 					OrgName:       "", // Would need org mapping if desired
 					Depth:         r.Depth,

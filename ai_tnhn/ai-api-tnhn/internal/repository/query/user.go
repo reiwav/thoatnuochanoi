@@ -51,7 +51,7 @@ func (p userRepository) Update(ctx context.Context, id string, input *models.Use
 		"active":     input.Active,
 		"org_id":     input.OrgID,
 		"updated_at": time.Now().Unix(),
-		"assigned_inundation_point_ids":       input.AssignedInundationPointIDs,
+		"assigned_inundation_station_ids":       input.AssignedInundationStationIDs,
 		"assigned_emergency_construction_ids": input.AssignedEmergencyConstructionIDs,
 		"assigned_pumping_station_id":         input.AssignedPumpingStationID,
 	}

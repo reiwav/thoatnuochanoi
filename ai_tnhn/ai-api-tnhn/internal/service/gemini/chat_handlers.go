@@ -20,7 +20,7 @@ func (s *service) handleToolCall(ctx context.Context, call *genai.FunctionCall, 
 		assignedRainIDs = user.AssignedRainStationIDs
 		assignedLakeIDs = user.AssignedLakeStationIDs
 		assignedRiverIDs = user.AssignedRiverStationIDs
-		assignedInuIDs = user.AssignedInundationPointIDs
+		assignedInuIDs = user.AssignedInundationStationIDs
 	}
 
 	// Group: Google & Emails

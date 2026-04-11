@@ -4,10 +4,14 @@ import {
     Box, Typography, Table, TableBody, TableCell, TableContainer,
     TableHead, TableRow, Paper, Chip, Stack, TextField, MenuItem,
     CircularProgress, Button, InputAdornment, TablePagination, Skeleton,
-    Dialog, DialogContent, IconButton, Collapse, useTheme, useMediaQuery, Grid
+    Dialog, DialogContent, IconButton, Collapse, useTheme, useMediaQuery, Grid,
+    Menu, ListItemIcon, ListItemText
 } from '@mui/material';
 import MainCard from 'ui-component/cards/MainCard';
-import { IconSearch, IconClock, IconAlertTriangle, IconX, IconChevronLeft, IconChevronRight, IconChevronUp, IconChevronDown } from '@tabler/icons-react';
+import { 
+    IconSearch, IconClock, IconAlertTriangle, IconX, IconChevronLeft, IconChevronRight, 
+    IconChevronUp, IconChevronDown, IconDotsVertical, IconPlus, IconEye, IconEdit, IconCheck 
+} from '@tabler/icons-react';
 import inundationApi from 'api/inundation';
 import organizationApi from 'api/organization';
 import { getInundationImageUrl } from 'utils/imageHelper';
@@ -63,9 +67,21 @@ const getLatestData = (report) => {
 
 const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, handleOpenViewer, navigate, isMobile, fetchPoints }) => {
     const [open, setOpen] = useState(point.status === 'active');
+    const isCollapsible = point.status === 'active';
     const latest = useMemo(() => getLatestData(point.active_report || point.last_report), [point]);
     const [commentInput, setCommentInput] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    // Action Menu State
+    const [anchorEl, setAnchorEl] = useState(null);
+    const menuOpen = Boolean(anchorEl);
+    const handleMenuClick = (event) => {
+        event.stopPropagation();
+        setAnchorEl(event.currentTarget);
+    };
+    const handleMenuClose = () => {
+        setAnchorEl(null);
+    };
     
     // Auth & Permissions
     const { user, isEmployee, isCompany } = useAuthStore();
@@ -247,7 +263,63 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                 <TableCell><Chip label={point.status === 'active' ? 'Đang ngập' : 'Bình thường'} color={point.status === 'active' ? 'error' : 'success'} size="small" sx={{ fontWeight: 700 }} /></TableCell>
                 <TableCell>{point.status === 'active' && latest?.traffic_status && <Chip label={getTrafficStatusLabel(latest.traffic_status)} size="small" color={getTrafficStatusColor(latest.traffic_status)} variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem' }} />}</TableCell>
                 <TableCell align="right" sx={{ p: { xs: 1, md: 2 } }}>
-                    <Button size="small" variant="text" onClick={() => navigate(`/admin/inundation/form?id=${point.active_report?.id || point.last_report_id}&tab=1&readonly=true`)}>Xem chi tiết</Button>
+                    {point.report_id ? (
+                        <>
+                            <IconButton size="small" onClick={handleMenuClick}>
+                                <IconDotsVertical size={20} />
+                            </IconButton>
+                            <Menu
+                                anchorEl={anchorEl}
+                                open={menuOpen}
+                                onClose={handleMenuClose}
+                                onClick={(e) => e.stopPropagation()}
+                                PaperProps={{
+                                    elevation: 3,
+                                    sx: { borderRadius: 2, minWidth: 150 }
+                                }}
+                            >
+                                <MenuItem onClick={() => { handleMenuClose(); navigate(`/admin/inundation/form?id=${point.report_id}&tab=1&readonly=true`); }}>
+                                    <ListItemIcon><IconEye size={18} /></ListItemIcon>
+                                    <ListItemText primary="Xem chi tiết" />
+                                </MenuItem>
+                                {canReview && (
+                                    <MenuItem onClick={() => { handleMenuClose(); navigate(`/admin/inundation/form?id=${point.report_id}&tab=1`); }}>
+                                        <ListItemIcon><IconEdit size={18} /></ListItemIcon>
+                                        <ListItemText primary="Cập nhật tiến độ" />
+                                    </MenuItem>
+                                )}
+                                {canReview && (
+                                    <MenuItem 
+                                        sx={{ color: 'success.main' }}
+                                        onClick={async () => { 
+                                            handleMenuClose(); 
+                                            if (window.confirm('Xác nhận kết thúc ngập cho điểm này?')) {
+                                                try {
+                                                    await inundationApi.resolveReport(point.report_id);
+                                                    toast.success('Đã kết thúc ngập');
+                                                    if (fetchPoints) fetchPoints();
+                                                } catch (err) {
+                                                    toast.error('Lỗi khi kết thúc ngập');
+                                                }
+                                            }
+                                        }}
+                                    >
+                                        <ListItemIcon><IconCheck size={18} color="green" /></ListItemIcon>
+                                        <ListItemText primary="Kết thúc ngập" />
+                                    </MenuItem>
+                                )}
+                            </Menu>
+                        </>
+                    ) : (
+                        <IconButton 
+                            size="small" 
+                            color="primary" 
+                            onClick={() => navigate(`/admin/inundation/form?tab=0&point_id=${point.id}&name=${encodeURIComponent(point.name)}`)}
+                            title="Tạo báo cáo mới"
+                        >
+                            <IconPlus size={20} />
+                        </IconButton>
+                    )}
                 </TableCell>
             </TableRow>
             <TableRow>

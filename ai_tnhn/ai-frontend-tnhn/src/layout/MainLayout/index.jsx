@@ -151,7 +151,7 @@ export default function MainLayout() {
         label: 'Điểm ngập',
         path: `${basePath}/inundation`,
         active: isInundationPath,
-        show: !isEmployee || (userInfo?.assigned_inundation_point_ids?.length > 0)
+        show: !isEmployee || (userInfo?.assigned_inundation_station_ids?.length > 0)
       },
       {
         id: 'pumping',

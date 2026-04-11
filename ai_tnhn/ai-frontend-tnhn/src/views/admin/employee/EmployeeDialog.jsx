@@ -29,7 +29,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
         password: '',
         role: ROLES.ROLE_CONG_NHAN_CTY,
         org_id: '',
-        assigned_inundation_point_ids: [],
+        assigned_inundation_station_ids: [],
         assigned_emergency_construction_ids: [],
         assigned_pumping_station_id: '',
         active: true
@@ -44,7 +44,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                     password: '',
                     role: employee.role || ROLES.ROLE_CONG_NHAN_CTY,
                     org_id: employee.org_id || defaultOrgId,
-                    assigned_inundation_point_ids: employee.assigned_inundation_point_ids || [],
+                    assigned_inundation_station_ids: employee.assigned_inundation_station_ids || [],
                     assigned_emergency_construction_ids: employee.assigned_emergency_construction_ids || [],
                     assigned_pumping_station_id: employee.assigned_pumping_station_id || '',
                     active: employee.active !== undefined ? employee.active : true
@@ -56,7 +56,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                     password: '',
                     role: ROLES.ROLE_CONG_NHAN_CTY,
                     org_id: defaultOrgId,
-                    assigned_inundation_point_ids: [],
+                    assigned_inundation_station_ids: [],
                     assigned_emergency_construction_ids: [],
                     assigned_pumping_station_id: '',
                     active: true
@@ -190,8 +190,8 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                                     <Box>
                                         <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'primary.main' }}>Điểm ngập được giao</Typography>
                                         <Typography variant="caption" color="textSecondary">
-                                            {formData.assigned_inundation_point_ids.length > 0
-                                                ? `Đã chọn ${formData.assigned_inundation_point_ids.length} điểm`
+                                            {formData.assigned_inundation_station_ids.length > 0
+                                                ? `Đã chọn ${formData.assigned_inundation_station_ids.length} điểm`
                                                 : 'Chưa có điểm nào được chọn'}
                                         </Typography>
                                     </Box>
@@ -210,16 +210,16 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                                     p: 1.5, border: '1px dashed', borderColor: 'divider',
                                     borderRadius: '12px', bgcolor: '#fdfdfd', minHeight: 48
                                 }}>
-                                    {formData.assigned_inundation_point_ids.length === 0 ? (
+                                    {formData.assigned_inundation_station_ids.length === 0 ? (
                                         <Typography variant="caption" color="textSecondary" sx={{ fontStyle: 'italic' }}>Chưa có điểm nào</Typography>
                                     ) : (
-                                        formData.assigned_inundation_point_ids.slice(0, 8).map((id) => {
+                                        formData.assigned_inundation_station_ids.slice(0, 8).map((id) => {
                                             const point = points.find(p => p.id === id);
                                             return <Chip key={id} label={point ? point.name : id} size="small" sx={{ fontWeight: 600 }} />;
                                         })
                                     )}
-                                    {formData.assigned_inundation_point_ids.length > 8 && (
-                                        <Chip label={`+${formData.assigned_inundation_point_ids.length - 8} mục nữa`} size="small" variant="outlined" sx={{ fontWeight: 700 }} />
+                                    {formData.assigned_inundation_station_ids.length > 8 && (
+                                        <Chip label={`+${formData.assigned_inundation_station_ids.length - 8} mục nữa`} size="small" variant="outlined" sx={{ fontWeight: 700 }} />
                                     )}
                                 </Box>
                             </Box>
@@ -317,8 +317,8 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                 title="Chọn điểm ngập"
                 items={points}
                 labelField="name"
-                initialSelectedIds={formData.assigned_inundation_point_ids}
-                onConfirm={(newIds) => handleChange('assigned_inundation_point_ids', newIds)}
+                initialSelectedIds={formData.assigned_inundation_station_ids}
+                onConfirm={(newIds) => handleChange('assigned_inundation_station_ids', newIds)}
                 singleSelect={true}
             />
 

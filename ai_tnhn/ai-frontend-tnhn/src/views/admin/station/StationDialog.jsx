@@ -7,7 +7,7 @@ import {
 import { IconX } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 
-const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type, organizations = [] }) => {
+const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type, organizations = { primary: [], shared: [] } }) => {
     const [formData, setFormData] = useState({
         TenTram: '',
         DiaChi: '',
@@ -134,7 +134,7 @@ const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type, organiz
                         onChange={(e) => handleChange('org_id', e.target.value)}
                     >
                         <MenuItem value="">Chọn đơn vị quản lý</MenuItem>
-                        {organizations.map((org) => (
+                        {(organizations.primary || []).map((org) => (
                             <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>
                         ))}
                     </TextField>
@@ -142,9 +142,9 @@ const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type, organiz
                     <Autocomplete
                         multiple
                         fullWidth
-                        options={organizations.filter(org => org.id !== formData.org_id)}
+                        options={(organizations.shared || []).filter(org => org.id !== formData.org_id)}
                         getOptionLabel={(option) => option.name}
-                        value={organizations.filter(org => formData.shared_org_ids?.includes(org.id))}
+                        value={(organizations.shared || []).filter(org => formData.shared_org_ids?.includes(org.id))}
                         onChange={(event, newValue) => {
                             handleChange('shared_org_ids', newValue.map(org => org.id));
                         }}

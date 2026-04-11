@@ -37,13 +37,8 @@ func (h *EmergencyConstructionHandler) checkPermissions(c *gin.Context) (isSuper
 		return false, false, nil
 	}
 
-	isSuperAdmin = client.Role == constant.ROLE_SUPER_ADMIN ||
-		client.Role == "supper_admin" ||
-		client.Role == "supper_admib" ||
-		client.Role == "super_admin "
-
-	isAllowedAll = isSuperAdmin || client.IsCompany
-	return isSuperAdmin, isAllowedAll, client
+	isAllowedAll = client.IsCompany
+	return false, isAllowedAll, client
 }
 
 func (h *EmergencyConstructionHandler) Create(c *gin.Context) {

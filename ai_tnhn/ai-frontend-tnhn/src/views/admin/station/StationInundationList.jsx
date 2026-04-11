@@ -116,9 +116,9 @@ const StationInundationList = () => {
     const canDelete = hasPermission('inundation:delete');
     const [loading, setLoading] = useState(false);
     const [points, setPoints] = useState([]);
-    const [organizations, setOrganizations] = useState([]);
+    const [organizations, setOrganizations] = useState({ primary: [], shared: [] });
 
-    const organizationNamesMap = organizations.reduce((acc, org) => {
+    const organizationNamesMap = (organizations.shared || []).reduce((acc, org) => {
         acc[org.id] = org.name;
         return acc;
     }, {});
@@ -164,9 +164,9 @@ const StationInundationList = () => {
 
     const loadOrganizations = async () => {
         try {
-            const res = await organizationApi.getAll({ page: 1, size: 1000 });
+            const res = await organizationApi.getSelectionList();
             if (res.data?.status === 'success') {
-                setOrganizations(res.data.data.data || []);
+                setOrganizations(res.data.data || { primary: [], shared: [] });
             }
         } catch (err) {
             console.error('Lỗi tải danh sách đơn vị:', err);
@@ -250,7 +250,7 @@ const StationInundationList = () => {
                         sx={{ width: { xs: '100%', sm: 200 } }}
                     >
                         <MenuItem value="">Tất cả đơn vị</MenuItem>
-                        {organizations.map((org) => (
+                        {(organizations.shared || []).map((org) => (
                             <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>
                         ))}
                     </TextField>

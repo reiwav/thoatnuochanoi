@@ -68,12 +68,11 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
     const [isSubmitting, setIsSubmitting] = useState(false);
     
     // Auth & Permissions
-    const { user, role, isEmployee } = useAuthStore();
+    const { user, isEmployee, isCompany } = useAuthStore();
     const canReview = useMemo(() => {
         if (isEmployee) return false;
         
-        const isSuperAdmin = role === 'super_admin' || ['supper_admin', 'supper_admib', 'super_admin '].includes(role);
-        const isAllowedAll = isSuperAdmin || user?.is_company;
+        const isAllowedAll = isCompany;
         if (isAllowedAll) return true;
 
         const report = point.active_report || point.last_report;
@@ -87,7 +86,7 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
         if (userOrg?.inundation_ids?.includes(report.point_id)) return true;
 
         return false;
-    }, [user, role, isEmployee, point, organizations]);
+    }, [user, isCompany, isEmployee, point, organizations]);
 
     const handleReview = async () => {
         if (!commentInput.trim()) return;
@@ -395,12 +394,11 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, getDuration,
     const [isSubmitting, setIsSubmitting] = useState(false);
     
     // Auth & Permissions
-    const { user, role, isEmployee } = useAuthStore();
+    const { user, isEmployee, isCompany } = useAuthStore();
     const canReview = useMemo(() => {
         if (isEmployee) return false;
         
-        const isSuperAdmin = role === 'super_admin' || ['supper_admin', 'supper_admib', 'super_admin '].includes(role);
-        const isAllowedAll = isSuperAdmin || user?.is_company;
+        const isAllowedAll = isCompany;
         if (isAllowedAll) return true;
 
         if (!report) return false;
@@ -413,7 +411,7 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, getDuration,
         if (userOrg?.inundation_ids?.includes(report.point_id)) return true;
 
         return false;
-    }, [user, role, isEmployee, report, organizations]);
+    }, [user, isCompany, isEmployee, report, organizations]);
 
     const handleReview = async () => {
         if (!commentInput.trim()) return;

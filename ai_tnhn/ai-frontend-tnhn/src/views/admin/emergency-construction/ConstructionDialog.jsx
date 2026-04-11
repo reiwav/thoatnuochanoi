@@ -2,14 +2,13 @@ import React, { useState, useEffect } from 'react';
 import {
     Dialog, DialogTitle, DialogContent, DialogActions,
     TextField, Button, Grid, IconButton, Stack,
-    Typography, Box, MenuItem
+    Typography, Box, MenuItem, Autocomplete, Chip
 } from '@mui/material';
 import { IconX } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
-import organizationApi from 'api/organization';
 import useAuthStore from 'store/useAuthStore';
 
-const ConstructionDialog = ({ open, onClose, onSubmit, item, isEdit, userRole = '', defaultOrgId = '' }) => {
+const ConstructionDialog = ({ open, onClose, onSubmit, item, isEdit, organizations = { primary: [], shared: [] }, defaultOrgId = '' }) => {
     const { hasPermission } = useAuthStore();
     const [formData, setFormData] = useState({
         name: '',
@@ -19,25 +18,12 @@ const ConstructionDialog = ({ open, onClose, onSubmit, item, isEdit, userRole = 
         end_date: 0,
         status: 'planned',
         cost: 0,
-        org_id: ''
+        org_id: '',
+        shared_org_ids: []
     });
-
-    const [organizations, setOrganizations] = useState([]);
-
-    const fetchOrganizations = async () => {
-        try {
-            const res = await organizationApi.getAll({ per_page: 1000 });
-            if (res.data?.status === 'success') {
-                setOrganizations(res.data.data?.data || []);
-            }
-        } catch (err) {
-            console.error('Lỗi tải danh sách công ty:', err);
-        }
-    };
 
     useEffect(() => {
         if (open) {
-            fetchOrganizations();
             if (isEdit && item) {
                 setFormData({
                     name: item.name || '',
@@ -47,7 +33,8 @@ const ConstructionDialog = ({ open, onClose, onSubmit, item, isEdit, userRole = 
                     end_date: item.end_date || 0,
                     status: item.status || 'planned',
                     cost: item.cost || 0,
-                    org_id: item.org_id || ''
+                    org_id: item.org_id || '',
+                    shared_org_ids: item.shared_org_ids || []
                 });
             } else {
                 setFormData({
@@ -58,7 +45,8 @@ const ConstructionDialog = ({ open, onClose, onSubmit, item, isEdit, userRole = 
                     end_date: Math.floor(Date.now() / 1000) + 86400 * 30, // Default 30 days
                     status: 'planned',
                     cost: 0,
-                    org_id: defaultOrgId || ''
+                    org_id: defaultOrgId || '',
+                    shared_org_ids: []
                 });
             }
         }
@@ -75,11 +63,9 @@ const ConstructionDialog = ({ open, onClose, onSubmit, item, isEdit, userRole = 
         if (!formData.name) return toast.error("Vui lòng nhập tên công trình");
         if (!formData.org_id) return toast.error("Vui lòng chọn đơn vị quản lý");
 
-        // Convert date strings if needed, but here assuming they are timestamps
         onSubmit(formData);
     };
 
-    // Helper for date input (YYYY-MM-DD to unix timestamp and vice versa)
     const toDateString = (timestamp) => {
         if (!timestamp) return '';
         return new Date(timestamp * 1000).toISOString().split('T')[0];
@@ -153,18 +139,42 @@ const ConstructionDialog = ({ open, onClose, onSubmit, item, isEdit, userRole = 
                             />
                         </Grid>
                     </Grid>
-                    {hasPermission('organization:view') && (
-                        <TextField
-                            fullWidth select label="Đơn vị quản lý" required size="small"
-                            value={formData.org_id}
-                            onChange={(e) => handleChange('org_id', e.target.value)}
-                            sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
-                        >
-                            {organizations.map((org) => (
-                                <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>
-                            ))}
-                        </TextField>
-                    )}
+
+                    <TextField
+                        fullWidth select label="Đơn vị quản lý" required size="small"
+                        value={formData.org_id}
+                        onChange={(e) => handleChange('org_id', e.target.value)}
+                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
+                    >
+                        {(organizations.primary || []).map((org) => (
+                            <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>
+                        ))}
+                    </TextField>
+
+                    <Autocomplete
+                        multiple
+                        fullWidth
+                        size="small"
+                        options={(organizations.shared || []).filter(org => org.id !== formData.org_id)}
+                        getOptionLabel={(option) => option.name}
+                        value={(organizations.shared || []).filter(org => formData.shared_org_ids?.includes(org.id))}
+                        onChange={(event, newValue) => {
+                            handleChange('shared_org_ids', newValue.map(org => org.id));
+                        }}
+                        renderInput={(params) => (
+                            <TextField {...params} label="Đơn vị phối hợp" placeholder="Chọn đơn vị" sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }} />
+                        )}
+                        renderTags={(value, getTagProps) =>
+                            value.map((option, index) => (
+                                <Chip
+                                    variant="outlined" label={option.name}
+                                    {...getTagProps({ index })} key={option.id}
+                                    size="small" sx={{ borderRadius: '8px', fontWeight: 600 }}
+                                />
+                            ))
+                        }
+                    />
+
                     <TextField
                         fullWidth label="Mô tả" size="small" multiline rows={3}
                         value={formData.description}

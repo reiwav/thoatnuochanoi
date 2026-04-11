@@ -12,6 +12,7 @@ import Stack from '@mui/material/Stack';
 import Tooltip from '@mui/material/Tooltip';
 import { IconEdit, IconTrash, IconPlus, IconHistory } from '@tabler/icons-react';
 import pumpingStationApi from 'api/pumpingStation';
+import organizationApi from 'api/organization';
 import PumpingStationDialog from './PumpingStationDialog';
 import PumpingStationHistoryDialog from './PumpingStationHistoryDialog';
 import PumpingStationReport from './PumpingStationReport';
@@ -27,21 +28,39 @@ const PumpingStationPage = () => {
     const [open, setOpen] = useState(false);
     const [openHistory, setOpenHistory] = useState(false);
     const [selected, setSelected] = useState(null);
+    const [orgs, setOrgs] = useState({ primary: [], shared: [] });
 
     const isAdmin = hasPermission('trambom:view');
 
     const loadData = async () => {
         try {
             setLoading(true);
+            const promises = [];
+            
             if (isAdmin) {
-                const response = await pumpingStationApi.list();
-                setData(response.data.data?.data || []);
+                promises.push(pumpingStationApi.list());
             } else if (userInfo?.assigned_pumping_station_id) {
-                const response = await pumpingStationApi.get(userInfo.assigned_pumping_station_id);
-                setAssignedStation(response.data.data || null);
+                promises.push(pumpingStationApi.get(userInfo.assigned_pumping_station_id));
+            }
+            
+            promises.push(organizationApi.getSelectionList());
+
+            const results = await Promise.all(promises);
+            
+            if (isAdmin) {
+                const stRes = results[0];
+                setData(stRes.data.data?.data || []);
+            } else if (userInfo?.assigned_pumping_station_id) {
+                const stRes = results[0];
+                setAssignedStation(stRes.data.data || null);
+            }
+
+            const orgRes = results[results.length - 1];
+            if (orgRes.data?.status === 'success') {
+                setOrgs(orgRes.data.data || { primary: [], shared: [] });
             }
         } catch (error) {
-            console.error('Failed to load stations', error);
+            console.error('Failed to load data', error);
         } finally {
             setLoading(false);
         }
@@ -147,6 +166,7 @@ const PumpingStationPage = () => {
                 handleClose={() => setOpen(false)}
                 item={selected}
                 refresh={loadData}
+                organizations={orgs}
             />
 
             {selected && (

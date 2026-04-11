@@ -34,13 +34,8 @@ func (h *PumpingStationHandler) checkPermissions(c *gin.Context) (isSuperAdmin b
 		return false, false, nil
 	}
 
-	isSuperAdmin = user.Role == constant.ROLE_SUPER_ADMIN ||
-		user.Role == "supper_admin" ||
-		user.Role == "supper_admib" ||
-		user.Role == "super_admin "
-
-	isAllowedAll = isSuperAdmin || user.IsCompany
-	return isSuperAdmin, isAllowedAll, user
+	isAllowedAll = user.IsCompany
+	return false, isAllowedAll, user
 }
 
 func (h *PumpingStationHandler) Create(c *gin.Context) {

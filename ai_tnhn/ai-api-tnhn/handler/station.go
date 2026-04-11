@@ -1,13 +1,12 @@
 package handler
 
 import (
-	"ai-api-tnhn/constant"
 	"ai-api-tnhn/handler/filters"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/service/auth"
 	"ai-api-tnhn/internal/service/station"
 	"ai-api-tnhn/utils/web"
-	
+
 	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/gin-gonic/gin"
@@ -35,13 +34,9 @@ func (h *StationHandler) checkPermissions(c *gin.Context) (isSuperAdmin bool, is
 		return false, false, nil
 	}
 
-	isSuperAdmin = user.Role == constant.ROLE_SUPER_ADMIN ||
-		user.Role == "supper_admin" ||
-		user.Role == "supper_admib" ||
-		user.Role == "super_admin "
-
-	isAllowedAll = isSuperAdmin || user.IsCompany
-	return isSuperAdmin, isAllowedAll, user
+	// We no longer distinguish Super Admin strings, only IsCompany flag
+	isAllowedAll = user.IsCompany
+	return false, isAllowedAll, user
 }
 
 // RAIN STATIONS

@@ -4,9 +4,14 @@ import {
     Button, Stack, TextField, Table, TableBody,
     TableCell, TableContainer, TableHead, TableRow, Paper,
     IconButton, CircularProgress, Typography, Chip, Tooltip, Box,
-    MenuItem, Collapse, useTheme, useMediaQuery, Grid
+    MenuItem, Collapse, useTheme, useMediaQuery, Grid,
+    Menu, ListItemIcon, ListItemText
 } from '@mui/material';
-import { IconTrash, IconPlus, IconEdit, IconChevronDown, IconChevronUp } from '@tabler/icons-react';
+import { 
+    IconTrash, IconPlus, IconEdit, IconChevronDown, IconChevronUp,
+    IconDotsVertical, IconEye, IconCheck
+} from '@tabler/icons-react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 
 // project imports
@@ -18,14 +23,27 @@ import StationDialog from './StationDialog';
 import useAuthStore from 'store/useAuthStore';
 
 const CollapsibleStationRow = ({ row, handleOpenEdit, handleDelete, isMobile, canEdit, canDelete }) => {
+    const navigate = useNavigate();
     const [open, setOpen] = useState(false);
+    const [anchorEl, setAnchorEl] = useState(null);
+    const openMenu = Boolean(anchorEl);
+    const handleMenuClick = (event) => {
+        event.stopPropagation();
+        setAnchorEl(event.currentTarget);
+    };
+    const handleMenuClose = (e) => {
+        if (e) e.stopPropagation();
+        setAnchorEl(null);
+    };
     return (
         <React.Fragment>
             <TableRow hover sx={{ '& .MuiTableCell-root': { borderBottom: 'none' } }}>
                 <TableCell sx={{ width: 40, p: { xs: 1, md: 2 } }}>
-                    <IconButton aria-label="expand row" size="small" onClick={() => setOpen(!open)}>
-                        {open ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />}
-                    </IconButton>
+                    {row.report_id && (
+                        <IconButton aria-label="expand row" size="small" onClick={() => setOpen(!open)}>
+                            {open ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />}
+                        </IconButton>
+                    )}
                 </TableCell>
                 <TableCell sx={{ p: { xs: 1, md: 2 } }}>
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'primary.dark', fontSize: { xs: '0.875rem', md: 'inherit' } }}>{row.name}</Typography>
@@ -43,6 +61,10 @@ const CollapsibleStationRow = ({ row, handleOpenEdit, handleDelete, isMobile, ca
                             </Typography>
                         </TableCell>
                         <TableCell>
+                            <Chip label={row.report_id ? 'Đang ngập' : 'Bình thường'}
+                                color={row.report_id ? 'error' : 'success'} size="small" variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem', height: 24 }} />
+                        </TableCell>
+                        <TableCell>
                             <Chip label={row.active ? 'Hoạt động' : 'Ngừng'}
                                 color={row.active ? 'success' : 'default'} size="small" variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem', height: 24 }} />
                         </TableCell>
@@ -50,54 +72,77 @@ const CollapsibleStationRow = ({ row, handleOpenEdit, handleDelete, isMobile, ca
                 )}
                 {!isMobile && (canEdit || canDelete) && (
                     <TableCell align="right" sx={{ p: { xs: 1, md: 2 } }}>
-                        {canEdit && (
-                            <Tooltip title="Chỉnh sửa">
-                                <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>
-                                    <IconEdit size={20} />
-                                </IconButton>
-                            </Tooltip>
-                        )}
-                        {canDelete && (
-                            <Tooltip title="Xóa">
-                                <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}>
-                                    <IconTrash size={20} />
-                                </IconButton>
-                            </Tooltip>
-                        )}
+                        <Stack direction="row" spacing={1} justifyContent="flex-end">
+                            {row.report_id && (
+                                <>
+                                    <IconButton size="small" onClick={handleMenuClick} color="error" sx={{ bgcolor: 'error.lighter' }}>
+                                        <IconDotsVertical size={20} />
+                                    </IconButton>
+                                    <Menu
+                                        anchorEl={anchorEl}
+                                        open={openMenu}
+                                        onClose={handleMenuClose}
+                                        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                                        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                                    >
+                                        <MenuItem onClick={() => { handleMenuClose(); navigate(`/admin/inundation/form?id=${row.report_id}&tab=1&readonly=true`); }}>
+                                            <ListItemIcon><IconEye size={18} /></ListItemIcon>
+                                            <ListItemText>Xem báo cáo</ListItemText>
+                                        </MenuItem>
+                                        <MenuItem onClick={() => { handleMenuClose(); navigate(`/admin/inundation/form?id=${row.report_id}&tab=2`); }}>
+                                            <ListItemIcon><IconPlus size={18} /></ListItemIcon>
+                                            <ListItemText>Cập nhật tiến độ</ListItemText>
+                                        </MenuItem>
+                                        <MenuItem onClick={() => { handleMenuClose(); navigate(`/admin/inundation/form?id=${row.report_id}&tab=1`); }}>
+                                            <ListItemIcon><IconCheck size={18} /></ListItemIcon>
+                                            <ListItemText>Kết thúc ngập</ListItemText>
+                                        </MenuItem>
+                                    </Menu>
+                                </>
+                            )}
+                            {canEdit && (
+                                <Tooltip title="Chỉnh sửa">
+                                    <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>
+                                        <IconEdit size={20} />
+                                    </IconButton>
+                                </Tooltip>
+                            )}
+                            {canDelete && (
+                                <Tooltip title="Xóa">
+                                    <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}>
+                                        <IconTrash size={20} />
+                                    </IconButton>
+                                </Tooltip>
+                            )}
+                        </Stack>
                     </TableCell>
                 )}
             </TableRow>
-            <TableRow>
-                <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider', paddingBottom: 0, paddingTop: 0 }} colSpan={isMobile ? 2 : 5}>
-                    <Collapse in={open} timeout="auto" unmountOnExit>
-                        <Box sx={{ m: { xs: 1, md: 2 }, p: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-                            <Typography variant="h6" gutterBottom component="div" sx={{ fontWeight: 700, color: 'primary.main', mb: 2, fontSize: { xs: '0.875rem', md: 'inherit' } }}>
-                                {row.address}
-                            </Typography>
-                            <Stack spacing={1.5}>
-                                {isMobile && (
-                                    <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
-                                        <Chip label={row.active ? 'Hoạt động' : 'Ngừng'}
-                                            color={row.active ? 'success' : 'default'} size="small" variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem', height: 24 }} />
-                                    </Stack>
-                                )}
+            {row.report_id && (
+                <TableRow>
+                    <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider', paddingBottom: 0, paddingTop: 0 }} colSpan={isMobile ? 2 : 6}>
+                        <Collapse in={open} timeout="auto" unmountOnExit>
+                            <Box sx={{ m: { xs: 1, md: 2 }, p: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'primary.main', mb: 2 }}>Thông tin chi tiết</Typography>
                                 <Grid container spacing={2}>
                                     <Grid item xs={12} sm={6}>
-                                        <Typography variant="body2" color="text.secondary">Tọa độ:</Typography>
-                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{row.lat}, {row.lng}</Typography>
+                                        <Typography variant="caption" color="text.secondary" display="block">Vĩ độ (Lat):</Typography>
+                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{row.lat}</Typography>
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <Typography variant="caption" color="text.secondary" display="block">Kinh độ (Lng):</Typography>
+                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{row.lng}</Typography>
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Typography variant="caption" color="text.secondary" display="block">Địa chỉ:</Typography>
+                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{row.address || '-'}</Typography>
                                     </Grid>
                                 </Grid>
-                                {isMobile && (canEdit || canDelete) && (
-                                    <Box sx={{ mt: 1, textAlign: 'right', display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                                        {canEdit && <Button size="small" color="primary" variant="contained" startIcon={<IconEdit size={16} />} onClick={() => handleOpenEdit(row)}>Chỉnh sửa</Button>}
-                                        {canDelete && <Button size="small" color="error" variant="outlined" startIcon={<IconTrash size={16} />} onClick={() => handleDelete(row.id)}>Xóa</Button>}
-                                    </Box>
-                                )}
-                            </Stack>
-                        </Box>
-                    </Collapse>
-                </TableCell>
-            </TableRow>
+                            </Box>
+                        </Collapse>
+                    </TableCell>
+                </TableRow>
+            )}
         </React.Fragment>
     );
 };
@@ -255,8 +300,9 @@ const StationInundationList = () => {
                             {!isMobile && (
                                 <>
                                     <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Đơn vị quản lý</TableCell>
-                                    <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Trạng thái</TableCell>
-                                    {(canEdit || canDelete) && <TableCell align="right" sx={{ fontWeight: 800, fontSize: '1rem' }}>Thao tác</TableCell>}
+                                    <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Tình trạng ngập</TableCell>
+                                    <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Trạng thái trạm</TableCell>
+                                    {(canEdit || canDelete || true) && <TableCell align="right" sx={{ fontWeight: 800, fontSize: '1rem' }}>Thao tác</TableCell>}
                                 </>
                             )}
                         </TableRow>

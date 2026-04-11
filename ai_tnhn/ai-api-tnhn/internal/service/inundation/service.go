@@ -57,6 +57,7 @@ type PointStatus struct {
 	ActiveReport *models.InundationReport `json:"active_report,omitempty"`
 	LastReport   *models.InundationReport `json:"last_report,omitempty"`
 	LastReportID string                   `json:"last_report_id"`
+	ReportID     string                   `json:"report_id"`
 	Active       bool                     `json:"active"`
 	CreatedAt    int64                    `json:"created_at"`
 }
@@ -106,7 +107,37 @@ func NewService(
 	// 2. Start the worker loop (Startup scan + channel listener)
 	svc.syncWorker.Start()
 
+	// 3. Sync existing active reports to stations on startup (Background)
+	go svc.syncActiveReportsToStations(context.Background())
+
 	return svc
+}
+
+func (s *service) syncActiveReportsToStations(ctx context.Context) {
+	fmt.Println("Starting inundation station report_id sync...")
+	// Find all active reports
+	f := filter.NewPaginationFilter()
+	f.AddWhere("status", "status", "active")
+	f.PerPage = 1000
+	reports, _, err := s.inundationRepo.List(ctx, f)
+	if err != nil {
+		fmt.Printf("Sync error: failed to list active reports: %v\n", err)
+		return
+	}
+
+	for _, r := range reports {
+		if r.PointID != "" {
+			point, err := s.inundationPointRepo.GetByID(ctx, r.PointID)
+			if err == nil && point != nil {
+				if point.ReportID != r.ID {
+					point.ReportID = r.ID
+					_ = s.inundationPointRepo.Update(ctx, *point)
+					fmt.Printf("Synced report %s to station %s\n", r.ID, point.Name)
+				}
+			}
+		}
+	}
+	fmt.Println("Inundation station report_id sync completed.")
 }
 
 func (s *service) CreateReport(ctx context.Context, report *models.InundationReport, images []ImageContent) error {
@@ -138,6 +169,15 @@ func (s *service) CreateReport(ctx context.Context, report *models.InundationRep
 	err := s.inundationRepo.Create(ctx, report)
 	if err != nil {
 		return err
+	}
+
+	// NEW: Update station with report_id if active
+	if report.Status == "active" && report.PointID != "" {
+		point, err := s.inundationPointRepo.GetByID(ctx, report.PointID)
+		if err == nil && point != nil {
+			point.ReportID = report.ID
+			_ = s.inundationPointRepo.Update(ctx, *point)
+		}
 	}
 
 	// Trigger immediate sync task
@@ -313,6 +353,17 @@ func (s *service) Resolve(ctx context.Context, reportID string, endTime int64) e
 	if endTime == 0 {
 		endTime = time.Now().Unix()
 	}
+
+	// NEW: Find report to get point_id before resolving
+	report, err := s.inundationRepo.GetByID(ctx, reportID)
+	if err == nil && report != nil && report.PointID != "" {
+		point, err := s.inundationPointRepo.GetByID(ctx, report.PointID)
+		if err == nil && point != nil && point.ReportID == reportID {
+			point.ReportID = ""
+			_ = s.inundationPointRepo.Update(ctx, *point)
+		}
+	}
+
 	return s.inundationRepo.Resolve(ctx, reportID, endTime)
 }
 
@@ -655,6 +706,7 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []
 			ActiveReport: activeReport,
 			LastReport:   lastReport,
 			LastReportID: lastID,
+			ReportID:     p.ReportID,
 			Active:       p.Active,
 			CreatedAt:    p.CTime,
 		}

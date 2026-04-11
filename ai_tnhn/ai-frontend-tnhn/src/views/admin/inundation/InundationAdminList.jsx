@@ -4,10 +4,15 @@ import {
     Box, Typography, Table, TableBody, TableCell, TableContainer,
     TableHead, TableRow, Paper, Chip, Stack, TextField, MenuItem,
     CircularProgress, Button, InputAdornment, TablePagination, Skeleton,
-    Dialog, DialogContent, IconButton, Collapse, useTheme, useMediaQuery, Grid
+    Dialog, DialogContent, IconButton, Collapse, useTheme, useMediaQuery, Grid,
+    Menu, ListItemIcon, ListItemText, Tooltip
 } from '@mui/material';
 import MainCard from 'ui-component/cards/MainCard';
-import { IconSearch, IconClock, IconAlertTriangle, IconX, IconChevronLeft, IconChevronRight, IconChevronUp, IconChevronDown } from '@tabler/icons-react';
+import { 
+    IconSearch, IconClock, IconAlertTriangle, IconX, IconChevronLeft, 
+    IconChevronRight, IconChevronUp, IconChevronDown, IconDotsVertical,
+    IconEye, IconPlus, IconCheck
+} from '@tabler/icons-react';
 import inundationApi from 'api/inundation';
 import organizationApi from 'api/organization';
 import { getInundationImageUrl } from 'utils/imageHelper';
@@ -63,6 +68,17 @@ const getLatestData = (report) => {
 
 const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, handleOpenViewer, navigate, isMobile, fetchPoints }) => {
     const [open, setOpen] = useState(point.status === 'active');
+    const [anchorEl, setAnchorEl] = useState(null);
+    const openMenu = Boolean(anchorEl);
+    const handleMenuClick = (event) => {
+        event.stopPropagation();
+        setAnchorEl(event.currentTarget);
+    };
+    const handleMenuClose = (e) => {
+        if (e) e.stopPropagation();
+        setAnchorEl(null);
+    };
+
     const latest = useMemo(() => getLatestData(point.active_report || point.last_report), [point]);
     const [commentInput, setCommentInput] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -216,16 +232,18 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                                 ) : <Typography variant="caption" sx={{ fontStyle: 'italic', color: 'text.disabled' }}>Không có ảnh</Typography>}
                             </Box>
 
-                            <Button
-                                fullWidth
-                                variant="contained"
-                                color="primary"
-                                size="large"
-                                sx={{ borderRadius: 3, fontWeight: 700, py: 1 }}
-                                onClick={() => navigate(`/admin/inundation/form?id=${point.active_report?.id || point.last_report_id}&tab=1&readonly=true`)}
-                            >
-                                Xem chi tiết báo cáo
-                            </Button>
+                            {point.report_id && (
+                                <Button
+                                    fullWidth
+                                    variant="contained"
+                                    color="primary"
+                                    size="large"
+                                    sx={{ borderRadius: 3, fontWeight: 700, py: 1 }}
+                                    onClick={() => navigate(`/admin/inundation/form?id=${point.report_id}&tab=1&readonly=true`)}
+                                >
+                                    Xem báo cáo hiện tại
+                                </Button>
+                            )}
                         </Box>
                     </Collapse>
                 </Stack>
@@ -235,11 +253,13 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
 
     return (
         <React.Fragment>
-            <TableRow hover sx={{ '& .MuiTableCell-root': { borderBottom: 'none' } }}>
+            <TableRow hover sx={{ '& .MuiTableCell-root': { borderBottom: point.report_id ? 'none' : '1px solid', borderColor: 'divider' } }}>
                 <TableCell sx={{ width: 40, p: { xs: 1, md: 2 } }}>
-                    <IconButton aria-label="expand row" size="small" onClick={() => setOpen(!open)}>
-                        {open ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />}
-                    </IconButton>
+                    {point.report_id && (
+                        <IconButton aria-label="expand row" size="small" onClick={() => setOpen(!open)}>
+                            {open ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />}
+                        </IconButton>
+                    )}
                 </TableCell>
                 <TableCell sx={{ p: { xs: 1, md: 2 } }}>
                     <Typography variant="body2" sx={{ fontWeight: 800, color: 'primary.dark' }}>{point.name}</Typography>
@@ -248,143 +268,187 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                 <TableCell><Chip label={point.status === 'active' ? 'Đang ngập' : 'Bình thường'} color={point.status === 'active' ? 'error' : 'success'} size="small" sx={{ fontWeight: 700 }} /></TableCell>
                 <TableCell>{point.status === 'active' && latest?.traffic_status && <Chip label={getTrafficStatusLabel(latest.traffic_status)} size="small" color={getTrafficStatusColor(latest.traffic_status)} variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem' }} />}</TableCell>
                 <TableCell align="right" sx={{ p: { xs: 1, md: 2 } }}>
-                    <Button size="small" variant="text" onClick={() => navigate(`/admin/inundation/form?id=${point.active_report?.id || point.last_report_id}&tab=1&readonly=true`)}>Xem chi tiết</Button>
+                    {point.report_id ? (
+                        <>
+                            <IconButton
+                                size="small"
+                                onClick={handleMenuClick}
+                                color="primary"
+                                sx={{ bgcolor: 'primary.lighter' }}
+                            >
+                                <IconDotsVertical size={20} />
+                            </IconButton>
+                            <Menu
+                                anchorEl={anchorEl}
+                                open={openMenu}
+                                onClose={handleMenuClose}
+                                transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                                anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                            >
+                                <MenuItem onClick={() => { handleMenuClose(); navigate(`/admin/inundation/form?id=${point.report_id}&tab=1&readonly=true`); }}>
+                                    <ListItemIcon><IconEye size={18} /></ListItemIcon>
+                                    <ListItemText>Xem báo cáo</ListItemText>
+                                </MenuItem>
+                                <MenuItem onClick={() => { handleMenuClose(); navigate(`/admin/inundation/form?id=${point.report_id}&tab=2`); }}>
+                                    <ListItemIcon><IconPlus size={18} /></ListItemIcon>
+                                    <ListItemText>Cập nhật tiến độ</ListItemText>
+                                </MenuItem>
+                                <MenuItem onClick={() => { handleMenuClose(); navigate(`/admin/inundation/form?id=${point.report_id}&tab=1`); }}>
+                                    <ListItemIcon><IconCheck size={18} /></ListItemIcon>
+                                    <ListItemText>Kết thúc ngập</ListItemText>
+                                </MenuItem>
+                            </Menu>
+                        </>
+                    ) : (
+                        <Tooltip title="Tạo báo cáo ngập">
+                            <IconButton
+                                size="small"
+                                color="error"
+                                onClick={() => navigate(`/admin/inundation/form?tab=0&point_id=${point.id}&name=${encodeURIComponent(point.name)}`)}
+                                sx={{ bgcolor: 'error.lighter' }}
+                            >
+                                <IconPlus size={20} />
+                            </IconButton>
+                        </Tooltip>
+                    )}
                 </TableCell>
             </TableRow>
-            <TableRow>
-                <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider', paddingBottom: 0, paddingTop: 0 }} colSpan={isMobile ? 2 : 6}>
-                    <Collapse in={open} timeout="auto" unmountOnExit>
-                        <Box sx={{ m: { xs: 1, md: 2 }, p: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-                            <Typography variant="h6" gutterBottom component="div" sx={{ fontWeight: 700, color: 'primary.main', mb: 2, fontSize: { xs: '0.875rem', md: 'inherit' } }}>
-                                {point.address}
-                            </Typography>
-                            <Stack spacing={1.5}>
-                                {isMobile && (
-                                    <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
-                                        <Chip label={point.status === 'active' ? 'Đang ngập' : 'Bình thường'} color={point.status === 'active' ? 'error' : 'success'} size="small" sx={{ fontWeight: 700 }} />
-                                        {point.status === 'active' && latest?.traffic_status && (
-                                            <Chip label={getTrafficStatusLabel(latest.traffic_status)} size="small" color={getTrafficStatusColor(latest.traffic_status)} variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem' }} />
-                                        )}
-                                    </Stack>
-                                )}
-                                <Grid container spacing={2}>
-                                    <Grid item xs={12} sm={6}>
-                                        <Typography variant="body2" color="text.secondary">Kích thước ngập:</Typography>
-                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                            {latest ? `${latest.length || 0}m x ${latest.width || 0}m x ${latest.depth || 0}m` : '-'}
-                                        </Typography>
-                                    </Grid>
-                                    <Grid item xs={12} sm={6}>
-                                        <Typography variant="body2" color="text.secondary">Thời gian ngập:</Typography>
-                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                            {`Bắt đầu: ${formatTime(point.start_time || latest?.start_time)}`}
-                                        </Typography>
-                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                            {point.status === 'active' ? 'Đang diễn ra' : `Kết thúc: ${formatTime(point.end_time || latest?.end_time)}`}
-                                        </Typography>
-                                        <Typography variant="caption" color={point.status === 'active' ? "error" : "text.secondary"} sx={{ fontWeight: 600, display: 'block' }}>
-                                            {point.status === 'active'
-                                                ? `Cập nhật lúc: ${formatTime(latest?.newest_ts)} (${!latest?.oldest_ts || Number(latest?.oldest_ts) === Number(latest?.newest_ts) ? '00' : getDuration(latest?.oldest_ts, latest?.newest_ts)})`
-                                                : `Tổng thời gian: ${getDuration(point.start_time || latest?.start_time, point.end_time || latest?.end_time)}`}
-                                        </Typography>
-                                    </Grid>
-                                </Grid>
-
-                                {latest?.review_comment && (
-                                    <Box sx={{ mt: 1, p: 1.5, bgcolor: '#fff5f5', borderRadius: 2, border: '1px solid', borderColor: '#ffc1c1' }}>
-                                        <Typography variant="caption" sx={{ fontWeight: 800, color: 'error.main', display: 'block', mb: 0.5 }}>NHẬN XÉT CỦA REVIEWER:</Typography>
-                                        <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'error.dark', fontWeight: 600 }}>{latest.review_comment}</Typography>
-                                    </Box>
-                                )}
-
-                                {canReview && point.status === 'active' && (
-                                    <Box sx={{ mt: 2, p: 2, bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: 'primary.main' }}>Gửi nhận xét cho nhân viên:</Typography>
-                                        <TextField
-                                            fullWidth
-                                            multiline
-                                            rows={2}
-                                            placeholder="Nhập nội dung cần yêu cầu sửa đổi..."
-                                            value={commentInput}
-                                            onChange={(e) => setCommentInput(e.target.value)}
-                                            sx={{ mb: 1.5, '& .MuiOutlinedInput-root': { bgcolor: 'grey.50' } }}
-                                        />
-                                        <Stack direction="row" justifyContent="flex-end">
-                                            <Button
-                                                variant="contained"
-                                                color="primary"
-                                                size="small"
-                                                onClick={handleReview}
-                                                disabled={isSubmitting || !commentInput.trim()}
-                                                startIcon={isSubmitting ? <CircularProgress size={16} /> : null}
-                                            >
-                                                Gửi nhận xét
-                                            </Button>
+            {point.report_id && (
+                <TableRow>
+                    <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider', paddingBottom: 0, paddingTop: 0 }} colSpan={isMobile ? 2 : 6}>
+                        <Collapse in={open} timeout="auto" unmountOnExit>
+                            <Box sx={{ m: { xs: 1, md: 2 }, p: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                                <Typography variant="h6" gutterBottom component="div" sx={{ fontWeight: 700, color: 'primary.main', mb: 2, fontSize: { xs: '0.875rem', md: 'inherit' } }}>
+                                    {point.address}
+                                </Typography>
+                                <Stack spacing={1.5}>
+                                    {isMobile && (
+                                        <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
+                                            <Chip label={point.status === 'active' ? 'Đang ngập' : 'Bình thường'} color={point.status === 'active' ? 'error' : 'success'} size="small" sx={{ fontWeight: 700 }} />
+                                            {point.status === 'active' && latest?.traffic_status && (
+                                                <Chip label={getTrafficStatusLabel(latest.traffic_status)} size="small" color={getTrafficStatusColor(latest.traffic_status)} variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem' }} />
+                                            )}
                                         </Stack>
-                                    </Box>
-                                )}
+                                    )}
+                                    <Grid container spacing={2}>
+                                        <Grid item xs={12} sm={6}>
+                                            <Typography variant="body2" color="text.secondary">Kích thước ngập:</Typography>
+                                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                {latest ? `${latest.length || 0}m x ${latest.width || 0}m x ${latest.depth || 0}m` : '-'}
+                                            </Typography>
+                                        </Grid>
+                                        <Grid item xs={12} sm={6}>
+                                            <Typography variant="body2" color="text.secondary">Thời gian ngập:</Typography>
+                                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                {`Bắt đầu: ${formatTime(point.start_time || latest?.start_time)}`}
+                                            </Typography>
+                                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                {point.status === 'active' ? 'Đang diễn ra' : `Kết thúc: ${formatTime(point.end_time || latest?.end_time)}`}
+                                            </Typography>
+                                            <Typography variant="caption" color={point.status === 'active' ? "error" : "text.secondary"} sx={{ fontWeight: 600, display: 'block' }}>
+                                                {point.status === 'active'
+                                                    ? `Cập nhật lúc: ${formatTime(latest?.newest_ts)} (${!latest?.oldest_ts || Number(latest?.oldest_ts) === Number(latest?.newest_ts) ? '00' : getDuration(latest?.oldest_ts, latest?.newest_ts)})`
+                                                    : `Tổng thời gian: ${getDuration(point.start_time || latest?.start_time, point.end_time || latest?.end_time)}`}
+                                            </Typography>
+                                        </Grid>
+                                    </Grid>
 
-                                {latest?.updates?.length > 0 && (
-                                    <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>Lịch sử cập nhật:</Typography>
-                                        <Stack spacing={1}>
-                                            {latest.updates.slice().sort((a, b) => b.timestamp - a.timestamp).map((upd, idx) => (
-                                                <Box key={idx} sx={{ p: 1, bgcolor: 'background.paper', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
-                                                    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
-                                                        <Typography variant="caption" sx={{ fontWeight: 700, color: 'primary.main' }}>
-                                                            {formatTime(upd.timestamp)}
-                                                        </Typography>
-                                                        {(upd.traffic_status || upd.trafficStatus) && (
-                                                            <Chip
-                                                                label={getTrafficStatusLabel(upd.traffic_status || upd.trafficStatus)}
-                                                                size="small"
-                                                                color={getTrafficStatusColor(upd.traffic_status || upd.trafficStatus)}
-                                                                variant="outlined"
-                                                                sx={{ height: 18, fontSize: '0.625rem' }}
-                                                            />
+                                    {latest?.review_comment && (
+                                        <Box sx={{ mt: 1, p: 1.5, bgcolor: '#fff5f5', borderRadius: 2, border: '1px solid', borderColor: '#ffc1c1' }}>
+                                            <Typography variant="caption" sx={{ fontWeight: 800, color: 'error.main', display: 'block', mb: 0.5 }}>NHẬN XÉT CỦA REVIEWER:</Typography>
+                                            <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'error.dark', fontWeight: 600 }}>{latest.review_comment}</Typography>
+                                        </Box>
+                                    )}
+
+                                    {canReview && point.status === 'active' && (
+                                        <Box sx={{ mt: 2, p: 2, bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: 'primary.main' }}>Gửi nhận xét cho nhân viên:</Typography>
+                                            <TextField
+                                                fullWidth
+                                                multiline
+                                                rows={2}
+                                                placeholder="Nhập nội dung cần yêu cầu sửa đổi..."
+                                                value={commentInput}
+                                                onChange={(e) => setCommentInput(e.target.value)}
+                                                sx={{ mb: 1.5, '& .MuiOutlinedInput-root': { bgcolor: 'grey.50' } }}
+                                            />
+                                            <Stack direction="row" justifyContent="flex-end">
+                                                <Button
+                                                    variant="contained"
+                                                    color="primary"
+                                                    size="small"
+                                                    onClick={handleReview}
+                                                    disabled={isSubmitting || !commentInput.trim()}
+                                                    startIcon={isSubmitting ? <CircularProgress size={16} /> : null}
+                                                >
+                                                    Gửi nhận xét
+                                                </Button>
+                                            </Stack>
+                                        </Box>
+                                    )}
+
+                                    {latest?.updates?.length > 0 && (
+                                        <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>Lịch sử cập nhật:</Typography>
+                                            <Stack spacing={1}>
+                                                {latest.updates.slice().sort((a, b) => b.timestamp - a.timestamp).map((upd, idx) => (
+                                                    <Box key={idx} sx={{ p: 1, bgcolor: 'background.paper', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
+                                                        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
+                                                            <Typography variant="caption" sx={{ fontWeight: 700, color: 'primary.main' }}>
+                                                                {formatTime(upd.timestamp)}
+                                                            </Typography>
+                                                            {(upd.traffic_status || upd.trafficStatus) && (
+                                                                <Chip
+                                                                    label={getTrafficStatusLabel(upd.traffic_status || upd.trafficStatus)}
+                                                                    size="small"
+                                                                    color={getTrafficStatusColor(upd.traffic_status || upd.trafficStatus)}
+                                                                    variant="outlined"
+                                                                    sx={{ height: 18, fontSize: '0.625rem' }}
+                                                                />
+                                                            )}
+                                                        </Stack>
+                                                        <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>{upd.description || 'Không có mô tả'}</Typography>
+                                                        {upd.review_comment && (
+                                                            <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'error.main', fontStyle: 'italic', fontWeight: 600 }}>
+                                                                Reviewer: {upd.review_comment}
+                                                            </Typography>
                                                         )}
-                                                    </Stack>
-                                                    <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>{upd.description || 'Không có mô tả'}</Typography>
-                                                    {upd.review_comment && (
-                                                        <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'error.main', fontStyle: 'italic', fontWeight: 600 }}>
-                                                            Reviewer: {upd.review_comment}
-                                                        </Typography>
-                                                    )}
-                                                    {upd.old_data?.length > 0 && (
-                                                        <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
-                                                            <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary' }}>Dữ liệu cũ:</Typography>
-                                                            {upd.old_data.map((old, oIdx) => (
-                                                                <Typography key={oIdx} variant="caption" sx={{ display: 'block', fontSize: '0.65rem' }}>
-                                                                    • {old.description || 'N/A'} ({old.depth}m)
-                                                                </Typography>
-                                                            ))}
-                                                        </Box>
-                                                    )}
-                                                </Box>
-                                            ))}
-                                        </Stack>
+                                                        {upd.old_data?.length > 0 && (
+                                                            <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
+                                                                <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary' }}>Dữ liệu cũ:</Typography>
+                                                                {upd.old_data.map((old, oIdx) => (
+                                                                    <Typography key={oIdx} variant="caption" sx={{ display: 'block', fontSize: '0.65rem' }}>
+                                                                        • {old.description || 'N/A'} ({old.depth}m)
+                                                                    </Typography>
+                                                                ))}
+                                                            </Box>
+                                                        )}
+                                                    </Box>
+                                                ))}
+                                            </Stack>
+                                        </Box>
+                                    )}
+                                    <Box>
+                                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>Ảnh liên quan:</Typography>
+                                        {latest?.images?.length > 0 ? (
+                                            <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', pb: 1 }}>
+                                                {latest.images.map((img, idx) => (
+                                                    <Box key={idx} component="img" src={getInundationImageUrl(img)} onClick={(e) => { e.stopPropagation(); handleOpenViewer(latest.images, idx); }} sx={{ width: 56, height: 56, borderRadius: 1.5, objectFit: 'cover', cursor: 'pointer', border: '1px solid', borderColor: 'divider', flexShrink: 0 }} />
+                                                ))}
+                                            </Stack>
+                                        ) : <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.disabled' }}>Không có ảnh</Typography>}
                                     </Box>
-                                )}
-                                <Box>
-                                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>Ảnh liên quan:</Typography>
-                                    {latest?.images?.length > 0 ? (
-                                        <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', pb: 1 }}>
-                                            {latest.images.map((img, idx) => (
-                                                <Box key={idx} component="img" src={getInundationImageUrl(img)} onClick={(e) => { e.stopPropagation(); handleOpenViewer(latest.images, idx); }} sx={{ width: 56, height: 56, borderRadius: 1.5, objectFit: 'cover', cursor: 'pointer', border: '1px solid', borderColor: 'divider', flexShrink: 0 }} />
-                                            ))}
-                                        </Stack>
-                                    ) : <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.disabled' }}>Không có ảnh</Typography>}
-                                </Box>
-                                {isMobile && (
-                                    <Box sx={{ mt: 1, textAlign: 'right' }}>
-                                        <Button size="small" variant="contained" color="primary" onClick={() => navigate(`/admin/inundation/form?id=${point.active_report?.id || point.last_report_id}&tab=1&readonly=true`)}>Xem chi tiết</Button>
-                                    </Box>
-                                )}
-                            </Stack>
-                        </Box>
-                    </Collapse>
-                </TableCell>
-            </TableRow>
+                                    {isMobile && (
+                                        <Box sx={{ mt: 1, textAlign: 'right' }}>
+                                            <Button size="small" variant="contained" color="primary" onClick={() => navigate(`/admin/inundation/form?id=${point.active_report?.id || point.last_report_id}&tab=1&readonly=true`)}>Xem chi tiết</Button>
+                                        </Box>
+                                    )}
+                                </Stack>
+                            </Box>
+                        </Collapse>
+                    </TableCell>
+                </TableRow>
+            )}
         </React.Fragment>
     );
 };

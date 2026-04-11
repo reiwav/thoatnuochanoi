@@ -59,4 +59,5 @@ type InundationPoint struct {
 	Lat             string `json:"lat" bson:"lat"`
 	Lng             string `json:"lng" bson:"lng"`
 	Active          bool   `json:"active" bson:"active"`
+	ReportID        string `json:"report_id" bson:"report_id"`
 }

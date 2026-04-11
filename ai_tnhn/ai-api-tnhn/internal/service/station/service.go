@@ -28,6 +28,9 @@ type Service interface {
 	UpdateRiverStation(ctx context.Context, id string, input *models.RiverStation) error
 	DeleteRiverStation(ctx context.Context, id string) error
 	ListRiverStations(ctx context.Context, filter filter.Filter) ([]*models.RiverStation, int64, error)
+	ListRainStationsFiltered(ctx context.Context, orgID string, ids []string) ([]*models.RainStation, error)
+	ListLakeStationsFiltered(ctx context.Context, orgID string, ids []string) ([]*models.LakeStation, error)
+	ListRiverStationsFiltered(ctx context.Context, orgID string, ids []string) ([]*models.RiverStation, error)
 	GetOrgByID(ctx context.Context, id string) (*models.Organization, error)
 }
 
@@ -96,6 +99,18 @@ func (s *service) DeleteRiverStation(ctx context.Context, id string) error {
 }
 func (s *service) ListRiverStations(ctx context.Context, filter filter.Filter) ([]*models.RiverStation, int64, error) {
 	return s.riverRepo.List(ctx, filter)
+}
+
+func (s *service) ListRainStationsFiltered(ctx context.Context, orgID string, ids []string) ([]*models.RainStation, error) {
+	return s.rainRepo.ListFiltered(ctx, orgID, ids)
+}
+
+func (s *service) ListLakeStationsFiltered(ctx context.Context, orgID string, ids []string) ([]*models.LakeStation, error) {
+	return s.lakeRepo.ListFiltered(ctx, orgID, ids)
+}
+
+func (s *service) ListRiverStationsFiltered(ctx context.Context, orgID string, ids []string) ([]*models.RiverStation, error) {
+	return s.riverRepo.ListFiltered(ctx, orgID, ids)
 }
 
 func (s *service) GetOrgByID(ctx context.Context, id string) (*models.Organization, error) {

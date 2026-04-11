@@ -51,6 +51,26 @@ func (h *StationHandler) CreateRain(c *gin.Context) {
 		web.AssertNil(web.BadRequest(err.Error()))
 		return
 	}
+
+	_, isAllowedAll, user := h.checkPermissions(c)
+	if user != nil {
+		if isAllowedAll {
+			// Super Admin or Company level: must provide OrgID
+			if m.OrgID == "" {
+				web.AssertNil(web.BadRequest("Vui lòng chọn xí nghiệp quản lý"))
+				return
+			}
+		} else {
+			// Branch level: auto-assign their own OrgID
+			m.OrgID = user.OrgID
+		}
+	}
+
+	if m.OrgID == "" {
+		web.AssertNil(web.BadRequest("Không xác định được xí nghiệp quản lý"))
+		return
+	}
+
 	res, err := h.service.CreateRainStation(c.Request.Context(), &m)
 	web.AssertNil(err)
 	h.SendData(c, res)
@@ -63,6 +83,17 @@ func (h *StationHandler) UpdateRain(c *gin.Context) {
 		web.AssertNil(web.BadRequest(err.Error()))
 		return
 	}
+
+	_, isAllowedAll, user := h.checkPermissions(c)
+	if user != nil {
+		if !isAllowedAll {
+			// Non-admin can't change OrgID, force their own
+			// Or better: verify it belongs to them first.
+			// For now, force it to their OrgID if they try to update
+			m.OrgID = user.OrgID
+		}
+	}
+
 	err := h.service.UpdateRainStation(c.Request.Context(), id, &m)
 	web.AssertNil(err)
 	h.SendData(c, m)
@@ -120,6 +151,24 @@ func (h *StationHandler) CreateLake(c *gin.Context) {
 		web.AssertNil(web.BadRequest(err.Error()))
 		return
 	}
+
+	_, isAllowedAll, user := h.checkPermissions(c)
+	if user != nil {
+		if isAllowedAll {
+			if m.OrgID == "" {
+				web.AssertNil(web.BadRequest("Vui lòng chọn xí nghiệp quản lý"))
+				return
+			}
+		} else {
+			m.OrgID = user.OrgID
+		}
+	}
+
+	if m.OrgID == "" {
+		web.AssertNil(web.BadRequest("Không xác định được xí nghiệp quản lý"))
+		return
+	}
+
 	res, err := h.service.CreateLakeStation(c.Request.Context(), &m)
 	web.AssertNil(err)
 	h.SendData(c, res)
@@ -132,6 +181,12 @@ func (h *StationHandler) UpdateLake(c *gin.Context) {
 		web.AssertNil(web.BadRequest(err.Error()))
 		return
 	}
+
+	_, isAllowedAll, user := h.checkPermissions(c)
+	if user != nil && !isAllowedAll {
+		m.OrgID = user.OrgID
+	}
+
 	err := h.service.UpdateLakeStation(c.Request.Context(), id, &m)
 	web.AssertNil(err)
 	h.SendData(c, m)
@@ -189,6 +244,24 @@ func (h *StationHandler) CreateRiver(c *gin.Context) {
 		web.AssertNil(web.BadRequest(err.Error()))
 		return
 	}
+
+	_, isAllowedAll, user := h.checkPermissions(c)
+	if user != nil {
+		if isAllowedAll {
+			if m.OrgID == "" {
+				web.AssertNil(web.BadRequest("Vui lòng chọn xí nghiệp quản lý"))
+				return
+			}
+		} else {
+			m.OrgID = user.OrgID
+		}
+	}
+
+	if m.OrgID == "" {
+		web.AssertNil(web.BadRequest("Không xác định được xí nghiệp quản lý"))
+		return
+	}
+
 	res, err := h.service.CreateRiverStation(c.Request.Context(), &m)
 	web.AssertNil(err)
 	h.SendData(c, res)
@@ -201,6 +274,12 @@ func (h *StationHandler) UpdateRiver(c *gin.Context) {
 		web.AssertNil(web.BadRequest(err.Error()))
 		return
 	}
+
+	_, isAllowedAll, user := h.checkPermissions(c)
+	if user != nil && !isAllowedAll {
+		m.OrgID = user.OrgID
+	}
+
 	err := h.service.UpdateRiverStation(c.Request.Context(), id, &m)
 	web.AssertNil(err)
 	h.SendData(c, m)

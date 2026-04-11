@@ -11,6 +11,7 @@ import { toast } from 'react-hot-toast';
 import MainCard from 'ui-component/cards/MainCard';
 import AnimateButton from 'ui-component/extended/AnimateButton';
 import stationApi from 'api/station';
+import organizationApi from 'api/organization';
 import StationDialog from './StationDialog';
 import useAuthStore from 'store/useAuthStore';
 
@@ -22,6 +23,7 @@ const StationRiverList = () => {
     
     const [loading, setLoading] = useState(false);
     const [stations, setStations] = useState([]);
+    const [organizations, setOrganizations] = useState([]);
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [totalItems, setTotalItems] = useState(0);
@@ -32,26 +34,31 @@ const StationRiverList = () => {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingStation, setEditingStation] = useState(null);
 
-    const loadStations = async () => {
+    const loadData = async () => {
         setLoading(true);
         try {
-            const res = await stationApi.river.getAll({ ...params, page: page + 1, per_page: rowsPerPage });
-            if (res.data?.status === 'success') {
-                const result = res.data.data;
+            const [stRes, orgRes] = await Promise.all([
+                stationApi.river.getAll({ ...params, page: page + 1, per_page: rowsPerPage }),
+                organizationApi.getAll()
+            ]);
+
+            if (stRes.data?.status === 'success') {
+                const result = stRes.data.data;
                 setStations(Array.isArray(result.data) ? result.data : []);
                 setTotalItems(result.total || 0);
-            } else {
-                setStations([]);
+            }
+
+            if (orgRes.data?.status === 'success') {
+                setOrganizations(orgRes.data.data?.data || []);
             }
         } catch (err) {
-            console.error('Lỗi tải danh sách trạm sông:', err);
-            setStations([]);
+            console.error('Lỗi tải dữ liệu:', err);
         } finally {
             setLoading(false);
         }
     };
 
-    useEffect(() => { loadStations(); }, [page, rowsPerPage, params]);
+    useEffect(() => { loadData(); }, [page, rowsPerPage, params]);
 
     const handleSearch = () => { setPage(0); setParams(filterInputs); };
     const handleOpenCreate = () => { setEditingStation(null); setDialogOpen(true); };
@@ -61,7 +68,7 @@ const StationRiverList = () => {
         if (!window.confirm('Bạn có chắc chắn muốn xóa trạm này?')) return;
         try {
             const res = await stationApi.river.delete(id);
-            if (res.data?.status === 'success') { toast.success('Xóa thành công'); loadStations(); }
+            if (res.data?.status === 'success') { toast.success('Xóa thành công'); loadData(); }
         } catch (err) {
             toast.error(err.response?.data?.error || 'Lỗi xóa trạm');
         }
@@ -76,12 +83,22 @@ const StationRiverList = () => {
             if (res.data?.status === 'success') {
                 toast.success(editingStation ? 'Cập nhật thành công' : 'Thêm mới thành công');
                 setDialogOpen(false);
-                loadStations();
+                loadData();
             }
         } catch (err) {
             toast.error(err.response?.data?.error || 'Đã có lỗi xảy ra');
         }
     };
+
+    const getOrgName = (orgId) => {
+        const org = organizations.find(o => o.id === orgId);
+        return org ? org.name : '';
+    };
+
+    const organizationNamesMap = organizations.reduce((acc, org) => {
+        acc[org.id] = org.name;
+        return acc;
+    }, {});
 
     return (
         <MainCard
@@ -117,6 +134,8 @@ const StationRiverList = () => {
                     <TableHead sx={{ bgcolor: 'grey.50' }}>
                         <TableRow>
                             <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Tên trạm</TableCell>
+                            <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Xí nghiệp quản lý</TableCell>
+                            <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Xí nghiệp phối hợp</TableCell>
                             <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Loại</TableCell>
                             <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Địa chỉ</TableCell>
                             <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Tọa độ</TableCell>
@@ -127,13 +146,15 @@ const StationRiverList = () => {
                     </TableHead>
                     <TableBody>
                         {loading ? (
-                            <TableRow><TableCell colSpan={6} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
+                            <TableRow><TableCell colSpan={9} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
                         ) : stations.length === 0 ? (
-                            <TableRow><TableCell colSpan={6} align="center" sx={{ py: 3 }}>Không tìm thấy trạm</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={9} align="center" sx={{ py: 3 }}>Không tìm thấy trạm</TableCell></TableRow>
                         ) : (
                             stations.map((row) => (
                                 <TableRow key={row.id} hover>
                                     <TableCell sx={{ fontWeight: 800, fontSize: '1.05rem', color: 'primary.dark' }}>{row.TenTram}</TableCell>
+                                    <TableCell sx={{ fontSize: '0.95rem', fontWeight: 600 }}>{getOrgName(row.org_id) || '-'}</TableCell>
+                                    <TableCell sx={{ fontSize: '0.85rem' }}>{row.shared_org_ids?.map(id => organizationNamesMap[id]).filter(n => n).join(', ') || '-'}</TableCell>
                                     <TableCell sx={{ fontSize: '1rem' }}>{row.Loai}</TableCell>
                                     <TableCell sx={{ fontSize: '0.95rem' }}>{row.DiaChi}</TableCell>
                                     <TableCell sx={{ fontSize: '0.85rem' }}>{row.Lat}, {row.Lng}</TableCell>
@@ -177,7 +198,7 @@ const StationRiverList = () => {
             <StationDialog
                 open={dialogOpen} onClose={() => setDialogOpen(false)}
                 onSubmit={handleSubmit} station={editingStation} isEdit={!!editingStation}
-                type="river"
+                type="river" organizations={organizations}
             />
         </MainCard>
     );

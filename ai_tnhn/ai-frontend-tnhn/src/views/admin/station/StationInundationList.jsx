@@ -22,7 +22,7 @@ import organizationApi from 'api/organization';
 import StationDialog from './StationDialog';
 import useAuthStore from 'store/useAuthStore';
 
-const CollapsibleStationRow = ({ row, handleOpenEdit, handleDelete, isMobile, canEdit, canDelete }) => {
+const CollapsibleStationRow = ({ row, handleOpenEdit, handleDelete, isMobile, canEdit, canDelete, organizationNamesMap }) => {
     const navigate = useNavigate();
     const [open, setOpen] = useState(false);
     const [anchorEl, setAnchorEl] = useState(null);
@@ -63,6 +63,11 @@ const CollapsibleStationRow = ({ row, handleOpenEdit, handleDelete, isMobile, ca
                         <TableCell>
                             <Chip label={row.report_id ? 'Đang ngập' : 'Bình thường'}
                                 color={row.report_id ? 'error' : 'success'} size="small" variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem', height: 24 }} />
+                        </TableCell>
+                        <TableCell>
+                            <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>
+                                {row.shared_org_ids?.map(id => organizationNamesMap[id]).filter(n => n).join(', ') || '-'}
+                            </Typography>
                         </TableCell>
                         <TableCell>
                             <Chip label={row.active ? 'Hoạt động' : 'Ngừng'}
@@ -158,6 +163,11 @@ const StationInundationList = () => {
     const [points, setPoints] = useState([]);
     const [organizations, setOrganizations] = useState([]);
 
+    const organizationNamesMap = organizations.reduce((acc, org) => {
+        acc[org.id] = org.name;
+        return acc;
+    }, {});
+
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingPoint, setEditingPoint] = useState(null);
 
@@ -240,7 +250,8 @@ const StationInundationList = () => {
                 lat: values.Lat,
                 lng: values.Lng,
                 active: values.Active,
-                org_id: values.org_id
+                org_id: values.org_id,
+                shared_org_ids: values.shared_org_ids
             };
             const res = editingPoint
                 ? await stationApi.inundation.update(editingPoint.id, payload)
@@ -301,6 +312,7 @@ const StationInundationList = () => {
                                 <>
                                     <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Đơn vị quản lý</TableCell>
                                     <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Tình trạng ngập</TableCell>
+                                    <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Đơn vị phối hợp</TableCell>
                                     <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Trạng thái trạm</TableCell>
                                     {(canEdit || canDelete || true) && <TableCell align="right" sx={{ fontWeight: 800, fontSize: '1rem' }}>Thao tác</TableCell>}
                                 </>
@@ -309,9 +321,9 @@ const StationInundationList = () => {
                     </TableHead>
                     <TableBody>
                         {loading ? (
-                            <TableRow><TableCell colSpan={isMobile ? 2 : 5} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
+                            <TableRow><TableCell colSpan={isMobile ? 2 : 6} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
                         ) : points.length === 0 ? (
-                            <TableRow><TableCell colSpan={isMobile ? 2 : 5} align="center" sx={{ py: 3 }}>Không tìm thấy điểm ngập</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={isMobile ? 2 : 6} align="center" sx={{ py: 3 }}>Không tìm thấy điểm ngập</TableCell></TableRow>
                         ) : (
                             points.map((row) => (
                                 <CollapsibleStationRow
@@ -322,6 +334,7 @@ const StationInundationList = () => {
                                     isMobile={isMobile}
                                     canEdit={canEdit}
                                     canDelete={canDelete}
+                                    organizationNamesMap={organizationNamesMap}
                                 />
                             ))
                         )}

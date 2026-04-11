@@ -30,7 +30,7 @@ func InitRouter(cfg *config.Config, s *Services, r *Repositories, log logger.Log
 	queryHandler := handler.NewQueryHandler(s.Query)
 	googleHandler := handler.NewGoogleHandler(s.GoogleApi, s.Gemini, s.Drive, s.Water, s.Email, contextWith, cfg.GoogleDriveConfig, log, s.Weather, r.AiChatLog)
 
-	mid := middleware.NewMiddleware(*cfg, r.Token, contextWith, log)
+	mid := middleware.NewMiddleware(*cfg, r.Token, s.Permission, contextWith, log)
 	handlers := router.HandlerFuncs{
 		Logger:                         log,
 		LoginHandler:                   authHandler.LoginHandler,

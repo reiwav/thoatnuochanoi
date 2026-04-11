@@ -11,6 +11,7 @@ import { toast } from 'react-hot-toast';
 import MainCard from 'ui-component/cards/MainCard';
 import AnimateButton from 'ui-component/extended/AnimateButton';
 import stationApi from 'api/station';
+import organizationApi from 'api/organization';
 import StationDialog from './StationDialog';
 import useAuthStore from 'store/useAuthStore';
 
@@ -21,8 +22,8 @@ const StationLakeList = () => {
     const canDelete = hasPermission('water:delete');
 
     const [loading, setLoading] = useState(false);
-    // ... rest of the state
     const [stations, setStations] = useState([]);
+    const [organizations, setOrganizations] = useState([]);
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [totalItems, setTotalItems] = useState(0);
@@ -33,26 +34,31 @@ const StationLakeList = () => {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingStation, setEditingStation] = useState(null);
 
-    const loadStations = async () => {
+    const loadData = async () => {
         setLoading(true);
         try {
-            const res = await stationApi.lake.getAll({ ...params, page: page + 1, per_page: rowsPerPage });
-            if (res.data?.status === 'success') {
-                const result = res.data.data;
+            const [stRes, orgRes] = await Promise.all([
+                stationApi.lake.getAll({ ...params, page: page + 1, per_page: rowsPerPage }),
+                organizationApi.getAll()
+            ]);
+
+            if (stRes.data?.status === 'success') {
+                const result = stRes.data.data;
                 setStations(Array.isArray(result.data) ? result.data : []);
                 setTotalItems(result.total || 0);
-            } else {
-                setStations([]);
+            }
+
+            if (orgRes.data?.status === 'success') {
+                setOrganizations(orgRes.data.data?.data || []);
             }
         } catch (err) {
-            console.error('Lỗi tải danh sách trạm hồ:', err);
-            setStations([]);
+            console.error('Lỗi tải dữ liệu:', err);
         } finally {
             setLoading(false);
         }
     };
 
-    useEffect(() => { loadStations(); }, [page, rowsPerPage, params]);
+    useEffect(() => { loadData(); }, [page, rowsPerPage, params]);
 
     const handleSearch = () => { setPage(0); setParams(filterInputs); };
     const handleOpenCreate = () => { setEditingStation(null); setDialogOpen(true); };
@@ -62,7 +68,7 @@ const StationLakeList = () => {
         if (!window.confirm('Bạn có chắc chắn muốn xóa trạm này?')) return;
         try {
             const res = await stationApi.lake.delete(id);
-            if (res.data?.status === 'success') { toast.success('Xóa thành công'); loadStations(); }
+            if (res.data?.status === 'success') { toast.success('Xóa thành công'); loadData(); }
         } catch (err) {
             toast.error(err.response?.data?.error || 'Lỗi xóa trạm');
         }
@@ -77,17 +83,27 @@ const StationLakeList = () => {
             if (res.data?.status === 'success') {
                 toast.success(editingStation ? 'Cập nhật thành công' : 'Thêm mới thành công');
                 setDialogOpen(false);
-                loadStations();
+                loadData();
             }
         } catch (err) {
             toast.error(err.response?.data?.error || 'Đã có lỗi xảy ra');
         }
     };
 
+    const getOrgName = (orgId) => {
+        const org = organizations.find(o => o.id === orgId);
+        return org ? org.name : '';
+    };
+
+    const organizationNamesMap = organizations.reduce((acc, org) => {
+        acc[org.id] = org.name;
+        return acc;
+    }, {});
+
     return (
         <MainCard
             title="Quản lý trạm đo mực nước hồ"
-            secondary={canEdit && (
+            secondary={canCreate && (
                 <AnimateButton>
                     <Button variant="contained" color="secondary" startIcon={<IconPlus size={20} />} onClick={handleOpenCreate} sx={{ fontWeight: 700, fontSize: '1rem', px: 2, py: 1 }}>
                         Thêm trạm mới
@@ -118,23 +134,27 @@ const StationLakeList = () => {
                     <TableHead sx={{ bgcolor: 'grey.50' }}>
                         <TableRow>
                             <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Tên trạm</TableCell>
+                            <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Xí nghiệp quản lý</TableCell>
+                            <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Xí nghiệp phối hợp</TableCell>
                             <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Loại</TableCell>
                             <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Địa chỉ</TableCell>
                             <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Tọa độ</TableCell>
                             <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Ngưỡng</TableCell>
                             <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Trạng thái</TableCell>
-                            {canEdit && <TableCell align="right" sx={{ fontWeight: 800, fontSize: '1rem' }}>Thao tác</TableCell>}
+                            {(canEdit || canDelete) && <TableCell align="right" sx={{ fontWeight: 800, fontSize: '1rem' }}>Thao tác</TableCell>}
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {loading ? (
-                            <TableRow><TableCell colSpan={6} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
+                            <TableRow><TableCell colSpan={9} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
                         ) : stations.length === 0 ? (
-                            <TableRow><TableCell colSpan={6} align="center" sx={{ py: 3 }}>Không tìm thấy trạm</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={9} align="center" sx={{ py: 3 }}>Không tìm thấy trạm</TableCell></TableRow>
                         ) : (
                             stations.map((row) => (
                                 <TableRow key={row.id} hover>
                                     <TableCell sx={{ fontWeight: 800, fontSize: '1.05rem', color: 'primary.dark' }}>{row.TenTram}</TableCell>
+                                    <TableCell sx={{ fontSize: '0.95rem', fontWeight: 600 }}>{getOrgName(row.org_id) || '-'}</TableCell>
+                                    <TableCell sx={{ fontSize: '0.85rem' }}>{row.shared_org_ids?.map(id => organizationNamesMap[id]).filter(n => n).join(', ') || '-'}</TableCell>
                                     <TableCell sx={{ fontSize: '1rem' }}>{row.Loai}</TableCell>
                                     <TableCell sx={{ fontSize: '0.95rem' }}>{row.DiaChi}</TableCell>
                                     <TableCell sx={{ fontSize: '0.85rem' }}>{row.Lat}, {row.Lng}</TableCell>
@@ -143,18 +163,22 @@ const StationLakeList = () => {
                                         <Chip label={row.Active ? 'Hoạt động' : 'Ngừng'}
                                             color={row.Active ? 'success' : 'default'} size="small" variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem', height: 24 }} />
                                     </TableCell>
-                                    {canEdit && (
+                                    {(canEdit || canDelete) && (
                                         <TableCell align="right">
-                                            <Tooltip title="Chỉnh sửa">
-                                                <IconButton color="primary" onClick={() => handleOpenEdit(row)}>
-                                                    <IconEdit size={20} />
-                                                </IconButton>
-                                            </Tooltip>
-                                            <Tooltip title="Xóa">
-                                                <IconButton color="error" onClick={() => handleDelete(row.id)}>
-                                                    <IconTrash size={20} />
-                                                </IconButton>
-                                            </Tooltip>
+                                            {canEdit && (
+                                                <Tooltip title="Chỉnh sửa">
+                                                    <IconButton color="primary" onClick={() => handleOpenEdit(row)}>
+                                                        <IconEdit size={20} />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            )}
+                                            {canDelete && (
+                                                <Tooltip title="Xóa">
+                                                    <IconButton color="error" onClick={() => handleDelete(row.id)}>
+                                                        <IconTrash size={20} />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            )}
                                         </TableCell>
                                     )}
                                 </TableRow>
@@ -174,7 +198,7 @@ const StationLakeList = () => {
             <StationDialog
                 open={dialogOpen} onClose={() => setDialogOpen(false)}
                 onSubmit={handleSubmit} station={editingStation} isEdit={!!editingStation}
-                type="lake"
+                type="lake" organizations={organizations}
             />
         </MainCard>
     );

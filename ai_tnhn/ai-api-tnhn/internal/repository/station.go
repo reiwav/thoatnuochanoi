@@ -14,6 +14,7 @@ type RainStation interface {
 	Update(ctx context.Context, id string, input *models.RainStation) error
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, filter filter.Filter) ([]*models.RainStation, int64, error)
+	ListFiltered(ctx context.Context, orgID string, ids []string) ([]*models.RainStation, error)
 }
 
 type LakeStation interface {
@@ -23,6 +24,7 @@ type LakeStation interface {
 	Update(ctx context.Context, id string, input *models.LakeStation) error
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, filter filter.Filter) ([]*models.LakeStation, int64, error)
+	ListFiltered(ctx context.Context, orgID string, ids []string) ([]*models.LakeStation, error)
 }
 
 type RiverStation interface {
@@ -32,4 +34,5 @@ type RiverStation interface {
 	Update(ctx context.Context, id string, input *models.RiverStation) error
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, filter filter.Filter) ([]*models.RiverStation, int64, error)
+	ListFiltered(ctx context.Context, orgID string, ids []string) ([]*models.RiverStation, error)
 }

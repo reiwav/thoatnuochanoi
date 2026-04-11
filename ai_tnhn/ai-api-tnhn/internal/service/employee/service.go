@@ -55,7 +55,7 @@ func (s *service) Create(ctx context.Context, input *models.User, currentUserRol
 	input.Active = true // Default to active
 
 	// Validate assignments
-	if err := s.validateAssignments(ctx, "", input.OrgID, input.AssignedInundationPointIDs, input.AssignedEmergencyConstructionIDs, input.AssignedPumpingStationID); err != nil {
+	if err := s.validateAssignments(ctx, "", input.OrgID, input.AssignedInundationPointIDs, input.AssignedRainStationIDs, input.AssignedLakeStationIDs, input.AssignedRiverStationIDs, input.AssignedEmergencyConstructionIDs, input.AssignedPumpingStationID); err != nil {
 		return nil, err
 	}
 
@@ -112,16 +112,25 @@ func (s *service) Update(ctx context.Context, id string, input *models.User, cur
 	}
 
 	// Validate assignments on the merged record
-	if err := s.validateAssignments(ctx, id, existing.OrgID, existing.AssignedInundationPointIDs, existing.AssignedEmergencyConstructionIDs, existing.AssignedPumpingStationID); err != nil {
+	if err := s.validateAssignments(ctx, id, existing.OrgID, existing.AssignedInundationPointIDs, existing.AssignedRainStationIDs, existing.AssignedLakeStationIDs, existing.AssignedRiverStationIDs, existing.AssignedEmergencyConstructionIDs, existing.AssignedPumpingStationID); err != nil {
 		return err
 	}
 
 	return s.userRepo.Update(ctx, id, existing)
 }
 
-func (s *service) validateAssignments(ctx context.Context, userID string, orgID string, pointIDs []string, constructionIDs []string, stationID string) error {
+func (s *service) validateAssignments(ctx context.Context, userID string, orgID string, pointIDs, rainIDs, lakeIDs, riverIDs, constructionIDs []string, stationID string) error {
 	if len(pointIDs) > 1 {
 		return web.BadRequest("Chỉ được phép gán tối đa 1 điểm ngập")
+	}
+	if len(rainIDs) > 1 {
+		return web.BadRequest("Chỉ được phép gán tối đa 1 trạm mưa")
+	}
+	if len(lakeIDs) > 1 {
+		return web.BadRequest("Chỉ được phép gán tối đa 1 trạm hồ")
+	}
+	if len(riverIDs) > 1 {
+		return web.BadRequest("Chỉ được phép gán tối đa 1 trạm sông")
 	}
 	if len(constructionIDs) > 1 {
 		return web.BadRequest("Chỉ được phép gán tối đa 1 công trình khẩn")
@@ -140,6 +149,54 @@ func (s *service) validateAssignments(ctx context.Context, userID string, orgID 
 		users, _, err := s.userRepo.List(ctx, f)
 		if err == nil && len(users) > 0 {
 			return web.BadRequest("Điểm ngập này đã được gán cho nhân viên: " + users[0].Name)
+		}
+	}
+
+	// Check for Rain Station assignment
+	if len(rainIDs) > 0 {
+		rid := rainIDs[0]
+		f := filter.NewBasicFilter()
+		f.AddWhere("org_id", "org_id", orgID)
+		f.AddWhere("assigned_rain_station_ids", "assigned_rain_station_ids", rid)
+		if userID != "" {
+			f.AddWhere("_id", "_id", primitive.M{"$ne": userID})
+		}
+
+		users, _, err := s.userRepo.List(ctx, f)
+		if err == nil && len(users) > 0 {
+			return web.BadRequest("Trạm mưa này đã được gán cho nhân viên: " + users[0].Name)
+		}
+	}
+
+	// Check for Lake Station assignment
+	if len(lakeIDs) > 0 {
+		lid := lakeIDs[0]
+		f := filter.NewBasicFilter()
+		f.AddWhere("org_id", "org_id", orgID)
+		f.AddWhere("assigned_lake_station_ids", "assigned_lake_station_ids", lid)
+		if userID != "" {
+			f.AddWhere("_id", "_id", primitive.M{"$ne": userID})
+		}
+
+		users, _, err := s.userRepo.List(ctx, f)
+		if err == nil && len(users) > 0 {
+			return web.BadRequest("Trạm hồ này đã được gán cho nhân viên: " + users[0].Name)
+		}
+	}
+
+	// Check for River Station assignment
+	if len(riverIDs) > 0 {
+		rid := riverIDs[0]
+		f := filter.NewBasicFilter()
+		f.AddWhere("org_id", "org_id", orgID)
+		f.AddWhere("assigned_river_station_ids", "assigned_river_station_ids", rid)
+		if userID != "" {
+			f.AddWhere("_id", "_id", primitive.M{"$ne": userID})
+		}
+
+		users, _, err := s.userRepo.List(ctx, f)
+		if err == nil && len(users) > 0 {
+			return web.BadRequest("Trạm sông này đã được gán cho nhân viên: " + users[0].Name)
 		}
 	}
 

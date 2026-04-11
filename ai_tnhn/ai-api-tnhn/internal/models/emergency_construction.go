@@ -13,6 +13,7 @@ type EmergencyConstruction struct {
 	EndDate          int64  `bson:"end_date" json:"end_date"`
 	Status           string `bson:"status" json:"status"` // planned, ongoing, completed, suspended
 	Cost             int64  `bson:"cost" json:"cost"`
-	OrgID            string `bson:"org_id" json:"org_id"`
+	OrgID            string   `bson:"org_id" json:"org_id"`
+	SharedOrgIDs     []string `bson:"shared_org_ids" json:"shared_org_ids"`
 	OrganizationName string `bson:"-" json:"organization_name,omitempty"`
 }

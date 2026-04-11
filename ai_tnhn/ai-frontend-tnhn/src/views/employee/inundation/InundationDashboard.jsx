@@ -108,7 +108,6 @@ const getLatestData = (report) => {
 
 const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, handleOpenViewer, navigate, isMobile, basePath, hasPermission, isEmployee }) => {
     const [open, setOpen] = useState(point.status === 'active');
-    const isCollapsible = point.status === 'active';
     const latest = useMemo(() => getLatestData(point.active_report || point.last_report), [point]);
     
     // Action Menu State
@@ -188,9 +187,11 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                         )}
                     </Stack>
                 </Box>
-                <IconButton size="small" onClick={() => setOpen(!open)} sx={{ mt: -0.5 }}>
-                    {open ? <IconChevronUp size={22} /> : <IconChevronDown size={22} />}
-                </IconButton>
+                {point.status === 'active' && (
+                    <IconButton size="small" onClick={() => setOpen(!open)} sx={{ mt: -0.5 }}>
+                        {open ? <IconChevronUp size={22} /> : <IconChevronDown size={22} />}
+                    </IconButton>
+                )}
             </Box>
 
             <Collapse in={open} timeout="auto" unmountOnExit>
@@ -286,11 +287,13 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
 
     return (
         <React.Fragment>
-            <TableRow hover sx={{ '& .MuiTableCell-root': { borderBottom: 'none' } }}>
+            <TableRow hover sx={{ '& .MuiTableCell-root': { borderBottom: '1px solid', borderColor: 'divider' } }}>
                 <TableCell sx={{ width: 40, p: 2 }}>
-                    <IconButton aria-label="expand row" size="small" onClick={() => setOpen(!open)}>
-                        {open ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />}
-                    </IconButton>
+                    {point.status === "active" && (
+                        <IconButton aria-label="expand row" size="small" onClick={() => setOpen(!open)}>
+                            {open ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />}
+                        </IconButton>
+                    )}
                 </TableCell>
                 <TableCell sx={{ p: 2 }}>
                     <Typography
@@ -409,9 +412,10 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                     )}
                 </TableCell>
             </TableRow>
-            <TableRow>
-                <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider', paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
-                    <Collapse in={open} timeout="auto" unmountOnExit>
+            {point.status === 'active' && (
+                <TableRow>
+                    <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider', paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
+                        <Collapse in={open} timeout="auto" unmountOnExit>
                         <Box sx={{ m: 2, p: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
                             <Typography variant="h6" gutterBottom component="div" sx={{ fontWeight: 700, color: 'primary.main', mb: 2 }}>
                                 {point.address}
@@ -498,6 +502,7 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                     </Collapse>
                 </TableCell>
             </TableRow>
+            )}
         </React.Fragment>
     );
 };

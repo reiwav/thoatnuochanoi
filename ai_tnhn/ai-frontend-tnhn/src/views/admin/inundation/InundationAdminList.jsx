@@ -67,7 +67,6 @@ const getLatestData = (report) => {
 
 const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, handleOpenViewer, navigate, isMobile, fetchPoints }) => {
     const [open, setOpen] = useState(point.status === 'active');
-    const isCollapsible = point.status === 'active';
     const latest = useMemo(() => getLatestData(point.active_report || point.last_report), [point]);
     const [commentInput, setCommentInput] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -250,11 +249,13 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
 
     return (
         <React.Fragment>
-            <TableRow hover sx={{ '& .MuiTableCell-root': { borderBottom: 'none' } }}>
+            <TableRow hover sx={{ '& .MuiTableCell-root': { borderBottom: '1px solid', borderColor: 'divider' } }}>
                 <TableCell sx={{ width: 40, p: { xs: 1, md: 2 } }}>
-                    <IconButton aria-label="expand row" size="small" onClick={() => setOpen(!open)}>
-                        {open ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />}
-                    </IconButton>
+                    {point.status === "active" && (
+                        <IconButton aria-label="expand row" size="small" onClick={() => setOpen(!open)}>
+                            {open ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />}
+                        </IconButton>
+                    )}
                 </TableCell>
                 <TableCell sx={{ p: { xs: 1, md: 2 } }}>
                     <Typography variant="body2" sx={{ fontWeight: 800, color: 'primary.dark' }}>{point.name}</Typography>
@@ -322,9 +323,10 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                     )}
                 </TableCell>
             </TableRow>
-            <TableRow>
-                <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider', paddingBottom: 0, paddingTop: 0 }} colSpan={isMobile ? 2 : 6}>
-                    <Collapse in={open} timeout="auto" unmountOnExit>
+            {point.status === "active" && (
+                <TableRow>
+                    <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider', paddingBottom: 0, paddingTop: 0 }} colSpan={isMobile ? 2 : 6}>
+                        <Collapse in={open} timeout="auto" unmountOnExit>
                         <Box sx={{ m: { xs: 1, md: 2 }, p: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
                             <Typography variant="h6" gutterBottom component="div" sx={{ fontWeight: 700, color: 'primary.main', mb: 2, fontSize: { xs: '0.875rem', md: 'inherit' } }}>
                                 {point.address}
@@ -456,6 +458,7 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                     </Collapse>
                 </TableCell>
             </TableRow>
+            )}
         </React.Fragment>
     );
 };
@@ -573,7 +576,7 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, getDuration,
 
     return (
         <React.Fragment>
-            <TableRow hover sx={{ '& .MuiTableCell-root': { borderBottom: 'none' } }}>
+            <TableRow hover sx={{ '& .MuiTableCell-root': { borderBottom: '1px solid', borderColor: 'divider' } }}>
                 <TableCell sx={{ width: 40, p: { xs: 1, md: 2 } }}>
                     <IconButton aria-label="expand row" size="small" onClick={() => setOpen(!open)}>
                         {open ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />}

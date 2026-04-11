@@ -58,8 +58,16 @@ const PumpingStationPage = () => {
             const orgRes = results[results.length - 1];
             if (orgRes.data?.status === 'success') {
                 setOrgs(orgRes.data.data || { primary: [], shared: [] });
+                const stRes = results[0];
+                setAssignedStation(stRes.data.data || null);
+            }
+
+            const orgRes = results[results.length - 1];
+            if (orgRes.data?.status === 'success') {
+                setOrgs(orgRes.data.data || { primary: [], shared: [] });
             }
         } catch (error) {
+            console.error('Failed to load data', error);
             console.error('Failed to load data', error);
         } finally {
             setLoading(false);
@@ -170,6 +178,7 @@ const PumpingStationPage = () => {
                 handleClose={() => setOpen(false)}
                 item={selected}
                 refresh={loadData}
+                organizations={orgs}
                 organizations={orgs}
             />
 

@@ -23,6 +23,10 @@ import StationDialog from './StationDialog';
 import useAuthStore from 'store/useAuthStore';
 
 const CollapsibleStationRow = ({ row, handleOpenEdit, handleDelete, isMobile, canEdit, canDelete, organizationNamesMap }) => {
+<<<<<<< HEAD
+=======
+    const navigate = useNavigate();
+>>>>>>> 5bf3b0b8c1e276c1a18fe0e7b6b72f27a4ce2f8e
     const [open, setOpen] = useState(false);
     const [anchorEl, setAnchorEl] = useState(null);
     const openMenu = Boolean(anchorEl);
@@ -57,6 +61,11 @@ const CollapsibleStationRow = ({ row, handleOpenEdit, handleDelete, isMobile, ca
                         <TableCell>
                             <Typography variant="body2" sx={{ fontWeight: 700, color: 'secondary.main' }}>
                                 {row.org_name || '-'}
+                            </Typography>
+                        </TableCell>
+                        <TableCell>
+                            <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>
+                                {row.shared_org_ids?.map(id => organizationNamesMap[id]).filter(n => n).join(', ') || '-'}
                             </Typography>
                         </TableCell>
                         <TableCell>
@@ -306,9 +315,16 @@ const StationInundationList = () => {
                             {!isMobile && (
                                 <>
                                     <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Đơn vị quản lý</TableCell>
+<<<<<<< HEAD
                                     <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Đơn vị phối hợp</TableCell>
                                     <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Trạng thái</TableCell>
                                     {(canEdit || canDelete) && <TableCell align="right" sx={{ fontWeight: 800, fontSize: '1rem' }}>Thao tác</TableCell>}
+=======
+                                    <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Tình trạng ngập</TableCell>
+                                    <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Đơn vị phối hợp</TableCell>
+                                    <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Trạng thái trạm</TableCell>
+                                    {(canEdit || canDelete || true) && <TableCell align="right" sx={{ fontWeight: 800, fontSize: '1rem' }}>Thao tác</TableCell>}
+>>>>>>> 5bf3b0b8c1e276c1a18fe0e7b6b72f27a4ce2f8e
                                 </>
                             )}
                         </TableRow>

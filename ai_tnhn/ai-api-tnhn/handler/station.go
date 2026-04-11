@@ -123,20 +123,11 @@ func (h *StationHandler) ListRain(c *gin.Context) {
 	// Permission-based filtering
 	_, isAllowedAll, user := h.checkPermissions(c)
 	if user != nil && !isAllowedAll {
-		org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
-		if err == nil && org != nil {
-			if len(org.RainStationIDs) > 0 {
-				// UNION logic: Owned by Org OR in Shared IDs list
-				req.AddWhere("org_id_or_ids", "$or", []bson.M{
-					{"org_id": user.OrgID},
-					{"_id": bson.M{"$in": org.RainStationIDs}},
-				})
-			} else {
-				req.AddWhere("org_id", "org_id", user.OrgID)
-			}
-		} else {
-			req.AddWhere("org_id", "org_id", user.OrgID)
-		}
+		// UNION logic: Owned by Org OR in SharedOrgIDs list
+		req.AddWhere("org_id_or_shared", "$or", []bson.M{
+			{"org_id": user.OrgID},
+			{"shared_org_ids": user.OrgID},
+		})
 	}
 
 	items, total, err := h.service.ListRainStations(c.Request.Context(), req)
@@ -216,20 +207,11 @@ func (h *StationHandler) ListLake(c *gin.Context) {
 	// Permission-based filtering
 	_, isAllowedAll, user := h.checkPermissions(c)
 	if user != nil && !isAllowedAll {
-		org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
-		if err == nil && org != nil {
-			if len(org.LakeStationIDs) > 0 {
-				// UNION logic: Owned by Org OR in Shared IDs list
-				req.AddWhere("org_id_or_ids", "$or", []bson.M{
-					{"org_id": user.OrgID},
-					{"_id": bson.M{"$in": org.LakeStationIDs}},
-				})
-			} else {
-				req.AddWhere("org_id", "org_id", user.OrgID)
-			}
-		} else {
-			req.AddWhere("org_id", "org_id", user.OrgID)
-		}
+		// UNION logic: Owned by Org OR in SharedOrgIDs list
+		req.AddWhere("org_id_or_shared", "$or", []bson.M{
+			{"org_id": user.OrgID},
+			{"shared_org_ids": user.OrgID},
+		})
 	}
 
 	items, total, err := h.service.ListLakeStations(c.Request.Context(), req)
@@ -309,20 +291,11 @@ func (h *StationHandler) ListRiver(c *gin.Context) {
 	// Permission-based filtering
 	_, isAllowedAll, user := h.checkPermissions(c)
 	if user != nil && !isAllowedAll {
-		org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
-		if err == nil && org != nil {
-			if len(org.RiverStationIDs) > 0 {
-				// UNION logic: Owned by Org OR in Shared IDs list
-				req.AddWhere("org_id_or_ids", "$or", []bson.M{
-					{"org_id": user.OrgID},
-					{"_id": bson.M{"$in": org.RiverStationIDs}},
-				})
-			} else {
-				req.AddWhere("org_id", "org_id", user.OrgID)
-			}
-		} else {
-			req.AddWhere("org_id", "org_id", user.OrgID)
-		}
+		// UNION logic: Owned by Org OR in SharedOrgIDs list
+		req.AddWhere("org_id_or_shared", "$or", []bson.M{
+			{"org_id": user.OrgID},
+			{"shared_org_ids": user.OrgID},
+		})
 	}
 
 	items, total, err := h.service.ListRiverStations(c.Request.Context(), req)

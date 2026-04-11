@@ -3,6 +3,7 @@ package query
 import (
 	"ai-api-tnhn/internal/base/logger"
 	"ai-api-tnhn/internal/base/mgo/db"
+	"ai-api-tnhn/internal/base/mgo/filter"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/repository"
 	"context"
@@ -19,6 +20,12 @@ func NewInundationPointRepository(dbase *mongo.Database, collectionName string, 
 	return &inundationPointRepo{
 		Table: db.NewTable(collectionName, prefix, dbase, l),
 	}
+}
+
+func (r *inundationPointRepo) List(ctx context.Context, f filter.Filter) ([]models.InundationPoint, int64, error) {
+	var points []models.InundationPoint
+	total, err := r.R_SearchAndCount(ctx, f, &points)
+	return points, total, err
 }
 
 func (r *inundationPointRepo) ListByOrg(ctx context.Context, orgID string) ([]models.InundationPoint, error) {

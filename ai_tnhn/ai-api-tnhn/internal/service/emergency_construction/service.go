@@ -483,14 +483,10 @@ func (s *service) ExportExcelToDrive(ctx context.Context, dateStr string, orgID 
 		// Fetch constructions for this org
 		// Fetch constructions for this org (Union of owned and shared)
 		filterReq := filter.NewBasicFilter()
-		if len(org.EmergencyConstructionIDs) > 0 {
-			filterReq.AddWhere("org_id_or_ids", "$or", []bson.M{
-				{"org_id": org.ID},
-				{"_id": bson.M{"$in": org.EmergencyConstructionIDs}},
-			})
-		} else {
-			filterReq.AddWhere("org_id", "org_id", org.ID)
-		}
+		filterReq.AddWhere("org_id_or_shared", "$or", []bson.M{
+			{"org_id": org.ID},
+			{"shared_org_ids": org.ID},
+		})
 		consList, _, err := s.repo.List(ctx, filterReq)
 		if err != nil || len(consList) == 0 {
 			continue

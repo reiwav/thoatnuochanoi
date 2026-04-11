@@ -232,14 +232,18 @@ func (s *service) ListReportsWithFilter(ctx context.Context, orgID, status, traf
 	f.PerPage = int64(size)
 
 	if len(pointIDs) > 0 && orgID != "" {
-		f.AddWhere("org_id_or_points", "$or", []bson.M{
+		f.AddWhere("org_id_or_shared_or_points", "$or", []bson.M{
 			{"org_id": orgID},
+			{"shared_org_ids": orgID},
 			{"point_id": bson.M{"$in": pointIDs}},
 		})
 	} else if len(pointIDs) > 0 {
 		f.AddWhere("point_id", "point_id", bson.M{"$in": pointIDs})
 	} else if orgID != "" {
-		f.AddWhere("org_id", "org_id", orgID)
+		f.AddWhere("org_id_or_shared", "$or", []bson.M{
+			{"org_id": orgID},
+			{"shared_org_ids": orgID},
+		})
 	}
 	if status != "" {
 		f.AddWhere("status", "status", status)
@@ -485,9 +489,15 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []
 	// 1. Get all managed points (Union of owned points and shared points)
 	allPointsMap := make(map[string]models.InundationPoint)
 
-	// A. Get points owned by this organization
+	// A. Get points owned by or shared with this organization
 	if orgID != "" {
-		ownedPoints, err := s.inundationPointRepo.ListByOrg(ctx, orgID)
+		pf := filter.NewPaginationFilter()
+		pf.PerPage = 1000
+		pf.AddWhere("org_id_or_shared", "$or", []bson.M{
+			{"org_id": orgID},
+			{"shared_org_ids": orgID},
+		})
+		ownedPoints, _, err := s.inundationPointRepo.List(ctx, pf)
 		if err == nil {
 			for _, p := range ownedPoints {
 				allPointsMap[p.ID] = p
@@ -539,12 +549,16 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []
 	if len(pointIDs) > 0 && orgID != "" {
 		f.AddWhere("org_id_or_points", "$or", []bson.M{
 			{"org_id": orgID},
+			{"shared_org_ids": orgID},
 			{"point_id": bson.M{"$in": pointIDs}},
 		})
 	} else if len(pointIDs) > 0 {
 		f.AddWhere("point_id", "point_id", bson.M{"$in": pointIDs})
 	} else if orgID != "" {
-		f.AddWhere("org_id", "org_id", orgID)
+		f.AddWhere("org_id_or_shared", "$or", []bson.M{
+			{"org_id": orgID},
+			{"shared_org_ids": orgID},
+		})
 	}
 	f.AddWhere("status", "status", "active")
 	activeReports, _, err := s.inundationRepo.List(ctx, f)
@@ -575,7 +589,10 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []
 	} else if len(pointIDs) > 0 {
 		pipeline[0]["$match"].(bson.M)["point_id"] = bson.M{"$in": pointIDs}
 	} else if orgID != "" {
-		pipeline[0]["$match"].(bson.M)["org_id"] = orgID
+		pipeline[0]["$match"].(bson.M)["$or"] = []bson.M{
+			{"org_id": orgID},
+			{"shared_org_ids": orgID},
+		}
 	}
 
 	var pipeRes []struct {

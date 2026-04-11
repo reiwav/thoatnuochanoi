@@ -102,7 +102,7 @@ func (h *EmergencyConstructionHandler) List(c *gin.Context) {
 
 	queryOrgID := c.Query("org_id")
 	targetOrgID := ""
-	
+
 	if isAllowedAll {
 		targetOrgID = queryOrgID
 	} else {
@@ -112,16 +112,12 @@ func (h *EmergencyConstructionHandler) List(c *gin.Context) {
 
 	// 2. Further restrict by specific IDs if needed (Shared points or Employee assignments)
 	if targetOrgID != "" {
-		// Admin/Contextual view: Use Organization's configured IDs
-		org, err := h.service.GetOrgByID(c.Request.Context(), targetOrgID)
-		if err == nil && org != nil && len(org.EmergencyConstructionIDs) > 0 {
-			// UNION logic: Owned by Org OR in Shared IDs list
-			req.AddWhere("org_id_or_ids", "$or", []bson.M{
-				{"org_id": targetOrgID},
-				{"_id": bson.M{"$in": org.EmergencyConstructionIDs}},
-			})
-			req.OrgID = "" // Clear the strict OrgID filter
-		}
+		// UNION logic: Owned by Org OR in SharedOrgIDs list
+		req.AddWhere("org_id_or_shared", "$or", []bson.M{
+			{"org_id": targetOrgID},
+			{"shared_org_ids": targetOrgID},
+		})
+		req.OrgID = "" // Clear the strict OrgID filter
 	} else if client.Role == constant.ROLE_EMPLOYEE || client.IsEmployee {
 		// Default mobile app view for employees: only their assigned items
 		user, err := h.service.GetUserByID(c.Request.Context(), client.UserID)
@@ -372,7 +368,7 @@ func (h *EmergencyConstructionHandler) GetProgressHistory(c *gin.Context) {
 func (h *EmergencyConstructionHandler) ExportExcel(c *gin.Context) {
 	date := c.Query("date")
 	orgID := c.Query("org_id")
-	
+
 	// Permission-based isolation
 	_, isAllowedAll, client := h.checkPermissions(c)
 	if client != nil {

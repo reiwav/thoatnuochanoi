@@ -109,20 +109,11 @@ func (h *PumpingStationHandler) List(c *gin.Context) {
 	}
 
 	if targetOrgID != "" {
-		org, err := h.service.GetOrgByID(c.Request.Context(), targetOrgID)
-		if err == nil && org != nil {
-			if len(org.PumpingStationIDs) > 0 {
-				// UNION logic: Owned by Org OR in Shared IDs list
-				f.AddWhere("org_id_or_ids", "$or", []bson.M{
-					{"org_id": targetOrgID},
-					{"_id": bson.M{"$in": org.PumpingStationIDs}},
-				})
-			} else {
-				f.AddWhere("org_id", "org_id", targetOrgID)
-			}
-		} else {
-			f.AddWhere("org_id", "org_id", targetOrgID)
-		}
+		// UNION logic: Owned by Org OR in SharedOrgIDs list
+		f.AddWhere("org_id_or_shared", "$or", []bson.M{
+			{"org_id": targetOrgID},
+			{"shared_org_ids": targetOrgID},
+		})
 	} else if user.Role == constant.ROLE_EMPLOYEE || user.IsEmployee {
 		// Employee view: Only their assigned station
 		if user.UserID != "" {

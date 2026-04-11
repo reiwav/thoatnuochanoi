@@ -8,11 +8,13 @@ import TextField from '@mui/material/TextField';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
 import Stack from '@mui/material/Stack';
-import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import MenuItem from '@mui/material/MenuItem';
+import Autocomplete from '@mui/material/Autocomplete';
+import Chip from '@mui/material/Chip';
 import pumpingStationApi from 'api/pumpingStation';
 import { toast } from 'react-hot-toast';
 
-const PumpingStationDialog = ({ open, handleClose, item, refresh, organizations = [] }) => {
+const PumpingStationDialog = ({ open, handleClose, item, refresh, organizations = { primary: [], shared: [] } }) => {
     const [formData, setFormData] = useState({
         name: '',
         address: '',
@@ -21,33 +23,43 @@ const PumpingStationDialog = ({ open, handleClose, item, refresh, organizations 
         active: true,
         link: '',
         is_auto: false,
+        org_id: '',
+        shared_org_ids: []
     });
 
     useEffect(() => {
-        if (item) {
-            setFormData(item);
-        } else {
-            setFormData({
-                name: '',
-                address: '',
-                org_id: '',
-                pump_count: 0,
-                active: true,
-                link: '',
-                is_auto: false,
-            });
+        if (open) {
+            if (item) {
+                setFormData({
+                    ...item,
+                    shared_org_ids: item.shared_org_ids || []
+                });
+            } else {
+                setFormData({
+                    name: '',
+                    address: '',
+                    pump_count: 0,
+                    active: true,
+                    link: '',
+                    is_auto: false,
+                    org_id: '',
+                    shared_org_ids: []
+                });
+            }
         }
     }, [item, open]);
 
-    const handleChange = (e) => {
-        const { name, value, type, checked } = e.target;
-        setFormData({
-            ...formData,
-            [name]: type === 'checkbox' ? checked : value,
-        });
+    const handleChange = (field, value) => {
+        setFormData(prev => ({
+            ...prev,
+            [field]: value
+        }));
     };
 
     const handleSubmit = async () => {
+        if (!formData.name) return toast.error("Vui lòng nhập tên trạm bơm");
+        if (!formData.org_id) return toast.error("Vui lòng chọn đơn vị quản lý");
+
         try {
             const payload = {
                 ...formData,
@@ -63,29 +75,26 @@ const PumpingStationDialog = ({ open, handleClose, item, refresh, organizations 
             refresh();
             handleClose();
         } catch (error) {
-            toast.error('Thao tác thất bại');
+            toast.error(error.response?.data?.error || 'Thao tác thất bại');
         }
     };
 
     return (
         <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-            <DialogTitle>{item ? 'Chỉnh sửa trạm bơm' : 'Thêm trạm bơm mới'}</DialogTitle>
+            <DialogTitle sx={{ fontWeight: 800 }}>{item ? 'Chỉnh sửa trạm bơm' : 'Thêm trạm bơm mới'}</DialogTitle>
             <DialogContent dividers>
-                <Stack spacing={2} sx={{ mt: 1 }}>
+                <Stack spacing={3} sx={{ mt: 1 }}>
                     <TextField
-                        fullWidth
-                        label="Tên trạm bơm"
-                        name="name"
+                        fullWidth label="Tên trạm bơm" required
                         value={formData.name}
-                        onChange={handleChange}
-                        required
+                        onChange={(e) => handleChange('name', e.target.value)}
+                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
                     />
                     <TextField
-                        fullWidth
-                        label="Địa chỉ"
-                        name="address"
+                        fullWidth label="Địa chỉ"
                         value={formData.address}
-                        onChange={handleChange}
+                        onChange={(e) => handleChange('address', e.target.value)}
+                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
                     />
                     <FormControl fullWidth>
                         <InputLabel>Đơn vị quản lý</InputLabel>
@@ -102,36 +111,67 @@ const PumpingStationDialog = ({ open, handleClose, item, refresh, organizations 
                         </Select>
                     </FormControl>
                     <TextField
-                        fullWidth
-                        label="Số lượng máy bơm"
-                        name="pump_count"
-                        type="number"
+                        fullWidth label="Số lượng máy bơm" type="number"
                         value={formData.pump_count}
-                        onChange={handleChange}
-                        required
+                        onChange={(e) => handleChange('pump_count', e.target.value)}
+                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
                     />
+
                     <TextField
+                        fullWidth select label="Đơn vị quản lý" required
+                        value={formData.org_id}
+                        onChange={(e) => handleChange('org_id', e.target.value)}
+                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
+                    >
+                        {(organizations.primary || []).map((org) => (
+                            <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>
+                        ))}
+                    </TextField>
+
+                    <Autocomplete
+                        multiple
                         fullWidth
-                        label="Link quản lý"
-                        name="link"
-                        value={formData.link}
-                        onChange={handleChange}
+                        options={(organizations.shared || []).filter(org => org.id !== formData.org_id)}
+                        getOptionLabel={(option) => option.name}
+                        value={(organizations.shared || []).filter(org => formData.shared_org_ids?.includes(org.id))}
+                        onChange={(event, newValue) => {
+                            handleChange('shared_org_ids', newValue.map(org => org.id));
+                        }}
+                        renderInput={(params) => (
+                            <TextField {...params} label="Đơn vị phối hợp" placeholder="Chọn đơn vị" sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }} />
+                        )}
+                        renderTags={(value, getTagProps) =>
+                            value.map((option, index) => (
+                                <Chip
+                                    variant="outlined" label={option.name}
+                                    {...getTagProps({ index })} key={option.id}
+                                    size="small" sx={{ borderRadius: '8px', fontWeight: 600 }}
+                                />
+                            ))
+                        }
                     />
-                    <Stack direction="row" spacing={2}>
+
+                    <TextField
+                        fullWidth label="Link quản lý"
+                        value={formData.link}
+                        onChange={(e) => handleChange('link', e.target.value)}
+                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
+                    />
+                    <Stack direction="row" spacing={3}>
                         <FormControlLabel
-                            control={<Checkbox name="is_auto" checked={formData.is_auto} onChange={handleChange} />}
+                            control={<Checkbox checked={formData.is_auto} onChange={(e) => handleChange('is_auto', e.target.checked)} />}
                             label="Tự động (Auto)"
                         />
                         <FormControlLabel
-                            control={<Checkbox name="active" checked={formData.active} onChange={handleChange} />}
+                            control={<Checkbox checked={formData.active} onChange={(e) => handleChange('active', e.target.checked)} />}
                             label="Hoạt động"
                         />
                     </Stack>
                 </Stack>
             </DialogContent>
-            <DialogActions>
-                <Button onClick={handleClose}>Hủy</Button>
-                <Button variant="contained" onClick={handleSubmit}>
+            <DialogActions sx={{ p: 2 }}>
+                <Button onClick={handleClose} color="inherit">Hủy</Button>
+                <Button variant="contained" onClick={handleSubmit} color="primary">
                     {item ? 'Cập nhật' : 'Thêm mới'}
                 </Button>
             </DialogActions>

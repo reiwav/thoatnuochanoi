@@ -2,7 +2,7 @@ package filter
 
 const (
 	defaultPerPage = 50
-	maxPerPage     = 200
+	maxPerPage     = 1000
 )
 
 type PaginationFilter struct {

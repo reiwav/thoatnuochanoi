@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react'; // v2 - for cache busting
 import {
     Dialog, DialogTitle, DialogContent, DialogActions,
     TextField, Button, Grid, IconButton, Stack, FormControlLabel, Switch,
-    FormControl, InputLabel, Select, MenuItem, Typography
+    FormControl, InputLabel, Select, MenuItem, Typography, Autocomplete, Chip
 } from '@mui/material';
 import { IconX } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 
-const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type, organizations = [] }) => {
+const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type, organizations = { primary: [], shared: [] } }) => {
     const [formData, setFormData] = useState({
         TenTram: '',
         DiaChi: '',
@@ -15,6 +15,7 @@ const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type, organiz
         Lng: '',
         Active: true,
         org_id: '',
+        shared_org_ids: [],
         // Specific for Lake/River
         Loai: '',
         TenTramHTML: '',
@@ -31,6 +32,7 @@ const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type, organiz
                     Lng: station.Lng || station.lng || '',
                     Active: station.Active !== undefined ? station.Active : (station.active !== undefined ? station.active : true),
                     org_id: station.org_id || '',
+                    shared_org_ids: station.shared_org_ids || [],
                     Loai: station.Loai || '',
                     TenTramHTML: station.TenTramHTML || '',
                     NguongCanhBao: station.NguongCanhBao !== undefined ? station.NguongCanhBao : ''
@@ -43,6 +45,7 @@ const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type, organiz
                     Lng: '',
                     Active: true,
                     org_id: '',
+                    shared_org_ids: [],
                     Loai: '',
                     TenTramHTML: '',
                     NguongCanhBao: ''
@@ -122,20 +125,49 @@ const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type, organiz
                         </Grid>
                     </Grid>
 
-                    {type === 'inundation' && (
-                        <TextField
-                            select
-                            fullWidth
-                            label="Đơn vị quản lý"
-                            value={formData.org_id}
-                            onChange={(e) => handleChange('org_id', e.target.value)}
-                        >
-                            <MenuItem value="">Chọn đơn vị quản lý</MenuItem>
-                            {organizations.map((org) => (
-                                <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>
-                            ))}
-                        </TextField>
-                    )}
+                    <TextField
+                        select
+                        fullWidth
+                        label="Đơn vị quản lý"
+                        required
+                        value={formData.org_id}
+                        onChange={(e) => handleChange('org_id', e.target.value)}
+                    >
+                        <MenuItem value="">Chọn đơn vị quản lý</MenuItem>
+                        {(organizations.primary || []).map((org) => (
+                            <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>
+                        ))}
+                    </TextField>
+
+                    <Autocomplete
+                        multiple
+                        fullWidth
+                        options={(organizations.shared || []).filter(org => org.id !== formData.org_id)}
+                        getOptionLabel={(option) => option.name}
+                        value={(organizations.shared || []).filter(org => formData.shared_org_ids?.includes(org.id))}
+                        onChange={(event, newValue) => {
+                            handleChange('shared_org_ids', newValue.map(org => org.id));
+                        }}
+                        renderInput={(params) => (
+                            <TextField {...params} label="Xí nghiệp phối hợp" placeholder="Chọn xí nghiệp" />
+                        )}
+                        renderTags={(value, getTagProps) =>
+                            value.map((option, index) => (
+                                <Chip
+                                    variant="outlined"
+                                    label={option.name}
+                                    {...getTagProps({ index })}
+                                    key={option.id}
+                                    sx={{ borderRadius: '8px', fontWeight: 600 }}
+                                />
+                            ))
+                        }
+                        sx={{
+                            '& .MuiAutocomplete-tag': {
+                                m: 0.5
+                            }
+                        }}
+                    />
 
                     {(type === 'lake' || type === 'river') && (
                         <TextField

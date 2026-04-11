@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {  } from 'react-router-dom';
+import { } from 'react-router-dom';
 import {
     Button, Stack, TextField, Table, TableBody,
     TableCell, TableContainer, TableHead, TableRow, Paper,
@@ -7,7 +7,7 @@ import {
     MenuItem, Collapse, useTheme, useMediaQuery, Grid,
     Menu, ListItemIcon, ListItemText
 } from '@mui/material';
-import { 
+import {
     IconTrash, IconPlus, IconEdit, IconChevronDown, IconChevronUp,
     IconDotsVertical, IconEye, IconCheck
 } from '@tabler/icons-react';
@@ -22,8 +22,7 @@ import organizationApi from 'api/organization';
 import StationDialog from './StationDialog';
 import useAuthStore from 'store/useAuthStore';
 
-const CollapsibleStationRow = ({ row, handleOpenEdit, handleDelete, isMobile, canEdit, canDelete }) => {
-    const navigate = useNavigate();
+const CollapsibleStationRow = ({ row, handleOpenEdit, handleDelete, isMobile, canEdit, canDelete, organizationNamesMap }) => {
     const [open, setOpen] = useState(false);
     const [anchorEl, setAnchorEl] = useState(null);
     const openMenu = Boolean(anchorEl);
@@ -61,8 +60,9 @@ const CollapsibleStationRow = ({ row, handleOpenEdit, handleDelete, isMobile, ca
                             </Typography>
                         </TableCell>
                         <TableCell>
-                            <Chip label={row.report_id ? 'Đang ngập' : 'Bình thường'}
-                                color={row.report_id ? 'error' : 'success'} size="small" variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem', height: 24 }} />
+                            <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>
+                                {row.shared_org_ids?.map(id => organizationNamesMap[id]).filter(n => n).join(', ') || '-'}
+                            </Typography>
                         </TableCell>
                         <TableCell>
                             <Chip label={row.active ? 'Hoạt động' : 'Ngừng'}
@@ -156,7 +156,12 @@ const StationInundationList = () => {
     const canDelete = hasPermission('inundation:delete');
     const [loading, setLoading] = useState(false);
     const [points, setPoints] = useState([]);
-    const [organizations, setOrganizations] = useState([]);
+    const [organizations, setOrganizations] = useState({ primary: [], shared: [] });
+
+    const organizationNamesMap = (organizations.shared || []).reduce((acc, org) => {
+        acc[org.id] = org.name;
+        return acc;
+    }, {});
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingPoint, setEditingPoint] = useState(null);
@@ -199,9 +204,9 @@ const StationInundationList = () => {
 
     const loadOrganizations = async () => {
         try {
-            const res = await organizationApi.getAll({ page: 1, size: 1000 });
+            const res = await organizationApi.getSelectionList();
             if (res.data?.status === 'success') {
-                setOrganizations(res.data.data.data || []);
+                setOrganizations(res.data.data || { primary: [], shared: [] });
             }
         } catch (err) {
             console.error('Lỗi tải danh sách đơn vị:', err);
@@ -223,8 +228,8 @@ const StationInundationList = () => {
         if (!window.confirm('Bạn có chắc chắn muốn xóa điểm ngập này?')) return;
         try {
             const res = await stationApi.inundation.delete(id);
-            if (res.data?.status === 'success') { 
-                toast.success('Xóa thành công'); 
+            if (res.data?.status === 'success') {
+                toast.success('Xóa thành công');
                 setPoints(prev => prev.filter(p => p.id !== id));
             }
         } catch (err) {
@@ -240,7 +245,8 @@ const StationInundationList = () => {
                 lat: values.Lat,
                 lng: values.Lng,
                 active: values.Active,
-                org_id: values.org_id
+                org_id: values.org_id,
+                shared_org_ids: values.shared_org_ids
             };
             const res = editingPoint
                 ? await stationApi.inundation.update(editingPoint.id, payload)
@@ -284,7 +290,7 @@ const StationInundationList = () => {
                         sx={{ width: { xs: '100%', sm: 200 } }}
                     >
                         <MenuItem value="">Tất cả đơn vị</MenuItem>
-                        {organizations.map((org) => (
+                        {(organizations.shared || []).map((org) => (
                             <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>
                         ))}
                     </TextField>
@@ -300,18 +306,18 @@ const StationInundationList = () => {
                             {!isMobile && (
                                 <>
                                     <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Đơn vị quản lý</TableCell>
-                                    <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Tình trạng ngập</TableCell>
-                                    <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Trạng thái trạm</TableCell>
-                                    {(canEdit || canDelete || true) && <TableCell align="right" sx={{ fontWeight: 800, fontSize: '1rem' }}>Thao tác</TableCell>}
+                                    <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Đơn vị phối hợp</TableCell>
+                                    <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Trạng thái</TableCell>
+                                    {(canEdit || canDelete) && <TableCell align="right" sx={{ fontWeight: 800, fontSize: '1rem' }}>Thao tác</TableCell>}
                                 </>
                             )}
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {loading ? (
-                            <TableRow><TableCell colSpan={isMobile ? 2 : 5} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
+                            <TableRow><TableCell colSpan={isMobile ? 2 : 6} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
                         ) : points.length === 0 ? (
-                            <TableRow><TableCell colSpan={isMobile ? 2 : 5} align="center" sx={{ py: 3 }}>Không tìm thấy điểm ngập</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={isMobile ? 2 : 6} align="center" sx={{ py: 3 }}>Không tìm thấy điểm ngập</TableCell></TableRow>
                         ) : (
                             points.map((row) => (
                                 <CollapsibleStationRow
@@ -322,6 +328,7 @@ const StationInundationList = () => {
                                     isMobile={isMobile}
                                     canEdit={canEdit}
                                     canDelete={canDelete}
+                                    organizationNamesMap={organizationNamesMap}
                                 />
                             ))
                         )}

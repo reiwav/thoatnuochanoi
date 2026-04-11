@@ -8,6 +8,7 @@ import (
 	"ai-api-tnhn/internal/repository"
 	"context"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -44,6 +45,30 @@ func (p rainStationRepository) List(ctx context.Context, filter filter.Filter) (
 	return items, total, err
 }
 
+func (p rainStationRepository) ListFiltered(ctx context.Context, orgID string, ids []string) ([]*models.RainStation, error) {
+	var items []*models.RainStation
+	f := bson.M{}
+
+	if orgID != "all" {
+		var conds []bson.M
+		if orgID != "" {
+			conds = append(conds, bson.M{"org_id": orgID})
+		}
+		if len(ids) > 0 {
+			conds = append(conds, bson.M{"_id": bson.M{"$in": ids}})
+		}
+
+		if len(conds) > 0 {
+			f["$or"] = conds
+		} else {
+			return items, nil
+		}
+	}
+
+	err := p.R_SelectMany(ctx, f, &items)
+	return items, err
+}
+
 // Lake Station Repository
 type lakeStationRepository struct {
 	*db.Table
@@ -77,6 +102,30 @@ func (p lakeStationRepository) List(ctx context.Context, filter filter.Filter) (
 	return items, total, err
 }
 
+func (p lakeStationRepository) ListFiltered(ctx context.Context, orgID string, ids []string) ([]*models.LakeStation, error) {
+	var items []*models.LakeStation
+	f := bson.M{}
+
+	if orgID != "all" {
+		var conds []bson.M
+		if orgID != "" {
+			conds = append(conds, bson.M{"org_id": orgID})
+		}
+		if len(ids) > 0 {
+			conds = append(conds, bson.M{"_id": bson.M{"$in": ids}})
+		}
+
+		if len(conds) > 0 {
+			f["$or"] = conds
+		} else {
+			return items, nil
+		}
+	}
+
+	err := p.R_SelectMany(ctx, f, &items)
+	return items, err
+}
+
 // River Station Repository
 type riverStationRepository struct {
 	*db.Table
@@ -108,4 +157,28 @@ func (p riverStationRepository) List(ctx context.Context, filter filter.Filter) 
 	var items []*models.RiverStation
 	total, err := p.R_SearchAndCount(ctx, filter, &items)
 	return items, total, err
+}
+
+func (p riverStationRepository) ListFiltered(ctx context.Context, orgID string, ids []string) ([]*models.RiverStation, error) {
+	var items []*models.RiverStation
+	f := bson.M{}
+
+	if orgID != "all" {
+		var conds []bson.M
+		if orgID != "" {
+			conds = append(conds, bson.M{"org_id": orgID})
+		}
+		if len(ids) > 0 {
+			conds = append(conds, bson.M{"_id": bson.M{"$in": ids}})
+		}
+
+		if len(conds) > 0 {
+			f["$or"] = conds
+		} else {
+			return items, nil
+		}
+	}
+
+	err := p.R_SelectMany(ctx, f, &items)
+	return items, err
 }

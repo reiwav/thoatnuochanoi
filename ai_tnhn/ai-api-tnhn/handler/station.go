@@ -1,13 +1,12 @@
 package handler
 
 import (
-	"ai-api-tnhn/constant"
 	"ai-api-tnhn/handler/filters"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/service/auth"
 	"ai-api-tnhn/internal/service/station"
 	"ai-api-tnhn/utils/web"
-	
+
 	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/gin-gonic/gin"
@@ -35,13 +34,9 @@ func (h *StationHandler) checkPermissions(c *gin.Context) (isSuperAdmin bool, is
 		return false, false, nil
 	}
 
-	isSuperAdmin = user.Role == constant.ROLE_SUPER_ADMIN ||
-		user.Role == "supper_admin" ||
-		user.Role == "supper_admib" ||
-		user.Role == "super_admin "
-
-	isAllowedAll = isSuperAdmin || user.IsCompany
-	return isSuperAdmin, isAllowedAll, user
+	// We no longer distinguish Super Admin strings, only IsCompany flag
+	isAllowedAll = user.IsCompany
+	return false, isAllowedAll, user
 }
 
 // RAIN STATIONS
@@ -51,6 +46,26 @@ func (h *StationHandler) CreateRain(c *gin.Context) {
 		web.AssertNil(web.BadRequest(err.Error()))
 		return
 	}
+
+	_, isAllowedAll, user := h.checkPermissions(c)
+	if user != nil {
+		if isAllowedAll {
+			// Super Admin or Company level: must provide OrgID
+			if m.OrgID == "" {
+				web.AssertNil(web.BadRequest("Vui lòng chọn xí nghiệp quản lý"))
+				return
+			}
+		} else {
+			// Branch level: auto-assign their own OrgID
+			m.OrgID = user.OrgID
+		}
+	}
+
+	if m.OrgID == "" {
+		web.AssertNil(web.BadRequest("Không xác định được xí nghiệp quản lý"))
+		return
+	}
+
 	res, err := h.service.CreateRainStation(c.Request.Context(), &m)
 	web.AssertNil(err)
 	h.SendData(c, res)
@@ -63,6 +78,17 @@ func (h *StationHandler) UpdateRain(c *gin.Context) {
 		web.AssertNil(web.BadRequest(err.Error()))
 		return
 	}
+
+	_, isAllowedAll, user := h.checkPermissions(c)
+	if user != nil {
+		if !isAllowedAll {
+			// Non-admin can't change OrgID, force their own
+			// Or better: verify it belongs to them first.
+			// For now, force it to their OrgID if they try to update
+			m.OrgID = user.OrgID
+		}
+	}
+
 	err := h.service.UpdateRainStation(c.Request.Context(), id, &m)
 	web.AssertNil(err)
 	h.SendData(c, m)
@@ -92,20 +118,11 @@ func (h *StationHandler) ListRain(c *gin.Context) {
 	// Permission-based filtering
 	_, isAllowedAll, user := h.checkPermissions(c)
 	if user != nil && !isAllowedAll {
-		org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
-		if err == nil && org != nil {
-			if len(org.RainStationIDs) > 0 {
-				// UNION logic: Owned by Org OR in Shared IDs list
-				req.AddWhere("org_id_or_ids", "$or", []bson.M{
-					{"org_id": user.OrgID},
-					{"_id": bson.M{"$in": org.RainStationIDs}},
-				})
-			} else {
-				req.AddWhere("org_id", "org_id", user.OrgID)
-			}
-		} else {
-			req.AddWhere("org_id", "org_id", user.OrgID)
-		}
+		// UNION logic: Owned by Org OR in SharedOrgIDs list
+		req.AddWhere("org_id_or_shared", "$or", []bson.M{
+			{"org_id": user.OrgID},
+			{"shared_org_ids": user.OrgID},
+		})
 	}
 
 	items, total, err := h.service.ListRainStations(c.Request.Context(), req)
@@ -120,6 +137,24 @@ func (h *StationHandler) CreateLake(c *gin.Context) {
 		web.AssertNil(web.BadRequest(err.Error()))
 		return
 	}
+
+	_, isAllowedAll, user := h.checkPermissions(c)
+	if user != nil {
+		if isAllowedAll {
+			if m.OrgID == "" {
+				web.AssertNil(web.BadRequest("Vui lòng chọn xí nghiệp quản lý"))
+				return
+			}
+		} else {
+			m.OrgID = user.OrgID
+		}
+	}
+
+	if m.OrgID == "" {
+		web.AssertNil(web.BadRequest("Không xác định được xí nghiệp quản lý"))
+		return
+	}
+
 	res, err := h.service.CreateLakeStation(c.Request.Context(), &m)
 	web.AssertNil(err)
 	h.SendData(c, res)
@@ -132,6 +167,12 @@ func (h *StationHandler) UpdateLake(c *gin.Context) {
 		web.AssertNil(web.BadRequest(err.Error()))
 		return
 	}
+
+	_, isAllowedAll, user := h.checkPermissions(c)
+	if user != nil && !isAllowedAll {
+		m.OrgID = user.OrgID
+	}
+
 	err := h.service.UpdateLakeStation(c.Request.Context(), id, &m)
 	web.AssertNil(err)
 	h.SendData(c, m)
@@ -161,20 +202,11 @@ func (h *StationHandler) ListLake(c *gin.Context) {
 	// Permission-based filtering
 	_, isAllowedAll, user := h.checkPermissions(c)
 	if user != nil && !isAllowedAll {
-		org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
-		if err == nil && org != nil {
-			if len(org.LakeStationIDs) > 0 {
-				// UNION logic: Owned by Org OR in Shared IDs list
-				req.AddWhere("org_id_or_ids", "$or", []bson.M{
-					{"org_id": user.OrgID},
-					{"_id": bson.M{"$in": org.LakeStationIDs}},
-				})
-			} else {
-				req.AddWhere("org_id", "org_id", user.OrgID)
-			}
-		} else {
-			req.AddWhere("org_id", "org_id", user.OrgID)
-		}
+		// UNION logic: Owned by Org OR in SharedOrgIDs list
+		req.AddWhere("org_id_or_shared", "$or", []bson.M{
+			{"org_id": user.OrgID},
+			{"shared_org_ids": user.OrgID},
+		})
 	}
 
 	items, total, err := h.service.ListLakeStations(c.Request.Context(), req)
@@ -189,6 +221,24 @@ func (h *StationHandler) CreateRiver(c *gin.Context) {
 		web.AssertNil(web.BadRequest(err.Error()))
 		return
 	}
+
+	_, isAllowedAll, user := h.checkPermissions(c)
+	if user != nil {
+		if isAllowedAll {
+			if m.OrgID == "" {
+				web.AssertNil(web.BadRequest("Vui lòng chọn xí nghiệp quản lý"))
+				return
+			}
+		} else {
+			m.OrgID = user.OrgID
+		}
+	}
+
+	if m.OrgID == "" {
+		web.AssertNil(web.BadRequest("Không xác định được xí nghiệp quản lý"))
+		return
+	}
+
 	res, err := h.service.CreateRiverStation(c.Request.Context(), &m)
 	web.AssertNil(err)
 	h.SendData(c, res)
@@ -201,6 +251,12 @@ func (h *StationHandler) UpdateRiver(c *gin.Context) {
 		web.AssertNil(web.BadRequest(err.Error()))
 		return
 	}
+
+	_, isAllowedAll, user := h.checkPermissions(c)
+	if user != nil && !isAllowedAll {
+		m.OrgID = user.OrgID
+	}
+
 	err := h.service.UpdateRiverStation(c.Request.Context(), id, &m)
 	web.AssertNil(err)
 	h.SendData(c, m)
@@ -230,20 +286,11 @@ func (h *StationHandler) ListRiver(c *gin.Context) {
 	// Permission-based filtering
 	_, isAllowedAll, user := h.checkPermissions(c)
 	if user != nil && !isAllowedAll {
-		org, err := h.service.GetOrgByID(c.Request.Context(), user.OrgID)
-		if err == nil && org != nil {
-			if len(org.RiverStationIDs) > 0 {
-				// UNION logic: Owned by Org OR in Shared IDs list
-				req.AddWhere("org_id_or_ids", "$or", []bson.M{
-					{"org_id": user.OrgID},
-					{"_id": bson.M{"$in": org.RiverStationIDs}},
-				})
-			} else {
-				req.AddWhere("org_id", "org_id", user.OrgID)
-			}
-		} else {
-			req.AddWhere("org_id", "org_id", user.OrgID)
-		}
+		// UNION logic: Owned by Org OR in SharedOrgIDs list
+		req.AddWhere("org_id_or_shared", "$or", []bson.M{
+			{"org_id": user.OrgID},
+			{"shared_org_ids": user.OrgID},
+		})
 	}
 
 	items, total, err := h.service.ListRiverStations(c.Request.Context(), req)

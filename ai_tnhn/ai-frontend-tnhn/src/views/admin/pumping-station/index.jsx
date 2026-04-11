@@ -12,6 +12,7 @@ import Stack from '@mui/material/Stack';
 import Tooltip from '@mui/material/Tooltip';
 import { IconEdit, IconTrash, IconPlus, IconHistory } from '@tabler/icons-react';
 import pumpingStationApi from 'api/pumpingStation';
+import organizationApi from 'api/organization';
 import PumpingStationDialog from './PumpingStationDialog';
 import PumpingStationHistoryDialog from './PumpingStationHistoryDialog';
 import PumpingStationReport from './PumpingStationReport';
@@ -27,6 +28,7 @@ const PumpingStationPage = () => {
     const [open, setOpen] = useState(false);
     const [openHistory, setOpenHistory] = useState(false);
     const [selected, setSelected] = useState(null);
+    const [organizations, setOrganizations] = useState([]);
 
     const isAdmin = hasPermission('trambom:view');
 
@@ -34,8 +36,12 @@ const PumpingStationPage = () => {
         try {
             setLoading(true);
             if (isAdmin) {
-                const response = await pumpingStationApi.list();
-                setData(response.data.data?.data || []);
+                const [stationRes, orgRes] = await Promise.all([
+                    pumpingStationApi.list(),
+                    organizationApi.getAll({ per_page: 1000 })
+                ]);
+                setData(stationRes.data.data?.data || []);
+                setOrganizations(orgRes.data.data?.data || []);
             } else if (userInfo?.assigned_pumping_station_id) {
                 const response = await pumpingStationApi.get(userInfo.assigned_pumping_station_id);
                 setAssignedStation(response.data.data || null);
@@ -100,6 +106,7 @@ const PumpingStationPage = () => {
                             <TableCell>Số TT</TableCell>
                             <TableCell>Tên trạm bơm</TableCell>
                             <TableCell>Địa chỉ</TableCell>
+                            <TableCell>Đơn vị</TableCell>
                             <TableCell>Số lượng bơm</TableCell>
                             <TableCell>Tự động</TableCell>
                             <TableCell align="center">Thao tác</TableCell>
@@ -111,6 +118,9 @@ const PumpingStationPage = () => {
                                 <TableCell>{index + 1}</TableCell>
                                 <TableCell>{item.name}</TableCell>
                                 <TableCell>{item.address}</TableCell>
+                                <TableCell>
+                                    {organizations.find(o => o.id === item.org_id)?.name || '---'}
+                                </TableCell>
                                 <TableCell>{item.pump_count}</TableCell>
                                 <TableCell>{item.is_auto ? 'Có' : 'Không'}</TableCell>
                                 <TableCell align="center">
@@ -147,6 +157,7 @@ const PumpingStationPage = () => {
                 handleClose={() => setOpen(false)}
                 item={selected}
                 refresh={loadData}
+                organizations={organizations}
             />
 
             {selected && (

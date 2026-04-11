@@ -8,13 +8,15 @@ import TextField from '@mui/material/TextField';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
 import Stack from '@mui/material/Stack';
+import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import pumpingStationApi from 'api/pumpingStation';
 import { toast } from 'react-hot-toast';
 
-const PumpingStationDialog = ({ open, handleClose, item, refresh }) => {
+const PumpingStationDialog = ({ open, handleClose, item, refresh, organizations = [] }) => {
     const [formData, setFormData] = useState({
         name: '',
         address: '',
+        org_id: '',
         pump_count: 0,
         active: true,
         link: '',
@@ -28,6 +30,7 @@ const PumpingStationDialog = ({ open, handleClose, item, refresh }) => {
             setFormData({
                 name: '',
                 address: '',
+                org_id: '',
                 pump_count: 0,
                 active: true,
                 link: '',
@@ -84,6 +87,20 @@ const PumpingStationDialog = ({ open, handleClose, item, refresh }) => {
                         value={formData.address}
                         onChange={handleChange}
                     />
+                    <FormControl fullWidth>
+                        <InputLabel>Đơn vị quản lý</InputLabel>
+                        <Select
+                            name="org_id"
+                            value={formData.org_id}
+                            label="Đơn vị quản lý"
+                            onChange={handleChange}
+                        >
+                            <MenuItem value=""><em>-- Chọn đơn vị --</em></MenuItem>
+                            {organizations.map((org) => (
+                                <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
                     <TextField
                         fullWidth
                         label="Số lượng máy bơm"

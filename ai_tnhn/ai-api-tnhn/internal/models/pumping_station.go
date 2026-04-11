@@ -10,6 +10,7 @@ type PumpingStation struct {
 	Active          bool   `json:"active" bson:"active"`
 	Link            string `json:"link" bson:"link"`
 	IsAuto          bool   `json:"is_auto" bson:"is_auto"`
+	OrgID           string `json:"org_id" bson:"org_id"`
 }
 
 type PumpingStationHistory struct {

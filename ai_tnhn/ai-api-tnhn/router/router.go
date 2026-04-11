@@ -3,7 +3,6 @@ package router
 import (
 	"ai-api-tnhn/handler"
 	"ai-api-tnhn/router/middleware"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -30,19 +29,6 @@ func (h *HandlerFuncs) Create(mid middleware.Middleware, orgHandler *handler.Org
 		}),
 	)
 	r.SetTrustedProxies(nil)
-	r.Use(func(c *gin.Context) {
-		// Nếu request không phải API và không tìm thấy file vật lý
-		if !strings.HasPrefix(c.Request.URL.Path, "/api") {
-			path := filepath.Join("./frontend_dist", c.Request.URL.Path)
-			_, err := os.Stat(path)
-			if os.IsNotExist(err) {
-				c.File("./frontend_dist/index.html")
-				c.Abort()
-				return
-			}
-		}
-		c.Next()
-	})
 	// Serve static web default frontend_dist
 	r.Use(static.Serve("/", static.LocalFile("./frontend_dist", false)))
 
@@ -89,6 +75,23 @@ func (h *HandlerFuncs) Create(mid middleware.Middleware, orgHandler *handler.Org
 	apiAdmin.POST("/database/query", mid.MidBasicType(), h.DatabaseQueryHandler)
 
 	r.NoRoute(func(c *gin.Context) {
+		// Nếu là request API thì trả về 404 JSON
+		if strings.HasPrefix(c.Request.URL.Path, "/api") {
+			c.JSON(404, gin.H{"message": "Not Found"})
+			return
+		}
+
+		// Nếu path có phần mở rộng (ví dụ: .js, .css, .png) thì khả năng cao là file tĩnh bị thiếu
+		// Trình duyệt nên nhận 404 thay vì nhận nội dung index.html để tránh lỗi MIME type
+		path := c.Request.URL.Path
+		if strings.Contains(filepath.Base(path), ".") {
+			c.Status(404)
+			return
+		}
+
+		// Ngược lại, phục vụ index.html cho SPA routing
+		// Thêm header để tránh cache file index.html (giúp trình duyệt luôn cập nhật hash file mới khi build lại)
+		c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
 		c.File("./frontend_dist/index.html")
 	})
 

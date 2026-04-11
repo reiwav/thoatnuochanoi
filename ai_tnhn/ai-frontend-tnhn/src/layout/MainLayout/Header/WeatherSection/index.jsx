@@ -108,7 +108,7 @@ const WeatherSection = () => {
   const getSmallWeatherIcon = (text) => {
     // Chỉ lấy phần mô tả thời tiết (nằm trước dấu chấm phẩy đầu tiên) để tránh bắt nhầm chữ "mưa" trong "Tỉ lệ mưa"
     const description = text.split(';')[0].toLowerCase();
-    const iconProps = { size: 14, style: { marginRight: '6px' } };
+    const iconProps = { size: 20, style: { marginRight: '8px' } };
 
     if (description.includes('dông') || description.includes('sấm')) return <IconCloudStorm {...iconProps} color={theme.palette.warning.dark} />;
     if (description.includes('sét')) return <IconBolt {...iconProps} color={theme.palette.warning.main} />;
@@ -120,36 +120,212 @@ const WeatherSection = () => {
     return <IconCloud {...iconProps} color={theme.palette.primary.main} />;
   };
 
+  const parseForecastLine = (line) => {
+    // Ví dụ line: "- Ngày 11/04: Sương mù; Tỉ lệ mưa: 0%; Nhiệt độ: 24.4-36.3°C"
+
+    // 1. Làm sạch dấu gạch đầu dòng và khoảng trắng thừa
+    const cleanLine = line.trim().replace(/^-?\s*/, '');
+
+    // 2. Tách Ngày và phần còn lại
+    const firstColonIndex = cleanLine.indexOf(':');
+    if (firstColonIndex === -1) return { day: '', desc: cleanLine, temp: '', rain: '' };
+
+    const day = cleanLine.substring(0, firstColonIndex).replace(/Ngày\s*/i, '').trim();
+    const rest = cleanLine.substring(firstColonIndex + 1).trim();
+
+    // 3. Tách các thành phần bằng dấu ";"
+    const details = rest.split(';').map(item => item.trim());
+
+    let desc = details[0] || ''; // "Sương mù"
+    let rain = '';
+    let temp = '';
+
+    details.forEach(detail => {
+      if (detail.includes('Tỉ lệ mưa')) {
+        // Lấy phần sau dấu ":" của "Tỉ lệ mưa: 0%"
+        rain = detail.split(':')[1]?.trim() || '';
+      } else if (detail.includes('Nhiệt độ')) {
+        // Lấy phần sau dấu ":" của "Nhiệt độ: 24.4-36.3°C"
+        temp = detail.split(':')[1]?.trim() || '';
+      }
+    });
+
+    return { day, desc, temp, rain };
+  };
+  const parsedForecast = forecastLines.map(parseForecastLine);
+
   return (
-    <Box sx={{ 
-      flexGrow: 1, 
-      display: { xs: 'none', lg: 'flex' }, 
-      justifyContent: 'center', 
+    <Box sx={{
+      flexGrow: 1,
+      display: { xs: 'none', lg: 'flex' },
+      justifyContent: 'center',
       alignItems: 'center',
       px: 1,
-      minHeight: '40px'
+      minHeight: '48px'
     }}>
-      <Tooltip title="Dự báo thời tiết Hà Nội 3 ngày tới (AI)" arrow>
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
-          {forecastLines.map((line, index) => (
-            <Stack key={index} direction="row" alignItems="center">
-              {getSmallWeatherIcon(line)}
-              <Typography
-                sx={{
-                  fontWeight: 600,
-                  fontSize: '0.65rem',
-                  lineHeight: 1.1,
-                  color: theme.palette.primary.main,
-                  textTransform: 'uppercase',
-                  textAlign: 'center',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {line}
-              </Typography>
+      <Tooltip
+        title={
+          <Box sx={{ 
+            p: 1.5, 
+            minWidth: '220px',
+            background: theme.palette.mode === 'dark' ? 'rgba(17, 25, 41, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+            backdropFilter: 'blur(10px)',
+            borderRadius: '12px',
+            border: '1px solid',
+            borderColor: theme.palette.divider,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
+          }}>
+            <Typography variant="subtitle2" sx={{ 
+              mb: 1.5, 
+              fontWeight: 800, 
+              color: theme.palette.primary.main,
+              borderBottom: '1px solid',
+              borderColor: 'divider',
+              pb: 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1
+            }}>
+              <IconCloud size={18} />
+              Dự báo thời tiết Hà Nội
+            </Typography>
+            <Stack spacing={1.5}>
+              {parsedForecast.map((item, idx) => (
+                <Box key={idx} sx={{ 
+                  pb: idx === parsedForecast.length - 1 ? 0 : 1,
+                  borderBottom: idx === parsedForecast.length - 1 ? 'none' : '1px dashed',
+                  borderColor: 'divider'
+                }}>
+                  <Typography variant="caption" sx={{ fontWeight: 700, color: theme.palette.text.primary, display: 'block', mb: 0.5 }}>
+                    Ngày {item.day}
+                  </Typography>
+                  <Box sx={{ pl: 1 }}>
+                    <Typography variant="caption" display="block" sx={{ color: theme.palette.text.secondary }}>
+                      • <b>{item.desc}</b>
+                    </Typography>
+                    {item.temp && (
+                      <Typography variant="caption" display="block" sx={{ color: theme.palette.warning.dark }}>
+                        • Nhiệt độ: {item.temp}
+                      </Typography>
+                    )}
+                    {item.rain && (
+                      <Typography variant="caption" display="block" sx={{ color: theme.palette.info.main }}>
+                        • Tỷ lệ mưa: {item.rain}
+                      </Typography>
+                    )}
+                  </Box>
+                </Box>
+              ))}
             </Stack>
+          </Box>
+        }
+        componentsProps={{
+          tooltip: {
+            sx: {
+              bgcolor: 'transparent',
+              '& .MuiTooltip-arrow': {
+                color: theme.palette.mode === 'dark' ? 'rgba(17, 25, 41, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+              }
+            }
+          }
+        }}
+        arrow
+      >
+        <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+          {parsedForecast.map((item, index) => (
+            <Box
+              key={index}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.5,
+                px: 2,
+                py: 0.75,
+                borderRadius: '10px',
+                minWidth: '200px',
+                background: theme.palette.mode === 'dark'
+                  ? 'rgba(255, 255, 255, 0.08)'
+                  : 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(10px)',
+                boxShadow: theme.palette.mode === 'dark'
+                  ? '0 4px 20px rgba(0,0,0,0.4)'
+                  : '0 4px 20px rgba(0,0,0,0.08)',
+                border: '1px solid',
+                borderColor: theme.palette.mode === 'dark'
+                  ? 'rgba(255, 255, 255, 0.15)'
+                  : 'rgba(0, 0, 0, 0.08)',
+                transition: 'all 0.3s ease',
+                cursor: 'pointer',
+                '&:hover': {
+                  transform: 'translateY(-3px) scale(1.02)',
+                  background: theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.12)'
+                    : '#fff',
+                  borderColor: theme.palette.primary.main,
+                  boxShadow: `0 8px 25px ${theme.palette.primary.light}40`
+                }
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                {getSmallWeatherIcon(item.desc)}
+              </Box>
+
+              <Stack direction="row" alignItems="center" spacing={1.5} sx={{ flexGrow: 1 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', borderRight: '1px solid', borderColor: 'divider', pr: 1.5 }}>
+                  <Typography
+                    sx={{
+                      fontWeight: 850,
+                      fontSize: '0.85rem',
+                      color: theme.palette.primary.main,
+                      lineHeight: 1
+                    }}
+                  >
+                    Ngày
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontWeight: 700,
+                      fontSize: '0.8rem',
+                      color: theme.palette.text.primary,
+                      lineHeight: 1.2
+                    }}
+                  >
+                    {item.day}
+                  </Typography>
+                </Box>
+
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                    <Typography
+                      sx={{
+                        fontWeight: 700,
+                        fontSize: '0.8rem',
+                        color: theme.palette.text.primary,
+                        lineHeight: 1.1,
+                        whiteSpace: 'nowrap',
+                        mb: 0.5
+                      }}
+                    >
+                      {item.desc}
+                    </Typography>
+                    <Stack direction="row" spacing={1.5}>
+                      {item.temp && (
+                        <Typography sx={{ fontWeight: 600, fontSize: '0.75rem', color: theme.palette.text.secondary }}>
+                          <Box component="span" sx={{ color: theme.palette.info.main }}>{item.temp}</Box>
+                        </Typography>
+                      )}
+                      {item.rain && (
+                        <Typography sx={{ fontWeight: 600, fontSize: '0.75rem', color: theme.palette.text.secondary }}>
+                          Mưa: <Box component="span" sx={{ color: theme.palette.info.main }}>{item.rain.replace(/Tỉ lệ mưa /i, '').trim()}</Box>
+                        </Typography>
+                      )}
+                    </Stack>
+                  </Box>
+                </Box>
+              </Stack>
+            </Box>
           ))}
-        </Box>
+        </Stack>
       </Tooltip>
     </Box>
   );

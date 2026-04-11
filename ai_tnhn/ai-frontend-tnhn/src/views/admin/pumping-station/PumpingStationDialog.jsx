@@ -24,7 +24,6 @@ const PumpingStationDialog = ({ open, handleClose, item, refresh, organizations 
         active: true,
         link: '',
         is_auto: false,
-        org_id: '',
         shared_org_ids: []
     });
 
@@ -47,7 +46,6 @@ const PumpingStationDialog = ({ open, handleClose, item, refresh, organizations 
                     shared_org_ids: []
                 });
             }
-        }
         }
     }, [item, open]);
 

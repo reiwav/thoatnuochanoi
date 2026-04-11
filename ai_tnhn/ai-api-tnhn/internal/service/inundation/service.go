@@ -58,6 +58,7 @@ type PointStatus struct {
 	LastReport   *models.InundationReport `json:"last_report,omitempty"`
 	LastReportID string                   `json:"last_report_id"`
 	ReportID     string                   `json:"report_id"`
+	SharedOrgIDs []string                 `json:"shared_org_ids,omitempty"`
 	Active       bool                     `json:"active"`
 	CreatedAt    int64                    `json:"created_at"`
 }
@@ -724,6 +725,7 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []
 			LastReport:   lastReport,
 			LastReportID: lastID,
 			ReportID:     p.ReportID,
+			SharedOrgIDs: p.SharedOrgIDs,
 			Active:       p.Active,
 			CreatedAt:    p.CTime,
 		}

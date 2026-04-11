@@ -200,16 +200,16 @@ const WeatherSection = () => {
                     Ngày {item.day}
                   </Typography>
                   <Box sx={{ pl: 1 }}>
-                    <Typography variant="caption" display="block" sx={{ color: theme.palette.text.secondary }}>
+                    <Typography variant="body2" display="block" sx={{ color: theme.palette.text.secondary, mb: 0.5 }}>
                       • <b>{item.desc}</b>
                     </Typography>
                     {item.temp && (
-                      <Typography variant="caption" display="block" sx={{ color: theme.palette.warning.dark }}>
+                      <Typography variant="body2" display="block" sx={{ color: theme.palette.primary.main, fontWeight: 700, mb: 0.5 }}>
                         • Nhiệt độ: {item.temp}
                       </Typography>
                     )}
                     {item.rain && (
-                      <Typography variant="caption" display="block" sx={{ color: theme.palette.info.main }}>
+                      <Typography variant="body2" display="block" sx={{ color: theme.palette.info.main, fontWeight: 700 }}>
                         • Tỷ lệ mưa: {item.rain}
                       </Typography>
                     )}
@@ -308,15 +308,15 @@ const WeatherSection = () => {
                     >
                       {item.desc}
                     </Typography>
-                    <Stack direction="row" spacing={1.5}>
+                    <Stack direction="row" spacing={2}>
                       {item.temp && (
-                        <Typography sx={{ fontWeight: 600, fontSize: '0.75rem', color: theme.palette.text.secondary }}>
-                          <Box component="span" sx={{ color: theme.palette.info.main }}>{item.temp}</Box>
+                        <Typography sx={{ fontWeight: 600, fontSize: '0.9rem', color: theme.palette.text.secondary }}>
+                          <Box component="span" sx={{ color: theme.palette.primary.main, fontWeight: 800, fontSize: '1rem' }}>{item.temp}</Box>
                         </Typography>
                       )}
                       {item.rain && (
-                        <Typography sx={{ fontWeight: 600, fontSize: '0.75rem', color: theme.palette.text.secondary }}>
-                          Mưa: <Box component="span" sx={{ color: theme.palette.info.main }}>{item.rain.replace(/Tỉ lệ mưa /i, '').trim()}</Box>
+                        <Typography sx={{ fontWeight: 600, fontSize: '0.85rem', color: theme.palette.text.secondary }}>
+                          Mưa: <Box component="span" sx={{ color: theme.palette.info.main, fontWeight: 800, fontSize: '1rem' }}>{item.rain.replace(/Tỉ lệ mưa /i, '').trim()}</Box>
                         </Typography>
                       )}
                     </Stack>

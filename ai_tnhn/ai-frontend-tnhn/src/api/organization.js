@@ -4,6 +4,9 @@ const organizationApi = {
     getAll: (params) => {
         return axiosClient.get('/admin/organizations', { params });
     },
+    getSelectionList: () => {
+        return axiosClient.get('/admin/organizations/selection');
+    },
     getById: (id) => {
         return axiosClient.get(`/admin/organizations/${id}`);
     },

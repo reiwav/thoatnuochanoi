@@ -62,14 +62,15 @@ func (m mid) MidBasicType(roles ...string) gin.HandlerFunc {
 		fmt.Println("tok.Role: ", tok.Role)
 		fmt.Println("tokenID: ", tokenID)
 		if len(roles) > 0 {
-			if !contains(roles, tok.Role) {
+			if !contains(roles, tok.Role) && !tok.IsCompany {
 				err = web.Unauthorized("access token not found " + tok.Role)
 				m.SendErrorForce(ctx, err, http.StatusUnauthorized)
 				ctx.Abort()
 				return
 			}
 		}
-		if tok.Role == constant.ROLE_SUPER_ADMIN {
+
+		if tok.IsCompany {
 			tok.OrgID = "all"
 		} else if tok.OrgID == "" {
 			err = web.Unauthorized("org-id not found")

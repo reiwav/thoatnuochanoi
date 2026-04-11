@@ -48,7 +48,7 @@ export default function MainLayout() {
   const { menuMaster, menuMasterLoading } = useGetMenuMaster();
   const drawerOpen = menuMaster?.isDashboardDrawerOpened;
 
-  const { isEmployee, role: userRole, user: userInfo, login: storeLogin, logout: storeLogout } = useAuthStore();
+  const { isEmployee, isCompany, role: userRole, user: userInfo, login: storeLogin, logout: storeLogout } = useAuthStore();
 
   // Auth check
   useEffect(() => {
@@ -72,11 +72,7 @@ export default function MainLayout() {
         const result = response.data;
         if (result.status === 'success') {
           const user = result.data;
-          // Normalize role typo
-          if (user.role === 'supper_admin' || user.role === 'super_admib') {
-            user.role = 'super_admin';
-          }
-          storeLogin(user, currentToken, user.role, user.is_employee);
+          storeLogin(user, currentToken, user.role, user.is_employee, user.is_company);
           setIsChecking(false);
         } else {
           storeLogout();
@@ -363,7 +359,7 @@ export default function MainLayout() {
           </Box>
         </MainContentStyled>
       )}
-      {!showMobileAppLayout && userRole === 'super_admin' && <FloatingChat />}
+      {!showMobileAppLayout && isCompany && <FloatingChat />}
       {/* {!showMobileAppLayout && <Customization />} */}
     </Box>
   );

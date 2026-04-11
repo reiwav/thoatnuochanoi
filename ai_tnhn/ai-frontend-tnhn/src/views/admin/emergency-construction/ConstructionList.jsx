@@ -140,22 +140,23 @@ const ConstructionList = () => {
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
-    const [orgs, setOrgs] = useState({});
+    const [orgs, setOrgs] = useState({ primary: [], shared: [] });
 
     const fetchOrgs = async () => {
         try {
-            const res = await organizationApi.getAll({ per_page: 1000 });
+            const res = await organizationApi.getSelectionList();
             if (res.data?.status === 'success') {
-                const orgMap = {};
-                res.data.data?.data?.forEach(o => {
-                    orgMap[o.id] = o.name;
-                });
-                setOrgs(orgMap);
+                setOrgs(res.data.data || { primary: [], shared: [] });
             }
         } catch (err) {
             console.error('Lỗi tải danh sách công ty:', err);
         }
     };
+
+    const orgNamesMap = (orgs.shared || []).reduce((acc, o) => {
+        acc[o.id] = o.name;
+        return acc;
+    }, {});
 
     const loadItems = async () => {
         setLoading(true);
@@ -276,7 +277,7 @@ const ConstructionList = () => {
                                     row={row}
                                     handleOpenEdit={handleOpenEdit}
                                     handleDelete={handleDelete}
-                                    orgs={orgs}
+                                    orgs={orgNamesMap}
                                     getStatusChip={getStatusChip}
                                     isMobile={isMobile}
                                     userRole={userRole}
@@ -327,7 +328,7 @@ const ConstructionList = () => {
             <ConstructionDialog
                 open={dialogOpen} onClose={() => setDialogOpen(false)}
                 onSubmit={handleSubmit} item={editingItem} isEdit={!!editingItem}
-                defaultOrgId={userOrgId}
+                defaultOrgId={userOrgId} organizations={orgs}
             />
         </Box>
     );

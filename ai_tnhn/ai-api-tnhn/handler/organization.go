@@ -1,12 +1,11 @@
 package handler
 
 import (
-	"ai-api-tnhn/constant"
 	"ai-api-tnhn/handler/filters"
 	"ai-api-tnhn/internal/models"
+	"ai-api-tnhn/internal/repository"
 	"ai-api-tnhn/internal/service/auth"
 	"ai-api-tnhn/internal/service/organization"
-	"ai-api-tnhn/internal/repository"
 	"ai-api-tnhn/utils/web"
 
 	"github.com/gin-gonic/gin"
@@ -98,22 +97,10 @@ func (h *OrganizationHandler) List(c *gin.Context) {
 		return
 	}
 
-	// Security: If not Super Admin or Company (is_company == true), force filter to their own OrgID
 	token := h.contextWith.GetToken(c.Request)
 	user, err := h.authService.GetProfile(c.Request.Context(), token)
 	if err == nil && user != nil {
-		isSuperAdmin := user.Role == constant.ROLE_SUPER_ADMIN || user.Role == "supper_admin" || user.Role == "supper_admib" || user.Role == "super_admin "
-		isCompany := false
-
-		if !isSuperAdmin {
-			// Check if user's role is a company role (is_company = true)
-			roleInfo, errRole := h.roleRepo.GetByCode(c.Request.Context(), user.Role)
-			if errRole == nil && roleInfo != nil && roleInfo.IsCompany {
-				isCompany = true
-			}
-		}
-
-		if !isSuperAdmin && !isCompany {
+		if !user.IsCompany {
 			req.ID = user.OrgID
 		}
 	}
@@ -123,5 +110,36 @@ func (h *OrganizationHandler) List(c *gin.Context) {
 	h.SendData(c, gin.H{
 		"data":  orgs,
 		"total": total,
+	})
+}
+
+// GetSelectionList - Public list for selection dropdowns (no role-based filtering for shared)
+func (h *OrganizationHandler) GetSelectionList(c *gin.Context) {
+	req := filters.NewOrganizationListRequest()
+	req.PerPage = 1000 // Ensure we get all for list
+
+	allOrgs, _, err := h.service.List(c.Request.Context(), req)
+	web.AssertNil(err)
+
+	// Determine primary list based on user role
+	var primaryOrgs []*models.Organization
+	token := h.contextWith.GetToken(c.Request)
+	user, err := h.authService.GetProfile(c.Request.Context(), token)
+
+	if err == nil && user != nil && user.IsCompany {
+		primaryOrgs = allOrgs
+	} else if user != nil {
+		// Only current user's org allowed for primary selection
+		for _, org := range allOrgs {
+			if org.ID == user.OrgID {
+				primaryOrgs = append(primaryOrgs, org)
+				break
+			}
+		}
+	}
+
+	h.SendData(c, gin.H{
+		"primary": primaryOrgs,
+		"shared":  allOrgs,
 	})
 }

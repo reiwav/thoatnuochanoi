@@ -13,6 +13,7 @@ func (h *HandlerFuncs) OrganizationRoutes(g *gin.RouterGroup, mid middleware.Mid
 		org.POST("", orgHandler.Create)
 		org.PUT("/:id", orgHandler.Update)
 		org.DELETE("/:id", orgHandler.Delete)
+		org.GET("/selection", orgHandler.GetSelectionList)
 		org.GET("/:id", orgHandler.GetByID)
 		org.GET("", orgHandler.List)
 	}

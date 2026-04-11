@@ -23,7 +23,7 @@ const StationLakeList = () => {
 
     const [loading, setLoading] = useState(false);
     const [stations, setStations] = useState([]);
-    const [organizations, setOrganizations] = useState([]);
+    const [organizations, setOrganizations] = useState({ primary: [], shared: [] });
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [totalItems, setTotalItems] = useState(0);
@@ -39,7 +39,7 @@ const StationLakeList = () => {
         try {
             const [stRes, orgRes] = await Promise.all([
                 stationApi.lake.getAll({ ...params, page: page + 1, per_page: rowsPerPage }),
-                organizationApi.getAll()
+                organizationApi.getSelectionList()
             ]);
 
             if (stRes.data?.status === 'success') {
@@ -49,7 +49,7 @@ const StationLakeList = () => {
             }
 
             if (orgRes.data?.status === 'success') {
-                setOrganizations(orgRes.data.data?.data || []);
+                setOrganizations(orgRes.data.data || { primary: [], shared: [] });
             }
         } catch (err) {
             console.error('Lỗi tải dữ liệu:', err);
@@ -91,11 +91,11 @@ const StationLakeList = () => {
     };
 
     const getOrgName = (orgId) => {
-        const org = organizations.find(o => o.id === orgId);
+        const org = organizations.shared?.find(o => o.id === orgId);
         return org ? org.name : '';
     };
 
-    const organizationNamesMap = organizations.reduce((acc, org) => {
+    const organizationNamesMap = (organizations.shared || []).reduce((acc, org) => {
         acc[org.id] = org.name;
         return acc;
     }, {});

@@ -31,28 +31,28 @@ import (
 )
 
 type Services struct {
-	Token             token.Service
-	Auth              auth.Service
-	Organization      organization.Service
-	Employee          employee.Service
-	Water             water.Service
-	Email             email.Service
-	Station           station.Service
-	Inundation        inundation.Service
-	Weather           weather.Service
-	GoogleApi         googleapi.Service
-	EmConstruction    emergency_construction.Service
-	ContractCategory  contract_category.Service
-	Contract          contract.Service
-	PumpingStation    pumpingstation.Service
-	Permission        permission.Service
-	Role              role.Service
-	Query             query.Service
-	StationData       stationdata.Service
-	Gemini            gemini.Service
-	Telegram          telegram.BotTele
-	Drive             googledrive.Service
-	Storage           storage.Service
+	Token            token.Service
+	Auth             auth.Service
+	Organization     organization.Service
+	Employee         employee.Service
+	Water            water.Service
+	Email            email.Service
+	Station          station.Service
+	Inundation       inundation.Service
+	Weather          weather.Service
+	GoogleApi        googleapi.Service
+	EmConstruction   emergency_construction.Service
+	ContractCategory contract_category.Service
+	Contract         contract.Service
+	PumpingStation   pumpingstation.Service
+	Permission       permission.Service
+	Role             role.Service
+	Query            query.Service
+	StationData      stationdata.Service
+	Gemini           gemini.Service
+	Telegram         telegram.BotTele
+	Drive            googledrive.Service
+	Storage          storage.Service
 }
 
 func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log logger.Logger) *Services {
@@ -126,7 +126,7 @@ func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log log
 		}
 		if s.Weather != nil {
 			s.Weather.SetForecastFunc(func(ctx context.Context, prompt string) (string, error) {
-				return targetWeatherSvc.Chat(ctx, prompt, nil, "system_weather", "SKIP_LOG")
+				return targetWeatherSvc.Chat(ctx, prompt, nil, "system_weather", true, "SKIP_LOG")
 			})
 		}
 	}

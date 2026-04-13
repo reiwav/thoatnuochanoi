@@ -15,7 +15,7 @@ import (
 
 // ChatContract xử lý chat AI chuyên biệt cho quản lý hợp đồng.
 // Tách riêng để phân quyền theo vai trò người dùng.
-func (s *service) ChatContract(ctx context.Context, prompt string, history []ChatMessage, userID string, logPrompt string) (string, error) {
+func (s *service) ChatContract(ctx context.Context, prompt string, history []ChatMessage, userID string, isCompany bool, logPrompt string) (string, error) {
 	// 1. Lấy luân phiên client bằng getContractClient()
 	client := s.getContractClient()
 	model := client.GenerativeModel("gemini-2.5-flash")

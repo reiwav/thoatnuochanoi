@@ -8,7 +8,7 @@ import (
 	"github.com/google/generative-ai-go/genai"
 )
 
-func (s *service) handleToolCall(ctx context.Context, call *genai.FunctionCall, userID string) (interface{}, error) {
+func (s *service) handleToolCall(ctx context.Context, call *genai.FunctionCall, userID string, isCompany bool) (interface{}, error) {
 	name := call.Name
 
 	// 0. Fetch User Permissions
@@ -17,6 +17,9 @@ func (s *service) handleToolCall(ctx context.Context, call *genai.FunctionCall, 
 	var assignedRainIDs, assignedLakeIDs, assignedRiverIDs, assignedInuIDs []string
 	if user != nil {
 		orgID = user.OrgID
+		if isCompany || user.Role == "super_admin" {
+			orgID = ""
+		}
 		assignedRainIDs = user.AssignedRainStationIDs
 		assignedLakeIDs = user.AssignedLakeStationIDs
 		assignedRiverIDs = user.AssignedRiverStationIDs
@@ -42,8 +45,8 @@ func (s *service) handleToolCall(ctx context.Context, call *genai.FunctionCall, 
 	}
 
 	// Group: Emergency Construction
-	if strings.HasPrefix(name, "get_emergency_") || strings.HasPrefix(name, "get_unfinished_") || 
-	   strings.HasPrefix(name, "get_recent_") || name == "report_emergency_work_progress" {
+	if strings.HasPrefix(name, "get_emergency_") || strings.HasPrefix(name, "get_unfinished_") ||
+		strings.HasPrefix(name, "get_recent_") || name == "report_emergency_work_progress" {
 		return s.handleConstructionTools(ctx, call, userID)
 	}
 

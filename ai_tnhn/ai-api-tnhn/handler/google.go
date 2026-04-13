@@ -292,8 +292,8 @@ func (h *GoogleHandler) ChatContract(c *gin.Context) {
 		return
 	}
 
-	userID, _ := h.contextWith.GetUserID(c)
-	response, err := h.geminiSvc.ChatContract(c.Request.Context(), body.Prompt, body.History, userID, "")
+	token := h.contextWith.GetTokenFromContext(c)
+	response, err := h.geminiSvc.ChatContract(c.Request.Context(), body.Prompt, body.History, token.UserID, token.IsCompany, "")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -315,9 +315,9 @@ func (h *GoogleHandler) Chat(c *gin.Context) {
 		return
 	}
 
-	userID, _ := h.contextWith.GetUserID(c)
-	fmt.Printf(" [Chat Handler] UserID: %s, Prompt length: %d\n", userID, len(body.Prompt))
-	response, err := h.geminiSvc.Chat(c.Request.Context(), body.Prompt, body.History, userID, "")
+	token := h.contextWith.GetTokenFromContext(c)
+	fmt.Printf(" [Chat Handler] UserID: %s, Prompt length: %d\n", token.UserID, len(body.Prompt))
+	response, err := h.geminiSvc.Chat(c.Request.Context(), body.Prompt, body.History, token.UserID, token.IsCompany, "")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -747,7 +747,7 @@ Hãy viết tóm tắt 1-2 câu ngắn gọn về tình hình mưa, bao gồm:
 - Hình thế thời tiết gây mưa (ví dụ: rãnh áp thấp, không khí lạnh, hội tụ gió...)
 - Mức độ mưa: Nếu < 5 điểm là "Mưa vùng", 5-10: "Mưa rải rác trên diện rộng", > 10: "Mưa trên diện rộng"
 KHÔNG bao gồm thông tin nhiệt độ, gió, độ ẩm hay khuyến cáo.`, extractedContent, len(phuongs)+len(xas))
-		if aiResult, err := h.geminiSvc.Chat(ctx, prompt, nil, "system_report", "SKIP_LOG"); err == nil && aiResult != "" {
+		if aiResult, err := h.geminiSvc.Chat(ctx, prompt, nil, "system_report", true, "SKIP_LOG"); err == nil && aiResult != "" {
 			noidung = aiResult
 		}
 	}
@@ -1017,7 +1017,7 @@ MẪU BÁO CÁO YÊU CẦU:
 Công ty Thoát nước Hà Nội báo cáo UBND Thành phố tình hình PCUN đô thị thời điểm: “[Giờ] ngày [Ngày]”: Trên địa bàn thành phố xuất hiện mưa từ [Thời điểm bắt đầu mưa] đến [Thời điểm kết thúc mưa]. Mưa cường độ [Cường độ mưa], [Diện rộng hay hẹp], lượng mưa phổ biến [Số mm] đến [Số mm]mm, riêng khu vực: [Tên trạm/phường lớn nhất] có lượng mưa lớn hơn [Số mm]mm; [Tình trạng úng ngập]; Công ty Thoát nước Hà Nội đã triển khai ứng trực tại các vị trí có khả năng ngập từ [Thời điểm bắt đầu mưa]; các trạm bơm Yên Sở, cổ nhuế, đồng bông 1, hầm chui... vận hành từ khi xuất hiện mưa để hạ mực nước hệ thống, đảm bảo giao thông ở hầm chui, các cửa phai vận hành theo quy định. Công ty sẽ tiếp tục báo cáo khi có diễn biến mưa trong thời gian tới. TRân trọng./.`, rawSummary)
 
 	userID, _ := h.contextWith.GetUserID(c)
-	aiResult, _ := h.geminiSvc.Chat(ctx, prompt, nil, userID, "Báo cáo nhanh (Văn bản)")
+	aiResult, _ := h.geminiSvc.Chat(ctx, prompt, nil, userID, true, "Báo cáo nhanh (Văn bản)")
 	c.JSON(http.StatusOK, gin.H{"status": "success", "data": aiResult})
 }
 
@@ -1206,7 +1206,7 @@ YÊU CẦU:
 		now.Format("15h04"), now.Format("02/01/2006"),
 		rainSummary, waterSummary, inundationSummary, emailSection)
 
-	aiResult, err := h.geminiSvc.Chat(ctx, prompt, nil, userID, "Tổng hợp tình hình hệ thống")
+	aiResult, err := h.geminiSvc.Chat(ctx, prompt, nil, userID, true, "Tổng hợp tình hình hệ thống")
 	if err != nil {
 		h.log.GetLogger().Errorf("[GenerateAIDynamicReport] Gemini Chat Error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate dynamic report: " + err.Error()})

@@ -30,8 +30,8 @@ type ChatMessage struct {
 }
 
 type Service interface {
-	Chat(ctx context.Context, prompt string, history []ChatMessage, userID string, logPrompt string) (string, error)
-	ChatContract(ctx context.Context, prompt string, history []ChatMessage, userID string, logPrompt string) (string, error)
+	Chat(ctx context.Context, prompt string, history []ChatMessage, userID string, isCompany bool, logPrompt string) (string, error)
+	ChatContract(ctx context.Context, prompt string, history []ChatMessage, userID string, isCompany bool, logPrompt string) (string, error)
 	ExtractTextFromPDF(ctx context.Context, pdfBytes []byte) (string, error)
 }
 
@@ -128,7 +128,7 @@ func (s *service) getContractClient() *genai.Client {
 	return client
 }
 
-func (s *service) Chat(ctx context.Context, prompt string, history []ChatMessage, userID string, logPrompt string) (string, error) {
+func (s *service) Chat(ctx context.Context, prompt string, history []ChatMessage, userID string, isCompany bool, logPrompt string) (string, error) {
 	// Keep raw prompt for logging
 	rawPrompt := prompt
 	augmentedPrompt := prompt
@@ -205,7 +205,7 @@ func (s *service) Chat(ctx context.Context, prompt string, history []ChatMessage
 			g.Go(func() error {
 				fmt.Printf(" [Gemini Chat] Tool Call: %s with args: %v\n", call.Name, call.Args)
 
-				result, toolErr := s.handleToolCall(gCtx, call, userID)
+				result, toolErr := s.handleToolCall(gCtx, call, userID, isCompany)
 
 				mu.Lock()
 				defer mu.Unlock()

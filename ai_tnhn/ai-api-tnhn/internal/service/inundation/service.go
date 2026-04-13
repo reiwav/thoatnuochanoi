@@ -208,6 +208,8 @@ func (s *service) AddUpdate(ctx context.Context, reportID string, update *models
 	report.Length = update.Length
 	report.Width = update.Width
 	report.Depth = update.Depth
+	report.Description = update.Description
+	report.Images = update.Images
 
 	if report.Status == "resolved" || report.Status == "normal" {
 		report.TrafficStatus = ""
@@ -487,6 +489,8 @@ func (s *service) UpdateUpdateContent(ctx context.Context, updateID string, upda
 		mainReport.Length = update.Length
 		mainReport.Width = update.Width
 		mainReport.TrafficStatus = update.TrafficStatus
+		mainReport.Description = update.Description
+		mainReport.Images = update.Images
 		mainReport.NeedsCorrection = false
 		mainReport.NeedsCorrectionUpdateID = ""
 		_ = s.inundationRepo.Update(ctx, mainReport)

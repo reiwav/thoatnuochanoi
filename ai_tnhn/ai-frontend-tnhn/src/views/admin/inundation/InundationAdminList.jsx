@@ -178,39 +178,6 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                                 </Grid>
                             </Grid>
 
-                            {latest?.updates?.length > 0 && (
-                                <Box sx={{ mb: 2 }}>
-                                    <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', display: 'block', mb: 1 }}>LỊCH SỬ CẬP NHẬT:</Typography>
-                                    <Stack spacing={1}>
-                                        {latest.updates.slice(0, 3).sort((a, b) => b.timestamp - a.timestamp).map((upd, idx) => (
-                                            <Box key={idx} sx={{ p: 1, bgcolor: 'grey.50', borderRadius: 1.5, border: '1px solid', borderColor: 'divider' }}>
-                                                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
-                                                    <Typography variant="caption" sx={{ fontWeight: 700, color: 'primary.main' }}>{formatTime(upd.timestamp)}</Typography>
-                                                    {(upd.traffic_status || upd.trafficStatus) && (
-                                                        <Chip label={getTrafficStatusLabel(upd.traffic_status || upd.trafficStatus)} size="small" color={getTrafficStatusColor(upd.traffic_status || upd.trafficStatus)} variant="outlined" sx={{ height: 16, fontSize: '0.6rem' }} />
-                                                    )}
-                                                </Stack>
-                                                <Typography variant="body2" sx={{ fontSize: '0.75rem', lineHeight: 1.3 }}>{upd.description || 'Không có mô tả'}</Typography>
-                                                {upd.review_comment && (
-                                                    <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'error.main', fontStyle: 'italic', fontWeight: 600 }}>
-                                                        Reviewer: {upd.review_comment}
-                                                    </Typography>
-                                                )}
-                                                {upd.old_data?.length > 0 && (
-                                                    <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
-                                                        <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary' }}>Dữ liệu cũ:</Typography>
-                                                        {upd.old_data.map((old, oIdx) => (
-                                                            <Typography key={oIdx} variant="caption" sx={{ display: 'block', fontSize: '0.65rem' }}>
-                                                                • {old.description || 'N/A'} ({old.depth}m)
-                                                            </Typography>
-                                                        ))}
-                                                    </Box>
-                                                )}
-                                            </Box>
-                                        ))}
-                                    </Stack>
-                                </Box>
-                            )}
 
                             {latest?.review_comment && (
                                 <Box sx={{ mb: 2, p: 1, bgcolor: 'error.lighter', borderRadius: 1.5, border: '1px solid', borderColor: 'error.light' }}>
@@ -397,47 +364,6 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                                     </Box>
                                 )}
 
-                                {latest?.updates?.length > 0 && (
-                                    <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>Lịch sử cập nhật:</Typography>
-                                        <Stack spacing={1}>
-                                            {latest.updates.slice().sort((a, b) => b.timestamp - a.timestamp).map((upd, idx) => (
-                                                <Box key={idx} sx={{ p: 1, bgcolor: 'background.paper', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
-                                                    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
-                                                        <Typography variant="caption" sx={{ fontWeight: 700, color: 'primary.main' }}>
-                                                            {formatTime(upd.timestamp)}
-                                                        </Typography>
-                                                        {(upd.traffic_status || upd.trafficStatus) && (
-                                                            <Chip
-                                                                label={getTrafficStatusLabel(upd.traffic_status || upd.trafficStatus)}
-                                                                size="small"
-                                                                color={getTrafficStatusColor(upd.traffic_status || upd.trafficStatus)}
-                                                                variant="outlined"
-                                                                sx={{ height: 18, fontSize: '0.625rem' }}
-                                                            />
-                                                        )}
-                                                    </Stack>
-                                                    <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>{upd.description || 'Không có mô tả'}</Typography>
-                                                    {upd.review_comment && (
-                                                        <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'error.main', fontStyle: 'italic', fontWeight: 600 }}>
-                                                            Reviewer: {upd.review_comment}
-                                                        </Typography>
-                                                    )}
-                                                    {upd.old_data?.length > 0 && (
-                                                        <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
-                                                            <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary' }}>Dữ liệu cũ:</Typography>
-                                                            {upd.old_data.map((old, oIdx) => (
-                                                                <Typography key={oIdx} variant="caption" sx={{ display: 'block', fontSize: '0.65rem' }}>
-                                                                    • {old.description || 'N/A'} ({old.depth}m)
-                                                                </Typography>
-                                                            ))}
-                                                        </Box>
-                                                    )}
-                                                </Box>
-                                            ))}
-                                        </Stack>
-                                    </Box>
-                                )}
                                 <Box>
                                     <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>Ảnh liên quan:</Typography>
                                     {latest?.images?.length > 0 ? (
@@ -631,47 +557,6 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, getDuration,
                                         <Typography variant="body2" sx={{ fontWeight: 600 }}>{`${report.length || 0}m x ${report.width || 0}m x ${report.depth || 0}m`}</Typography>
                                     </Grid>
                                 </Grid>
-                                {report.updates?.length > 0 && (
-                                    <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>Lịch sử cập nhật:</Typography>
-                                        <Stack spacing={1}>
-                                            {report.updates.slice().sort((a, b) => b.timestamp - a.timestamp).map((upd, idx) => (
-                                                <Box key={idx} sx={{ p: 1, bgcolor: 'background.paper', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
-                                                    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
-                                                        <Typography variant="caption" sx={{ fontWeight: 700, color: 'primary.main' }}>
-                                                            {formatTime(upd.timestamp)}
-                                                        </Typography>
-                                                        {(upd.traffic_status || upd.trafficStatus) && (
-                                                            <Chip
-                                                                label={getTrafficStatusLabel(upd.traffic_status || upd.trafficStatus)}
-                                                                size="small"
-                                                                color={getTrafficStatusColor(upd.traffic_status || upd.trafficStatus)}
-                                                                variant="outlined"
-                                                                sx={{ height: 18, fontSize: '0.625rem' }}
-                                                            />
-                                                        )}
-                                                    </Stack>
-                                                    <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>{upd.description || 'Không có mô tả'}</Typography>
-                                                    {upd.review_comment && (
-                                                        <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'error.main', fontStyle: 'italic', fontWeight: 600 }}>
-                                                            Reviewer: {upd.review_comment}
-                                                        </Typography>
-                                                    )}
-                                                    {upd.old_data?.length > 0 && (
-                                                        <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
-                                                            <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary' }}>Dữ liệu cũ:</Typography>
-                                                            {upd.old_data.map((old, oIdx) => (
-                                                                <Typography key={oIdx} variant="caption" sx={{ display: 'block', fontSize: '0.65rem' }}>
-                                                                    • {old.description || 'N/A'} ({old.depth}m)
-                                                                </Typography>
-                                                            ))}
-                                                        </Box>
-                                                    )}
-                                                </Box>
-                                            ))}
-                                        </Stack>
-                                    </Box>
-                                )}
                                 <Box>
                                     <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>Ảnh liên quan:</Typography>
                                     {report.images?.length > 0 ? (

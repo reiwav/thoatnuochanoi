@@ -11,7 +11,7 @@ import (
 	"errors"
 	"strings"
 
-	"go.mongodb.org/mongo-driver/bson/primitive"
+
 )
 
 type Service interface {
@@ -120,117 +120,7 @@ func (s *service) Update(ctx context.Context, id string, input *models.User, cur
 }
 
 func (s *service) validateAssignments(ctx context.Context, userID string, orgID string, pointIDs, rainIDs, lakeIDs, riverIDs, constructionIDs []string, stationID string) error {
-	if len(pointIDs) > 1 {
-		return web.BadRequest("Chỉ được phép gán tối đa 1 điểm ngập")
-	}
-	if len(rainIDs) > 1 {
-		return web.BadRequest("Chỉ được phép gán tối đa 1 trạm mưa")
-	}
-	if len(lakeIDs) > 1 {
-		return web.BadRequest("Chỉ được phép gán tối đa 1 trạm hồ")
-	}
-	if len(riverIDs) > 1 {
-		return web.BadRequest("Chỉ được phép gán tối đa 1 trạm sông")
-	}
-	if len(constructionIDs) > 1 {
-		return web.BadRequest("Chỉ được phép gán tối đa 1 công trình khẩn")
-	}
-
-	// Check if inundation point is already assigned to another user in the same org
-	if len(pointIDs) > 0 {
-		pid := pointIDs[0]
-		f := filter.NewBasicFilter()
-		f.AddWhere("org_id", "org_id", orgID)
-		f.AddWhere("assigned_inundation_station_ids", "assigned_inundation_station_ids", pid)
-		if userID != "" {
-			f.AddWhere("_id", "_id", primitive.M{"$ne": userID})
-		}
-
-		users, _, err := s.userRepo.List(ctx, f)
-		if err == nil && len(users) > 0 {
-			return web.BadRequest("Điểm ngập này đã được gán cho nhân viên: " + users[0].Name)
-		}
-	}
-
-	// Check for Rain Station assignment
-	if len(rainIDs) > 0 {
-		rid := rainIDs[0]
-		f := filter.NewBasicFilter()
-		f.AddWhere("org_id", "org_id", orgID)
-		f.AddWhere("assigned_rain_station_ids", "assigned_rain_station_ids", rid)
-		if userID != "" {
-			f.AddWhere("_id", "_id", primitive.M{"$ne": userID})
-		}
-
-		users, _, err := s.userRepo.List(ctx, f)
-		if err == nil && len(users) > 0 {
-			return web.BadRequest("Trạm mưa này đã được gán cho nhân viên: " + users[0].Name)
-		}
-	}
-
-	// Check for Lake Station assignment
-	if len(lakeIDs) > 0 {
-		lid := lakeIDs[0]
-		f := filter.NewBasicFilter()
-		f.AddWhere("org_id", "org_id", orgID)
-		f.AddWhere("assigned_lake_station_ids", "assigned_lake_station_ids", lid)
-		if userID != "" {
-			f.AddWhere("_id", "_id", primitive.M{"$ne": userID})
-		}
-
-		users, _, err := s.userRepo.List(ctx, f)
-		if err == nil && len(users) > 0 {
-			return web.BadRequest("Trạm hồ này đã được gán cho nhân viên: " + users[0].Name)
-		}
-	}
-
-	// Check for River Station assignment
-	if len(riverIDs) > 0 {
-		rid := riverIDs[0]
-		f := filter.NewBasicFilter()
-		f.AddWhere("org_id", "org_id", orgID)
-		f.AddWhere("assigned_river_station_ids", "assigned_river_station_ids", rid)
-		if userID != "" {
-			f.AddWhere("_id", "_id", primitive.M{"$ne": userID})
-		}
-
-		users, _, err := s.userRepo.List(ctx, f)
-		if err == nil && len(users) > 0 {
-			return web.BadRequest("Trạm sông này đã được gán cho nhân viên: " + users[0].Name)
-		}
-	}
-
-	// Check if emergency construction is already assigned to another user in the same org
-	if len(constructionIDs) > 0 {
-		cid := constructionIDs[0]
-		f := filter.NewBasicFilter()
-		f.AddWhere("org_id", "org_id", orgID)
-		f.AddWhere("assigned_emergency_construction_ids", "assigned_emergency_construction_ids", cid)
-		if userID != "" {
-			f.AddWhere("_id", "_id", primitive.M{"$ne": userID})
-		}
-
-		users, _, err := s.userRepo.List(ctx, f)
-		if err == nil && len(users) > 0 {
-			return web.BadRequest("Công trình khẩn này đã được gán cho nhân viên: " + users[0].Name)
-		}
-	}
-
-	// Check if pumping station is already assigned to another user in the same org
-	if stationID != "" {
-		f := filter.NewBasicFilter()
-		f.AddWhere("org_id", "org_id", orgID)
-		f.AddWhere("assigned_pumping_station_id", "assigned_pumping_station_id", stationID)
-		if userID != "" {
-			f.AddWhere("_id", "_id", primitive.M{"$ne": userID})
-		}
-
-		users, _, err := s.userRepo.List(ctx, f)
-		if err == nil && len(users) > 0 {
-			return web.BadRequest("Trạm bơm này đã được gán cho nhân viên: " + users[0].Name)
-		}
-	}
-
+	// Restrictions removed to allow multiple and overlapping assignments as requested.
 	return nil
 }
 

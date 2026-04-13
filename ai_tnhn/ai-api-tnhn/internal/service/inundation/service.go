@@ -69,14 +69,14 @@ type ImageContent struct {
 }
 
 type service struct {
-	inundationRepo       repository.Inundation
-	inundationUpdateRepo repository.InundationUpdate
-	inundationStationRepo  repository.InundationStation
-	orgRepo              repository.Organization
-	driveSvc             googledrive.Service
-	folderCache          map[string]string
-	cacheMu              sync.RWMutex
-	syncWorker           *SyncWorker
+	inundationRepo        repository.Inundation
+	inundationUpdateRepo  repository.InundationUpdate
+	inundationStationRepo repository.InundationStation
+	orgRepo               repository.Organization
+	driveSvc              googledrive.Service
+	folderCache           map[string]string
+	cacheMu               sync.RWMutex
+	syncWorker            *SyncWorker
 }
 
 func NewService(
@@ -87,12 +87,12 @@ func NewService(
 	driveSvc googledrive.Service,
 ) Service {
 	svc := &service{
-		inundationRepo:       inundationRepo,
-		inundationUpdateRepo: inundationUpdateRepo,
-		inundationStationRepo:  inundationStationRepo,
-		orgRepo:              orgRepo,
-		driveSvc:             driveSvc,
-		folderCache:          make(map[string]string),
+		inundationRepo:        inundationRepo,
+		inundationUpdateRepo:  inundationUpdateRepo,
+		inundationStationRepo: inundationStationRepo,
+		orgRepo:               orgRepo,
+		driveSvc:              driveSvc,
+		folderCache:           make(map[string]string),
 	}
 
 	// 1. Initialize background sync worker
@@ -133,6 +133,23 @@ func (s *service) CreateReport(ctx context.Context, report *models.InundationRep
 
 	if report.Status == "" {
 		report.Status = "active"
+	}
+
+	// 2. Check if point already has an active report. If so, convert this to an update.
+	if report.Status == "active" && report.PointID != "" {
+		point, err := s.inundationStationRepo.GetByID(ctx, report.PointID)
+		if err == nil && point != nil && point.ReportID != "" {
+			// Transparently route to AddUpdate to avoid duplicate active sessions
+			update := &models.InundationUpdate{
+				Description:   report.Description,
+				Depth:         report.Depth,
+				Length:        report.Length,
+				Width:         report.Width,
+				TrafficStatus: report.TrafficStatus,
+				Timestamp:     time.Now().Unix(),
+			}
+			return s.AddUpdate(ctx, point.ReportID, update, report.UserID, report.UserEmail, images)
+		}
 	}
 
 	// 3. Save report to DB

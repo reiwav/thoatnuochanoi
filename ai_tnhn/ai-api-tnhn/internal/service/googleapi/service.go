@@ -47,7 +47,7 @@ type GoogleStatus struct {
 type Service interface {
 	GetStatus(ctx context.Context) (*GoogleStatus, error)
 	GetRainSummary(ctx context.Context, orgID string) (*RainSummaryData, error)
-	GetWaterSummary(ctx context.Context) (*WaterSummaryData, error)
+	GetWaterSummary(ctx context.Context, orgID string) (*WaterSummaryData, error)
 	GetInundationSummary(ctx context.Context) (*InundationSummaryData, error)
 	GetRecentEmails(ctx context.Context, limit int) ([]email.EmailInfo, error)
 	GetUnreadEmails(ctx context.Context, limit int) ([]email.EmailInfo, error)

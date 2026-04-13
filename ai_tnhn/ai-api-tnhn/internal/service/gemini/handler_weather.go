@@ -41,37 +41,9 @@ func (s *service) handleWeatherTools(ctx context.Context, call *genai.FunctionCa
 		return summary, nil
 
 	case "get_live_water_summary":
-		summary, err := s.googleApiSvc.GetWaterSummary(ctx)
+		summary, err := s.googleApiSvc.GetWaterSummary(ctx, orgID)
 		if err != nil {
 			return nil, err
-		}
-		if orgID != "all" {
-			allowedLakes, _ := s.stationSvc.ListLakeStationsFiltered(ctx, orgID, assignedLakeIDs)
-			allowedRivers, _ := s.stationSvc.ListRiverStationsFiltered(ctx, orgID, assignedRiverIDs)
-
-			allowedLakeNames := make(map[string]bool)
-			for _, st := range allowedLakes {
-				allowedLakeNames[st.TenTram] = true
-			}
-			allowedRiverNames := make(map[string]bool)
-			for _, st := range allowedRivers {
-				allowedRiverNames[st.TenTram] = true
-			}
-
-			var filteredLakes []googleapi.WaterStationStat
-			for _, st := range summary.LakeStations {
-				if allowedLakeNames[st.Name] {
-					filteredLakes = append(filteredLakes, st)
-				}
-			}
-			var filteredRivers []googleapi.WaterStationStat
-			for _, st := range summary.RiverStations {
-				if allowedRiverNames[st.Name] {
-					filteredRivers = append(filteredRivers, st)
-				}
-			}
-			summary.LakeStations = filteredLakes
-			summary.RiverStations = filteredRivers
 		}
 		return summary, nil
 

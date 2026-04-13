@@ -183,7 +183,12 @@ func (h *GoogleHandler) GetRainSummary(c *gin.Context) {
 }
 
 func (h *GoogleHandler) GetWaterSummary(c *gin.Context) {
-	summary, err := h.googleSvc.GetWaterSummary(c.Request.Context())
+	token := h.contextWith.GetTokenFromContext(c)
+	orgID := token.OrgID
+	if token.IsCompany {
+		orgID = ""
+	}
+	summary, err := h.googleSvc.GetWaterSummary(c.Request.Context(), orgID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

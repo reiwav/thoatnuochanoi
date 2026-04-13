@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react'; // v2 - for cache busting
 import {
     Dialog, DialogTitle, DialogContent, DialogActions,
     TextField, Button, Grid, IconButton, Stack, FormControlLabel, Switch,
-    FormControl, InputLabel, Select, MenuItem, Typography, Autocomplete, Chip
+    FormControl, InputLabel, Select, MenuItem, Typography
 } from '@mui/material';
+import MultiSelectCheckboxes from 'ui-component/MultiSelectCheckboxes';
 import { IconX } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 
@@ -139,29 +140,12 @@ const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type, organiz
                         ))}
                     </TextField>
 
-                    <Autocomplete
-                        multiple
-                        fullWidth
-                        options={(organizations.shared || []).filter(org => org.id !== formData.org_id)}
-                        getOptionLabel={(option) => option.name}
-                        value={(organizations.shared || []).filter(org => formData.shared_org_ids?.includes(org.id))}
-                        onChange={(event, newValue) => {
-                            handleChange('shared_org_ids', newValue.map(org => org.id));
-                        }}
-                        renderInput={(params) => (
-                            <TextField {...params} label="Xí nghiệp phối hợp" placeholder="Chọn xí nghiệp" />
-                        )}
-                        renderTags={(value, getTagProps) =>
-                            value.map((option, index) => (
-                                <Chip
-                                    variant="outlined"
-                                    label={option.name}
-                                    {...getTagProps({ index })}
-                                    key={option.id}
-                                    sx={{ borderRadius: '8px', fontWeight: 600 }}
-                                />
-                            ))
-                        }
+                    <MultiSelectCheckboxes
+                        label="Xí nghiệp phối hợp"
+                        placeholder="Chọn xí nghiệp"
+                        options={(organizations.shared || []).filter((org) => org.id !== formData.org_id)}
+                        value={formData.shared_org_ids}
+                        onChange={(ids) => handleChange('shared_org_ids', ids)}
                         sx={{
                             '& .MuiAutocomplete-tag': {
                                 m: 0.5

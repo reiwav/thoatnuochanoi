@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import {
     Dialog, DialogTitle, DialogContent, DialogActions,
     TextField, Button, Grid, IconButton, Stack,
-    Typography, Box, MenuItem, Autocomplete, Chip
+    Typography, Box, MenuItem
 } from '@mui/material';
+import MultiSelectCheckboxes from 'ui-component/MultiSelectCheckboxes';
 import { IconX } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 import useAuthStore from 'store/useAuthStore';
@@ -151,28 +152,13 @@ const ConstructionDialog = ({ open, onClose, onSubmit, item, isEdit, organizatio
                         ))}
                     </TextField>
 
-                    <Autocomplete
-                        multiple
-                        fullWidth
+                    <MultiSelectCheckboxes
+                        label="Đơn vị phối hợp"
+                        placeholder="Chọn đơn vị"
+                        options={(organizations.shared || []).filter((org) => org.id !== formData.org_id)}
+                        value={formData.shared_org_ids}
+                        onChange={(ids) => handleChange('shared_org_ids', ids)}
                         size="small"
-                        options={(organizations.shared || []).filter(org => org.id !== formData.org_id)}
-                        getOptionLabel={(option) => option.name}
-                        value={(organizations.shared || []).filter(org => formData.shared_org_ids?.includes(org.id))}
-                        onChange={(event, newValue) => {
-                            handleChange('shared_org_ids', newValue.map(org => org.id));
-                        }}
-                        renderInput={(params) => (
-                            <TextField {...params} label="Đơn vị phối hợp" placeholder="Chọn đơn vị" sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }} />
-                        )}
-                        renderTags={(value, getTagProps) =>
-                            value.map((option, index) => (
-                                <Chip
-                                    variant="outlined" label={option.name}
-                                    {...getTagProps({ index })} key={option.id}
-                                    size="small" sx={{ borderRadius: '8px', fontWeight: 600 }}
-                                />
-                            ))
-                        }
                     />
 
                     <TextField

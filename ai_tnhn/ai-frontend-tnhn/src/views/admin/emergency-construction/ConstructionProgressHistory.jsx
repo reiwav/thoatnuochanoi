@@ -4,13 +4,14 @@ import {
     Box, Typography, Table, TableBody, TableCell, TableContainer,
     TableHead, TableRow, Paper, Chip, Stack, TextField, MenuItem,
     CircularProgress, Button, TablePagination,
-    IconButton, Collapse, useTheme, useMediaQuery, Grid, Autocomplete, Checkbox,
+    IconButton, Collapse, useTheme, useMediaQuery, Grid,
     Dialog, DialogContent
 } from '@mui/material';
+import MultiSelectCheckboxes from 'ui-component/MultiSelectCheckboxes';
 import MainCard from 'ui-component/cards/MainCard';
 import {
     IconSearch, IconAlertTriangle, IconX, IconChevronUp, IconChevronDown,
-    IconMapPin, IconCalendar, IconUser, IconClipboardList, IconSquare, IconCheckbox,
+    IconMapPin, IconCalendar, IconUser, IconClipboardList,
     IconChevronLeft, IconChevronRight, IconEdit
 } from '@tabler/icons-react';
 import emergencyConstructionApi from 'api/emergencyConstruction';
@@ -268,30 +269,17 @@ const ConstructionProgressHistory = () => {
                     </Grid>
                     <Grid item xs={12} md={6}>
                         <Stack direction="row" spacing={2} alignItems="flex-start">
-                            <Autocomplete
-                                multiple
-                                fullWidth
+                            <MultiSelectCheckboxes
+                                label="Chọn công trình"
+                                placeholder="Tìm kiếm..."
+                                options={constructions}
+                                value={constructionFilter}
+                                onChange={(ids) => {
+                                    setConstructionFilter(ids);
+                                    setPage(0);
+                                }}
                                 limitTags={2}
                                 size="small"
-                                options={constructions}
-                                disableCloseOnSelect
-                                getOptionLabel={(option) => option.name}
-                                value={constructions.filter(c => constructionFilter.includes(c.id))}
-                                onChange={(_, newValue) => { setConstructionFilter(newValue.map(v => v.id)); setPage(0); }}
-                                renderInput={(params) => (
-                                    <TextField {...params} label="Chọn công trình" placeholder="Tìm kiếm..." sx={{ bgcolor: 'background.paper', borderRadius: 2 }} />
-                                )}
-                                renderOption={(props, option, { selected }) => (
-                                    <li {...props}>
-                                        <Checkbox
-                                            icon={<IconSquare size={20} />}
-                                            checkedIcon={<IconCheckbox size={20} />}
-                                            style={{ marginRight: 8 }}
-                                            checked={selected}
-                                        />
-                                        <Typography variant="body2">{option.name}</Typography>
-                                    </li>
-                                )}
                                 sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 }, flex: 1 }}
                             />
                             {(dateFilter || constructionFilter.length > 0 || searchQuery) && (

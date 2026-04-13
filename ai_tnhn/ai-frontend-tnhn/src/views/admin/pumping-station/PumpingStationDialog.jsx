@@ -9,8 +9,7 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
 import Stack from '@mui/material/Stack';
 import MenuItem from '@mui/material/MenuItem';
-import Autocomplete from '@mui/material/Autocomplete';
-import Chip from '@mui/material/Chip';
+import MultiSelectCheckboxes from 'ui-component/MultiSelectCheckboxes';
 import pumpingStationApi from 'api/pumpingStation';
 import { toast } from 'react-hot-toast';
 
@@ -113,27 +112,12 @@ const PumpingStationDialog = ({ open, handleClose, item, refresh, organizations 
                         ))}
                     </TextField>
 
-                    <Autocomplete
-                        multiple
-                        fullWidth
-                        options={(organizations.shared || []).filter(org => org.id !== formData.org_id)}
-                        getOptionLabel={(option) => option.name}
-                        value={(organizations.shared || []).filter(org => formData.shared_org_ids?.includes(org.id))}
-                        onChange={(event, newValue) => {
-                            handleChange('shared_org_ids', newValue.map(org => org.id));
-                        }}
-                        renderInput={(params) => (
-                            <TextField {...params} label="Đơn vị phối hợp" placeholder="Chọn đơn vị" sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }} />
-                        )}
-                        renderTags={(value, getTagProps) =>
-                            value.map((option, index) => (
-                                <Chip
-                                    variant="outlined" label={option.name}
-                                    {...getTagProps({ index })} key={option.id}
-                                    size="small" sx={{ borderRadius: '8px', fontWeight: 600 }}
-                                />
-                            ))
-                        }
+                    <MultiSelectCheckboxes
+                        label="Đơn vị phối hợp"
+                        placeholder="Chọn đơn vị"
+                        options={(organizations.shared || []).filter((org) => org.id !== formData.org_id)}
+                        value={formData.shared_org_ids}
+                        onChange={(ids) => handleChange('shared_org_ids', ids)}
                     />
 
                     <TextField

@@ -260,13 +260,7 @@ func (s *service) ListReportsWithFilter(ctx context.Context, orgID, status, traf
 	f.Page = int64(page + 1) // filter uses 1-based page
 	f.PerPage = int64(size)
 
-	if len(pointIDs) > 0 && orgID != "" {
-		f.AddWhere("org_id_or_shared_or_points", "$or", []bson.M{
-			{"org_id": orgID},
-			{"shared_org_ids": orgID},
-			{"point_id": bson.M{"$in": pointIDs}},
-		})
-	} else if len(pointIDs) > 0 {
+	if len(pointIDs) > 0 {
 		f.AddWhere("point_id", "point_id", bson.M{"$in": pointIDs})
 	} else if orgID != "" {
 		f.AddWhere("org_id_or_shared", "$or", []bson.M{

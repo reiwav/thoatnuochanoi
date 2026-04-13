@@ -283,17 +283,7 @@ func (h *InundationHandler) ListReports(c *gin.Context) {
 		targetOrgID = user.OrgID
 	}
 
-	if targetOrgID != "" {
-		// New logic: search for points owned by OR shared with targetOrgID
-		res, err := h.service.GetPointsStatus(c.Request.Context(), targetOrgID, nil) // passing nil pointIDs will fetch by org
-		if err == nil {
-			for _, p := range res {
-				pointIDs = append(pointIDs, p.ID)
-			}
-		}
-	}
-
-	if len(pointIDs) == 0 && user.IsEmployee && !isAllowedAll {
+	if user.IsEmployee && !isAllowedAll {
 		pointIDs = user.AssignedInundationStationIDs
 		if len(pointIDs) == 0 {
 			// If no points assigned to employee, return empty result
@@ -302,6 +292,14 @@ func (h *InundationHandler) ListReports(c *gin.Context) {
 				"total": 0,
 			})
 			return
+		}
+	} else if targetOrgID != "" {
+		// Manager or Admin: search for points owned by OR shared with targetOrgID
+		res, err := h.service.GetPointsStatus(c.Request.Context(), targetOrgID, nil) // passing nil pointIDs will fetch by org
+		if err == nil {
+			for _, p := range res {
+				pointIDs = append(pointIDs, p.ID)
+			}
 		}
 	}
 

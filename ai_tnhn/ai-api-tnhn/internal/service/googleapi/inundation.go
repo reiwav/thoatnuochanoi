@@ -26,8 +26,11 @@ type InundationSummaryData struct {
 	OngoingPoints []InundationStationStat `json:"ongoing_points"`
 }
 
-func (s *service) GetInundationSummary(ctx context.Context) (*InundationSummaryData, error) {
-	reports, _, err := s.inuSvc.ListReports(ctx, "")
+func (s *service) GetInundationSummary(ctx context.Context, orgID string, assignedInuIDs []string) (*InundationSummaryData, error) {
+	if orgID == "all" {
+		orgID = ""
+	}
+	reports, _, err := s.inuSvc.ListReportsWithFilter(ctx, orgID, "active", "", "", assignedInuIDs, 0, 1000)
 	if err != nil {
 		return nil, err
 	}
@@ -41,28 +44,24 @@ func (s *service) GetInundationSummary(ctx context.Context) (*InundationSummaryD
 
 	var ongoing []InundationStationStat
 	for _, r := range reports {
-		if r.Status == "active" {
-			var updates []InundationUpdateStat
-			if fullReport, err := s.inuSvc.GetReport(ctx, r.ID); err == nil && fullReport != nil {
-				for _, u := range fullReport.Updates {
-					updates = append(updates, InundationUpdateStat{
-						Timestamp:   time.Unix(u.Timestamp, 0).Format("15:04 02/01/2006"),
-						Description: u.Description,
-						Depth:       u.Depth,
-					})
-				}
-			}
-
-			ongoing = append(ongoing, InundationStationStat{
-				StreetName:    r.StreetName,
-				OrgName:       orgMap[r.OrgID],
-				Depth:         r.Depth,
-				StartTime:     time.Unix(r.StartTime, 0).Format("15:04 02/01/2006"),
-				Description:   r.Description,
-				CurrentStatus: "Đang ngập lụt, chưa kết thúc",
-				Updates:       updates,
+		var updates []InundationUpdateStat
+		for _, u := range r.Updates {
+			updates = append(updates, InundationUpdateStat{
+				Timestamp:   time.Unix(u.Timestamp, 0).Format("15:04 02/01/2006"),
+				Description: u.Description,
+				Depth:       u.Depth,
 			})
 		}
+
+		ongoing = append(ongoing, InundationStationStat{
+			StreetName:    r.StreetName,
+			OrgName:       orgMap[r.OrgID],
+			Depth:         r.Depth,
+			StartTime:     time.Unix(r.StartTime, 0).Format("15:04 02/01/2006"),
+			Description:   r.Description,
+			CurrentStatus: "Đang ngập lụt",
+			Updates:       updates,
+		})
 	}
 
 	return &InundationSummaryData{

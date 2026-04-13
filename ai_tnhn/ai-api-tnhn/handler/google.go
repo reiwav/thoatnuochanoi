@@ -231,7 +231,12 @@ func (h *GoogleHandler) GetWaterSummary(c *gin.Context) {
 }
 
 func (h *GoogleHandler) GetInundationSummary(c *gin.Context) {
-	summary, err := h.googleSvc.GetInundationSummary(c.Request.Context())
+	token := h.contextWith.GetTokenFromContext(c)
+	orgID := token.OrgID
+	if token.IsCompany {
+		orgID = ""
+	}
+	summary, err := h.googleSvc.GetInundationSummary(c.Request.Context(), orgID, nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -575,7 +580,7 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 	soLuongUngNgap := 0
 	chiTietCacDiem := ""
 	g.Go(func() error {
-		if inundationSummary, err := h.googleSvc.GetInundationSummary(gCtx); err == nil && inundationSummary != nil {
+		if inundationSummary, err := h.googleSvc.GetInundationSummary(gCtx, "", nil); err == nil && inundationSummary != nil {
 			soLuongUngNgap = inundationSummary.ActivePoints
 			if soLuongUngNgap > 0 {
 				var details []string
@@ -870,7 +875,7 @@ func (h *GoogleHandler) GenerateQuickReportText(c *gin.Context) {
 	// 2. Fetch Inundation Summary
 	inundationInfo := "Trên các tuyến đường an toàn, không xảy ra úng ngập"
 	g.Go(func() error {
-		if inundationSummary, err := h.googleSvc.GetInundationSummary(gCtx); err == nil && inundationSummary != nil {
+		if inundationSummary, err := h.googleSvc.GetInundationSummary(gCtx, "", nil); err == nil && inundationSummary != nil {
 			if inundationSummary.ActivePoints > 0 {
 				var details []string
 				for _, pt := range inundationSummary.OngoingPoints {
@@ -1139,7 +1144,7 @@ func (h *GoogleHandler) GenerateAIDynamicReport(c *gin.Context) {
 	// === Goroutine 4: Inundation status ===
 	inundationSummary := ""
 	g.Go(func() error {
-		summary, err := h.googleSvc.GetInundationSummary(gCtx)
+		summary, err := h.googleSvc.GetInundationSummary(gCtx, "", nil)
 		if err != nil || summary == nil {
 			inundationSummary = "Không có dữ liệu."
 			return nil

@@ -48,7 +48,7 @@ type Service interface {
 	GetStatus(ctx context.Context) (*GoogleStatus, error)
 	GetRainSummary(ctx context.Context, orgID string) (*RainSummaryData, error)
 	GetWaterSummary(ctx context.Context, orgID string) (*WaterSummaryData, error)
-	GetInundationSummary(ctx context.Context) (*InundationSummaryData, error)
+	GetInundationSummary(ctx context.Context, orgID string, assignedInuIDs []string) (*InundationSummaryData, error)
 	GetRecentEmails(ctx context.Context, limit int) ([]email.EmailInfo, error)
 	GetUnreadEmails(ctx context.Context, limit int) ([]email.EmailInfo, error)
 	ReadEmailByTitle(ctx context.Context, title string) (*email.EmailDetail, error)

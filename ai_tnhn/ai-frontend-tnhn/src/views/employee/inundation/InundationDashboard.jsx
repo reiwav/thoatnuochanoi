@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import React from 'react';
+import dayjs from 'dayjs';
 import {
     Box,
     Typography,
@@ -49,7 +50,9 @@ import {
     IconDotsVertical,
     IconPlus,
     IconEye,
-    IconCheck
+    IconCheck,
+    IconHistory,
+    IconTools
 } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 import inundationApi from 'api/inundation';
@@ -70,7 +73,7 @@ const getLatestData = (report) => {
 
     const updates = report.updates && Array.isArray(report.updates) ? report.updates : [];
     const sortedUpdates = [...updates].sort((a, b) => b.timestamp - a.timestamp);
-    
+
     // Determine timestamps
     if (sortedUpdates.length > 0) {
         const newest = sortedUpdates[0];
@@ -110,7 +113,7 @@ const getLatestData = (report) => {
 const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate, isMobile, basePath, hasPermission, isEmployee }) => {
     const [open, setOpen] = useState(point.status === 'active');
     const latest = useMemo(() => getLatestData(point.active_report || point.last_report), [point]);
-    
+
     // Action Menu State
     const [anchorEl, setAnchorEl] = useState(null);
     const menuOpen = Boolean(anchorEl);
@@ -220,7 +223,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                             <Typography variant="body1" sx={{ fontWeight: 700 }}>
                                 {latest ? formatDateTime(latest.start_time) : '-'}
                             </Typography>
-                             {latest && (
+                            {latest && (
                                 <Typography variant="caption" color={point.status === 'active' ? "error" : "text.secondary"} sx={{ fontWeight: 700, display: 'block', mt: 0.5, fontSize: '0.8rem' }}>
                                     {point.status === 'active'
                                         ? `Cập nhật lúc: ${formatDateTime(point.updated_at || latest.newest_ts)} (Đã ngập ${formatDuration(latest.start_time)})`
@@ -367,8 +370,8 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                     <ListItemText primary="Xem chi tiết" />
                                 </MenuItem>
                                 {hasPermission('inundation:edit') && (
-                                    <MenuItem onClick={() => { 
-                                        handleMenuClose(); 
+                                    <MenuItem onClick={() => {
+                                        handleMenuClose();
                                         let url = `${basePath}/inundation/form?tab=1&id=${point.report_id}&name=${encodeURIComponent(point.name)}`;
                                         if (needsCorrection && needsCorrectionUpdateId) {
                                             url += `&edit_update_id=${needsCorrectionUpdateId}`;
@@ -380,10 +383,10 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                     </MenuItem>
                                 )}
                                 {hasPermission('inundation:edit') && !isEmployee && (
-                                    <MenuItem 
+                                    <MenuItem
                                         sx={{ color: 'success.main' }}
-                                        onClick={async () => { 
-                                            handleMenuClose(); 
+                                        onClick={async () => {
+                                            handleMenuClose();
                                             if (window.confirm('Xác nhận kết thúc ngập cho điểm này?')) {
                                                 try {
                                                     await inundationApi.resolveReport(point.report_id);
@@ -402,9 +405,9 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                             </Menu>
                         </>
                     ) : (
-                        <IconButton 
-                            size="small" 
-                            color="primary" 
+                        <IconButton
+                            size="small"
+                            color="primary"
                             onClick={() => navigate(`${basePath}/inundation/form?tab=0&point_id=${point.id}&name=${encodeURIComponent(point.name)}`)}
                             title="Tạo báo cáo mới"
                         >
@@ -417,52 +420,52 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                 <TableRow>
                     <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider', paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
                         <Collapse in={open} timeout="auto" unmountOnExit>
-                        <Box sx={{ m: 2, p: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-                            <Typography variant="h6" gutterBottom component="div" sx={{ fontWeight: 700, color: 'primary.main', mb: 2 }}>
-                                {point.address}
-                            </Typography>
-                            <Stack spacing={1.5}>
-                                <Grid container spacing={2}>
-                                    <Grid item xs={12} sm={6}>
-                                        <Typography variant="body2" color="text.secondary">Kích thước ngập:</Typography>
-                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                            {latest ? `${latest.length || 0}m x ${latest.width || 0}m x ${latest.depth || 0}m` : '-'}
-                                        </Typography>
-                                    </Grid>
-                                    <Grid item xs={12} sm={6}>
-                                        <Typography variant="body2" color="text.secondary">Thời gian:</Typography>
-                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{`Bắt đầu: ${formatDateTime(latest.start_time)}`}</Typography>
-                                        <Grid item xs={12}>
-                                             <Typography variant="caption" color={point.status === 'active' ? "error" : "text.secondary"} sx={{ fontWeight: 700, display: 'block', mt: 0.5, fontSize: '0.8rem' }}>
-                                                {point.status === 'active'
-                                                    ? `Cập nhật lúc: ${formatDateTime(point.updated_at || latest.newest_ts)} (Đã ngập ${formatDuration(latest.start_time)})`
-                                                    : `Đã kết thúc`}
+                            <Box sx={{ m: 2, p: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                                <Typography variant="h6" gutterBottom component="div" sx={{ fontWeight: 700, color: 'primary.main', mb: 2 }}>
+                                    {point.address}
+                                </Typography>
+                                <Stack spacing={1.5}>
+                                    <Grid container spacing={2}>
+                                        <Grid item xs={12} sm={6}>
+                                            <Typography variant="body2" color="text.secondary">Kích thước ngập:</Typography>
+                                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                {latest ? `${latest.length || 0}m x ${latest.width || 0}m x ${latest.depth || 0}m` : '-'}
                                             </Typography>
                                         </Grid>
+                                        <Grid item xs={12} sm={6}>
+                                            <Typography variant="body2" color="text.secondary">Thời gian:</Typography>
+                                            <Typography variant="body2" sx={{ fontWeight: 600 }}>{`Bắt đầu: ${formatDateTime(latest.start_time)}`}</Typography>
+                                            <Grid item xs={12}>
+                                                <Typography variant="caption" color={point.status === 'active' ? "error" : "text.secondary"} sx={{ fontWeight: 700, display: 'block', mt: 0.5, fontSize: '0.8rem' }}>
+                                                    {point.status === 'active'
+                                                        ? `Cập nhật lúc: ${formatDateTime(point.updated_at || latest.newest_ts)} (Đã ngập ${formatDuration(latest.start_time)})`
+                                                        : `Đã kết thúc`}
+                                                </Typography>
+                                            </Grid>
+                                        </Grid>
                                     </Grid>
-                                </Grid>
-                                <Box>
-                                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>Ảnh liên quan:</Typography>
-                                    {latest?.images?.length > 0 ? (
-                                        <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', pb: 1 }}>
-                                            {latest.images.map((img, idx) => (
-                                                <Box
-                                                    key={idx} component="img" src={getInundationImageUrl(img)}
-                                                    onClick={(e) => { e.stopPropagation(); handleOpenViewer(latest.images, idx); }}
-                                                    sx={{ width: 56, height: 56, borderRadius: 1.5, objectFit: 'cover', cursor: 'pointer', border: '1px solid', borderColor: 'divider', flexShrink: 0 }}
-                                                />
-                                            ))}
-                                        </Stack>
-                                    ) : (
-                                        <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.disabled' }}>Không có ảnh</Typography>
-                                    )}
-                                </Box>
+                                    <Box>
+                                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>Ảnh liên quan:</Typography>
+                                        {latest?.images?.length > 0 ? (
+                                            <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', pb: 1 }}>
+                                                {latest.images.map((img, idx) => (
+                                                    <Box
+                                                        key={idx} component="img" src={getInundationImageUrl(img)}
+                                                        onClick={(e) => { e.stopPropagation(); handleOpenViewer(latest.images, idx); }}
+                                                        sx={{ width: 56, height: 56, borderRadius: 1.5, objectFit: 'cover', cursor: 'pointer', border: '1px solid', borderColor: 'divider', flexShrink: 0 }}
+                                                    />
+                                                ))}
+                                            </Stack>
+                                        ) : (
+                                            <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.disabled' }}>Không có ảnh</Typography>
+                                        )}
+                                    </Box>
 
-                            </Stack>
-                        </Box>
-                    </Collapse>
-                </TableCell>
-            </TableRow>
+                                </Stack>
+                            </Box>
+                        </Collapse>
+                    </TableCell>
+                </TableRow>
             )}
         </React.Fragment>
     );
@@ -522,7 +525,7 @@ const CollapsibleHistoryRow = ({ report, organizations, handleOpenViewer, naviga
                             <Typography variant="body2" color="text.secondary">Thời gian ngập:</Typography>
                             <Typography variant="body1" sx={{ fontWeight: 700 }}>{`Bắt đầu: ${formatDateTime(report.start_time)}`}</Typography>
                             <Typography variant="body1" sx={{ fontWeight: 700 }}>{report.status === 'resolved' ? `Kết thúc: ${formatDateTime(report.end_time)}` : `Cập nhật: ${formatDateTime(report.updated_at || latest.newest_ts)}`}</Typography>
-                             <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, display: 'block', mt: 0.5, fontSize: '0.8rem' }}>
+                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, display: 'block', mt: 0.5, fontSize: '0.8rem' }}>
                                 Tổng thời gian: {formatDuration(report.start_time, report.end_time)}
                             </Typography>
                         </Grid>
@@ -627,7 +630,7 @@ const CollapsibleHistoryRow = ({ report, organizations, handleOpenViewer, naviga
                                         <Typography variant="body2" sx={{ fontWeight: 600 }}>
                                             {report.status === 'resolved' ? `Kết thúc: ${formatDateTime(report.end_time)}` : `Cập nhật: ${formatDateTime(report.updated_at || latest.newest_ts)}`}
                                         </Typography>
-                                         <Typography variant="caption" sx={{ fontWeight: 800, display: 'block', mt: 0.5, color: 'primary.main' }}>
+                                        <Typography variant="caption" sx={{ fontWeight: 800, display: 'block', mt: 0.5, color: 'primary.main' }}>
                                             Tổng thời gian: {formatDuration(report.start_time, report.end_time)}
                                         </Typography>
                                     </Grid>
@@ -699,11 +702,15 @@ const InundationDashboard = () => {
     const [orgFilter, setOrgFilter] = useState('');
     const [organizations, setOrganizations] = useState([]);
     const [assignedStation, setAssignedStation] = useState(null);
+    const [openPumpHistory, setOpenPumpHistory] = useState(false);
 
     // Pagination for History
     const [historyPage, setHistoryPage] = useState(0);
     const [historyRowsPerPage, setHistoryRowsPerPage] = useState(10);
     const [totalHistory, setTotalHistory] = useState(0);
+
+    const [pumpingHistory, setPumpingHistory] = useState([]);
+    const [loadingPumpingHistory, setLoadingPumpingHistory] = useState(false);
 
     // Lightbox viewer
     const [viewer, setViewer] = useState({ open: false, images: [], index: 0 });
@@ -754,7 +761,7 @@ const InundationDashboard = () => {
     };
 
     const fetchAssignedStation = async () => {
-        if (userRole === 'employee' && userInfo?.assigned_pumping_station_id) {
+        if (isEmployee && userInfo?.assigned_pumping_station_id) {
             try {
                 const response = await pumpingStationApi.get(userInfo.assigned_pumping_station_id);
                 setAssignedStation(response.data.data || null);
@@ -792,6 +799,25 @@ const InundationDashboard = () => {
         fetchPoints();
         fetchAssignedStation();
     }, [orgFilter, userInfo]);
+
+    const fetchPumpingHistory = async () => {
+        if (!userInfo?.assigned_pumping_station_id) return;
+        setLoadingPumpingHistory(true);
+        try {
+            const response = await pumpingStationApi.getHistory(userInfo.assigned_pumping_station_id);
+            setPumpingHistory(response.data.data?.data || []);
+        } catch (error) {
+            console.error('Failed to load pump history', error);
+        } finally {
+            setLoadingPumpingHistory(false);
+        }
+    };
+
+    useEffect(() => {
+        if (activeTab === 5) {
+            fetchPumpingHistory();
+        }
+    }, [activeTab, userInfo]);
 
     useEffect(() => {
         if (activeTab === 3 || !isMobile) {
@@ -949,8 +975,6 @@ const InundationDashboard = () => {
                                 key={report.id}
                                 report={report}
                                 organizations={organizations}
-                                formatTime={formatTime}
-                                getDuration={getDuration}
                                 handleOpenViewer={handleOpenViewer}
                                 navigate={navigate}
                                 isMobile={isMobile}
@@ -1278,6 +1302,25 @@ const InundationDashboard = () => {
                 <Typography variant="body1" color="textSecondary" sx={{ mb: 4 }}>
                     {userInfo?.email || 'Phòng Thoát Nước Hà Nội'}
                 </Typography>
+                <List sx={{ bgcolor: 'background.paper', borderRadius: 4, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', mb: 2, overflow: 'hidden' }}>
+                    <ListItem button onClick={() => navigate(`${basePath}/inundation?activeTab=3`)} sx={{ py: 2, borderBottom: '1px solid', borderColor: 'grey.100' }}>
+                        <ListItemIcon>
+                            <IconHistory size={26} color={theme.palette.primary.main} />
+                        </ListItemIcon>
+                        <ListItemText primary="Lịch sử điểm ngập" primaryTypographyProps={{ fontWeight: 700 }} />
+                        <IconChevronRight size={20} />
+                    </ListItem>
+                    {isEmployee && userInfo?.assigned_pumping_station_id && (
+                        <ListItem button onClick={() => navigate(`${basePath}/inundation?activeTab=5`)} sx={{ py: 2 }}>
+                            <ListItemIcon>
+                                <IconTools size={26} color={theme.palette.success.main} />
+                            </ListItemIcon>
+                            <ListItemText primary="Lịch sử vận hành trạm" primaryTypographyProps={{ fontWeight: 700 }} />
+                            <IconChevronRight size={20} />
+                        </ListItem>
+                    )}
+                </List>
+
                 <List sx={{ bgcolor: 'background.paper', borderRadius: 4, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', mb: 4, overflow: 'hidden' }}>
                     <ListItem button onClick={handleLogout} sx={{ color: 'error.main', py: 2 }}>
                         <ListItemIcon>
@@ -1287,6 +1330,79 @@ const InundationDashboard = () => {
                         <IconChevronRight size={20} />
                     </ListItem>
                 </List>
+            </Box>
+        );
+    }
+
+    if (activeTab === 5) {
+        return (
+            <Box sx={{
+                px: isMobile ? 1.5 : 2,
+                pt: 2,
+                pb: 10,
+                flexGrow: 1,
+                overflowY: 'auto',
+                WebkitOverflowScrolling: 'touch'
+            }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                    <IconButton onClick={() => navigate(`${basePath}/inundation?activeTab=4`)} sx={{ mr: 1 }}>
+                        <IconChevronLeft />
+                    </IconButton>
+                    <Typography variant="h3" sx={{ fontWeight: 900 }}>
+                        Lịch sử vận hành trạm
+                    </Typography>
+                </Box>
+
+                <Stack spacing={2}>
+                    {loadingPumpingHistory ? (
+                        [1, 2, 3].map(i => <Skeleton key={i} variant="rectangular" height={100} sx={{ borderRadius: 3 }} />)
+                    ) : (pumpingHistory || []).length === 0 ? (
+                        <Box sx={{ py: 5, textAlign: 'center', bgcolor: 'grey.50', borderRadius: 3 }}>
+                            <Typography color="text.secondary">Chưa có dữ liệu lịch sử</Typography>
+                        </Box>
+                    ) : (
+                        pumpingHistory.map((row) => (
+                            <Paper key={row.id} elevation={0} sx={{ p: 2, borderRadius: 3, border: '1px solid', borderColor: 'grey.100' }}>
+                                <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 1.5 }}>
+                                    <Box>
+                                        <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                                            {dayjs(row.timestamp * 1000).format('DD/MM/YYYY HH:mm')}
+                                        </Typography>
+                                        {row.note && (
+                                            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontStyle: 'italic' }}>
+                                                "{row.note}"
+                                            </Typography>
+                                        )}
+                                    </Box>
+                                    <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.disabled' }}>
+                                        Bởi: {row.user_name}
+                                    </Typography>
+                                </Stack>
+                                <Divider sx={{ mb: 1.5, borderStyle: 'dashed' }} />
+                                <Stack direction="row" spacing={1.5}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                        <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: 'success.main' }} />
+                                        <Typography variant="body2" sx={{ fontWeight: 700, color: 'success.main' }}>
+                                            VH: {row.operating_count}
+                                        </Typography>
+                                    </Box>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                        <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: 'error.main' }} />
+                                        <Typography variant="body2" sx={{ fontWeight: 700, color: 'error.main' }}>
+                                            Đóng: {row.closed_count}
+                                        </Typography>
+                                    </Box>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                        <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: 'warning.main' }} />
+                                        <Typography variant="body2" sx={{ fontWeight: 700, color: 'warning.main' }}>
+                                            BD: {row.maintenance_count}
+                                        </Typography>
+                                    </Box>
+                                </Stack>
+                            </Paper>
+                        ))
+                    )}
+                </Stack>
             </Box>
         );
     }
@@ -1412,8 +1528,6 @@ const InundationDashboard = () => {
                                 key={point.id}
                                 point={point}
                                 organizations={organizations}
-                                formatTime={formatTime}
-                                getDuration={getDuration}
                                 handleOpenViewer={handleOpenViewer}
                                 navigate={navigate}
                                 isMobile={isMobile}
@@ -1450,8 +1564,6 @@ const InundationDashboard = () => {
                                         key={point.id}
                                         point={point}
                                         organizations={organizations}
-                                        formatTime={formatTime}
-                                        getDuration={getDuration}
                                         handleOpenViewer={handleOpenViewer}
                                         navigate={navigate}
                                         isMobile={isMobile}

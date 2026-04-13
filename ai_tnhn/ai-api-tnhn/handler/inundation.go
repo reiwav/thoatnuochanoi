@@ -284,7 +284,12 @@ func (h *InundationHandler) ListReports(c *gin.Context) {
 	}
 
 	if user.IsEmployee && !isAllowedAll {
-		pointIDs = user.AssignedInundationStationIDs
+		// Filter out empty strings if any
+		for _, pid := range user.AssignedInundationStationIDs {
+			if pid != "" {
+				pointIDs = append(pointIDs, pid)
+			}
+		}
 		if len(pointIDs) == 0 {
 			// If no points assigned to employee, return empty result
 			h.SendData(c, gin.H{
@@ -327,7 +332,15 @@ func (h *InundationHandler) GetPointsStatus(c *gin.Context) {
 
 	if user.IsEmployee && !isAllowedAll {
 		// Employee: chỉ lấy điểm ngập đã gắn trong tài khoản
-		pointIDs = user.AssignedInundationStationIDs
+		for _, pid := range user.AssignedInundationStationIDs {
+			if pid != "" {
+				pointIDs = append(pointIDs, pid)
+			}
+		}
+		if len(pointIDs) == 0 {
+			h.SendData(c, []inundation.PointStatus{})
+			return
+		}
 		orgID = "" // không fetch theo org
 	} else if isAllowedAll {
 		// Super admin / Company: lấy tất cả hoặc theo org_id filter

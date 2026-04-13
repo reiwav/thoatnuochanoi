@@ -151,21 +151,21 @@ export default function MainLayout() {
         label: 'Điểm ngập',
         path: `${basePath}/inundation`,
         active: isInundationPath,
-        show: !isEmployee || (userInfo?.assigned_inundation_station_ids?.length > 0)
+        show: !isEmployee || (userInfo?.assigned_inundation_station_ids?.filter(id => id && id.trim() !== "").length > 0)
       },
       {
         id: 'pumping',
         label: 'Trạm bơm',
         path: `${basePath}/tram-bom`,
         active: isPumpingPath,
-        show: !isEmployee || (userInfo?.assigned_pumping_station_id !== "")
+        show: !isEmployee || (userInfo?.assigned_pumping_station_id && userInfo.assigned_pumping_station_id.trim() !== "")
       },
       {
         id: 'construction',
         label: 'Công trình khẩn',
         path: `${basePath}/emergency-construction/dashboard`,
         active: isConstructionPath,
-        show: !isEmployee || (userInfo?.assigned_emergency_construction_ids?.length > 0)
+        show: !isEmployee || (userInfo?.assigned_emergency_construction_ids?.filter(id => id && id.trim() !== "").length > 0)
       }
     ];
 
@@ -180,7 +180,7 @@ export default function MainLayout() {
         label: 'Trạm bơm', 
         icon: <EngineeringIcon sx={{ fontSize: '1.4rem' }} />, 
         tab: '1',
-        show: !isEmployee || (userInfo?.assigned_pumping_station_id !== "")
+        show: !isEmployee || (userInfo?.assigned_pumping_station_id && userInfo.assigned_pumping_station_id.trim() !== "")
       },
       { 
         id: 'active', 
@@ -192,7 +192,6 @@ export default function MainLayout() {
         ), 
         tab: '2' 
       },
-      { id: 'history', label: 'Lịch sử', icon: <HistoryIcon sx={{ fontSize: '1.4rem' }} />, tab: '3' },
       { id: 'profile', label: 'Tài khoản', icon: <PersonIcon sx={{ fontSize: '1.4rem' }} />, tab: '4' }
     ];
     return items.filter(i => i.show !== false);

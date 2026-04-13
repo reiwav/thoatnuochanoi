@@ -101,7 +101,7 @@ func (h *InundationHandler) CreateReport(c *gin.Context) {
 	// 4.1 Permission Check for Employee
 	if user.IsEmployee {
 		isAssigned := false
-		for _, pid := range user.AssignedInundationPointIDs {
+		for _, pid := range user.AssignedInundationStationIDs {
 			if pid == pointID {
 				isAssigned = true
 				break
@@ -179,7 +179,7 @@ func (h *InundationHandler) AddUpdateSituation(c *gin.Context) {
 		report, err := h.service.GetReport(c.Request.Context(), reportID)
 		if err == nil && report != nil {
 			isAssigned := false
-			for _, pid := range user.AssignedInundationPointIDs {
+			for _, pid := range user.AssignedInundationStationIDs {
 				if pid == report.PointID {
 					isAssigned = true
 					break
@@ -294,7 +294,7 @@ func (h *InundationHandler) ListReports(c *gin.Context) {
 	}
 
 	if len(pointIDs) == 0 && user.IsEmployee && !isAllowedAll {
-		pointIDs = user.AssignedInundationPointIDs
+		pointIDs = user.AssignedInundationStationIDs
 		if len(pointIDs) == 0 {
 			// If no points assigned to employee, return empty result
 			h.SendData(c, gin.H{
@@ -329,7 +329,7 @@ func (h *InundationHandler) GetPointsStatus(c *gin.Context) {
 
 	if user.IsEmployee && !isAllowedAll {
 		// Employee: chỉ lấy điểm ngập đã gắn trong tài khoản
-		pointIDs = user.AssignedInundationPointIDs
+		pointIDs = user.AssignedInundationStationIDs
 		orgID = "" // không fetch theo org
 	} else if isAllowedAll {
 		// Super admin / Company: lấy tất cả hoặc theo org_id filter
@@ -351,7 +351,7 @@ func (h *InundationHandler) GetPointsStatus(c *gin.Context) {
 }
 
 func (h *InundationHandler) CreatePoint(c *gin.Context) {
-	var req models.InundationPoint
+	var req models.InundationStation
 	if err := c.ShouldBindJSON(&req); err != nil {
 		h.SendError(c, web.BadRequest("Invalid request: "+err.Error()))
 		return
@@ -378,7 +378,7 @@ func (h *InundationHandler) CreatePoint(c *gin.Context) {
 
 func (h *InundationHandler) UpdatePoint(c *gin.Context) {
 	id := c.Param("id")
-	var req models.InundationPoint
+	var req models.InundationStation
 	if err := c.ShouldBindJSON(&req); err != nil {
 		h.SendError(c, web.BadRequest("Invalid request: "+err.Error()))
 		return

@@ -57,9 +57,10 @@ type RiverStation struct {
 	SharedOrgIDs    []string `json:"shared_org_ids" bson:"shared_org_ids"`
 }
 
-type InundationPoint struct {
+type InundationStation struct {
 	model.BaseModel `bson:",inline"`
 	OrgID           string   `json:"org_id" bson:"org_id"` // Managed by this Org
+	ReportID        string   `json:"report_id" bson:"report_id"`
 	SharedOrgIDs    []string `json:"shared_org_ids" bson:"shared_org_ids"`
 	Name            string   `json:"name" bson:"name"`
 	Address         string   `json:"address" bson:"address"`

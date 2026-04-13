@@ -30,7 +30,8 @@ import {
     DialogContent,
     TablePagination,
     MenuItem,
-    Grid
+    Grid,
+    Menu
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -44,7 +45,11 @@ import {
     IconChevronRight,
     IconChevronLeft,
     IconLogout,
-    IconEdit
+    IconEdit,
+    IconDotsVertical,
+    IconPlus,
+    IconEye,
+    IconCheck
 } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 import inundationApi from 'api/inundation';
@@ -104,6 +109,18 @@ const getLatestData = (report) => {
 const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, handleOpenViewer, navigate, isMobile, basePath, hasPermission, isEmployee }) => {
     const [open, setOpen] = useState(point.status === 'active');
     const latest = useMemo(() => getLatestData(point.active_report || point.last_report), [point]);
+    
+    // Action Menu State
+    const [anchorEl, setAnchorEl] = useState(null);
+    const menuOpen = Boolean(anchorEl);
+    const handleMenuClick = (event) => {
+        event.stopPropagation();
+        setAnchorEl(event.currentTarget);
+    };
+    const handleMenuClose = () => {
+        setAnchorEl(null);
+    };
+
     const needsCorrection = useMemo(() => {
         const report = point.active_report || point.last_report;
         return report?.needs_correction || report?.updates?.some(u => u.needs_correction);
@@ -170,9 +187,11 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                         )}
                     </Stack>
                 </Box>
-                <IconButton size="small" onClick={() => setOpen(!open)} sx={{ mt: -0.5 }}>
-                    {open ? <IconChevronUp size={22} /> : <IconChevronDown size={22} />}
-                </IconButton>
+                {point.status === 'active' && (
+                    <IconButton size="small" onClick={() => setOpen(!open)} sx={{ mt: -0.5 }}>
+                        {open ? <IconChevronUp size={22} /> : <IconChevronDown size={22} />}
+                    </IconButton>
+                )}
             </Box>
 
             <Collapse in={open} timeout="auto" unmountOnExit>
@@ -268,11 +287,13 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
 
     return (
         <React.Fragment>
-            <TableRow hover sx={{ '& .MuiTableCell-root': { borderBottom: 'none' } }}>
+            <TableRow hover sx={{ '& .MuiTableCell-root': { borderBottom: '1px solid', borderColor: 'divider' } }}>
                 <TableCell sx={{ width: 40, p: 2 }}>
-                    <IconButton aria-label="expand row" size="small" onClick={() => setOpen(!open)}>
-                        {open ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />}
-                    </IconButton>
+                    {point.status === "active" && (
+                        <IconButton aria-label="expand row" size="small" onClick={() => setOpen(!open)}>
+                            {open ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />}
+                        </IconButton>
+                    )}
                 </TableCell>
                 <TableCell sx={{ p: 2 }}>
                     <Typography
@@ -325,34 +346,76 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                     )}
                 </TableCell>
                 <TableCell align="center" sx={{ p: 2, width: 120 }}>
-                    {point.status === 'active' ? (
-                        hasPermission('inundation:edit') && (
-                            <Button
-                                variant="contained"
-                                color="error"
-                                size="small"
-                                onClick={() => navigate(`${basePath}/inundation/form?tab=1&id=${point.active_report.id}&name=${encodeURIComponent(point.name)}`)}
+                    {point.report_id ? (
+                        <>
+                            <IconButton size="small" onClick={handleMenuClick}>
+                                <IconDotsVertical size={20} />
+                            </IconButton>
+                            <Menu
+                                anchorEl={anchorEl}
+                                open={menuOpen}
+                                onClose={handleMenuClose}
+                                onClick={(e) => e.stopPropagation()}
+                                PaperProps={{
+                                    elevation: 3,
+                                    sx: { borderRadius: 2, minWidth: 150 }
+                                }}
                             >
-                                Cập nhật
-                            </Button>
-                        )
+                                <MenuItem onClick={() => { handleMenuClose(); navigate(`${basePath}/inundation/form?id=${point.report_id}&tab=1&readonly=true`); }}>
+                                    <ListItemIcon><IconEye size={18} /></ListItemIcon>
+                                    <ListItemText primary="Xem chi tiết" />
+                                </MenuItem>
+                                {hasPermission('inundation:edit') && (
+                                    <MenuItem onClick={() => { 
+                                        handleMenuClose(); 
+                                        let url = `${basePath}/inundation/form?tab=1&id=${point.report_id}&name=${encodeURIComponent(point.name)}`;
+                                        if (needsCorrection && needsCorrectionUpdateId) {
+                                            url += `&edit_update_id=${needsCorrectionUpdateId}`;
+                                        }
+                                        navigate(url);
+                                    }}>
+                                        <ListItemIcon><IconEdit size={18} /></ListItemIcon>
+                                        <ListItemText primary={needsCorrection ? "Sửa lỗi" : "Cập nhật tiến độ"} />
+                                    </MenuItem>
+                                )}
+                                {hasPermission('inundation:edit') && !isEmployee && (
+                                    <MenuItem 
+                                        sx={{ color: 'success.main' }}
+                                        onClick={async () => { 
+                                            handleMenuClose(); 
+                                            if (window.confirm('Xác nhận kết thúc ngập cho điểm này?')) {
+                                                try {
+                                                    await inundationApi.resolveReport(point.report_id);
+                                                    toast.success('Đã kết thúc ngập');
+                                                    window.location.reload();
+                                                } catch (err) {
+                                                    toast.error('Lỗi khi kết thúc ngập');
+                                                }
+                                            }
+                                        }}
+                                    >
+                                        <ListItemIcon><IconCheck size={18} color="green" /></ListItemIcon>
+                                        <ListItemText primary="Kết thúc ngập" />
+                                    </MenuItem>
+                                )}
+                            </Menu>
+                        </>
                     ) : (
-                        hasPermission('inundation:create') && (
-                            <Button
-                                variant="contained"
-                                color="primary"
-                                size="small"
-                                onClick={() => navigate(`${basePath}/inundation/form?tab=0&point_id=${point.id}&name=${encodeURIComponent(point.name)}`)}
-                            >
-                                Báo cáo
-                            </Button>
-                        )
+                        <IconButton 
+                            size="small" 
+                            color="primary" 
+                            onClick={() => navigate(`${basePath}/inundation/form?tab=0&point_id=${point.id}&name=${encodeURIComponent(point.name)}`)}
+                            title="Tạo báo cáo mới"
+                        >
+                            <IconPlus size={20} />
+                        </IconButton>
                     )}
                 </TableCell>
             </TableRow>
-            <TableRow>
-                <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider', paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
-                    <Collapse in={open} timeout="auto" unmountOnExit>
+            {point.status === 'active' && (
+                <TableRow>
+                    <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider', paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
+                        <Collapse in={open} timeout="auto" unmountOnExit>
                         <Box sx={{ m: 2, p: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
                             <Typography variant="h6" gutterBottom component="div" sx={{ fontWeight: 700, color: 'primary.main', mb: 2 }}>
                                 {point.address}
@@ -439,6 +502,7 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                     </Collapse>
                 </TableCell>
             </TableRow>
+            )}
         </React.Fragment>
     );
 };

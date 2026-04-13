@@ -11,7 +11,7 @@ type InundationUpdateStat struct {
 	Depth       string `json:"depth"`
 }
 
-type InundationPointStat struct {
+type InundationStationStat struct {
 	StreetName    string                 `json:"street_name"`
 	OrgName       string                 `json:"org_name"`
 	Depth         string                 `json:"depth"`
@@ -23,7 +23,7 @@ type InundationPointStat struct {
 
 type InundationSummaryData struct {
 	ActivePoints  int                   `json:"active_points"`
-	OngoingPoints []InundationPointStat `json:"ongoing_points"`
+	OngoingPoints []InundationStationStat `json:"ongoing_points"`
 }
 
 func (s *service) GetInundationSummary(ctx context.Context) (*InundationSummaryData, error) {
@@ -39,7 +39,7 @@ func (s *service) GetInundationSummary(ctx context.Context) (*InundationSummaryD
 		orgMap[org.ID] = org.Name
 	}
 
-	var ongoing []InundationPointStat
+	var ongoing []InundationStationStat
 	for _, r := range reports {
 		if r.Status == "active" {
 			var updates []InundationUpdateStat
@@ -53,7 +53,7 @@ func (s *service) GetInundationSummary(ctx context.Context) (*InundationSummaryD
 				}
 			}
 
-			ongoing = append(ongoing, InundationPointStat{
+			ongoing = append(ongoing, InundationStationStat{
 				StreetName:    r.StreetName,
 				OrgName:       orgMap[r.OrgID],
 				Depth:         r.Depth,

@@ -12,24 +12,24 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type inundationPointRepo struct {
+type inundationStationRepo struct {
 	*db.Table
 }
 
-func NewInundationPointRepository(dbase *mongo.Database, collectionName string, prefix string, l logger.Logger) repository.InundationPoint {
-	return &inundationPointRepo{
+func NewInundationStationRepository(dbase *mongo.Database, collectionName string, prefix string, l logger.Logger) repository.InundationStation {
+	return &inundationStationRepo{
 		Table: db.NewTable(collectionName, prefix, dbase, l),
 	}
 }
 
-func (r *inundationPointRepo) List(ctx context.Context, f filter.Filter) ([]models.InundationPoint, int64, error) {
-	var points []models.InundationPoint
+func (r *inundationStationRepo) List(ctx context.Context, f filter.Filter) ([]models.InundationStation, int64, error) {
+	var points []models.InundationStation
 	total, err := r.R_SearchAndCount(ctx, f, &points)
 	return points, total, err
 }
 
-func (r *inundationPointRepo) ListByOrg(ctx context.Context, orgID string) ([]models.InundationPoint, error) {
-	var points []models.InundationPoint
+func (r *inundationStationRepo) ListByOrg(ctx context.Context, orgID string) ([]models.InundationStation, error) {
+	var points []models.InundationStation
 	filter := bson.M{"active": true}
 	if orgID != "" {
 		filter["org_id"] = orgID
@@ -38,21 +38,21 @@ func (r *inundationPointRepo) ListByOrg(ctx context.Context, orgID string) ([]mo
 	return points, err
 }
 
-func (r *inundationPointRepo) GetByID(ctx context.Context, id string) (*models.InundationPoint, error) {
-	var point models.InundationPoint
+func (r *inundationStationRepo) GetByID(ctx context.Context, id string) (*models.InundationStation, error) {
+	var point models.InundationStation
 	err := r.R_SelectByID(ctx, id, &point)
 	return &point, err
 }
 
-func (r *inundationPointRepo) Create(ctx context.Context, point models.InundationPoint) (string, error) {
+func (r *inundationStationRepo) Create(ctx context.Context, point models.InundationStation) (string, error) {
 	err := r.R_Create(ctx, &point)
 	return point.ID, err
 }
 
-func (r *inundationPointRepo) Update(ctx context.Context, point models.InundationPoint) error {
+func (r *inundationStationRepo) Update(ctx context.Context, point models.InundationStation) error {
 	return r.R_Update(ctx, &point)
 }
 
-func (r *inundationPointRepo) Delete(ctx context.Context, id string) error {
+func (r *inundationStationRepo) Delete(ctx context.Context, id string) error {
 	return r.R_DeleteByID(ctx, id)
 }

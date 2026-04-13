@@ -55,7 +55,7 @@ func (s *service) Create(ctx context.Context, input *models.User, currentUserRol
 	input.Active = true // Default to active
 
 	// Validate assignments
-	if err := s.validateAssignments(ctx, "", input.OrgID, input.AssignedInundationPointIDs, input.AssignedRainStationIDs, input.AssignedLakeStationIDs, input.AssignedRiverStationIDs, input.AssignedEmergencyConstructionIDs, input.AssignedPumpingStationID); err != nil {
+	if err := s.validateAssignments(ctx, "", input.OrgID, input.AssignedInundationStationIDs, input.AssignedRainStationIDs, input.AssignedLakeStationIDs, input.AssignedRiverStationIDs, input.AssignedEmergencyConstructionIDs, input.AssignedPumpingStationID); err != nil {
 		return nil, err
 	}
 
@@ -102,7 +102,7 @@ func (s *service) Update(ctx context.Context, id string, input *models.User, cur
 		existing.OrgID = input.OrgID
 	}
 	existing.Active = input.Active
-	existing.AssignedInundationPointIDs = input.AssignedInundationPointIDs
+	existing.AssignedInundationStationIDs = input.AssignedInundationStationIDs
 	existing.AssignedEmergencyConstructionIDs = input.AssignedEmergencyConstructionIDs
 	existing.AssignedPumpingStationID = input.AssignedPumpingStationID
 
@@ -112,7 +112,7 @@ func (s *service) Update(ctx context.Context, id string, input *models.User, cur
 	}
 
 	// Validate assignments on the merged record
-	if err := s.validateAssignments(ctx, id, existing.OrgID, existing.AssignedInundationPointIDs, existing.AssignedRainStationIDs, existing.AssignedLakeStationIDs, existing.AssignedRiverStationIDs, existing.AssignedEmergencyConstructionIDs, existing.AssignedPumpingStationID); err != nil {
+	if err := s.validateAssignments(ctx, id, existing.OrgID, existing.AssignedInundationStationIDs, existing.AssignedRainStationIDs, existing.AssignedLakeStationIDs, existing.AssignedRiverStationIDs, existing.AssignedEmergencyConstructionIDs, existing.AssignedPumpingStationID); err != nil {
 		return err
 	}
 
@@ -141,7 +141,7 @@ func (s *service) validateAssignments(ctx context.Context, userID string, orgID 
 		pid := pointIDs[0]
 		f := filter.NewBasicFilter()
 		f.AddWhere("org_id", "org_id", orgID)
-		f.AddWhere("assigned_inundation_point_ids", "assigned_inundation_point_ids", pid)
+		f.AddWhere("assigned_inundation_station_ids", "assigned_inundation_station_ids", pid)
 		if userID != "" {
 			f.AddWhere("_id", "_id", primitive.M{"$ne": userID})
 		}

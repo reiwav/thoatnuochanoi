@@ -34,9 +34,9 @@ type Service interface {
 
 	// Points management
 	GetPointsStatus(ctx context.Context, orgID string, pointIDs []string) ([]PointStatus, error)
-	GetPointByID(ctx context.Context, id string) (*models.InundationPoint, error)
-	CreatePoint(ctx context.Context, point models.InundationPoint) (string, error)
-	UpdatePoint(ctx context.Context, id string, point models.InundationPoint) error
+	GetPointByID(ctx context.Context, id string) (*models.InundationStation, error)
+	CreatePoint(ctx context.Context, point models.InundationStation) (string, error)
+	UpdatePoint(ctx context.Context, id string, point models.InundationStation) error
 	DeletePoint(ctx context.Context, id string) error
 
 	// Org helpers for visibility
@@ -54,6 +54,7 @@ type PointStatus struct {
 	Lat          string                   `json:"lat"`
 	Lng          string                   `json:"lng"`
 	Status       string                   `json:"status"` // active, normal
+	ReportID     string                   `json:"report_id"`
 	ActiveReport *models.InundationReport `json:"active_report,omitempty"`
 	LastReport   *models.InundationReport `json:"last_report,omitempty"`
 	LastReportID string                   `json:"last_report_id"`
@@ -70,7 +71,7 @@ type ImageContent struct {
 type service struct {
 	inundationRepo       repository.Inundation
 	inundationUpdateRepo repository.InundationUpdate
-	inundationPointRepo  repository.InundationPoint
+	inundationStationRepo  repository.InundationStation
 	orgRepo              repository.Organization
 	driveSvc             googledrive.Service
 	folderCache          map[string]string
@@ -81,14 +82,14 @@ type service struct {
 func NewService(
 	inundationRepo repository.Inundation,
 	inundationUpdateRepo repository.InundationUpdate,
-	inundationPointRepo repository.InundationPoint,
+	inundationStationRepo repository.InundationStation,
 	orgRepo repository.Organization,
 	driveSvc googledrive.Service,
 ) Service {
 	svc := &service{
 		inundationRepo:       inundationRepo,
 		inundationUpdateRepo: inundationUpdateRepo,
-		inundationPointRepo:  inundationPointRepo,
+		inundationStationRepo:  inundationStationRepo,
 		orgRepo:              orgRepo,
 		driveSvc:             driveSvc,
 		folderCache:          make(map[string]string),
@@ -138,6 +139,15 @@ func (s *service) CreateReport(ctx context.Context, report *models.InundationRep
 	err := s.inundationRepo.Create(ctx, report)
 	if err != nil {
 		return err
+	}
+
+	// NEW: Update station's report_id if it's an active report
+	if report.Status == "active" && report.PointID != "" {
+		point, err := s.inundationStationRepo.GetByID(ctx, report.PointID)
+		if err == nil && point != nil {
+			point.ReportID = report.ID
+			_ = s.inundationStationRepo.Update(ctx, *point)
+		}
 	}
 
 	// Trigger immediate sync task
@@ -198,6 +208,8 @@ func (s *service) AddUpdate(ctx context.Context, reportID string, update *models
 	report.Length = update.Length
 	report.Width = update.Width
 	report.Depth = update.Depth
+	report.Description = update.Description
+	report.Images = update.Images
 
 	if report.Status == "resolved" || report.Status == "normal" {
 		report.TrafficStatus = ""
@@ -317,6 +329,17 @@ func (s *service) Resolve(ctx context.Context, reportID string, endTime int64) e
 	if endTime == 0 {
 		endTime = time.Now().Unix()
 	}
+
+	// NEW: Clear station's report_id when report is resolved
+	report, err := s.inundationRepo.GetByID(ctx, reportID)
+	if err == nil && report != nil && report.PointID != "" {
+		point, err := s.inundationStationRepo.GetByID(ctx, report.PointID)
+		if err == nil && point != nil && point.ReportID == reportID {
+			point.ReportID = ""
+			_ = s.inundationStationRepo.Update(ctx, *point)
+		}
+	}
+
 	return s.inundationRepo.Resolve(ctx, reportID, endTime)
 }
 
@@ -466,6 +489,8 @@ func (s *service) UpdateUpdateContent(ctx context.Context, updateID string, upda
 		mainReport.Length = update.Length
 		mainReport.Width = update.Width
 		mainReport.TrafficStatus = update.TrafficStatus
+		mainReport.Description = update.Description
+		mainReport.Images = update.Images
 		mainReport.NeedsCorrection = false
 		mainReport.NeedsCorrectionUpdateID = ""
 		_ = s.inundationRepo.Update(ctx, mainReport)
@@ -474,20 +499,20 @@ func (s *service) UpdateUpdateContent(ctx context.Context, updateID string, upda
 	return nil
 }
 
-func (s *service) GetPointByID(ctx context.Context, id string) (*models.InundationPoint, error) {
-	return s.inundationPointRepo.GetByID(ctx, id)
+func (s *service) GetPointByID(ctx context.Context, id string) (*models.InundationStation, error) {
+	return s.inundationStationRepo.GetByID(ctx, id)
 }
 
-func (s *service) CreatePoint(ctx context.Context, point models.InundationPoint) (string, error) {
+func (s *service) CreatePoint(ctx context.Context, point models.InundationStation) (string, error) {
 	if point.Active == false {
 		point.Active = true
 	}
-	return s.inundationPointRepo.Create(ctx, point)
+	return s.inundationStationRepo.Create(ctx, point)
 }
 
 func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []string) ([]PointStatus, error) {
 	// 1. Get all managed points (Union of owned points and shared points)
-	allPointsMap := make(map[string]models.InundationPoint)
+	allPointsMap := make(map[string]models.InundationStation)
 
 	// A. Get points owned by or shared with this organization
 	if orgID != "" {
@@ -497,7 +522,7 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []
 			{"org_id": orgID},
 			{"shared_org_ids": orgID},
 		})
-		ownedPoints, _, err := s.inundationPointRepo.List(ctx, pf)
+		ownedPoints, _, err := s.inundationStationRepo.List(ctx, pf)
 		if err == nil {
 			for _, p := range ownedPoints {
 				allPointsMap[p.ID] = p
@@ -509,7 +534,7 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []
 	if len(pointIDs) > 0 {
 		for _, pid := range pointIDs {
 			if _, exists := allPointsMap[pid]; !exists {
-				p, err := s.inundationPointRepo.GetByID(ctx, pid)
+				p, err := s.inundationStationRepo.GetByID(ctx, pid)
 				if err == nil && p != nil {
 					allPointsMap[p.ID] = *p
 				}
@@ -520,7 +545,7 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []
 	// C. If both are empty and user is likely a Super Admin (orgID == "" and pointIDs empty),
 	// ListByOrg("") will fetch all active points.
 	if orgID == "" && len(pointIDs) == 0 {
-		allPoints, err := s.inundationPointRepo.ListByOrg(ctx, "")
+		allPoints, err := s.inundationStationRepo.ListByOrg(ctx, "")
 		if err == nil {
 			for _, p := range allPoints {
 				allPointsMap[p.ID] = p
@@ -528,7 +553,7 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []
 		}
 	}
 
-	points := make([]models.InundationPoint, 0, len(allPointsMap))
+	points := make([]models.InundationStation, 0, len(allPointsMap))
 	for _, p := range allPointsMap {
 		points = append(points, p)
 	}
@@ -669,6 +694,7 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []
 			Lat:          p.Lat,
 			Lng:          p.Lng,
 			Status:       status,
+			ReportID:     p.ReportID,
 			ActiveReport: activeReport,
 			LastReport:   lastReport,
 			LastReportID: lastID,
@@ -680,13 +706,13 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []
 	return result, nil
 }
 
-func (s *service) UpdatePoint(ctx context.Context, id string, point models.InundationPoint) error {
+func (s *service) UpdatePoint(ctx context.Context, id string, point models.InundationStation) error {
 	point.ID = id
-	return s.inundationPointRepo.Update(ctx, point)
+	return s.inundationStationRepo.Update(ctx, point)
 }
 
 func (s *service) DeletePoint(ctx context.Context, id string) error {
-	return s.inundationPointRepo.Delete(ctx, id)
+	return s.inundationStationRepo.Delete(ctx, id)
 }
 func (s *service) getOrgFolderID(ctx context.Context, org *models.Organization) (string, error) {
 	folderID := org.DriveFolderID
@@ -738,7 +764,7 @@ func (s *service) resolveUploadFolder(ctx context.Context, org *models.Organizat
 	// 3. Get/Create Station Folder (e.g., Ngõ 123_ID...)
 	stationFolderName := "UNKNOWN_STATION"
 	if pointID != "" {
-		point, err := s.inundationPointRepo.GetByID(ctx, pointID)
+		point, err := s.inundationStationRepo.GetByID(ctx, pointID)
 		if err == nil && point != nil {
 			stationFolderName = fmt.Sprintf("%s_%s", point.Name, point.ID)
 		} else {

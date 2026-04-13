@@ -458,45 +458,7 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                                         <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.disabled' }}>Không có ảnh</Typography>
                                     )}
                                 </Box>
-                                {latest?.updates?.length > 0 && (
-                                    <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>Lịch sử cập nhật:</Typography>
-                                        <Stack spacing={1}>
-                                            {latest.updates.slice().sort((a, b) => b.timestamp - a.timestamp).map((upd, idx) => (
-                                                <Box key={idx} sx={{ p: 1, bgcolor: 'background.paper', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
-                                                    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
-                                                        <Typography variant="caption" sx={{ fontWeight: 700, color: 'primary.main' }}>
-                                                            {formatTime(upd.timestamp)}
-                                                        </Typography>
-                                                        {upd.traffic_status && (
-                                                            <Chip
-                                                                label={getTrafficStatusLabel(upd.traffic_status)}
-                                                                size="small" color={getTrafficStatusColor(upd.traffic_status)}
-                                                                variant="outlined" sx={{ height: 18, fontSize: '0.625rem' }}
-                                                            />
-                                                        )}
-                                                    </Stack>
-                                                    <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>{upd.description || 'Không có mô tả'}</Typography>
-                                                    {upd.review_comment && (
-                                                        <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'error.main', fontStyle: 'italic', fontWeight: 600 }}>
-                                                            Reviewer: {upd.review_comment}
-                                                        </Typography>
-                                                    )}
-                                                    {upd.old_data?.length > 0 && (
-                                                        <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
-                                                            <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary' }}>Dữ liệu cũ:</Typography>
-                                                            {upd.old_data.map((old, oIdx) => (
-                                                                <Typography key={oIdx} variant="caption" sx={{ display: 'block', fontSize: '0.65rem' }}>
-                                                                    • {old.description || 'N/A'} ({old.depth}m)
-                                                                </Typography>
-                                                            ))}
-                                                        </Box>
-                                                    )}
-                                                </Box>
-                                            ))}
-                                        </Stack>
-                                    </Box>
-                                )}
+
                             </Stack>
                         </Box>
                     </Collapse>
@@ -606,60 +568,7 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenVi
                         Xem chi tiết
                     </Button>
 
-                    {report.updates?.length > 0 && (
-                        <Box sx={{ mt: 1, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 1.5 }}>Lịch sử cập nhật:</Typography>
-                            <Stack spacing={1.5}>
-                                {report.updates.slice().sort((a, b) => b.timestamp - a.timestamp).map((upd, idx) => (
-                                    <Box key={idx} sx={{ p: 1.5, bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-                                        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.8 }}>
-                                            <Typography variant="body2" sx={{ fontWeight: 800, color: 'primary.main' }}>
-                                                {formatTime(upd.timestamp)}
-                                            </Typography>
-                                            {(upd.traffic_status || upd.trafficStatus) && (
-                                                <Chip
-                                                    label={getTrafficStatusLabel(upd.traffic_status || upd.trafficStatus)}
-                                                    size="small" color={getTrafficStatusColor(upd.traffic_status || upd.trafficStatus)}
-                                                    variant="outlined" sx={{ fontWeight: 800 }}
-                                                />
-                                            )}
-                                        </Stack>
-                                        <Typography variant="body2" sx={{ fontSize: '0.9rem', lineHeight: 1.4 }}>
-                                            {upd.description || 'Không có mô tả'}
-                                        </Typography>
-                                        {upd.review_comment && (
-                                            <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'error.main', fontStyle: 'italic', fontWeight: 700 }}>
-                                                Reviewer: {upd.review_comment}
-                                            </Typography>
-                                        )}
-                                        {(hasPermission?.('inundation:edit') || (isEmployee && upd.needs_correction)) && (
-                                            <Button
-                                                size="small" startIcon={<IconEdit size={16} />}
-                                                variant="contained" color="error"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    navigate(`${basePath}/inundation/form?tab=1&id=${report.id}&name=${encodeURIComponent(report.street_name)}&edit_update_id=${upd.id}`);
-                                                }}
-                                                sx={{ borderRadius: 10, fontSize: '0.7rem', fontWeight: 700, mt: 1, py: 0.2 }}
-                                            >
-                                                Sửa nội dung
-                                            </Button>
-                                        )}
-                                        {upd.old_data?.length > 0 && (
-                                            <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
-                                                <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary' }}>Dữ liệu cũ:</Typography>
-                                                {upd.old_data.map((old, oIdx) => (
-                                                    <Typography key={oIdx} variant="caption" sx={{ display: 'block', fontSize: '0.75rem' }}>
-                                                        • {old.description || 'N/A'} ({old.depth}m)
-                                                    </Typography>
-                                                ))}
-                                            </Box>
-                                        )}
-                                    </Box>
-                                ))}
-                            </Stack>
-                        </Box>
-                    )}
+
                 </Stack>
             </Collapse>
         </Paper>
@@ -786,58 +695,7 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenVi
                                         <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.disabled' }}>Không có ảnh</Typography>
                                     )}
                                 </Box>
-                                {report.updates?.length > 0 && (
-                                    <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>Lịch sử cập nhật:</Typography>
-                                        <Stack spacing={1}>
-                                            {report.updates.slice().sort((a, b) => b.timestamp - a.timestamp).map((upd, idx) => (
-                                                <Box key={idx} sx={{ p: 1, bgcolor: 'background.paper', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
-                                                    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
-                                                        <Typography variant="caption" sx={{ fontWeight: 700, color: 'primary.main' }}>
-                                                            {formatTime(upd.timestamp)}
-                                                        </Typography>
-                                                        {(upd.traffic_status || upd.trafficStatus) && (
-                                                            <Chip
-                                                                label={getTrafficStatusLabel(upd.traffic_status || upd.trafficStatus)}
-                                                                size="small" color={getTrafficStatusColor(upd.traffic_status || upd.trafficStatus)}
-                                                                variant="outlined" sx={{ height: 18, fontSize: '0.625rem' }}
-                                                            />
-                                                        )}
-                                                    </Stack>
-                                                    <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>{upd.description || 'Không có mô tả'}</Typography>
-                                                    {upd.review_comment && (
-                                                        <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'error.main', fontStyle: 'italic', fontWeight: 600 }}>
-                                                            Reviewer: {upd.review_comment}
-                                                        </Typography>
-                                                    )}
-                                                    {(hasPermission('inundation:edit') || (isEmployee && upd.needs_correction)) && (
-                                                        <Button
-                                                            size="small" startIcon={<IconEdit size={16} />}
-                                                            variant="contained" color="error"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                navigate(`${basePath}/inundation/form?tab=1&id=${point.active_report.id}&name=${encodeURIComponent(point.name)}&edit_update_id=${upd.id}`);
-                                                            }}
-                                                            sx={{ borderRadius: 10, fontSize: '0.7rem', fontWeight: 700, mt: 1, py: 0.2 }}
-                                                        >
-                                                            Sửa nội dung
-                                                        </Button>
-                                                    )}
-                                                    {upd.old_data?.length > 0 && (
-                                                        <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
-                                                            <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary' }}>Dữ liệu cũ:</Typography>
-                                                            {upd.old_data.map((old, oIdx) => (
-                                                                <Typography key={oIdx} variant="caption" sx={{ display: 'block', fontSize: '0.65rem' }}>
-                                                                    • {old.description || 'N/A'} ({old.depth}m)
-                                                                </Typography>
-                                                            ))}
-                                                        </Box>
-                                                    )}
-                                                </Box>
-                                            ))}
-                                        </Stack>
-                                    </Box>
-                                )}
+
                             </Stack>
                         </Box>
                     </Collapse>

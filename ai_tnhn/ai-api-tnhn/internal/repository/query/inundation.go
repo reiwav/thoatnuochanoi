@@ -7,6 +7,7 @@ import (
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/repository"
 	"context"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -39,7 +40,7 @@ func (r *inundationRepo) List(ctx context.Context, filter filter.Filter) ([]*mod
 }
 
 func (r *inundationRepo) UpdateStatus(ctx context.Context, id string, status string) error {
-	update := bson.M{"status": status}
+	update := bson.M{"status": status, "updated_at": time.Now().Unix()}
 	if status == "resolved" || status == "normal" {
 		update["traffic_status"] = ""
 	}
@@ -47,7 +48,12 @@ func (r *inundationRepo) UpdateStatus(ctx context.Context, id string, status str
 }
 
 func (r *inundationRepo) Resolve(ctx context.Context, id string, endTime int64) error {
-	return r.R_UnsafeUpdateByID(ctx, id, bson.M{"$set": bson.M{"status": "resolved", "end_time": endTime, "traffic_status": ""}})
+	return r.R_UnsafeUpdateByID(ctx, id, bson.M{"$set": bson.M{
+		"status":         "resolved",
+		"end_time":       endTime,
+		"traffic_status": "",
+		"updated_at":     time.Now().Unix(),
+	}})
 }
 
 func (r *inundationRepo) Update(ctx context.Context, report *models.InundationReport) error {

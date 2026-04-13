@@ -18,6 +18,7 @@ import { getInundationImageUrl } from 'utils/imageHelper';
 import { getTrafficStatusColor, getTrafficStatusLabel } from 'utils/trafficStatusHelper';
 import { toast } from 'react-hot-toast';
 import useAuthStore from 'store/useAuthStore';
+import { formatDateTime, formatDuration } from 'utils/dataHelper';
 
 const getLatestData = (report) => {
     if (!report) return null;
@@ -65,7 +66,7 @@ const getLatestData = (report) => {
     };
 };
 
-const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, handleOpenViewer, navigate, isMobile, fetchPoints }) => {
+const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate, isMobile, fetchPoints }) => {
     const [open, setOpen] = useState(point.status === 'active');
     const latest = useMemo(() => getLatestData(point.active_report || point.last_report), [point]);
     const [commentInput, setCommentInput] = useState('');
@@ -168,12 +169,20 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                                         {latest ? `${latest.length || 0}m x ${latest.width || 0}m x ${latest.depth || 0}m` : '-'}
                                     </Typography>
                                 </Grid>
+                                    <Typography variant="caption" color="text.secondary" display="block">Bắt đầu:</Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                                        {latest ? formatDateTime(latest.start_time) : '-'}
+                                    </Typography>
+                                </Grid>
                                 <Grid item xs={6}>
-                                    <Typography variant="caption" color="text.secondary" display="block">Cập nhật:</Typography>
+                                    <Typography variant="caption" color="text.secondary" display="block">Cập nhật lúc:</Typography>
                                     <Typography variant="caption" color={point.status === 'active' ? "error" : "text.secondary"} sx={{ fontWeight: 700 }}>
                                         {point.status === 'active'
-                                            ? `${formatTime(latest?.newest_ts)} (${!latest?.oldest_ts || Number(latest?.oldest_ts) === Number(latest?.newest_ts) ? '00' : getDuration(latest?.oldest_ts, latest?.newest_ts)})`
-                                            : `${getDuration(point.start_time || latest?.start_time, point.end_time || latest?.end_time)}`}
+                                            ? `${formatDateTime(point.updated_at || latest?.newest_ts)}`
+                                            : `Kết thúc: ${formatDateTime(point.end_time || latest?.end_time)}`}
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ fontWeight: 800, display: 'block', color: 'primary.main' }}>
+                                        Tổng: {formatDuration(point.start_time || latest?.start_time, point.end_time || latest?.end_time)}
                                     </Typography>
                                 </Grid>
                             </Grid>
@@ -315,17 +324,14 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                                         </Typography>
                                     </Grid>
                                     <Grid item xs={12} sm={6}>
-                                        <Typography variant="body2" color="text.secondary">Thời gian ngập:</Typography>
                                         <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                            {`Bắt đầu: ${formatTime(point.start_time || latest?.start_time)}`}
+                                            {`Bắt đầu: ${formatDateTime(point.start_time || latest?.start_time)}`}
                                         </Typography>
                                         <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                            {point.status === 'active' ? 'Đang diễn ra' : `Kết thúc: ${formatTime(point.end_time || latest?.end_time)}`}
+                                            {point.status === 'active' ? `Cập nhật: ${formatDateTime(point.updated_at || latest?.newest_ts)}` : `Kết thúc: ${formatDateTime(point.end_time || latest?.end_time)}`}
                                         </Typography>
-                                        <Typography variant="caption" color={point.status === 'active' ? "error" : "text.secondary"} sx={{ fontWeight: 600, display: 'block' }}>
-                                            {point.status === 'active'
-                                                ? `Cập nhật lúc: ${formatTime(latest?.newest_ts)} (${!latest?.oldest_ts || Number(latest?.oldest_ts) === Number(latest?.newest_ts) ? '00' : getDuration(latest?.oldest_ts, latest?.newest_ts)})`
-                                                : `Tổng thời gian: ${getDuration(point.start_time || latest?.start_time, point.end_time || latest?.end_time)}`}
+                                        <Typography variant="caption" sx={{ fontWeight: 800, display: 'block', color: 'primary.main' }}>
+                                            Tổng thời gian: {formatDuration(point.start_time || latest?.start_time, point.end_time || latest?.end_time)}
                                         </Typography>
                                     </Grid>
                                 </Grid>
@@ -389,7 +395,7 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
     );
 };
 
-const CollapsibleHistoryRow = ({ report, organizations, formatTime, getDuration, handleOpenViewer, navigate, isMobile, fetchHistory }) => {
+const CollapsibleHistoryRow = ({ report, organizations, handleOpenViewer, navigate, isMobile, fetchHistory }) => {
     const [open, setOpen] = useState(report.status === 'active');
     const [commentInput, setCommentInput] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -461,9 +467,12 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, getDuration,
                             <Grid container spacing={2} sx={{ mb: 2 }}>
                                 <Grid item xs={6}>
                                     <Typography variant="caption" color="text.secondary" display="block" sx={{ fontWeight: 700, mb: 0.5 }}>THỜI GIAN:</Typography>
-                                    <Typography variant="caption" sx={{ fontWeight: 700, display: 'block', color: 'primary.main' }}>Bắt đầu: {formatTime(report.start_time)}</Typography>
+                                    <Typography variant="caption" sx={{ fontWeight: 700, display: 'block', color: 'primary.main' }}>Bắt đầu: {formatDateTime(report.start_time)}</Typography>
                                     <Typography variant="caption" sx={{ fontWeight: 700, display: 'block', color: report.status === 'active' ? 'error.main' : 'success.main' }}>
-                                        {report.status === 'resolved' ? `Kết thúc: ${formatTime(report.end_time)}` : 'Đang ngập'}
+                                        {report.status === 'resolved' ? `Kết thúc: ${formatDateTime(report.end_time)}` : `Cập nhật: ${formatDateTime(report.updated_at || report.timestamp)}`}
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ fontWeight: 800, display: 'block', color: 'secondary.main' }}>
+                                        Tổng: {formatDuration(report.start_time, report.end_time)}
                                     </Typography>
                                 </Grid>
                                 <Grid item xs={6}>
@@ -512,8 +521,15 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, getDuration,
                     <Typography variant="body2" sx={{ fontWeight: 800, color: 'primary.dark' }}>{report.street_name}</Typography>
                 </TableCell>
                 <TableCell><Typography variant="body2" color="primary">{organizations.find(o => o.id === report.org_id)?.name || report.org_id}</Typography></TableCell>
-                <TableCell><Typography variant="body2">{formatTime(report.start_time)}</Typography></TableCell>
-                <TableCell><Typography variant="body2">{report.end_time ? formatTime(report.end_time) : '-'}</Typography></TableCell>
+                <TableCell sx={{ p: { xs: 1, md: 2 } }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{formatDateTime(report.start_time)}</Typography>
+                </TableCell>
+                <TableCell sx={{ p: { xs: 1, md: 2 } }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{report.status === 'resolved' ? formatDateTime(report.end_time) : formatDateTime(report.updated_at || report.timestamp)}</Typography>
+                </TableCell>
+                <TableCell sx={{ p: { xs: 1, md: 2 } }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{formatDuration(report.start_time, report.end_time)}</Typography>
+                </TableCell>
                 <TableCell><Chip label={report.status === 'active' ? 'Đang ngập' : 'Đã kết thúc'} color={report.status === 'active' ? 'error' : 'success'} size="small" sx={{ fontWeight: 700 }} /></TableCell>
                 <TableCell align="right" sx={{ p: { xs: 1, md: 2 } }}>
                     <Button size="small" variant="text" onClick={() => navigate(`/admin/inundation/form?id=${report.id}&tab=1&readonly=true`)}>Xem chi tiết</Button>
@@ -530,26 +546,16 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, getDuration,
                                 {isMobile && (
                                     <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
                                         <Chip label={report.status === 'active' ? 'Đang ngập' : 'Đã kết thúc'} color={report.status === 'active' ? 'error' : 'success'} size="small" sx={{ fontWeight: 700 }} />
-                                        <Typography variant="body2" sx={{ mt: 0.5 }}><strong>Bắt đầu:</strong> {formatTime(report.start_time)}</Typography>
+                                        <Typography variant="body2" sx={{ mt: 0.5 }}><strong>Bắt đầu:</strong> {formatDateTime(report.start_time)}</Typography>
                                     </Stack>
                                 )}
                                 <Grid container spacing={2}>
                                     <Grid item xs={12} sm={6}>
                                         <Typography variant="body2" color="text.secondary">Thời gian ngập:</Typography>
-                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{`Bắt đầu: ${formatTime(report.start_time)}`}</Typography>
-                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{report.status === 'resolved' ? `Kết thúc: ${formatTime(report.end_time)}` : 'Đang diễn ra'}</Typography>
-                                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block' }}>
-                                            Tổng thời gian: {(() => {
-                                                if (report.status === 'active') {
-                                                    const sortedUpdates = report.updates && report.updates.length > 0
-                                                        ? [...report.updates].sort((a, b) => b.timestamp - a.timestamp)
-                                                        : [];
-                                                    const newest = sortedUpdates.length > 0 ? sortedUpdates[0].timestamp : report.start_time;
-                                                    const oldest = sortedUpdates.length > 0 ? sortedUpdates[sortedUpdates.length - 1].timestamp : report.start_time;
-                                                    return getDuration(oldest, newest);
-                                                }
-                                                return getDuration(report.start_time, report.end_time);
-                                            })()}
+                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{`Bắt đầu: ${formatDateTime(report.start_time)}`}</Typography>
+                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{report.status === 'resolved' ? `Kết thúc: ${formatDateTime(report.end_time)}` : `Cập nhật: ${formatDateTime(report.updated_at || report.timestamp)}`}</Typography>
+                                        <Typography variant="caption" sx={{ fontWeight: 800, display: 'block', mt: 0.5, color: 'primary.main' }}>
+                                            Tổng thời gian: {formatDuration(report.start_time, report.end_time)}
                                         </Typography>
                                     </Grid>
                                     <Grid item xs={12} sm={6}>
@@ -692,19 +698,7 @@ const InundationAdminList = () => {
         });
     }, [points, searchQuery, statusFilter, trafficFilter]);
 
-    const formatTime = (ts) => {
-        if (!ts) return '-';
-        return new Date(ts * 1000).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
-    };
 
-    const getDuration = (startTime, endTime) => {
-        if (!startTime) return '';
-        const end = endTime || Math.floor(Date.now() / 1000);
-        const diff = end - startTime;
-        const h = Math.floor(diff / 3600);
-        const m = Math.floor((diff % 3600) / 60);
-        return h > 0 ? `${h}h ${m}p` : `${m}p`;
-    };
 
     const handleOpenViewer = (imgs, idx = 0) => {
         if (!imgs || imgs.length === 0) return;
@@ -825,8 +819,6 @@ const InundationAdminList = () => {
                                             key={point.id}
                                             point={point}
                                             organizations={organizations}
-                                            formatTime={formatTime}
-                                            getDuration={getDuration}
                                             handleOpenViewer={handleOpenViewer}
                                             navigate={navigate}
                                             isMobile={isMobile}
@@ -856,8 +848,6 @@ const InundationAdminList = () => {
                                                     key={point.id}
                                                     point={point}
                                                     organizations={organizations}
-                                                    formatTime={formatTime}
-                                                    getDuration={getDuration}
                                                     handleOpenViewer={handleOpenViewer}
                                                     navigate={navigate}
                                                     isMobile={isMobile}
@@ -885,8 +875,6 @@ const InundationAdminList = () => {
                                             key={report.id}
                                             report={report}
                                             organizations={organizations}
-                                            formatTime={formatTime}
-                                            getDuration={getDuration}
                                             handleOpenViewer={handleOpenViewer}
                                             navigate={navigate}
                                             isMobile={isMobile}
@@ -915,7 +903,8 @@ const InundationAdminList = () => {
                                         <TableCell sx={{ fontWeight: 700 }}>Tuyến đường / Điểm</TableCell>
                                         <TableCell sx={{ fontWeight: 700 }}>Đơn vị quản lý</TableCell>
                                         <TableCell sx={{ fontWeight: 700 }}>Bắt đầu</TableCell>
-                                        <TableCell sx={{ fontWeight: 700 }}>Kết thúc</TableCell>
+                                        <TableCell sx={{ fontWeight: 700 }}>Cập nhật / Kết thúc</TableCell>
+                                        <TableCell sx={{ fontWeight: 700 }}>Tổng thời gian</TableCell>
                                         <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>
                                         <TableCell sx={{ fontWeight: 700 }} align="right">Thao tác</TableCell>
                                     </TableRow>
@@ -928,8 +917,6 @@ const InundationAdminList = () => {
                                                     key={report.id}
                                                     report={report}
                                                     organizations={organizations}
-                                                    formatTime={formatTime}
-                                                    getDuration={getDuration}
                                                     handleOpenViewer={handleOpenViewer}
                                                     navigate={navigate}
                                                     isMobile={isMobile}

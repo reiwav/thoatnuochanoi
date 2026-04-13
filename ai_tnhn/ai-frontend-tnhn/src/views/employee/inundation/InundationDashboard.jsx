@@ -62,6 +62,7 @@ import authApi from 'api/auth';
 
 import { getInundationImageUrl } from 'utils/imageHelper';
 import { getTrafficStatusColor, getTrafficStatusLabel } from 'utils/trafficStatusHelper';
+import { formatDateTime, formatDuration } from 'utils/dataHelper';
 
 const getLatestData = (report) => {
     if (!report) return null;
@@ -106,7 +107,7 @@ const getLatestData = (report) => {
     };
 };
 
-const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, handleOpenViewer, navigate, isMobile, basePath, hasPermission, isEmployee }) => {
+const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate, isMobile, basePath, hasPermission, isEmployee }) => {
     const [open, setOpen] = useState(point.status === 'active');
     const latest = useMemo(() => getLatestData(point.active_report || point.last_report), [point]);
     
@@ -215,15 +216,15 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                             </Typography>
                         </Grid>
                         <Grid item xs={12} sm={6}>
-                            <Typography variant="body2" color="text.secondary">Thời gian:</Typography>
+                            <Typography variant="body2" color="text.secondary">Thời gian bắt đầu:</Typography>
                             <Typography variant="body1" sx={{ fontWeight: 700 }}>
-                                {latest ? formatTime(latest.start_time) : '-'}
+                                {latest ? formatDateTime(latest.start_time) : '-'}
                             </Typography>
                              {latest && (
                                 <Typography variant="caption" color={point.status === 'active' ? "error" : "text.secondary"} sx={{ fontWeight: 700, display: 'block', mt: 0.5, fontSize: '0.8rem' }}>
                                     {point.status === 'active'
-                                        ? `Cập nhật: ${formatTime(latest.newest_ts)} (${!latest.oldest_ts || Number(latest.oldest_ts) === Number(latest.newest_ts) ? '00' : getDuration(latest.oldest_ts, latest.newest_ts)})`
-                                        : `Lần cuối: ${getDuration(latest.start_time)} trước`}
+                                        ? `Cập nhật lúc: ${formatDateTime(point.updated_at || latest.newest_ts)} (Đã ngập ${formatDuration(latest.start_time)})`
+                                        : `Đã kết thúc`}
                                 </Typography>
                             )}
                         </Grid>
@@ -429,17 +430,15 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                                         </Typography>
                                     </Grid>
                                     <Grid item xs={12} sm={6}>
-                                        <Typography variant="body2" color="text.secondary">Thời gian bắt đầu:</Typography>
-                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                            {latest ? formatTime(latest.start_time) : '-'}
-                                        </Typography>
-                                         {latest && (
-                                            <Typography variant="caption" color={point.status === 'active' ? "error" : "text.secondary"} sx={{ fontWeight: 600, display: 'block' }}>
+                                        <Typography variant="body2" color="text.secondary">Thời gian:</Typography>
+                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{`Bắt đầu: ${formatDateTime(latest.start_time)}`}</Typography>
+                                        <Grid item xs={12}>
+                                             <Typography variant="caption" color={point.status === 'active' ? "error" : "text.secondary"} sx={{ fontWeight: 700, display: 'block', mt: 0.5, fontSize: '0.8rem' }}>
                                                 {point.status === 'active'
-                                                    ? `Cập nhật lúc: ${formatTime(latest.newest_ts)} (${!latest.oldest_ts || Number(latest.oldest_ts) === Number(latest.newest_ts) ? '00' : getDuration(latest.oldest_ts, latest.newest_ts)})`
-                                                    : `Lần cuối: ${getDuration(latest.start_time)} trước`}
+                                                    ? `Cập nhật lúc: ${formatDateTime(point.updated_at || latest.newest_ts)} (Đã ngập ${formatDuration(latest.start_time)})`
+                                                    : `Đã kết thúc`}
                                             </Typography>
-                                        )}
+                                        </Grid>
                                     </Grid>
                                 </Grid>
                                 <Box>
@@ -469,8 +468,8 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
     );
 };
 
-const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenViewer, navigate, isMobile, basePath, getDuration, hasPermission, isEmployee }) => {
-    const [open, setOpen] = useState(report.status === 'active');
+const CollapsibleHistoryRow = ({ report, organizations, handleOpenViewer, navigate, isMobile, basePath, hasPermission, isEmployee }) => {
+    const [open, setOpen] = useState(false);
     const latest = useMemo(() => getLatestData(report), [report]);
 
     const renderCard = () => (
@@ -521,20 +520,10 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenVi
                     <Grid container spacing={2}>
                         <Grid item xs={12} sm={6}>
                             <Typography variant="body2" color="text.secondary">Thời gian ngập:</Typography>
-                            <Typography variant="body1" sx={{ fontWeight: 700 }}>{`Bắt đầu: ${formatTime(report.start_time)}`}</Typography>
-                            <Typography variant="body1" sx={{ fontWeight: 700 }}>{report.status === 'resolved' ? `Kết thúc: ${formatTime(report.end_time)}` : 'Đang diễn ra'}</Typography>
+                            <Typography variant="body1" sx={{ fontWeight: 700 }}>{`Bắt đầu: ${formatDateTime(report.start_time)}`}</Typography>
+                            <Typography variant="body1" sx={{ fontWeight: 700 }}>{report.status === 'resolved' ? `Kết thúc: ${formatDateTime(report.end_time)}` : `Cập nhật: ${formatDateTime(report.updated_at || latest.newest_ts)}`}</Typography>
                              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, display: 'block', mt: 0.5, fontSize: '0.8rem' }}>
-                                Tổng thời gian: {(() => {
-                                    if (report.status === 'active') {
-                                        const sorted = report.updates && Array.isArray(report.updates) 
-                                            ? [...report.updates].sort((a, b) => b.timestamp - a.timestamp) 
-                                            : [];
-                                        const newest = sorted.length > 0 ? sorted[0].timestamp : report.start_time;
-                                        const oldest = sorted.length > 0 ? sorted[sorted.length - 1].timestamp : report.start_time;
-                                        return Number(oldest) === Number(newest) ? '00' : getDuration(oldest, newest);
-                                    }
-                                    return getDuration(report.start_time, report.end_time);
-                                })()}
+                                Tổng thời gian: {formatDuration(report.start_time, report.end_time)}
                             </Typography>
                         </Grid>
                         <Grid item xs={12} sm={6}>
@@ -598,11 +587,14 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenVi
                         {organizations.find((o) => o.id === report.org_id)?.name || report.org_id}
                     </Typography>
                 </TableCell>
-                <TableCell>
-                    <Typography variant="body2">{formatTime(report.start_time)}</Typography>
+                <TableCell sx={{ p: 2, display: { xs: 'none', md: 'table-cell' } }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{formatDateTime(report.start_time)}</Typography>
                 </TableCell>
-                <TableCell>
-                    <Typography variant="body2">{report.end_time ? formatTime(report.end_time) : '-'}</Typography>
+                <TableCell sx={{ p: 2, display: { xs: 'none', md: 'table-cell' } }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{report.status === 'resolved' ? formatDateTime(report.end_time) : formatDateTime(report.updated_at || latest.newest_ts)}</Typography>
+                </TableCell>
+                <TableCell sx={{ p: 2, display: { xs: 'none', md: 'table-cell' } }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{formatDuration(report.start_time, report.end_time)}</Typography>
                 </TableCell>
                 <TableCell>
                     <Chip
@@ -630,31 +622,14 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenVi
                                     <Grid item xs={12} sm={6}>
                                         <Typography variant="body2" color="text.secondary">Thời gian ngập:</Typography>
                                         <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                            {`Bắt đầu: ${formatTime(report.start_time)}`}
+                                            {`Bắt đầu: ${formatDateTime(report.start_time)}`}
                                         </Typography>
                                         <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                            {report.status === 'resolved' ? `Kết thúc: ${formatTime(report.end_time)}` : 'Đang diễn ra'}
+                                            {report.status === 'resolved' ? `Kết thúc: ${formatDateTime(report.end_time)}` : `Cập nhật: ${formatDateTime(report.updated_at || latest.newest_ts)}`}
                                         </Typography>
-                                         <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block' }}>
-                                            Tổng thời gian: {(() => {
-                                                if (report.status === 'active') {
-                                                    const sorted = report.updates && Array.isArray(report.updates) 
-                                                        ? [...report.updates].sort((a, b) => b.timestamp - a.timestamp) 
-                                                        : [];
-                                                    const newest = sorted.length > 0 ? sorted[0].timestamp : report.start_time;
-                                                    const oldest = sorted.length > 0 ? sorted[sorted.length - 1].timestamp : report.start_time;
-                                                    return Number(oldest) === Number(newest) ? '00' : getDuration(oldest, newest);
-                                                }
-                                                return getDuration(report.start_time, report.end_time);
-                                            })()}
+                                         <Typography variant="caption" sx={{ fontWeight: 800, display: 'block', mt: 0.5, color: 'primary.main' }}>
+                                            Tổng thời gian: {formatDuration(report.start_time, report.end_time)}
                                         </Typography>
-                                    </Grid>
-                                    <Grid item xs={12} sm={6}>
-                                        <Typography variant="body2" color="text.secondary">Kích thước ngập:</Typography>
-                                        <Typography
-                                            variant="body2"
-                                            sx={{ fontWeight: 600 }}
-                                        >{`${latest?.length || 0}m x ${latest?.width || 0}m x ${latest?.depth || 0}m`}</Typography>
                                     </Grid>
                                     <Grid item xs={12} sm={6}>
                                         <Typography variant="body2" color="text.secondary">Giao thông:</Typography>
@@ -855,19 +830,7 @@ const InundationDashboard = () => {
         });
     }, [points, activeTab, searchQuery, historyStatus, historyTrafficStatus]);
 
-    const formatTime = (ts) => {
-        if (!ts) return 'N/A';
-        return new Date(ts * 1000).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
-    };
 
-    const getDuration = (startTime, endTime) => {
-        if (!startTime) return '';
-        const end = endTime || Math.floor(Date.now() / 1000);
-        const diff = end - startTime;
-        const h = Math.floor(diff / 3600);
-        const m = Math.floor((diff % 3600) / 60);
-        return h > 0 ? `${h}h ${m}p` : `${m}p`;
-    };
 
     const handleLogout = async () => {
         try {
@@ -1016,8 +979,9 @@ const InundationDashboard = () => {
                                 <TableCell sx={{ width: 40 }} />
                                 <TableCell sx={{ fontWeight: 700 }}>Tuyến đường / Điểm</TableCell>
                                 <TableCell sx={{ fontWeight: 700 }}>Đơn vị quản lý</TableCell>
-                                <TableCell sx={{ fontWeight: 700 }}>Bắt đầu</TableCell>
-                                <TableCell sx={{ fontWeight: 700 }}>Kết thúc</TableCell>
+                                <TableCell sx={{ fontWeight: 700, display: { xs: 'none', md: 'table-cell' } }}>Bắt đầu</TableCell>
+                                <TableCell sx={{ fontWeight: 700, display: { xs: 'none', md: 'table-cell' } }}>Cập nhật / Kết thúc</TableCell>
+                                <TableCell sx={{ fontWeight: 700, display: { xs: 'none', md: 'table-cell' } }}>Tổng thời gian</TableCell>
                                 <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>
                                 <TableCell sx={{ fontWeight: 700 }} align="right">Thao tác</TableCell>
                             </TableRow>
@@ -1041,8 +1005,6 @@ const InundationDashboard = () => {
                                         key={report.id}
                                         report={report}
                                         organizations={organizations}
-                                        formatTime={formatTime}
-                                        getDuration={getDuration}
                                         handleOpenViewer={handleOpenViewer}
                                         navigate={navigate}
                                         isMobile={isMobile}
@@ -1255,13 +1217,12 @@ const InundationDashboard = () => {
                                                 key={point.id}
                                                 point={point}
                                                 organizations={organizations}
-                                                formatTime={formatTime}
-                                                getDuration={getDuration}
                                                 handleOpenViewer={handleOpenViewer}
                                                 navigate={navigate}
                                                 isMobile={isMobile}
                                                 basePath={basePath}
                                                 hasPermission={hasPermission}
+                                                isEmployee={isEmployee}
                                             />
                                         ))}
                                 </TableBody>

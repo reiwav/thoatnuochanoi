@@ -116,7 +116,7 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
             if (values.width) fd.append('width', values.width);
             if (values.depth) fd.append('depth', values.depth);
             if (values.traffic_status) fd.append('traffic_status', values.traffic_status);
-            
+
             if (isCorrectionMode) {
                 if (selectedReport.type === 'start') {
                     // Editing the MAIN report record
@@ -181,11 +181,11 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
                 <TextField
                     select
                     fullWidth label="Chọn điểm ngập" name="point_id"
-                    value={values.point_id || ''} 
+                    value={values.point_id || ''}
                     onChange={(e) => {
                         const p = points.find(p => p.id === e.target.value);
-                        setValues(prev => ({ 
-                            ...prev, 
+                        setValues(prev => ({
+                            ...prev,
                             point_id: e.target.value,
                             street_name: p ? p.street_name : ''
                         }));
@@ -295,17 +295,17 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
             <Button
                 fullWidth size="large" variant="contained"
                 color={isCorrectionMode ? 'error' : (resolveOnUpdate ? 'error' : 'secondary')}
-                onClick={handleSubmit} 
+                onClick={handleSubmit}
                 disabled={loading || (isCorrectionMode ? false : (selectedReport ? !hasPermission('inundation:edit') : !hasPermission('inundation:create')))}
                 startIcon={loading ? <CircularProgress size={17} color="inherit" /> : <IconSend size={17} />}
                 sx={{ borderRadius: 100, py: 1.4, fontWeight: 700, mt: 1 }}
             >
                 {loading ? 'Đang xử lý...' : (
-                    isCorrectionMode 
-                    ? 'Lưu thay đổi chỉnh sửa'
-                    : (!(selectedReport ? hasPermission('inundation:edit') : hasPermission('inundation:create')) 
-                        ? 'Không có quyền thực hiện' 
-                        : (resolveOnUpdate ? 'Xác nhận Kết thúc đợt ngập' : (selectedReport ? 'Cập nhật tình hình' : 'Gửi báo cáo')))
+                    isCorrectionMode
+                        ? 'Lưu thay đổi chỉnh sửa'
+                        : (!(selectedReport ? hasPermission('inundation:edit') : hasPermission('inundation:create'))
+                            ? 'Không có quyền thực hiện'
+                            : (resolveOnUpdate ? 'Xác nhận Kết thúc đợt ngập' : (selectedReport ? 'Cập nhật tình hình' : 'Gửi báo cáo')))
                 )}
             </Button>
         </Stack>

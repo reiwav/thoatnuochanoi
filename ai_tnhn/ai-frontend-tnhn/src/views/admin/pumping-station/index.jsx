@@ -10,15 +10,120 @@ import IconButton from '@mui/material/IconButton';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import Tooltip from '@mui/material/Tooltip';
-import { IconEdit, IconTrash, IconPlus, IconHistory } from '@tabler/icons-react';
+import { IconEdit, IconTrash, IconPlus, IconHistory, IconChevronDown, IconChevronUp } from '@tabler/icons-react';
+import dayjs from 'dayjs';
+import { CircularProgress, Box, Typography, Collapse, Grid, Divider } from '@mui/material';
 import pumpingStationApi from 'api/pumpingStation';
 import organizationApi from 'api/organization';
 import PumpingStationDialog from './PumpingStationDialog';
 import PumpingStationHistoryDialog from './PumpingStationHistoryDialog';
 import PumpingStationReport from './PumpingStationReport';
 import { toast } from 'react-hot-toast';
-import { CircularProgress, Box, Typography } from '@mui/material';
 import useAuthStore from 'store/useAuthStore';
+
+const PumpingStationRow = ({ item, index, getOrgNames, handleHistory, handleEdit, handleDelete, hasPermission }) => {
+    const [open, setOpen] = useState(false);
+    const lastReport = item.last_report;
+
+    return (
+        <>
+            <TableRow sx={{ '& > *': { borderBottom: 'unset' } }}>
+                <TableCell>
+                    <IconButton size="small" onClick={() => setOpen(!open)}>
+                        {open ? <IconChevronUp size={18} /> : <IconChevronDown size={18} />}
+                    </IconButton>
+                </TableCell>
+                <TableCell>{index + 1}</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>{item.name}</TableCell>
+                <TableCell>{item.address || '-'}</TableCell>
+                <TableCell>{item.pump_count}</TableCell>
+                <TableCell>{item.is_auto ? 'Có' : 'Không'}</TableCell>
+                <TableCell>{getOrgNames(item.org_id)}</TableCell>
+                <TableCell align="center">
+                    <Stack direction="row" spacing={1} justifyContent="center">
+                        <Tooltip title="Lịch sử vận hành">
+                            <IconButton color="info" onClick={() => handleHistory(item)}>
+                                <IconHistory size="18" />
+                            </IconButton>
+                        </Tooltip>
+                        {hasPermission('trambom:edit') && (
+                            <Tooltip title="Chỉnh sửa">
+                                <IconButton color="primary" onClick={() => handleEdit(item)}>
+                                    <IconEdit size="18" />
+                                </IconButton>
+                            </Tooltip>
+                        )}
+                        {hasPermission('trambom:delete') && (
+                            <Tooltip title="Xóa">
+                                <IconButton color="error" onClick={() => handleDelete(item.id)}>
+                                    <IconTrash size={18} />
+                                </IconButton>
+                            </Tooltip>
+                        )}
+                    </Stack>
+                </TableCell>
+            </TableRow>
+            <TableRow>
+                <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={8}>
+                    <Collapse in={open} timeout="auto" unmountOnExit>
+                        <Box sx={{ m: 1, p: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'grey.100' }}>
+                            <Typography variant="h6" gutterBottom sx={{ fontWeight: 700, color: 'primary.main', mb: 2 }}>
+                                Trạng thái vận hành mới nhất
+                            </Typography>
+                            {lastReport ? (
+                                <Grid container spacing={3}>
+                                    <Grid item xs={12} sm={4}>
+                                        <Box sx={{ p: 1.5, bgcolor: 'white', borderRadius: 2, border: '1px solid', borderColor: 'success.light', textAlign: 'center' }}>
+                                            <Typography variant="caption" color="success.main" sx={{ fontWeight: 800, display: 'block' }}>VẬN HÀNH</Typography>
+                                            <Typography variant="h4" sx={{ fontWeight: 900 }}>{lastReport.operating_count}</Typography>
+                                        </Box>
+                                    </Grid>
+                                    <Grid item xs={12} sm={4}>
+                                        <Box sx={{ p: 1.5, bgcolor: 'white', borderRadius: 2, border: '1px solid', borderColor: 'error.light', textAlign: 'center' }}>
+                                            <Typography variant="caption" color="error.main" sx={{ fontWeight: 800, display: 'block' }}>ĐANG ĐÓNG</Typography>
+                                            <Typography variant="h4" sx={{ fontWeight: 900 }}>{lastReport.closed_count}</Typography>
+                                        </Box>
+                                    </Grid>
+                                    <Grid item xs={12} sm={4}>
+                                        <Box sx={{ p: 1.5, bgcolor: 'white', borderRadius: 2, border: '1px solid', borderColor: 'warning.light', textAlign: 'center' }}>
+                                            <Typography variant="caption" color="warning.main" sx={{ fontWeight: 800, display: 'block' }}>BẢO DƯỠNG</Typography>
+                                            <Typography variant="h4" sx={{ fontWeight: 900 }}>{lastReport.maintenance_count}</Typography>
+                                        </Box>
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Divider sx={{ my: 1, borderStyle: 'dashed' }} />
+                                        <Grid container sx={{ mt: 1 }}>
+                                            <Grid item xs={12} sm={8}>
+                                                <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', display: 'block' }}>GHI CHÚ:</Typography>
+                                                <Typography variant="body2" sx={{ fontStyle: 'italic', mt: 0.5 }}>
+                                                    {lastReport.note ? `"${lastReport.note}"` : '(Không có ghi chú)'}
+                                                </Typography>
+                                            </Grid>
+                                            <Grid item xs={12} sm={4} sx={{ textAlign: { sm: 'right' }, mt: { xs: 2, sm: 0 } }}>
+                                                <Typography variant="caption" sx={{ display: 'block', fontWeight: 700, color: 'text.secondary' }}>
+                                                    Cập nhật: {dayjs(lastReport.timestamp * 1000).format('DD/MM/YYYY HH:mm')}
+                                                </Typography>
+                                                <Typography variant="caption" sx={{ display: 'block', fontWeight: 700, color: 'text.disabled' }}>
+                                                    Bởi: {lastReport.user_name}
+                                                </Typography>
+                                            </Grid>
+                                        </Grid>
+                                    </Grid>
+                                </Grid>
+                            ) : (
+                                <Box sx={{ py: 2, textAlign: 'center' }}>
+                                    <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                                        Chưa có dữ liệu vận hành nào được ghi nhận.
+                                    </Typography>
+                                </Box>
+                            )}
+                        </Box>
+                    </Collapse>
+                </TableCell>
+            </TableRow>
+        </>
+    );
+};
 
 const PumpingStationPage = () => {
     const { user: userInfo, hasPermission } = useAuthStore();
@@ -129,50 +234,28 @@ const PumpingStationPage = () => {
                 <Table>
                     <TableHead>
                         <TableRow>
+                            <TableCell sx={{ width: 40 }} />
                             <TableCell>Số TT</TableCell>
                             <TableCell>Tên trạm bơm</TableCell>
                             <TableCell>Địa chỉ</TableCell>
                             <TableCell>Số lượng bơm</TableCell>
                             <TableCell>Tự động</TableCell>
                             <TableCell>Đơn vị quản lý</TableCell>
-                            <TableCell>Đơn vị phối hợp</TableCell>
                             <TableCell align="center">Thao tác</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {(data || []).map((item, index) => (
-                            <TableRow key={item.id}>
-                                <TableCell>{index + 1}</TableCell>
-                                <TableCell sx={{ fontWeight: 600 }}>{item.name}</TableCell>
-                                <TableCell>{item.address}</TableCell>
-                                <TableCell>{item.pump_count}</TableCell>
-                                <TableCell>{item.is_auto ? 'Có' : 'Không'}</TableCell>
-                                <TableCell>{getOrgNames(item.org_id)}</TableCell>
-                                <TableCell>{getOrgNames(item.shared_org_ids)}</TableCell>
-                                <TableCell align="center">
-                                    <Stack direction="row" spacing={1} justifyContent="center">
-                                        <Tooltip title="Lịch sử vận hành">
-                                            <IconButton color="info" onClick={() => handleHistory(item)}>
-                                                <IconHistory size="20" />
-                                            </IconButton>
-                                        </Tooltip>
-                                        {hasPermission('trambom:edit') && (
-                                            <Tooltip title="Chỉnh sửa">
-                                                <IconButton color="primary" onClick={() => handleEdit(item)}>
-                                                    <IconEdit size="20" />
-                                                </IconButton>
-                                            </Tooltip>
-                                        )}
-                                        {hasPermission('trambom:delete') && (
-                                            <Tooltip title="Xóa">
-                                                <IconButton color="error" onClick={() => handleDelete(item.id)}>
-                                                    <IconTrash size={20} />
-                                                </IconButton>
-                                            </Tooltip>
-                                        )}
-                                    </Stack>
-                                </TableCell>
-                            </TableRow>
+                            <PumpingStationRow
+                                key={item.id}
+                                item={item}
+                                index={index}
+                                getOrgNames={getOrgNames}
+                                handleHistory={handleHistory}
+                                handleEdit={handleEdit}
+                                handleDelete={handleDelete}
+                                hasPermission={hasPermission}
+                            />
                         ))}
                     </TableBody>
                 </Table>

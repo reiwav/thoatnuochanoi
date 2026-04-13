@@ -79,6 +79,20 @@ func (h *PumpingStationHandler) Delete(c *gin.Context) {
 	h.SendData(c, true)
 }
 
+func (h *PumpingStationHandler) Get(c *gin.Context) {
+	id := c.Param("id")
+	res, err := h.service.GetByID(c.Request.Context(), id)
+	if err != nil {
+		h.SendError(c, err)
+		return
+	}
+	if res == nil {
+		h.SendError(c, web.NotFound("trạm bơm không tồn tại"))
+		return
+	}
+	h.SendData(c, res)
+}
+
 func (h *PumpingStationHandler) List(c *gin.Context) {
 	f := filter.NewBasicFilter()
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "0"))
@@ -113,7 +127,7 @@ func (h *PumpingStationHandler) List(c *gin.Context) {
 		// Employee view: Only their assigned station
 		if user.UserID != "" {
 			// Fetch user details to get assignment (or we could cache it in Token but let's stick to profile for now if needed)
-			// Actually, ClientCache should have the assignment if we want to be fast, 
+			// Actually, ClientCache should have the assignment if we want to be fast,
 			// but for now let's just use what's available.
 			// Wait, the previous logic used user.AssignedPumpingStationID.
 			// I should probably fetch the user profile if it's an employee.

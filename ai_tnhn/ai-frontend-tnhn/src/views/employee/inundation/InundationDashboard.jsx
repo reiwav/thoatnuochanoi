@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import React from 'react';
+import dayjs from 'dayjs';
 import {
     Box,
     Typography,
@@ -49,7 +50,9 @@ import {
     IconDotsVertical,
     IconPlus,
     IconEye,
-    IconCheck
+    IconCheck,
+    IconHistory,
+    IconTools
 } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 import inundationApi from 'api/inundation';
@@ -62,6 +65,7 @@ import authApi from 'api/auth';
 
 import { getInundationImageUrl } from 'utils/imageHelper';
 import { getTrafficStatusColor, getTrafficStatusLabel } from 'utils/trafficStatusHelper';
+import { formatDateTime, formatDuration } from 'utils/dataHelper';
 
 const getLatestData = (report) => {
     if (!report) return null;
@@ -69,7 +73,7 @@ const getLatestData = (report) => {
 
     const updates = report.updates && Array.isArray(report.updates) ? report.updates : [];
     const sortedUpdates = [...updates].sort((a, b) => b.timestamp - a.timestamp);
-    
+
     // Determine timestamps
     if (sortedUpdates.length > 0) {
         const newest = sortedUpdates[0];
@@ -106,10 +110,130 @@ const getLatestData = (report) => {
     };
 };
 
-const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, handleOpenViewer, navigate, isMobile, basePath, hasPermission, isEmployee }) => {
+const CollapsiblePumpingStationRow = ({ station, isMobile, navigate, basePath }) => {
+    const [open, setOpen] = useState(false);
+    const lastReport = station.last_report;
+    const theme = useTheme();
+
+    return (
+        <Paper 
+            elevation={0} 
+            sx={{ 
+                p: 2, 
+                mb: 1.5, 
+                border: '1px solid', 
+                borderColor: 'divider', 
+                borderRadius: 4, 
+                bgcolor: 'background.paper',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+                '&:hover': { boxShadow: '0 4px 20px rgba(0,0,0,0.08)' },
+                transition: 'all 0.3s ease'
+            }}
+        >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: lastReport ? 1 : 0, gap: 1 }}>
+                <Box sx={{ flex: 1 }}>
+                    <Typography
+                        variant="h4"
+                        onClick={() => navigate(`${basePath}/inundation?activeTab=1&assignedStationId=${station.id}`)}
+                        sx={{
+                            fontWeight: 900,
+                            color: 'primary.dark',
+                            mb: 1,
+                            lineHeight: 1.2,
+                            cursor: 'pointer',
+                            '&:hover': { color: 'primary.main' }
+                        }}
+                    >
+                        {station.name}
+                    </Typography>
+                    <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
+                        <Chip
+                            label={`${station.pump_count} máy bơm`}
+                            size="small"
+                            sx={{ fontWeight: 800, bgcolor: 'primary.lighter', color: 'primary.main', height: 24 }}
+                        />
+                        {lastReport ? (
+                             <Chip
+                                label={`Cập nhật: ${formatDateTime(lastReport.timestamp)}`}
+                                size="small"
+                                variant="outlined"
+                                sx={{ fontWeight: 700, height: 24 }}
+                            />
+                        ) : (
+                            <Chip
+                                label="Chưa có báo cáo"
+                                size="small"
+                                variant="outlined"
+                                color="warning"
+                                sx={{ fontWeight: 700, height: 24 }}
+                            />
+                        )}
+                    </Stack>
+                </Box>
+                {lastReport && (
+                    <IconButton size="small" onClick={() => setOpen(!open)} sx={{ mt: -0.5, bgcolor: open ? 'primary.lighter' : 'transparent' }}>
+                        {open ? <IconChevronUp size={22} color={theme.palette.primary.main} /> : <IconChevronDown size={22} />}
+                    </IconButton>
+                )}
+            </Box>
+
+            <Collapse in={open} timeout="auto" unmountOnExit>
+                <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 3, border: '1px solid', borderColor: 'grey.100' }}>
+                    <Grid container spacing={2}>
+                        <Grid item xs={4}>
+                            <Box sx={{ textAlign: 'center' }}>
+                                <Typography variant="caption" color="success.main" sx={{ fontWeight: 800, display: 'block', mb: 0.5 }}>VẬN HÀNH</Typography>
+                                <Typography variant="h3" sx={{ fontWeight: 900, color: 'success.main' }}>{lastReport?.operating_count || 0}</Typography>
+                            </Box>
+                        </Grid>
+                        <Grid item xs={4}>
+                            <Box sx={{ textAlign: 'center' }}>
+                                <Typography variant="caption" color="error.main" sx={{ fontWeight: 800, display: 'block', mb: 0.5 }}>ĐANG ĐÓNG</Typography>
+                                <Typography variant="h3" sx={{ fontWeight: 900, color: 'error.main' }}>{lastReport?.closed_count || 0}</Typography>
+                            </Box>
+                        </Grid>
+                        <Grid item xs={4}>
+                            <Box sx={{ textAlign: 'center' }}>
+                                <Typography variant="caption" color="warning.main" sx={{ fontWeight: 800, display: 'block', mb: 0.5 }}>BẢO DƯỠNG</Typography>
+                                <Typography variant="h3" sx={{ fontWeight: 900, color: 'warning.main' }}>{lastReport?.maintenance_count || 0}</Typography>
+                            </Box>
+                        </Grid>
+                        
+                        {(lastReport?.note || lastReport?.user_name) && (
+                            <Grid item xs={12}>
+                                <Divider sx={{ my: 1.5, borderStyle: 'dashed' }} />
+                                {lastReport?.note && (
+                                    <Box sx={{ mb: 1.5 }}>
+                                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 0.5, textTransform: 'uppercase' }}>Ghi chú vận hành</Typography>
+                                        <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.primary', bgcolor: 'white', p: 1, borderRadius: 1.5, border: '1px solid', borderColor: 'grey.200' }}>
+                                            "{lastReport.note}"
+                                        </Typography>
+                                    </Box>
+                                )}
+                                <Stack direction="row" justifyContent="flex-end" alignItems="center" spacing={1}>
+                                    <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.disabled' }}>
+                                        Người báo cáo:
+                                    </Typography>
+                                    <Chip 
+                                        label={lastReport.user_name} 
+                                        size="small" 
+                                        avatar={<Avatar sx={{ width: 16, height: 16, fontSize: '0.6rem' }}><IconUser size={10} /></Avatar>}
+                                        sx={{ fontWeight: 700, height: 20, fontSize: '0.7rem' }} 
+                                    />
+                                </Stack>
+                            </Grid>
+                        )}
+                    </Grid>
+                </Box>
+            </Collapse>
+        </Paper>
+    );
+};
+
+const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate, isMobile, basePath, hasPermission, isEmployee }) => {
     const [open, setOpen] = useState(point.status === 'active');
     const latest = useMemo(() => getLatestData(point.active_report || point.last_report), [point]);
-    
+
     // Action Menu State
     const [anchorEl, setAnchorEl] = useState(null);
     const menuOpen = Boolean(anchorEl);
@@ -215,15 +339,15 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                             </Typography>
                         </Grid>
                         <Grid item xs={12} sm={6}>
-                            <Typography variant="body2" color="text.secondary">Thời gian:</Typography>
+                            <Typography variant="body2" color="text.secondary">Thời gian bắt đầu:</Typography>
                             <Typography variant="body1" sx={{ fontWeight: 700 }}>
-                                {latest ? formatTime(latest.start_time) : '-'}
+                                {latest ? formatDateTime(latest.start_time) : '-'}
                             </Typography>
-                             {latest && (
+                            {latest && (
                                 <Typography variant="caption" color={point.status === 'active' ? "error" : "text.secondary"} sx={{ fontWeight: 700, display: 'block', mt: 0.5, fontSize: '0.8rem' }}>
                                     {point.status === 'active'
-                                        ? `Cập nhật: ${formatTime(latest.newest_ts)} (${!latest.oldest_ts || Number(latest.oldest_ts) === Number(latest.newest_ts) ? '00' : getDuration(latest.oldest_ts, latest.newest_ts)})`
-                                        : `Lần cuối: ${getDuration(latest.start_time)} trước`}
+                                        ? `Cập nhật lúc: ${formatDateTime(point.updated_at || latest.newest_ts)} (Đã ngập ${formatDuration(latest.start_time)})`
+                                        : `Đã kết thúc`}
                                 </Typography>
                             )}
                         </Grid>
@@ -366,8 +490,8 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                                     <ListItemText primary="Xem chi tiết" />
                                 </MenuItem>
                                 {hasPermission('inundation:edit') && (
-                                    <MenuItem onClick={() => { 
-                                        handleMenuClose(); 
+                                    <MenuItem onClick={() => {
+                                        handleMenuClose();
                                         let url = `${basePath}/inundation/form?tab=1&id=${point.report_id}&name=${encodeURIComponent(point.name)}`;
                                         if (needsCorrection && needsCorrectionUpdateId) {
                                             url += `&edit_update_id=${needsCorrectionUpdateId}`;
@@ -379,10 +503,10 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                                     </MenuItem>
                                 )}
                                 {hasPermission('inundation:edit') && !isEmployee && (
-                                    <MenuItem 
+                                    <MenuItem
                                         sx={{ color: 'success.main' }}
-                                        onClick={async () => { 
-                                            handleMenuClose(); 
+                                        onClick={async () => {
+                                            handleMenuClose();
                                             if (window.confirm('Xác nhận kết thúc ngập cho điểm này?')) {
                                                 try {
                                                     await inundationApi.resolveReport(point.report_id);
@@ -401,9 +525,9 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                             </Menu>
                         </>
                     ) : (
-                        <IconButton 
-                            size="small" 
-                            color="primary" 
+                        <IconButton
+                            size="small"
+                            color="primary"
                             onClick={() => navigate(`${basePath}/inundation/form?tab=0&point_id=${point.id}&name=${encodeURIComponent(point.name)}`)}
                             title="Tạo báo cáo mới"
                         >
@@ -416,61 +540,59 @@ const CollapsiblePointRow = ({ point, organizations, formatTime, getDuration, ha
                 <TableRow>
                     <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider', paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
                         <Collapse in={open} timeout="auto" unmountOnExit>
-                        <Box sx={{ m: 2, p: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-                            <Typography variant="h6" gutterBottom component="div" sx={{ fontWeight: 700, color: 'primary.main', mb: 2 }}>
-                                {point.address}
-                            </Typography>
-                            <Stack spacing={1.5}>
-                                <Grid container spacing={2}>
-                                    <Grid item xs={12} sm={6}>
-                                        <Typography variant="body2" color="text.secondary">Kích thước ngập:</Typography>
-                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                            {latest ? `${latest.length || 0}m x ${latest.width || 0}m x ${latest.depth || 0}m` : '-'}
-                                        </Typography>
-                                    </Grid>
-                                    <Grid item xs={12} sm={6}>
-                                        <Typography variant="body2" color="text.secondary">Thời gian bắt đầu:</Typography>
-                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                            {latest ? formatTime(latest.start_time) : '-'}
-                                        </Typography>
-                                         {latest && (
-                                            <Typography variant="caption" color={point.status === 'active' ? "error" : "text.secondary"} sx={{ fontWeight: 600, display: 'block' }}>
-                                                {point.status === 'active'
-                                                    ? `Cập nhật lúc: ${formatTime(latest.newest_ts)} (${!latest.oldest_ts || Number(latest.oldest_ts) === Number(latest.newest_ts) ? '00' : getDuration(latest.oldest_ts, latest.newest_ts)})`
-                                                    : `Lần cuối: ${getDuration(latest.start_time)} trước`}
+                            <Box sx={{ m: 2, p: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                                <Typography variant="h6" gutterBottom component="div" sx={{ fontWeight: 700, color: 'primary.main', mb: 2 }}>
+                                    {point.address}
+                                </Typography>
+                                <Stack spacing={1.5}>
+                                    <Grid container spacing={2}>
+                                        <Grid item xs={12} sm={6}>
+                                            <Typography variant="body2" color="text.secondary">Kích thước ngập:</Typography>
+                                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                {latest ? `${latest.length || 0}m x ${latest.width || 0}m x ${latest.depth || 0}m` : '-'}
                                             </Typography>
-                                        )}
+                                        </Grid>
+                                        <Grid item xs={12} sm={6}>
+                                            <Typography variant="body2" color="text.secondary">Thời gian:</Typography>
+                                            <Typography variant="body2" sx={{ fontWeight: 600 }}>{`Bắt đầu: ${formatDateTime(latest.start_time)}`}</Typography>
+                                            <Grid item xs={12}>
+                                                <Typography variant="caption" color={point.status === 'active' ? "error" : "text.secondary"} sx={{ fontWeight: 700, display: 'block', mt: 0.5, fontSize: '0.8rem' }}>
+                                                    {point.status === 'active'
+                                                        ? `Cập nhật lúc: ${formatDateTime(point.updated_at || latest.newest_ts)} (Đã ngập ${formatDuration(latest.start_time)})`
+                                                        : `Đã kết thúc`}
+                                                </Typography>
+                                            </Grid>
+                                        </Grid>
                                     </Grid>
-                                </Grid>
-                                <Box>
-                                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>Ảnh liên quan:</Typography>
-                                    {latest?.images?.length > 0 ? (
-                                        <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', pb: 1 }}>
-                                            {latest.images.map((img, idx) => (
-                                                <Box
-                                                    key={idx} component="img" src={getInundationImageUrl(img)}
-                                                    onClick={(e) => { e.stopPropagation(); handleOpenViewer(latest.images, idx); }}
-                                                    sx={{ width: 56, height: 56, borderRadius: 1.5, objectFit: 'cover', cursor: 'pointer', border: '1px solid', borderColor: 'divider', flexShrink: 0 }}
-                                                />
-                                            ))}
-                                        </Stack>
-                                    ) : (
-                                        <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.disabled' }}>Không có ảnh</Typography>
-                                    )}
-                                </Box>
+                                    <Box>
+                                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>Ảnh liên quan:</Typography>
+                                        {latest?.images?.length > 0 ? (
+                                            <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', pb: 1 }}>
+                                                {latest.images.map((img, idx) => (
+                                                    <Box
+                                                        key={idx} component="img" src={getInundationImageUrl(img)}
+                                                        onClick={(e) => { e.stopPropagation(); handleOpenViewer(latest.images, idx); }}
+                                                        sx={{ width: 56, height: 56, borderRadius: 1.5, objectFit: 'cover', cursor: 'pointer', border: '1px solid', borderColor: 'divider', flexShrink: 0 }}
+                                                    />
+                                                ))}
+                                            </Stack>
+                                        ) : (
+                                            <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.disabled' }}>Không có ảnh</Typography>
+                                        )}
+                                    </Box>
 
-                            </Stack>
-                        </Box>
-                    </Collapse>
-                </TableCell>
-            </TableRow>
+                                </Stack>
+                            </Box>
+                        </Collapse>
+                    </TableCell>
+                </TableRow>
             )}
         </React.Fragment>
     );
 };
 
-const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenViewer, navigate, isMobile, basePath, getDuration, hasPermission, isEmployee }) => {
-    const [open, setOpen] = useState(report.status === 'active');
+const CollapsibleHistoryRow = ({ report, organizations, handleOpenViewer, navigate, isMobile, basePath, hasPermission, isEmployee }) => {
+    const [open, setOpen] = useState(false);
     const latest = useMemo(() => getLatestData(report), [report]);
 
     const renderCard = () => (
@@ -521,20 +643,10 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenVi
                     <Grid container spacing={2}>
                         <Grid item xs={12} sm={6}>
                             <Typography variant="body2" color="text.secondary">Thời gian ngập:</Typography>
-                            <Typography variant="body1" sx={{ fontWeight: 700 }}>{`Bắt đầu: ${formatTime(report.start_time)}`}</Typography>
-                            <Typography variant="body1" sx={{ fontWeight: 700 }}>{report.status === 'resolved' ? `Kết thúc: ${formatTime(report.end_time)}` : 'Đang diễn ra'}</Typography>
-                             <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, display: 'block', mt: 0.5, fontSize: '0.8rem' }}>
-                                Tổng thời gian: {(() => {
-                                    if (report.status === 'active') {
-                                        const sorted = report.updates && Array.isArray(report.updates) 
-                                            ? [...report.updates].sort((a, b) => b.timestamp - a.timestamp) 
-                                            : [];
-                                        const newest = sorted.length > 0 ? sorted[0].timestamp : report.start_time;
-                                        const oldest = sorted.length > 0 ? sorted[sorted.length - 1].timestamp : report.start_time;
-                                        return Number(oldest) === Number(newest) ? '00' : getDuration(oldest, newest);
-                                    }
-                                    return getDuration(report.start_time, report.end_time);
-                                })()}
+                            <Typography variant="body1" sx={{ fontWeight: 700 }}>{`Bắt đầu: ${formatDateTime(report.start_time)}`}</Typography>
+                            <Typography variant="body1" sx={{ fontWeight: 700 }}>{report.status === 'resolved' ? `Kết thúc: ${formatDateTime(report.end_time)}` : `Cập nhật: ${formatDateTime(report.updated_at || latest.newest_ts)}`}</Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, display: 'block', mt: 0.5, fontSize: '0.8rem' }}>
+                                Tổng thời gian: {formatDuration(report.start_time, report.end_time)}
                             </Typography>
                         </Grid>
                         <Grid item xs={12} sm={6}>
@@ -598,11 +710,14 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenVi
                         {organizations.find((o) => o.id === report.org_id)?.name || report.org_id}
                     </Typography>
                 </TableCell>
-                <TableCell>
-                    <Typography variant="body2">{formatTime(report.start_time)}</Typography>
+                <TableCell sx={{ p: 2, display: { xs: 'none', md: 'table-cell' } }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{formatDateTime(report.start_time)}</Typography>
                 </TableCell>
-                <TableCell>
-                    <Typography variant="body2">{report.end_time ? formatTime(report.end_time) : '-'}</Typography>
+                <TableCell sx={{ p: 2, display: { xs: 'none', md: 'table-cell' } }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{report.status === 'resolved' ? formatDateTime(report.end_time) : formatDateTime(report.updated_at || latest.newest_ts)}</Typography>
+                </TableCell>
+                <TableCell sx={{ p: 2, display: { xs: 'none', md: 'table-cell' } }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{formatDuration(report.start_time, report.end_time)}</Typography>
                 </TableCell>
                 <TableCell>
                     <Chip
@@ -630,31 +745,14 @@ const CollapsibleHistoryRow = ({ report, organizations, formatTime, handleOpenVi
                                     <Grid item xs={12} sm={6}>
                                         <Typography variant="body2" color="text.secondary">Thời gian ngập:</Typography>
                                         <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                            {`Bắt đầu: ${formatTime(report.start_time)}`}
+                                            {`Bắt đầu: ${formatDateTime(report.start_time)}`}
                                         </Typography>
                                         <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                            {report.status === 'resolved' ? `Kết thúc: ${formatTime(report.end_time)}` : 'Đang diễn ra'}
+                                            {report.status === 'resolved' ? `Kết thúc: ${formatDateTime(report.end_time)}` : `Cập nhật: ${formatDateTime(report.updated_at || latest.newest_ts)}`}
                                         </Typography>
-                                         <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block' }}>
-                                            Tổng thời gian: {(() => {
-                                                if (report.status === 'active') {
-                                                    const sorted = report.updates && Array.isArray(report.updates) 
-                                                        ? [...report.updates].sort((a, b) => b.timestamp - a.timestamp) 
-                                                        : [];
-                                                    const newest = sorted.length > 0 ? sorted[0].timestamp : report.start_time;
-                                                    const oldest = sorted.length > 0 ? sorted[sorted.length - 1].timestamp : report.start_time;
-                                                    return Number(oldest) === Number(newest) ? '00' : getDuration(oldest, newest);
-                                                }
-                                                return getDuration(report.start_time, report.end_time);
-                                            })()}
+                                        <Typography variant="caption" sx={{ fontWeight: 800, display: 'block', mt: 0.5, color: 'primary.main' }}>
+                                            Tổng thời gian: {formatDuration(report.start_time, report.end_time)}
                                         </Typography>
-                                    </Grid>
-                                    <Grid item xs={12} sm={6}>
-                                        <Typography variant="body2" color="text.secondary">Kích thước ngập:</Typography>
-                                        <Typography
-                                            variant="body2"
-                                            sx={{ fontWeight: 600 }}
-                                        >{`${latest?.length || 0}m x ${latest?.width || 0}m x ${latest?.depth || 0}m`}</Typography>
                                     </Grid>
                                     <Grid item xs={12} sm={6}>
                                         <Typography variant="body2" color="text.secondary">Giao thông:</Typography>
@@ -724,11 +822,18 @@ const InundationDashboard = () => {
     const [orgFilter, setOrgFilter] = useState('');
     const [organizations, setOrganizations] = useState([]);
     const [assignedStation, setAssignedStation] = useState(null);
+    const [openPumpHistory, setOpenPumpHistory] = useState(false);
 
     // Pagination for History
     const [historyPage, setHistoryPage] = useState(0);
     const [historyRowsPerPage, setHistoryRowsPerPage] = useState(10);
     const [totalHistory, setTotalHistory] = useState(0);
+
+    const [pumpingHistory, setPumpingHistory] = useState([]);
+    const [loadingPumpingHistory, setLoadingPumpingHistory] = useState(false);
+
+    const [pumpingStations, setPumpingStations] = useState([]);
+    const [loadingPumpingStations, setLoadingPumpingStations] = useState(false);
 
     // Lightbox viewer
     const [viewer, setViewer] = useState({ open: false, images: [], index: 0 });
@@ -779,12 +884,25 @@ const InundationDashboard = () => {
     };
 
     const fetchAssignedStation = async () => {
-        if (userRole === 'employee' && userInfo?.assigned_pumping_station_id) {
+        if (isEmployee && userInfo?.assigned_pumping_station_id) {
             try {
                 const response = await pumpingStationApi.get(userInfo.assigned_pumping_station_id);
                 setAssignedStation(response.data.data || null);
             } catch (error) {
                 console.error('Failed to fetch assigned station:', error);
+            }
+        }
+
+        // Also fetch all stations if not restricted (admin or manager)
+        if (!isEmployee || hasPermission('pumping_station:view_all')) {
+            setLoadingPumpingStations(true);
+            try {
+                const response = await pumpingStationApi.list();
+                setPumpingStations(response.data.data?.data || []);
+            } catch (error) {
+                console.error('Failed to fetch all pumping stations:', error);
+            } finally {
+                setLoadingPumpingStations(false);
             }
         }
     };
@@ -817,6 +935,25 @@ const InundationDashboard = () => {
         fetchPoints();
         fetchAssignedStation();
     }, [orgFilter, userInfo]);
+
+    const fetchPumpingHistory = async () => {
+        if (!userInfo?.assigned_pumping_station_id) return;
+        setLoadingPumpingHistory(true);
+        try {
+            const response = await pumpingStationApi.getHistory(userInfo.assigned_pumping_station_id);
+            setPumpingHistory(response.data.data?.data || []);
+        } catch (error) {
+            console.error('Failed to load pump history', error);
+        } finally {
+            setLoadingPumpingHistory(false);
+        }
+    };
+
+    useEffect(() => {
+        if (activeTab === 5) {
+            fetchPumpingHistory();
+        }
+    }, [activeTab, userInfo]);
 
     useEffect(() => {
         if (activeTab === 3 || !isMobile) {
@@ -855,19 +992,7 @@ const InundationDashboard = () => {
         });
     }, [points, activeTab, searchQuery, historyStatus, historyTrafficStatus]);
 
-    const formatTime = (ts) => {
-        if (!ts) return 'N/A';
-        return new Date(ts * 1000).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
-    };
 
-    const getDuration = (startTime, endTime) => {
-        if (!startTime) return '';
-        const end = endTime || Math.floor(Date.now() / 1000);
-        const diff = end - startTime;
-        const h = Math.floor(diff / 3600);
-        const m = Math.floor((diff % 3600) / 60);
-        return h > 0 ? `${h}h ${m}p` : `${m}p`;
-    };
 
     const handleLogout = async () => {
         try {
@@ -986,8 +1111,6 @@ const InundationDashboard = () => {
                                 key={report.id}
                                 report={report}
                                 organizations={organizations}
-                                formatTime={formatTime}
-                                getDuration={getDuration}
                                 handleOpenViewer={handleOpenViewer}
                                 navigate={navigate}
                                 isMobile={isMobile}
@@ -1016,8 +1139,9 @@ const InundationDashboard = () => {
                                 <TableCell sx={{ width: 40 }} />
                                 <TableCell sx={{ fontWeight: 700 }}>Tuyến đường / Điểm</TableCell>
                                 <TableCell sx={{ fontWeight: 700 }}>Đơn vị quản lý</TableCell>
-                                <TableCell sx={{ fontWeight: 700 }}>Bắt đầu</TableCell>
-                                <TableCell sx={{ fontWeight: 700 }}>Kết thúc</TableCell>
+                                <TableCell sx={{ fontWeight: 700, display: { xs: 'none', md: 'table-cell' } }}>Bắt đầu</TableCell>
+                                <TableCell sx={{ fontWeight: 700, display: { xs: 'none', md: 'table-cell' } }}>Cập nhật / Kết thúc</TableCell>
+                                <TableCell sx={{ fontWeight: 700, display: { xs: 'none', md: 'table-cell' } }}>Tổng thời gian</TableCell>
                                 <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>
                                 <TableCell sx={{ fontWeight: 700 }} align="right">Thao tác</TableCell>
                             </TableRow>
@@ -1041,8 +1165,6 @@ const InundationDashboard = () => {
                                         key={report.id}
                                         report={report}
                                         organizations={organizations}
-                                        formatTime={formatTime}
-                                        getDuration={getDuration}
                                         handleOpenViewer={handleOpenViewer}
                                         navigate={navigate}
                                         isMobile={isMobile}
@@ -1255,13 +1377,12 @@ const InundationDashboard = () => {
                                                 key={point.id}
                                                 point={point}
                                                 organizations={organizations}
-                                                formatTime={formatTime}
-                                                getDuration={getDuration}
                                                 handleOpenViewer={handleOpenViewer}
                                                 navigate={navigate}
                                                 isMobile={isMobile}
                                                 basePath={basePath}
                                                 hasPermission={hasPermission}
+                                                isEmployee={isEmployee}
                                             />
                                         ))}
                                 </TableBody>
@@ -1276,16 +1397,71 @@ const InundationDashboard = () => {
 
     // Mobile views
     if (activeTab === 1) {
+        const urlParams = new URLSearchParams(search);
+        const assignedStationId = urlParams.get('assignedStationId');
+        const stationToReport = assignedStationId ? pumpingStations.find(s => s.id === assignedStationId) : assignedStation;
+
         return (
-            <Box sx={{ px: isMobile ? 1.2 : 2, pt: 2, pb: 4 }}>
-                {assignedStation ? (
-                    <PumpingStationReport station={assignedStation} />
+            <Box sx={{ px: isMobile ? 1.5 : 2, pt: 2, pb: 10 }}>
+                {isEmployee && !assignedStationId ? (
+                    assignedStation ? (
+                        <PumpingStationReport station={assignedStation} />
+                    ) : (
+                        <Box sx={{ p: 4, textAlign: 'center', bgcolor: 'error.lighter', borderRadius: 4, border: '1px solid', borderColor: 'error.light' }}>
+                            <IconAlertTriangle size={48} color={theme.palette.error.main} style={{ marginBottom: 16 }} />
+                            <Typography color="error.dark" variant="h4" sx={{ fontWeight: 900 }}>
+                                Chưa được gán trạm bơm
+                            </Typography>
+                            <Typography color="error.main" variant="body2" sx={{ mt: 1, fontWeight: 600 }}>
+                                Vui lòng liên hệ quản lý để được phân công trạm bơm vận hành.
+                            </Typography>
+                        </Box>
+                    )
                 ) : (
-                    <Box sx={{ p: 3, textAlign: 'center' }}>
-                        <Typography color="error" sx={{ fontWeight: 700 }}>
-                            Bạn chưa được gán vào trạm bơm nào.
-                        </Typography>
-                    </Box>
+                    <>
+                        {stationToReport && assignedStationId ? (
+                            <Box>
+                                <Button 
+                                    startIcon={<IconChevronLeft />} 
+                                    onClick={() => navigate(`${basePath}/inundation?activeTab=1`)}
+                                    sx={{ mb: 2, fontWeight: 800 }}
+                                >
+                                    Quay lại danh sách
+                                </Button>
+                                <PumpingStationReport station={stationToReport} />
+                            </Box>
+                        ) : (
+                            <>
+                                <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Typography variant="h3" sx={{ fontWeight: 900, color: 'primary.main' }}>
+                                        Danh sách trạm bơm
+                                    </Typography>
+                                    <Badge badgeContent={pumpingStations.length} color="primary">
+                                        <Avatar sx={{ bgcolor: 'primary.lighter', width: 40, height: 40 }}>
+                                            <IconTools size={20} color={theme.palette.primary.main} />
+                                        </Avatar>
+                                    </Badge>
+                                </Box>
+                                <Stack spacing={1}>
+                                    {loadingPumpingStations ? (
+                                        [1, 2, 3].map(i => <Skeleton key={i} variant="rectangular" height={80} sx={{ borderRadius: 4 }} />)
+                                    ) : pumpingStations.length === 0 ? (
+                                        <Typography sx={{ textAlign: 'center', py: 5, color: 'text.secondary' }}>Không tìm thấy trạm bơm nào</Typography>
+                                    ) : (
+                                        pumpingStations.map(station => (
+                                            <CollapsiblePumpingStationRow 
+                                                key={station.id}
+                                                station={station}
+                                                isMobile={isMobile}
+                                                navigate={navigate}
+                                                basePath={basePath}
+                                            />
+                                        ))
+                                    )}
+                                </Stack>
+                            </>
+                        )}
+                    </>
                 )}
             </Box>
         );
@@ -1317,6 +1493,25 @@ const InundationDashboard = () => {
                 <Typography variant="body1" color="textSecondary" sx={{ mb: 4 }}>
                     {userInfo?.email || 'Phòng Thoát Nước Hà Nội'}
                 </Typography>
+                <List sx={{ bgcolor: 'background.paper', borderRadius: 4, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', mb: 2, overflow: 'hidden' }}>
+                    <ListItem button onClick={() => navigate(`${basePath}/inundation?activeTab=3`)} sx={{ py: 2, borderBottom: '1px solid', borderColor: 'grey.100' }}>
+                        <ListItemIcon>
+                            <IconHistory size={26} color={theme.palette.primary.main} />
+                        </ListItemIcon>
+                        <ListItemText primary="Lịch sử điểm ngập" primaryTypographyProps={{ fontWeight: 700 }} />
+                        <IconChevronRight size={20} />
+                    </ListItem>
+                    {isEmployee && userInfo?.assigned_pumping_station_id && (
+                        <ListItem button onClick={() => navigate(`${basePath}/inundation?activeTab=5`)} sx={{ py: 2 }}>
+                            <ListItemIcon>
+                                <IconTools size={26} color={theme.palette.success.main} />
+                            </ListItemIcon>
+                            <ListItemText primary="Lịch sử vận hành trạm" primaryTypographyProps={{ fontWeight: 700 }} />
+                            <IconChevronRight size={20} />
+                        </ListItem>
+                    )}
+                </List>
+
                 <List sx={{ bgcolor: 'background.paper', borderRadius: 4, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', mb: 4, overflow: 'hidden' }}>
                     <ListItem button onClick={handleLogout} sx={{ color: 'error.main', py: 2 }}>
                         <ListItemIcon>
@@ -1326,6 +1521,79 @@ const InundationDashboard = () => {
                         <IconChevronRight size={20} />
                     </ListItem>
                 </List>
+            </Box>
+        );
+    }
+
+    if (activeTab === 5) {
+        return (
+            <Box sx={{
+                px: isMobile ? 1.5 : 2,
+                pt: 2,
+                pb: 10,
+                flexGrow: 1,
+                overflowY: 'auto',
+                WebkitOverflowScrolling: 'touch'
+            }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                    <IconButton onClick={() => navigate(`${basePath}/inundation?activeTab=4`)} sx={{ mr: 1 }}>
+                        <IconChevronLeft />
+                    </IconButton>
+                    <Typography variant="h3" sx={{ fontWeight: 900 }}>
+                        Lịch sử vận hành trạm
+                    </Typography>
+                </Box>
+
+                <Stack spacing={2}>
+                    {loadingPumpingHistory ? (
+                        [1, 2, 3].map(i => <Skeleton key={i} variant="rectangular" height={100} sx={{ borderRadius: 3 }} />)
+                    ) : (pumpingHistory || []).length === 0 ? (
+                        <Box sx={{ py: 5, textAlign: 'center', bgcolor: 'grey.50', borderRadius: 3 }}>
+                            <Typography color="text.secondary">Chưa có dữ liệu lịch sử</Typography>
+                        </Box>
+                    ) : (
+                        pumpingHistory.map((row) => (
+                            <Paper key={row.id} elevation={0} sx={{ p: 2, borderRadius: 3, border: '1px solid', borderColor: 'grey.100' }}>
+                                <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 1.5 }}>
+                                    <Box>
+                                        <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                                            {dayjs(row.timestamp * 1000).format('DD/MM/YYYY HH:mm')}
+                                        </Typography>
+                                        {row.note && (
+                                            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontStyle: 'italic' }}>
+                                                "{row.note}"
+                                            </Typography>
+                                        )}
+                                    </Box>
+                                    <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.disabled' }}>
+                                        Bởi: {row.user_name}
+                                    </Typography>
+                                </Stack>
+                                <Divider sx={{ mb: 1.5, borderStyle: 'dashed' }} />
+                                <Stack direction="row" spacing={1.5}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                        <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: 'success.main' }} />
+                                        <Typography variant="body2" sx={{ fontWeight: 700, color: 'success.main' }}>
+                                            VH: {row.operating_count}
+                                        </Typography>
+                                    </Box>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                        <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: 'error.main' }} />
+                                        <Typography variant="body2" sx={{ fontWeight: 700, color: 'error.main' }}>
+                                            Đóng: {row.closed_count}
+                                        </Typography>
+                                    </Box>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                        <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: 'warning.main' }} />
+                                        <Typography variant="body2" sx={{ fontWeight: 700, color: 'warning.main' }}>
+                                            BD: {row.maintenance_count}
+                                        </Typography>
+                                    </Box>
+                                </Stack>
+                            </Paper>
+                        ))
+                    )}
+                </Stack>
             </Box>
         );
     }
@@ -1451,8 +1719,6 @@ const InundationDashboard = () => {
                                 key={point.id}
                                 point={point}
                                 organizations={organizations}
-                                formatTime={formatTime}
-                                getDuration={getDuration}
                                 handleOpenViewer={handleOpenViewer}
                                 navigate={navigate}
                                 isMobile={isMobile}
@@ -1489,8 +1755,6 @@ const InundationDashboard = () => {
                                         key={point.id}
                                         point={point}
                                         organizations={organizations}
-                                        formatTime={formatTime}
-                                        getDuration={getDuration}
                                         handleOpenViewer={handleOpenViewer}
                                         navigate={navigate}
                                         isMobile={isMobile}

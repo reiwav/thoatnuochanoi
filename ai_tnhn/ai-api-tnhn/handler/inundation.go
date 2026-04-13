@@ -283,18 +283,13 @@ func (h *InundationHandler) ListReports(c *gin.Context) {
 		targetOrgID = user.OrgID
 	}
 
-	if targetOrgID != "" {
-		// New logic: search for points owned by OR shared with targetOrgID
-		res, err := h.service.GetPointsStatus(c.Request.Context(), targetOrgID, nil) // passing nil pointIDs will fetch by org
-		if err == nil {
-			for _, p := range res {
-				pointIDs = append(pointIDs, p.ID)
+	if user.IsEmployee && !isAllowedAll {
+		// Filter out empty strings if any
+		for _, pid := range user.AssignedInundationStationIDs {
+			if pid != "" {
+				pointIDs = append(pointIDs, pid)
 			}
 		}
-	}
-
-	if len(pointIDs) == 0 && user.IsEmployee && !isAllowedAll {
-		pointIDs = user.AssignedInundationStationIDs
 		if len(pointIDs) == 0 {
 			// If no points assigned to employee, return empty result
 			h.SendData(c, gin.H{
@@ -302,6 +297,14 @@ func (h *InundationHandler) ListReports(c *gin.Context) {
 				"total": 0,
 			})
 			return
+		}
+	} else if targetOrgID != "" {
+		// Manager or Admin: search for points owned by OR shared with targetOrgID
+		res, err := h.service.GetPointsStatus(c.Request.Context(), targetOrgID, nil) // passing nil pointIDs will fetch by org
+		if err == nil {
+			for _, p := range res {
+				pointIDs = append(pointIDs, p.ID)
+			}
 		}
 	}
 
@@ -329,7 +332,15 @@ func (h *InundationHandler) GetPointsStatus(c *gin.Context) {
 
 	if user.IsEmployee && !isAllowedAll {
 		// Employee: chỉ lấy điểm ngập đã gắn trong tài khoản
-		pointIDs = user.AssignedInundationStationIDs
+		for _, pid := range user.AssignedInundationStationIDs {
+			if pid != "" {
+				pointIDs = append(pointIDs, pid)
+			}
+		}
+		if len(pointIDs) == 0 {
+			h.SendData(c, []inundation.PointStatus{})
+			return
+		}
 		orgID = "" // không fetch theo org
 	} else if isAllowedAll {
 		// Super admin / Company: lấy tất cả hoặc theo org_id filter

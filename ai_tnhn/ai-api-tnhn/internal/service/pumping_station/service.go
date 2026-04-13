@@ -95,20 +95,22 @@ func (s *service) CreateHistory(ctx context.Context, user *models.User, history 
 		return nil, web.BadRequest("Tổng số lượng máy bơm báo cáo vượt quá số lượng thực tế của trạm")
 	}
 
-	// 3. Deduplication: Check latest record
-	f := filter.NewPaginationFilter()
-	f.Page = 1
-	f.PerPage = 1
-	f.AddWhere("station_id", "station_id", history.StationID)
-	f.SetOrderBy("-timestamp")
-	latestItems, _, err := s.stationRepo.ListHistory(ctx, f)
-	if err == nil && len(latestItems) > 0 {
-		latest := latestItems[0]
-		if latest.OperatingCount == history.OperatingCount &&
-			latest.ClosedCount == history.ClosedCount &&
-			latest.MaintenanceCount == history.MaintenanceCount {
-			// No change, skip insert
-			return latest, nil
+	// 3. Deduplication for automatic reports
+	if user == nil {
+		f := filter.NewPaginationFilter()
+		f.Page = 1
+		f.PerPage = 1
+		f.AddWhere("station_id", "station_id", history.StationID)
+		f.SetOrderBy("-timestamp")
+		latestItems, _, err := s.stationRepo.ListHistory(ctx, f)
+		if err == nil && len(latestItems) > 0 {
+			latest := latestItems[0]
+			if latest.OperatingCount == history.OperatingCount &&
+				latest.ClosedCount == history.ClosedCount &&
+				latest.MaintenanceCount == history.MaintenanceCount {
+				// No change in counts for auto-report, skip insert
+				return latest, nil
+			}
 		}
 	}
 
@@ -126,7 +128,13 @@ func (s *service) CreateHistory(ctx context.Context, user *models.User, history 
 		history.Timestamp = time.Now().Unix()
 	}
 
-	return s.stationRepo.CreateHistory(ctx, history)
+	res, err := s.stationRepo.CreateHistory(ctx, history)
+	if err == nil {
+		// Update station with last report
+		station.LastReport = res
+		_ = s.stationRepo.Update(ctx, station.ID, station)
+	}
+	return res, err
 }
 
 func (s *service) ListHistory(ctx context.Context, filter filter.Filter) ([]*models.PumpingStationHistory, int64, error) {

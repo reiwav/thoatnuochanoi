@@ -45,6 +45,7 @@ func (h HandlerFuncs) StationRoutes(api *gin.RouterGroup, mid middleware.Middlew
 	pumping := station.Group("/pumping")
 	{
 		pumping.GET("", pumpingHandler.List)
+		pumping.GET("/:id", pumpingHandler.Get)
 		pumping.POST("", pumpingHandler.Create)
 		pumping.PUT("/:id", pumpingHandler.Update)
 		pumping.DELETE("/:id", pumpingHandler.Delete)

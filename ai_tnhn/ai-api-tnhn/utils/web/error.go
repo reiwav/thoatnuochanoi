@@ -86,3 +86,13 @@ func (e Forbidden) Error() string {
 func (e Forbidden) StatusCode() int {
 	return http.StatusForbidden
 }
+
+type Conflict string
+
+func (e Conflict) Error() string {
+	return string(e)
+}
+
+func (e Conflict) StatusCode() int {
+	return http.StatusConflict
+}

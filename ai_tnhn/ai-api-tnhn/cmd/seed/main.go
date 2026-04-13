@@ -2,13 +2,11 @@ package main
 
 import (
 	"ai-api-tnhn/config"
-	"ai-api-tnhn/constant"
 	"ai-api-tnhn/internal/base/logger"
 	"ai-api-tnhn/internal/base/mgo/db"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/repository/query"
 	"ai-api-tnhn/internal/service/permission"
-	"ai-api-tnhn/internal/service/role"
 	"context"
 
 	"github.com/joho/godotenv"
@@ -36,8 +34,8 @@ func main() {
 	rolePermRepo := query.NewRolePermissionRepo(mgo.DB, "role_permissions", "rp", logSvc)
 	permService := permission.NewService(permRepo, rolePermRepo)
 
-	roleRepo := query.NewRoleRepo(mgo.DB, "roles", "role", logSvc)
-	roleService := role.NewService(roleRepo)
+	//roleRepo := query.NewRoleRepo(mgo.DB, "roles", "role", logSvc)
+	//roleService := role.NewService(roleRepo)
 
 	log.Info("Starting database seeding (Role-Permission Matrix)...")
 
@@ -62,7 +60,9 @@ func main() {
 		{Code: "inundation:create", Title: "Báo cáo", Group: "Điểm ngập", Type: "button", Description: "Nút báo cáo ngập tại Dashboard"},
 		{Code: "inundation:edit", Title: "Sửa", Group: "Điểm ngập", Type: "button", Description: "Chỉnh sửa trạng thái ngập"},
 		{Code: "inundation:delete", Title: "Xóa", Group: "Điểm ngập", Type: "button", Description: "Xóa báo cáo ngập"},
-		{Code: "inundation:review", Title: "Nhận xét", Group: "Điểm ngập", Type: "button", Description: "Quyền rà soát và gửi nhận xét cho nhân viên"},
+		{Code: "inundation:review", Title: "Nhận xét điểm ngập", Group: "Điểm ngập", Type: "button", Description: "Quyền rà soát và gửi nhận xét cho nhân viên"},
+		{Code: "inundation:survey", Title: "Khảo sát thiết kế", Group: "Điểm ngập", Type: "button", Description: "Quyền khảo sát & phối hợp xử lý điểm ngập"},
+		{Code: "inundation:mechanic", Title: "Cơ giới", Group: "Điểm ngập", Type: "button", Description: "Quyền bổ sung ảnh giám sát từ XN Cơ giới"},
 
 		// ─── Mực nước ───
 		{Code: "water:view", Title: "Xem", Group: "Mực nước", Type: "child_menu", Description: "Xem bảng sông hồ, lịch sử, danh sách"},
@@ -129,113 +129,129 @@ func main() {
 		log.Fatalf("Failed to seed permissions: %v", err)
 	}
 
-	allPermCodes := []string{}
-	for _, p := range initialPermissions {
-		allPermCodes = append(allPermCodes, p.Code)
-	}
+	// allPermCodes := []string{}
+	// for _, p := range initialPermissions {
+	// 	allPermCodes = append(allPermCodes, p.Code)
+	// }
 
-	// 2. Map Permissions to Roles based on Organizational Matrix
+	// // 2. Map Permissions to Roles based on Organizational Matrix
 
-	// Roles with Full Access (Company Level + System Admin)
-	fullAccessRoles := []string{
-		constant.ROLE_SUPER_ADMIN,
-		constant.ROLE_CHU_TICH_CTY,
-		constant.ROLE_GIAM_DOC_CTY,
-		constant.ROLE_PHO_GIAM_DOC_CTY,
-		constant.ROLE_PHONG_HT_MT_CDS,
-	}
-	for _, r := range fullAccessRoles {
-		if err := permService.UpdateMatrix(ctx, r, allPermCodes); err != nil {
-			log.Errorf("Failed to update matrix for role %s: %v", r, err)
-		} else {
-			log.Infof("✓ Seeded full access for role: %s", r)
-		}
-	}
+	// // Roles with Full Access (Company Level + System Admin)
+	// fullAccessRoles := []string{
+	// 	constant.ROLE_SUPER_ADMIN,
+	// 	constant.ROLE_CHU_TICH_CTY,
+	// 	constant.ROLE_GIAM_DOC_CTY,
+	// 	constant.ROLE_PHO_GIAM_DOC_CTY,
+	// 	constant.ROLE_PHONG_HT_MT_CDS,
+	// }
+	// for _, r := range fullAccessRoles {
+	// 	if err := permService.UpdateMatrix(ctx, r, allPermCodes); err != nil {
+	// 		log.Errorf("Failed to update matrix for role %s: %v", r, err)
+	// 	} else {
+	// 		log.Infof("✓ Seeded full access for role: %s", r)
+	// 	}
+	// }
 
-	// 2.1 Seed Role metadata into the new 'roles' collection
-	initialRoles := []models.Role{
-		{Code: constant.ROLE_SUPER_ADMIN, Name: "Super Admin (System)", Description: "Toàn quyền hệ thống", IsCompany: true},
-		{Code: constant.ROLE_CHU_TICH_CTY, Name: "Chủ tịch công ty", Description: "Ban lãnh đạo công ty", IsCompany: true},
-		{Code: constant.ROLE_GIAM_DOC_CTY, Name: "Giám đốc công ty", Description: "Ban điều hành công ty", IsCompany: true},
-		{Code: constant.ROLE_PHO_GIAM_DOC_CTY, Name: "Phó giám đốc công ty", Description: "Ban điều hành công ty", IsCompany: true},
-		{Code: constant.ROLE_PHONG_HT_MT_CDS, Name: "Phòng HT – MT – CĐS", Description: "Phòng CNTT & Chuyển đổi số", IsCompany: true},
-		{Code: constant.ROLE_PHONG_KT_CL, Name: "Phòng Kỹ thuật chất lượng", Description: "Phòng nghiệp vụ kỹ thuật"},
-		{Code: constant.ROLE_GIAM_DOC_XN, Name: "Giám đốc xí nghiệp", Description: "Lãnh đạo đơn vị cơ sở"},
-		{Code: constant.ROLE_TRUONG_PHONG_KT, Name: "Trưởng phòng kỹ thuật", Description: "Quản lý kỹ thuật cơ sở"},
-		{Code: constant.ROLE_CONG_NHAN_CTY, Name: "Công nhân công ty", Description: "Nhân viên vận hành hiện trường"},
-	}
+	// // 2.1 Seed Role metadata into the new 'roles' collection
+	// initialRoles := []models.Role{
+	// 	{Code: constant.ROLE_SUPER_ADMIN, Name: "Super Admin (System)", Description: "Toàn quyền hệ thống", IsCompany: true},
+	// 	{Code: constant.ROLE_CHU_TICH_CTY, Name: "Chủ tịch công ty", Description: "Ban lãnh đạo công ty", IsCompany: true},
+	// 	{Code: constant.ROLE_GIAM_DOC_CTY, Name: "Giám đốc công ty", Description: "Ban điều hành công ty", IsCompany: true},
+	// 	{Code: constant.ROLE_PHO_GIAM_DOC_CTY, Name: "Phó giám đốc công ty", Description: "Ban điều hành công ty", IsCompany: true},
+	// 	{Code: constant.ROLE_PHONG_HT_MT_CDS, Name: "Phòng HT – MT – CĐS", Description: "Phòng CNTT & Chuyển đổi số", IsCompany: true},
+	// 	{Code: constant.ROLE_PHONG_KT_CL, Name: "Phòng Kỹ thuật chất lượng", Description: "Phòng nghiệp vụ kỹ thuật"},
+	// 	{Code: constant.ROLE_GIAM_DOC_XN, Name: "Giám đốc xí nghiệp", Description: "Lãnh đạo đơn vị cơ sở"},
+	// 	{Code: constant.ROLE_TRUONG_PHONG_KT, Name: "Trưởng phòng kỹ thuật", Description: "Quản lý kỹ thuật cơ sở"},
+	// 	{Code: constant.ROLE_CONG_NHAN_CTY, Name: "Công nhân công ty", Description: "Nhân viên vận hành hiện trường"},
+	// 	{Code: constant.ROLE_XN_KS_TK, Name: "Xí nghiệp Khảo sát thiết kế", Description: "Đơn vị khảo sát và thiết kế"},
+	// 	{Code: constant.ROLE_XN_CO_GIOI, Name: "Xí nghiệp Cơ giới", Description: "Đơn vị vận hành xe máy, thiết bị cơ giới"},
+	// }
 
-	for _, r := range initialRoles {
-		existing, _ := roleService.GetByCode(ctx, r.Code)
-		if existing == nil {
-			_ = roleService.Create(ctx, &r)
-			log.Infof("✓ Created Role entity: %s", r.Name)
-		}
-	}
+	// for _, r := range initialRoles {
+	// 	existing, _ := roleService.GetByCode(ctx, r.Code)
+	// 	if existing == nil {
+	// 		_ = roleService.Create(ctx, &r)
+	// 		log.Infof("✓ Created Role entity: %s", r.Name)
+	// 	}
+	// }
 
-	// 5. Phòng Kỹ thuật chất lượng (phong_kt_cl)
-	// Theo DB: Xem/Nhập tất cả VH + AI báo cáo + Xem quản trị cơ bản
-	_ = permService.UpdateMatrix(ctx, constant.ROLE_PHONG_KT_CL, []string{
-		"rain:view", "rain:create", "rain:edit", "rain:export", "rain:delete",
-		"inundation:view", "inundation:create", "inundation:edit", "inundation:delete", "inundation:review",
-		"water:view", "water:create", "water:edit", "water:export", "water:delete",
-		"cuapai:view", "trambom:view", "trambom:create", "trambom:edit", "trambom:delete",
-		"ai:chat", "ai:report", "ai:synthesis", "ai:post-rain", "ai:report-emergency",
-		"emergency:view", "emergency:create", "emergency:edit", "emergency:export",
-		"employee:view", "organization:view", "role:view", "role-matrix:view",
-		"contract:view", "contract-category:view", "contract-ai:chat",
-	})
-	log.Info("✓ Seeded granular role: phong_kt_cl")
+	// // 5. Phòng Kỹ thuật chất lượng (phong_kt_cl)
+	// // Theo DB: Xem/Nhập tất cả VH + AI báo cáo + Xem quản trị cơ bản
+	// _ = permService.UpdateMatrix(ctx, constant.ROLE_PHONG_KT_CL, []string{
+	// 	"rain:view", "rain:create", "rain:edit", "rain:export", "rain:delete",
+	// 	"inundation:view", "inundation:create", "inundation:edit", "inundation:delete", "inundation:review",
+	// 	"water:view", "water:create", "water:edit", "water:export", "water:delete",
+	// 	"cuapai:view", "trambom:view", "trambom:create", "trambom:edit", "trambom:delete",
+	// 	"ai:chat", "ai:report", "ai:synthesis", "ai:post-rain", "ai:report-emergency",
+	// 	"emergency:view", "emergency:create", "emergency:edit", "emergency:export",
+	// 	"employee:view", "organization:view", "role:view", "role-matrix:view",
+	// 	"contract:view", "contract-category:view", "contract-ai:chat",
+	// })
+	// log.Info("✓ Seeded granular role: phong_kt_cl")
 
-	// 6 & 7. Giám đốc xí nghiệp & Trưởng phòng kỹ thuật (giam_doc_xn, truong_phong_kt)
-	// Theo DB: Xem/Nhập mưa, ngập + Xem trạm bơm + CT khẩn cấp + Xem NV
-	enterpriseManagerPerms := []string{
-		"rain:view", "rain:create", "rain:edit", "rain:export",
-		"inundation:view", "inundation:create", "inundation:edit",
-		"trambom:view",
-		"employee:view",
-		"emergency:view", "emergency:create", "emergency:edit", "emergency:export",
-	}
-	_ = permService.UpdateMatrix(ctx, constant.ROLE_GIAM_DOC_XN, enterpriseManagerPerms)
-	_ = permService.UpdateMatrix(ctx, constant.ROLE_TRUONG_PHONG_KT, enterpriseManagerPerms)
-	log.Info("✓ Seeded granular enterprise management roles")
+	// // 6 & 7. Giám đốc xí nghiệp & Trưởng phòng kỹ thuật (giam_doc_xn, truong_phong_kt)
+	// // Theo DB: Xem/Nhập mưa, ngập + Xem trạm bơm + CT khẩn cấp + Xem NV
+	// enterpriseManagerPerms := []string{
+	// 	"rain:view", "rain:create", "rain:edit", "rain:export",
+	// 	"inundation:view", "inundation:create", "inundation:edit",
+	// 	"trambom:view",
+	// 	"employee:view",
+	// 	"emergency:view", "emergency:create", "emergency:edit", "emergency:export",
+	// }
+	// _ = permService.UpdateMatrix(ctx, constant.ROLE_GIAM_DOC_XN, enterpriseManagerPerms)
+	// _ = permService.UpdateMatrix(ctx, constant.ROLE_TRUONG_PHONG_KT, enterpriseManagerPerms)
+	// log.Info("✓ Seeded granular enterprise management roles")
 
-	// 8. Công nhân công ty (cong_nhan_cty)
-	// Theo DB: Xem mưa/ngập/nước/cửa phai/trạm bơm + Báo cáo ngập + CT khẩn cấp
-	_ = permService.UpdateMatrix(ctx, constant.ROLE_CONG_NHAN_CTY, []string{
-		"rain:view",
-		"inundation:view", "inundation:create", "inundation:edit",
-		"water:view",
-		"cuapai:view",
-		"trambom:view",
-		"emergency:view", "emergency:create",
-	})
-	log.Info("✓ Seeded granular role: cong_nhan_cty")
+	// // 8. Công nhân công ty (cong_nhan_cty)
+	// // Theo DB: Xem mưa/ngập/nước/cửa phai/trạm bơm + Báo cáo ngập + CT khẩn cấp
+	// _ = permService.UpdateMatrix(ctx, constant.ROLE_CONG_NHAN_CTY, []string{
+	// 	"rain:view",
+	// 	"inundation:view", "inundation:create", "inundation:edit",
+	// 	"water:view",
+	// 	"cuapai:view",
+	// 	"trambom:view",
+	// 	"emergency:view", "emergency:create",
+	// })
+	// log.Info("✓ Seeded granular role: cong_nhan_cty")
 
-	// 3. Seed Mock Users for Testing
-	log.Info("Seeding mock users for testing...")
-	userRepo := query.NewUserRepo(mgo.DB, "users", "usr", logSvc)
+	// // 9. Xí nghiệp Khảo sát thiết kế
+	// _ = permService.UpdateMatrix(ctx, constant.ROLE_XN_KS_TK, []string{
+	// 	"inundation:view", constant.PERM_INUNDATION_SURVEY,
+	// })
+	// log.Info("✓ Seeded specialized role: xn_ks_tk")
 
-	mockUsers := []models.User{
-		{Name: "Chủ tịch Công ty", Username: "ct_tnhn", Email: "ct@tnhn.vn", Role: constant.ROLE_CHU_TICH_CTY, Active: true, Password: "tnhn@2026"},
-		{Name: "Giám đốc Công ty", Username: "gd_tnhn", Email: "gd@tnhn.vn", Role: constant.ROLE_GIAM_DOC_CTY, Active: true, Password: "tnhn@2026"},
-		{Name: "Phó giám đốc Công ty", Username: "pgd_tnhn", Email: "pgd@tnhn.vn", Role: constant.ROLE_PHO_GIAM_DOC_CTY, Active: true, Password: "tnhn@2026"},
-		{Name: "Phòng HT – MT – CĐS", Username: "cds_tnhn", Email: "cds@tnhn.vn", Role: constant.ROLE_PHONG_HT_MT_CDS, Active: true, Password: "tnhn@2026"},
-		{Name: "Phòng Kỹ thuật chất lượng", Username: "ktcl_tnhn", Email: "ktcl@tnhn.vn", Role: constant.ROLE_PHONG_KT_CL, Active: true, Password: "tnhn@2026"},
-		{Name: "Giám đốc Xí nghiệp", Username: "gdxn_tnhn", Email: "gdxn@tnhn.vn", Role: constant.ROLE_GIAM_DOC_XN, Active: true, Password: "tnhn@2026"},
-		{Name: "Trưởng phòng Kỹ thuật", Username: "tp_kt", Email: "tpkt@tnhn.vn", Role: constant.ROLE_TRUONG_PHONG_KT, Active: true, Password: "tnhn@2026"},
-		{Name: "Công nhân Công ty", Username: "cn_tnhn", Email: "cn@tnhn.vn", Role: constant.ROLE_CONG_NHAN_CTY, Active: true, Password: "tnhn@2026"},
-	}
+	// // 10. Xí nghiệp Cơ giới
+	// _ = permService.UpdateMatrix(ctx, constant.ROLE_XN_CO_GIOI, []string{
+	// 	"inundation:view", constant.PERM_INUNDATION_MECHANIC,
+	// })
+	// log.Info("✓ Seeded specialized role: xn_co_gioi")
 
-	for _, u := range mockUsers {
-		copyUser := u // create copy for pointer
-		_, err := userRepo.Create(ctx, &copyUser)
-		if err != nil {
-			log.Infof("ℹ Skip/Exists mock user: %s", u.Username)
-		} else {
-			log.Infof("✓ Created mock user: %s (pass: tnhn@2026)", u.Username)
-		}
-	}
+	// // 3. Seed Mock Users for Testing
+	// log.Info("Seeding mock users for testing...")
+	// userRepo := query.NewUserRepo(mgo.DB, "users", "usr", logSvc)
+
+	// mockUsers := []models.User{
+	// 	{Name: "Chủ tịch Công ty", Username: "ct_tnhn", Email: "ct@tnhn.vn", Role: constant.ROLE_CHU_TICH_CTY, Active: true, Password: "tnhn@2026"},
+	// 	{Name: "Giám đốc Công ty", Username: "gd_tnhn", Email: "gd@tnhn.vn", Role: constant.ROLE_GIAM_DOC_CTY, Active: true, Password: "tnhn@2026"},
+	// 	{Name: "Phó giám đốc Công ty", Username: "pgd_tnhn", Email: "pgd@tnhn.vn", Role: constant.ROLE_PHO_GIAM_DOC_CTY, Active: true, Password: "tnhn@2026"},
+	// 	{Name: "Phòng HT – MT – CĐS", Username: "cds_tnhn", Email: "cds@tnhn.vn", Role: constant.ROLE_PHONG_HT_MT_CDS, Active: true, Password: "tnhn@2026"},
+	// 	{Name: "Phòng Kỹ thuật chất lượng", Username: "ktcl_tnhn", Email: "ktcl@tnhn.vn", Role: constant.ROLE_PHONG_KT_CL, Active: true, Password: "tnhn@2026"},
+	// 	{Name: "Giám đốc Xí nghiệp", Username: "gdxn_tnhn", Email: "gdxn@tnhn.vn", Role: constant.ROLE_GIAM_DOC_XN, Active: true, Password: "tnhn@2026"},
+	// 	{Name: "Trưởng phòng Kỹ thuật", Username: "tp_kt", Email: "tpkt@tnhn.vn", Role: constant.ROLE_TRUONG_PHONG_KT, Active: true, Password: "tnhn@2026"},
+	// 	{Name: "Công nhân Công ty", Username: "cn_tnhn", Email: "cn@tnhn.vn", Role: constant.ROLE_CONG_NHAN_CTY, Active: true, Password: "tnhn@2026"},
+	// 	{Name: "Xí nghiệp Khảo sát thiết kế", Username: "ks_tnhn", Email: "kstk@tnhn.vn", Role: constant.ROLE_XN_KS_TK, Active: true, Password: "tnhn@2026"},
+	// 	{Name: "Xí nghiệp Cơ giới", Username: "cg_tnhn", Email: "xn_cogioi@tnhn.vn", Role: constant.ROLE_XN_CO_GIOI, Active: true, Password: "tnhn@2026"},
+	// }
+
+	// for _, u := range mockUsers {
+	// 	copyUser := u // create copy for pointer
+	// 	_, err := userRepo.Create(ctx, &copyUser)
+	// 	if err != nil {
+	// 		log.Infof("ℹ Skip/Exists mock user: %s", u.Username)
+	// 	} else {
+	// 		log.Infof("✓ Created mock user: %s (pass: tnhn@2026)", u.Username)
+	// 	}
+	// }
 
 	log.Info("Database seeding completed successfully!")
 }

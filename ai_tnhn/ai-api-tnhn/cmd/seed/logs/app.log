@@ -1,0 +1,5 @@
+time="2026-04-13 13:49:41" level=info msg="Connecting to database..."
+time="2026-04-13 13:49:41" level=info msg="Starting database seeding (Role-Permission Matrix)..."
+time="2026-04-13 13:49:41" level=info msg="Dropping old permissions collection for clean re-seed..."
+time="2026-04-13 13:49:41" level=info msg="Seeding permission definitions (menu:action)..."
+time="2026-04-13 13:49:43" level=info msg="Database seeding completed successfully!"

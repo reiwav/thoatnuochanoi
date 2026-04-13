@@ -128,7 +128,13 @@ func (s *service) CreateHistory(ctx context.Context, user *models.User, history 
 		history.Timestamp = time.Now().Unix()
 	}
 
-	return s.stationRepo.CreateHistory(ctx, history)
+	res, err := s.stationRepo.CreateHistory(ctx, history)
+	if err == nil {
+		// Update station with last report
+		station.LastReport = res
+		_ = s.stationRepo.Update(ctx, station.ID, station)
+	}
+	return res, err
 }
 
 func (s *service) ListHistory(ctx context.Context, filter filter.Filter) ([]*models.PumpingStationHistory, int64, error) {

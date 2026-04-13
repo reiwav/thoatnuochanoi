@@ -1,6 +1,7 @@
 package router
 
 import (
+	"ai-api-tnhn/constant"
 	"ai-api-tnhn/handler"
 	"ai-api-tnhn/router/middleware"
 
@@ -11,19 +12,19 @@ func (h HandlerFuncs) GoogleRoutes(api *gin.RouterGroup, mid middleware.Middlewa
 	google := api.Group("/google")
 	google.Use(mid.MidBasicType())
 	{
-		google.GET("/status", h.GoogleStatusHandler)
-		google.GET("/rain-summary", h.GoogleRainSummaryHandler)
-		google.GET("/water-summary", h.GoogleWaterSummaryHandler)
-		google.GET("/inundation-summary", h.GoogleInundationSummaryHandler)
-		google.POST("/chat", h.GoogleChatHandler)
-		google.GET("/chat/history", h.GoogleChatHistoryHandler)
-		google.POST("/contract-chat", mid.MidBasicType(), h.GoogleContractChatHandler)
-		google.GET("/email/:id", h.GoogleEmailDetailHandler)
-		google.GET("/emails/recent", h.GoogleRecentEmailsHandler)
-		google.GET("/emails/unread", h.GoogleUnreadEmailsHandler)
-		google.POST("/quick-report", h.GenerateQuickReportV3)
-		google.POST("/quick-report-text", h.GenerateQuickReportTextHandler)
-		google.POST("/dynamic-report", h.GenerateAIDynamicReportHandler)
-		google.GET("/weather/forecast", h.GetWeatherForecastHandler)
+		google.GET("/status", googleHandler.GetStatus)
+		google.GET("/rain-summary", mid.Authorize(constant.PERM_AI_SYNTHESIS), googleHandler.GetRainSummary)
+		google.GET("/water-summary", mid.Authorize(constant.PERM_AI_SYNTHESIS), googleHandler.GetWaterSummary)
+		google.GET("/inundation-summary", mid.Authorize(constant.PERM_AI_SYNTHESIS), googleHandler.GetInundationSummary)
+		google.POST("/chat", mid.Authorize(constant.PERM_AI_CHAT), googleHandler.Chat)
+		google.GET("/chat/history", mid.Authorize(constant.PERM_AI_CHAT), googleHandler.GetChatHistory)
+		google.POST("/contract-chat", mid.Authorize(constant.PERM_AI_CHAT), googleHandler.ChatContract)
+		google.GET("/email/:id", mid.Authorize(constant.PERM_AI_CHAT), googleHandler.GetEmailDetail)
+		google.GET("/emails/recent", mid.Authorize(constant.PERM_AI_CHAT), googleHandler.GetRecentEmails)
+		google.GET("/emails/unread", mid.Authorize(constant.PERM_AI_CHAT), googleHandler.GetUnreadEmails)
+		google.POST("/quick-report", mid.Authorize(constant.PERM_AI_REPORT), googleHandler.GenerateQuickReportV3)
+		google.POST("/quick-report-text", mid.Authorize(constant.PERM_AI_REPORT), googleHandler.GenerateQuickReportText)
+		google.POST("/dynamic-report", mid.Authorize(constant.PERM_AI_POST_RAIN), googleHandler.GenerateAIDynamicReport)
+		google.GET("/weather/forecast", googleHandler.GetWeatherForecast)
 	}
 }

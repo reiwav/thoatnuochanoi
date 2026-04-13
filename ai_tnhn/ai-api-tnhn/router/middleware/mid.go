@@ -5,6 +5,7 @@ import (
 	"ai-api-tnhn/constant"
 	"ai-api-tnhn/internal/base/logger"
 	"ai-api-tnhn/internal/repository"
+	"ai-api-tnhn/internal/service/permission"
 	"ai-api-tnhn/utils/web"
 	"fmt"
 	"net/http"
@@ -15,11 +16,13 @@ import (
 
 type Middleware interface {
 	MidBasicType(role ...string) gin.HandlerFunc
+	Authorize(permKey string) gin.HandlerFunc
 	Recovery() gin.HandlerFunc
 }
 
 func NewMiddleware(conf config.Config,
 	tokenRepo repository.Token,
+	permService permission.Service,
 	contextWith web.ContextWith,
 	l logger.Logger,
 ) Middleware {
@@ -27,6 +30,7 @@ func NewMiddleware(conf config.Config,
 		conf:        conf,
 		ContextWith: contextWith,
 		tokenRepo:   tokenRepo,
+		permService: permService,
 		l:           l,
 	}
 }
@@ -35,8 +39,9 @@ type mid struct {
 	conf config.Config
 	web.ContextWith
 	web.JsonRender
-	l         logger.Logger
-	tokenRepo repository.Token
+	l           logger.Logger
+	tokenRepo   repository.Token
+	permService permission.Service
 }
 
 func (m mid) MidBasicType(roles ...string) gin.HandlerFunc {
@@ -88,6 +93,48 @@ func (m mid) MidBasicType(roles ...string) gin.HandlerFunc {
 			IsCompany:  tok.IsCompany,
 		})
 		m.SetUserID(ctx, tok.UserID)
+		ctx.Next()
+	}
+}
+
+func (m mid) Authorize(permKey string) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		tokenID := m.GetToken(ctx.Request)
+		tok, err := m.tokenRepo.GetByID(ctx, tokenID)
+		if err != nil || tok == nil {
+			m.SendErrorForce(ctx, web.Unauthorized("access token not found"), http.StatusUnauthorized)
+			ctx.Abort()
+			return
+		}
+
+		// Bypass check if Super Admin/Company leader
+		if tok.IsCompany {
+			ctx.Next()
+			return
+		}
+
+		// Check permissions for normal roles
+		perms, err := m.permService.GetPermissionsByRole(ctx, tok.Role)
+		if err != nil {
+			m.SendErrorForce(ctx, web.InternalServerError("failed to fetch permissions"), http.StatusInternalServerError)
+			ctx.Abort()
+			return
+		}
+
+		hasPerm := false
+		for _, p := range perms {
+			if p == permKey {
+				hasPerm = true
+				break
+			}
+		}
+
+		if !hasPerm {
+			m.SendErrorForce(ctx, web.Forbidden("bạn không có quyền thực hiện hành động này"), http.StatusForbidden)
+			ctx.Abort()
+			return
+		}
+
 		ctx.Next()
 	}
 }

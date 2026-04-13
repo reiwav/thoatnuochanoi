@@ -97,6 +97,16 @@ const PumpingStationPage = () => {
         }
     };
 
+    const getOrgNames = (ids) => {
+        if (!ids) return '';
+        const idList = Array.isArray(ids) ? ids : [ids];
+        const allOrgs = [...(orgs.primary || []), ...(orgs.shared || [])];
+        return idList
+            .map((id) => allOrgs.find((o) => o.id === id)?.name)
+            .filter((name) => !!name)
+            .join(', ');
+    };
+
     if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}><CircularProgress /></Box>;
 
     if (!isAdmin) {
@@ -105,13 +115,16 @@ const PumpingStationPage = () => {
     }
 
     return (
-        <MainCard title="QUẢN LÝ TRẠM BƠM" secondary={
-            hasPermission('trambom:edit') && (
-                <Button variant="contained" startIcon={<IconPlus />} onClick={handleAdd}>
-                    Thêm trạm bơm
-                </Button>
-            )
-        }>
+        <MainCard
+            title="QUẢN LÝ TRẠM BƠM"
+            secondary={
+                hasPermission('trambom:edit') && (
+                    <Button variant="contained" startIcon={<IconPlus />} onClick={handleAdd}>
+                        Thêm trạm bơm
+                    </Button>
+                )
+            }
+        >
             <TableContainer>
                 <Table>
                     <TableHead>
@@ -121,6 +134,8 @@ const PumpingStationPage = () => {
                             <TableCell>Địa chỉ</TableCell>
                             <TableCell>Số lượng bơm</TableCell>
                             <TableCell>Tự động</TableCell>
+                            <TableCell>Đơn vị quản lý</TableCell>
+                            <TableCell>Đơn vị phối hợp</TableCell>
                             <TableCell align="center">Thao tác</TableCell>
                         </TableRow>
                     </TableHead>
@@ -128,10 +143,12 @@ const PumpingStationPage = () => {
                         {(data || []).map((item, index) => (
                             <TableRow key={item.id}>
                                 <TableCell>{index + 1}</TableCell>
-                                <TableCell>{item.name}</TableCell>
+                                <TableCell sx={{ fontWeight: 600 }}>{item.name}</TableCell>
                                 <TableCell>{item.address}</TableCell>
                                 <TableCell>{item.pump_count}</TableCell>
                                 <TableCell>{item.is_auto ? 'Có' : 'Không'}</TableCell>
+                                <TableCell>{getOrgNames(item.org_id)}</TableCell>
+                                <TableCell>{getOrgNames(item.shared_org_ids)}</TableCell>
                                 <TableCell align="center">
                                     <Stack direction="row" spacing={1} justifyContent="center">
                                         <Tooltip title="Lịch sử vận hành">

@@ -1,9 +1,12 @@
 package googleapi
 
 import (
+	"ai-api-tnhn/internal/base/mgo/filter"
 	"context"
 	"fmt"
 	"sort"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type RainStationStat struct {
@@ -22,12 +25,44 @@ type RainSummaryData struct {
 	SummaryText    string            `json:"summary_text,omitempty"`
 }
 
-func (s *service) GetRainSummary(ctx context.Context) (*RainSummaryData, error) {
+func (s *service) getPermittedRainStations(ctx context.Context, orgID string) (map[int]bool, error) {
+	if s.stationSvc == nil {
+		return nil, fmt.Errorf("stationSvc is not initialized")
+	}
+
+	f := filter.NewBasicFilter()
+	if orgID != "" {
+		f.AddWhere("org_id_or_shared", "$or", []bson.M{
+			{"org_id": orgID},
+			{"shared_org_ids": orgID},
+		})
+	}
+
+	stations, _, err := s.stationSvc.ListRainStations(ctx, f)
+	if err != nil {
+		return nil, err
+	}
+
+	permitted := make(map[int]bool)
+	for _, st := range stations {
+		if st.OldID > 0 {
+			permitted[st.OldID] = true
+		}
+	}
+	return permitted, nil
+}
+
+func (s *service) GetRainSummary(ctx context.Context, orgID string) (*RainSummaryData, error) {
 	rainData, err := s.weatherSvc.GetRawRainData(ctx)
 	if err != nil {
 		fmt.Printf(" [GoogleAPI] Rain API Error: %v\n", err)
 		return nil, err
 	}
+	permitted, err := s.getPermittedRainStations(ctx, orgID)
+	if err != nil {
+		return nil, err
+	}
+
 	stationMap := make(map[int]string)
 	for _, t := range rainData.Content.Tram {
 		var id int
@@ -36,6 +71,11 @@ func (s *service) GetRainSummary(ctx context.Context) (*RainSummaryData, error) 
 		} else if v, ok := t.Id.(string); ok {
 			fmt.Sscanf(v, "%d", &id)
 		}
+
+		if orgID != "" && !permitted[id] {
+			continue // Skip stations not permitted
+		}
+
 		stationMap[id] = t.TenPhuong
 	}
 
@@ -47,6 +87,10 @@ func (s *service) GetRainSummary(ctx context.Context) (*RainSummaryData, error) 
 				id = int(v)
 			} else if v, ok := d.TramId.(string); ok {
 				fmt.Sscanf(v, "%d", &id)
+			}
+
+			if orgID != "" && !permitted[id] {
+				continue
 			}
 
 			tBD := d.ThoiGian_BD

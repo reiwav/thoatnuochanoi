@@ -170,7 +170,7 @@ func (s *service) Chat(ctx context.Context, prompt string, history []ChatMessage
 	}
 
 	session := model.StartChat()
-	session.History = genaiHistory
+	//session.History = genaiHistory
 
 	fmt.Printf("\n=== [Gemini Chat] User Prompt ===\n%s\n=================================\n", augmentedPrompt)
 

@@ -96,7 +96,7 @@ func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log log
 	s.Inundation = inundation.NewService(repos.Inundation, repos.InundationUpdate, repos.InundationStation, repos.Organization, driveService)
 	s.Weather = weather.NewService(repos.HistoricalRain)
 
-	s.GoogleApi, _ = googleapi.NewService(cfg.GoogleDriveConfig, cfg.OAuthConfig, repos.AiUsage, s.Inundation, s.Weather)
+	s.GoogleApi, _ = googleapi.NewService(cfg.GoogleDriveConfig, cfg.OAuthConfig, repos.AiUsage, s.Inundation, s.Weather, s.Station)
 	if s.GoogleApi != nil {
 		s.GoogleApi.SetEmailService(s.Email)
 	}

@@ -864,7 +864,7 @@ const AiSupport = () => {
                     <Box sx={{ px: 3, pb: 2, display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
                         {[
                             { text: 'Lượng mưa hiện tại các điểm?', type: 'rain' },
-                            { text: 'Tổng hợp báo cáo nhanh (AI)?', type: 'dynamic' },
+                            // { text: 'Tổng hợp báo cáo nhanh (AI)?', type: 'dynamic' },
                             { text: 'Những điểm nào đang ngập, tình trạng?', type: 'question' },
                             { text: 'Lượng mưa ở khu vực gần điểm ngập?', type: 'question' }
                         ].map((q, i) => (

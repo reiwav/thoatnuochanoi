@@ -3,11 +3,11 @@ package handler
 import (
 	"ai-api-tnhn/config"
 	"ai-api-tnhn/internal/base/logger"
+	"ai-api-tnhn/internal/repository"
 	"ai-api-tnhn/internal/service/email"
 	"ai-api-tnhn/internal/service/gemini"
 	"ai-api-tnhn/internal/service/googleapi"
 	"ai-api-tnhn/internal/service/googledrive"
-	"ai-api-tnhn/internal/repository"
 	"ai-api-tnhn/internal/service/water"
 
 	"ai-api-tnhn/internal/models"
@@ -58,7 +58,6 @@ func NewGoogleHandler(googleSvc googleapi.Service, geminiSvc gemini.Service, dri
 		log:           log,
 		weatherSvc:    weatherSvc,
 	}
-
 
 	// Chạy nền khi khởi động để nạp Cache
 	go func() {
@@ -140,19 +139,23 @@ func (h *GoogleHandler) GetStatus(c *gin.Context) {
 }
 
 func (h *GoogleHandler) GetRainSummary(c *gin.Context) {
-	summary, err := h.googleSvc.GetRainSummary(c.Request.Context())
+	// Persist to chat history
+	token := h.contextWith.GetTokenFromContext(c)
+	orgID := token.OrgID
+	if token.IsCompany {
+		orgID = ""
+	}
+	summary, err := h.googleSvc.GetRainSummary(c.Request.Context(), orgID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Persist to chat history
-	userID, _ := h.contextWith.GetUserID(c)
-	if h.aiChatLogRepo != nil && userID != "" {
+	if h.aiChatLogRepo != nil && token.UserID != "" {
 		now := time.Now()
 		// Save User Query
 		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
-			UserID: userID, Role: "user", Content: "Tình hình mưa đang như thế nào?", ChatType: "support", Timestamp: now.Add(-1 * time.Second),
+			UserID: token.UserID, Role: "user", Content: "Tình hình mưa đang như thế nào?", ChatType: "support", Timestamp: now.Add(-1 * time.Second),
 		})
 
 		// Format AI Response
@@ -169,7 +172,7 @@ func (h *GoogleHandler) GetRainSummary(c *gin.Context) {
 
 		// Save AI Response
 		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
-			UserID: userID, Role: "model", Content: displayText, ChatType: "support", Timestamp: now,
+			UserID: token.UserID, Role: "model", Content: displayText, ChatType: "support", Timestamp: now,
 		})
 	}
 

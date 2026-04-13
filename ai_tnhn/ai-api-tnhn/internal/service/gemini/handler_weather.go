@@ -12,7 +12,7 @@ import (
 func (s *service) handleWeatherTools(ctx context.Context, call *genai.FunctionCall, orgID string, assignedRainIDs, assignedLakeIDs, assignedRiverIDs []string) (interface{}, error) {
 	switch call.Name {
 	case "get_live_rain_summary":
-		summary, err := s.googleApiSvc.GetRainSummary(ctx)
+		summary, err := s.googleApiSvc.GetRainSummary(ctx, orgID)
 		if err != nil {
 			return nil, err
 		}

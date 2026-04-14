@@ -75,7 +75,7 @@ func (s *service) List(ctx context.Context, filter filter.Filter) ([]*models.Pum
 // History
 func (s *service) CreateHistory(ctx context.Context, user *models.User, history *models.PumpingStationHistory) (*models.PumpingStationHistory, error) {
 	// 1. Permission check: Employee can only update their assigned station
-	if user != nil && user.Role == "employee" {
+	if user != nil && user.IsEmployee {
 		if user.AssignedPumpingStationID == "" {
 			return nil, web.Forbidden("Bạn chưa được gán vào trạm bơm nào")
 		}

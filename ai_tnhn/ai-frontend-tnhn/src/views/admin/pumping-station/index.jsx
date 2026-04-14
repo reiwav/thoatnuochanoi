@@ -143,7 +143,7 @@ const PumpingStationPage = () => {
             const promises = [];
             
             if (isAdmin) {
-                promises.push(pumpingStationApi.list());
+                promises.push(pumpingStationApi.list({ per_page: 1000 }));
             } else if (userInfo?.assigned_pumping_station_id) {
                 promises.push(pumpingStationApi.get(userInfo.assigned_pumping_station_id));
             }

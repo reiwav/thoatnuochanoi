@@ -169,12 +169,12 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                         {latest ? `${latest.length || 0}m x ${latest.width || 0}m x ${latest.depth || 0}m` : '-'}
                                     </Typography>
                                 </Grid>
+                                <Grid item xs={6}>
                                     <Typography variant="caption" color="text.secondary" display="block">Bắt đầu:</Typography>
                                     <Typography variant="body2" sx={{ fontWeight: 700 }}>
                                         {latest ? formatDateTime(latest.start_time) : '-'}
                                     </Typography>
-                                </Grid>
-                                <Grid item xs={6}>
+
                                     <Typography variant="caption" color="text.secondary" display="block">Cập nhật lúc:</Typography>
                                     <Typography variant="caption" color={point.status === 'active' ? "error" : "text.secondary"} sx={{ fontWeight: 700 }}>
                                         {point.status === 'active'

@@ -17,7 +17,7 @@ func (s *service) handleToolCall(ctx context.Context, call *genai.FunctionCall, 
 	var assignedRainIDs, assignedLakeIDs, assignedRiverIDs, assignedInuIDs []string
 	if user != nil {
 		orgID = user.OrgID
-		if isCompany || user.Role == "super_admin" {
+		if isCompany {
 			orgID = ""
 		}
 		assignedRainIDs = user.AssignedRainStationIDs

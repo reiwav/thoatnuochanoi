@@ -60,8 +60,10 @@ import {
     IconTools,
     IconCloudUpload,
     IconSend,
-    IconInfoCircle
+    IconInfoCircle,
+    IconMessage2
 } from '@tabler/icons-react';
+
 import { toast } from 'react-hot-toast';
 import { processAndWatermark } from 'utils/imageProcessor';
 import inundationApi from 'api/inundation';
@@ -251,7 +253,7 @@ const CollapsiblePumpingStationRow = ({ station, isMobile, navigate, basePath })
 
 const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate, isMobile, basePath, hasPermission, isEmployee }) => {
     const theme = useTheme();
-    const { user } = useAuthStore();
+    const { user, isCompany } = useAuthStore();
     const [open, setOpen] = useState(point.status === 'active');
     const [tabValue, setTabValue] = useState(0);
     const latest = useMemo(() => getLatestData(point.active_report || point.last_report), [point]);
@@ -314,6 +316,42 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
         const report = point.active_report || point.last_report;
         return report?.needs_correction_update_id || '';
     }, [point]);
+
+    const canReview = useMemo(() => {
+        if (isEmployee) return false;
+        if (isCompany) return true;
+        const report = point.active_report || point.last_report;
+        if (!report) return false;
+        if (report.org_id === user?.org_id) return true;
+        const userOrg = organizations?.find(o => o.id === user?.org_id);
+        if (userOrg?.inundation_ids?.includes(report.point_id)) return true;
+        return false;
+    }, [user, isCompany, isEmployee, point, organizations]);
+
+    const [reviewLoading, setReviewLoading] = useState(false);
+    const [reviewComment, setReviewComment] = useState('');
+
+    const handleReviewSubmit = async () => {
+        if (!point.active_report || !reviewComment.trim()) return;
+        setReviewLoading(true);
+        try {
+            const reportId = point.active_report.id;
+            const updates = point.active_report.updates || [];
+            if (updates.length > 0) {
+                const sorted = [...updates].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                await inundationApi.reviewUpdate(sorted[0].id, reviewComment);
+            } else {
+                await inundationApi.reviewReport(reportId, reviewComment);
+            }
+            toast.success('Đã gửi nhận xét rà soát');
+            setReviewComment('');
+            window.location.reload();
+        } catch (err) {
+            toast.error('Lỗi khi gửi nhận xét');
+        } finally {
+            setReviewLoading(false);
+        }
+    };
 
     // Survey Handlers
     const handleSurveyImageChange = async (e) => {
@@ -726,6 +764,45 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                                 </Typography>
                                             </Grid>
                                         </Grid>
+                                        <Box sx={{ mt: 1 }}>
+                                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, mb: 1, display: 'block' }}>Mô tả từ hiện trường:</Typography>
+                                            <Typography variant="body2" sx={{ fontStyle: 'italic', bgcolor: 'grey.50', p: 1.5, borderRadius: 2, border: '1px solid', borderColor: 'grey.200', mb: 2 }}>
+                                                {latest?.description || 'Không có mô tả'}
+                                            </Typography>
+                                        </Box>
+
+                                        {(canReview || isEmployee) && latest?.review_comment && (
+                                            <Box sx={{ p: 1.5, bgcolor: 'error.lighter', borderRadius: 2, borderLeft: '4px solid', borderColor: 'error.main', mb: 2 }}>
+                                                <Typography variant="caption" sx={{ fontWeight: 800, color: 'error.main', display: 'block', mb: 0.5 }}>NHẬN XÉT RÀ SOÁT:</Typography>
+                                                <Typography variant="body2" sx={{ fontWeight: 600, color: 'error.dark' }}>{latest.review_comment}</Typography>
+                                                <Typography variant="caption" sx={{ display: 'block', mt: 0.5, fontStyle: 'italic' }}>— {latest.reviewer_name || latest.reviewer_email}</Typography>
+                                            </Box>
+                                        )}
+
+                                        {canReview && point.status === 'active' && (
+                                            <Box sx={{ mt: 1, mb: 2 }}>
+                                                <TextField
+                                                    fullWidth multiline rows={2}
+                                                    label="Gửi nhận xét rà soát (Yêu cầu sửa)"
+                                                    value={reviewComment}
+                                                    onChange={(e) => setReviewComment(e.target.value)}
+                                                    placeholder="Nhập nội dung cần nhân viên chỉnh sửa lại..."
+                                                    sx={{ mb: 1.5 }}
+                                                />
+                                                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                                    <Button
+                                                        variant="contained" color="error"
+                                                        onClick={handleReviewSubmit}
+                                                        disabled={reviewLoading || !reviewComment.trim()}
+                                                        startIcon={reviewLoading ? <CircularProgress size={16} color="inherit" /> : <IconMessage2 size={16} />}
+                                                        sx={{ borderRadius: 2, fontWeight: 800 }}
+                                                    >
+                                                        {reviewLoading ? 'Đang gửi...' : 'GỬI YÊU CẦU SỬA'}
+                                                    </Button>
+                                                </Box>
+                                            </Box>
+                                        )}
+
                                         <Box sx={{ mt: 1 }}>
                                             <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, mb: 1, display: 'block' }}>Ảnh liên quan:</Typography>
                                             {latest?.images?.length > 0 ? (

@@ -76,7 +76,7 @@ func (s *service) GetPumpingStationSummary(ctx context.Context, orgID string, as
 			if st.LastReport.Note != "" {
 				note = st.LastReport.Note
 			}
-			lastUpdate = time.Unix(st.LastReport.Timestamp, 0).Format("15:04 02/01/2006")
+			lastUpdate = time.Unix(st.LastReport.Timestamp, 0).Format("15:04")
 		}
 
 		totalPumps += st.PumpCount

@@ -27,7 +27,7 @@ function doPost(e) {
     data.chi_tiet_cac_diem = chi_tiet;
 
     // 1. Thay thế các placeholder văn bản đơn giản
-    const replacements = ['dd', 'mm', 'yyyy', 'hh', 'noidung', 'time_mua', 'so_luong_ung_ngap', 'chi_tiet_cac_diem', 'hien_trang_mua'];
+    const replacements = ['dd', 'mm', 'yyyy', 'hh', 'noidung', 'time_mua', 'so_luong_ung_ngap', 'chi_tiet_cac_diem', 'hien_trang_mua', 'noi_dung_tram_bom'];
     replacements.forEach(key => {
       let value = (data[key] !== undefined && data[key] !== null) ? String(data[key]) : "";
       body.replaceText('\\{' + key + '\\}', value);

@@ -599,6 +599,21 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 		return nil
 	})
 
+	// 5. Fetch Pumping Station Summary
+	noiDungTramBom := ""
+	g.Go(func() error {
+		if pumpingSummary, err := h.googleSvc.GetPumpingStationSummary(gCtx, "", nil); err == nil && pumpingSummary != nil {
+			var stInfos []string
+			for _, st := range pumpingSummary.Stations {
+				stInfos = append(stInfos, fmt.Sprintf("%s (vận hành %d/%d bơm tại thời điểm %s)", st.Name, st.OperatingCount, st.PumpCount, st.LastUpdate))
+			}
+			if len(stInfos) > 0 {
+				noiDungTramBom = strings.Join(stInfos, ", ")
+			}
+		}
+		return nil
+	})
+
 	_ = g.Wait()
 
 	waterStations := make(map[string]string)
@@ -798,6 +813,7 @@ Quy tắc:
 		"dd": dd, "mm": mm, "yyyy": yyyy, "hh": hh, "noidung": noidung, "time_mua": timeMua,
 		"so_luong_ung_ngap": soLuongUngNgap, "chi_tiet_cac_diem": chiTietCacDiem,
 		"hien_trang_mua":    hienTrangMua,
+		"noi_dung_tram_bom": noiDungTramBom,
 		"table1_mua_phuong": phuong1, "table2_mua_phuong": phuong2,
 		"table1_mua_xa": xa1, "table2_mua_xa": xa2,
 		"table_song": riverDataRaw, "table_ho": lakeDataRaw,

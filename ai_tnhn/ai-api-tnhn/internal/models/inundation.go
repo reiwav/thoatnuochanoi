@@ -9,6 +9,7 @@ type InundationUpdate struct {
 	ReportID        string   `bson:"report_id" json:"report_id"`
 	UserID          string   `bson:"user_id" json:"user_id"`
 	UserEmail       string   `bson:"user_email" json:"user_email"`
+	UserName        string   `bson:"user_name" json:"user_name"`
 	Timestamp       int64    `bson:"timestamp" json:"timestamp"`
 	Description     string   `bson:"description" json:"description"`
 	Depth           string   `bson:"depth" json:"depth"`
@@ -22,6 +23,18 @@ type InundationUpdate struct {
 	ReviewerName    string        `bson:"reviewer_name,omitempty" json:"reviewer_name,omitempty"`
 	NeedsCorrection bool          `bson:"needs_correction" json:"needs_correction"`
 	OldData         []interface{} `bson:"old_data,omitempty" json:"old_data,omitempty"`
+	// Technical sync fields
+	SurveyChecked bool     `bson:"survey_checked" json:"survey_checked"`
+	SurveyImages  []string `bson:"survey_images" json:"survey_images"`
+	SurveyNote    string   `bson:"survey_note" json:"survey_note"`
+	SurveyUserID  string   `bson:"survey_user_id" json:"survey_user_id"`
+	MechChecked   bool     `bson:"mech_checked" json:"mech_checked"`
+	MechImages    []string `bson:"mech_images" json:"mech_images"`
+	MechNote      string   `bson:"mech_note" json:"mech_note"`
+	MechD         string   `bson:"mech_d" json:"mech_d"`
+	MechR         string   `bson:"mech_r" json:"mech_r"`
+	MechS         string   `bson:"mech_s" json:"mech_s"`
+	MechUserID    string   `bson:"mech_user_id" json:"mech_user_id"`
 }
 
 type InundationReport struct {
@@ -48,4 +61,19 @@ type InundationReport struct {
 	ReviewerName    string             `bson:"reviewer_name,omitempty" json:"reviewer_name,omitempty"`
 	NeedsCorrection         bool               `bson:"needs_correction" json:"needs_correction"`
 	NeedsCorrectionUpdateID string             `bson:"needs_correction_update_id" json:"needs_correction_update_id"`
+
+	// Design Survey Data
+	SurveyChecked bool     `bson:"survey_checked" json:"survey_checked"`
+	SurveyImages  []string `bson:"survey_images" json:"survey_images"`
+	SurveyNote    string   `bson:"survey_note" json:"survey_note"`
+	SurveyUserID  string   `bson:"survey_user_id" json:"survey_user_id"`
+
+	// Mechanization Data
+	MechChecked bool     `bson:"mech_checked" json:"mech_checked"`
+	MechImages  []string `bson:"mech_images" json:"mech_images"`
+	MechNote    string   `bson:"mech_note" json:"mech_note"`
+	MechD       string   `bson:"mech_d" json:"mech_d"`
+	MechR       string   `bson:"mech_r" json:"mech_r"`
+	MechS       string   `bson:"mech_s" json:"mech_s"`
+	MechUserID  string   `bson:"mech_user_id" json:"mech_user_id"`
 }

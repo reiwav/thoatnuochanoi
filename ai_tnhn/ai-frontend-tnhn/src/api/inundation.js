@@ -56,6 +56,16 @@ const inundationApi = {
         return axiosClient.put(`/inundation/update/${id}`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
+    },
+    updateSurvey: (id, formData) => {
+        return axiosClient.put(`/inundation/report/${id}/survey`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+    },
+    updateMech: (id, formData) => {
+        return axiosClient.put(`/inundation/report/${id}/mech`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
     }
 };
 

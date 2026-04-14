@@ -25,6 +25,8 @@ type Service interface {
 	GetReport(ctx context.Context, reportID string) (*models.InundationReport, error)
 	Resolve(ctx context.Context, reportID string, endTime int64) error
 	UpdateReport(ctx context.Context, id string, report *models.InundationReport, images []ImageContent) error
+	UpdateSurvey(ctx context.Context, id string, report *models.InundationReport, userEmail, userName string, images []ImageContent) error
+	UpdateMech(ctx context.Context, id string, report *models.InundationReport, userEmail, userName string, images []ImageContent) error
 
 	// Review and Correction
 	ReviewReport(ctx context.Context, reportID, comment, reviewerID, reviewerEmail, reviewerName string) error
@@ -394,6 +396,125 @@ func (s *service) UpdateReport(ctx context.Context, id string, report *models.In
 
 	return nil
 }
+
+func (s *service) UpdateSurvey(ctx context.Context, id string, report *models.InundationReport, userEmail, userName string, images []ImageContent) error {
+	existing, err := s.inundationRepo.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	existing.SurveyChecked = report.SurveyChecked
+	existing.SurveyNote = report.SurveyNote
+	existing.SurveyUserID = report.SurveyUserID
+
+	var savedImages []string
+	if len(images) > 0 {
+		savedPaths, err := s.saveLocalImages(fmt.Sprintf("%s_survey", id), images)
+		if err != nil {
+			fmt.Printf("Warning: failed to save some survey images locally: %v\n", err)
+		}
+		for _, path := range savedPaths {
+			savedImages = append(savedImages, "local:"+path)
+		}
+		if len(savedImages) > 0 {
+			existing.SurveyImages = savedImages
+		}
+	}
+
+	err = s.inundationRepo.Update(ctx, existing)
+	if err != nil {
+		return err
+	}
+
+	// Create a new update for history
+	newUpdate := &models.InundationUpdate{
+		ReportID:      id,
+		UserID:        report.SurveyUserID,
+		UserEmail:     userEmail,
+		UserName:      userName,
+		Timestamp:     time.Now().Unix(),
+		Description:   "Cập nhật dữ liệu khảo sát thiết kế",
+		Depth:         existing.Depth,
+		Length:        existing.Length,
+		Width:         existing.Width,
+		TrafficStatus: existing.TrafficStatus,
+		SurveyChecked: existing.SurveyChecked,
+		SurveyNote:    existing.SurveyNote,
+		SurveyUserID:  existing.SurveyUserID,
+		SurveyImages:  existing.SurveyImages,
+	}
+	_ = s.inundationUpdateRepo.Create(ctx, *newUpdate)
+
+	// Trigger immediate sync task
+	if len(images) > 0 {
+		s.syncWorker.Enqueue(id, TaskTypeReport)
+	}
+
+	return nil
+}
+
+func (s *service) UpdateMech(ctx context.Context, id string, report *models.InundationReport, userEmail, userName string, images []ImageContent) error {
+	existing, err := s.inundationRepo.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	existing.MechChecked = report.MechChecked
+	existing.MechNote = report.MechNote
+	existing.MechD = report.MechD
+	existing.MechR = report.MechR
+	existing.MechS = report.MechS
+	existing.MechUserID = report.MechUserID
+
+	var savedImages []string
+	if len(images) > 0 {
+		savedPaths, err := s.saveLocalImages(fmt.Sprintf("%s_mech", id), images)
+		if err != nil {
+			fmt.Printf("Warning: failed to save some mechanization images locally: %v\n", err)
+		}
+		for _, path := range savedPaths {
+			savedImages = append(savedImages, "local:"+path)
+		}
+		if len(savedImages) > 0 {
+			existing.MechImages = savedImages
+		}
+	}
+
+	err = s.inundationRepo.Update(ctx, existing)
+	if err != nil {
+		return err
+	}
+
+	// Create a new update for history
+	newUpdate := &models.InundationUpdate{
+		ReportID:      id,
+		UserID:        report.MechUserID,
+		UserEmail:     userEmail,
+		UserName:      userName,
+		Timestamp:     time.Now().Unix(),
+		Description:   "Cập nhật dữ liệu cơ giới/hỗ trợ",
+		Depth:         existing.Depth,
+		Length:        existing.Length,
+		Width:         existing.Width,
+		TrafficStatus: existing.TrafficStatus,
+		MechChecked:   existing.MechChecked,
+		MechNote:      existing.MechNote,
+		MechD:         existing.MechD,
+		MechR:         existing.MechR,
+		MechS:         existing.MechS,
+		MechUserID:    existing.MechUserID,
+		MechImages:    existing.MechImages,
+	}
+	_ = s.inundationUpdateRepo.Create(ctx, *newUpdate)
+
+	// Trigger immediate sync task
+	if len(images) > 0 {
+		s.syncWorker.Enqueue(id, TaskTypeReport)
+	}
+
+	return nil
+}
+
 
 func (s *service) ReviewReport(ctx context.Context, reportID, comment, reviewerID, reviewerEmail, reviewerName string) error {
 	report, err := s.inundationRepo.GetByID(ctx, reportID)

@@ -443,7 +443,7 @@ func (s *service) UpdateSurvey(ctx context.Context, id string, report *models.In
 		SurveyUserID:  existing.SurveyUserID,
 		SurveyImages:  existing.SurveyImages,
 	}
-	_ = s.inundationUpdateRepo.Create(ctx, *newUpdate)
+	_ = s.inundationUpdateRepo.Create(ctx, newUpdate)
 
 	// Trigger immediate sync task
 	if len(images) > 0 {
@@ -505,7 +505,7 @@ func (s *service) UpdateMech(ctx context.Context, id string, report *models.Inun
 		MechUserID:    existing.MechUserID,
 		MechImages:    existing.MechImages,
 	}
-	_ = s.inundationUpdateRepo.Create(ctx, *newUpdate)
+	_ = s.inundationUpdateRepo.Create(ctx, newUpdate)
 
 	// Trigger immediate sync task
 	if len(images) > 0 {

@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import {
     Box, Typography, Stack, Chip, Divider, Paper, CircularProgress,
     Dialog, DialogContent, IconButton as MuiIconButton, useMediaQuery,
-    Button, TextField
+    Button, TextField, Grid
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import {
@@ -55,25 +55,48 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
                 reviewer_id: selectedReport.reviewer_id,
                 reviewer_email: selectedReport.reviewer_email,
                 reviewer_name: selectedReport.reviewer_name,
-                needs_correction: selectedReport.needs_correction
+                needs_correction: selectedReport.needs_correction,
+                survey_checked: selectedReport.survey_checked,
+                survey_note: selectedReport.survey_note,
+                survey_images: selectedReport.survey_images,
+                survey_user_id: selectedReport.survey_user_id,
+                mech_checked: selectedReport.mech_checked,
+                mech_note: selectedReport.mech_note,
+                mech_d: selectedReport.mech_d,
+                mech_r: selectedReport.mech_r,
+                mech_s: selectedReport.mech_s,
+                mech_user_id: selectedReport.mech_user_id,
+                mech_images: selectedReport.mech_images
             },
             ...updates.map((u, i) => ({
                 id: u.id,
                 type: 'update',
-                title: (u.status === 'resolved') ? 'Kết thúc đợt ngập' : `Cập nhật #${i + 1}`,
+                title: (u.status === 'resolved') ? 'Kết thúc đợt ngập' : (u.description || `Cập nhật #${i + 1}`),
                 ts: u.timestamp,
                 desc: u.description || 'Cập nhật hiện trường',
                 length: u.length,
                 width: u.width,
                 depth: u.depth,
                 traffic_status: u.traffic_status || u.trafficStatus,
-                user: u.user_email,
+                user: u.user_email || u.user_id,
+                userName: u.user_name,
                 images: u.images || [],
                 review_comment: u.review_comment,
                 reviewer_id: u.reviewer_id,
                 reviewer_email: u.reviewer_email,
                 reviewer_name: u.reviewer_name,
-                needs_correction: u.needs_correction
+                needs_correction: u.needs_correction,
+                survey_checked: u.survey_checked,
+                survey_note: u.survey_note,
+                survey_images: u.survey_images,
+                survey_user_id: u.survey_user_id,
+                mech_checked: u.mech_checked,
+                mech_note: u.mech_note,
+                mech_d: u.mech_d,
+                mech_r: u.mech_r,
+                mech_s: u.mech_s,
+                mech_user_id: u.mech_user_id,
+                mech_images: u.mech_images
             }))
         ].reverse();
     }, [selectedReport]);
@@ -156,6 +179,8 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
                 </Stack>
             </Paper>
 
+
+
             <Typography variant="h4" sx={{ mb: 2, px: 0.5, fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
                 Lịch sử cập nhật <Chip label={timelineData.length} size="small" sx={{ height: 24, fontSize: '0.82rem', fontWeight: 900 }} />
             </Typography>
@@ -218,6 +243,39 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
                                 </Box>
                             )}
 
+                            {(item.survey_checked || item.survey_note) && (
+                                <Box sx={{ mb: 1.5, p: 1, borderLeft: '3px solid', borderColor: 'primary.main', bgcolor: 'primary.lighter', borderRadius: 1 }}>
+                                    <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', display: 'block', mb: 0.5 }}>⚡️ KHẢO SÁT THIẾT KẾ:</Typography>
+                                    {item.survey_note && <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.survey_note}</Typography>}
+                                    {item.survey_images?.length > 0 && (
+                                        <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5 }}>
+                                            {item.survey_images.map((img, i) => (
+                                                <Box key={i} component="img" src={getInundationImageUrl(img)} onClick={() => handleOpenViewer(item.survey_images, i)} sx={{ width: 40, height: 40, borderRadius: 1, objectFit: 'cover', cursor: 'pointer' }} />
+                                            ))}
+                                        </Box>
+                                    )}
+                                </Box>
+                            )}
+
+                            {(item.mech_checked || item.mech_note) && (
+                                <Box sx={{ mb: 1.5, p: 1, borderLeft: '3px solid', borderColor: 'secondary.main', bgcolor: 'secondary.lighter', borderRadius: 1 }}>
+                                    <Typography variant="caption" sx={{ fontWeight: 800, color: 'secondary.main', display: 'block', mb: 0.5 }}>⚙️ CƠ GIỚI/HỖ TRỢ:</Typography>
+                                    {(item.mech_d || item.mech_r || item.mech_s) && (
+                                        <Typography variant="caption" sx={{ fontWeight: 800, color: 'secondary.dark', mb: 0.5, display: 'block' }}>
+                                            D: {item.mech_d || '-'} | R: {item.mech_r || '-'} | S: {item.mech_s || '-'}
+                                        </Typography>
+                                    )}
+                                    {item.mech_note && <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.mech_note}</Typography>}
+                                    {item.mech_images?.length > 0 && (
+                                        <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5 }}>
+                                            {item.mech_images.map((img, i) => (
+                                                <Box key={i} component="img" src={getInundationImageUrl(img)} onClick={() => handleOpenViewer(item.mech_images, i)} sx={{ width: 40, height: 40, borderRadius: 1, objectFit: 'cover', cursor: 'pointer' }} />
+                                            ))}
+                                        </Box>
+                                    )}
+                                </Box>
+                            )}
+
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
                                 {(item.depth || item.length || item.width) && (
                                     <Box sx={{ px: 1.2, py: 0.5, bgcolor: 'grey.50', borderRadius: 100, border: '1px solid', borderColor: 'grey.200', display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -238,8 +296,8 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
                                 {item.user && (
                                     <Box sx={{ px: 1.2, py: 0.5, bgcolor: 'secondary.lighter', borderRadius: 100, border: '1px solid', borderColor: 'secondary.light', display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                         <IconUser size={14} color={theme.palette.secondary.main} />
-                                        <Typography variant="caption" sx={{ color: 'secondary.dark', fontWeight: 700, fontSize: '0.9rem' }}>
-                                            {item.user.split('@')[0]}
+                                        <Typography variant="caption" sx={{ color: 'secondary.dark', fontWeight: 700, fontSize: '0.85rem' }}>
+                                            {item.userName || item.user.split('@')[0]}
                                         </Typography>
                                     </Box>
                                 )}

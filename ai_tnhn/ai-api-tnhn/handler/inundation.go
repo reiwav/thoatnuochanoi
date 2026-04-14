@@ -742,3 +742,137 @@ func (h *InundationHandler) UpdateSituationUpdateContent(c *gin.Context) {
 	}
 	h.SendData(c, true)
 }
+func (h *InundationHandler) UpdateSurvey(c *gin.Context) {
+	id := c.Param("id")
+
+	isAllowedAll, user := h.checkPermissions(c)
+	if user == nil {
+		h.SendError(c, web.Unauthorized("Invalid user session"))
+		return
+	}
+
+	// Fetch existing report to check permissions
+	existing, err := h.service.GetReport(c.Request.Context(), id)
+	if err != nil {
+		h.SendError(c, err)
+		return
+	}
+
+	if !isAllowedAll {
+		isAuthorized := existing.OrgID == user.OrgID
+		if !isAuthorized && user.OrgID != "" {
+			point, err := h.service.GetPointByID(c.Request.Context(), existing.PointID)
+			if err == nil && point != nil {
+				for _, sid := range point.SharedOrgIDs {
+					if sid == user.OrgID {
+						isAuthorized = true
+						break
+					}
+				}
+			}
+		}
+		if !isAuthorized {
+			h.SendError(c, web.Unauthorized("Bạn không có quyền cập nhật thông tin khảo sát"))
+			return
+		}
+	}
+
+	form, _ := c.MultipartForm()
+	updatedField := &models.InundationReport{
+		SurveyChecked: c.PostForm("survey_checked") == "true",
+		SurveyNote:    c.PostForm("survey_note"),
+		SurveyUserID:  user.ID,
+	}
+
+	var images []inundation.ImageContent
+	if form != nil {
+		files := form.File["images"]
+		for _, fileHeader := range files {
+			file, err := fileHeader.Open()
+			if err == nil {
+				images = append(images, inundation.ImageContent{
+					Name:     fileHeader.Filename,
+					MimeType: fileHeader.Header.Get("Content-Type"),
+					Reader:   file,
+				})
+				defer file.Close()
+			}
+		}
+	}
+
+	err = h.service.UpdateSurvey(c.Request.Context(), id, updatedField, user.Email, user.Name, images)
+	if err != nil {
+		h.SendError(c, err)
+		return
+	}
+	h.SendData(c, true)
+}
+
+func (h *InundationHandler) UpdateMech(c *gin.Context) {
+	id := c.Param("id")
+
+	isAllowedAll, user := h.checkPermissions(c)
+	if user == nil {
+		h.SendError(c, web.Unauthorized("Invalid user session"))
+		return
+	}
+
+	// Fetch existing report to check permissions
+	existing, err := h.service.GetReport(c.Request.Context(), id)
+	if err != nil {
+		h.SendError(c, err)
+		return
+	}
+
+	if !isAllowedAll {
+		isAuthorized := existing.OrgID == user.OrgID
+		if !isAuthorized && user.OrgID != "" {
+			point, err := h.service.GetPointByID(c.Request.Context(), existing.PointID)
+			if err == nil && point != nil {
+				for _, sid := range point.SharedOrgIDs {
+					if sid == user.OrgID {
+						isAuthorized = true
+						break
+					}
+				}
+			}
+		}
+		if !isAuthorized {
+			h.SendError(c, web.Unauthorized("Bạn không có quyền cập nhật thông tin cơ giới"))
+			return
+		}
+	}
+
+	form, _ := c.MultipartForm()
+	updatedField := &models.InundationReport{
+		MechChecked: c.PostForm("mech_checked") == "true",
+		MechNote:    c.PostForm("mech_note"),
+		MechD:       c.PostForm("mech_d"),
+		MechR:       c.PostForm("mech_r"),
+		MechS:       c.PostForm("mech_s"),
+		MechUserID:  user.ID,
+	}
+
+	var images []inundation.ImageContent
+	if form != nil {
+		files := form.File["images"]
+		for _, fileHeader := range files {
+			file, err := fileHeader.Open()
+			if err == nil {
+				images = append(images, inundation.ImageContent{
+					Name:     fileHeader.Filename,
+					MimeType: fileHeader.Header.Get("Content-Type"),
+					Reader:   file,
+				})
+				defer file.Close()
+			}
+		}
+	}
+
+	err = h.service.UpdateMech(c.Request.Context(), id, updatedField, user.Email, user.Name, images)
+	if err != nil {
+		h.SendError(c, err)
+		return
+	}
+	h.SendData(c, true)
+}

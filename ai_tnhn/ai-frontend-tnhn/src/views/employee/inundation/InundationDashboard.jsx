@@ -32,7 +32,12 @@ import {
     TablePagination,
     MenuItem,
     Grid,
-    Menu
+    Menu,
+    Tabs,
+    Tab,
+    Checkbox,
+    FormControlLabel,
+    Tooltip
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -52,9 +57,13 @@ import {
     IconEye,
     IconCheck,
     IconHistory,
-    IconTools
+    IconTools,
+    IconCloudUpload,
+    IconSend,
+    IconInfoCircle
 } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
+import { processAndWatermark } from 'utils/imageProcessor';
 import inundationApi from 'api/inundation';
 import organizationApi from 'api/organization';
 import pumpingStationApi from 'api/pumpingStation';
@@ -95,7 +104,17 @@ const getLatestData = (report) => {
             newest_ts: newest.timestamp,
             oldest_ts: oldest.timestamp,
             status: data.status === 'resolved' || data.status === 'normal' ? 'normal' : data.status,
-            traffic_status: (data.status === 'resolved' || data.status === 'normal') ? "" : (updateWithTraffic?.traffic_status || updateWithTraffic?.trafficStatus || data.traffic_status)
+            traffic_status: (data.status === 'resolved' || data.status === 'normal') ? "" : (updateWithTraffic?.traffic_status || updateWithTraffic?.trafficStatus || data.traffic_status),
+            // Technical fields from updates
+            survey_checked: newest.survey_checked !== undefined ? newest.survey_checked : data.survey_checked,
+            survey_note: newest.survey_note || data.survey_note,
+            survey_images: (newest.survey_images && newest.survey_images.length > 0) ? newest.survey_images : data.survey_images,
+            mech_checked: newest.mech_checked !== undefined ? newest.mech_checked : data.mech_checked,
+            mech_note: newest.mech_note || data.mech_note,
+            mech_d: newest.mech_d || data.mech_d,
+            mech_r: newest.mech_r || data.mech_r,
+            mech_s: newest.mech_s || data.mech_s,
+            mech_images: (newest.mech_images && newest.mech_images.length > 0) ? newest.mech_images : data.mech_images
         };
     }
 
@@ -231,8 +250,50 @@ const CollapsiblePumpingStationRow = ({ station, isMobile, navigate, basePath })
 };
 
 const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate, isMobile, basePath, hasPermission, isEmployee }) => {
+    const theme = useTheme();
+    const { user } = useAuthStore();
     const [open, setOpen] = useState(point.status === 'active');
+    const [tabValue, setTabValue] = useState(0);
     const latest = useMemo(() => getLatestData(point.active_report || point.last_report), [point]);
+
+    // NEW: Survey & Mech states
+    const [surveyLoading, setSurveyLoading] = useState(false);
+    const [surveyData, setSurveyData] = useState({
+        checked: point.active_report?.survey_checked || false,
+        note: point.active_report?.survey_note || '',
+        images: [],
+        previews: []
+    });
+
+    const [mechLoading, setMechLoading] = useState(false);
+    const [mechData, setMechData] = useState({
+        checked: point.active_report?.mech_checked || false,
+        note: point.active_report?.mech_note || '',
+        d: point.active_report?.mech_d || '',
+        r: point.active_report?.mech_r || '',
+        s: point.active_report?.mech_s || '',
+        images: [],
+        previews: []
+    });
+
+    // Update state when point change (e.g. after refresh)
+    useEffect(() => {
+        if (point.active_report) {
+            setSurveyData(prev => ({
+                ...prev,
+                checked: point.active_report.survey_checked || false,
+                note: point.active_report.survey_note || ''
+            }));
+            setMechData(prev => ({
+                ...prev,
+                checked: point.active_report.mech_checked || false,
+                note: point.active_report.mech_note || '',
+                d: point.active_report.mech_d || '',
+                r: point.active_report.mech_r || '',
+                s: point.active_report.mech_s || ''
+            }));
+        }
+    }, [point.active_report]);
 
     // Action Menu State
     const [anchorEl, setAnchorEl] = useState(null);
@@ -253,6 +314,82 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
         const report = point.active_report || point.last_report;
         return report?.needs_correction_update_id || '';
     }, [point]);
+
+    // Survey Handlers
+    const handleSurveyImageChange = async (e) => {
+        const pickedFiles = Array.from(e.target.files);
+        if (pickedFiles.length === 0) return;
+        try {
+            const processedFiles = await Promise.all(pickedFiles.map(file => processAndWatermark(file, point.name)));
+            setSurveyData(prev => ({
+                ...prev,
+                images: [...prev.images, ...processedFiles],
+                previews: [...prev.previews, ...processedFiles.map(file => URL.createObjectURL(file))]
+            }));
+        } catch (error) {
+            console.error('Error processing survey images:', error);
+            toast.error('Lỗi khi xử lý ảnh');
+        }
+    };
+
+    const handleSurveySubmit = async () => {
+        if (!point.active_report) return;
+        setSurveyLoading(true);
+        try {
+            const fd = new FormData();
+            fd.append('survey_checked', surveyData.checked);
+            fd.append('survey_note', surveyData.note);
+            surveyData.images.forEach(img => fd.append('images', img));
+            await inundationApi.updateSurvey(point.active_report.id, fd);
+            toast.success('Cập nhật khảo sát thiết kế thành công');
+            setSurveyData(prev => ({ ...prev, images: [], previews: [] }));
+            // Trigger refresh - in a real app we might use a context or callback
+            window.location.reload(); 
+        } catch (err) {
+            toast.error('Lỗi khi cập nhật khảo sát');
+        } finally {
+            setSurveyLoading(false);
+        }
+    };
+
+    // Mech Handlers
+    const handleMechImageChange = async (e) => {
+        const pickedFiles = Array.from(e.target.files);
+        if (pickedFiles.length === 0) return;
+        try {
+            const processedFiles = await Promise.all(pickedFiles.map(file => processAndWatermark(file, point.name)));
+            setMechData(prev => ({
+                ...prev,
+                images: [...prev.images, ...processedFiles],
+                previews: [...prev.previews, ...processedFiles.map(file => URL.createObjectURL(file))]
+            }));
+        } catch (error) {
+            console.error('Error processing mech images:', error);
+            toast.error('Lỗi khi xử lý ảnh');
+        }
+    };
+
+    const handleMechSubmit = async () => {
+        if (!point.active_report) return;
+        setMechLoading(true);
+        try {
+            const fd = new FormData();
+            fd.append('mech_checked', mechData.checked);
+            fd.append('mech_note', mechData.note);
+            fd.append('mech_d', mechData.d);
+            fd.append('mech_r', mechData.r);
+            fd.append('mech_s', mechData.s);
+            mechData.images.forEach(img => fd.append('images', img));
+            await inundationApi.updateMech(point.active_report.id, fd);
+            toast.success('Cập nhật cơ giới thành công');
+            setMechData(prev => ({ ...prev, images: [], previews: [] }));
+            window.location.reload();
+        } catch (err) {
+            toast.error('Lỗi khi cập nhật cơ giới');
+        } finally {
+            setMechLoading(false);
+        }
+    };
 
     const renderCard = () => (
         <Paper elevation={0} sx={{ p: 2, mb: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 3, bgcolor: 'background.paper' }}>
@@ -540,48 +677,195 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                 <TableRow>
                     <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider', paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
                         <Collapse in={open} timeout="auto" unmountOnExit>
-                            <Box sx={{ m: 2, p: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-                                <Typography variant="h6" gutterBottom component="div" sx={{ fontWeight: 700, color: 'primary.main', mb: 2 }}>
-                                    {point.address}
-                                </Typography>
-                                <Stack spacing={1.5}>
-                                    <Grid container spacing={2}>
-                                        <Grid item xs={12} sm={6}>
-                                            <Typography variant="body2" color="text.secondary">Kích thước ngập:</Typography>
-                                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                                {latest ? `${latest.length || 0}m x ${latest.width || 0}m x ${latest.depth || 0}m` : '-'}
-                                            </Typography>
-                                        </Grid>
-                                        <Grid item xs={12} sm={6}>
-                                            <Typography variant="body2" color="text.secondary">Thời gian:</Typography>
-                                            <Typography variant="body2" sx={{ fontWeight: 600 }}>{`Bắt đầu: ${formatDateTime(latest.start_time)}`}</Typography>
-                                            <Grid item xs={12}>
-                                                <Typography variant="caption" color={point.status === 'active' ? "error" : "text.secondary"} sx={{ fontWeight: 700, display: 'block', mt: 0.5, fontSize: '0.8rem' }}>
+                            <Box sx={{ m: 2, p: 2, bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
+                                <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+                                    <Tabs
+                                        value={tabValue}
+                                        onChange={(e, v) => setTabValue(v)}
+                                        textColor="primary"
+                                        indicatorColor="primary"
+                                        variant="scrollable"
+                                        scrollButtons="auto"
+                                        sx={{
+                                            '& .MuiTab-root': {
+                                                fontWeight: 800,
+                                                fontSize: '0.875rem',
+                                                minHeight: 48,
+                                                color: 'text.secondary'
+                                            },
+                                            '& .Mui-selected': {
+                                                color: 'primary.main'
+                                            }
+                                        }}
+                                    >
+                                        <Tab label="Nhận xét" />
+                                        {(hasPermission('inundation:survey') || user?.isCompany) && <Tab label="Khảo sát thiết kế" />}
+                                        {(hasPermission('inundation:mechanic') || user?.isCompany) && <Tab label={point.org_id !== user?.org_id ? "XN Địa bàn hỗ trợ" : "Xí nghiệp Cơ giới"} />}
+                                    </Tabs>
+                                </Box>
+
+                                {tabValue === 0 && (
+                                    <Stack spacing={1.5}>
+                                        <Typography variant="h6" gutterBottom component="div" sx={{ fontWeight: 800, color: 'primary.main', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <IconInfoCircle size={18} /> {point.address}
+                                        </Typography>
+                                        <Grid container spacing={2}>
+                                            <Grid item xs={12} sm={6}>
+                                                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>Kích thước ngập:</Typography>
+                                                <Typography variant="body2" sx={{ fontWeight: 700, mt: 0.5 }}>
+                                                    {latest ? `${latest.length || 0}m x ${latest.width || 0}m x ${latest.depth || 0}m` : '-'}
+                                                </Typography>
+                                            </Grid>
+                                            <Grid item xs={12} sm={6}>
+                                                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>Thời gian:</Typography>
+                                                <Typography variant="body2" sx={{ fontWeight: 700, mt: 0.5 }}>{`Bắt đầu: ${formatDateTime(latest.start_time)}`}</Typography>
+                                                <Typography variant="caption" color={point.status === 'active' ? "error" : "text.secondary"} sx={{ fontWeight: 800, display: 'block', mt: 1 }}>
                                                     {point.status === 'active'
-                                                        ? `Cập nhật lúc: ${formatDateTime(point.updated_at || latest.newest_ts)} (Đã ngập ${formatDuration(latest.start_time)})`
-                                                        : `Đã kết thúc`}
+                                                        ? `⚡️ Cập nhật lúc: ${formatDateTime(point.updated_at || latest.newest_ts)} (Đã ngập ${formatDuration(latest.start_time)})`
+                                                        : `✅ Đã kết thúc`}
                                                 </Typography>
                                             </Grid>
                                         </Grid>
-                                    </Grid>
-                                    <Box>
-                                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>Ảnh liên quan:</Typography>
-                                        {latest?.images?.length > 0 ? (
-                                            <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', pb: 1 }}>
-                                                {latest.images.map((img, idx) => (
-                                                    <Box
-                                                        key={idx} component="img" src={getInundationImageUrl(img)}
-                                                        onClick={(e) => { e.stopPropagation(); handleOpenViewer(latest.images, idx); }}
-                                                        sx={{ width: 56, height: 56, borderRadius: 1.5, objectFit: 'cover', cursor: 'pointer', border: '1px solid', borderColor: 'divider', flexShrink: 0 }}
-                                                    />
-                                                ))}
-                                            </Stack>
-                                        ) : (
-                                            <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.disabled' }}>Không có ảnh</Typography>
-                                        )}
-                                    </Box>
+                                        <Box sx={{ mt: 1 }}>
+                                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, mb: 1, display: 'block' }}>Ảnh liên quan:</Typography>
+                                            {latest?.images?.length > 0 ? (
+                                                <Stack direction="row" spacing={1.5} sx={{ overflowX: 'auto', pb: 1, '&::-webkit-scrollbar': { height: 4 } }}>
+                                                    {latest.images.map((img, idx) => (
+                                                        <Box
+                                                            key={idx} component="img" src={getInundationImageUrl(img)}
+                                                            onClick={(e) => { e.stopPropagation(); handleOpenViewer(latest.images, idx); }}
+                                                            sx={{ width: 64, height: 64, borderRadius: 2, objectFit: 'cover', cursor: 'pointer', border: '1px solid', borderColor: 'divider', flexShrink: 0, '&:hover': { transform: 'scale(1.05)', transition: 'all 0.2s' } }}
+                                                        />
+                                                    ))}
+                                                </Stack>
+                                            ) : (
+                                                <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.disabled', py: 1 }}>Không có ảnh</Typography>
+                                            )}
+                                        </Box>
+                                    </Stack>
+                                )}
 
-                                </Stack>
+                                {tabValue === 1 && (
+                                    <Box sx={{ p: 1 }}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, color: 'primary.dark' }}>XÍ NGHIỆP KHẢO SÁT THIẾT KẾ</Typography>
+                                        <Stack spacing={3}>
+                                            <FormControlLabel
+                                                control={<Checkbox checked={surveyData.checked} onChange={(e) => setSurveyData({...surveyData, checked: e.target.checked})} />}
+                                                label={<Typography sx={{ fontWeight: 700 }}>Đã kiểm tra</Typography>}
+                                            />
+                                            <Box>
+                                                <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', mb: 1, display: 'block' }}>ẢNH HIỆN TRƯỜNG:</Typography>
+                                                <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', mb: 1.5 }}>
+                                                    <Box component="label" sx={{ width: 64, height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed', borderColor: 'divider', borderRadius: 2, cursor: 'pointer', bgcolor: 'grey.50', '&:hover': { borderColor: 'primary.main', bgcolor: 'primary.lighter' } }}>
+                                                        <input type="file" hidden multiple accept="image/*" onChange={handleSurveyImageChange} />
+                                                        <IconCloudUpload size={24} color={theme.palette.primary.main} />
+                                                    </Box>
+                                                    {surveyData.previews.map((src, i) => (
+                                                        <Box key={i} sx={{ position: 'relative', width: 64, height: 64 }}>
+                                                            <Box component="img" src={src} sx={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 2, border: '1px solid', borderColor: 'divider' }} />
+                                                            <IconButton size="small" onClick={() => {
+                                                                const ni = [...surveyData.images]; ni.splice(i, 1);
+                                                                const np = [...surveyData.previews]; URL.revokeObjectURL(np[i]); np.splice(i, 1);
+                                                                setSurveyData({...surveyData, images: ni, previews: np});
+                                                            }} sx={{ position: 'absolute', top: -5, right: -5, bgcolor: 'error.main', color: 'white', p: 0.2, '&:hover': { bgcolor: 'error.dark' } }}>
+                                                                <IconX size={10} />
+                                                            </IconButton>
+                                                        </Box>
+                                                    ))}
+                                                    {/* Display EXISTING images if any */}
+                                                    {!surveyData.images.length && point.active_report?.survey_images?.map((img, idx) => (
+                                                        <Box key={idx} component="img" src={getInundationImageUrl(img)} sx={{ width: 64, height: 64, borderRadius: 2, objectFit: 'cover', border: '1px solid', borderColor: 'divider' }} onClick={() => handleOpenViewer(point.active_report.survey_images, idx)} />
+                                                    ))}
+                                                </Box>
+                                            </Box>
+                                            <TextField
+                                                fullWidth label="Thông tin thêm" multiline rows={2}
+                                                value={surveyData.note} onChange={(e) => setSurveyData({...surveyData, note: e.target.value})}
+                                                placeholder="Nhập ghi chú hoặc thông tin khảo sát..."
+                                            />
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                {point.active_report?.survey_user_id && (
+                                                    <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.disabled' }}>
+                                                        Cập nhật bởi: {point.active_report.survey_user_id}
+                                                    </Typography>
+                                                )}
+                                                <Button
+                                                    variant="contained" color="primary" onClick={handleSurveySubmit}
+                                                    disabled={surveyLoading} startIcon={surveyLoading ? <CircularProgress size={16} color="inherit" /> : <IconSend size={16} />}
+                                                    sx={{ borderRadius: 2, fontWeight: 800, px: 4 }}
+                                                >
+                                                    {surveyLoading ? 'Đang gửi...' : 'GỬI CẬP NHẬT'}
+                                                </Button>
+                                            </Box>
+                                        </Stack>
+                                    </Box>
+                                )}
+
+                                {tabValue === 2 && (
+                                    <Box sx={{ p: 1 }}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, color: 'primary.dark' }}>{point.org_id !== user?.org_id ? "XN ĐỊA BÀN HỖ TRỢ" : "XÍ NGHIỆP CƠ GIỚI"}</Typography>
+                                        <Stack spacing={3}>
+                                            <FormControlLabel
+                                                control={<Checkbox checked={mechData.checked} onChange={(e) => setMechData({...mechData, checked: e.target.checked})} />}
+                                                label={<Typography sx={{ fontWeight: 700 }}>Đã ứng trực</Typography>}
+                                            />
+                                            <Grid container spacing={2}>
+                                                <Grid item xs={12} sm={4}>
+                                                    <TextField fullWidth label="D" size="small" value={mechData.d} onChange={(e) => setMechData({...mechData, d: e.target.value})} placeholder="Sâu" />
+                                                </Grid>
+                                                <Grid item xs={12} sm={4}>
+                                                    <TextField fullWidth label="R" size="small" value={mechData.r} onChange={(e) => setMechData({...mechData, r: e.target.value})} placeholder="Rộng" />
+                                                </Grid>
+                                                <Grid item xs={12} sm={4}>
+                                                    <TextField fullWidth label="S" size="small" value={mechData.s} onChange={(e) => setMechData({...mechData, s: e.target.value})} placeholder="Dài/Diện tích" />
+                                                </Grid>
+                                            </Grid>
+                                            <Box>
+                                                <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', mb: 1, display: 'block' }}>ẢNH HIỆN TRƯỜNG:</Typography>
+                                                <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', mb: 1.5 }}>
+                                                    <Box component="label" sx={{ width: 64, height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed', borderColor: 'divider', borderRadius: 2, cursor: 'pointer', bgcolor: 'grey.50', '&:hover': { borderColor: 'primary.main', bgcolor: 'primary.lighter' } }}>
+                                                        <input type="file" hidden multiple accept="image/*" onChange={handleMechImageChange} />
+                                                        <IconCloudUpload size={24} color={theme.palette.primary.main} />
+                                                    </Box>
+                                                    {mechData.previews.map((src, i) => (
+                                                        <Box key={i} sx={{ position: 'relative', width: 64, height: 64 }}>
+                                                            <Box component="img" src={src} sx={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 2, border: '1px solid', borderColor: 'divider' }} />
+                                                            <IconButton size="small" onClick={() => {
+                                                                const ni = [...mechData.images]; ni.splice(i, 1);
+                                                                const np = [...mechData.previews]; URL.revokeObjectURL(np[i]); np.splice(i, 1);
+                                                                setMechData({...mechData, images: ni, previews: np});
+                                                            }} sx={{ position: 'absolute', top: -5, right: -5, bgcolor: 'error.main', color: 'white', p: 0.2, '&:hover': { bgcolor: 'error.dark' } }}>
+                                                                <IconX size={10} />
+                                                            </IconButton>
+                                                        </Box>
+                                                    ))}
+                                                    {!mechData.images.length && point.active_report?.mech_images?.map((img, idx) => (
+                                                        <Box key={idx} component="img" src={getInundationImageUrl(img)} sx={{ width: 64, height: 64, borderRadius: 2, objectFit: 'cover', border: '1px solid', borderColor: 'divider' }} onClick={() => handleOpenViewer(point.active_report.mech_images, idx)} />
+                                                    ))}
+                                                </Box>
+                                            </Box>
+                                            <TextField
+                                                fullWidth label="Thông tin khác" multiline rows={2}
+                                                value={mechData.note} onChange={(e) => setMechData({...mechData, note: e.target.value})}
+                                                placeholder="Nhập ghi chú hoặc thông tin tình hình..."
+                                            />
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                {point.active_report?.mech_user_id && (
+                                                    <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.disabled' }}>
+                                                        Cập nhật bởi: {point.active_report.mech_user_id}
+                                                    </Typography>
+                                                )}
+                                                <Button
+                                                    variant="contained" color="secondary" onClick={handleMechSubmit}
+                                                    disabled={mechLoading} startIcon={mechLoading ? <CircularProgress size={16} color="inherit" /> : <IconSend size={16} />}
+                                                    sx={{ borderRadius: 2, fontWeight: 800, px: 4, bgcolor: 'secondary.main' }}
+                                                >
+                                                    {mechLoading ? 'Đang gửi...' : 'GỬI CẬP NHẬT'}
+                                                </Button>
+                                            </Box>
+                                        </Stack>
+                                    </Box>
+                                )}
                             </Box>
                         </Collapse>
                     </TableCell>
@@ -592,6 +876,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
 };
 
 const CollapsibleHistoryRow = ({ report, organizations, handleOpenViewer, navigate, isMobile, basePath, hasPermission, isEmployee }) => {
+    const theme = useTheme();
     const [open, setOpen] = useState(false);
     const latest = useMemo(() => getLatestData(report), [report]);
 
@@ -807,7 +1092,7 @@ const InundationDashboard = () => {
     const navigate = useNavigate();
     const { search } = useLocation();
     const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+    const isMobile = useMediaQuery(theme?.breakpoints?.down('md') || '(max-width:900px)');
 
     // Get auth state from Zustand
     const { isEmployee, role: userRole, user: userInfo, logout, hasPermission } = useAuthStore();

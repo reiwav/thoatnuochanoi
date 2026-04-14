@@ -22,16 +22,18 @@ import { toast } from 'react-hot-toast';
 import useAuthStore from 'store/useAuthStore';
 
 const PumpingStationRow = ({ item, index, getOrgNames, handleHistory, handleEdit, handleDelete, hasPermission }) => {
-    const [open, setOpen] = useState(false);
+    const [open, setOpen] = useState(!!item.last_report);
     const lastReport = item.last_report;
 
     return (
         <>
-            <TableRow sx={{ '& > *': { borderBottom: 'unset' } }}>
+            <TableRow sx={{ '& > *': { borderBottom: lastReport ? '1px dashed' : 'inherit', borderColor: 'divider' } }}>
                 <TableCell>
-                    <IconButton size="small" onClick={() => setOpen(!open)}>
-                        {open ? <IconChevronUp size={18} /> : <IconChevronDown size={18} />}
-                    </IconButton>
+                    {lastReport && (
+                        <IconButton size="small" onClick={() => setOpen(!open)}>
+                            {open ? <IconChevronUp size={18} /> : <IconChevronDown size={18} />}
+                        </IconButton>
+                    )}
                 </TableCell>
                 <TableCell>{index + 1}</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>{item.name}</TableCell>
@@ -63,14 +65,14 @@ const PumpingStationRow = ({ item, index, getOrgNames, handleHistory, handleEdit
                     </Stack>
                 </TableCell>
             </TableRow>
-            <TableRow>
-                <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={8}>
-                    <Collapse in={open} timeout="auto" unmountOnExit>
-                        <Box sx={{ m: 1, p: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'grey.100' }}>
+            {lastReport && (
+                <TableRow>
+                    <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider', py: 0 }} colSpan={8}>
+                        <Collapse in={open} timeout="auto" unmountOnExit>
+                        <Box sx={{ my: 2, mx: 1, p: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
                             <Typography variant="h6" gutterBottom sx={{ fontWeight: 700, color: 'primary.main', mb: 2 }}>
                                 Trạng thái vận hành mới nhất
                             </Typography>
-                            {lastReport ? (
                                 <Grid container spacing={3}>
                                     <Grid item xs={12} sm={4}>
                                         <Box sx={{ p: 1.5, bgcolor: 'white', borderRadius: 2, border: '1px solid', borderColor: 'success.light', textAlign: 'center' }}>
@@ -101,7 +103,7 @@ const PumpingStationRow = ({ item, index, getOrgNames, handleHistory, handleEdit
                                             </Grid>
                                             <Grid item xs={12} sm={4} sx={{ textAlign: { sm: 'right' }, mt: { xs: 2, sm: 0 } }}>
                                                 <Typography variant="caption" sx={{ display: 'block', fontWeight: 700, color: 'text.secondary' }}>
-                                                    Cập nhật: {dayjs(lastReport.timestamp * 1000).format('DD/MM/YYYY HH:mm')}
+                                                     Cập nhật: {dayjs(lastReport.timestamp * 1000).format('DD/MM/YYYY HH:mm')}
                                                 </Typography>
                                                 <Typography variant="caption" sx={{ display: 'block', fontWeight: 700, color: 'text.disabled' }}>
                                                     Bởi: {lastReport.user_name}
@@ -110,17 +112,11 @@ const PumpingStationRow = ({ item, index, getOrgNames, handleHistory, handleEdit
                                         </Grid>
                                     </Grid>
                                 </Grid>
-                            ) : (
-                                <Box sx={{ py: 2, textAlign: 'center' }}>
-                                    <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                                        Chưa có dữ liệu vận hành nào được ghi nhận.
-                                    </Typography>
-                                </Box>
-                            )}
                         </Box>
                     </Collapse>
                 </TableCell>
             </TableRow>
+        )}
         </>
     );
 };
@@ -235,7 +231,7 @@ const PumpingStationPage = () => {
                     <TableHead>
                         <TableRow>
                             <TableCell sx={{ width: 40 }} />
-                            <TableCell>Số TT</TableCell>
+                            <TableCell>STT</TableCell>
                             <TableCell>Tên trạm bơm</TableCell>
                             <TableCell>Địa chỉ</TableCell>
                             <TableCell>Số lượng bơm</TableCell>

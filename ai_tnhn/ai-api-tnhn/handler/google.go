@@ -577,15 +577,15 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 	})
 
 	// 4. Fetch Inundation Summary
-	soLuongUngNgap := 0
+	motaUngNgap := " không xuất hiện điểm úng ngập"
 	chiTietCacDiem := ""
 	g.Go(func() error {
 		if inundationSummary, err := h.googleSvc.GetInundationSummary(gCtx, "", nil); err == nil && inundationSummary != nil {
-			soLuongUngNgap = inundationSummary.ActivePoints
-			if soLuongUngNgap > 0 {
+			motaUngNgap = "có " + fmt.Sprintf("%d", inundationSummary.ActivePoints) + " điểm úng ngập"
+			if inundationSummary.ActivePoints > 0 {
 				var details []string
 				for _, pt := range inundationSummary.OngoingPoints {
-					depthInfo := pt.Depth
+					depthInfo := "(Dài x Rộng x Sâu) " + pt.Length + " x " + pt.Width + " x " + pt.Depth
 					if depthInfo == "" {
 						depthInfo = "chưa rõ độ sâu"
 					} else {
@@ -811,7 +811,7 @@ Quy tắc:
 
 	payload := map[string]interface{}{
 		"dd": dd, "mm": mm, "yyyy": yyyy, "hh": hh, "noidung": noidung, "time_mua": timeMua,
-		"so_luong_ung_ngap": soLuongUngNgap, "chi_tiet_cac_diem": chiTietCacDiem,
+		"mo_ta_ung_ngap": motaUngNgap, "chi_tiet_cac_diem": chiTietCacDiem,
 		"hien_trang_mua":    hienTrangMua,
 		"noi_dung_tram_bom": noiDungTramBom,
 		"table1_mua_phuong": phuong1, "table2_mua_phuong": phuong2,

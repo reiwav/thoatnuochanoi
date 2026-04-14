@@ -15,6 +15,8 @@ type InundationStationStat struct {
 	StreetName    string                 `json:"street_name"`
 	OrgName       string                 `json:"org_name"`
 	Depth         string                 `json:"depth"`
+	Width         string                 `json:"width"`
+	Length        string                 `json:"length"`
 	StartTime     string                 `json:"start_time"`
 	Description   string                 `json:"description"`
 	CurrentStatus string                 `json:"current_status"`
@@ -22,7 +24,7 @@ type InundationStationStat struct {
 }
 
 type InundationSummaryData struct {
-	ActivePoints  int                   `json:"active_points"`
+	ActivePoints  int                     `json:"active_points"`
 	OngoingPoints []InundationStationStat `json:"ongoing_points"`
 }
 
@@ -57,6 +59,8 @@ func (s *service) GetInundationSummary(ctx context.Context, orgID string, assign
 			StreetName:    r.StreetName,
 			OrgName:       orgMap[r.OrgID],
 			Depth:         r.Depth,
+			Width:         r.Width,
+			Length:        r.Length,
 			StartTime:     time.Unix(r.StartTime, 0).Format("15:04 02/01/2006"),
 			Description:   r.Description,
 			CurrentStatus: "Đang ngập lụt",

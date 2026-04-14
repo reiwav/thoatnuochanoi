@@ -113,6 +113,10 @@ func (s *service) getChatTools() []*genai.FunctionDeclaration {
 			Description: "Lấy thông tin tổng hợp tình hình ngập lụt hiện tại (các điểm đang ngập, chưa kết thúc).",
 		},
 		{
+			Name:        "get_live_pumping_summary",
+			Description: "Lấy thông tin tổng hợp tình hình hoạt động của các trạm bơm hiện tại (số lượng máy bơm đang chạy, bảo dưỡng, đóng).",
+		},
+		{
 			Name:        "get_rain_summary_by_ward",
 			Description: "Lấy tổng hợp lượng mưa theo từng Phường/Xã trong một khoảng thời gian.",
 			Parameters: &genai.Schema{

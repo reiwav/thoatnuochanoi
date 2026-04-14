@@ -96,7 +96,8 @@ func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log log
 	s.Inundation = inundation.NewService(repos.Inundation, repos.InundationUpdate, repos.InundationStation, repos.Organization, driveService)
 	s.Weather = weather.NewService(repos.HistoricalRain)
 
-	s.GoogleApi, _ = googleapi.NewService(cfg.GoogleDriveConfig, cfg.OAuthConfig, repos.AiUsage, s.Inundation, s.Weather, s.Station)
+	s.PumpingStation = pumpingstation.NewService(repos.PumpingStation, repos.User, repos.Organization)
+	s.GoogleApi, _ = googleapi.NewService(cfg.GoogleDriveConfig, cfg.OAuthConfig, repos.AiUsage, s.Inundation, s.Weather, s.Station, s.PumpingStation)
 	if s.GoogleApi != nil {
 		s.GoogleApi.SetEmailService(s.Email)
 	}
@@ -104,7 +105,7 @@ func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log log
 	s.EmConstruction = emergency_construction.NewService(repos.EmergencyConstruction, repos.EmergencyConstructionHistory, repos.EmergencyConstructionProgress, repos.User, repos.Organization, driveService)
 	s.ContractCategory = contract_category.NewService(repos.ContractCategory, driveService)
 	s.Contract = contract.NewService(repos.Contract, repos.ContractCategory, repos.Organization, driveService)
-	s.PumpingStation = pumpingstation.NewService(repos.PumpingStation, repos.User, repos.Organization)
+
 	s.Permission = permission.NewService(repos.Permission, repos.RolePermission)
 	s.Role = role.NewService(repos.Role)
 

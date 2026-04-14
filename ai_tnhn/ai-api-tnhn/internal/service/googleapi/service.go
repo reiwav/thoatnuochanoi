@@ -11,6 +11,7 @@ import (
 	"ai-api-tnhn/internal/service/inundation"
 	"ai-api-tnhn/internal/service/station"
 	"ai-api-tnhn/internal/service/weather"
+	pumpingstation "ai-api-tnhn/internal/service/pumping_station"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"golang.org/x/oauth2"
@@ -49,6 +50,7 @@ type Service interface {
 	GetRainSummary(ctx context.Context, orgID string) (*RainSummaryData, error)
 	GetWaterSummary(ctx context.Context, orgID string) (*WaterSummaryData, error)
 	GetInundationSummary(ctx context.Context, orgID string, assignedInuIDs []string) (*InundationSummaryData, error)
+	GetPumpingStationSummary(ctx context.Context, orgID string, assignedIDs []string) (*PumpingStationSummaryData, error)
 	GetRecentEmails(ctx context.Context, limit int) ([]email.EmailInfo, error)
 	GetUnreadEmails(ctx context.Context, limit int) ([]email.EmailInfo, error)
 	ReadEmailByTitle(ctx context.Context, title string) (*email.EmailDetail, error)
@@ -64,9 +66,10 @@ type service struct {
 	emailSvc    email.Service
 	weatherSvc  weather.Service
 	stationSvc  station.Service
+	pumpingSvc  pumpingstation.Service
 }
 
-func NewService(conf config.GoogleDriveConfig, oauthConf config.OAuthConfig, aiUsageRepo repository.AiUsage, inuSvc inundation.Service, weatherSvc weather.Service, stationSvc station.Service) (Service, error) {
+func NewService(conf config.GoogleDriveConfig, oauthConf config.OAuthConfig, aiUsageRepo repository.AiUsage, inuSvc inundation.Service, weatherSvc weather.Service, stationSvc station.Service, pumpingSvc pumpingstation.Service) (Service, error) {
 	ctx := context.Background()
 	var driveSvc *drive.Service
 	var gmailSvc *gmail.Service
@@ -119,6 +122,7 @@ func NewService(conf config.GoogleDriveConfig, oauthConf config.OAuthConfig, aiU
 		inuSvc:      inuSvc,
 		weatherSvc:  weatherSvc,
 		stationSvc:  stationSvc,
+		pumpingSvc:  pumpingSvc,
 	}, nil
 }
 

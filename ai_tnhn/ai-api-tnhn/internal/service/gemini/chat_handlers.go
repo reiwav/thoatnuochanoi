@@ -14,7 +14,7 @@ func (s *service) handleToolCall(ctx context.Context, call *genai.FunctionCall, 
 	// 0. Fetch User Permissions
 	user, _ := s.userRepo.GetByID(ctx, userID)
 	orgID := ""
-	var assignedRainIDs, assignedLakeIDs, assignedRiverIDs, assignedInuIDs []string
+	var assignedRainIDs, assignedLakeIDs, assignedRiverIDs, assignedInuIDs, assignedPumpingIDs []string
 	if user != nil {
 		orgID = user.OrgID
 		if isCompany {
@@ -24,6 +24,9 @@ func (s *service) handleToolCall(ctx context.Context, call *genai.FunctionCall, 
 		assignedLakeIDs = user.AssignedLakeStationIDs
 		assignedRiverIDs = user.AssignedRiverStationIDs
 		assignedInuIDs = user.AssignedInundationStationIDs
+		if user.AssignedPumpingStationID != "" {
+			assignedPumpingIDs = []string{user.AssignedPumpingStationID}
+		}
 	}
 
 	// Group: Google & Emails
@@ -42,6 +45,11 @@ func (s *service) handleToolCall(ctx context.Context, call *genai.FunctionCall, 
 	// Group: Inundation
 	if name == "get_live_inundation_summary" {
 		return s.handleInundationTools(ctx, call, orgID, assignedInuIDs)
+	}
+
+	// Group: Pumping
+	if name == "get_live_pumping_summary" {
+		return s.handlePumpingTools(ctx, call, orgID, assignedPumpingIDs)
 	}
 
 	// Group: Emergency Construction

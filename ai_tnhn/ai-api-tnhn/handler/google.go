@@ -579,13 +579,15 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 	// 4. Fetch Inundation Summary
 	motaUngNgap := " không xuất hiện điểm úng ngập"
 	chiTietCacDiem := ""
+	soLuongUngNgap := 0
 	g.Go(func() error {
 		if inundationSummary, err := h.googleSvc.GetInundationSummary(gCtx, "", nil); err == nil && inundationSummary != nil {
+			soLuongUngNgap = inundationSummary.ActivePoints
 			motaUngNgap = "có " + fmt.Sprintf("%d", inundationSummary.ActivePoints) + " điểm úng ngập"
 			if inundationSummary.ActivePoints > 0 {
 				var details []string
 				for _, pt := range inundationSummary.OngoingPoints {
-					depthInfo := "(Dài x Rộng x Sâu) " + pt.Length + " x " + pt.Width + " x " + pt.Depth
+					depthInfo := pt.Length + " x " + pt.Width + " x " + pt.Depth
 					if depthInfo == "" {
 						depthInfo = "chưa rõ độ sâu"
 					} else {
@@ -759,28 +761,28 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 ---
 %s
 ---
-Và số liệu: HIỆN TẠI KHÔNG CÓ TRẠM NÀO GHI NHẬN MƯA.
+Và số liệu thực tế: HIỆN TẠI KHÔNG CÓ TRẠM NÀO GHI NHẬN MƯA.
 
-Hãy phân tích nội dung trên và TRẢ VỀ DUY NHẤT 1 ĐOẠN VĂN THEO ĐÚNG ĐỊNH DẠNG BÊN DƯỚI (thay thế phần trong ngoặc vuông bằng thông tin phù hợp). TUYỆT ĐỐI KHÔNG thêm lời giải thích hay bất kỳ câu chữ nào khác:
+Hãy tóm tắt thành 1 đoạn văn Báo cáo (DUY NHẤT 1 ĐOẠN) tuân theo đúng quy tắc sau:
+- NẾU bản tin dự báo có đề cập đến các hình thế thời tiết cụ thể (như không khí lạnh, rãnh áp thấp, vùng hội tụ gió...), hãy viết: "Trên địa bàn thành phố hiện không ghi nhận điểm mưa nào, dù đang chịu ảnh hưởng của [tên hình thế thời tiết lấy từ bản tin]."
+- NẾU bản tin dự báo KHÔNG đề cập rõ hình thế thời tiết nào cụ thể, hãy viết ĐƠN GIẢN là: "Hiện tại, trên địa bàn thành phố không ghi nhận điểm mưa nào." (TUYỆT ĐỐI KHÔNG dùng các cụm từ vô nghĩa như "chịu ảnh hưởng của tình hình thời tiết hiện trạng" hay "thời tiết hiện tại").
+- LUÔN kết thúc đoạn văn bằng câu: "Lượng mưa đo được đến thời điểm %s ngày %s/%s/%s cụ thể như sau:"
 
-Hiện tại, trên địa bàn thành phố không ghi nhận điểm mưa nào, mặc dù thời tiết có thể đang chịu ảnh hưởng của [hình thế thời tiết]. Lượng mưa đo được đến thời điểm %s ngày %s/%s/%s cụ thể như sau:
-
-Quy tắc:
-- [hình thế thời tiết]: Phân tích từ bản tin dự báo (ví dụ: rãnh áp thấp, không khí lạnh...). Nếu không xác định rõ thì ghi "tình hình thời tiết hiện tại".`, extractedContent, hh, dd, mm, yyyy)
+Chỉ trả về nội dung đoạn văn, KHÔNG có lời chào, KHÔNG giải thích.`, extractedContent, hh, dd, mm, yyyy)
 		} else {
 			prompt = fmt.Sprintf(`Dựa trên nội dung bản tin dự báo thời tiết sau:
 ---
 %s
 ---
-Và số liệu: có %d điểm đang ghi nhận mưa.
+Và số liệu thực tế: Có %d điểm đang ghi nhận mưa.
 
-Hãy phân tích nội dung trên và TRẢ VỀ DUY NHẤT 1 ĐOẠN VĂN THEO ĐÚNG ĐỊNH DẠNG BÊN DƯỚI (thay thế phần trong ngoặc vuông bằng thông tin phù hợp). TUYỆT ĐỐI KHÔNG thêm lời giải thích, không thêm nhận xét hay bất kỳ câu chữ nào khác bên ngoài phần định dạng này:
+Hãy tóm tắt thành 1 đoạn văn Báo cáo (DUY NHẤT 1 ĐOẠN) tuân theo đúng quy tắc sau:
+- Đánh giá mức độ: Nếu từ 1-4 điểm thì gọi là "mưa vùng", từ 5-10 điểm thì gọi là "mưa rải rác trên diện rộng", lớn hơn 10 điểm thì gọi là "mưa trên diện rộng".
+- NẾU bản tin dự báo có đề cập tới hình thế thời tiết cụ thể (như không khí lạnh, rãnh áp thấp, vùng hội tụ...), hãy ghép thành câu: "Hiện tại, xuất hiện [mức độ mưa], nguyên nhân do ảnh hưởng của [tên hình thế thời tiết lấy từ bản tin]."
+- NẾU bản tin dự báo KHÔNG có hình thế cụ thể, chỉ viết: "Hiện tại, trên địa bàn thành phố đang xuất hiện [mức độ mưa]." (Tuyệt đối không tự bịa ra nguyên nhân nếu không có).
+- LUÔN kết thúc đoạn văn bằng câu: "Mưa dông xảy ra với lượng mưa đo được đến thời điểm %s ngày %s/%s/%s cụ thể như sau:"
 
-Hiện tại, xuất hiện [mức độ mưa], nguyên nhân do ảnh hưởng của [hình thế thời tiết]. Mưa dông xảy ra với lượng mưa đo được đến thời điểm %s ngày %s/%s/%s cụ thể như sau:
-
-Quy tắc:
-- [mức độ mưa]: Nếu từ 1-4 điểm thì ghi là "mưa vùng", từ 5-10 điểm thì ghi "mưa rải rác trên diện rộng", > 10 điểm thì ghi "mưa trên diện rộng".
-- [hình thế thời tiết]: Phân tích từ bản tin dự báo (ví dụ: rãnh áp thấp, không khí lạnh, vùng áp thấp...). Nếu không xác định rõ thì ghi "thời tiết xấu cục bộ".`, extractedContent, soDiemMua, hh, dd, mm, yyyy)
+Chỉ trả về nội dung đoạn văn, KHÔNG có lời chào, KHÔNG giải thích.`, extractedContent, soDiemMua, hh, dd, mm, yyyy)
 		}
 
 		if aiResult, err := h.geminiSvc.Chat(ctx, prompt, nil, "system_report", true, "SKIP_LOG"); err == nil && aiResult != "" {
@@ -811,7 +813,8 @@ Quy tắc:
 
 	payload := map[string]interface{}{
 		"dd": dd, "mm": mm, "yyyy": yyyy, "hh": hh, "noidung": noidung, "time_mua": timeMua,
-		"mo_ta_ung_ngap": motaUngNgap, "chi_tiet_cac_diem": chiTietCacDiem,
+		"so_luong_ung_ngap": soLuongUngNgap,
+		"mo_ta_ung_ngap":    motaUngNgap, "chi_tiet_cac_diem": chiTietCacDiem,
 		"hien_trang_mua":    hienTrangMua,
 		"noi_dung_tram_bom": noiDungTramBom,
 		"table1_mua_phuong": phuong1, "table2_mua_phuong": phuong2,

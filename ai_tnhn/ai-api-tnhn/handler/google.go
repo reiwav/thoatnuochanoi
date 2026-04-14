@@ -622,10 +622,10 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 		rainStations[idStr] = name
 	}
 
-	lakeDataRaw := [][]string{{"Tên Trạm", "Mực nước"}}
-	riverDataRaw := [][]string{{"Tên Trạm", "Mực nước"}}
-	phuongDataRaw := [][]string{{"Tên Phường", "Lượng mưa"}}
-	xaDataRaw := [][]string{{"Tên Xã", "Lượng mưa"}}
+	lakeDataRaw := [][]string{{"Hồ", "Mực nước"}}
+	riverDataRaw := [][]string{{"Sông", "Mực nước"}}
+	phuongDataRaw := [][]string{{"Phường", "Lượng mưa (mm)"}}
+	xaDataRaw := [][]string{{"Xã", "Lượng mưa (mm)"}}
 
 	type itemVal struct {
 		name string
@@ -737,16 +737,37 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 
 	noidung := "Báo cáo tình hình mưa"
 	if h.geminiSvc != nil && extractedContent != "" {
-		prompt := fmt.Sprintf(`Dựa trên nội dung bản tin dự báo thời tiết sau:
+		soDiemMua := len(phuongs) + len(xas)
+		var prompt string
+		if soDiemMua == 0 {
+			prompt = fmt.Sprintf(`Dựa trên nội dung bản tin dự báo thời tiết sau:
+---
+%s
+---
+Và số liệu: HIỆN TẠI KHÔNG CÓ TRẠM NÀO GHI NHẬN MƯA.
+
+Hãy phân tích nội dung trên và TRẢ VỀ DUY NHẤT 1 ĐOẠN VĂN THEO ĐÚNG ĐỊNH DẠNG BÊN DƯỚI (thay thế phần trong ngoặc vuông bằng thông tin phù hợp). TUYỆT ĐỐI KHÔNG thêm lời giải thích hay bất kỳ câu chữ nào khác:
+
+Hiện tại, trên địa bàn thành phố không ghi nhận điểm mưa nào, mặc dù thời tiết có thể đang chịu ảnh hưởng của [hình thế thời tiết]. Lượng mưa đo được đến thời điểm %s ngày %s/%s/%s cụ thể như sau:
+
+Quy tắc:
+- [hình thế thời tiết]: Phân tích từ bản tin dự báo (ví dụ: rãnh áp thấp, không khí lạnh...). Nếu không xác định rõ thì ghi "tình hình thời tiết hiện tại".`, extractedContent, hh, dd, mm, yyyy)
+		} else {
+			prompt = fmt.Sprintf(`Dựa trên nội dung bản tin dự báo thời tiết sau:
 ---
 %s
 ---
 Và số liệu: có %d điểm đang ghi nhận mưa.
 
-Hãy viết tóm tắt 1-2 câu ngắn gọn về tình hình mưa, bao gồm:
-- Hình thế thời tiết gây mưa (ví dụ: rãnh áp thấp, không khí lạnh, hội tụ gió...)
-- Mức độ mưa: Nếu < 5 điểm là "Mưa vùng", 5-10: "Mưa rải rác trên diện rộng", > 10: "Mưa trên diện rộng"
-KHÔNG bao gồm thông tin nhiệt độ, gió, độ ẩm hay khuyến cáo.`, extractedContent, len(phuongs)+len(xas))
+Hãy phân tích nội dung trên và TRẢ VỀ DUY NHẤT 1 ĐOẠN VĂN THEO ĐÚNG ĐỊNH DẠNG BÊN DƯỚI (thay thế phần trong ngoặc vuông bằng thông tin phù hợp). TUYỆT ĐỐI KHÔNG thêm lời giải thích, không thêm nhận xét hay bất kỳ câu chữ nào khác bên ngoài phần định dạng này:
+
+Hiện tại, xuất hiện [mức độ mưa], nguyên nhân do ảnh hưởng của [hình thế thời tiết]. Mưa dông xảy ra với lượng mưa đo được đến thời điểm %s ngày %s/%s/%s cụ thể như sau:
+
+Quy tắc:
+- [mức độ mưa]: Nếu từ 1-4 điểm thì ghi là "mưa vùng", từ 5-10 điểm thì ghi "mưa rải rác trên diện rộng", > 10 điểm thì ghi "mưa trên diện rộng".
+- [hình thế thời tiết]: Phân tích từ bản tin dự báo (ví dụ: rãnh áp thấp, không khí lạnh, vùng áp thấp...). Nếu không xác định rõ thì ghi "thời tiết xấu cục bộ".`, extractedContent, soDiemMua, hh, dd, mm, yyyy)
+		}
+
 		if aiResult, err := h.geminiSvc.Chat(ctx, prompt, nil, "system_report", true, "SKIP_LOG"); err == nil && aiResult != "" {
 			noidung = aiResult
 		}
@@ -768,9 +789,15 @@ KHÔNG bao gồm thông tin nhiệt độ, gió, độ ẩm hay khuyến cáo.`,
 	phuong1, phuong2 := splitTable(phuongDataRaw)
 	xa1, xa2 := splitTable(xaDataRaw)
 
+	hienTrangMua := "không còn mưa"
+	if len(phuongs)+len(xas) > 0 {
+		hienTrangMua = "tiếp tục có mưa"
+	}
+
 	payload := map[string]interface{}{
 		"dd": dd, "mm": mm, "yyyy": yyyy, "hh": hh, "noidung": noidung, "time_mua": timeMua,
 		"so_luong_ung_ngap": soLuongUngNgap, "chi_tiet_cac_diem": chiTietCacDiem,
+		"hien_trang_mua":    hienTrangMua,
 		"table1_mua_phuong": phuong1, "table2_mua_phuong": phuong2,
 		"table1_mua_xa": xa1, "table2_mua_xa": xa2,
 		"table_song": riverDataRaw, "table_ho": lakeDataRaw,

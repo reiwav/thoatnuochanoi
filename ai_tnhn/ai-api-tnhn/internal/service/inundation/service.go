@@ -13,6 +13,7 @@ import (
 
 	"os"
 	"path/filepath"
+	"sort"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -689,6 +690,11 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []
 	for _, p := range allPointsMap {
 		points = append(points, p)
 	}
+
+	// Sort points by Name alphabetically
+	sort.Slice(points, func(i, j int) bool {
+		return points[i].Name < points[j].Name
+	})
 
 	if len(points) == 0 {
 		return []PointStatus{}, nil

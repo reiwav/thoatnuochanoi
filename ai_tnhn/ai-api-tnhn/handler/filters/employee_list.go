@@ -17,6 +17,7 @@ func NewEmployeeListRequest() *EmployeeListRequest {
 	req := &EmployeeListRequest{
 		PaginationFilter: *filter.NewPaginationFilter(),
 	}
+	req.SetOrderBy("name")
 	return req
 }
 

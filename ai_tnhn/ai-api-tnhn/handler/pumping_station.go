@@ -101,7 +101,7 @@ func (h *PumpingStationHandler) List(c *gin.Context) {
 		sizeStr = c.DefaultQuery("per_page", "10")
 	}
 	size, _ := strconv.Atoi(sizeStr)
-	f.SetOrderBy("-created_at")
+	f.SetOrderBy("name")
 
 	// Permission-based filtering
 	_, isAllowedAll, user := h.checkPermissions(c)

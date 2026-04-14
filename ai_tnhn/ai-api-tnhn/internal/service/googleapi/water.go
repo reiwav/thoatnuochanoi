@@ -4,6 +4,7 @@ import (
 	"ai-api-tnhn/internal/base/mgo/filter"
 	"context"
 	"fmt"
+	"sort"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -105,6 +106,14 @@ func (s *service) GetWaterSummary(ctx context.Context, orgID string) (*WaterSumm
 			rivers = append(rivers, stat)
 		}
 	}
+
+	// Sort lakes and rivers by Name alphabetically
+	sort.Slice(lakes, func(i, j int) bool {
+		return lakes[i].Name < lakes[j].Name
+	})
+	sort.Slice(rivers, func(i, j int) bool {
+		return rivers[i].Name < rivers[j].Name
+	})
 
 	return &WaterSummaryData{
 		TotalStations: len(waterData.Content.Tram),

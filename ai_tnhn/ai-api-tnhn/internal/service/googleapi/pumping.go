@@ -2,6 +2,7 @@ package googleapi
 
 import (
 	"context"
+	"sort"
 	"time"
 
 	"ai-api-tnhn/internal/base/mgo/filter"
@@ -93,6 +94,11 @@ func (s *service) GetPumpingStationSummary(ctx context.Context, orgID string, as
 			LastUpdate:       lastUpdate,
 		})
 	}
+
+	// Sort station stats by Name alphabetically
+	sort.Slice(stationStats, func(i, j int) bool {
+		return stationStats[i].Name < stationStats[j].Name
+	})
 
 	return &PumpingStationSummaryData{
 		TotalStations:       len(stations),

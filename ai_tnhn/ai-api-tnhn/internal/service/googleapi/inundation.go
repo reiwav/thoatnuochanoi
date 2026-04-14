@@ -2,6 +2,7 @@ package googleapi
 
 import (
 	"context"
+	"sort"
 	"time"
 )
 
@@ -67,6 +68,11 @@ func (s *service) GetInundationSummary(ctx context.Context, orgID string, assign
 			Updates:       updates,
 		})
 	}
+
+	// Sort ongoing points by StreetName alphabetically
+	sort.Slice(ongoing, func(i, j int) bool {
+		return ongoing[i].StreetName < ongoing[j].StreetName
+	})
 
 	return &InundationSummaryData{
 		ActivePoints:  len(ongoing),

@@ -15,9 +15,11 @@ type OrganizationListRequest struct {
 }
 
 func NewOrganizationListRequest() *OrganizationListRequest {
-	return &OrganizationListRequest{
+	req := &OrganizationListRequest{
 		PaginationFilter: *filter.NewPaginationFilter(),
 	}
+	req.SetOrderBy("name")
+	return req
 }
 
 func (f *OrganizationListRequest) GetWhere() filter.Where {

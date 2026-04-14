@@ -24,7 +24,9 @@ func (f *StationListRequest) GetWhere() filter.Where {
 }
 
 func NewStationListRequest() *StationListRequest {
-	return &StationListRequest{
+	req := &StationListRequest{
 		PaginationFilter: *filter.NewPaginationFilter(),
 	}
+	req.SetOrderBy("ten_tram")
+	return req
 }

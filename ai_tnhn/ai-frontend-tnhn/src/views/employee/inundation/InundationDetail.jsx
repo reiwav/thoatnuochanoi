@@ -26,7 +26,15 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
     const [reviewDialog, setReviewDialog] = useState({ open: false, itemId: null, type: null, comment: '' });
     const [editMode, setEditMode] = useState({ open: false, item: null });
 
-    const { role: userRole, hasPermission, isEmployee } = useAuthStore();
+    const { role: userRole, hasPermission, isEmployee, isCompany } = useAuthStore();
+
+    const canReview = useMemo(() => {
+        if (isEmployee) return false;
+        if (isCompany) return true;
+        if (!selectedReport) return false;
+        if (selectedReport.org_id === user?.org_id) return true;
+        return false;
+    }, [user, isCompany, isEmployee, selectedReport]);
 
     const handleOpenViewer = (imgs, idx = 0) => {
         if (!imgs || imgs.length === 0) {
@@ -222,7 +230,7 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
                             </Stack>
                             <Typography variant="body1" color="textSecondary" sx={{ mb: 1, fontWeight: 500 }}>{item.desc}</Typography>
 
-                            {item.review_comment && (
+                            {(canReview || isEmployee) && item.review_comment && (
                                 <Box sx={{ 
                                     mb: 2, p: 2, 
                                     bgcolor: 'error.lighter', 
@@ -301,8 +309,7 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
                                         </Typography>
                                     </Box>
                                 )}
-
-                                {hasPermission('inundation:review') && (
+                                 {canReview && (
                                     <Button
                                         size="small" startIcon={<IconMessage2 size={16} />}
                                         variant="outlined" color="error"

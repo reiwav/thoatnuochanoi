@@ -94,6 +94,10 @@ const getLatestData = (report) => {
         const updateWithDimensions = sortedUpdates.find(u => u.length || u.width || u.depth);
         const updateWithTraffic = sortedUpdates.find(u => u.traffic_status || u.trafficStatus);
         const updateWithImages = sortedUpdates.find(u => u.images && u.images.length > 0);
+        
+        // Find most recent updates for technical fields to get specific timestamps
+        const surveyUpdate = sortedUpdates.find(u => u.survey_checked || u.survey_note || (u.survey_images && u.survey_images.length > 0));
+        const mechUpdate = sortedUpdates.find(u => u.mech_checked || u.mech_note || u.mech_d || u.mech_r || u.mech_s || (u.mech_images && u.mech_images.length > 0));
 
         return {
             ...data,
@@ -107,16 +111,20 @@ const getLatestData = (report) => {
             oldest_ts: oldest.timestamp,
             status: data.status === 'resolved' || data.status === 'normal' ? 'normal' : data.status,
             traffic_status: (data.status === 'resolved' || data.status === 'normal') ? "" : (updateWithTraffic?.traffic_status || updateWithTraffic?.trafficStatus || data.traffic_status),
-            // Technical fields from updates
-            survey_checked: newest.survey_checked !== undefined ? newest.survey_checked : data.survey_checked,
-            survey_note: newest.survey_note || data.survey_note,
-            survey_images: (newest.survey_images && newest.survey_images.length > 0) ? newest.survey_images : data.survey_images,
-            mech_checked: newest.mech_checked !== undefined ? newest.mech_checked : data.mech_checked,
-            mech_note: newest.mech_note || data.mech_note,
-            mech_d: newest.mech_d || data.mech_d,
-            mech_r: newest.mech_r || data.mech_r,
-            mech_s: newest.mech_s || data.mech_s,
-            mech_images: (newest.mech_images && newest.mech_images.length > 0) ? newest.mech_images : data.mech_images
+            
+            // Technical fields with specific timestamps
+            survey_checked: surveyUpdate ? surveyUpdate.survey_checked : data.survey_checked,
+            survey_note: surveyUpdate ? surveyUpdate.survey_note : data.survey_note,
+            survey_images: (surveyUpdate?.survey_images && surveyUpdate.survey_images.length > 0) ? surveyUpdate.survey_images : data.survey_images,
+            survey_ts: surveyUpdate?.timestamp,
+            
+            mech_checked: mechUpdate ? mechUpdate.mech_checked : data.mech_checked,
+            mech_note: mechUpdate ? mechUpdate.mech_note : data.mech_note,
+            mech_d: mechUpdate ? mechUpdate.mech_d : data.mech_d,
+            mech_r: mechUpdate ? mechUpdate.mech_r : data.mech_r,
+            mech_s: mechUpdate ? mechUpdate.mech_s : data.mech_s,
+            mech_images: (mechUpdate?.mech_images && mechUpdate.mech_images.length > 0) ? mechUpdate.mech_images : data.mech_images,
+            mech_ts: mechUpdate?.timestamp
         };
     }
 
@@ -127,7 +135,9 @@ const getLatestData = (report) => {
         timestamp: startTime,
         newest_ts: startTime,
         oldest_ts: startTime,
-        traffic_status: (data.status === 'resolved' || data.status === 'normal') ? "" : data.traffic_status
+        traffic_status: (data.status === 'resolved' || data.status === 'normal') ? "" : data.traffic_status,
+        survey_ts: startTime,
+        mech_ts: startTime
     };
 };
 
@@ -721,92 +731,147 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                         <IconInfoCircle size={18} /> {point.address}
                                     </Typography>
                                     
-                                    {/* THÔNG TIN CHUNG */}
-                                    <Box sx={{ p: 1.5, px: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'grey.200', mb: 2 }}>
-                                        <Grid container spacing={2}>
-                                            <Grid item xs={12} sm={6}>
-                                                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, display: 'block', mb: 0.5 }}>Kích thước & Thời gian:</Typography>
-                                                <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                                                    {latest ? `${latest.length || 0}m x ${latest.width || 0}m x ${latest.depth || 0}m` : '-'}
+                                    {/* 3 VÙNG NGANG TỔNG HỢP */}
+                                    <Grid container spacing={2}>
+                                        {/* CỘT 1: THÔNG TIN CHUNG & RÀ SOÁT */}
+                                        <Grid item xs={12} md={4}>
+                                            <Box sx={{ p: 1.5, height: '100%', bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'grey.200' }}>
+                                                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 1, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                                    ℹ️ Báo cáo & Rà soát
                                                 </Typography>
-                                                <Typography variant="body2" sx={{ fontWeight: 600, mt: 0.5, color: point.status === 'active' ? 'error.main' : 'success.main' }}>
-                                                    {point.status === 'active'
-                                                        ? `Bắt đầu lúc: ${formatDateTime(latest?.start_time)} (${formatDuration(latest?.start_time)})`
-                                                        : `Đã kết thúc`}
-                                                </Typography>
-                                            </Grid>
-                                            
-                                            <Grid item xs={12} sm={6}>
-                                                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, display: 'block', mb: 0.5 }}>Mô tả hiện trường:</Typography>
-                                                <Typography variant="body2" sx={{ fontStyle: latest?.description ? 'normal' : 'italic', color: latest?.description ? 'text.primary' : 'text.disabled' }}>
-                                                    {latest?.description || 'Không có mô tả'}
-                                                </Typography>
-                                            </Grid>
+                                                
+                                                <Stack spacing={1.5}>
+                                                    <Box>
+                                                        <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                                                            {latest ? `${latest.length || 0}m x ${latest.width || 0}m x ${latest.depth || 0}m` : '-'}
+                                                        </Typography>
+                                                        <Typography variant="caption" color="error.main" sx={{ fontWeight: 700, display: 'block' }}>
+                                                            {point.status === 'active' ? `Bắt đầu: ${formatDateTime(latest?.start_time)}` : 'Đã kết thúc'}
+                                                        </Typography>
+                                                    </Box>
+
+                                                    {latest?.description && (
+                                                        <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.8rem', lineBreak: 'anywhere' }}>
+                                                            "{latest.description}"
+                                                        </Typography>
+                                                    )}
+
+                                                    {latest?.images?.length > 0 && (
+                                                        <Box>
+                                                            <Stack direction="row" spacing={0.5} sx={{ overflowX: 'auto', pb: 0.5 }}>
+                                                                {latest.images.map((img, idx) => (
+                                                                    <Box
+                                                                        key={idx} component="img" src={getInundationImageUrl(img)}
+                                                                        onClick={(e) => { e.stopPropagation(); handleOpenViewer(latest.images, idx); }}
+                                                                        sx={{ width: 42, height: 42, borderRadius: 1, objectFit: 'cover', cursor: 'pointer', border: '1px solid', borderColor: 'divider', flexShrink: 0 }}
+                                                                    />
+                                                                ))}
+                                                            </Stack>
+                                                        </Box>
+                                                    )}
+
+                                                    {(canReview || isEmployee) && latest?.review_comment && (
+                                                        <Box sx={{ p: 1, bgcolor: 'error.lighter', borderRadius: 1.5, borderLeft: '3px solid', borderColor: 'error.main' }}>
+                                                            <Typography variant="caption" sx={{ fontWeight: 800, color: 'error.main', display: 'block' }}>RÀ SOÁT:</Typography>
+                                                            <Typography variant="caption" sx={{ fontWeight: 600, color: 'error.dark', display: 'block' }}>{latest.review_comment}</Typography>
+                                                        </Box>
+                                                    )}
+                                                </Stack>
+                                            </Box>
                                         </Grid>
 
-                                        {latest?.images?.length > 0 && (
-                                            <Box sx={{ mt: 1.5, pt: 1.5, borderTop: '1px dashed', borderColor: 'grey.300' }}>
-                                                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, mb: 1, display: 'block' }}>Ảnh liên quan:</Typography>
-                                                <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', pb: 0.5, '&::-webkit-scrollbar': { height: 4 } }}>
-                                                    {latest.images.map((img, idx) => (
-                                                        <Box
-                                                            key={idx} component="img" src={getInundationImageUrl(img)}
-                                                            onClick={(e) => { e.stopPropagation(); handleOpenViewer(latest.images, idx); }}
-                                                            sx={{ width: 48, height: 48, borderRadius: 1.5, objectFit: 'cover', cursor: 'pointer', border: '1px solid', borderColor: 'divider', flexShrink: 0, '&:hover': { opacity: 0.8 } }}
-                                                        />
-                                                    ))}
-                                                </Stack>
-                                            </Box>
-                                        )}
-                                    </Box>
-
-                                    {/* CÁC ĐƠN VỊ PHỐI HỢP */}
-                                    <Stack spacing={1}>
-                                        {(canReview || isEmployee) && latest?.review_comment && (
-                                            <Box sx={{ p: 1, px: 2, bgcolor: 'error.lighter', borderRadius: 2, borderLeft: '3px solid', borderColor: 'error.main', display: 'flex', flexDirection: 'column' }}>
-                                                <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                                    <Typography variant="caption" sx={{ fontWeight: 800, color: 'error.main' }}>NHẬN XÉT RÀ SOÁT:</Typography>
-                                                    <Typography variant="caption" sx={{ fontStyle: 'italic', fontWeight: 600, color: 'error.main' }}>{latest.reviewer_name || latest.reviewer_email}</Typography>
-                                                </Stack>
-                                                <Typography variant="body2" sx={{ fontWeight: 600, color: 'error.dark', mt: 0.5 }}>{latest.review_comment}</Typography>
-                                            </Box>
-                                        )}
-
-                                        {(latest?.survey_checked || latest?.survey_note || (latest?.survey_images && latest?.survey_images?.length > 0)) && (
-                                            <Box sx={{ p: 1, px: 2, borderLeft: '3px solid', borderColor: 'primary.main', bgcolor: 'primary.lighter', borderRadius: 2 }}>
-                                                <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', display: 'block', mb: 0.5 }}>⚡️ KHẢO SÁT THIẾT KẾ</Typography>
-                                                {latest.survey_note && <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.dark' }}>{latest.survey_note}</Typography>}
-                                                {latest.survey_images?.length > 0 && (
-                                                    <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5 }}>
-                                                        {latest.survey_images.map((img, i) => (
-                                                            <Box key={i} component="img" src={getInundationImageUrl(img)} onClick={() => handleOpenViewer(latest.survey_images, i)} sx={{ width: 36, height: 36, borderRadius: 1, objectFit: 'cover', cursor: 'pointer', border: '1px solid', borderColor: 'primary.light' }} />
-                                                        ))}
-                                                    </Box>
-                                                )}
-                                            </Box>
-                                        )}
-
-                                        {(latest?.mech_checked || latest?.mech_note || latest?.mech_d || latest?.mech_r || latest?.mech_s || (latest?.mech_images && latest.mech_images.length > 0)) && (
-                                            <Box sx={{ p: 1, px: 2, borderLeft: '3px solid', borderColor: 'warning.main', bgcolor: 'warning.lighter', borderRadius: 2 }}>
-                                                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
-                                                    <Typography variant="caption" sx={{ fontWeight: 800, color: 'warning.dark' }}>⚙️ CƠ GIỚI / HỖ TRỢ</Typography>
-                                                    {(latest.mech_d || latest.mech_r || latest.mech_s) && (
-                                                        <Typography variant="caption" sx={{ fontWeight: 800, color: 'warning.dark', bgcolor: 'white', px: 1, borderRadius: 10 }}>
-                                                            D:{latest.mech_d||'-'} • R:{latest.mech_r||'-'} • S:{latest.mech_s||'-'}
+                                        {/* CỘT 2: CƠ GIỚI & HỖ TRỢ */}
+                                        <Grid item xs={12} md={4}>
+                                            <Box sx={{ p: 1.5, height: '100%', bgcolor: 'green.lighter', borderRadius: 2, border: '1px solid', borderColor: 'warning.main' }}>
+                                                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1, borderBottom: '1px solid', borderColor: 'warning.light', pb: 0.5 }}>
+                                                    <Typography variant="caption" color="green.dark" sx={{ fontWeight: 900, textTransform: 'uppercase', letterSpacing: 1 }}>
+                                                        ⚙️ Cơ giới / Hỗ trợ
+                                                    </Typography>
+                                                    {latest?.mech_ts && (
+                                                        <Typography variant="caption" sx={{ color: 'green.dark', fontWeight: 700 }}>
+                                                            {formatDateTime(latest.mech_ts)}
                                                         </Typography>
                                                     )}
                                                 </Stack>
-                                                {latest.mech_note && <Typography variant="body2" sx={{ fontWeight: 600, color: 'warning.dark' }}>{latest.mech_note}</Typography>}
-                                                {latest.mech_images?.length > 0 && (
-                                                    <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5 }}>
-                                                        {latest.mech_images.map((img, i) => (
-                                                            <Box key={i} component="img" src={getInundationImageUrl(img)} onClick={() => handleOpenViewer(latest.mech_images, i)} sx={{ width: 36, height: 36, borderRadius: 1, objectFit: 'cover', cursor: 'pointer', border: '1px solid', borderColor: 'warning.light' }} />
-                                                        ))}
+                                                
+                                                <Stack spacing={1.5}>
+                                                    {(latest?.mech_d || latest?.mech_r || latest?.mech_s) && (
+                                                        <Box sx={{ display: 'flex', gap: 1 }}>
+                                                            <Chip 
+                                                                label={<Box component="span">D: <Box component="span" sx={{ color: 'primary.main', fontWeight: 900 }}>{latest.mech_d || '-'}</Box></Box>} 
+                                                                size="small" 
+                                                                sx={{ height: 22, fontSize: '0.75rem', fontWeight: 700, bgcolor: 'white', color: 'black', border: '1px solid', borderColor: 'warning.main' }} 
+                                                            />
+                                                            <Chip 
+                                                                label={<Box component="span">R: <Box component="span" sx={{ color: 'primary.main', fontWeight: 900 }}>{latest.mech_r || '-'}</Box></Box>} 
+                                                                size="small" 
+                                                                sx={{ height: 22, fontSize: '0.75rem', fontWeight: 700, bgcolor: 'white', color: 'black', border: '1px solid', borderColor: 'warning.main' }} 
+                                                            />
+                                                            <Chip 
+                                                                label={<Box component="span">S: <Box component="span" sx={{ color: 'primary.main', fontWeight: 900 }}>{latest.mech_s || '-'}</Box></Box>} 
+                                                                size="small" 
+                                                                sx={{ height: 22, fontSize: '0.75rem', fontWeight: 700, bgcolor: 'white', color: 'black', border: '1px solid', borderColor: 'warning.main' }} 
+                                                            />
+                                                        </Box>
+                                                    )}
+                                                    
+                                                    <Box>
+                                                        {latest?.mech_note ? (
+                                                            <Typography variant="body2" sx={{ fontWeight: 700, color: 'black', fontSize: '0.875rem', lineHeight: 1.4 }}>{latest.mech_note}</Typography>
+                                                        ) : (
+                                                            <Typography variant="caption" sx={{ fontStyle: 'italic', color: 'text.secondary', opacity: 0.8 }}>Chưa có thông tin cập nhật</Typography>
+                                                        )}
                                                     </Box>
-                                                )}
+
+                                                    {latest?.mech_images?.length > 0 && (
+                                                        <Box sx={{ display: 'flex', gap: 0.6, flexWrap: 'wrap' }}>
+                                                            {latest.mech_images.map((img, i) => (
+                                                                <Box key={i} component="img" src={getInundationImageUrl(img)} onClick={() => handleOpenViewer(latest.mech_images, i)} sx={{ width: 44, height: 44, borderRadius: 1.5, objectFit: 'cover', cursor: 'pointer', border: '2px solid', borderColor: 'warning.main', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} />
+                                                            ))}
+                                                        </Box>
+                                                    )}
+                                                </Stack>
                                             </Box>
-                                        )}
-                                    </Stack>
+                                        </Grid>
+
+                                        {/* CỘT 3: KHẢO SÁT THIẾT KẾ */}
+                                        <Grid item xs={12} md={4}>
+                                            <Box sx={{ p: 1.5, height: '100%', bgcolor: 'primary.lighter', borderRadius: 2, border: '1px solid', borderColor: 'primary.main' }}>
+                                                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1, borderBottom: '1px solid', borderColor: 'primary.light', pb: 0.5 }}>
+                                                    <Typography variant="caption" color="primary.main" sx={{ fontWeight: 900, textTransform: 'uppercase', letterSpacing: 1 }}>
+                                                        ⚡️ Khảo sát thiết kế
+                                                    </Typography>
+                                                    {latest?.survey_ts && (
+                                                        <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 700 }}>
+                                                            {formatDateTime(latest.survey_ts)}
+                                                        </Typography>
+                                                    )}
+                                                </Stack>
+                                                
+                                                <Stack spacing={1.5}>
+                                                    <Box>
+                                                        {latest?.survey_note ? (
+                                                            <Typography variant="body2" sx={{ fontWeight: 700, color: 'primary.dark', fontSize: '0.875rem', lineHeight: 1.4 }}>{latest.survey_note}</Typography>
+                                                        ) : (
+                                                            <Typography variant="caption" sx={{ fontStyle: 'italic', color: 'primary.main', opacity: 0.7 }}>Chưa có thông tin cập nhật</Typography>
+                                                        )}
+                                                    </Box>
+
+                                                    {latest?.survey_images?.length > 0 && (
+                                                        <Box sx={{ display: 'flex', gap: 0.6, flexWrap: 'wrap' }}>
+                                                            {latest.survey_images.map((img, i) => (
+                                                                <Box key={i} component="img" src={getInundationImageUrl(img)} onClick={() => handleOpenViewer(latest.survey_images, i)} sx={{ width: 44, height: 44, borderRadius: 1.5, objectFit: 'cover', cursor: 'pointer', border: '2px solid', borderColor: 'primary.main', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} />
+                                                            ))}
+                                                        </Box>
+                                                    )}
+
+                                                    {latest?.survey_checked && (
+                                                        <Chip icon={<IconCheck size={14} color="white" />} label="Đã hoàn thành khảo sát" size="small" sx={{ fontWeight: 800, bgcolor: 'primary.main', color: 'white', py: 1.5, px: 1, borderRadius: 2 }} />
+                                                    )}
+                                                </Stack>
+                                            </Box>
+                                        </Grid>
+                                    </Grid>
                                 </Box>
 
                                 <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>

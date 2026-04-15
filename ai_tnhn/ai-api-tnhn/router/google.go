@@ -25,5 +25,6 @@ func (h HandlerFuncs) GoogleRoutes(api *gin.RouterGroup, mid middleware.Middlewa
 		google.POST("/quick-report-text", googleHandler.GenerateQuickReportText)
 		google.POST("/dynamic-report", googleHandler.GenerateAIDynamicReport)
 		google.GET("/weather/forecast", googleHandler.GetWeatherForecast)
+		google.GET("/weather/forecast/gemini", googleHandler.GetGeminiWeatherForecast)
 	}
 }

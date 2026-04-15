@@ -82,6 +82,20 @@ func (h *GoogleHandler) GetWeatherForecast(c *gin.Context) {
 	})
 }
 
+func (h *GoogleHandler) GetGeminiWeatherForecast(c *gin.Context) {
+	forecast, err := h.weatherSvc.GetGeminiForecast(c.Request.Context())
+	if err != nil {
+		h.log.GetLogger().Errorf("Failed to get gemini weather forecast: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Không thể lấy thông tin dự báo thời tiết lúc này"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": "success",
+		"data":   forecast,
+	})
+}
+
 func (h *GoogleHandler) getLatestOCRText(ctx context.Context) string {
 	if h.emailSvc == nil || h.geminiSvc == nil {
 		return ""

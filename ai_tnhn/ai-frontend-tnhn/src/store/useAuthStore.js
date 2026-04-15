@@ -13,6 +13,7 @@ const useAuthStore = create(
       isEmployee: false,
       isCompany: false, // New state
       permissions: [],
+      permissionsLoaded: false,
 
       // Actions
       login: (userData, token, role, isEmployee = false, isCompany = false) => {
@@ -21,13 +22,14 @@ const useAuthStore = create(
           token,
           role: role,
           isEmployee: !!isEmployee,
-          isCompany: !!isCompany
+          isCompany: !!isCompany,
+          permissionsLoaded: false
         });
         // Fetch permissions immediately after login if token exists
         get().fetchPermissions();
       },
       logout: () => {
-        set({ user: null, token: null, role: null, isEmployee: false, isCompany: false, permissions: [] });
+        set({ user: null, token: null, role: null, isEmployee: false, isCompany: false, permissions: [], permissionsLoaded: false });
         localStorage.removeItem('admin_token');
       },
       fetchPermissions: async () => {
@@ -36,19 +38,22 @@ const useAuthStore = create(
         try {
           // Dynamic permissions endpoint
           const response = await axiosClient.get('/admin/permissions/my');
-          set({ permissions: response.data?.data || [] });
+          set({ permissions: response.data?.data || [], permissionsLoaded: true });
         } catch (error) {
           console.error('Failed to fetch permissions', error);
           if (error.response?.status === 401) {
-            set({ permissions: [] });
+            set({ permissions: [], permissionsLoaded: true });
           }
         }
       },
 
       hasPermission: (permissionId) => {
-        const { role: currentRole, permissions, isCompany } = get();
+        const { role: currentRole, permissions } = get();
         if (!currentRole) return false;
-        if (isCompany) return true; // Company level has all permissions
+        
+        // Only super_admin gets automatic all-access. 
+        // Other isCompany users still follow the permission matrix.
+        if (currentRole === 'super_admin') return true;
 
         if (Array.isArray(permissionId)) {
           return permissionId.includes(currentRole);

@@ -479,14 +479,14 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                             </Grid>
                                         )}
 
-                                        {/* CỘT 3: KHẢO SÁT THIẾT KẾ */}
+                                        {/* CỘT 3: XNTK */}
                                         {
                                             (hasPermission('inundation:survey') || isCompany) && (
                                                 <Grid item xs={12} md={(hasPermission('inundation:mechanic') || isCompany) ? 4 : 8}>
                                                     <Box sx={{ p: 1.5, height: '100%', bgcolor: 'primary.lighter', borderRadius: 2, border: '1px solid', borderColor: 'primary.main' }}>
                                                         <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1, borderBottom: '1px solid', borderColor: 'primary.light', pb: 0.5 }}>
                                                             <Typography variant="caption" color="primary.main" sx={{ fontWeight: 900, textTransform: 'uppercase', letterSpacing: 1 }}>
-                                                                ⚡️ Khảo sát thiết kế
+                                                                ⚡️ XNTK
                                                             </Typography>
                                                             {latest?.survey_ts && (
                                                                 <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 700 }}>

@@ -61,7 +61,7 @@ func main() {
 		{Code: "inundation:edit", Title: "Sửa", Group: "Điểm ngập", Type: "button", Description: "Chỉnh sửa trạng thái ngập"},
 		{Code: "inundation:delete", Title: "Xóa", Group: "Điểm ngập", Type: "button", Description: "Xóa báo cáo ngập"},
 		{Code: "inundation:review", Title: "Nhận xét điểm ngập", Group: "Điểm ngập", Type: "button", Description: "Quyền rà soát và gửi nhận xét cho nhân viên"},
-		{Code: "inundation:survey", Title: "Khảo sát thiết kế", Group: "Điểm ngập", Type: "button", Description: "Quyền khảo sát & phối hợp xử lý điểm ngập"},
+		{Code: "inundation:survey", Title: "XNTK", Group: "Điểm ngập", Type: "button", Description: "Quyền khảo sát & phối hợp xử lý điểm ngập"},
 		{Code: "inundation:mechanic", Title: "Cơ giới", Group: "Điểm ngập", Type: "button", Description: "Quyền bổ sung ảnh giám sát từ XN Cơ giới"},
 
 		// ─── Mực nước ───
@@ -163,7 +163,7 @@ func main() {
 	// 	{Code: constant.ROLE_GIAM_DOC_XN, Name: "Giám đốc xí nghiệp", Description: "Lãnh đạo đơn vị cơ sở"},
 	// 	{Code: constant.ROLE_TRUONG_PHONG_KT, Name: "Trưởng phòng kỹ thuật", Description: "Quản lý kỹ thuật cơ sở"},
 	// 	{Code: constant.ROLE_CONG_NHAN_CTY, Name: "Công nhân công ty", Description: "Nhân viên vận hành hiện trường"},
-	// 	{Code: constant.ROLE_XN_KS_TK, Name: "Xí nghiệp Khảo sát thiết kế", Description: "Đơn vị khảo sát và thiết kế"},
+	// 	{Code: constant.ROLE_XN_KS_TK, Name: "Xí nghiệp XNTK", Description: "Đơn vị khảo sát và thiết kế"},
 	// 	{Code: constant.ROLE_XN_CO_GIOI, Name: "Xí nghiệp Cơ giới", Description: "Đơn vị vận hành xe máy, thiết bị cơ giới"},
 	// }
 
@@ -214,7 +214,7 @@ func main() {
 	// })
 	// log.Info("✓ Seeded granular role: cong_nhan_cty")
 
-	// // 9. Xí nghiệp Khảo sát thiết kế
+	// // 9. Xí nghiệp XNTK
 	// _ = permService.UpdateMatrix(ctx, constant.ROLE_XN_KS_TK, []string{
 	// 	"inundation:view", constant.PERM_INUNDATION_SURVEY,
 	// })
@@ -239,7 +239,7 @@ func main() {
 	// 	{Name: "Giám đốc Xí nghiệp", Username: "gdxn_tnhn", Email: "gdxn@tnhn.vn", Role: constant.ROLE_GIAM_DOC_XN, Active: true, Password: "tnhn@2026"},
 	// 	{Name: "Trưởng phòng Kỹ thuật", Username: "tp_kt", Email: "tpkt@tnhn.vn", Role: constant.ROLE_TRUONG_PHONG_KT, Active: true, Password: "tnhn@2026"},
 	// 	{Name: "Công nhân Công ty", Username: "cn_tnhn", Email: "cn@tnhn.vn", Role: constant.ROLE_CONG_NHAN_CTY, Active: true, Password: "tnhn@2026"},
-	// 	{Name: "Xí nghiệp Khảo sát thiết kế", Username: "ks_tnhn", Email: "kstk@tnhn.vn", Role: constant.ROLE_XN_KS_TK, Active: true, Password: "tnhn@2026"},
+	// 	{Name: "XNTK", Username: "ks_tnhn", Email: "kstk@tnhn.vn", Role: constant.ROLE_XN_KS_TK, Active: true, Password: "tnhn@2026"},
 	// 	{Name: "Xí nghiệp Cơ giới", Username: "cg_tnhn", Email: "xn_cogioi@tnhn.vn", Role: constant.ROLE_XN_CO_GIOI, Active: true, Password: "tnhn@2026"},
 	// }
 

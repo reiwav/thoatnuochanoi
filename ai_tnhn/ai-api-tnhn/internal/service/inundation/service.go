@@ -8,12 +8,12 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"sort"
 	"sync"
 	"time"
 
 	"os"
 	"path/filepath"
-	"sort"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -691,11 +691,6 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []
 		points = append(points, p)
 	}
 
-	// Sort points by Name alphabetically
-	sort.Slice(points, func(i, j int) bool {
-		return points[i].Name < points[j].Name
-	})
-
 	if len(points) == 0 {
 		return []PointStatus{}, nil
 	}
@@ -842,6 +837,10 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []
 		}
 	}
 
+	// Sort points by Name alphabetically
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Name < result[j].Name
+	})
 	return result, nil
 }
 

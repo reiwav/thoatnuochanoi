@@ -33,6 +33,7 @@ import authApi from 'api/auth';
 import { ADMIN_TOKEN } from 'constants/auth';
 import inundationApi from 'api/inundation';
 import useAuthStore from 'store/useAuthStore';
+import menuItems from 'menu-items';
 
 export default function MainLayout() {
   const theme = useTheme();
@@ -48,7 +49,7 @@ export default function MainLayout() {
   const { menuMaster, menuMasterLoading } = useGetMenuMaster();
   const drawerOpen = menuMaster?.isDashboardDrawerOpened;
 
-  const { isEmployee, isCompany, role: userRole, user: userInfo, login: storeLogin, logout: storeLogout } = useAuthStore();
+  const { isEmployee, isCompany, role: userRole, user: userInfo, login: storeLogin, logout: storeLogout, hasPermission, permissionsLoaded } = useAuthStore();
 
   // Auth check
   useEffect(() => {
@@ -87,64 +88,15 @@ export default function MainLayout() {
     checkAuth();
   }, [navigate, searchParams, storeLogin, storeLogout]);
 
-  // Role-based redirection
-  useEffect(() => {
-    if (isChecking || !userInfo) return;
-
-    const role = userRole || 'employee';
-    const basePath = isEmployee ? '/company' : '/admin';
-
-    // If at root, redirect to respective dashboard
-    if (pathname === '/') {
-      navigate(`${basePath}/inundation`, { replace: true });
-      return;
-    }
-
-    // Redirect if on the wrong path prefix
-    if (isEmployee && pathname.startsWith('/admin')) {
-      const newPath = pathname.replace('/admin', '/company');
-      navigate(newPath, { replace: true });
-    } else if (!isEmployee && pathname.startsWith('/company')) {
-      const newPath = pathname.replace('/company', '/admin');
-      navigate(newPath, { replace: true });
-    }
-  }, [isChecking, userInfo, pathname, navigate, userRole]);
-
   const basePath = isEmployee ? '/company' : '/admin';
-
-  // Fetch active flood count for badge
-  useEffect(() => {
-    if (!isEmployee) return;
-    const fetchCount = async () => {
-      try {
-        const res = await inundationApi.listReports();
-        if (res.data?.status === 'success') {
-          const active = (res.data.data || []).filter(r => r.status !== 'resolved').length;
-          setActiveFloodCount(active);
-        }
-      } catch { /* silent */ }
-    };
-    fetchCount();
-    const interval = setInterval(fetchCount, 60000); // refresh every minute
-    return () => clearInterval(interval);
-  }, [isEmployee]);
-
   const isConstructionPath = pathname.includes('/emergency-construction');
   const isInundationPath = pathname === '/' || pathname.startsWith('/admin/inundation') || pathname.startsWith('/company/inundation');
   const isPumpingPath = pathname.includes('/tram-bom');
   const isAiSupportPath = pathname === '/admin/ai-support';
-  const showMobileAppLayout = isEmployee && (isInundationPath || isConstructionPath || isPumpingPath);
-
-  // Auto-collapse sidebar on AI Support page (only for mobile)
-  useEffect(() => {
-    if (isAiSupportPath && downSM) {
-      handlerDrawerOpen(false);
-    }
-  }, [isAiSupportPath, downSM]);
 
   const availableTabs = useMemo(() => {
     if (!userInfo) return [];
-    
+
     const tabs = [
       {
         id: 'inundation',
@@ -171,6 +123,125 @@ export default function MainLayout() {
 
     return tabs.filter(tab => tab.show);
   }, [userInfo, isEmployee, basePath, isInundationPath, isPumpingPath, isConstructionPath]);
+
+  // Role-based redirection
+  useEffect(() => {
+    if (isChecking || !permissionsLoaded || !userInfo) return;
+
+    // Helper to find first allowed path
+    const getFirstAllowedPath = () => {
+      if (isEmployee) {
+        if (availableTabs.length > 0) {
+          return availableTabs[0].path;
+        }
+        return `${basePath}/inundation?activeTab=4`;
+      }
+
+      // Admin/Company logic
+      const findInItems = (items) => {
+        if (!items) return null;
+        for (const item of items) {
+          if (item.type === 'item') {
+            if (!item.id || hasPermission(item.id)) {
+              return item.url;
+            }
+          }
+          if (item.children) {
+            const found = findInItems(item.children);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+
+      // Search across all menu item groups
+      for (const group of menuItems.items) {
+        const found = findInItems(group.children);
+        if (found) return found;
+      }
+
+      return null;
+    };
+
+    // If at root, redirect to first allowed page
+    if (pathname === '/') {
+      const targetPath = getFirstAllowedPath();
+      if (targetPath) {
+        navigate(targetPath, { replace: true });
+      } else {
+        // Fallback if no permissions at all - maybe redirect to profile or logout
+        navigate(`${basePath}/inundation?activeTab=4`, { replace: true });
+      }
+      return;
+    }
+
+    // Verify permission for current admin/company route
+    if (!isEmployee && pathname !== '/') {
+      const findCurrentItem = (items) => {
+        if (!items) return null;
+        for (const item of items) {
+          if (item.url === pathname) return item;
+          if (item.children) {
+            const found = findCurrentItem(item.children);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+
+      let currentMenuItem = null;
+      for (const group of menuItems.items) {
+        currentMenuItem = findCurrentItem(group.children);
+        if (currentMenuItem) break;
+      }
+
+      if (currentMenuItem && currentMenuItem.id && !hasPermission(currentMenuItem.id)) {
+        const targetPath = getFirstAllowedPath();
+        if (targetPath && targetPath !== pathname) {
+          navigate(targetPath, { replace: true });
+        } else {
+          // No alternative found or looping - redirect to profile tab of inundation as fallback
+          navigate(`${basePath}/inundation?activeTab=4`, { replace: true });
+        }
+        return;
+      }
+    }
+
+    // Redirect if on the wrong path prefix
+    if (isEmployee && pathname.startsWith('/admin')) {
+      const newPath = pathname.replace('/admin', '/company');
+      navigate(newPath, { replace: true });
+    } else if (!isEmployee && pathname.startsWith('/company')) {
+      const newPath = pathname.replace('/company', '/admin');
+      navigate(newPath, { replace: true });
+    }
+  }, [isChecking, permissionsLoaded, userInfo, pathname, navigate, isEmployee, availableTabs, basePath, hasPermission]);
+
+  const showMobileAppLayout = isEmployee && (isInundationPath || isConstructionPath || isPumpingPath);
+
+  // Auto-collapse sidebar on AI Support page (only for mobile)
+  useEffect(() => {
+    if (isAiSupportPath && downSM) {
+      handlerDrawerOpen(false);
+    }
+  }, [isAiSupportPath, downSM]);
+
+  // Fetch active flood count for badge
+  useEffect(() => {
+    if (!isEmployee) return;
+    const fetchCount = async () => {
+      try {
+        const res = await inundationApi.listReports();
+        if (res.data?.status === 'success') {
+          const active = (res.data.data || []).filter(r => r.status !== 'resolved').length;
+          setActiveFloodCount(active);
+        }
+      } catch { /* silent */ }
+    };
+    fetchCount();
+    const interval = setInterval(fetchCount, 60000); // refresh every minute
+    return () => clearInterval(interval);
+  }, [isEmployee]);
 
   const inundationNavItems = useMemo(() => {
     const items = [
@@ -236,7 +307,7 @@ export default function MainLayout() {
     return 0; // dashboard
   };
 
-  if (menuMasterLoading || isChecking) return <Loader />;
+  if (menuMasterLoading || isChecking || !permissionsLoaded) return <Loader />;
 
   return (
     <Box sx={{ display: 'flex' }}>

@@ -397,7 +397,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
             fd.append('survey_note', surveyData.note);
             surveyData.images.forEach(img => fd.append('images', img));
             await inundationApi.updateSurvey(point.active_report.id, fd);
-            toast.success('Cập nhật khảo sát thiết kế thành công');
+            toast.success('Cập nhật XNTK thành công');
             setSurveyData(prev => ({ ...prev, images: [], previews: [] }));
             // Trigger refresh - in a real app we might use a context or callback
             window.location.reload();
@@ -768,7 +768,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                             <Box sx={{ p: 1.5, height: '100%', bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'grey.200' }}>
                                                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
                                                     <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                                                        ℹ️ Báo cáo & Rà soát
+                                                        ℹ️ Xí nghiệp báo cáo
                                                     </Typography>
                                                     {isReviewUpdated && (
                                                         <Chip
@@ -879,7 +879,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                             </Box>
                                         </Grid>
 
-                                        {/* CỘT 3: KHẢO SÁT THIẾT KẾ */}
+                                        {/* CỘT 3: XNTK */}
                                         <Grid item xs={12} md={4}>
                                             <Box sx={{ p: 1.5, height: '100%', bgcolor: 'primary.lighter', borderRadius: 2, border: '1px solid', borderColor: 'primary.main' }}>
                                                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1, borderBottom: '1px solid', borderColor: 'primary.light', pb: 0.5 }}>
@@ -911,7 +911,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                                     )}
 
                                                     {latest?.survey_checked && (
-                                                        <Chip icon={<IconCheck size={14} color="white" />} label="Đã hoàn thành khảo sát" size="small" sx={{ fontWeight: 800, bgcolor: 'primary.main', color: 'white', py: 1.5, px: 1, borderRadius: 2 }} />
+                                                        <Chip icon={<IconCheck size={14} color="white" />} label="Đã kiểm tra" size="small" sx={{ fontWeight: 800, bgcolor: 'primary.main', color: 'white', py: 1.5, px: 1, borderRadius: 2 }} />
                                                     )}
                                                 </Stack>
                                             </Box>
@@ -920,7 +920,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                 </Box>
 
                                 {canViewTabs && (
-                                    <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+                                    <Box sx={{ borderColor: 'divider', mb: 2 }}>
                                         <Tabs
                                             value={tabValue}
                                             onChange={(e, v) => setTabValue(v)}
@@ -944,16 +944,15 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                                 }
                                             }}
                                         >
-                                            {canReview && <Tab value="review" label="Nhận xét / Rà soát" />}
-                                            {canSurvey && <Tab value="survey" label="Khảo sát thiết kế" />}
-                                            {canMech && <Tab value="mech" label={point.org_id !== user?.org_id ? "XN Địa bàn hỗ trợ" : "Xí nghiệp Cơ giới"} />}
+                                            {canReview && <Tab value="review" label="Nhận xét của phòng kỹ thuật chất lượng" />}
+                                            {canSurvey && <Tab value="survey" label="XNTK" />}
+                                            {canMech && <Tab value="mech" label="Xí nghiệp Cơ giới" />}
                                         </Tabs>
                                     </Box>
                                 )}
 
                                 {tabValue === 'survey' && canSurvey && (
                                     <Box sx={{ p: 1 }}>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, color: 'primary.dark' }}>XÍ NGHIỆP KHẢO SÁT THIẾT KẾ</Typography>
                                         <Stack spacing={3}>
                                             <FormControlLabel
                                                 control={<Checkbox checked={surveyData.checked} onChange={(e) => setSurveyData({ ...surveyData, checked: e.target.checked })} />}
@@ -1009,7 +1008,6 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
 
                                 {tabValue === 'mech' && canMech && (
                                     <Box sx={{ p: 1 }}>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, color: 'primary.dark' }}>{point.org_id !== user?.org_id ? "XN ĐỊA BÀN HỖ TRỢ" : "XÍ NGHIỆP CƠ GIỚI"}</Typography>
                                         <Stack spacing={3}>
                                             <FormControlLabel
                                                 control={<Checkbox checked={mechData.checked} onChange={(e) => setMechData({ ...mechData, checked: e.target.checked })} />}
@@ -1075,8 +1073,6 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
 
                                 {tabValue === 'review' && canReview && (
                                     <Box sx={{ p: 1 }}>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, color: 'primary.dark' }}>NHẬN XÉT / RÀ SOÁT ĐIỂM NGẬP</Typography>
-
                                         {!latest?.needs_correction ? (
                                             <Stack spacing={2}>
                                                 <TextField

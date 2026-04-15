@@ -24,6 +24,11 @@ dayjs.locale('vi');
 
 const AiSupport = () => {
     const { user: userInfo, hasPermission } = useAuthStore();
+    
+    // Safety guard: if not company level and no ai:chat permission, don't render.
+    // The MainLayout should have redirected us already.
+    if (!hasPermission('ai:chat')) return null;
+
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);

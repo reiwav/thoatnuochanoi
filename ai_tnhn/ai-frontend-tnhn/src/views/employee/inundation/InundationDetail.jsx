@@ -51,7 +51,7 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
     const timelineData = useMemo(() => {
         if (!selectedReport) return [];
         const updates = selectedReport.updates || [];
-        
+
         // If there are no updates (for very old data), Fallback to show the report as the first item
         if (updates.length === 0) {
             return [{
@@ -133,7 +133,7 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
             }
             toast.success('Đã gửi phản hồi');
             setReviewDialog({ open: false, itemId: null, type: null, comment: '' });
-            window.location.reload(); 
+            window.location.reload();
         } catch (err) {
             toast.error('Lỗi khi gửi phản hồi');
         }
@@ -213,7 +213,7 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
                             <Stack direction={isMobile ? "column" : "row"} justifyContent="space-between" alignItems={isMobile ? "flex-start" : "center"} sx={{ mb: 0.5, gap: isMobile ? 0.3 : 1 }}>
                                 <Typography variant="h6" sx={{ fontWeight: 800, flex: 1, fontSize: isMobile ? '0.9rem' : 'inherit', lineHeight: 1.3, wordBreak: 'break-word', display: 'flex', alignItems: 'center', gap: 1 }}>
                                     {item.title}
-                            {item.needs_correction && !item.is_review_updated && <Chip label="Cần sửa" size="small" color="error" variant="filled" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 900 }} />}
+                                    {item.needs_correction && !item.is_review_updated && <Chip label="Cần sửa" size="small" color="error" variant="filled" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 900 }} />}
                                     {item.is_review_updated && <Chip label="Đã cập nhật" size="small" color="success" variant="filled" icon={<IconCheck size={12} />} sx={{ height: 20, fontSize: '0.65rem', fontWeight: 900 }} />}
                                 </Typography>
                                 <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 600, whiteSpace: 'nowrap', opacity: 0.8, fontSize: isMobile ? '0.75rem' : '0.875rem' }}>
@@ -223,11 +223,11 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
                             <Typography variant="body1" color="textSecondary" sx={{ mb: 1, fontWeight: 500 }}>{item.desc}</Typography>
 
                             {(canReview || isEmployee) && item.review_comment && (
-                                <Box sx={{ 
-                                    mb: 2, p: 2, 
-                                    bgcolor: 'error.lighter', 
-                                    borderRadius: 2, 
-                                    borderLeft: '4px solid', 
+                                <Box sx={{
+                                    mb: 2, p: 2,
+                                    bgcolor: 'error.lighter',
+                                    borderRadius: 2,
+                                    borderLeft: '4px solid',
                                     borderColor: 'error.main',
                                     boxShadow: '0 2px 4px rgba(211, 47, 47, 0.05)'
                                 }}>
@@ -245,7 +245,7 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
 
                             {(item.survey_checked || item.survey_note) && (
                                 <Box sx={{ mb: 1.5, p: 1, borderLeft: '3px solid', borderColor: 'primary.main', bgcolor: 'primary.lighter', borderRadius: 1 }}>
-                                    <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', display: 'block', mb: 0.5 }}>⚡️ KHẢO SÁT THIẾT KẾ:</Typography>
+                                    <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', display: 'block', mb: 0.5 }}>⚡️ XNTK:</Typography>
                                     {item.survey_note && <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.survey_note}</Typography>}
                                     {item.survey_images?.length > 0 && (
                                         <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5 }}>
@@ -259,7 +259,7 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
 
                             {(item.mech_checked || item.mech_note) && (
                                 <Box sx={{ mb: 1.5, p: 1, borderLeft: '3px solid', borderColor: 'secondary.main', bgcolor: 'secondary.lighter', borderRadius: 1 }}>
-                                    <Typography variant="caption" sx={{ fontWeight: 800, color: 'secondary.main', display: 'block', mb: 0.5 }}>⚙️ CƠ GIỚI/HỖ TRỢ:</Typography>
+                                    <Typography variant="caption" sx={{ fontWeight: 800, color: 'secondary.main', display: 'block', mb: 0.5 }}>⚙️ Xí nghiệp cơ giới:</Typography>
                                     {(item.mech_d || item.mech_r || item.mech_s) && (
                                         <Typography variant="caption" sx={{ fontWeight: 800, color: 'secondary.dark', mb: 0.5, display: 'block' }}>
                                             D: {item.mech_d || '-'} | R: {item.mech_r || '-'} | S: {item.mech_s || '-'}
@@ -301,7 +301,7 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
                                         </Typography>
                                     </Box>
                                 )}
-                                 {canReview && !item.needs_correction && (
+                                {canReview && !item.needs_correction && (
                                     <Button
                                         size="small" startIcon={<IconMessage2 size={16} />}
                                         variant="outlined" color="error"
@@ -347,7 +347,7 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
                                 )}
                             </Box>
 
-                             {item.images?.length > 0 && (
+                            {item.images?.length > 0 && (
                                 <Box sx={{ display: 'flex', gap: 1.2, mt: 1.5, overflowX: 'auto', pb: 1, '&::-webkit-scrollbar': { height: 4 }, '&::-webkit-scrollbar-thumb': { bgcolor: 'grey.300', borderRadius: 4 } }}>
                                     {item.images.map((img, i) => (
                                         <Box

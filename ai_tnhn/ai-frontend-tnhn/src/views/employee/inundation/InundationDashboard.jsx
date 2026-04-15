@@ -94,7 +94,7 @@ const getLatestData = (report) => {
         const updateWithDimensions = sortedUpdates.find(u => u.length || u.width || u.depth);
         const updateWithTraffic = sortedUpdates.find(u => u.traffic_status || u.trafficStatus);
         const updateWithImages = sortedUpdates.find(u => u.images && u.images.length > 0);
-        
+
         // Find most recent updates for technical fields to get specific timestamps
         const surveyUpdate = sortedUpdates.find(u => u.survey_checked || u.survey_note || (u.survey_images && u.survey_images.length > 0));
         const mechUpdate = sortedUpdates.find(u => u.mech_checked || u.mech_note || u.mech_d || u.mech_r || u.mech_s || (u.mech_images && u.mech_images.length > 0));
@@ -111,13 +111,13 @@ const getLatestData = (report) => {
             oldest_ts: oldest.timestamp,
             status: data.status === 'resolved' || data.status === 'normal' ? 'normal' : data.status,
             traffic_status: (data.status === 'resolved' || data.status === 'normal') ? "" : (updateWithTraffic?.traffic_status || updateWithTraffic?.trafficStatus || data.traffic_status),
-            
+
             // Technical fields with specific timestamps
             survey_checked: surveyUpdate ? surveyUpdate.survey_checked : data.survey_checked,
             survey_note: surveyUpdate ? surveyUpdate.survey_note : data.survey_note,
             survey_images: (surveyUpdate?.survey_images && surveyUpdate.survey_images.length > 0) ? surveyUpdate.survey_images : data.survey_images,
             survey_ts: surveyUpdate?.timestamp,
-            
+
             mech_checked: mechUpdate ? mechUpdate.mech_checked : data.mech_checked,
             mech_note: mechUpdate ? mechUpdate.mech_note : data.mech_note,
             mech_d: mechUpdate ? mechUpdate.mech_d : data.mech_d,
@@ -147,14 +147,14 @@ const CollapsiblePumpingStationRow = ({ station, isMobile, navigate, basePath })
     const theme = useTheme();
 
     return (
-        <Paper 
-            elevation={0} 
-            sx={{ 
-                p: 2, 
-                mb: 1.5, 
-                border: '1px solid', 
-                borderColor: 'divider', 
-                borderRadius: 4, 
+        <Paper
+            elevation={0}
+            sx={{
+                p: 2,
+                mb: 1.5,
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 4,
                 bgcolor: 'background.paper',
                 boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
                 '&:hover': { boxShadow: '0 4px 20px rgba(0,0,0,0.08)' },
@@ -184,7 +184,7 @@ const CollapsiblePumpingStationRow = ({ station, isMobile, navigate, basePath })
                             sx={{ fontWeight: 800, bgcolor: 'primary.lighter', color: 'primary.main', height: 24 }}
                         />
                         {lastReport ? (
-                             <Chip
+                            <Chip
                                 label={`Cập nhật: ${formatDateTime(lastReport.timestamp)}`}
                                 size="small"
                                 variant="outlined"
@@ -229,7 +229,7 @@ const CollapsiblePumpingStationRow = ({ station, isMobile, navigate, basePath })
                                 <Typography variant="h3" sx={{ fontWeight: 900, color: 'warning.main' }}>{lastReport?.maintenance_count || 0}</Typography>
                             </Box>
                         </Grid>
-                        
+
                         {(lastReport?.note || lastReport?.user_name) && (
                             <Grid item xs={12}>
                                 <Divider sx={{ my: 1.5, borderStyle: 'dashed' }} />
@@ -245,11 +245,11 @@ const CollapsiblePumpingStationRow = ({ station, isMobile, navigate, basePath })
                                     <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.disabled' }}>
                                         Người báo cáo:
                                     </Typography>
-                                    <Chip 
-                                        label={lastReport.user_name} 
-                                        size="small" 
+                                    <Chip
+                                        label={lastReport.user_name}
+                                        size="small"
                                         avatar={<Avatar sx={{ width: 16, height: 16, fontSize: '0.6rem' }}><IconUser size={10} /></Avatar>}
-                                        sx={{ fontWeight: 700, height: 20, fontSize: '0.7rem' }} 
+                                        sx={{ fontWeight: 700, height: 20, fontSize: '0.7rem' }}
                                     />
                                 </Stack>
                             </Grid>
@@ -392,7 +392,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
             toast.success('Cập nhật khảo sát thiết kế thành công');
             setSurveyData(prev => ({ ...prev, images: [], previews: [] }));
             // Trigger refresh - in a real app we might use a context or callback
-            window.location.reload(); 
+            window.location.reload();
         } catch (err) {
             toast.error('Lỗi khi cập nhật khảo sát');
         } finally {
@@ -635,6 +635,11 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                         {point.org_name || organizations.find((o) => o.id === point.org_id)?.name || ''}
                     </Typography>
                 </TableCell>
+                <TableCell>
+                    <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>
+                        {point.shared_org_ids?.map(id => organizations.find(o => o.id === id)?.name).filter(n => n).join(', ') || '-'}
+                    </Typography>
+                </TableCell>
                 <TableCell align="center">
                     <Chip
                         label={point.status === 'active' ? 'Đang ngập' : 'Bình thường'}
@@ -730,16 +735,16 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                     <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 800, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
                                         <IconInfoCircle size={18} /> {point.address}
                                     </Typography>
-                                    
+
                                     {/* 3 VÙNG NGANG TỔNG HỢP */}
                                     <Grid container spacing={2}>
                                         {/* CỘT 1: THÔNG TIN CHUNG & RÀ SOÁT */}
                                         <Grid item xs={12} md={4}>
                                             <Box sx={{ p: 1.5, height: '100%', bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'grey.200' }}>
                                                 <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 1, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                                                    ℹ️ Báo cáo & Rà soát
+                                                    ℹ️ Xí nghiệp báo cáo
                                                 </Typography>
-                                                
+
                                                 <Stack spacing={1.5}>
                                                     <Box>
                                                         <Typography variant="body2" sx={{ fontWeight: 700 }}>
@@ -785,7 +790,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                             <Box sx={{ p: 1.5, height: '100%', bgcolor: 'green.lighter', borderRadius: 2, border: '1px solid', borderColor: 'warning.main' }}>
                                                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1, borderBottom: '1px solid', borderColor: 'warning.light', pb: 0.5 }}>
                                                     <Typography variant="caption" color="green.dark" sx={{ fontWeight: 900, textTransform: 'uppercase', letterSpacing: 1 }}>
-                                                        ⚙️ Cơ giới / Hỗ trợ
+                                                        ⚙️ XN Cơ giới
                                                     </Typography>
                                                     {latest?.mech_ts && (
                                                         <Typography variant="caption" sx={{ color: 'green.dark', fontWeight: 700 }}>
@@ -793,28 +798,28 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                                         </Typography>
                                                     )}
                                                 </Stack>
-                                                
+
                                                 <Stack spacing={1.5}>
                                                     {(latest?.mech_d || latest?.mech_r || latest?.mech_s) && (
                                                         <Box sx={{ display: 'flex', gap: 1 }}>
-                                                            <Chip 
-                                                                label={<Box component="span">D: <Box component="span" sx={{ color: 'primary.main', fontWeight: 900 }}>{latest.mech_d || '-'}</Box></Box>} 
-                                                                size="small" 
-                                                                sx={{ height: 22, fontSize: '0.75rem', fontWeight: 700, bgcolor: 'white', color: 'black', border: '1px solid', borderColor: 'warning.main' }} 
+                                                            <Chip
+                                                                label={<Box component="span">D: <Box component="span" sx={{ color: 'primary.main', fontWeight: 900 }}>{latest.mech_d || '-'}</Box></Box>}
+                                                                size="small"
+                                                                sx={{ height: 22, fontSize: '0.75rem', fontWeight: 700, bgcolor: 'white', color: 'black', border: '1px solid', borderColor: 'warning.main' }}
                                                             />
-                                                            <Chip 
-                                                                label={<Box component="span">R: <Box component="span" sx={{ color: 'primary.main', fontWeight: 900 }}>{latest.mech_r || '-'}</Box></Box>} 
-                                                                size="small" 
-                                                                sx={{ height: 22, fontSize: '0.75rem', fontWeight: 700, bgcolor: 'white', color: 'black', border: '1px solid', borderColor: 'warning.main' }} 
+                                                            <Chip
+                                                                label={<Box component="span">R: <Box component="span" sx={{ color: 'primary.main', fontWeight: 900 }}>{latest.mech_r || '-'}</Box></Box>}
+                                                                size="small"
+                                                                sx={{ height: 22, fontSize: '0.75rem', fontWeight: 700, bgcolor: 'white', color: 'black', border: '1px solid', borderColor: 'warning.main' }}
                                                             />
-                                                            <Chip 
-                                                                label={<Box component="span">S: <Box component="span" sx={{ color: 'primary.main', fontWeight: 900 }}>{latest.mech_s || '-'}</Box></Box>} 
-                                                                size="small" 
-                                                                sx={{ height: 22, fontSize: '0.75rem', fontWeight: 700, bgcolor: 'white', color: 'black', border: '1px solid', borderColor: 'warning.main' }} 
+                                                            <Chip
+                                                                label={<Box component="span">S: <Box component="span" sx={{ color: 'primary.main', fontWeight: 900 }}>{latest.mech_s || '-'}</Box></Box>}
+                                                                size="small"
+                                                                sx={{ height: 22, fontSize: '0.75rem', fontWeight: 700, bgcolor: 'white', color: 'black', border: '1px solid', borderColor: 'warning.main' }}
                                                             />
                                                         </Box>
                                                     )}
-                                                    
+
                                                     <Box>
                                                         {latest?.mech_note ? (
                                                             <Typography variant="body2" sx={{ fontWeight: 700, color: 'black', fontSize: '0.875rem', lineHeight: 1.4 }}>{latest.mech_note}</Typography>
@@ -839,7 +844,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                             <Box sx={{ p: 1.5, height: '100%', bgcolor: 'primary.lighter', borderRadius: 2, border: '1px solid', borderColor: 'primary.main' }}>
                                                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1, borderBottom: '1px solid', borderColor: 'primary.light', pb: 0.5 }}>
                                                     <Typography variant="caption" color="primary.main" sx={{ fontWeight: 900, textTransform: 'uppercase', letterSpacing: 1 }}>
-                                                        ⚡️ Khảo sát thiết kế
+                                                        ⚡️ XN KSTK
                                                     </Typography>
                                                     {latest?.survey_ts && (
                                                         <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 700 }}>
@@ -847,7 +852,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                                         </Typography>
                                                     )}
                                                 </Stack>
-                                                
+
                                                 <Stack spacing={1.5}>
                                                     <Box>
                                                         {latest?.survey_note ? (
@@ -894,7 +899,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                             }
                                         }}
                                     >
-                                        <Tab label="Nhận xét" />
+                                        <Tab label="PKTCL nhận xét" />
                                         {(hasPermission('inundation:survey') || user?.isCompany) && <Tab label="Khảo sát thiết kế" />}
                                         {(hasPermission('inundation:mechanic') || user?.isCompany) && <Tab label={point.org_id !== user?.org_id ? "XN Địa bàn hỗ trợ" : "Xí nghiệp Cơ giới"} />}
                                     </Tabs>
@@ -937,7 +942,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                         <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, color: 'primary.dark' }}>XÍ NGHIỆP KHẢO SÁT THIẾT KẾ</Typography>
                                         <Stack spacing={3}>
                                             <FormControlLabel
-                                                control={<Checkbox checked={surveyData.checked} onChange={(e) => setSurveyData({...surveyData, checked: e.target.checked})} />}
+                                                control={<Checkbox checked={surveyData.checked} onChange={(e) => setSurveyData({ ...surveyData, checked: e.target.checked })} />}
                                                 label={<Typography sx={{ fontWeight: 700 }}>Đã kiểm tra</Typography>}
                                             />
                                             <Box>
@@ -953,7 +958,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                                             <IconButton size="small" onClick={() => {
                                                                 const ni = [...surveyData.images]; ni.splice(i, 1);
                                                                 const np = [...surveyData.previews]; URL.revokeObjectURL(np[i]); np.splice(i, 1);
-                                                                setSurveyData({...surveyData, images: ni, previews: np});
+                                                                setSurveyData({ ...surveyData, images: ni, previews: np });
                                                             }} sx={{ position: 'absolute', top: -5, right: -5, bgcolor: 'error.main', color: 'white', p: 0.2, '&:hover': { bgcolor: 'error.dark' } }}>
                                                                 <IconX size={10} />
                                                             </IconButton>
@@ -967,7 +972,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                             </Box>
                                             <TextField
                                                 fullWidth label="Thông tin thêm" multiline rows={2}
-                                                value={surveyData.note} onChange={(e) => setSurveyData({...surveyData, note: e.target.value})}
+                                                value={surveyData.note} onChange={(e) => setSurveyData({ ...surveyData, note: e.target.value })}
                                                 placeholder="Nhập ghi chú hoặc thông tin khảo sát..."
                                             />
                                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -993,18 +998,18 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                         <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, color: 'primary.dark' }}>{point.org_id !== user?.org_id ? "XN ĐỊA BÀN HỖ TRỢ" : "XÍ NGHIỆP CƠ GIỚI"}</Typography>
                                         <Stack spacing={3}>
                                             <FormControlLabel
-                                                control={<Checkbox checked={mechData.checked} onChange={(e) => setMechData({...mechData, checked: e.target.checked})} />}
+                                                control={<Checkbox checked={mechData.checked} onChange={(e) => setMechData({ ...mechData, checked: e.target.checked })} />}
                                                 label={<Typography sx={{ fontWeight: 700 }}>Đã ứng trực</Typography>}
                                             />
                                             <Grid container spacing={2}>
                                                 <Grid item xs={12} sm={4}>
-                                                    <TextField fullWidth label="D" size="small" value={mechData.d} onChange={(e) => setMechData({...mechData, d: e.target.value})} placeholder="Sâu" />
+                                                    <TextField fullWidth label="D" size="small" value={mechData.d} onChange={(e) => setMechData({ ...mechData, d: e.target.value })} placeholder="Sâu" />
                                                 </Grid>
                                                 <Grid item xs={12} sm={4}>
-                                                    <TextField fullWidth label="R" size="small" value={mechData.r} onChange={(e) => setMechData({...mechData, r: e.target.value})} placeholder="Rộng" />
+                                                    <TextField fullWidth label="R" size="small" value={mechData.r} onChange={(e) => setMechData({ ...mechData, r: e.target.value })} placeholder="Rộng" />
                                                 </Grid>
                                                 <Grid item xs={12} sm={4}>
-                                                    <TextField fullWidth label="S" size="small" value={mechData.s} onChange={(e) => setMechData({...mechData, s: e.target.value})} placeholder="Dài/Diện tích" />
+                                                    <TextField fullWidth label="S" size="small" value={mechData.s} onChange={(e) => setMechData({ ...mechData, s: e.target.value })} placeholder="Dài/Diện tích" />
                                                 </Grid>
                                             </Grid>
                                             <Box>
@@ -1020,7 +1025,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                                             <IconButton size="small" onClick={() => {
                                                                 const ni = [...mechData.images]; ni.splice(i, 1);
                                                                 const np = [...mechData.previews]; URL.revokeObjectURL(np[i]); np.splice(i, 1);
-                                                                setMechData({...mechData, images: ni, previews: np});
+                                                                setMechData({ ...mechData, images: ni, previews: np });
                                                             }} sx={{ position: 'absolute', top: -5, right: -5, bgcolor: 'error.main', color: 'white', p: 0.2, '&:hover': { bgcolor: 'error.dark' } }}>
                                                                 <IconX size={10} />
                                                             </IconButton>
@@ -1033,7 +1038,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                             </Box>
                                             <TextField
                                                 fullWidth label="Thông tin khác" multiline rows={2}
-                                                value={mechData.note} onChange={(e) => setMechData({...mechData, note: e.target.value})}
+                                                value={mechData.note} onChange={(e) => setMechData({ ...mechData, note: e.target.value })}
                                                 placeholder="Nhập ghi chú hoặc thông tin tình hình..."
                                             />
                                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1180,6 +1185,11 @@ const CollapsibleHistoryRow = ({ report, organizations, handleOpenViewer, naviga
                 <TableCell>
                     <Typography variant="body2" color="primary">
                         {organizations.find((o) => o.id === report.org_id)?.name || report.org_id}
+                    </Typography>
+                </TableCell>
+                <TableCell>
+                    <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>
+                        {report.shared_org_ids?.map(id => organizations.find(o => o.id === id)?.name).filter(n => n).join(', ') || '-'}
                     </Typography>
                 </TableCell>
                 <TableCell sx={{ p: 2, display: { xs: 'none', md: 'table-cell' } }}>
@@ -1611,6 +1621,7 @@ const InundationDashboard = () => {
                                 <TableCell sx={{ width: 40 }} />
                                 <TableCell sx={{ fontWeight: 700 }}>Tuyến đường / Điểm</TableCell>
                                 <TableCell sx={{ fontWeight: 700 }}>Đơn vị quản lý</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>Xí nghiệp phối hợp</TableCell>
                                 <TableCell sx={{ fontWeight: 700, display: { xs: 'none', md: 'table-cell' } }}>Bắt đầu</TableCell>
                                 <TableCell sx={{ fontWeight: 700, display: { xs: 'none', md: 'table-cell' } }}>Cập nhật / Kết thúc</TableCell>
                                 <TableCell sx={{ fontWeight: 700, display: { xs: 'none', md: 'table-cell' } }}>Tổng thời gian</TableCell>
@@ -1827,7 +1838,8 @@ const InundationDashboard = () => {
                                         <TableCell sx={{ fontWeight: 700 }}>Điểm ngập</TableCell>
                                         {!isMobile && (
                                             <>
-                                                <TableCell sx={{ fontWeight: 700, width: 250 }}>Đơn vị quản lý</TableCell>
+                                                <TableCell sx={{ fontWeight: 700, width: 200 }}>Đơn vị quản lý</TableCell>
+                                                <TableCell sx={{ fontWeight: 700, width: 250 }}>Xí nghiệp phối hợp</TableCell>
                                                 <TableCell sx={{ fontWeight: 700 }} align="center">Trạng thái</TableCell>
                                                 <TableCell sx={{ fontWeight: 700 }} align="center">Giao thông</TableCell>
                                                 <TableCell sx={{ fontWeight: 700, width: 120 }} align="center">Thao tác</TableCell>
@@ -1893,8 +1905,8 @@ const InundationDashboard = () => {
                     <>
                         {stationToReport && assignedStationId ? (
                             <Box>
-                                <Button 
-                                    startIcon={<IconChevronLeft />} 
+                                <Button
+                                    startIcon={<IconChevronLeft />}
                                     onClick={() => navigate(`${basePath}/inundation?activeTab=1`)}
                                     sx={{ mb: 2, fontWeight: 800 }}
                                 >
@@ -1921,7 +1933,7 @@ const InundationDashboard = () => {
                                         <Typography sx={{ textAlign: 'center', py: 5, color: 'text.secondary' }}>Không tìm thấy trạm bơm nào</Typography>
                                     ) : (
                                         pumpingStations.map(station => (
-                                            <CollapsiblePumpingStationRow 
+                                            <CollapsiblePumpingStationRow
                                                 key={station.id}
                                                 station={station}
                                                 isMobile={isMobile}

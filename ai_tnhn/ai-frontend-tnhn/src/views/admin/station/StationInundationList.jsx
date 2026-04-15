@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {  } from 'react-router-dom';
+import { } from 'react-router-dom';
 import {
     Button, Stack, TextField, Table, TableBody,
     TableCell, TableContainer, TableHead, TableRow, Paper,
@@ -188,8 +188,8 @@ const StationInundationList = () => {
         if (!window.confirm('Bạn có chắc chắn muốn xóa điểm ngập này?')) return;
         try {
             const res = await stationApi.inundation.delete(id);
-            if (res.data?.status === 'success') { 
-                toast.success('Xóa thành công'); 
+            if (res.data?.status === 'success') {
+                toast.success('Xóa thành công');
                 setPoints(prev => prev.filter(p => p.id !== id));
             }
         } catch (err) {

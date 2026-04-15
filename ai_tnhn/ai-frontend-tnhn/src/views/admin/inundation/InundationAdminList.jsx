@@ -258,6 +258,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                     <Typography variant="body2" sx={{ fontWeight: 800, color: 'primary.dark' }}>{point.name}</Typography>
                 </TableCell>
                 <TableCell><Typography variant="body2" color="primary">{point.org_name || organizations.find(o => o.id === point.org_id)?.name || ''}</Typography></TableCell>
+                <TableCell><Typography variant="body2" sx={{ fontSize: '0.85rem' }}>{point.shared_org_ids?.map(id => organizations.find(o => o.id === id)?.name).filter(n => n).join(', ') || '-'}</Typography></TableCell>
                 <TableCell><Chip label={point.status === 'active' ? 'Đang ngập' : 'Bình thường'} color={point.status === 'active' ? 'error' : 'success'} size="small" sx={{ fontWeight: 700 }} /></TableCell>
                 <TableCell>{point.status === 'active' && latest?.traffic_status && <Chip label={getTrafficStatusLabel(latest.traffic_status)} size="small" color={getTrafficStatusColor(latest.traffic_status)} variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem' }} />}</TableCell>
                 <TableCell align="right" sx={{ p: { xs: 1, md: 2 } }}>
@@ -396,20 +397,20 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                                 <Stack spacing={1.5}>
                                                     {(latest?.mech_d || latest?.mech_r || latest?.mech_s) && (
                                                         <Box sx={{ display: 'flex', gap: 1 }}>
-                                                            <Chip 
-                                                                label={<Box component="span">D: <Box component="span" sx={{ color: 'primary.main', fontWeight: 900 }}>{latest.mech_d || '-'}</Box></Box>} 
-                                                                size="small" 
-                                                                sx={{ height: 22, fontSize: '0.75rem', fontWeight: 700, bgcolor: 'white', color: 'black', border: '1px solid', borderColor: 'warning.main' }} 
+                                                            <Chip
+                                                                label={<Box component="span">D: <Box component="span" sx={{ color: 'primary.main', fontWeight: 900 }}>{latest.mech_d || '-'}</Box></Box>}
+                                                                size="small"
+                                                                sx={{ height: 22, fontSize: '0.75rem', fontWeight: 700, bgcolor: 'white', color: 'black', border: '1px solid', borderColor: 'warning.main' }}
                                                             />
-                                                            <Chip 
-                                                                label={<Box component="span">R: <Box component="span" sx={{ color: 'primary.main', fontWeight: 900 }}>{latest.mech_r || '-'}</Box></Box>} 
-                                                                size="small" 
-                                                                sx={{ height: 22, fontSize: '0.75rem', fontWeight: 700, bgcolor: 'white', color: 'black', border: '1px solid', borderColor: 'warning.main' }} 
+                                                            <Chip
+                                                                label={<Box component="span">R: <Box component="span" sx={{ color: 'primary.main', fontWeight: 900 }}>{latest.mech_r || '-'}</Box></Box>}
+                                                                size="small"
+                                                                sx={{ height: 22, fontSize: '0.75rem', fontWeight: 700, bgcolor: 'white', color: 'black', border: '1px solid', borderColor: 'warning.main' }}
                                                             />
-                                                            <Chip 
-                                                                label={<Box component="span">S: <Box component="span" sx={{ color: 'primary.main', fontWeight: 900 }}>{latest.mech_s || '-'}</Box></Box>} 
-                                                                size="small" 
-                                                                sx={{ height: 22, fontSize: '0.75rem', fontWeight: 700, bgcolor: 'white', color: 'black', border: '1px solid', borderColor: 'warning.main' }} 
+                                                            <Chip
+                                                                label={<Box component="span">S: <Box component="span" sx={{ color: 'primary.main', fontWeight: 900 }}>{latest.mech_s || '-'}</Box></Box>}
+                                                                size="small"
+                                                                sx={{ height: 22, fontSize: '0.75rem', fontWeight: 700, bgcolor: 'white', color: 'black', border: '1px solid', borderColor: 'warning.main' }}
                                                             />
                                                         </Box>
                                                     )}
@@ -643,6 +644,7 @@ const CollapsibleHistoryRow = ({ report, organizations, handleOpenViewer, naviga
                     <Typography variant="body2" sx={{ fontWeight: 800, color: 'primary.dark' }}>{report.street_name}</Typography>
                 </TableCell>
                 <TableCell><Typography variant="body2" color="primary">{organizations.find(o => o.id === report.org_id)?.name || report.org_id}</Typography></TableCell>
+                <TableCell><Typography variant="body2" sx={{ fontSize: '0.85rem' }}>{report.shared_org_ids?.map(id => organizations.find(o => o.id === id)?.name).filter(n => n).join(', ') || '-'}</Typography></TableCell>
                 <TableCell sx={{ p: { xs: 1, md: 2 } }}>
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>{formatDateTime(report.start_time)}</Typography>
                 </TableCell>
@@ -956,7 +958,8 @@ const InundationAdminList = () => {
                                     <TableRow>
                                         <TableCell sx={{ width: 40 }} />
                                         <TableCell sx={{ fontWeight: 700 }}>Điểm ngập</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, width: 250 }}>Đơn vị quản lý</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, width: 200 }}>Đơn vị quản lý</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, width: 250 }}>Xí nghiệp phối hợp</TableCell>
                                         <TableCell sx={{ fontWeight: 700 }} align="center">Trạng thái</TableCell>
                                         <TableCell sx={{ fontWeight: 700 }} align="center">Giao thông</TableCell>
                                         <TableCell sx={{ fontWeight: 700, width: 120 }} align="center">Thao tác</TableCell>
@@ -1024,6 +1027,7 @@ const InundationAdminList = () => {
                                         <TableCell sx={{ width: 40 }} />
                                         <TableCell sx={{ fontWeight: 700 }}>Tuyến đường / Điểm</TableCell>
                                         <TableCell sx={{ fontWeight: 700 }}>Đơn vị quản lý</TableCell>
+                                        <TableCell sx={{ fontWeight: 700 }}>Xí nghiệp phối hợp</TableCell>
                                         <TableCell sx={{ fontWeight: 700 }}>Bắt đầu</TableCell>
                                         <TableCell sx={{ fontWeight: 700 }}>Cập nhật / Kết thúc</TableCell>
                                         <TableCell sx={{ fontWeight: 700 }}>Tổng thời gian</TableCell>

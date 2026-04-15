@@ -61,6 +61,7 @@ type PointStatus struct {
 	ActiveReport *models.InundationReport `json:"active_report,omitempty"`
 	LastReport   *models.InundationReport `json:"last_report,omitempty"`
 	LastReportID string                   `json:"last_report_id"`
+	SharedOrgIDs []string                 `json:"shared_org_ids"`
 	Active       bool                     `json:"active"`
 	CreatedAt    int64                    `json:"created_at"`
 }
@@ -516,7 +517,6 @@ func (s *service) UpdateMech(ctx context.Context, id string, report *models.Inun
 	return nil
 }
 
-
 func (s *service) ReviewReport(ctx context.Context, reportID, comment, reviewerID, reviewerEmail, reviewerName string) error {
 	report, err := s.inundationRepo.GetByID(ctx, reportID)
 	if err != nil {
@@ -836,6 +836,7 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []
 			ActiveReport: activeReport,
 			LastReport:   lastReport,
 			LastReportID: lastID,
+			SharedOrgIDs: p.SharedOrgIDs,
 			Active:       p.Active,
 			CreatedAt:    p.CTime,
 		}

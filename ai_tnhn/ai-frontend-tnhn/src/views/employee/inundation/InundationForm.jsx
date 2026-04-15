@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
     Box, Button, Typography, Stack,
@@ -50,6 +50,8 @@ const InundationForm = () => {
 
     const reportId = searchParams.get('id');
     const tabParam = searchParams.get('tab');
+    const editUpdateId = searchParams.get('edit_update_id');
+    const isEdit = searchParams.get('edit') === 'true' || !!editUpdateId;
 
     useEffect(() => {
         if (tabParam !== null) setTab(parseInt(tabParam));
@@ -59,6 +61,18 @@ const InundationForm = () => {
         if (reportId) fetchReport(reportId);
         else setSelectedReport(null);
     }, [reportId, fetchReport]);
+
+    const reportToPass = useMemo(() => {
+        if (!selectedReport) return null;
+        if (editUpdateId) {
+            const upd = selectedReport.updates?.find(u => u.id === editUpdateId);
+            if (upd) return { ...upd, type: 'update', is_update_record: true };
+        }
+        if (isEdit) {
+            return { ...selectedReport, type: 'start' };
+        }
+        return selectedReport;
+    }, [selectedReport, editUpdateId, isEdit]);
 
     const handleSuccess = () => {
         const reportId = searchParams.get('id') || selectedReport?.id;
@@ -122,41 +136,14 @@ const InundationForm = () => {
 
         return (
             <Box sx={{ width: '100%' }}>
-                {correctionUpdate && (
-                    <Box sx={{ 
-                        mb: 3, p: 2, 
-                        bgcolor: 'error.lighter', 
-                        borderRadius: 3, 
-                        border: '1px solid', 
-                        borderColor: 'error.light',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 1
-                    }}>
-                        <Typography variant="subtitle1" sx={{ color: 'error.main', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <IconHistory size={20} /> YÊU CẦU CHỈNH SỬA TỪ RÀ SOÁT
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: 'error.dark', fontWeight: 600 }}>
-                            "{correctionUpdate.review_comment}"
-                        </Typography>
-                        <Stack direction="row" spacing={1} sx={{ mt: 0.5 }}>
-                            <Button 
-                                size="small" variant="contained" color="error" 
-                                onClick={() => setTab(1)}
-                                sx={{ borderRadius: 10, fontWeight: 700 }}
-                            >
-                                Xem chi tiết & Sửa
-                            </Button>
-                        </Stack>
-                    </Box>
-                )}
                 {TabSwitcher()}
                 {tab === 0 ? (
                 <InundationReportPanel
-                    selectedReport={selectedReport}
+                    selectedReport={reportToPass}
                     pointId={searchParams.get('point_id')}
                     initialStreetName={searchParams.get('name')}
                     onSuccess={handleSuccess}
+                    isCorrectionMode={isEdit}
                 />
             ) : (
                 <InundationDetail

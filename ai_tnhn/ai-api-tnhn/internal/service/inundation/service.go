@@ -25,7 +25,7 @@ type Service interface {
 	ListReportsWithFilter(ctx context.Context, orgID, status, trafficStatus, query string, pointIDs []string, page, size int) ([]*models.InundationReport, int64, error)
 	GetReport(ctx context.Context, reportID string) (*models.InundationReport, error)
 	Resolve(ctx context.Context, reportID string, endTime int64) error
-	UpdateReport(ctx context.Context, id string, report *models.InundationReport, images []ImageContent) error
+	UpdateReport(ctx context.Context, id string, report *models.InundationReport, userID, userEmail, userName string, images []ImageContent) error
 	UpdateSurvey(ctx context.Context, id string, report *models.InundationReport, userEmail, userName string, images []ImageContent) error
 	UpdateMech(ctx context.Context, id string, report *models.InundationReport, userEmail, userName string, images []ImageContent) error
 
@@ -33,7 +33,7 @@ type Service interface {
 	ReviewReport(ctx context.Context, reportID, comment, reviewerID, reviewerEmail, reviewerName string) error
 	ReviewUpdate(ctx context.Context, updateID, comment, reviewerID, reviewerEmail, reviewerName string) error
 	GetUpdateByID(ctx context.Context, updateID string) (*models.InundationUpdate, error)
-	UpdateUpdateContent(ctx context.Context, updateID string, update *models.InundationUpdate, images []ImageContent) error
+	UpdateUpdateContent(ctx context.Context, updateID string, update *models.InundationUpdate, userID, userEmail, userName string, images []ImageContent) error
 
 	// Points management
 	GetPointsStatus(ctx context.Context, orgID string, pointIDs []string) ([]PointStatus, error)
@@ -160,6 +160,24 @@ func (s *service) CreateReport(ctx context.Context, report *models.InundationRep
 	if err != nil {
 		return err
 	}
+
+	// ALWAYS Create an initial update record for history/timeline consistency
+	initialUpdate := &models.InundationUpdate{
+		ReportID:      report.ID,
+		UserID:        report.UserID,
+		UserEmail:     report.UserEmail,
+		Timestamp:     report.StartTime,
+		Description:   report.Description,
+		Depth:         report.Depth,
+		Length:        report.Length,
+		Width:         report.Width,
+		TrafficStatus: report.TrafficStatus,
+		Images:        report.Images,
+	}
+	if initialUpdate.Description == "" {
+		initialUpdate.Description = "Bắt đầu đợt ngập"
+	}
+	_ = s.inundationUpdateRepo.Create(ctx, initialUpdate)
 
 	// NEW: Update station's report_id if it's an active report
 	if report.Status == "active" && report.PointID != "" {
@@ -357,7 +375,7 @@ func (s *service) Resolve(ctx context.Context, reportID string, endTime int64) e
 	return s.inundationRepo.Resolve(ctx, reportID, endTime)
 }
 
-func (s *service) UpdateReport(ctx context.Context, id string, report *models.InundationReport, images []ImageContent) error {
+func (s *service) UpdateReport(ctx context.Context, id string, report *models.InundationReport, userID, userEmail, userName string, images []ImageContent) error {
 	existing, err := s.inundationRepo.GetByID(ctx, id)
 	if err != nil {
 		return err
@@ -389,6 +407,23 @@ func (s *service) UpdateReport(ctx context.Context, id string, report *models.In
 	if err != nil {
 		return err
 	}
+
+	// Create a new update for history (Timeline)
+	newUpdate := &models.InundationUpdate{
+		ReportID:        id,
+		UserID:          userID,
+		UserEmail:       userEmail,
+		UserName:        userName,
+		Timestamp:       time.Now().Unix(),
+		Description:     "Chỉnh sửa thông tin báo cáo (theo yêu cầu rà soát)",
+		Depth:           existing.Depth,
+		Length:          existing.Length,
+		Width:           existing.Width,
+		TrafficStatus:   existing.TrafficStatus,
+		Images:          existing.Images,
+		IsReviewUpdated: true,
+	}
+	_ = s.inundationUpdateRepo.Create(ctx, newUpdate)
 
 	// Trigger immediate sync task
 	if len(images) > 0 {
@@ -525,12 +560,35 @@ func (s *service) ReviewReport(ctx context.Context, reportID, comment, reviewerI
 	if report.Status != "active" {
 		return fmt.Errorf("chỉ được phép nhận xét khi báo cáo đang ở trạng thái active")
 	}
+
 	report.ReviewComment = comment
 	report.ReviewerId = reviewerID
 	report.ReviewerEmail = reviewerEmail
 	report.ReviewerName = reviewerName
 	report.NeedsCorrection = true
-	return s.inundationRepo.Update(ctx, report)
+	report.IsReviewUpdated = false
+	if err := s.inundationRepo.Update(ctx, report); err != nil {
+		return err
+	}
+
+	// Đồng bộ review_comment vào bản ghi InundationUpdate mới nhất
+	updates, err := s.inundationUpdateRepo.ListByReportID(ctx, reportID)
+	if err == nil && len(updates) > 0 {
+		latestUpdate := updates[len(updates)-1]
+		latestUpdate.ReviewComment = comment
+		latestUpdate.ReviewerId = reviewerID
+		latestUpdate.ReviewerEmail = reviewerEmail
+		latestUpdate.ReviewerName = reviewerName
+		latestUpdate.NeedsCorrection = true
+		latestUpdate.IsReviewUpdated = false // reset: dù đã sửa lần 1, vẫn cần sửa tiếp
+		_ = s.inundationUpdateRepo.Update(ctx, latestUpdate)
+
+		// Cập nhật NeedsCorrectionUpdateID trên report
+		report.NeedsCorrectionUpdateID = latestUpdate.ID
+		_ = s.inundationRepo.Update(ctx, report)
+	}
+
+	return nil
 }
 
 func (s *service) ReviewUpdate(ctx context.Context, updateID, comment, reviewerID, reviewerEmail, reviewerName string) error {
@@ -552,6 +610,7 @@ func (s *service) ReviewUpdate(ctx context.Context, updateID, comment, reviewerI
 	update.ReviewerEmail = reviewerEmail
 	update.ReviewerName = reviewerName
 	update.NeedsCorrection = true
+	update.IsReviewUpdated = false // reset nếu nhân viên đã từng sửa, reviewer yêu cầu sửa lại
 	if err := s.inundationUpdateRepo.Update(ctx, update); err != nil {
 		return err
 	}
@@ -559,6 +618,20 @@ func (s *service) ReviewUpdate(ctx context.Context, updateID, comment, reviewerI
 	// Gắn cờ lên report: update nào cần sửa
 	report.NeedsCorrection = true
 	report.NeedsCorrectionUpdateID = updateID
+	report.IsReviewUpdated = false
+
+	// Nếu là bản ghi update MỚI NHẤT → sync review_comment lên report luôn
+	allUpdates, err := s.inundationUpdateRepo.ListByReportID(ctx, update.ReportID)
+	if err == nil && len(allUpdates) > 0 {
+		latestUpdate := allUpdates[len(allUpdates)-1]
+		if latestUpdate.ID == updateID {
+			report.ReviewComment = comment
+			report.ReviewerId = reviewerID
+			report.ReviewerEmail = reviewerEmail
+			report.ReviewerName = reviewerName
+		}
+	}
+
 	return s.inundationRepo.Update(ctx, report)
 }
 
@@ -566,67 +639,69 @@ func (s *service) GetUpdateByID(ctx context.Context, updateID string) (*models.I
 	return s.inundationUpdateRepo.GetByID(ctx, updateID)
 }
 
-func (s *service) UpdateUpdateContent(ctx context.Context, updateID string, updatedData *models.InundationUpdate, images []ImageContent) error {
+func (s *service) UpdateUpdateContent(ctx context.Context, updateID string, updatedData *models.InundationUpdate, userID, userEmail, userName string, images []ImageContent) error {
 	update, err := s.inundationUpdateRepo.GetByID(ctx, updateID)
 	if err != nil {
 		return err
 	}
 
-	// Lưu lịch sử bản cũ trước khi cập nhật
-	snapshot := map[string]interface{}{
-		"description":    update.Description,
-		"depth":          update.Depth,
-		"length":         update.Length,
-		"width":          update.Width,
-		"traffic_status": update.TrafficStatus,
-		"images":         update.Images,
-		"timestamp":      update.Timestamp,
-	}
-	update.OldData = append(update.OldData, snapshot)
-
+	// 1. Update the existing record instead of creating a new one
 	update.Description = updatedData.Description
 	update.Depth = updatedData.Depth
 	update.Length = updatedData.Length
 	update.Width = updatedData.Width
 	update.TrafficStatus = updatedData.TrafficStatus
 	update.NeedsCorrection = false
+	update.IsReviewUpdated = true
 
+	// Handle images: if new images are provided, use them; otherwise keep old ones
 	if len(images) > 0 {
-		savedPaths, err := s.saveLocalImages(updateID, images)
-		if err != nil {
-			fmt.Printf("Warning: failed to save some content update images locally: %v\n", err)
-		}
-		newImages := []string{}
-		for _, path := range savedPaths {
-			newImages = append(newImages, "local:"+path)
-		}
-		if len(newImages) > 0 {
+		savedPaths, err := s.saveLocalImages(fmt.Sprintf("%s_fix_%d", updateID, time.Now().Unix()), images)
+		if err == nil {
+			newImages := []string{}
+			for _, path := range savedPaths {
+				newImages = append(newImages, "local:"+path)
+			}
 			update.Images = newImages
 		}
 	}
 
+	// 2. Save the updated record
 	err = s.inundationUpdateRepo.Update(ctx, update)
 	if err != nil {
 		return err
 	}
 
-	// Trigger immediate sync task
-	if len(images) > 0 {
-		s.syncWorker.Enqueue(updateID, TaskTypeUpdate)
-	}
+	// 3. Sync to main report ONLY if this is the latest update
+	allUpdates, err := s.inundationUpdateRepo.ListByReportID(ctx, update.ReportID)
+	if err == nil && len(allUpdates) > 0 {
+		// Newest entry in history list (last in array)
+		latest := allUpdates[len(allUpdates)-1]
 
-	// Sync back to main report if this was the latest info
-	mainReport, err := s.inundationRepo.GetByID(ctx, update.ReportID)
-	if err == nil {
-		mainReport.Depth = update.Depth
-		mainReport.Length = update.Length
-		mainReport.Width = update.Width
-		mainReport.TrafficStatus = update.TrafficStatus
-		mainReport.Description = update.Description
-		mainReport.Images = update.Images
-		mainReport.NeedsCorrection = false
-		mainReport.NeedsCorrectionUpdateID = ""
-		_ = s.inundationRepo.Update(ctx, mainReport)
+		if latest.ID == update.ID {
+			// This IS the latest record -> Sync to main report
+			mainReport, rErr := s.inundationRepo.GetByID(ctx, update.ReportID)
+			if rErr == nil {
+				mainReport.Depth = update.Depth
+				mainReport.Length = update.Length
+				mainReport.Width = update.Width
+				mainReport.TrafficStatus = update.TrafficStatus
+				mainReport.Description = update.Description
+				mainReport.Images = update.Images
+				mainReport.NeedsCorrection = false
+				mainReport.NeedsCorrectionUpdateID = ""
+				mainReport.IsReviewUpdated = true
+				_ = s.inundationRepo.Update(ctx, mainReport)
+			}
+		} else {
+			// Not latest -> Just clear the correction flag on report if this was the one targeted
+			mainReport, rErr := s.inundationRepo.GetByID(ctx, update.ReportID)
+			if rErr == nil && mainReport.NeedsCorrectionUpdateID == update.ID {
+				mainReport.NeedsCorrection = false
+				mainReport.NeedsCorrectionUpdateID = ""
+				_ = s.inundationRepo.Update(ctx, mainReport)
+			}
+		}
 	}
 
 	return nil

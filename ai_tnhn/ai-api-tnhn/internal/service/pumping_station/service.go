@@ -90,7 +90,7 @@ func (s *service) CreateHistory(ctx context.Context, user *models.User, history 
 		return nil, errors.New("không tìm thấy trạm bơm")
 	}
 
-	totalReported := history.OperatingCount + history.ClosedCount + history.MaintenanceCount
+	totalReported := history.OperatingCount + history.ClosedCount + history.MaintenanceCount + history.NoSignalCount
 	if totalReported > station.PumpCount {
 		return nil, web.BadRequest("Tổng số lượng máy bơm báo cáo vượt quá số lượng thực tế của trạm")
 	}
@@ -107,7 +107,8 @@ func (s *service) CreateHistory(ctx context.Context, user *models.User, history 
 			latest := latestItems[0]
 			if latest.OperatingCount == history.OperatingCount &&
 				latest.ClosedCount == history.ClosedCount &&
-				latest.MaintenanceCount == history.MaintenanceCount {
+				latest.MaintenanceCount == history.MaintenanceCount &&
+				latest.NoSignalCount == history.NoSignalCount {
 				// No change in counts for auto-report, skip insert
 				return latest, nil
 			}

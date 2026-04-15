@@ -23,6 +23,7 @@ type PumpingStationHistory struct {
 	OperatingCount   int    `json:"operating_count" bson:"operating_count"`
 	ClosedCount      int    `json:"closed_count" bson:"closed_count"`
 	MaintenanceCount int    `json:"maintenance_count" bson:"maintenance_count"`
+	NoSignalCount    int    `json:"no_signal_count" bson:"no_signal_count"`
 	Note             string `json:"note" bson:"note"`
 	Timestamp        int64  `json:"timestamp" bson:"timestamp"`
 }

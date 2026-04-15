@@ -36,15 +36,25 @@ const PumpingStationHistoryDialog = ({ open, handleClose, station }) => {
             <DialogTitle dividers>Lịch sử vận hành: {station?.name}</DialogTitle>
             <DialogContent dividers>
                 <TableContainer>
-                    <Table size="small">
-                        <TableHead>
+                    <Table 
+                        size="small" 
+                        sx={{ 
+                            border: '1px solid #ccc',
+                            '& .MuiTableCell-root': {
+                                border: '1px solid #ccc',
+                                padding: '8px'
+                            }
+                        }}
+                    >
+                        <TableHead sx={{ bgcolor: '#f5f5f5' }}>
                             <TableRow>
-                                <TableCell>Thời gian</TableCell>
-                                <TableCell>Nhân viên</TableCell>
-                                <TableCell align="center">Vận hành</TableCell>
-                                <TableCell align="center">Đóng</TableCell>
-                                <TableCell align="center">Bảo dưỡng</TableCell>
-                                <TableCell>Ghi chú</TableCell>
+                                <TableCell sx={{ fontWeight: 700, color: 'black' }}>Thời gian</TableCell>
+                                <TableCell sx={{ fontWeight: 700, color: 'black' }}>Nhân viên</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 700, color: 'black' }}>Vận hành</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 700, color: 'black' }}>Dừng</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 700, color: 'black' }}>Bảo dưỡng</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 700, color: 'black' }}>Ko tín hiệu</TableCell>
+                                <TableCell sx={{ fontWeight: 700, color: 'black' }}>Ghi chú</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -53,15 +63,16 @@ const PumpingStationHistoryDialog = ({ open, handleClose, station }) => {
                                     <TableRow key={row.id}>
                                         <TableCell>{dayjs(row.timestamp * 1000).format('DD/MM/YYYY HH:mm')}</TableCell>
                                         <TableCell>{row.user_name}</TableCell>
-                                        <TableCell align="center" style={{ color: 'green' }}>{row.operating_count}</TableCell>
-                                        <TableCell align="center" style={{ color: 'red' }}>{row.closed_count}</TableCell>
-                                        <TableCell align="center" style={{ color: 'orange' }}>{row.maintenance_count}</TableCell>
+                                        <TableCell align="center" style={{ color: 'red', fontWeight: 600 }}>{row.operating_count}</TableCell>
+                                        <TableCell align="center" style={{ color: 'green', fontWeight: 600 }}>{row.closed_count}</TableCell>
+                                        <TableCell align="center" style={{ color: '#FBC02D', fontWeight: 600 }}>{row.maintenance_count}</TableCell>
+                                        <TableCell align="center" style={{ color: 'grey', fontWeight: 600 }}>{row.no_signal_count}</TableCell>
                                         <TableCell>{row.note}</TableCell>
                                     </TableRow>
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={6} align="center">Chưa có dữ liệu báo cáo</TableCell>
+                                    <TableCell colSpan={7} align="center">Chưa có dữ liệu báo cáo</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>

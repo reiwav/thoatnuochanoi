@@ -10,9 +10,9 @@ import IconButton from '@mui/material/IconButton';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import Tooltip from '@mui/material/Tooltip';
-import { IconEdit, IconTrash, IconPlus, IconHistory, IconChevronDown, IconChevronUp } from '@tabler/icons-react';
+import { IconEdit, IconTrash, IconPlus, IconHistory, IconChevronDown, IconChevronUp, IconEngine, IconClock, IconUser } from '@tabler/icons-react';
 import dayjs from 'dayjs';
-import { CircularProgress, Box, Typography, Collapse, Grid, Divider } from '@mui/material';
+import { CircularProgress, Box, Typography, Collapse, Grid, Divider, Paper, useTheme, Chip } from '@mui/material';
 import pumpingStationApi from 'api/pumpingStation';
 import organizationApi from 'api/organization';
 import PumpingStationDialog from './PumpingStationDialog';
@@ -22,25 +22,42 @@ import { toast } from 'react-hot-toast';
 import useAuthStore from 'store/useAuthStore';
 
 const PumpingStationRow = ({ item, index, getOrgNames, handleHistory, handleEdit, handleDelete, hasPermission }) => {
+    const theme = useTheme();
     const [open, setOpen] = useState(!!item.last_report);
     const lastReport = item.last_report;
 
     return (
         <>
-            <TableRow sx={{ '& > *': { borderBottom: lastReport ? '1px dashed' : 'inherit', borderColor: 'divider' } }}>
-                <TableCell>
+            <TableRow hover sx={{ '& > *': { borderBottom: lastReport ? '1px dashed' : '1px solid', borderColor: 'divider' } }}>
+                <TableCell sx={{ p: { xs: 1, md: 2 } }}>
                     {lastReport && (
                         <IconButton size="small" onClick={() => setOpen(!open)}>
                             {open ? <IconChevronUp size={18} /> : <IconChevronDown size={18} />}
                         </IconButton>
                     )}
                 </TableCell>
-                <TableCell>{index + 1}</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>{item.name}</TableCell>
-                <TableCell>{item.address || '-'}</TableCell>
-                <TableCell>{item.pump_count}</TableCell>
-                <TableCell>{item.is_auto ? 'Có' : 'Không'}</TableCell>
-                <TableCell>{getOrgNames(item.org_id)}</TableCell>
+                <TableCell sx={{ p: { xs: 1, md: 2 } }}>{index + 1}</TableCell>
+                <TableCell sx={{ p: { xs: 1, md: 2 } }}>
+                    <Typography variant="body2" sx={{ fontWeight: 800, color: 'primary.dark' }}>{item.name}</Typography>
+                </TableCell>
+                <TableCell sx={{ p: { xs: 1, md: 2 } }}>
+                    <Typography variant="body2" color="textSecondary">{item.address || '-'}</Typography>
+                </TableCell>
+                <TableCell sx={{ p: { xs: 1, md: 2 } }}>
+                    <Typography variant="body2" sx={{ fontWeight: 700 }}>{item.pump_count}</Typography>
+                </TableCell>
+                <TableCell sx={{ p: { xs: 1, md: 2 } }}>
+                    <Chip
+                        label={item.is_auto ? 'Có' : 'Không'}
+                        size="small"
+                        color={item.is_auto ? 'primary' : 'default'}
+                        variant={item.is_auto ? 'filled' : 'outlined'}
+                        sx={{ fontWeight: 700 }}
+                    />
+                </TableCell>
+                <TableCell sx={{ p: { xs: 1, md: 2 } }}>
+                    <Typography variant="body2" color="primary" sx={{ fontWeight: 600 }}>{getOrgNames(item.org_id)}</Typography>
+                </TableCell>
                 <TableCell align="center">
                     <Stack direction="row" spacing={1} justifyContent="center">
                         <Tooltip title="Lịch sử vận hành">
@@ -69,59 +86,88 @@ const PumpingStationRow = ({ item, index, getOrgNames, handleHistory, handleEdit
                 <TableRow>
                     <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider', py: 0 }} colSpan={8}>
                         <Collapse in={open} timeout="auto" unmountOnExit>
-                        <Box sx={{ my: 2, mx: 1, p: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-                            <Typography variant="h6" gutterBottom sx={{ fontWeight: 700, color: 'primary.main', mb: 2 }}>
-                                Trạng thái vận hành mới nhất
-                            </Typography>
+                            <Box sx={{ my: 2, mx: 1, p: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                                <Typography variant="h6" gutterBottom sx={{ fontWeight: 700, color: 'primary.main', mb: 2 }}>
+                                    Trạng thái vận hành mới nhất
+                                </Typography>
                                 <Grid container spacing={3}>
-                                    <Grid item xs={12} sm={4}>
-                                        <Box sx={{ p: 1.5, bgcolor: 'white', borderRadius: 2, border: '1px solid', borderColor: 'success.light', textAlign: 'center' }}>
-                                            <Typography variant="caption" color="success.main" sx={{ fontWeight: 800, display: 'block' }}>VẬN HÀNH</Typography>
+                                    <Grid item xs={12} sm={3}>
+                                        <Box sx={{ p: 1.5, bgcolor: 'white', borderRadius: 2, border: '1px solid', borderColor: 'error.light', textAlign: 'center' }}>
+                                            <Typography variant="caption" color="error.main" sx={{ fontWeight: 800, display: 'block' }}>VẬN HÀNH</Typography>
                                             <Typography variant="h4" sx={{ fontWeight: 900 }}>{lastReport.operating_count}</Typography>
                                         </Box>
                                     </Grid>
-                                    <Grid item xs={12} sm={4}>
-                                        <Box sx={{ p: 1.5, bgcolor: 'white', borderRadius: 2, border: '1px solid', borderColor: 'error.light', textAlign: 'center' }}>
-                                            <Typography variant="caption" color="error.main" sx={{ fontWeight: 800, display: 'block' }}>ĐANG ĐÓNG</Typography>
+                                    <Grid item xs={12} sm={3}>
+                                        <Box sx={{ p: 1.5, bgcolor: 'white', borderRadius: 2, border: '1px solid', borderColor: 'success.light', textAlign: 'center' }}>
+                                            <Typography variant="caption" color="success.main" sx={{ fontWeight: 800, display: 'block' }}>ĐANG DỪNG</Typography>
                                             <Typography variant="h4" sx={{ fontWeight: 900 }}>{lastReport.closed_count}</Typography>
                                         </Box>
                                     </Grid>
-                                    <Grid item xs={12} sm={4}>
-                                        <Box sx={{ p: 1.5, bgcolor: 'white', borderRadius: 2, border: '1px solid', borderColor: 'warning.light', textAlign: 'center' }}>
-                                            <Typography variant="caption" color="warning.main" sx={{ fontWeight: 800, display: 'block' }}>BẢO DƯỠNG</Typography>
+                                    <Grid item xs={12} sm={3}>
+                                        <Box sx={{
+                                            p: 1.5, bgcolor: 'white', borderRadius: 2, border: '1px solid', borderColor: '#FFEB3B', textAlign: 'center',
+                                            animation: 'status-blink 1s ease-in-out infinite'
+                                        }}>
+                                            <style>
+                                                {`
+                                                @keyframes status-blink {
+                                                    0%, 100% { opacity: 1; transform: scale(1); }
+                                                    50% { opacity: 0.7; transform: scale(1.02); }
+                                                }
+                                                `}
+                                            </style>
+                                            <Typography variant="caption" sx={{ fontWeight: 800, display: 'block', color: '#FBC02D' }}>BẢO DƯỠNG</Typography>
                                             <Typography variant="h4" sx={{ fontWeight: 900 }}>{lastReport.maintenance_count}</Typography>
                                         </Box>
                                     </Grid>
+                                    <Grid item xs={12} sm={3}>
+                                        <Box sx={{ p: 1.5, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'grey.400', textAlign: 'center' }}>
+                                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block' }}>KO TÍN HIỆU</Typography>
+                                            <Typography variant="h4" sx={{ fontWeight: 900, color: 'text.secondary' }}>{lastReport.no_signal_count || 0}</Typography>
+                                        </Box>
+                                    </Grid>
                                     <Grid item xs={12}>
-                                        <Divider sx={{ my: 1, borderStyle: 'dashed' }} />
-                                        <Grid container sx={{ mt: 1 }}>
-                                            <Grid item xs={12} sm={8}>
-                                                <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', display: 'block' }}>GHI CHÚ:</Typography>
-                                                <Typography variant="body2" sx={{ fontStyle: 'italic', mt: 0.5 }}>
-                                                    {lastReport.note ? `"${lastReport.note}"` : '(Không có ghi chú)'}
-                                                </Typography>
+                                        <Grid container spacing={2} alignItems="center">
+                                            <Grid item xs={12} md={7}>
+                                                <Box sx={{ p: 1.5, bgcolor: 'background.paper', borderRadius: 2, borderLeft: '4px solid', borderColor: 'primary.light' }}>
+                                                    <Typography variant="caption" color="text.disabled" sx={{ fontWeight: 800, display: 'block', mb: 0.5 }}>
+                                                        Ghi chú vận hành:
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ fontStyle: lastReport.note ? 'normal' : 'italic', color: lastReport.note ? 'text.primary' : 'text.disabled', fontWeight: 500 }}>
+                                                        {lastReport.note || 'Chưa có ghi chú cho báo cáo này'}
+                                                    </Typography>
+                                                </Box>
                                             </Grid>
-                                            <Grid item xs={12} sm={4} sx={{ textAlign: { sm: 'right' }, mt: { xs: 2, sm: 0 } }}>
-                                                <Typography variant="caption" sx={{ display: 'block', fontWeight: 700, color: 'text.secondary' }}>
-                                                     Cập nhật: {dayjs(lastReport.timestamp * 1000).format('DD/MM/YYYY HH:mm')}
-                                                </Typography>
-                                                <Typography variant="caption" sx={{ display: 'block', fontWeight: 700, color: 'text.disabled' }}>
-                                                    Bởi: {lastReport.user_name}
-                                                </Typography>
+                                            <Grid item xs={12} md={5}>
+                                                <Stack spacing={1} sx={{ pl: { md: 2 } }}>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                        <IconClock size={16} color={theme.palette.text.secondary} />
+                                                        <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary' }}>
+                                                            Cập nhật: <Box component="span" sx={{ color: 'primary.main' }}>{dayjs(lastReport.timestamp * 1000).format('DD/MM/YYYY HH:mm')}</Box>
+                                                        </Typography>
+                                                    </Box>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                        <IconUser size={16} color={theme.palette.text.secondary} />
+                                                        <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary' }}>
+                                                            Người báo cáo: <Box component="span" sx={{ color: 'text.primary' }}>{lastReport.user_name}</Box>
+                                                        </Typography>
+                                                    </Box>
+                                                </Stack>
                                             </Grid>
                                         </Grid>
                                     </Grid>
                                 </Grid>
-                        </Box>
-                    </Collapse>
-                </TableCell>
-            </TableRow>
-        )}
+                            </Box>
+                        </Collapse>
+                    </TableCell>
+                </TableRow>
+            )}
         </>
     );
 };
 
 const PumpingStationPage = () => {
+    const theme = useTheme();
     const { user: userInfo, hasPermission } = useAuthStore();
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -137,17 +183,17 @@ const PumpingStationPage = () => {
         try {
             setLoading(true);
             const promises = [];
-            
+
             if (isAdmin) {
                 promises.push(pumpingStationApi.list({ per_page: 1000 }));
             } else if (userInfo?.assigned_pumping_station_id) {
                 promises.push(pumpingStationApi.get(userInfo.assigned_pumping_station_id));
             }
-            
+
             promises.push(organizationApi.getSelectionList());
 
             const results = await Promise.all(promises);
-            
+
             if (isAdmin) {
                 const stRes = results[0];
                 setData(stRes.data.data?.data || []);
@@ -217,27 +263,32 @@ const PumpingStationPage = () => {
 
     return (
         <MainCard
-            title="QUẢN LÝ TRẠM BƠM"
+            title={
+                <Stack direction="row" alignItems="center" spacing={1}>
+                    <IconEngine size={24} color={theme.palette.primary.main} />
+                    <Typography variant="h3" sx={{ fontWeight: 800 }}>QUẢN LÝ TRẠM BƠM</Typography>
+                </Stack>
+            }
             secondary={
                 hasPermission('trambom:edit') && (
-                    <Button variant="contained" startIcon={<IconPlus />} onClick={handleAdd}>
+                    <Button variant="contained" startIcon={<IconPlus />} onClick={handleAdd} sx={{ borderRadius: 2 }}>
                         Thêm trạm bơm
                     </Button>
                 )
             }
         >
-            <TableContainer>
+            <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, '& .MuiTableCell-root': { fontSize: { xs: '0.875rem' } } }}>
                 <Table>
-                    <TableHead>
+                    <TableHead sx={{ bgcolor: 'grey.50' }}>
                         <TableRow>
                             <TableCell sx={{ width: 40 }} />
-                            <TableCell>STT</TableCell>
-                            <TableCell>Tên trạm bơm</TableCell>
-                            <TableCell>Địa chỉ</TableCell>
-                            <TableCell>Số lượng bơm</TableCell>
-                            <TableCell>Tự động</TableCell>
-                            <TableCell>Đơn vị quản lý</TableCell>
-                            <TableCell align="center">Thao tác</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }}>STT</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }}>Tên trạm bơm</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }}>Địa chỉ</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }}>Số lượng bơm</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }}>Tự động</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }}>Đơn vị quản lý</TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 700 }}>Thao tác</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>

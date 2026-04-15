@@ -509,6 +509,17 @@ func (s *service) UpdateMech(ctx context.Context, id string, report *models.Inun
 	existing.MechS = report.MechS
 	existing.MechUserID = report.MechUserID
 
+	// OVERRIDE: Update main report dimensions with worker's data
+	if report.MechD != "" {
+		existing.Depth = report.MechD
+	}
+	if report.MechS != "" {
+		existing.Length = report.MechS
+	}
+	if report.MechR != "" {
+		existing.Width = report.MechR
+	}
+
 	var savedImages []string
 	if len(images) > 0 {
 		savedPaths, err := s.saveLocalImages(fmt.Sprintf("%s_mech", id), images)

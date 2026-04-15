@@ -84,6 +84,25 @@ func (h *InundationHandler) CreateReport(c *gin.Context) {
 	}
 
 	// 4. Create Report
+	depth := c.PostForm("depth")
+	length := c.PostForm("length")
+	width := c.PostForm("width")
+
+	mechD := c.PostForm("mech_d")
+	mechR := c.PostForm("mech_r")
+	mechS := c.PostForm("mech_s")
+
+	// If mech data provided, prioritize it for main dimensions too
+	if depth == "" && mechD != "" {
+		depth = mechD
+	}
+	if length == "" && mechS != "" {
+		length = mechS
+	}
+	if width == "" && mechR != "" {
+		width = mechR
+	}
+
 	report := &models.InundationReport{
 		OrgID:         user.OrgID,
 		UserID:        user.ID,
@@ -96,6 +115,12 @@ func (h *InundationHandler) CreateReport(c *gin.Context) {
 		StartTime:     startTime,
 		Description:   description,
 		TrafficStatus: trafficStatus,
+		MechChecked:   c.PostForm("mech_checked") == "true",
+		MechNote:      c.PostForm("mech_note"),
+		MechD:         mechD,
+		MechR:         mechR,
+		MechS:         mechS,
+		MechUserID:    user.ID,
 	}
 
 	// 4.1 Permission Check for Employee

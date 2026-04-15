@@ -13,18 +13,18 @@ const useAuthStore = create(
       isEmployee: false,
       isCompany: false, // New state
       permissions: [],
-      
+
       // Actions
       login: (userData, token, role, isEmployee = false, isCompany = false) => {
         let normalizedRole = role;
         if (role === 'giam_doc_xi_nghiep') normalizedRole = 'giam_doc_xn';
         if (['supper_admin', 'supper_admib', 'super_admin '].includes(role)) normalizedRole = 'super_admin';
-        set({ 
-          user: userData, 
-          token, 
-          role: normalizedRole, 
+        set({
+          user: userData,
+          token,
+          role: normalizedRole,
           isEmployee: !!isEmployee,
-          isCompany: !!isCompany 
+          isCompany: !!isCompany
         });
         // Fetch permissions immediately after login if token exists
         get().fetchPermissions();
@@ -33,11 +33,9 @@ const useAuthStore = create(
         set({ user: null, token: null, role: null, isEmployee: false, isCompany: false, permissions: [] });
         localStorage.removeItem('admin_token');
       },
-      
       fetchPermissions: async () => {
         const { token } = get();
         if (!token) return;
-        
         try {
           // Dynamic permissions endpoint
           const response = await axiosClient.get('/admin/permissions/my');
@@ -49,16 +47,16 @@ const useAuthStore = create(
           }
         }
       },
-      
+
       hasPermission: (permissionId) => {
         const { role: currentRole, permissions, isCompany } = get();
         if (!currentRole) return false;
         if (isCompany) return true; // Company level has all permissions
-        
+
         if (Array.isArray(permissionId)) {
           return permissionId.includes(currentRole);
         }
-        
+
         return permissions.includes(permissionId);
       }
     }),

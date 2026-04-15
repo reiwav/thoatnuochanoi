@@ -33,7 +33,7 @@ const StationRow = ({ row, handleOpenEdit, handleDelete, isMobile, canEdit, canD
                 <TableCell sx={{ fontWeight: 800, fontSize: '1.05rem', color: 'primary.dark' }}>{row.TenTram}</TableCell>
                 {!isMobile && <TableCell sx={{ fontSize: '0.95rem' }}>{row.DiaChi}</TableCell>}
                 <TableCell sx={{ fontSize: '0.95rem', fontWeight: 600 }}>{organizationName || '-'}</TableCell>
-                {!isMobile && <TableCell sx={{ fontSize: '0.85rem' }}>{row.shared_org_ids?.map(id => organizationNames[id]).filter(n => n).join(', ') || '-'}</TableCell>}
+                {!isMobile && <TableCell sx={{ fontSize: '0.85rem' }}>{row.share_all ? 'Tất cả xí nghiệp' : (row.shared_org_ids?.map(id => organizationNames[id]).filter(n => n).join(', ') || '-')}</TableCell>}
                 {!isMobile && <TableCell sx={{ fontSize: '0.85rem' }}>{row.Lat}, {row.Lng}</TableCell>}
                 {!isMobile && <TableCell sx={{ fontSize: '1rem', fontWeight: 700 }}>{row.NguongCanhBao || '-'}</TableCell>}
                 {!isMobile && (
@@ -106,7 +106,7 @@ const StationRow = ({ row, handleOpenEdit, handleDelete, isMobile, canEdit, canD
 const StationRainList = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-    const { user, hasPermission } = useAuthStore();
+    const { user, isCompany, hasPermission } = useAuthStore();
     const canCreate = hasPermission('rain:create');
     const canEdit = hasPermission('rain:edit');
     const canDelete = hasPermission('rain:delete');
@@ -168,8 +168,8 @@ const StationRainList = () => {
         try {
             const payload = { ...values };
             const res = editingStation
-                ? await stationApi.rain.update(editingStation.id, payload)
-                : await stationApi.rain.create(payload);
+                ? await stationApi.rain.update(editingStation.id, values)
+                : await stationApi.rain.create(values);
             if (res.data?.status === 'success') {
                 toast.success(editingStation ? 'Cập nhật thành công' : 'Thêm mới thành công');
                 setDialogOpen(false);
@@ -247,8 +247,8 @@ const StationRainList = () => {
                                     handleOpenEdit={handleOpenEdit}
                                     handleDelete={handleDelete}
                                     isMobile={isMobile}
-                                    canEdit={canEdit && (user?.isCompany || user?.org_id === row.org_id)}
-                                    canDelete={canDelete && (user?.isCompany || user?.org_id === row.org_id)}
+                                    canEdit={canEdit && (isCompany || user?.org_id === row.org_id)}
+                                    canDelete={canDelete && (isCompany || user?.org_id === row.org_id)}
                                     organizationName={getOrgName(row.org_id)}
                                     organizationNames={organizationNamesMap}
                                 />

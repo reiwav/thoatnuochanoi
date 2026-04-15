@@ -44,7 +44,7 @@ const CollapsibleStationRow = ({ row, handleOpenEdit, handleDelete, isMobile, ca
                         </TableCell>
                         <TableCell>
                             <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>
-                                {row.shared_org_ids?.map(id => organizationNamesMap[id]).filter(n => n).join(', ') || '-'}
+                                {row.share_all ? 'Tất cả xí nghiệp' : (row.shared_org_ids?.map(id => organizationNamesMap[id]).filter(n => n).join(', ') || '-')}
                             </Typography>
                         </TableCell>
                         <TableCell>
@@ -110,7 +110,7 @@ const CollapsibleStationRow = ({ row, handleOpenEdit, handleDelete, isMobile, ca
 const StationInundationList = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-    const { user, hasPermission } = useAuthStore();
+    const { user, isCompany, hasPermission } = useAuthStore();
     const canCreate = hasPermission('inundation:create');
     const canEdit = hasPermission('inundation:edit');
     const canDelete = hasPermission('inundation:delete');
@@ -206,7 +206,8 @@ const StationInundationList = () => {
                 lng: values.Lng,
                 active: values.Active,
                 org_id: values.org_id,
-                shared_org_ids: values.shared_org_ids
+                shared_org_ids: values.shared_org_ids,
+                share_all: values.share_all
             };
             const res = editingPoint
                 ? await stationApi.inundation.update(editingPoint.id, payload)
@@ -286,8 +287,8 @@ const StationInundationList = () => {
                                     handleOpenEdit={handleOpenEdit}
                                     handleDelete={handleDelete}
                                     isMobile={isMobile}
-                                    canEdit={canEdit && (user?.isCompany || user?.org_id === row.org_id)}
-                                    canDelete={canDelete && (user?.isCompany || user?.org_id === row.org_id)}
+                                    canEdit={canEdit && (isCompany || user?.org_id === row.org_id)}
+                                    canDelete={canDelete && (isCompany || user?.org_id === row.org_id)}
                                     organizationNamesMap={organizationNamesMap}
                                 />
                             ))

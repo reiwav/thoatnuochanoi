@@ -47,6 +47,7 @@ export default function AuthLogin() {
     const name = searchParams.get('name');
     const isEmployeeVal = searchParams.get('is_employee') === 'true';
     const isCompanyVal = searchParams.get('is_company') === 'true';
+    const roleLevelVal = parseInt(searchParams.get('role_level') || '-1', 10);
 
     if (token) {
       // Store metadata via Zustand
@@ -54,9 +55,9 @@ export default function AuthLogin() {
       if (userRole === 'supper_admin' || userRole === 'super_admib' || userRole === 'super_admin ') {
         userRole = ROLES.ROLE_SUPER_ADMIN;
       }
-      
-      storeLogin({ name, email: searchParams.get('email') }, token, userRole, isEmployeeVal, isCompanyVal);
-      
+
+      storeLogin({ name, email: searchParams.get('email') }, token, userRole, isEmployeeVal, isCompanyVal, roleLevelVal);
+
       // Immediate redirection based on is_employee flag
       if (isEmployeeVal) {
         navigate('/company/inundation', { replace: true });
@@ -91,10 +92,10 @@ export default function AuthLogin() {
       console.log(response);
       const result = response.data;
 
-        // 2. Kiểm tra status từ server trả về
+      // 2. Kiểm tra status từ server trả về
       if (result.status === 'success') {
         const tokenData = result.data;
-        
+
         let role = tokenData.role || ROLES.ROLE_EMPLOYEE;
         if (role === 'supper_admin' || role === 'super_admib' || role === 'super_admin ') {
           role = ROLES.ROLE_SUPER_ADMIN;
@@ -102,9 +103,10 @@ export default function AuthLogin() {
 
         const isEmployee = !!tokenData.is_employee;
         const isCompany = !!tokenData.is_company;
+        const roleLevel = tokenData.role_level;
 
         // Store via Zustand
-        storeLogin({ name: tokenData.name, email: values.email }, tokenData.id, role, isEmployee, isCompany);
+        storeLogin({ name: tokenData.name, email: values.email }, tokenData.id, role, isEmployee, isCompany, roleLevel);
 
         // Redirect based on isEmployee
         if (isEmployee) {

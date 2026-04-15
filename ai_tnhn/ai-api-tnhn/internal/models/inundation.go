@@ -41,6 +41,7 @@ type InundationReport struct {
 	model.BaseModel         `bson:",inline"`
 	OrgID                   string             `bson:"org_id" json:"org_id"`
 	SharedOrgIDs            []string           `bson:"shared_org_ids" json:"shared_org_ids"`
+	ShareAll                bool               `bson:"share_all" json:"share_all"`
 	PointID                 string             `bson:"point_id" json:"point_id"` // Link to InundationStation (optional if new location)
 	UserID                  string             `bson:"user_id" json:"user_id"`
 	UserEmail               string             `bson:"user_email" json:"user_email"`

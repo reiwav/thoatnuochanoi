@@ -11,7 +11,7 @@ import { toast } from 'react-hot-toast';
 import useAuthStore from 'store/useAuthStore';
 
 const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type, organizations = { primary: [], shared: [] } }) => {
-    const { user } = useAuthStore();
+    const { user, isCompany } = useAuthStore();
     const [formData, setFormData] = useState({
         TenTram: '',
         DiaChi: '',
@@ -20,6 +20,7 @@ const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type, organiz
         Active: true,
         org_id: '',
         shared_org_ids: [],
+        share_all: false,
         // Specific for Lake/River
         Loai: '',
         TenTramHTML: '',
@@ -37,6 +38,7 @@ const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type, organiz
                     Active: station.Active !== undefined ? station.Active : (station.active !== undefined ? station.active : true),
                     org_id: station.org_id || '',
                     shared_org_ids: station.shared_org_ids || [],
+                    share_all: station.share_all || false,
                     Loai: station.Loai || '',
                     TenTramHTML: station.TenTramHTML || '',
                     NguongCanhBao: station.NguongCanhBao !== undefined ? station.NguongCanhBao : ''
@@ -50,6 +52,7 @@ const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type, organiz
                     Active: true,
                     org_id: '',
                     shared_org_ids: [],
+                    share_all: false,
                     Loai: '',
                     TenTramHTML: '',
                     NguongCanhBao: ''
@@ -59,7 +62,13 @@ const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type, organiz
     }, [open, isEdit, station]);
 
     const handleChange = (field, value) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
+        setFormData(prev => {
+            const newData = { ...prev, [field]: value };
+            if (field === 'share_all' && value === true) {
+                newData.shared_org_ids = [];
+            }
+            return newData;
+        });
     };
 
     const handleSave = () => {
@@ -136,7 +145,7 @@ const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type, organiz
                         required
                         value={formData.org_id}
                         onChange={(e) => handleChange('org_id', e.target.value)}
-                        disabled={!user?.isCompany}
+                        disabled={!isCompany}
                     >
                         <MenuItem value="">Chọn đơn vị quản lý</MenuItem>
                         {(organizations.primary || []).map((org) => (
@@ -144,18 +153,31 @@ const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type, organiz
                         ))}
                     </TextField>
 
-                    <MultiSelectCheckboxes
-                        label="Xí nghiệp phối hợp"
-                        placeholder="Chọn xí nghiệp"
-                        options={(organizations.shared || []).filter((org) => org.id !== formData.org_id)}
-                        value={formData.shared_org_ids}
-                        onChange={(ids) => handleChange('shared_org_ids', ids)}
-                        sx={{
-                            '& .MuiAutocomplete-tag': {
-                                m: 0.5
-                            }
-                        }}
+                    <FormControlLabel
+                        control={
+                            <Switch
+                                checked={formData.share_all}
+                                onChange={(e) => handleChange('share_all', e.target.checked)}
+                                color="secondary"
+                            />
+                        }
+                        label={<Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Chia sẻ với tất cả xí nghiệp</Typography>}
                     />
+
+                    {!formData.share_all && (
+                        <MultiSelectCheckboxes
+                            label="Xí nghiệp phối hợp"
+                            placeholder="Chọn xí nghiệp"
+                            options={(organizations.shared || []).filter((org) => org.id !== formData.org_id)}
+                            value={formData.shared_org_ids}
+                            onChange={(ids) => handleChange('shared_org_ids', ids)}
+                            sx={{
+                                '& .MuiAutocomplete-tag': {
+                                    m: 0.5
+                                }
+                            }}
+                        />
+                    )}
 
                     {(type === 'lake' || type === 'river') && (
                         <TextField

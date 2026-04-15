@@ -18,7 +18,7 @@ type User struct {
 	Active          bool          `bson:"active" json:"active"`
 
 	// RBAC for Employee
-	AssignedInundationStationIDs       []string `bson:"assigned_inundation_station_ids" json:"assigned_inundation_station_ids"`
+	AssignedInundationStationIDs     []string `bson:"assigned_inundation_station_ids" json:"assigned_inundation_station_ids"`
 	AssignedRainStationIDs           []string `bson:"assigned_rain_station_ids" json:"assigned_rain_station_ids"`
 	AssignedLakeStationIDs           []string `bson:"assigned_lake_station_ids" json:"assigned_lake_station_ids"`
 	AssignedRiverStationIDs          []string `bson:"assigned_river_station_ids" json:"assigned_river_station_ids"`

@@ -17,6 +17,7 @@ type RainStation struct {
 	NguongCanhBao   float64  `json:"NguongCanhBao" bson:"nguong_canh_bao"`
 	OrgID           string   `json:"org_id" bson:"org_id"`
 	SharedOrgIDs    []string `json:"shared_org_ids" bson:"shared_org_ids"`
+	ShareAll        bool     `json:"share_all" bson:"share_all"`
 }
 
 type LakeStation struct {
@@ -36,6 +37,7 @@ type LakeStation struct {
 	NguongCanhBao   float64  `json:"NguongCanhBao" bson:"nguong_canh_bao"`
 	OrgID           string   `json:"org_id" bson:"org_id"`
 	SharedOrgIDs    []string `json:"shared_org_ids" bson:"shared_org_ids"`
+	ShareAll        bool     `json:"share_all" bson:"share_all"`
 }
 
 type RiverStation struct {
@@ -55,6 +57,7 @@ type RiverStation struct {
 	NguongCanhBao   float64  `json:"NguongCanhBao" bson:"nguong_canh_bao"`
 	OrgID           string   `json:"org_id" bson:"org_id"`
 	SharedOrgIDs    []string `json:"shared_org_ids" bson:"shared_org_ids"`
+	ShareAll        bool     `json:"share_all" bson:"share_all"`
 }
 
 type InundationStation struct {
@@ -67,4 +70,5 @@ type InundationStation struct {
 	Lat             string   `json:"lat" bson:"lat"`
 	Lng             string   `json:"lng" bson:"lng"`
 	Active          bool     `json:"active" bson:"active"`
+	ShareAll        bool     `json:"share_all" bson:"share_all"`
 }

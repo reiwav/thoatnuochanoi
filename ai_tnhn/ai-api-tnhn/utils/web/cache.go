@@ -58,7 +58,6 @@ func (c *ClientCache) GetUserID(ctx *gin.Context) (string, error) {
 	return uID, nil
 }
 
-
 func (c *ClientCache) GetOrgID(ctx *gin.Context) (string, error) {
 	uID := c.GetTokenFromContext(ctx).OrgID
 	if uID == "" {

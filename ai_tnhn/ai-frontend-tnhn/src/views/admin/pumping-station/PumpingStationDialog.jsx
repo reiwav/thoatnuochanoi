@@ -12,8 +12,10 @@ import MenuItem from '@mui/material/MenuItem';
 import MultiSelectCheckboxes from 'ui-component/MultiSelectCheckboxes';
 import pumpingStationApi from 'api/pumpingStation';
 import { toast } from 'react-hot-toast';
+import useAuthStore from 'store/useAuthStore';
 
 const PumpingStationDialog = ({ open, handleClose, item, refresh, organizations = { primary: [], shared: [] } }) => {
+    const { isCompany, user } = useAuthStore();
     const [formData, setFormData] = useState({
         name: '',
         address: '',
@@ -22,7 +24,8 @@ const PumpingStationDialog = ({ open, handleClose, item, refresh, organizations 
         link: '',
         is_auto: false,
         org_id: '',
-        shared_org_ids: []
+        shared_org_ids: [],
+        share_all: false
     });
 
     useEffect(() => {
@@ -30,7 +33,8 @@ const PumpingStationDialog = ({ open, handleClose, item, refresh, organizations 
             if (item) {
                 setFormData({
                     ...item,
-                    shared_org_ids: item.shared_org_ids || []
+                    shared_org_ids: item.shared_org_ids || [],
+                    share_all: item.share_all || false
                 });
             } else {
                 setFormData({
@@ -41,17 +45,21 @@ const PumpingStationDialog = ({ open, handleClose, item, refresh, organizations 
                     link: '',
                     is_auto: false,
                     org_id: '',
-                    shared_org_ids: []
+                    shared_org_ids: [],
+                    share_all: false
                 });
             }
         }
     }, [item, open]);
 
     const handleChange = (field, value) => {
-        setFormData(prev => ({
-            ...prev,
-            [field]: value
-        }));
+        setFormData(prev => {
+            const newData = { ...prev, [field]: value };
+            if (field === 'share_all' && value === true) {
+                newData.shared_org_ids = [];
+            }
+            return newData;
+        });
     };
 
     const handleSubmit = async () => {
@@ -105,6 +113,7 @@ const PumpingStationDialog = ({ open, handleClose, item, refresh, organizations 
                         fullWidth select label="Đơn vị quản lý" required
                         value={formData.org_id}
                         onChange={(e) => handleChange('org_id', e.target.value)}
+                        disabled={!isCompany}
                         sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
                     >
                         {(organizations.primary || []).map((org) => (
@@ -112,13 +121,20 @@ const PumpingStationDialog = ({ open, handleClose, item, refresh, organizations 
                         ))}
                     </TextField>
 
-                    <MultiSelectCheckboxes
-                        label="Đơn vị phối hợp"
-                        placeholder="Chọn đơn vị"
-                        options={(organizations.shared || []).filter((org) => org.id !== formData.org_id)}
-                        value={formData.shared_org_ids}
-                        onChange={(ids) => handleChange('shared_org_ids', ids)}
+                    <FormControlLabel
+                        control={<Checkbox checked={formData.share_all} onChange={(e) => handleChange('share_all', e.target.checked)} color="secondary" />}
+                        label="Chia sẻ với tất cả xí nghiệp"
                     />
+
+                    {!formData.share_all && (
+                        <MultiSelectCheckboxes
+                            label="Đơn vị phối hợp"
+                            placeholder="Chọn đơn vị"
+                            options={(organizations.shared || []).filter((org) => org.id !== formData.org_id)}
+                            value={formData.shared_org_ids}
+                            onChange={(ids) => handleChange('shared_org_ids', ids)}
+                        />
+                    )}
 
                     <TextField
                         fullWidth label="Link quản lý"

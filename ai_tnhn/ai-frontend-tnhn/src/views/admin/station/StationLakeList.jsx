@@ -16,7 +16,7 @@ import StationDialog from './StationDialog';
 import useAuthStore from 'store/useAuthStore';
 
 const StationLakeList = () => {
-    const { user, hasPermission } = useAuthStore();
+    const { user, isCompany, hasPermission } = useAuthStore();
     const canCreate = hasPermission('water:create');
     const canEdit = hasPermission('water:edit');
     const canDelete = hasPermission('water:delete');
@@ -76,10 +76,9 @@ const StationLakeList = () => {
 
     const handleSubmit = async (values) => {
         try {
-            const payload = { ...values };
             const res = editingStation
-                ? await stationApi.lake.update(editingStation.id, payload)
-                : await stationApi.lake.create(payload);
+                ? await stationApi.lake.update(editingStation.id, values)
+                : await stationApi.lake.create(values);
             if (res.data?.status === 'success') {
                 toast.success(editingStation ? 'Cập nhật thành công' : 'Thêm mới thành công');
                 setDialogOpen(false);
@@ -154,7 +153,7 @@ const StationLakeList = () => {
                                 <TableRow key={row.id} hover>
                                     <TableCell sx={{ fontWeight: 800, fontSize: '1.05rem', color: 'primary.dark' }}>{row.TenTram}</TableCell>
                                     <TableCell sx={{ fontSize: '0.95rem', fontWeight: 600 }}>{getOrgName(row.org_id) || '-'}</TableCell>
-                                    <TableCell sx={{ fontSize: '0.85rem' }}>{row.shared_org_ids?.map(id => organizationNamesMap[id]).filter(n => n).join(', ') || '-'}</TableCell>
+                                    <TableCell sx={{ fontSize: '0.85rem' }}>{row.share_all ? 'Tất cả xí nghiệp' : (row.shared_org_ids?.map(id => organizationNamesMap[id]).filter(n => n).join(', ') || '-')}</TableCell>
                                     <TableCell sx={{ fontSize: '1rem' }}>{row.Loai}</TableCell>
                                     <TableCell sx={{ fontSize: '0.95rem' }}>{row.DiaChi}</TableCell>
                                     <TableCell sx={{ fontSize: '0.85rem' }}>{row.Lat}, {row.Lng}</TableCell>
@@ -163,16 +162,16 @@ const StationLakeList = () => {
                                         <Chip label={row.Active ? 'Hoạt động' : 'Ngừng'}
                                             color={row.Active ? 'success' : 'default'} size="small" variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem', height: 24 }} />
                                     </TableCell>
-                                    {(canEdit && (user?.isCompany || user?.org_id === row.org_id) || (canDelete && (user?.isCompany || user?.org_id === row.org_id))) && (
+                                    {(canEdit && (isCompany || user?.org_id === row.org_id) || (canDelete && (isCompany || user?.org_id === row.org_id))) && (
                                         <TableCell align="right">
-                                            {canEdit && (user?.isCompany || user?.org_id === row.org_id) && (
+                                            {canEdit && (isCompany || user?.org_id === row.org_id) && (
                                                 <Tooltip title="Chỉnh sửa">
                                                     <IconButton color="primary" onClick={() => handleOpenEdit(row)}>
                                                         <IconEdit size={20} />
                                                     </IconButton>
                                                 </Tooltip>
                                             )}
-                                            {canDelete && (user?.isCompany || user?.org_id === row.org_id) && (
+                                            {canDelete && (isCompany || user?.org_id === row.org_id) && (
                                                 <Tooltip title="Xóa">
                                                     <IconButton color="error" onClick={() => handleDelete(row.id)}>
                                                         <IconTrash size={20} />

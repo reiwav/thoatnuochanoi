@@ -45,6 +45,10 @@ func (h *PumpingStationHandler) Create(c *gin.Context) {
 		return
 	}
 
+	if req.ShareAll {
+		req.SharedOrgIDs = []string{}
+	}
+
 	res, err := h.service.Create(c.Request.Context(), &req)
 	if err != nil {
 		h.SendError(c, err)
@@ -61,7 +65,29 @@ func (h *PumpingStationHandler) Update(c *gin.Context) {
 		return
 	}
 
-	err := h.service.Update(c.Request.Context(), id, &req)
+	_, isAllowedAll, user := h.checkPermissions(c)
+	if user == nil {
+		h.SendError(c, web.Unauthorized("Invalid user session"))
+		return
+	}
+
+	// Ownership check
+	current, err := h.service.GetByID(c.Request.Context(), id)
+	if err != nil || current == nil {
+		h.SendError(c, web.BadRequest("Không tìm thấy trạm bơm"))
+		return
+	}
+
+	if !isAllowedAll && current.OrgID != user.OrgID {
+		h.SendError(c, web.Unauthorized("Bạn không có quyền chỉnh sửa trạm của đơn vị khác"))
+		return
+	}
+
+	if req.ShareAll {
+		req.SharedOrgIDs = []string{}
+	}
+
+	err = h.service.Update(c.Request.Context(), id, &req)
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -71,7 +97,24 @@ func (h *PumpingStationHandler) Update(c *gin.Context) {
 
 func (h *PumpingStationHandler) Delete(c *gin.Context) {
 	id := c.Param("id")
-	err := h.service.Delete(c.Request.Context(), id)
+	_, isAllowedAll, user := h.checkPermissions(c)
+	if user == nil {
+		h.SendError(c, web.Unauthorized("Invalid user session"))
+		return
+	}
+
+	current, err := h.service.GetByID(c.Request.Context(), id)
+	if err != nil || current == nil {
+		h.SendError(c, web.BadRequest("Không tìm thấy trạm bơm"))
+		return
+	}
+
+	if !isAllowedAll && current.OrgID != user.OrgID {
+		h.SendError(c, web.Unauthorized("Bạn không có quyền xóa trạm của đơn vị khác"))
+		return
+	}
+
+	err = h.service.Delete(c.Request.Context(), id)
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -122,15 +165,12 @@ func (h *PumpingStationHandler) List(c *gin.Context) {
 		f.AddWhere("org_id_or_shared", "$or", []bson.M{
 			{"org_id": targetOrgID},
 			{"shared_org_ids": targetOrgID},
+			{"share_all": true},
 		})
 	} else if user.Role == constant.ROLE_EMPLOYEE || user.IsEmployee {
 		// Employee view: Only their assigned station
 		if user.UserID != "" {
-			// Fetch user details to get assignment (or we could cache it in Token but let's stick to profile for now if needed)
-			// Actually, ClientCache should have the assignment if we want to be fast,
-			// but for now let's just use what's available.
-			// Wait, the previous logic used user.AssignedPumpingStationID.
-			// I should probably fetch the user profile if it's an employee.
+			// Fetch user details to get assignment
 			profile, err := h.authService.GetProfile(c.Request.Context(), user.Token)
 			if err == nil && profile != nil {
 				if profile.AssignedPumpingStationID != "" {

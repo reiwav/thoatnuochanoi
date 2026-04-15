@@ -374,8 +374,13 @@ func (h *InundationHandler) CreatePoint(c *gin.Context) {
 		return
 	}
 
-	if !isAllowedAll || req.OrgID == "" {
-		req.OrgID = user.OrgID
+	if !isAllowedAll && user.OrgID != req.OrgID && !req.ShareAll && !web.Contains(req.SharedOrgIDs, user.OrgID) {
+		h.SendError(c, web.Unauthorized("Bạn không có quyền thêm điểm đo cho đơn vị khác"))
+		return
+	}
+
+	if req.ShareAll {
+		req.SharedOrgIDs = []string{}
 	}
 
 	id, err := h.service.CreatePoint(c.Request.Context(), req)
@@ -412,6 +417,10 @@ func (h *InundationHandler) UpdatePoint(c *gin.Context) {
 	if !isAllowedAll && currentPoint.OrgID != user.OrgID {
 		h.SendError(c, web.Unauthorized("Bạn không có quyền chỉnh sửa điểm ngập của đơn vị khác"))
 		return
+	}
+
+	if req.ShareAll {
+		req.SharedOrgIDs = []string{}
 	}
 
 	if !isAllowedAll {

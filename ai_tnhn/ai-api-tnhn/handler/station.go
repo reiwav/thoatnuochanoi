@@ -34,7 +34,7 @@ func (h *StationHandler) checkPermissions(c *gin.Context) (isSuperAdmin bool, is
 		return false, false, nil
 	}
 
-	// We no longer distinguish Super Admin strings, only IsCompany flag
+	// Super Admin or Level 0 has all permissions via IsCompany
 	isAllowedAll = user.IsCompany
 	return false, isAllowedAll, user
 }
@@ -64,6 +64,10 @@ func (h *StationHandler) CreateRain(c *gin.Context) {
 	if m.OrgID == "" {
 		web.AssertNil(web.BadRequest("Không xác định được xí nghiệp quản lý"))
 		return
+	}
+
+	if m.ShareAll {
+		m.SharedOrgIDs = []string{}
 	}
 
 	res, err := h.service.CreateRainStation(c.Request.Context(), &m)
@@ -99,6 +103,10 @@ func (h *StationHandler) UpdateRain(c *gin.Context) {
 
 	if !isAllowedAll {
 		m.OrgID = current.OrgID
+	}
+
+	if m.ShareAll {
+		m.SharedOrgIDs = []string{}
 	}
 
 	err = h.service.UpdateRainStation(c.Request.Context(), id, &m)
@@ -146,6 +154,7 @@ func (h *StationHandler) ListRain(c *gin.Context) {
 		req.AddWhere("org_id_or_shared", "$or", []bson.M{
 			{"org_id": user.OrgID},
 			{"shared_org_ids": user.OrgID},
+			{"share_all": true},
 		})
 	}
 
@@ -177,6 +186,10 @@ func (h *StationHandler) CreateLake(c *gin.Context) {
 	if m.OrgID == "" {
 		web.AssertNil(web.BadRequest("Không xác định được xí nghiệp quản lý"))
 		return
+	}
+
+	if m.ShareAll {
+		m.SharedOrgIDs = []string{}
 	}
 
 	res, err := h.service.CreateLakeStation(c.Request.Context(), &m)
@@ -212,6 +225,10 @@ func (h *StationHandler) UpdateLake(c *gin.Context) {
 
 	if !isAllowedAll {
 		m.OrgID = current.OrgID
+	}
+
+	if m.ShareAll {
+		m.SharedOrgIDs = []string{}
 	}
 
 	err = h.service.UpdateLakeStation(c.Request.Context(), id, &m)
@@ -259,6 +276,7 @@ func (h *StationHandler) ListLake(c *gin.Context) {
 		req.AddWhere("org_id_or_shared", "$or", []bson.M{
 			{"org_id": user.OrgID},
 			{"shared_org_ids": user.OrgID},
+			{"share_all": true},
 		})
 	}
 
@@ -290,6 +308,10 @@ func (h *StationHandler) CreateRiver(c *gin.Context) {
 	if m.OrgID == "" {
 		web.AssertNil(web.BadRequest("Không xác định được xí nghiệp quản lý"))
 		return
+	}
+
+	if m.ShareAll {
+		m.SharedOrgIDs = []string{}
 	}
 
 	res, err := h.service.CreateRiverStation(c.Request.Context(), &m)
@@ -325,6 +347,10 @@ func (h *StationHandler) UpdateRiver(c *gin.Context) {
 
 	if !isAllowedAll {
 		m.OrgID = current.OrgID
+	}
+
+	if m.ShareAll {
+		m.SharedOrgIDs = []string{}
 	}
 
 	err = h.service.UpdateRiverStation(c.Request.Context(), id, &m)
@@ -372,6 +398,7 @@ func (h *StationHandler) ListRiver(c *gin.Context) {
 		req.AddWhere("org_id_or_shared", "$or", []bson.M{
 			{"org_id": user.OrgID},
 			{"shared_org_ids": user.OrgID},
+			{"share_all": true},
 		})
 	}
 

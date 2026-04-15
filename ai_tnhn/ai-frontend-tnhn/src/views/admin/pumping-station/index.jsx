@@ -21,7 +21,7 @@ import PumpingStationReport from './PumpingStationReport';
 import { toast } from 'react-hot-toast';
 import useAuthStore from 'store/useAuthStore';
 
-const PumpingStationRow = ({ item, index, getOrgNames, handleHistory, handleEdit, handleDelete, hasPermission }) => {
+const PumpingStationRow = ({ item, index, getOrgNames, handleHistory, handleEdit, handleDelete, hasPermission, isCompany, user }) => {
     const [open, setOpen] = useState(!!item.last_report);
     const lastReport = item.last_report;
 
@@ -41,6 +41,7 @@ const PumpingStationRow = ({ item, index, getOrgNames, handleHistory, handleEdit
                 <TableCell>{item.pump_count}</TableCell>
                 <TableCell>{item.is_auto ? 'Có' : 'Không'}</TableCell>
                 <TableCell>{getOrgNames(item.org_id)}</TableCell>
+                <TableCell>{item.share_all ? 'Tất cả xí nghiệp' : (getOrgNames(item.shared_org_ids) || '-')}</TableCell>
                 <TableCell align="center">
                     <Stack direction="row" spacing={1} justifyContent="center">
                         <Tooltip title="Lịch sử vận hành">
@@ -48,14 +49,14 @@ const PumpingStationRow = ({ item, index, getOrgNames, handleHistory, handleEdit
                                 <IconHistory size="18" />
                             </IconButton>
                         </Tooltip>
-                        {hasPermission('trambom:edit') && (
+                        {hasPermission('trambom:edit') && (isCompany || user?.org_id === item.org_id) && (
                             <Tooltip title="Chỉnh sửa">
                                 <IconButton color="primary" onClick={() => handleEdit(item)}>
                                     <IconEdit size="18" />
                                 </IconButton>
                             </Tooltip>
                         )}
-                        {hasPermission('trambom:delete') && (
+                        {hasPermission('trambom:delete') && (isCompany || user?.org_id === item.org_id) && (
                             <Tooltip title="Xóa">
                                 <IconButton color="error" onClick={() => handleDelete(item.id)}>
                                     <IconTrash size={18} />
@@ -67,12 +68,12 @@ const PumpingStationRow = ({ item, index, getOrgNames, handleHistory, handleEdit
             </TableRow>
             {lastReport && (
                 <TableRow>
-                    <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider', py: 0 }} colSpan={8}>
+                    <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider', py: 0 }} colSpan={9}>
                         <Collapse in={open} timeout="auto" unmountOnExit>
-                        <Box sx={{ my: 2, mx: 1, p: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-                            <Typography variant="h6" gutterBottom sx={{ fontWeight: 700, color: 'primary.main', mb: 2 }}>
-                                Trạng thái vận hành mới nhất
-                            </Typography>
+                            <Box sx={{ my: 2, mx: 1, p: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                                <Typography variant="h6" gutterBottom sx={{ fontWeight: 700, color: 'primary.main', mb: 2 }}>
+                                    Trạng thái vận hành mới nhất
+                                </Typography>
                                 <Grid container spacing={3}>
                                     <Grid item xs={12} sm={4}>
                                         <Box sx={{ p: 1.5, bgcolor: 'white', borderRadius: 2, border: '1px solid', borderColor: 'success.light', textAlign: 'center' }}>
@@ -103,7 +104,7 @@ const PumpingStationRow = ({ item, index, getOrgNames, handleHistory, handleEdit
                                             </Grid>
                                             <Grid item xs={12} sm={4} sx={{ textAlign: { sm: 'right' }, mt: { xs: 2, sm: 0 } }}>
                                                 <Typography variant="caption" sx={{ display: 'block', fontWeight: 700, color: 'text.secondary' }}>
-                                                     Cập nhật: {dayjs(lastReport.timestamp * 1000).format('DD/MM/YYYY HH:mm')}
+                                                    Cập nhật: {dayjs(lastReport.timestamp * 1000).format('DD/MM/YYYY HH:mm')}
                                                 </Typography>
                                                 <Typography variant="caption" sx={{ display: 'block', fontWeight: 700, color: 'text.disabled' }}>
                                                     Bởi: {lastReport.user_name}
@@ -112,17 +113,17 @@ const PumpingStationRow = ({ item, index, getOrgNames, handleHistory, handleEdit
                                         </Grid>
                                     </Grid>
                                 </Grid>
-                        </Box>
-                    </Collapse>
-                </TableCell>
-            </TableRow>
-        )}
+                            </Box>
+                        </Collapse>
+                    </TableCell>
+                </TableRow>
+            )}
         </>
     );
 };
 
 const PumpingStationPage = () => {
-    const { user: userInfo, hasPermission } = useAuthStore();
+    const { user, isCompany, hasPermission } = useAuthStore();
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [assignedStation, setAssignedStation] = useState(null);
@@ -137,21 +138,21 @@ const PumpingStationPage = () => {
         try {
             setLoading(true);
             const promises = [];
-            
+
             if (isAdmin) {
                 promises.push(pumpingStationApi.list({ per_page: 1000 }));
-            } else if (userInfo?.assigned_pumping_station_id) {
-                promises.push(pumpingStationApi.get(userInfo.assigned_pumping_station_id));
+            } else if (user?.assigned_pumping_station_id) {
+                promises.push(pumpingStationApi.get(user.assigned_pumping_station_id));
             }
-            
+
             promises.push(organizationApi.getSelectionList());
 
             const results = await Promise.all(promises);
-            
+
             if (isAdmin) {
                 const stRes = results[0];
                 setData(stRes.data.data?.data || []);
-            } else if (userInfo?.assigned_pumping_station_id) {
+            } else if (user?.assigned_pumping_station_id) {
                 const stRes = results[0];
                 setAssignedStation(stRes.data.data || null);
             }
@@ -237,6 +238,7 @@ const PumpingStationPage = () => {
                             <TableCell>Số lượng bơm</TableCell>
                             <TableCell>Tự động</TableCell>
                             <TableCell>Đơn vị quản lý</TableCell>
+                            <TableCell>Đơn vị phối hợp</TableCell>
                             <TableCell align="center">Thao tác</TableCell>
                         </TableRow>
                     </TableHead>
@@ -251,6 +253,8 @@ const PumpingStationPage = () => {
                                 handleEdit={handleEdit}
                                 handleDelete={handleDelete}
                                 hasPermission={hasPermission}
+                                isCompany={isCompany}
+                                user={user}
                             />
                         ))}
                     </TableBody>

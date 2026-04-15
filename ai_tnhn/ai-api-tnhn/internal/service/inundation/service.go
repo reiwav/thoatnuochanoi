@@ -654,6 +654,7 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []
 		pf.AddWhere("org_id_or_shared", "$or", []bson.M{
 			{"org_id": orgID},
 			{"shared_org_ids": orgID},
+			{"share_all": true},
 		})
 		ownedPoints, _, err := s.inundationStationRepo.List(ctx, pf)
 		if err == nil {
@@ -708,6 +709,7 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []
 		f.AddWhere("org_id_or_points", "$or", []bson.M{
 			{"org_id": orgID},
 			{"shared_org_ids": orgID},
+			{"share_all": true},
 			{"point_id": bson.M{"$in": pointIDs}},
 		})
 	} else if len(pointIDs) > 0 {
@@ -716,6 +718,7 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []
 		f.AddWhere("org_id_or_shared", "$or", []bson.M{
 			{"org_id": orgID},
 			{"shared_org_ids": orgID},
+			{"share_all": true},
 		})
 	}
 	f.AddWhere("status", "status", "active")
@@ -742,6 +745,7 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []
 	if len(pointIDs) > 0 && orgID != "" {
 		pipeline[0]["$match"].(bson.M)["$or"] = []bson.M{
 			{"org_id": orgID},
+			{"share_all": true},
 			{"point_id": bson.M{"$in": pointIDs}},
 		}
 	} else if len(pointIDs) > 0 {
@@ -750,6 +754,7 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []
 		pipeline[0]["$match"].(bson.M)["$or"] = []bson.M{
 			{"org_id": orgID},
 			{"shared_org_ids": orgID},
+			{"share_all": true},
 		}
 	}
 

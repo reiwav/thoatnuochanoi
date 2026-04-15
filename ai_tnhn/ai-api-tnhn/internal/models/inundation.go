@@ -64,6 +64,9 @@ type InundationReport struct {
 	NeedsCorrection         bool               `bson:"needs_correction" json:"needs_correction"`
 	NeedsCorrectionUpdateID string             `bson:"needs_correction_update_id" json:"needs_correction_update_id"`
 	IsReviewUpdated         bool               `bson:"is_review_updated" json:"is_review_updated"`
+	Address                 string             `bson:"-" json:"address"`
+	OrgName                 string             `bson:"-" json:"org_name"`
+	OrgCode                 string             `bson:"-" json:"org_code"`
 
 	// Design Survey Data
 	SurveyChecked bool     `bson:"survey_checked" json:"survey_checked"`

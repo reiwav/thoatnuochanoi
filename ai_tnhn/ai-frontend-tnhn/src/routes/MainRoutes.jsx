@@ -26,6 +26,7 @@ const ConstructionReportingPage = Loadable(lazy(() => import('views/employee/eme
 const ConstructionFormPage = Loadable(lazy(() => import('views/employee/emergency-construction/ConstructionForm')));
 const ConstructionProgressHistoryPage = Loadable(lazy(() => import('views/admin/emergency-construction/ConstructionProgressHistory')));
 const InundationAdminList = Loadable(lazy(() => import('views/admin/inundation/InundationAdminList')));
+const InundationYearlyHistory = Loadable(lazy(() => import('views/admin/inundation/InundationYearlyHistory')));
 const ContractCategoryPage = Loadable(lazy(() => import('views/admin/contract-category')));
 const ContractPage = Loadable(lazy(() => import('views/admin/contract')));
 const RoleMatrixPage = Loadable(lazy(() => import('views/admin/role-matrix')));
@@ -67,6 +68,7 @@ const MainRoutes = {
         { path: 'station/lake/history', element: <StationHistory type="lake" /> },
         { path: 'station/inundation/list', element: <StationInundationList /> },
         { path: 'station/inundation/history', element: <InundationStationHistory /> },
+        { path: 'station/inundation/yearly', element: <InundationYearlyHistory /> },
         { path: 'cua-pai', element: <UnderDevelopment /> },
         { path: 'tram-bom', element: <PumpingStationPage /> },
         { path: 'sa-hinh-ngap', element: <UnderDevelopment /> },

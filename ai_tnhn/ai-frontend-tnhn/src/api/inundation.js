@@ -66,6 +66,16 @@ const inundationApi = {
         return axiosClient.put(`/inundation/report/${id}/mech`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
+    },
+    getYearlyHistory: (year, org_id) => {
+        let url = `/inundation/yearly-history?year=${year}`;
+        if (org_id) url += `&org_id=${org_id}`;
+        return axiosClient.get(url);
+    },
+    exportYearlyHistory: (year, org_id) => {
+        let url = `/inundation/yearly-history/export?year=${year}`;
+        if (org_id) url += `&org_id=${org_id}`;
+        return axiosClient.get(url, { responseType: 'blob' });
     }
 };
 

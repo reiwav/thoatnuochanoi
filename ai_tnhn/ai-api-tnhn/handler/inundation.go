@@ -889,3 +889,57 @@ func (h *InundationHandler) UpdateMech(c *gin.Context) {
 	}
 	h.SendData(c, true)
 }
+
+func (h *InundationHandler) GetYearlyHistory(c *gin.Context) {
+	yearStr := c.Query("year")
+	year, _ := strconv.Atoi(yearStr)
+	if year == 0 {
+		year = time.Now().Year()
+	}
+
+	isAllowedAll, user := h.checkPermissions(c)
+	if user == nil {
+		h.SendError(c, web.Unauthorized("Invalid user session"))
+		return
+	}
+
+	orgID := user.OrgID
+	if isAllowedAll {
+		orgID = c.Query("org_id")
+	}
+
+	reports, err := h.service.GetYearlyHistory(c.Request.Context(), orgID, year)
+	if err != nil {
+		h.SendError(c, err)
+		return
+	}
+
+	h.SendData(c, reports)
+}
+
+func (h *InundationHandler) ExportYearlyHistory(c *gin.Context) {
+	yearStr := c.Query("year")
+	year, _ := strconv.Atoi(yearStr)
+	if year == 0 {
+		year = time.Now().Year()
+	}
+
+	isAllowedAll, user := h.checkPermissions(c)
+	if user == nil {
+		h.SendError(c, web.Unauthorized("Invalid user session"))
+		return
+	}
+
+	orgID := user.OrgID
+	if isAllowedAll {
+		orgID = c.Query("org_id")
+	}
+
+	filePath, err := h.service.ExportYearlyHistory(c.Request.Context(), orgID, year)
+	if err != nil {
+		h.SendError(c, err)
+		return
+	}
+
+	c.File(filePath)
+}

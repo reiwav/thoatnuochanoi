@@ -265,7 +265,22 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
     const theme = useTheme();
     const { user, isCompany } = useAuthStore();
     const [open, setOpen] = useState(point.status === 'active');
-    const [tabValue, setTabValue] = useState(0);
+    const canSurvey = useMemo(() => hasPermission('inundation:survey') || user?.isCompany, [hasPermission, user]);
+    const canMech = useMemo(() => hasPermission('inundation:mechanic') || user?.isCompany, [hasPermission, user]);
+    const canReview = useMemo(() => {
+        if (isEmployee) return false;
+        if (isCompany) return true;
+        const report = point.active_report || point.last_report;
+        if (!report) return false;
+        if (report.org_id === user?.org_id) return true;
+        const userOrg = organizations?.find(o => o.id === user?.org_id);
+        if (userOrg?.inundation_ids?.includes(report.point_id)) return true;
+        return false;
+    }, [user, isCompany, isEmployee, point, organizations]);
+
+    const canViewTabs = canSurvey || canMech || canReview;
+
+    const [tabValue, setTabValue] = useState(canReview ? 'review' : (canSurvey ? 'survey' : (canMech ? 'mech' : '')));
     const latest = useMemo(() => getLatestData(point.active_report || point.last_report), [point]);
 
     // NEW: Survey & Mech states
@@ -326,17 +341,10 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
         const report = point.active_report || point.last_report;
         return report?.needs_correction_update_id || '';
     }, [point]);
-
-    const canReview = useMemo(() => {
-        if (isEmployee) return false;
-        if (isCompany) return true;
+    const isReviewUpdated = useMemo(() => {
         const report = point.active_report || point.last_report;
-        if (!report) return false;
-        if (report.org_id === user?.org_id) return true;
-        const userOrg = organizations?.find(o => o.id === user?.org_id);
-        if (userOrg?.inundation_ids?.includes(report.point_id)) return true;
-        return false;
-    }, [user, isCompany, isEmployee, point, organizations]);
+        return report?.is_review_updated;
+    }, [point]);
 
     const [reviewLoading, setReviewLoading] = useState(false);
     const [reviewComment, setReviewComment] = useState('');
@@ -450,7 +458,9 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                 if (hasPermission('inundation:edit') || (isEmployee && needsCorrection)) {
                                     let url = `${basePath}/inundation/form?tab=1&id=${point.active_report.id}&name=${encodeURIComponent(point.name)}`;
                                     if (needsCorrection && needsCorrectionUpdateId) {
-                                        url += `&edit_update_id=${needsCorrectionUpdateId}`;
+                                        url += `&edit_update_id=${needsCorrectionUpdateId}&edit=true`;
+                                    } else {
+                                        url += `&edit=true`;
                                     }
                                     navigate(url);
                                 }
@@ -480,6 +490,19 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                 label={getTrafficStatusLabel(latest.traffic_status)}
                                 size="small" color={getTrafficStatusColor(latest.traffic_status)}
                                 variant="outlined" sx={{ fontWeight: 800 }}
+                            />
+                        )}
+                        {isReviewUpdated && (
+                            <Chip
+                                label="ĐÃ SỬA"
+                                size="small"
+                                sx={{
+                                    fontWeight: 900,
+                                    color: 'white',
+                                    bgcolor: 'success.main',
+                                    fontSize: '0.65rem',
+                                    height: 20
+                                }}
                             />
                         )}
                         {needsCorrection && (
@@ -641,12 +664,14 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                     </Typography>
                 </TableCell>
                 <TableCell align="center">
-                    <Chip
-                        label={point.status === 'active' ? 'Đang ngập' : 'Bình thường'}
-                        color={point.status === 'active' ? 'error' : 'success'}
-                        size="small"
-                        sx={{ fontWeight: 700 }}
-                    />
+                    <Stack direction="row" spacing={0.5} justifyContent="center" alignItems="center">
+                        <Chip
+                            label={point.status === 'active' ? 'Đang ngập' : 'Bình thường'}
+                            color={point.status === 'active' ? 'error' : 'success'}
+                            size="small"
+                            sx={{ fontWeight: 700 }}
+                        />
+                    </Stack>
                 </TableCell>
                 <TableCell>
                     {point.status === 'active' && latest?.traffic_status && (
@@ -741,10 +766,25 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                         {/* CỘT 1: THÔNG TIN CHUNG & RÀ SOÁT */}
                                         <Grid item xs={12} md={4}>
                                             <Box sx={{ p: 1.5, height: '100%', bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'grey.200' }}>
-                                                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 1, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                                                    ℹ️ Xí nghiệp báo cáo
-                                                </Typography>
-
+                                                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+                                                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                                        ℹ️ Báo cáo & Rà soát
+                                                    </Typography>
+                                                    {isReviewUpdated && (
+                                                        <Chip
+                                                            label="ĐÃ SỬA"
+                                                            size="small"
+                                                            sx={{
+                                                                fontWeight: 900,
+                                                                color: 'white',
+                                                                bgcolor: 'success.main',
+                                                                fontSize: '0.65rem',
+                                                                height: 20,
+                                                                borderRadius: 1
+                                                            }}
+                                                        />
+                                                    )}
+                                                </Stack>
                                                 <Stack spacing={1.5}>
                                                     <Box>
                                                         <Typography variant="body2" sx={{ fontWeight: 700 }}>
@@ -879,65 +919,39 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                     </Grid>
                                 </Box>
 
-                                <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
-                                    <Tabs
-                                        value={tabValue}
-                                        onChange={(e, v) => setTabValue(v)}
-                                        textColor="primary"
-                                        indicatorColor="primary"
-                                        variant="scrollable"
-                                        scrollButtons="auto"
-                                        sx={{
-                                            '& .MuiTab-root': {
-                                                fontWeight: 800,
-                                                fontSize: '0.875rem',
-                                                minHeight: 48,
-                                                color: 'text.secondary'
-                                            },
-                                            '& .Mui-selected': {
-                                                color: 'primary.main'
-                                            }
-                                        }}
-                                    >
-                                        <Tab label="PKTCL nhận xét" />
-                                        {(hasPermission('inundation:survey') || user?.isCompany) && <Tab label="Khảo sát thiết kế" />}
-                                        {(hasPermission('inundation:mechanic') || user?.isCompany) && <Tab label={point.org_id !== user?.org_id ? "XN Địa bàn hỗ trợ" : "Xí nghiệp Cơ giới"} />}
-                                    </Tabs>
-                                </Box>
-
-                                {tabValue === 0 && (
-                                    <Box>
-                                        {canReview && point.status === 'active' ? (
-                                            <Box sx={{ mt: 1, mb: 2 }}>
-                                                <TextField
-                                                    fullWidth multiline rows={2}
-                                                    label="Gửi nhận xét rà soát (Yêu cầu sửa)"
-                                                    value={reviewComment}
-                                                    onChange={(e) => setReviewComment(e.target.value)}
-                                                    placeholder="Nhập nội dung cần nhân viên chỉnh sửa lại..."
-                                                    sx={{ mb: 1.5 }}
-                                                />
-                                                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                                                    <Button
-                                                        variant="contained" color="error"
-                                                        onClick={handleReviewSubmit}
-                                                        disabled={reviewLoading || !reviewComment.trim()}
-                                                        startIcon={reviewLoading ? <CircularProgress size={16} color="inherit" /> : <IconMessage2 size={16} />}
-                                                        sx={{ borderRadius: 2, fontWeight: 800 }}
-                                                    >
-                                                        {reviewLoading ? 'Đang gửi...' : 'GỬI YÊU CẦU SỬA'}
-                                                    </Button>
-                                                </Box>
-                                            </Box>
-                                        ) : (
-                                            <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.disabled', textAlign: 'center', py: 2 }}>
-                                                Chọn các tab để xem hoặc thao tác thông tin
-                                            </Typography>
-                                        )}
+                                {canViewTabs && (
+                                    <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+                                        <Tabs
+                                            value={tabValue}
+                                            onChange={(e, v) => setTabValue(v)}
+                                            variant="fullWidth"
+                                            sx={{
+                                                mb: 3,
+                                                borderBottom: '1px solid',
+                                                borderColor: 'divider',
+                                                '& .MuiTabs-indicator': {
+                                                    height: 3,
+                                                    borderRadius: '3px 3px 0 0'
+                                                },
+                                                '& .MuiTab-root': {
+                                                    fontWeight: 800,
+                                                    fontSize: '0.875rem',
+                                                    py: 2,
+                                                    transition: 'all .2s'
+                                                },
+                                                '& .Mui-selected': {
+                                                    color: 'primary.main'
+                                                }
+                                            }}
+                                        >
+                                            {canReview && <Tab value="review" label="Nhận xét / Rà soát" />}
+                                            {canSurvey && <Tab value="survey" label="Khảo sát thiết kế" />}
+                                            {canMech && <Tab value="mech" label={point.org_id !== user?.org_id ? "XN Địa bàn hỗ trợ" : "Xí nghiệp Cơ giới"} />}
+                                        </Tabs>
                                     </Box>
                                 )}
 
-                                {tabValue === 1 && (
+                                {tabValue === 'survey' && canSurvey && (
                                     <Box sx={{ p: 1 }}>
                                         <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, color: 'primary.dark' }}>XÍ NGHIỆP KHẢO SÁT THIẾT KẾ</Typography>
                                         <Stack spacing={3}>
@@ -993,7 +1007,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                     </Box>
                                 )}
 
-                                {tabValue === 2 && (
+                                {tabValue === 'mech' && canMech && (
                                     <Box sx={{ p: 1 }}>
                                         <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, color: 'primary.dark' }}>{point.org_id !== user?.org_id ? "XN ĐỊA BÀN HỖ TRỢ" : "XÍ NGHIỆP CƠ GIỚI"}</Typography>
                                         <Stack spacing={3}>
@@ -1058,12 +1072,54 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                         </Stack>
                                     </Box>
                                 )}
+
+                                {tabValue === 'review' && canReview && (
+                                    <Box sx={{ p: 1 }}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, color: 'primary.dark' }}>NHẬN XÉT / RÀ SOÁT ĐIỂM NGẬP</Typography>
+
+                                        {!latest?.needs_correction ? (
+                                            <Stack spacing={2}>
+                                                <TextField
+                                                    fullWidth multiline rows={3}
+                                                    placeholder="Nhập nội dung nhận xét hoặc yêu cầu chỉnh sửa..."
+                                                    value={reviewComment}
+                                                    onChange={(e) => setReviewComment(e.target.value)}
+                                                    sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'grey.50' } }}
+                                                />
+                                                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                                    <Button
+                                                        variant="contained" color="error" onClick={handleReviewSubmit}
+                                                        disabled={reviewLoading || !reviewComment.trim()}
+                                                        startIcon={reviewLoading ? <CircularProgress size={16} color="inherit" /> : <IconSend size={16} />}
+                                                        sx={{ borderRadius: 2, fontWeight: 800, px: 4 }}
+                                                    >
+                                                        {reviewLoading ? 'Đang gửi...' : 'GỬI PHẢN HỒI'}
+                                                    </Button>
+                                                </Box>
+                                            </Stack>
+                                        ) : (
+                                            <Box sx={{ p: 2, bgcolor: 'warning.lighter', borderRadius: 2, border: '1px solid', borderColor: 'warning.light', display: 'flex', alignItems: 'center', gap: 2 }}>
+                                                <IconMessage2 size={24} color="darkorange" />
+                                                <Box>
+                                                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'warning.dark' }}>
+                                                        Đã gửi yêu cầu rà soát — Đang chờ nhân viên chỉnh sửa
+                                                    </Typography>
+                                                    {latest?.review_comment && (
+                                                        <Typography variant="body2" sx={{ color: 'warning.dark', fontStyle: 'italic', display: 'block', mt: 0.5 }}>
+                                                            "{latest.review_comment}"
+                                                        </Typography>
+                                                    )}
+                                                </Box>
+                                            </Box>
+                                        )}
+                                    </Box>
+                                )}
                             </Box>
-                        </Collapse>
-                    </TableCell>
-                </TableRow>
+                        </Collapse >
+                    </TableCell >
+                </TableRow >
             )}
-        </React.Fragment>
+        </React.Fragment >
     );
 };
 

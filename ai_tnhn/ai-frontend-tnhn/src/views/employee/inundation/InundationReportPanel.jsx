@@ -62,7 +62,7 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
                 length: selectedReport.length || '',
                 width: selectedReport.width || '',
                 depth: selectedReport.depth || '',
-                description: '',
+                description: selectedReport.description || '',
                 traffic_status: selectedReport.traffic_status || selectedReport.trafficStatus || 'Đi lại bình thường',
                 start_time: selectedReport.start_time ? new Date(selectedReport.start_time * 1000).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16)
             });
@@ -117,20 +117,21 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
             if (values.depth) fd.append('depth', values.depth);
             if (values.traffic_status) fd.append('traffic_status', values.traffic_status);
 
+            if (resolveOnUpdate) fd.append('resolve', 'true');
+            images.forEach(img => fd.append('images', img));
+
             if (isCorrectionMode) {
-                if (selectedReport.type === 'start') {
-                    // Editing the MAIN report record
+                if (selectedReport.type === 'start' && !selectedReport.is_update_record) {
+                    // Editing the MAIN report record (used when no updates exist yet)
                     await inundationApi.updateReport(selectedReport.id, fd);
                     toast.success('Đã lưu thay đổi báo cáo chính');
                 } else {
-                    // Editing an EXISTING UPDATE record
+                    // Editing an EXISTING UPDATE record (including the start update if it exists)
                     await inundationApi.updateUpdateContent(selectedReport.id, fd);
                     toast.success('Đã lưu thay đổi chỉnh sửa');
                 }
             } else {
                 // Normal update (adding a new record to the history)
-                if (resolveOnUpdate) fd.append('resolve', 'true');
-                images.forEach(img => fd.append('images', img));
                 const res = await inundationApi.updateSituation(selectedReport.id, fd);
                 if (res.data?.status === 'success') {
                     toast.success(resolveOnUpdate ? 'Đã kết thúc đợt ngập' : 'Cập nhật thành công');

@@ -8,7 +8,7 @@ import { useTheme } from '@mui/material/styles';
 import {
     IconClock, IconRuler, IconPlus, IconX, IconRefresh, IconUser,
     IconChevronLeft, IconChevronRight, IconCar, IconMessage2, IconEdit,
-    IconAlertTriangle
+    IconAlertTriangle, IconCheck
 } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 import inundationApi from 'api/inundation';
@@ -51,62 +51,53 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
     const timelineData = useMemo(() => {
         if (!selectedReport) return [];
         const updates = selectedReport.updates || [];
-        return [
-            {
+        
+        // If there are no updates (for very old data), Fallback to show the report as the first item
+        if (updates.length === 0) {
+            return [{
                 id: selectedReport.id,
                 type: 'start', title: 'Bắt đầu đợt ngập', ts: selectedReport.start_time, desc: selectedReport.description || 'Ghi nhận bắt đầu',
                 length: selectedReport.length, width: selectedReport.width, depth: selectedReport.depth,
-                traffic_status: selectedReport.traffic_status || selectedReport.trafficStatus,
+                traffic_status: selectedReport.traffic_status,
                 user: selectedReport.user_email,
                 images: selectedReport.images || [],
-                review_comment: selectedReport.review_comment,
-                reviewer_id: selectedReport.reviewer_id,
-                reviewer_email: selectedReport.reviewer_email,
-                reviewer_name: selectedReport.reviewer_name,
                 needs_correction: selectedReport.needs_correction,
-                survey_checked: selectedReport.survey_checked,
-                survey_note: selectedReport.survey_note,
-                survey_images: selectedReport.survey_images,
-                survey_user_id: selectedReport.survey_user_id,
-                mech_checked: selectedReport.mech_checked,
-                mech_note: selectedReport.mech_note,
-                mech_d: selectedReport.mech_d,
-                mech_r: selectedReport.mech_r,
-                mech_s: selectedReport.mech_s,
-                mech_user_id: selectedReport.mech_user_id,
-                mech_images: selectedReport.mech_images
-            },
-            ...updates.map((u, i) => ({
-                id: u.id,
-                type: 'update',
-                title: (u.status === 'resolved') ? 'Kết thúc đợt ngập' : (u.description || `Cập nhật #${i + 1}`),
-                ts: u.timestamp,
-                desc: u.description || 'Cập nhật hiện trường',
-                length: u.length,
-                width: u.width,
-                depth: u.depth,
-                traffic_status: u.traffic_status || u.trafficStatus,
-                user: u.user_email || u.user_id,
-                userName: u.user_name,
-                images: u.images || [],
-                review_comment: u.review_comment,
-                reviewer_id: u.reviewer_id,
-                reviewer_email: u.reviewer_email,
-                reviewer_name: u.reviewer_name,
-                needs_correction: u.needs_correction,
-                survey_checked: u.survey_checked,
-                survey_note: u.survey_note,
-                survey_images: u.survey_images,
-                survey_user_id: u.survey_user_id,
-                mech_checked: u.mech_checked,
-                mech_note: u.mech_note,
-                mech_d: u.mech_d,
-                mech_r: u.mech_r,
-                mech_s: u.mech_s,
-                mech_user_id: u.mech_user_id,
-                mech_images: u.mech_images
-            }))
-        ].reverse();
+                is_update_record: false,
+            }];
+        }
+
+        return updates.map((u, i) => ({
+            id: u.id,
+            type: u.description === 'Bắt đầu đợt ngập' ? 'start' : 'update',
+            title: (u.status === 'resolved') ? 'Kết thúc đợt ngập' : (u.description || `Cập nhật #${i + 1}`),
+            ts: u.timestamp,
+            desc: u.description || 'Cập nhật hiện trường',
+            length: u.length,
+            width: u.width,
+            depth: u.depth,
+            traffic_status: u.traffic_status || u.trafficStatus,
+            user: u.user_email || u.user_id,
+            userName: u.user_name,
+            images: u.images || [],
+            review_comment: u.review_comment,
+            reviewer_id: u.reviewer_id,
+            reviewer_email: u.reviewer_email,
+            reviewer_name: u.reviewer_name,
+            needs_correction: u.needs_correction,
+            is_review_updated: u.is_review_updated,
+            survey_checked: u.survey_checked,
+            survey_note: u.survey_note,
+            survey_images: u.survey_images,
+            survey_user_id: u.survey_user_id,
+            mech_checked: u.mech_checked,
+            mech_note: u.mech_note,
+            mech_d: u.mech_d,
+            mech_r: u.mech_r,
+            mech_s: u.mech_s,
+            mech_user_id: u.mech_user_id,
+            mech_images: u.mech_images,
+            is_update_record: true
+        })).reverse();
     }, [selectedReport]);
 
     useEffect(() => {
@@ -222,7 +213,8 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
                             <Stack direction={isMobile ? "column" : "row"} justifyContent="space-between" alignItems={isMobile ? "flex-start" : "center"} sx={{ mb: 0.5, gap: isMobile ? 0.3 : 1 }}>
                                 <Typography variant="h6" sx={{ fontWeight: 800, flex: 1, fontSize: isMobile ? '0.9rem' : 'inherit', lineHeight: 1.3, wordBreak: 'break-word', display: 'flex', alignItems: 'center', gap: 1 }}>
                                     {item.title}
-                                    {item.needs_correction && <Chip label="Cần sửa" size="small" color="error" variant="filled" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 900 }} />}
+                            {item.needs_correction && !item.is_review_updated && <Chip label="Cần sửa" size="small" color="error" variant="filled" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 900 }} />}
+                                    {item.is_review_updated && <Chip label="Đã cập nhật" size="small" color="success" variant="filled" icon={<IconCheck size={12} />} sx={{ height: 20, fontSize: '0.65rem', fontWeight: 900 }} />}
                                 </Typography>
                                 <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 600, whiteSpace: 'nowrap', opacity: 0.8, fontSize: isMobile ? '0.75rem' : '0.875rem' }}>
                                     {new Date(item.ts * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })} • {new Date(item.ts * 1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
@@ -309,18 +301,31 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
                                         </Typography>
                                     </Box>
                                 )}
-                                 {canReview && (
+                                 {canReview && !item.needs_correction && (
                                     <Button
                                         size="small" startIcon={<IconMessage2 size={16} />}
                                         variant="outlined" color="error"
                                         onClick={() => setReviewDialog({ open: true, itemId: item.id, type: item.type, comment: item.review_comment || '' })}
                                         sx={{ height: 26, borderRadius: 10, fontSize: '0.75rem', fontWeight: 700 }}
                                     >
-                                        Nhận xét
+                                        {item.is_review_updated
+                                            ? 'Nhận xét lại'
+                                            : item.review_comment
+                                                ? 'Sửa nhận xét'
+                                                : 'Nhận xét'
+                                        }
                                     </Button>
                                 )}
+                                {canReview && item.needs_correction && (
+                                    <Box sx={{ px: 1.2, py: 0.5, bgcolor: 'warning.lighter', borderRadius: 10, border: '1px solid', borderColor: 'warning.light', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                        <IconMessage2 size={13} color="darkorange" />
+                                        <Typography variant="caption" sx={{ color: 'warning.dark', fontWeight: 700, fontSize: '0.75rem' }}>
+                                            Chờ nhân viên cập nhật
+                                        </Typography>
+                                    </Box>
+                                )}
 
-                                {(hasPermission('inundation:edit') || (isEmployee && item.needs_correction)) && (
+                                {isEmployee && item.needs_correction && (
                                     <Button
                                         size="small" startIcon={<IconEdit size={16} />}
                                         variant="contained" color="error"
@@ -328,6 +333,16 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
                                         sx={{ height: 26, borderRadius: 10, fontSize: '0.75rem', fontWeight: 700 }}
                                     >
                                         Chỉnh sửa lại
+                                    </Button>
+                                )}
+                                {!isEmployee && hasPermission('inundation:edit') && (
+                                    <Button
+                                        size="small" startIcon={<IconEdit size={16} />}
+                                        variant="outlined" color="secondary"
+                                        onClick={() => setEditMode({ open: true, item: item })}
+                                        sx={{ height: 26, borderRadius: 10, fontSize: '0.75rem', fontWeight: 700 }}
+                                    >
+                                        Chỉnh sửa
                                     </Button>
                                 )}
                             </Box>

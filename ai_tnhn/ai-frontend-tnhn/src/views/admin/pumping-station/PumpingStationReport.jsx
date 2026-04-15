@@ -33,11 +33,12 @@ const PumpingStationReport = ({ station }) => {
         operating_count: 0,
         closed_count: 0,
         maintenance_count: 0,
+        no_signal_count: 0,
         note: ''
     });
 
     const totalPumped = useMemo(() => {
-        return Number(formData.operating_count) + Number(formData.closed_count) + Number(formData.maintenance_count);
+        return Number(formData.operating_count) + Number(formData.closed_count) + Number(formData.maintenance_count) + Number(formData.no_signal_count);
     }, [formData]);
 
     const remainingCount = station.pump_count - totalPumped;
@@ -54,6 +55,7 @@ const PumpingStationReport = ({ station }) => {
                 operating_count: formData.operating_count,
                 closed_count: formData.closed_count,
                 maintenance_count: formData.maintenance_count,
+                no_signal_count: formData.no_signal_count,
                 note: formData.note
             };
 
@@ -64,7 +66,7 @@ const PumpingStationReport = ({ station }) => {
 
             await pumpingStationApi.report(payload);
             toast.success('Gửi báo cáo thành công');
-            setFormData({ operating_count: 0, closed_count: 0, maintenance_count: 0, note: '' });
+            setFormData({ operating_count: 0, closed_count: 0, maintenance_count: 0, no_signal_count: 0, note: '' });
         } catch (error) {
             toast.error(error.response?.data?.message || 'Báo cáo thất bại');
         }
@@ -104,22 +106,32 @@ const PumpingStationReport = ({ station }) => {
 
             {/* Status Grid */}
             <Grid container spacing={2} sx={{ mb: 3 }}>
-                <Grid item xs={12} sm={4}>
-                    <Paper elevation={0} sx={{ p: 1.5, textAlign: 'center', borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: alpha(theme.palette.success.main, 0.05) }}>
-                        <Typography variant="subtitle1" color="success.main" sx={{ fontWeight: 800, mb: 1 }}>Vận hành</Typography>
-                        <Typography variant="h3" color="success.main" sx={{ fontWeight: 900, fontSize: '1rem' }}>{formData.operating_count}</Typography>
-                    </Paper>
-                </Grid>
-                <Grid item xs={12} sm={4}>
+                <Grid item xs={12} sm={3}>
                     <Paper elevation={0} sx={{ p: 1.5, textAlign: 'center', borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: alpha(theme.palette.error.main, 0.05) }}>
-                        <Typography variant="subtitle1" color="error.main" sx={{ fontWeight: 800, mb: 1 }}>Đang đóng</Typography>
-                        <Typography variant="h3" color="error.main" sx={{ fontWeight: 900, fontSize: '1rem' }}>{formData.closed_count}</Typography>
+                        <Typography variant="subtitle1" color="error.main" sx={{ fontWeight: 800, mb: 1 }}>Vận hành</Typography>
+                        <Typography variant="h3" color="error.main" sx={{ fontWeight: 900, fontSize: '1rem' }}>{formData.operating_count}</Typography>
                     </Paper>
                 </Grid>
-                <Grid item xs={12} sm={4}>
-                    <Paper elevation={0} sx={{ p: 1.5, textAlign: 'center', borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: alpha(theme.palette.warning.main, 0.05) }}>
-                        <Typography variant="subtitle1" color="warning.main" sx={{ fontWeight: 800, mb: 1 }}>Bảo dưỡng</Typography>
-                        <Typography variant="h3" color="warning.main" sx={{ fontWeight: 900, fontSize: '1rem' }}>{formData.maintenance_count}</Typography>
+                <Grid item xs={12} sm={3}>
+                    <Paper elevation={0} sx={{ p: 1.5, textAlign: 'center', borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: alpha(theme.palette.success.main, 0.05) }}>
+                        <Typography variant="subtitle1" color="success.main" sx={{ fontWeight: 800, mb: 1 }}>Đang dừng</Typography>
+                        <Typography variant="h3" color="success.main" sx={{ fontWeight: 900, fontSize: '1rem' }}>{formData.closed_count}</Typography>
+                    </Paper>
+                </Grid>
+                <Grid item xs={12} sm={3}>
+                    <Paper elevation={0} sx={{ 
+                        p: 1.5, textAlign: 'center', borderRadius: 2, border: '1px solid', borderColor: '#FFEB3B', bgcolor: alpha('#FFEB3B', 0.1),
+                        animation: 'status-blink 1s ease-in-out infinite'
+                    }}>
+                        <style>{`@keyframes status-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }`}</style>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 1, color: '#FBC02D' }}>Bảo dưỡng</Typography>
+                        <Typography variant="h3" sx={{ fontWeight: 900, fontSize: '1rem', color: '#FBC02D' }}>{formData.maintenance_count}</Typography>
+                    </Paper>
+                </Grid>
+                <Grid item xs={12} sm={3}>
+                    <Paper elevation={0} sx={{ p: 1.5, textAlign: 'center', borderRadius: 2, border: '1px solid', borderColor: 'grey.400', bgcolor: 'grey.50' }}>
+                        <Typography variant="subtitle1" color="text.secondary" sx={{ fontWeight: 800, mb: 1 }}>Ko tín hiệu</Typography>
+                        <Typography variant="h3" color="text.secondary" sx={{ fontWeight: 900, fontSize: '1rem' }}>{formData.no_signal_count}</Typography>
                     </Paper>
                 </Grid>
             </Grid>
@@ -132,7 +144,7 @@ const PumpingStationReport = ({ station }) => {
                 </Typography>
 
                 <Grid container spacing={4}>
-                    <Grid item xs={12}>
+                    <Grid item xs={12} sm={6}>
                         <TextField
                             select
                             fullWidth
@@ -153,11 +165,11 @@ const PumpingStationReport = ({ station }) => {
                             ))}
                         </TextField>
                     </Grid>
-                    <Grid item xs={12}>
+                    <Grid item xs={12} sm={6}>
                         <TextField
                             select
                             fullWidth
-                            label="Số lượng đóng"
+                            label="Số lượng đang dừng"
                             name="closed_count"
                             value={formData.closed_count}
                             onChange={handleChange}
@@ -174,7 +186,7 @@ const PumpingStationReport = ({ station }) => {
                             ))}
                         </TextField>
                     </Grid>
-                    <Grid item xs={12}>
+                    <Grid item xs={12} sm={6}>
                         <TextField
                             select
                             fullWidth
@@ -195,8 +207,28 @@ const PumpingStationReport = ({ station }) => {
                             ))}
                         </TextField>
                     </Grid>
-                </Grid>
-                <Grid item xs={12}>
+                    <Grid item xs={12} sm={6}>
+                        <TextField
+                            select
+                            fullWidth
+                            label="Số lượng ko tín hiệu"
+                            name="no_signal_count"
+                            value={formData.no_signal_count}
+                            onChange={handleChange}
+                            InputProps={{
+                                sx: {
+                                    borderRadius: 2,
+                                    fontSize: '1rem',
+                                    height: '40px'
+                                }
+                            }}
+                        >
+                            {getOptions('no_signal_count').map(num => (
+                                <MenuItem key={num} value={num} sx={{ fontSize: '1rem' }}>{num} máy ko tín hiệu</MenuItem>
+                            ))}
+                        </TextField>
+                    </Grid>
+                    <Grid item xs={12}>
                     <TextField
                         sx={{ mt: 2.5 }}
                         fullWidth
@@ -217,6 +249,7 @@ const PumpingStationReport = ({ station }) => {
                     />
                 </Grid>
 
+                </Grid>
                 {remainingCount > 0 && (
                     <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary' }}>
                         <IconAlertTriangle size={16} />

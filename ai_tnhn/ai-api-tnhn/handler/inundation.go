@@ -661,7 +661,7 @@ func (h *InundationHandler) UpdateReport(c *gin.Context) {
 		}
 	}
 
-	err = h.service.UpdateReport(c.Request.Context(), id, updatedField, images)
+	err = h.service.UpdateReport(c.Request.Context(), id, updatedField, user.ID, user.Email, user.Name, images)
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -748,7 +748,7 @@ func (h *InundationHandler) UpdateSituationUpdateContent(c *gin.Context) {
 		}
 	}
 
-	err = h.service.UpdateUpdateContent(c.Request.Context(), updateID, updatedUpdate, images)
+	err = h.service.UpdateUpdateContent(c.Request.Context(), updateID, updatedUpdate, user.ID, user.Email, user.Name, images)
 	if err != nil {
 		h.SendError(c, err)
 		return

@@ -22,6 +22,7 @@ type InundationUpdate struct {
 	ReviewerEmail   string        `bson:"reviewer_email,omitempty" json:"reviewer_email,omitempty"`
 	ReviewerName    string        `bson:"reviewer_name,omitempty" json:"reviewer_name,omitempty"`
 	NeedsCorrection bool          `bson:"needs_correction" json:"needs_correction"`
+	IsReviewUpdated bool          `bson:"is_review_updated" json:"is_review_updated"`
 	OldData         []interface{} `bson:"old_data,omitempty" json:"old_data,omitempty"`
 	// Technical sync fields
 	SurveyChecked bool     `bson:"survey_checked" json:"survey_checked"`
@@ -62,6 +63,7 @@ type InundationReport struct {
 	ReviewerName            string             `bson:"reviewer_name,omitempty" json:"reviewer_name,omitempty"`
 	NeedsCorrection         bool               `bson:"needs_correction" json:"needs_correction"`
 	NeedsCorrectionUpdateID string             `bson:"needs_correction_update_id" json:"needs_correction_update_id"`
+	IsReviewUpdated         bool               `bson:"is_review_updated" json:"is_review_updated"`
 
 	// Design Survey Data
 	SurveyChecked bool     `bson:"survey_checked" json:"survey_checked"`

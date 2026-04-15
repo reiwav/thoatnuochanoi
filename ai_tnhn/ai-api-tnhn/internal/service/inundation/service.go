@@ -12,9 +12,11 @@ import (
 	"sync"
 	"time"
 
+	"strconv"
 	"os"
 	"path/filepath"
 
+	"github.com/xuri/excelize/v2"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -46,6 +48,10 @@ type Service interface {
 	GetOrgByCode(ctx context.Context, code string) (*models.Organization, error)
 	GetOrgByID(ctx context.Context, id string) (*models.Organization, error)
 	ListOrganizations(ctx context.Context) ([]*models.Organization, error)
+
+	// Yearly history reporting
+	GetYearlyHistory(ctx context.Context, orgID string, year int) ([]*models.InundationReport, error)
+	ExportYearlyHistory(ctx context.Context, orgID string, year int) (string, error)
 }
 
 type PointStatus struct {
@@ -1073,4 +1079,93 @@ func (s *service) saveLocalImages(prefix string, images []ImageContent) ([]strin
 	}
 
 	return savedPaths, nil
+}
+
+func (s *service) GetYearlyHistory(ctx context.Context, orgID string, year int) ([]*models.InundationReport, error) {
+	reports, err := s.inundationRepo.ListByYear(ctx, orgID, year)
+	if err != nil {
+		return nil, err
+	}
+
+	// Enrich reports with station names and org names
+	orgs, _, _ := s.orgRepo.List(ctx, filter.NewPaginationFilter())
+	orgNameMap := make(map[string]string)
+	orgCodeMap := make(map[string]string)
+	for _, o := range orgs {
+		orgNameMap[o.ID] = o.Name
+		orgCodeMap[o.ID] = o.Code
+	}
+
+	for _, r := range reports {
+		r.OrgName = orgNameMap[r.OrgID]
+		r.OrgCode = orgCodeMap[r.OrgID]
+		if r.PointID != "" {
+			point, _ := s.inundationStationRepo.GetByID(ctx, r.PointID)
+			if point != nil {
+				r.StreetName = point.Name // Use the station name if available
+				r.Address = point.Address
+				// Populate Org info from point if report org is empty
+				if r.OrgID == "" {
+					r.OrgID = point.OrgID
+					r.OrgName = orgNameMap[point.OrgID]
+					r.OrgCode = orgCodeMap[point.OrgID]
+				}
+			}
+		}
+	}
+
+	return reports, nil
+}
+
+func (s *service) ExportYearlyHistory(ctx context.Context, orgID string, year int) (string, error) {
+	reports, err := s.GetYearlyHistory(ctx, orgID, year)
+	if err != nil {
+		return "", err
+	}
+
+	f := excelize.NewFile()
+	sheetName := "LichSuNgap"
+	index, _ := f.NewSheet(sheetName)
+	f.DeleteSheet("Sheet1")
+
+	// Set Headers
+	headers := []string{"STT", "Điểm ngập lụt", "Đơn vị", "Quận", "Bắt đầu ngập", "Thời gian ngập"}
+	for i, header := range headers {
+		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
+		f.SetCellValue(sheetName, cell, header)
+	}
+
+	for i, r := range reports {
+		row := i + 2
+		f.SetCellValue(sheetName, "A"+strconv.Itoa(row), i+1)
+		f.SetCellValue(sheetName, "B"+strconv.Itoa(row), r.StreetName)
+		f.SetCellValue(sheetName, "C"+strconv.Itoa(row), r.OrgCode)
+		f.SetCellValue(sheetName, "D"+strconv.Itoa(row), r.Address)
+
+		startTime := time.Unix(r.StartTime, 0).Format("02/01/2006 15:04:05")
+		dimensions := fmt.Sprintf("%sx%sx%s", r.Length, r.Width, r.Depth)
+		f.SetCellValue(sheetName, "E"+strconv.Itoa(row), fmt.Sprintf("%s - %s", startTime, dimensions))
+
+		duration := ""
+		if r.EndTime > 0 {
+			duration = strconv.FormatInt((r.EndTime-r.StartTime)/60, 10)
+		}
+		f.SetCellValue(sheetName, "F"+strconv.Itoa(row), duration)
+	}
+
+	f.SetActiveSheet(index)
+
+	// Save to temp file
+	baseDir := "uploads/exports"
+	if _, err := os.Stat(baseDir); os.IsNotExist(err) {
+		_ = os.MkdirAll(baseDir, 0755)
+	}
+	fileName := fmt.Sprintf("lich_su_ngap_%d_%d.xlsx", year, time.Now().Unix())
+	filePath := filepath.Join(baseDir, fileName)
+
+	if err := f.SaveAs(filePath); err != nil {
+		return "", err
+	}
+
+	return filePath, nil
 }

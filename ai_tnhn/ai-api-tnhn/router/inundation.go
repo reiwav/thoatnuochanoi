@@ -25,5 +25,7 @@ func (h HandlerFuncs) InundationRoutes(api *gin.RouterGroup, mid middleware.Midd
 		group.POST("/points", inuHandler.CreatePoint)
 		group.PUT("/points/:id", inuHandler.UpdatePoint)
 		group.DELETE("/points/:id", inuHandler.DeletePoint)
+		group.GET("/yearly-history", inuHandler.GetYearlyHistory)
+		group.GET("/yearly-history/export", inuHandler.ExportYearlyHistory)
 	}
 }

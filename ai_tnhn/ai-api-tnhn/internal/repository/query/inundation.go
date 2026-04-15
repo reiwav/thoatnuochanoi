@@ -59,3 +59,24 @@ func (r *inundationRepo) Resolve(ctx context.Context, id string, endTime int64) 
 func (r *inundationRepo) Update(ctx context.Context, report *models.InundationReport) error {
 	return r.R_Update(ctx, report)
 }
+
+func (r *inundationRepo) ListByYear(ctx context.Context, orgID string, year int) ([]*models.InundationReport, error) {
+	startOfYear := time.Date(year, 1, 1, 0, 0, 0, 0, time.UTC).Unix()
+	endOfYear := time.Date(year, 12, 31, 23, 59, 59, 0, time.UTC).Unix()
+
+	filter := bson.M{
+		"start_time": bson.M{
+			"$gte": startOfYear,
+			"$lte": endOfYear,
+		},
+		"deleted_at": 0,
+	}
+
+	if orgID != "" {
+		filter["org_id"] = orgID
+	}
+
+	var reports []*models.InundationReport
+	err := r.R_SelectAndSort(ctx, filter, bson.D{{Key: "start_time", Value: 1}}, 0, 0, &reports)
+	return reports, err
+}

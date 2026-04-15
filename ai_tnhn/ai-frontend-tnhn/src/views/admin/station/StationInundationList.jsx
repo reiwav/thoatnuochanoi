@@ -110,7 +110,7 @@ const CollapsibleStationRow = ({ row, handleOpenEdit, handleDelete, isMobile, ca
 const StationInundationList = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-    const { hasPermission } = useAuthStore();
+    const { user, hasPermission } = useAuthStore();
     const canCreate = hasPermission('inundation:create');
     const canEdit = hasPermission('inundation:edit');
     const canDelete = hasPermission('inundation:delete');
@@ -286,8 +286,8 @@ const StationInundationList = () => {
                                     handleOpenEdit={handleOpenEdit}
                                     handleDelete={handleDelete}
                                     isMobile={isMobile}
-                                    canEdit={canEdit}
-                                    canDelete={canDelete}
+                                    canEdit={canEdit && (user?.isCompany || user?.org_id === row.org_id)}
+                                    canDelete={canDelete && (user?.isCompany || user?.org_id === row.org_id)}
                                     organizationNamesMap={organizationNamesMap}
                                 />
                             ))

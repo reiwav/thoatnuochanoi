@@ -8,7 +8,10 @@ import MultiSelectCheckboxes from 'ui-component/MultiSelectCheckboxes';
 import { IconX } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 
+import useAuthStore from 'store/useAuthStore';
+
 const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type, organizations = { primary: [], shared: [] } }) => {
+    const { user } = useAuthStore();
     const [formData, setFormData] = useState({
         TenTram: '',
         DiaChi: '',
@@ -133,6 +136,7 @@ const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type, organiz
                         required
                         value={formData.org_id}
                         onChange={(e) => handleChange('org_id', e.target.value)}
+                        disabled={!user?.isCompany}
                     >
                         <MenuItem value="">Chọn đơn vị quản lý</MenuItem>
                         {(organizations.primary || []).map((org) => (

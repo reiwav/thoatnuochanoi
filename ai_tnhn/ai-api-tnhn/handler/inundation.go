@@ -408,9 +408,9 @@ func (h *InundationHandler) UpdatePoint(c *gin.Context) {
 		return
 	}
 
-	// Ownership check
+	// Ownership check: Only owner org or Company admin can modify
 	if !isAllowedAll && currentPoint.OrgID != user.OrgID {
-		h.SendError(c, web.Unauthorized("Access denied: You do not have permission to modify this point"))
+		h.SendError(c, web.Unauthorized("Bạn không có quyền chỉnh sửa điểm ngập của đơn vị khác"))
 		return
 	}
 
@@ -437,15 +437,19 @@ func (h *InundationHandler) DeletePoint(c *gin.Context) {
 		return
 	}
 
-	if !isAllowedAll {
-		currentPoint, err := h.service.GetPointByID(c.Request.Context(), id)
-		if err == nil && currentPoint != nil && currentPoint.OrgID != user.OrgID {
-			h.SendError(c, web.Unauthorized("Access denied: You do not have permission to delete this point"))
-			return
-		}
+	// Ownership check: Only owner org or Company admin can delete
+	currentPoint, err := h.service.GetPointByID(c.Request.Context(), id)
+	if err != nil || currentPoint == nil {
+		h.SendError(c, web.NotFound("Không tìm thấy điểm ngập"))
+		return
 	}
 
-	err := h.service.DeletePoint(c.Request.Context(), id)
+	if !isAllowedAll && currentPoint.OrgID != user.OrgID {
+		h.SendError(c, web.Unauthorized("Bạn không có quyền xóa điểm ngập của đơn vị khác"))
+		return
+	}
+
+	err = h.service.DeletePoint(c.Request.Context(), id)
 	if err != nil {
 		h.SendError(c, err)
 		return

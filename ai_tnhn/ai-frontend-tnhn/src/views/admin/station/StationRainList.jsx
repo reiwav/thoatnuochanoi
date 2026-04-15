@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import {  } from 'react-router-dom';
+import { } from 'react-router-dom';
 import {
     Button, Grid, TextField, Table, TableBody, Box,
     TableCell, TableContainer, TableHead, TableRow, Paper,
@@ -106,7 +106,7 @@ const StationRow = ({ row, handleOpenEdit, handleDelete, isMobile, canEdit, canD
 const StationRainList = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-    const { hasPermission } = useAuthStore();
+    const { user, hasPermission } = useAuthStore();
     const canCreate = hasPermission('rain:create');
     const canEdit = hasPermission('rain:edit');
     const canDelete = hasPermission('rain:delete');
@@ -247,8 +247,8 @@ const StationRainList = () => {
                                     handleOpenEdit={handleOpenEdit}
                                     handleDelete={handleDelete}
                                     isMobile={isMobile}
-                                    canEdit={canEdit}
-                                    canDelete={canDelete}
+                                    canEdit={canEdit && (user?.isCompany || user?.org_id === row.org_id)}
+                                    canDelete={canDelete && (user?.isCompany || user?.org_id === row.org_id)}
                                     organizationName={getOrgName(row.org_id)}
                                     organizationNames={organizationNamesMap}
                                 />

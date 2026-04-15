@@ -16,7 +16,7 @@ import StationDialog from './StationDialog';
 import useAuthStore from 'store/useAuthStore';
 
 const StationLakeList = () => {
-    const { hasPermission } = useAuthStore();
+    const { user, hasPermission } = useAuthStore();
     const canCreate = hasPermission('water:create');
     const canEdit = hasPermission('water:edit');
     const canDelete = hasPermission('water:delete');
@@ -163,16 +163,16 @@ const StationLakeList = () => {
                                         <Chip label={row.Active ? 'Hoạt động' : 'Ngừng'}
                                             color={row.Active ? 'success' : 'default'} size="small" variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem', height: 24 }} />
                                     </TableCell>
-                                    {(canEdit || canDelete) && (
+                                    {(canEdit && (user?.isCompany || user?.org_id === row.org_id) || (canDelete && (user?.isCompany || user?.org_id === row.org_id))) && (
                                         <TableCell align="right">
-                                            {canEdit && (
+                                            {canEdit && (user?.isCompany || user?.org_id === row.org_id) && (
                                                 <Tooltip title="Chỉnh sửa">
                                                     <IconButton color="primary" onClick={() => handleOpenEdit(row)}>
                                                         <IconEdit size={20} />
                                                     </IconButton>
                                                 </Tooltip>
                                             )}
-                                            {canDelete && (
+                                            {canDelete && (user?.isCompany || user?.org_id === row.org_id) && (
                                                 <Tooltip title="Xóa">
                                                     <IconButton color="error" onClick={() => handleDelete(row.id)}>
                                                         <IconTrash size={20} />

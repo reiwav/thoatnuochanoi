@@ -80,23 +80,47 @@ func (h *StationHandler) UpdateRain(c *gin.Context) {
 	}
 
 	_, isAllowedAll, user := h.checkPermissions(c)
-	if user != nil {
-		if !isAllowedAll {
-			// Non-admin can't change OrgID, force their own
-			// Or better: verify it belongs to them first.
-			// For now, force it to their OrgID if they try to update
-			m.OrgID = user.OrgID
-		}
+	if user == nil {
+		web.AssertNil(web.Unauthorized("Invalid user session"))
+		return
 	}
 
-	err := h.service.UpdateRainStation(c.Request.Context(), id, &m)
+	// Ownership check
+	current, err := h.service.GetRainStation(c.Request.Context(), id)
+	if err != nil || current == nil {
+		web.AssertNil(web.BadRequest("Không tìm thấy trạm đo mưa"))
+		return
+	}
+
+	if !isAllowedAll && current.OrgID != user.OrgID {
+		web.AssertNil(web.Unauthorized("Bạn không có quyền chỉnh sửa trạm của đơn vị khác"))
+		return
+	}
+
+	if !isAllowedAll {
+		m.OrgID = current.OrgID
+	}
+
+	err = h.service.UpdateRainStation(c.Request.Context(), id, &m)
 	web.AssertNil(err)
 	h.SendData(c, m)
 }
 
 func (h *StationHandler) DeleteRain(c *gin.Context) {
 	id := c.Param("id")
-	err := h.service.DeleteRainStation(c.Request.Context(), id)
+	_, isAllowedAll, user := h.checkPermissions(c)
+	if user == nil {
+		web.AssertNil(web.Unauthorized("Invalid user session"))
+		return
+	}
+
+	current, err := h.service.GetRainStation(c.Request.Context(), id)
+	if err == nil && current != nil && !isAllowedAll && current.OrgID != user.OrgID {
+		web.AssertNil(web.Unauthorized("Bạn không có quyền xóa trạm của đơn vị khác"))
+		return
+	}
+
+	err = h.service.DeleteRainStation(c.Request.Context(), id)
 	web.AssertNil(err)
 	h.SendData(c, nil)
 }
@@ -169,18 +193,47 @@ func (h *StationHandler) UpdateLake(c *gin.Context) {
 	}
 
 	_, isAllowedAll, user := h.checkPermissions(c)
-	if user != nil && !isAllowedAll {
-		m.OrgID = user.OrgID
+	if user == nil {
+		web.AssertNil(web.Unauthorized("Invalid user session"))
+		return
 	}
 
-	err := h.service.UpdateLakeStation(c.Request.Context(), id, &m)
+	// Ownership check
+	current, err := h.service.GetLakeStation(c.Request.Context(), id)
+	if err != nil || current == nil {
+		web.AssertNil(web.BadRequest("Không tìm thấy trạm hồ"))
+		return
+	}
+
+	if !isAllowedAll && current.OrgID != user.OrgID {
+		web.AssertNil(web.Unauthorized("Bạn không có quyền chỉnh sửa trạm của đơn vị khác"))
+		return
+	}
+
+	if !isAllowedAll {
+		m.OrgID = current.OrgID
+	}
+
+	err = h.service.UpdateLakeStation(c.Request.Context(), id, &m)
 	web.AssertNil(err)
 	h.SendData(c, m)
 }
 
 func (h *StationHandler) DeleteLake(c *gin.Context) {
 	id := c.Param("id")
-	err := h.service.DeleteLakeStation(c.Request.Context(), id)
+	_, isAllowedAll, user := h.checkPermissions(c)
+	if user == nil {
+		web.AssertNil(web.Unauthorized("Invalid user session"))
+		return
+	}
+
+	current, err := h.service.GetLakeStation(c.Request.Context(), id)
+	if err == nil && current != nil && !isAllowedAll && current.OrgID != user.OrgID {
+		web.AssertNil(web.Unauthorized("Bạn không có quyền xóa trạm của đơn vị khác"))
+		return
+	}
+
+	err = h.service.DeleteLakeStation(c.Request.Context(), id)
 	web.AssertNil(err)
 	h.SendData(c, nil)
 }
@@ -253,18 +306,47 @@ func (h *StationHandler) UpdateRiver(c *gin.Context) {
 	}
 
 	_, isAllowedAll, user := h.checkPermissions(c)
-	if user != nil && !isAllowedAll {
-		m.OrgID = user.OrgID
+	if user == nil {
+		web.AssertNil(web.Unauthorized("Invalid user session"))
+		return
 	}
 
-	err := h.service.UpdateRiverStation(c.Request.Context(), id, &m)
+	// Ownership check
+	current, err := h.service.GetRiverStation(c.Request.Context(), id)
+	if err != nil || current == nil {
+		web.AssertNil(web.BadRequest("Không tìm thấy trạm sông"))
+		return
+	}
+
+	if !isAllowedAll && current.OrgID != user.OrgID {
+		web.AssertNil(web.Unauthorized("Bạn không có quyền chỉnh sửa trạm của đơn vị khác"))
+		return
+	}
+
+	if !isAllowedAll {
+		m.OrgID = current.OrgID
+	}
+
+	err = h.service.UpdateRiverStation(c.Request.Context(), id, &m)
 	web.AssertNil(err)
 	h.SendData(c, m)
 }
 
 func (h *StationHandler) DeleteRiver(c *gin.Context) {
 	id := c.Param("id")
-	err := h.service.DeleteRiverStation(c.Request.Context(), id)
+	_, isAllowedAll, user := h.checkPermissions(c)
+	if user == nil {
+		web.AssertNil(web.Unauthorized("Invalid user session"))
+		return
+	}
+
+	current, err := h.service.GetRiverStation(c.Request.Context(), id)
+	if err == nil && current != nil && !isAllowedAll && current.OrgID != user.OrgID {
+		web.AssertNil(web.Unauthorized("Bạn không có quyền xóa trạm của đơn vị khác"))
+		return
+	}
+
+	err = h.service.DeleteRiverStation(c.Request.Context(), id)
 	web.AssertNil(err)
 	h.SendData(c, nil)
 }

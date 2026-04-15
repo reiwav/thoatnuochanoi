@@ -182,42 +182,49 @@ const PumpingStationPage = () => {
 
     const isAdmin = hasPermission('trambom:view');
 
-    const loadData = async () => {
+    const fetchStations = async (silent = false) => {
         try {
-            setLoading(true);
-            const promises = [];
-
+            if (!silent) setLoading(true);
             if (isAdmin) {
-                promises.push(pumpingStationApi.list({ per_page: 1000 }));
+                const res = await pumpingStationApi.list({ per_page: 1000 });
+                setData(res.data.data?.data || []);
             } else if (user?.assigned_pumping_station_id) {
-                promises.push(pumpingStationApi.get(user.assigned_pumping_station_id));
-            }
-
-            promises.push(organizationApi.getSelectionList());
-
-            const results = await Promise.all(promises);
-
-            if (isAdmin) {
-                const stRes = results[0];
-                setData(stRes.data.data?.data || []);
-            } else if (user?.assigned_pumping_station_id) {
-                const stRes = results[0];
-                setAssignedStation(stRes.data.data || null);
-            }
-
-            const orgRes = results[results.length - 1];
-            if (orgRes.data?.status === 'success') {
-                setOrgs(orgRes.data.data || { primary: [], shared: [] });
+                const res = await pumpingStationApi.get(user.assigned_pumping_station_id);
+                setAssignedStation(res.data.data || null);
             }
         } catch (error) {
-            console.error('Failed to load data', error);
+            console.error('Failed to fetch stations', error);
         } finally {
-            setLoading(false);
+            if (!silent) setLoading(false);
         }
+    };
+
+    const fetchOrgs = async () => {
+        try {
+            const res = await organizationApi.getSelectionList();
+            if (res.data?.status === 'success') {
+                setOrgs(res.data.data || { primary: [], shared: [] });
+            }
+        } catch (error) {
+            console.error('Failed to fetch orgs', error);
+        }
+    };
+
+    const loadData = async () => {
+        setLoading(true);
+        await Promise.all([fetchStations(true), fetchOrgs()]);
+        setLoading(false);
     };
 
     useEffect(() => {
         loadData();
+
+        // Auto refresh every 5 seconds
+        const interval = setInterval(() => {
+            fetchStations(true);
+        }, 5000);
+
+        return () => clearInterval(interval);
     }, []);
 
     const handleAdd = () => {

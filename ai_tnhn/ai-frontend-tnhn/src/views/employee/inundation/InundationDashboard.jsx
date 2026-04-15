@@ -1404,7 +1404,7 @@ const InundationDashboard = () => {
         }
     };
 
-    const fetchPoints = async () => {
+    const fetchPoints = async (silent = false) => {
         try {
             const params = {};
             if (orgFilter) params.org_id = orgFilter;
@@ -1413,11 +1413,11 @@ const InundationDashboard = () => {
         } catch (err) {
             console.error('Failed to fetch points:', err);
         } finally {
-            setLoading(false);
+            if (!silent) setLoading(false);
         }
     };
 
-    const fetchAssignedStation = async () => {
+    const fetchAssignedStation = async (silent = false) => {
         if (isEmployee && userInfo?.assigned_pumping_station_id) {
             try {
                 const response = await pumpingStationApi.get(userInfo.assigned_pumping_station_id);
@@ -1429,20 +1429,20 @@ const InundationDashboard = () => {
 
         // Also fetch all stations if not restricted (admin or manager)
         if (!isEmployee || hasPermission('pumping_station:view_all')) {
-            setLoadingPumpingStations(true);
+            if (!silent) setLoadingPumpingStations(true);
             try {
                 const response = await pumpingStationApi.list();
                 setPumpingStations(response.data.data?.data || []);
             } catch (error) {
                 console.error('Failed to fetch all pumping stations:', error);
             } finally {
-                setLoadingPumpingStations(false);
+                if (!silent) setLoadingPumpingStations(false);
             }
         }
     };
 
-    const fetchOrgReports = async () => {
-        setLoadingHistory(true);
+    const fetchOrgReports = async (silent = false) => {
+        if (!silent) setLoadingHistory(true);
         try {
             const res = await inundationApi.listReports(historyPage, historyRowsPerPage, {
                 status: historyStatus,
@@ -1456,9 +1456,9 @@ const InundationDashboard = () => {
                 setTotalHistory(result.total || 0);
             }
         } catch {
-            toast.error('Lỗi khi tải lịch sử báo cáo');
+            if (!silent) toast.error('Lỗi khi tải lịch sử báo cáo');
         } finally {
-            setLoadingHistory(false);
+            if (!silent) setLoadingHistory(false);
         }
     };
 
@@ -1470,16 +1470,16 @@ const InundationDashboard = () => {
         fetchAssignedStation();
     }, [orgFilter, userInfo]);
 
-    const fetchPumpingHistory = async () => {
+    const fetchPumpingHistory = async (silent = false) => {
         if (!userInfo?.assigned_pumping_station_id) return;
-        setLoadingPumpingHistory(true);
+        if (!silent) setLoadingPumpingHistory(true);
         try {
             const response = await pumpingStationApi.getHistory(userInfo.assigned_pumping_station_id);
             setPumpingHistory(response.data.data?.data || []);
         } catch (error) {
             console.error('Failed to load pump history', error);
         } finally {
-            setLoadingPumpingHistory(false);
+            if (!silent) setLoadingPumpingHistory(false);
         }
     };
 
@@ -1494,6 +1494,25 @@ const InundationDashboard = () => {
             fetchOrgReports();
         }
     }, [activeTab, historyPage, historyRowsPerPage, isMobile, historyStatus, historyTrafficStatus, searchQuery, orgFilter]);
+
+    // Interval cập nhật tự động 5s
+    useEffect(() => {
+        const interval = setInterval(() => {
+            if (activeTab === 1 || activeTab === 2) {
+                fetchPoints(true);
+            }
+            if (activeTab === 3 || (!isMobile && activeTab !== 5)) {
+                fetchOrgReports(true);
+            }
+            if (activeTab === 4) {
+                fetchAssignedStation(true);
+            }
+            if (activeTab === 5) {
+                fetchPumpingHistory(true);
+            }
+        }, 5000);
+        return () => clearInterval(interval);
+    }, [activeTab, userInfo, isMobile, historyPage, historyRowsPerPage, historyStatus, historyTrafficStatus, searchQuery, orgFilter]);
 
     const stats = useMemo(() => {
         const total = points.length;

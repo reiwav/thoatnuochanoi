@@ -10,6 +10,7 @@ import (
 	"ai-api-tnhn/internal/service/googledrive"
 	"ai-api-tnhn/internal/service/water"
 
+	"ai-api-tnhn/internal/constants"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/service/weather"
 	"ai-api-tnhn/utils/web"
@@ -153,7 +154,6 @@ func (h *GoogleHandler) GetStatus(c *gin.Context) {
 }
 
 func (h *GoogleHandler) GetRainSummary(c *gin.Context) {
-	// Persist to chat history
 	token := h.contextWith.GetTokenFromContext(c)
 	orgID := token.OrgID
 	if token.IsCompany {
@@ -165,24 +165,16 @@ func (h *GoogleHandler) GetRainSummary(c *gin.Context) {
 		return
 	}
 
-	if h.aiChatLogRepo != nil && token.UserID != "" {
+	isChat := c.Query("is_chat") == "true"
+	if isChat && h.aiChatLogRepo != nil && token.UserID != "" {
 		now := time.Now()
 		// Save User Query
 		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
 			UserID: token.UserID, Role: "user", Content: "Tình hình mưa đang như thế nào?", ChatType: "support", Timestamp: now.Add(-1 * time.Second),
 		})
 
-		// Format AI Response
-		displayText := ""
-		if summary.RainyStations == 0 {
-			displayText = "Hiện tại ghi nhận không có mưa tại tất cả các trạm."
-		} else {
-			displayText = fmt.Sprintf("Tình hình mưa hiện tại:\n- Tổng số trạm: %d\n- Số trạm đang có mưa: %d\n- Trạm mưa lớn nhất: %s (%.1fmm)\n\nChi tiết danh sách các trạm mưa:\n",
-				summary.TotalStations, summary.RainyStations, summary.MaxRainStation.Name, summary.MaxRainStation.TotalRain)
-			for _, m := range summary.Measurements {
-				displayText += fmt.Sprintf("- %s: %.1fmm (%s - %s)\n", m.Name, m.TotalRain, m.StartTime, m.EndTime)
-			}
-		}
+		// Format AI Response to match Frontend display
+		displayText := h.formatRainSummary(summary)
 
 		// Save AI Response
 		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
@@ -194,6 +186,59 @@ func (h *GoogleHandler) GetRainSummary(c *gin.Context) {
 		"status": "success",
 		"data":   summary,
 	})
+}
+
+func (h *GoogleHandler) GetRainSummaryText(c *gin.Context) {
+	token := h.contextWith.GetTokenFromContext(c)
+	orgID := token.OrgID
+	if token.IsCompany {
+		orgID = ""
+	}
+	summary, err := h.googleSvc.GetRainSummary(c.Request.Context(), orgID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	displayText := h.formatRainSummary(summary)
+
+	// Persist to chat history automatically for this text-specific endpoint
+	if h.aiChatLogRepo != nil && token.UserID != "" {
+		now := time.Now()
+		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
+			UserID: token.UserID, Role: "user", Content: "Tình hình mưa đang như thế nào?", ChatType: "support", Timestamp: now.Add(-1 * time.Second),
+		})
+		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
+			UserID: token.UserID, Role: "model", Content: displayText, ChatType: "support", Timestamp: now,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": "success",
+		"data":   displayText,
+	})
+}
+
+func (h *GoogleHandler) formatRainSummary(summary *googleapi.RainSummaryData) string {
+	displayText := ""
+	if len(summary.Measurements) == 0 {
+		return "Hiện tại ghi nhận không có mưa tại tất cả các trạm."
+	}
+
+	statusLine := "- Hiện tại không còn mưa"
+	if summary.RainyStations > 0 {
+		statusLine = fmt.Sprintf("- Số trạm đang có mưa: %d", summary.RainyStations)
+	}
+	displayText = fmt.Sprintf("Tình hình mưa hiện tại:\n- Tổng số trạm: %d\n%s\n- Trạm mưa lớn nhất trong ngày: %s (%.1fmm)\n\nChi tiết danh sách các trạm có mưa trong ngày:\n",
+		summary.TotalStations, statusLine, summary.MaxRainStation.Name, summary.MaxRainStation.TotalRain)
+	for _, m := range summary.Measurements {
+		status := "✅ Đã tạnh"
+		if m.IsRaining {
+			status = "⛈️ Đang mưa"
+		}
+		displayText += fmt.Sprintf("- %s: %.1fmm (%s - %s) [%s]\n", m.Name, m.TotalRain, m.StartTime, m.EndTime, status)
+	}
+	return displayText
 }
 
 func (h *GoogleHandler) GetWaterSummary(c *gin.Context) {
@@ -525,7 +570,7 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 	h.log.GetLogger().Infof(">>> Generating report V3 for %s-%s-%s %s", dd, mm, yyyy, hh)
 
 	g, gCtx := errgroup.WithContext(ctx)
-	var waterResp, rainResp struct {
+	var waterResp struct {
 		Content struct {
 			Tram []map[string]interface{} `json:"tram"`
 			Data []map[string]interface{} `json:"data"`
@@ -558,27 +603,12 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 	})
 
 	// 2. Fetch Rain Data
+	var rainSum *googleapi.RainSummaryData
 	g.Go(func() error {
-		rData, err := h.weatherSvc.GetRawRainData(gCtx)
+		var err error
+		rainSum, err = h.googleSvc.GetRainSummary(gCtx, "")
 		if err != nil {
-			h.log.GetLogger().Warnf("Failed to fetch rain data via weatherSvc: %v", err)
-			return nil
-		}
-		// Map back to rainResp for compatibility
-		for _, t := range rData.Content.Tram {
-			rainResp.Content.Tram = append(rainResp.Content.Tram, map[string]interface{}{
-				"Id":        t.Id,
-				"TenPhuong": t.TenPhuong,
-				"TenTram":   t.TenTram,
-			})
-		}
-		for _, d := range rData.Content.Data {
-			rainResp.Content.Data = append(rainResp.Content.Data, map[string]interface{}{
-				"TramId":      d.TramId,
-				"LuongMua_HT": d.LuongMua_HT,
-				"ThoiGian_BD": d.ThoiGian_BD,
-				"ThoiGian_HT": d.ThoiGian_HT,
-			})
+			h.log.GetLogger().Warnf("Failed to fetch rain summary via googleSvc: %v", err)
 		}
 		return nil
 	})
@@ -639,19 +669,13 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 		name, _ := t["TenTram"].(string)
 		waterStations[id] = name
 	}
+	// Legacy bridge: rainStations map not needed if we use rainSum.Measurements directly
+	// but kept if other code depends on it.
 	rainStations := make(map[string]string)
-	for _, t := range rainResp.Content.Tram {
-		var idStr string
-		if id, ok := t["Id"].(float64); ok {
-			idStr = fmt.Sprintf("%.0f", id)
-		} else if id, ok := t["Id"].(string); ok {
-			idStr = id
+	if rainSum != nil {
+		for _, m := range rainSum.Measurements {
+			rainStations[m.Name] = m.Name
 		}
-		name, _ := t["TenPhuong"].(string)
-		if name == "" {
-			name, _ = t["TenTram"].(string)
-		}
-		rainStations[idStr] = name
 	}
 
 	lakeDataRaw := [][]string{{"Hồ", "Mực nước"}}
@@ -691,22 +715,15 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 		}
 	}
 
-	for _, d := range rainResp.Content.Data {
-		var tidStr string
-		if tid, ok := d["TramId"].(float64); ok {
-			tidStr = fmt.Sprintf("%.0f", tid)
-		} else if tid, ok := d["TramId"].(string); ok {
-			tidStr = tid
-		}
-		val := parseNum(d["LuongMua_HT"])
-		name := strings.TrimSpace(rainStations[tidStr])
-		if name == "" {
-			continue
-		}
-		if strings.Contains(strings.ToLower(name), "xã") {
-			xas = append(xas, itemVal{name, val})
-		} else {
-			phuongs = append(phuongs, itemVal{name, val})
+	if rainSum != nil {
+		for _, m := range rainSum.Measurements {
+			val := m.TotalRain
+			name := m.Name
+			if strings.Contains(strings.ToLower(name), "xã") {
+				xas = append(xas, itemVal{name, val})
+			} else {
+				phuongs = append(phuongs, itemVal{name, val})
+			}
 		}
 	}
 
@@ -751,10 +768,10 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 		return time.Time{}
 	}
 
-	for _, d := range rainResp.Content.Data {
-		if lmht, _ := d["LuongMua_HT"].(float64); lmht > 0 {
-			tbd := parseT(d["ThoiGian_BD"])
-			tht := parseT(d["ThoiGian_HT"])
+	if rainSum != nil {
+		for _, m := range rainSum.Measurements {
+			tbd := parseT(m.StartTimeFull)
+			tht := parseT(m.EndTimeFull)
 			if !tbd.IsZero() && (minStart.IsZero() || tbd.Before(minStart)) {
 				minStart = tbd
 			}
@@ -767,37 +784,39 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 		timeMua = fmt.Sprintf("%s đến %s", minStart.Format("15h04'"), maxEnd.Format("15h04'"))
 	}
 
+	// Prepare detailed rain info for Gemini
+	rainInfoStr := ""
+	if rainSum != nil {
+		for _, m := range rainSum.Measurements {
+			status := "Đang mưa"
+			if !m.IsRaining {
+				status = fmt.Sprintf("Đã tạnh lúc %s", m.EndTime)
+			}
+			rainInfoStr += fmt.Sprintf("- %s: %.1fmm (%s)\n", m.Name, m.TotalRain, status)
+		}
+	}
+
+	soDiemMua := 0
+	hasRainfall := false
+	if rainSum != nil {
+		soDiemMua = rainSum.RainyStations
+		for _, m := range rainSum.Measurements {
+			if m.TotalRain > 0 {
+				hasRainfall = true
+				break
+			}
+		}
+	}
+
 	noidung := "Báo cáo tình hình mưa"
 	if h.geminiSvc != nil && extractedContent != "" {
-		soDiemMua := len(phuongs) + len(xas)
 		var prompt string
-		if soDiemMua == 0 {
-			prompt = fmt.Sprintf(`Dựa trên nội dung bản tin dự báo thời tiết sau:
----
-%s
----
-Và số liệu thực tế: HIỆN TẠI KHÔNG CÓ TRẠM NÀO GHI NHẬN MƯA.
-
-Hãy tóm tắt thành 1 đoạn văn Báo cáo (DUY NHẤT 1 ĐOẠN) tuân theo đúng quy tắc sau:
-- NẾU bản tin dự báo có đề cập đến các hình thế thời tiết cụ thể (như không khí lạnh, rãnh áp thấp, vùng hội tụ gió...), hãy viết: "Trên địa bàn thành phố hiện không ghi nhận điểm mưa nào, dù đang chịu ảnh hưởng của [tên hình thế thời tiết lấy từ bản tin]."
-- NẾU bản tin dự báo KHÔNG đề cập rõ hình thế thời tiết nào cụ thể, hãy viết ĐƠN GIẢN là: "Hiện tại, trên địa bàn thành phố không ghi nhận điểm mưa nào." (TUYỆT ĐỐI KHÔNG dùng các cụm từ vô nghĩa như "chịu ảnh hưởng của tình hình thời tiết hiện trạng" hay "thời tiết hiện tại").
-- LUÔN kết thúc đoạn văn bằng câu: "Lượng mưa đo được đến thời điểm %s ngày %s/%s/%s cụ thể như sau:"
-
-Chỉ trả về nội dung đoạn văn, KHÔNG có lời chào, KHÔNG giải thích.`, extractedContent, hh, dd, mm, yyyy)
+		if soDiemMua == 0 && hasRainfall {
+			prompt = fmt.Sprintf(constants.PromptRainStopped, extractedContent, rainInfoStr, hh, dd, mm, yyyy)
+		} else if soDiemMua == 0 {
+			prompt = fmt.Sprintf(constants.PromptNoRain, extractedContent, rainInfoStr, hh, dd, mm, yyyy)
 		} else {
-			prompt = fmt.Sprintf(`Dựa trên nội dung bản tin dự báo thời tiết sau:
----
-%s
----
-Và số liệu thực tế: Có %d điểm đang ghi nhận mưa.
-
-Hãy tóm tắt thành 1 đoạn văn Báo cáo (DUY NHẤT 1 ĐOẠN) tuân theo đúng quy tắc sau:
-- Đánh giá mức độ: Nếu từ 1-4 điểm thì gọi là "mưa vùng", từ 5-10 điểm thì gọi là "mưa rải rác trên diện rộng", lớn hơn 10 điểm thì gọi là "mưa trên diện rộng".
-- NẾU bản tin dự báo có đề cập tới hình thế thời tiết cụ thể (như không khí lạnh, rãnh áp thấp, vùng hội tụ...), hãy ghép thành câu: "Hiện tại, xuất hiện [mức độ mưa], nguyên nhân do ảnh hưởng của [tên hình thế thời tiết lấy từ bản tin]."
-- NẾU bản tin dự báo KHÔNG có hình thế cụ thể, chỉ viết: "Hiện tại, trên địa bàn thành phố đang xuất hiện [mức độ mưa]." (Tuyệt đối không tự bịa ra nguyên nhân nếu không có).
-- LUÔN kết thúc đoạn văn bằng câu: "Mưa dông xảy ra với lượng mưa đo được đến thời điểm %s ngày %s/%s/%s cụ thể như sau:"
-
-Chỉ trả về nội dung đoạn văn, KHÔNG có lời chào, KHÔNG giải thích.`, extractedContent, soDiemMua, hh, dd, mm, yyyy)
+			prompt = fmt.Sprintf(constants.PromptActiveRain, extractedContent, soDiemMua, rainInfoStr, hh, dd, mm, yyyy)
 		}
 
 		if aiResult, err := h.geminiSvc.Chat(ctx, prompt, nil, "system_report", true, "SKIP_LOG"); err == nil && aiResult != "" {
@@ -822,7 +841,7 @@ Chỉ trả về nội dung đoạn văn, KHÔNG có lời chào, KHÔNG giải 
 	xa1, xa2 := splitTable(xaDataRaw)
 
 	hienTrangMua := "không còn mưa"
-	if len(phuongs)+len(xas) > 0 {
+	if soDiemMua > 0 {
 		hienTrangMua = "tiếp tục có mưa"
 	}
 
@@ -907,7 +926,6 @@ func (h *GoogleHandler) GenerateQuickReportText(c *gin.Context) {
 			Data []map[string]interface{} `json:"data"`
 		} `json:"Content"`
 	}
-
 	// 1. Fetch Rain Data
 	g.Go(func() error {
 		rData, err := h.weatherSvc.GetRawRainData(gCtx)
@@ -1089,7 +1107,6 @@ func (h *GoogleHandler) GenerateAIDynamicReport(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	userID, _ := h.contextWith.GetUserID(c)
 	now := time.Now()
 
 	g, gCtx := errgroup.WithContext(ctx)
@@ -1102,54 +1119,12 @@ func (h *GoogleHandler) GenerateAIDynamicReport(c *gin.Context) {
 	})
 
 	// === Goroutine 2: Rain data ===
-	rainSummary := ""
+	var rainSum *googleapi.RainSummaryData
 	g.Go(func() error {
-		rData, err := h.weatherSvc.GetRawRainData(gCtx)
-		if err != nil || rData == nil {
-			return nil
-		}
-		stations := make(map[string]string)
-		for _, t := range rData.Content.Tram {
-			name := t.TenPhuong
-			if name == "" {
-				name = t.TenTram
-			}
-			key := fmt.Sprintf("%v", t.Id)
-			stations[key] = name
-		}
-		type rainItem struct {
-			name string
-			val  float64
-			bd   string
-			ht   string
-		}
-		var items []rainItem
-		rainyCount := 0
-		for _, d := range rData.Content.Data {
-			if d.LuongMua_HT > 0 {
-				rainyCount++
-				key := fmt.Sprintf("%v", d.TramId)
-				name := stations[key]
-				if name == "" {
-					name = fmt.Sprintf("Trạm %v", d.TramId)
-				}
-				items = append(items, rainItem{name, d.LuongMua_HT, d.ThoiGian_BD, d.ThoiGian_HT})
-			}
-		}
-		sort.Slice(items, func(i, j int) bool { return items[i].val > items[j].val })
-		var lines []string
-		for _, it := range items {
-			lines = append(lines, fmt.Sprintf("  - %s: %.1fmm (từ %s đến %s)", it.name, it.val, it.bd, it.ht))
-		}
-
-		if rainyCount > 0 {
-			displayCount := 15
-			if len(items) < displayCount {
-				displayCount = len(items)
-			}
-			rainSummary = fmt.Sprintf("Tổng số điểm đang có mưa: %d/%d trạm\nChi tiết %d điểm mưa lớn nhất:\n%s", rainyCount, len(rData.Content.Data), displayCount, strings.Join(lines[:displayCount], "\n"))
-		} else {
-			rainSummary = "Hiện tại không có mưa trên toàn thành phố."
+		var err error
+		rainSum, err = h.googleSvc.GetRainSummary(gCtx, "")
+		if err != nil {
+			h.log.GetLogger().Warnf("Failed to fetch rain summary: %v", err)
 		}
 		return nil
 	})
@@ -1253,11 +1228,77 @@ func (h *GoogleHandler) GenerateAIDynamicReport(c *gin.Context) {
 	// === Wait for all goroutines ===
 	_ = g.Wait()
 
-	// === Build prompt with pre-fetched data ===
+	// === 6. Build Rain Summary Deterministically ===
+	soDiemMua := 0
+	hasRainfall := false
+	if rainSum != nil {
+		soDiemMua = rainSum.RainyStations
+		for _, m := range rainSum.Measurements {
+			if m.TotalRain > 0 {
+				hasRainfall = true
+				break
+			}
+		}
+	}
+
+	weatherSystems := []string{"không khí lạnh", "rãnh áp thấp", "vùng hội tụ gió", "áp cao lục địa", "áp cao lạnh lục địa", "hội tụ gió"}
+	foundSystem := ""
+	for _, sys := range weatherSystems {
+		if strings.Contains(strings.ToLower(emailContent), sys) {
+			foundSystem = sys
+			break
+		}
+	}
+
+	rainIntro := ""
+	if soDiemMua == 0 {
+		if hasRainfall {
+			if foundSystem != "" {
+				rainIntro = fmt.Sprintf("Hiện tại trên địa bàn thành phố không còn mưa, dù đang chịu ảnh hưởng của %s.", foundSystem)
+			} else {
+				rainIntro = "Hiện tại, trên địa bàn thành phố không còn mưa."
+			}
+		} else {
+			if foundSystem != "" {
+				rainIntro = fmt.Sprintf("Trên địa bàn thành phố hiện không ghi nhận điểm mưa nào, dù đang chịu ảnh hưởng của %s.", foundSystem)
+			} else {
+				rainIntro = "Hiện tại, trên địa bàn thành phố không ghi nhận điểm mưa nào."
+			}
+		}
+	} else {
+		mucDo := "mưa vùng"
+		if soDiemMua > 10 {
+			mucDo = "mưa trên diện rộng"
+		} else if soDiemMua >= 5 {
+			mucDo = "mưa rải rác trên diện rộng"
+		}
+
+		if foundSystem != "" {
+			rainIntro = fmt.Sprintf("Hiện tại, xuất hiện %s, nguyên nhân do ảnh hưởng của %s.", mucDo, foundSystem)
+		} else {
+			rainIntro = fmt.Sprintf("Hiện tại, trên địa bàn thành phố đang xuất hiện %s.", mucDo)
+		}
+	}
+	rainIntro += fmt.Sprintf(" Lượng mưa đo được đến thời điểm %s ngày %s cụ thể như sau:", now.Format("15h04"), now.Format("02/01/2006"))
+
+	rainSummary := rainIntro + "\n"
+	if rainSum != nil && len(rainSum.Measurements) > 0 {
+		var lines []string
+		for _, m := range rainSum.Measurements {
+			status := "Đang mưa"
+			if !m.IsRaining {
+				status = fmt.Sprintf("Đã tạnh lúc %s", m.EndTime)
+			}
+			lines = append(lines, fmt.Sprintf("  - %s: %.1fmm (%s)", m.Name, m.TotalRain, status))
+		}
+		rainSummary += strings.Join(lines, "\n")
+	}
+
+	// === 6. Build prompt with pre-fetched data ===
 	emailSection := ""
 	if emailContent != "" {
 		emailSection = fmt.Sprintf(`
-### 4. BẢN TIN DỰ BÁO THỜI TIẾT (Trích xuất từ email, Trang 1):
+### 5. BẢN TIN DỰ BÁO THỜI TIẾT (Trích xuất từ email, Trang 1):
 %s`, emailContent)
 	}
 
@@ -1276,8 +1317,11 @@ Dưới đây là DỮ LIỆU THU THẬP THỰC TẾ từ hệ thống giám sá
 
 ### 4. TÌNH HÌNH VẬN HÀNH CÁC TRẠM BƠM:
 %s
+
+### 5. THỜI TIẾT:
 %s
 
+### 6. PHÂN TÍCH VÀ ĐÁNH GIÁ:
 Dựa trên DỮ LIỆU THỰC TẾ ở trên, hãy viết 01 bản BÁO CÁO TỔNG HỢP TÌNH HÌNH THOÁT NƯỚC VÀ PHÒNG CHỐNG ÚNG NGẬP tại Hà Nội.
 
 YÊU CẦU:
@@ -1290,6 +1334,7 @@ YÊU CẦU:
 		now.Format("15h04"), now.Format("02/01/2006"),
 		rainSummary, waterSummary, inundationSummary, pumpingSummaryStr, emailSection)
 
+	userID, _ := h.contextWith.GetUserID(c)
 	aiResult, err := h.geminiSvc.Chat(ctx, prompt, nil, userID, true, "Tổng hợp tình hình hệ thống")
 	if err != nil {
 		h.log.GetLogger().Errorf("[GenerateAIDynamicReport] Gemini Chat Error: %v", err)

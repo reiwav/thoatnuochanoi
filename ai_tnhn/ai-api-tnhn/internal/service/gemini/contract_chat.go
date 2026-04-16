@@ -12,7 +12,6 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-
 // ChatContract xử lý chat AI chuyên biệt cho quản lý hợp đồng.
 // Tách riêng để phân quyền theo vai trò người dùng.
 func (s *service) ChatContract(ctx context.Context, prompt string, history []ChatMessage, userID string, isCompany bool, logPrompt string) (string, error) {
@@ -92,7 +91,7 @@ QUY TẮC QUAN TRỌNG:
 	}
 
 	session := model.StartChat()
-	session.History = genaiHistory
+	//session.History = genaiHistory
 
 	// Keep raw prompt for logging
 	rawPrompt := prompt
@@ -248,7 +247,6 @@ QUY TẮC QUAN TRỌNG:
 			}
 		}
 	}()
-
 
 	return finalResult, nil
 }

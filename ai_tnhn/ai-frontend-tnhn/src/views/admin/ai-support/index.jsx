@@ -209,32 +209,8 @@ const AiSupport = () => {
         setLoading(true);
 
         try {
-            const res = await axiosClient.get('/admin/google/rain-summary');
-            const data = res.data?.data;
-            let displayText = '';
-
-            if (typeof data === 'string') {
-                displayText = data;
-            } else if (data && typeof data === 'object') {
-                if (!data.measurements || data.measurements.length === 0) {
-                    displayText = 'Hiện tại ghi nhận không có mưa tại tất cả các trạm.';
-                } else {
-                    const statusLine = data.rainy_stations > 0
-                        ? `- Số trạm đang có mưa: ${data.rainy_stations}`
-                        : `- Hiện tại không còn mưa`;
-                    displayText = `Tình hình mưa hiện tại:\n` +
-                        `- Tổng số trạm: ${data.total_stations}\n` +
-                        statusLine + `\n` +
-                        `- Trạm mưa lớn nhất trong ngày: ${data.max_rain_station?.name} (${data.max_rain_station?.total_rain}mm)\n\n` +
-                        `Chi tiết danh sách các trạm có mưa trong ngày:\n` +
-                        data.measurements.map(m => {
-                            const status = m.is_raining ? '⛈️ Đang mưa' : '✅ Đã tạnh';
-                            return `- ${m.name}: ${m.total_rain}mm (${m.start_time} - ${m.end_time}) [${status}]`;
-                        }).join('\n');
-                }
-            } else {
-                displayText = 'Không thể lấy thông tin lượng mưa lúc này.';
-            }
+            const res = await axiosClient.get('/admin/google/rain-summary-text');
+            const displayText = res.data?.data || 'Không thể lấy thông tin lượng mưa lúc này.';
 
             const aiMsg = {
                 id: Date.now() + 1,

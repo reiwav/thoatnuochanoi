@@ -2,6 +2,7 @@ package weather
 
 import (
 	"ai-api-tnhn/internal/repository"
+	"ai-api-tnhn/internal/utils"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -11,29 +12,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
-
-var vietnamTZ = time.FixedZone("Asia/Ho_Chi_Minh", 7*60*60)
-
-// convertUTCToVietnam converts a UTC timestamp string to Vietnam timezone (UTC+7).
-// Input format: "2026-03-09T04:40:11" (UTC without timezone suffix)
-// Output format: "2026-03-09T11:40:11" (Vietnam local time)
-func convertUTCToVietnam(utcStr string) string {
-	if utcStr == "" || utcStr == "-" {
-		return utcStr
-	}
-	layouts := []string{
-		"2006-01-02T15:04:05",
-		"2006-01-02 15:04:05",
-	}
-	for _, layout := range layouts {
-		t, err := time.Parse(layout, utcStr)
-		if err == nil {
-			vnTime := t.In(vietnamTZ)
-			return vnTime.Format("2006-01-02T15:04:05")
-		}
-	}
-	return utcStr
-}
 
 type RainDataResponse struct {
 	Code    int `json:"Code"`
@@ -140,9 +118,9 @@ func (s *service) GetRawRainData(ctx context.Context) (*RainDataResponse, error)
 
 	// Convert UTC timestamps to Vietnam timezone (UTC+7)
 	for i := range rainData.Content.Data {
-		rainData.Content.Data[i].ThoiGian_BD = convertUTCToVietnam(rainData.Content.Data[i].ThoiGian_BD)
-		rainData.Content.Data[i].ThoiGian_HT = convertUTCToVietnam(rainData.Content.Data[i].ThoiGian_HT)
-		rainData.Content.Data[i].ThoiGian_Tr = convertUTCToVietnam(rainData.Content.Data[i].ThoiGian_Tr)
+		rainData.Content.Data[i].ThoiGian_BD = utils.ConvertUTCToVietnam(rainData.Content.Data[i].ThoiGian_BD)
+		rainData.Content.Data[i].ThoiGian_HT = utils.ConvertUTCToVietnam(rainData.Content.Data[i].ThoiGian_HT)
+		rainData.Content.Data[i].ThoiGian_Tr = utils.ConvertUTCToVietnam(rainData.Content.Data[i].ThoiGian_Tr)
 	}
 
 	return &rainData, nil
@@ -245,10 +223,10 @@ func (s *service) SetForecastFunc(fn ForecastFunc) {
 
 func (s *service) GetForecast(ctx context.Context) (string, error) {
 	// Caching: Only fetch once per day unless app restarts
-	now := time.Now().In(vietnamTZ)
-	if s.forecast != "" && s.lastFetch.In(vietnamTZ).Year() == now.Year() &&
-		s.lastFetch.In(vietnamTZ).Month() == now.Month() &&
-		s.lastFetch.In(vietnamTZ).Day() == now.Day() {
+	now := time.Now().In(utils.VietnamTZ)
+	if s.forecast != "" && s.lastFetch.In(utils.VietnamTZ).Year() == now.Year() &&
+		s.lastFetch.In(utils.VietnamTZ).Month() == now.Month() &&
+		s.lastFetch.In(utils.VietnamTZ).Day() == now.Day() {
 		return s.forecast, nil
 	}
 
@@ -394,10 +372,10 @@ func (s *service) generateManualForecast(meteoData string) string {
 }
 
 func (s *service) GetGeminiForecast(ctx context.Context) ([]ForecastDay, error) {
-	now := time.Now().In(vietnamTZ)
-	if len(s.geminiForecast) > 0 && s.lastGeminiFetch.In(vietnamTZ).Year() == now.Year() &&
-		s.lastGeminiFetch.In(vietnamTZ).Month() == now.Month() &&
-		s.lastGeminiFetch.In(vietnamTZ).Day() == now.Day() {
+	now := time.Now().In(utils.VietnamTZ)
+	if len(s.geminiForecast) > 0 && s.lastGeminiFetch.In(utils.VietnamTZ).Year() == now.Year() &&
+		s.lastGeminiFetch.In(utils.VietnamTZ).Month() == now.Month() &&
+		s.lastGeminiFetch.In(utils.VietnamTZ).Day() == now.Day() {
 		return s.geminiForecast, nil
 	}
 

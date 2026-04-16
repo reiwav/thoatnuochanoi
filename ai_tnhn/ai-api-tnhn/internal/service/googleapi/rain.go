@@ -2,6 +2,7 @@ package googleapi
 
 import (
 	"ai-api-tnhn/internal/base/mgo/filter"
+	"ai-api-tnhn/internal/utils"
 	"context"
 	"fmt"
 	"sort"
@@ -11,12 +12,14 @@ import (
 )
 
 type RainStationStat struct {
-	Name        string  `json:"name"`
-	TotalRain   float64 `json:"total_rain"`
-	SessionRain float64 `json:"session_rain"`
-	StartTime   string  `json:"start_time"`
-	EndTime     string  `json:"end_time"`
-	IsRaining   bool    `json:"is_raining"`
+	Name          string    `json:"name"`
+	TotalRain     float64   `json:"total_rain"`
+	SessionRain   float64   `json:"session_rain"`
+	StartTime     string    `json:"start_time"`
+	EndTime       string    `json:"end_time"`
+	StartTimeFull time.Time `json:"start_time_full"`
+	EndTimeFull   time.Time `json:"end_time_full"`
+	IsRaining     bool      `json:"is_raining"`
 }
 
 type RainSummaryData struct {
@@ -101,17 +104,14 @@ func (s *service) GetRainSummary(ctx context.Context, orgID string) (*RainSummar
 			// Parse ThoiGian_HT to check if it's currently raining (last update within 5 minutes)
 			isRaining := false
 			var lastUpdate time.Time
-			layout := "2006-01-02T15:04:05" // From weather.convertUTCToVietnam
-			if t, err := time.ParseInLocation(layout, d.ThoiGian_HT, now.Location()); err == nil {
-				lastUpdate = t
-			} else {
-				layoutSecondary := "2006-01-02 15:04:05"
-				if t, err := time.ParseInLocation(layoutSecondary, d.ThoiGian_HT, now.Location()); err == nil {
-					lastUpdate = t
-				}
+			lastUpdate, err = utils.ParseTime(d.ThoiGian_HT)
+			if err != nil {
+				fmt.Printf(" [GoogleAPI] ParseTime Error: %v\n", err)
+				continue
 			}
 
-			if !lastUpdate.IsZero() && now.Sub(lastUpdate) <= 5*time.Minute {
+			diff := now.Sub(lastUpdate)
+			if !lastUpdate.IsZero() && diff >= 0 && diff <= 5*time.Minute {
 				isRaining = true
 				rainyCount++
 			}
@@ -129,13 +129,26 @@ func (s *service) GetRainSummary(ctx context.Context, orgID string) (*RainSummar
 			if sessionRain < 0 {
 				sessionRain = 0
 			}
+			tFullBD, err := utils.ParseTime(d.ThoiGian_BD)
+			if err != nil {
+				fmt.Printf(" [GoogleAPI] ParseTime Error: %v\n", err)
+				continue
+			}
+			tFullHT, err := utils.ParseTime(d.ThoiGian_HT)
+			if err != nil {
+				fmt.Printf(" [GoogleAPI] ParseTime Error: %v\n", err)
+				continue
+			}
+
 			measurements = append(measurements, RainStationStat{
-				Name:        stationMap[id],
-				TotalRain:   d.LuongMua_HT,
-				SessionRain: sessionRain,
-				StartTime:   tBD,
-				EndTime:     tHT,
-				IsRaining:   isRaining,
+				Name:          stationMap[id],
+				TotalRain:     d.LuongMua_HT,
+				SessionRain:   sessionRain,
+				StartTime:     tBD,
+				EndTime:       tHT,
+				StartTimeFull: tFullBD,
+				EndTimeFull:   tFullHT,
+				IsRaining:     isRaining,
 			})
 		}
 	}

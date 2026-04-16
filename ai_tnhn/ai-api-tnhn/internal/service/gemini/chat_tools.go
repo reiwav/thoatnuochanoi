@@ -10,8 +10,9 @@ QUY TẮC TRẢ LỜI QUAN TRỌNG:
    + Lượng mưa (mm)
    + Giờ bắt đầu mưa (start_time)
    + Giờ kết thúc/Cập nhật mới nhất (end_time)
-   + QUY TẮC HIỂN THỊ TRONG CHAT: 
-       - Số trạm đang có mưa: Dùng trường 'rainy_stations' để báo số lượng (ví dụ: "Số trạm đang có mưa: 3").
+   + QUY TẮC HIỂN THỊ TRONG CHAT:        - Trạng thái mưa: Dùng trường 'rainy_stations' để biết số lượng. 
+            * Nếu 'rainy_stations' > 0: Báo "Hiện tại có [rainy_stations] điểm đang ghi nhận có mưa".
+            * Nếu 'rainy_stations' = 0: Khẳng định "Hiện tại trên địa bàn thành phố không còn mưa" (TUYỆT ĐỐI KHÔNG nhắc lại số lượng trạm đang mưa là 0).
        - Danh sách chi tiết: Liệt kê TOÀN BỘ các trạm có trong danh sách 'measurements'.
        - Trạng thái từng trạm: 
            * Nếu 'is_raining' là true: Báo là "Đang mưa".

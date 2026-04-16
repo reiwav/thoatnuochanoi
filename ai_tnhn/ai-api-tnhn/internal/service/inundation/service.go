@@ -197,7 +197,7 @@ func (s *service) CreateReport(ctx context.Context, report *models.InundationRep
 
 	// Trigger immediate sync task
 	if len(images) > 0 {
-		s.syncWorker.Enqueue(report.ID, TaskTypeReport)
+		// s.syncWorker.Enqueue(report.ID, TaskTypeReport)
 	}
 
 	return nil
@@ -267,7 +267,7 @@ func (s *service) AddUpdate(ctx context.Context, reportID string, update *models
 
 	// Trigger immediate sync task
 	if len(images) > 0 {
-		s.syncWorker.Enqueue(update.ID, TaskTypeUpdate)
+		// s.syncWorker.Enqueue(update.ID, TaskTypeUpdate)
 	}
 
 	return nil
@@ -434,7 +434,7 @@ func (s *service) UpdateReport(ctx context.Context, id string, report *models.In
 
 	// Trigger immediate sync task
 	if len(images) > 0 {
-		s.syncWorker.Enqueue(id, TaskTypeReport)
+		// s.syncWorker.Enqueue(id, TaskTypeReport)
 	}
 
 	return nil
@@ -490,7 +490,7 @@ func (s *service) UpdateSurvey(ctx context.Context, id string, report *models.In
 
 	// Trigger immediate sync task
 	if len(images) > 0 {
-		s.syncWorker.Enqueue(id, TaskTypeReport)
+		// s.syncWorker.Enqueue(id, TaskTypeReport)
 	}
 
 	return nil
@@ -563,7 +563,7 @@ func (s *service) UpdateMech(ctx context.Context, id string, report *models.Inun
 
 	// Trigger immediate sync task
 	if len(images) > 0 {
-		s.syncWorker.Enqueue(id, TaskTypeReport)
+		// s.syncWorker.Enqueue(id, TaskTypeReport)
 	}
 
 	return nil

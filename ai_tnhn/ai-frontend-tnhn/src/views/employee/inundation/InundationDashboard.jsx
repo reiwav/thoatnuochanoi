@@ -270,18 +270,21 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
     const theme = useTheme();
     const { user, isCompany } = useAuthStore();
     const [open, setOpen] = useState(point.status === 'active');
-    const canSurvey = useMemo(() => hasPermission('inundation:survey') || user?.isCompany, [hasPermission, user]);
-    const canMech = useMemo(() => hasPermission('inundation:mechanic') || user?.isCompany, [hasPermission, user]);
+    const canSurvey = useMemo(() => hasPermission('inundation:survey'), [hasPermission]);
+    const canMech = useMemo(() => hasPermission('inundation:mechanic') || hasPermission('inundation:mech'), [hasPermission]);
     const canReview = useMemo(() => {
         if (isEmployee) return false;
-        if (user?.isCompany) return true;
+        if (!hasPermission('inundation:review')) return false;
+        if (user?.isCompany || user?.role === 'super_admin') return true;
+
         const report = point.active_report || point.last_report;
         if (!report) return false;
         if (report.org_id === user?.org_id) return true;
+        
         const userOrg = organizations?.find(o => o.id === user?.org_id);
         if (userOrg?.inundation_ids?.includes(report.point_id)) return true;
         return false;
-    }, [user, point, organizations, isEmployee]);
+    }, [user, point, organizations, isEmployee, hasPermission]);
 
     const isMechOnly = useMemo(() => hasPermission('inundation:mechanic') && !hasPermission('inundation:edit'), [hasPermission]);
     const isSurveyOnly = useMemo(() => hasPermission('inundation:survey') && !hasPermission('inundation:edit'), [hasPermission]);
@@ -957,6 +960,13 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                                 {latest?.mech_checked && (
                                                     <Chip icon={<IconCheck size={14} color="white" />} label="ĐÃ ỨNG TRỰC" size="small" sx={{ fontWeight: 800, bgcolor: 'primary.main', color: 'white', py: 1.5, px: 1, borderRadius: 2 }} />
                                                 )}
+
+                                                {(canReview || isEmployee) && latest?.review_comment && (
+                                                    <Box sx={{ p: 1, bgcolor: 'error.lighter', borderRadius: 1.5, borderLeft: '3px solid', borderColor: 'error.main' }}>
+                                                        <Typography variant="caption" sx={{ fontWeight: 800, color: 'error.main', display: 'block' }}>RÀ SOÁT:</Typography>
+                                                        <Typography variant="caption" sx={{ fontWeight: 600, color: 'error.dark', display: 'block' }}>{latest.review_comment}</Typography>
+                                                    </Box>
+                                                )}
                                             </Stack>
                                         </Box>
                                     </Grid>
@@ -996,6 +1006,13 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
 
                                                 {latest?.survey_checked && (
                                                     <Chip icon={<IconCheck size={14} color="white" />} label="ĐÃ KIỂM TRA" size="small" sx={{ fontWeight: 800, bgcolor: 'primary.main', color: 'white', py: 1.5, px: 1, borderRadius: 2 }} />
+                                                )}
+
+                                                {(canReview || isEmployee) && latest?.review_comment && (
+                                                    <Box sx={{ p: 1, bgcolor: 'error.lighter', borderRadius: 1.5, borderLeft: '3px solid', borderColor: 'error.main' }}>
+                                                        <Typography variant="caption" sx={{ fontWeight: 800, color: 'error.main', display: 'block' }}>RÀ SOÁT:</Typography>
+                                                        <Typography variant="caption" sx={{ fontWeight: 600, color: 'error.dark', display: 'block' }}>{latest.review_comment}</Typography>
+                                                    </Box>
                                                 )}
                                             </Stack>
                                         </Box>
@@ -1194,6 +1211,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                     )}
                                 </Box>
                             )}
+
                         </Box>
                     </Collapse >
                 </TableCell >

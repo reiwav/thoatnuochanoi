@@ -896,8 +896,8 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                                     <Typography variant="body2" sx={{ fontWeight: 700 }}>
                                                         {latest ? `${latest.length || 0}m x ${latest.width || 0}m x ${latest.depth || 0}m` : '-'}
                                                     </Typography>
-                                                    <Typography variant="caption" color="error.main" sx={{ fontWeight: 700, display: 'block' }}>
-                                                        {point.status === 'active' ? `Bắt đầu: ${formatDateTime(latest?.start_time)}` : 'Đã kết thúc'}
+                                                    <Typography variant="caption" color={point.report_id ? "error.main" : "success.main"} sx={{ fontWeight: 700, display: 'block' }}>
+                                                        {point.report_id ? `Bắt đầu: ${formatDateTime(latest?.start_time)}` : 'Đã tạnh/Bình thường'}
                                                     </Typography>
                                                 </Box>
 
@@ -1699,7 +1699,7 @@ const InundationDashboard = () => {
 
     const stats = useMemo(() => {
         const total = points.length;
-        const active = points.filter((p) => p.status === 'active').length;
+        const active = points.filter((p) => !!p.report_id).length;
         return { total, active, normal: total - active };
     }, [points]);
 

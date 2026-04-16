@@ -235,7 +235,7 @@ const StationInundationList = () => {
             )}
         >
             <Box sx={{ mb: 3 }}>
-                <Stack spacing={isMobile ? 2 : 1.5} sx={{ mb: 3 }}>
+                <Stack direction={isMobile ? "column" : "row"} spacing={1.5} alignItems="center">
                     <TextField
                         fullWidth
                         placeholder="Tìm tên điểm, địa chỉ..."
@@ -245,14 +245,13 @@ const StationInundationList = () => {
                         InputProps={{
                             sx: { borderRadius: 3 }
                         }}
+                        sx={{ flex: 1 }}
                     />
-                    <Stack direction={isMobile ? "column" : "row"} spacing={isMobile ? 2 : 1} alignItems="center">
-                        <OrganizationSelect
-                            value={orgFilter}
-                            onChange={(e) => setOrgFilter(e.target.value)}
-                            sx={{ width: { xs: '100%', sm: 250 } }}
-                        />
-                    </Stack>
+                    <OrganizationSelect
+                        value={orgFilter}
+                        onChange={(e) => setOrgFilter(e.target.value)}
+                        sx={{ width: { xs: '100%', sm: 250 } }}
+                    />
                 </Stack>
             </Box>
 

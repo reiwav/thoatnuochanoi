@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
     Button, Grid, TextField, Table, TableBody,
-    TableCell, TableContainer, TableHead, TableRow, Paper,
+    TableCell, TableContainer, TableHead, TableRow, Paper, Stack,
     IconButton, CircularProgress, TablePagination, Typography, Chip, Box, Alert,
     Collapse, useTheme, useMediaQuery, FormControl, InputLabel, Select, MenuItem
 } from '@mui/material';
@@ -309,35 +309,33 @@ const EmployeeList = () => {
                 </Alert>
             )}
 
-            <Grid container spacing={2} sx={{ mb: 3 }} alignItems="center">
-                <Grid item xs={12} sm={3}>
+            <Box sx={{ mb: 3 }}>
+                <Stack direction={isMobile ? "column" : "row"} spacing={1.5} alignItems="center">
                     <TextField fullWidth label="Tên người dùng" value={filterInputs.name}
                         onChange={(e) => setFilterInputs({ ...filterInputs, name: e.target.value })}
                         size="small"
-                        InputProps={{ sx: { borderRadius: 3 } }} />
-                </Grid>
-                <Grid item xs={12} sm={3}>
+                        InputProps={{ sx: { borderRadius: 3 } }}
+                        sx={{ flex: 1 }}
+                    />
                     <TextField fullWidth label="Email" value={filterInputs.email}
                         onChange={(e) => setFilterInputs({ ...filterInputs, email: e.target.value })}
                         size="small"
-                        InputProps={{ sx: { borderRadius: 3 } }} />
-                </Grid>
-                <Grid item xs={12} sm={4}>
+                        InputProps={{ sx: { borderRadius: 3 } }}
+                        sx={{ flex: 1 }}
+                    />
                     <OrganizationSelect
                         value={filterInputs.org_id}
                         onChange={(e) => setFilterInputs({ ...filterInputs, org_id: e.target.value })}
                         size="small"
                         label="Đơn vị / Xí nghiệp"
-                        InputProps={{ sx: { borderRadius: 3 } }}
+                        sx={{ width: { xs: '100%', sm: 250 } }}
                     />
-                </Grid>
-                <Grid item xs={12} sm={2}>
-                    <Button fullWidth variant="contained" color="primary" startIcon={<IconSearch size={20} />}
-                        onClick={handleSearch} sx={{ borderRadius: 3, fontWeight: 700, height: 40 }}>
+                    <Button variant="contained" color="primary" startIcon={<IconSearch size={20} />}
+                        onClick={handleSearch} sx={{ borderRadius: 3, fontWeight: 700, height: 40, px: 3 }}>
                         Tìm kiếm
                     </Button>
-                </Grid>
-            </Grid>
+                </Stack>
+            </Box>
 
             <TableContainer component={Paper} sx={{ border: '1px solid', borderColor: 'divider', boxShadow: 'none', borderRadius: '12px' }}>
                 <Table>

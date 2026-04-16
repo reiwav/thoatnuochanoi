@@ -949,7 +949,7 @@ const InundationAdminList = () => {
             }
         >
             <Box sx={{ mb: 3 }}>
-                <Stack spacing={isMobile ? 2 : 1.5} sx={{ mb: 3 }}>
+                <Stack direction={isMobile ? "column" : "row"} spacing={1} alignItems="center">
                     <TextField
                         fullWidth
                         size={isMobile ? "medium" : "small"}
@@ -960,48 +960,50 @@ const InundationAdminList = () => {
                             startAdornment: <IconSearch size={20} sx={{ color: 'text.disabled', mr: 1, ml: 0.5 }} />,
                             sx: { borderRadius: 3, fontWeight: 600 }
                         }}
+                        sx={{ flex: 1 }}
                     />
-                    <Stack direction={isMobile ? "column" : "row"} spacing={isMobile ? 2 : 1}>
-                        <OrganizationSelect
-                            value={orgFilter}
-                            onChange={(e) => { setOrgFilter(e.target.value); setHistoryPage(0); }}
-                        />
+                    <OrganizationSelect
+                        value={orgFilter}
+                        onChange={(e) => { setOrgFilter(e.target.value); setHistoryPage(0); }}
+                        sx={{ width: { xs: '100%', sm: 220 } }}
+                    />
 
-                        <TextField
-                            select
-                            fullWidth
-                            size={isMobile ? "medium" : "small"}
-                            label="Trạng thái"
-                            value={statusFilter}
-                            onChange={(e) => { setStatusFilter(e.target.value); setHistoryPage(0); }}
-                            InputProps={{ sx: { borderRadius: 3, fontWeight: 600 } }}
-                        >
-                            <MenuItem value="">Tất cả trạng thái</MenuItem>
-                            <MenuItem value="active">Đang ngập</MenuItem>
-                            {activeTab === 0 ? <MenuItem value="normal">Bình thường</MenuItem> : <MenuItem value="resolved">Đã kết thúc</MenuItem>}
-                        </TextField>
+                    <TextField
+                        select
+                        fullWidth
+                        size={isMobile ? "medium" : "small"}
+                        label="Trạng thái"
+                        value={statusFilter}
+                        onChange={(e) => { setStatusFilter(e.target.value); setHistoryPage(0); }}
+                        InputProps={{ sx: { borderRadius: 3, fontWeight: 600 } }}
+                        sx={{ width: { xs: '100%', sm: 180 } }}
+                    >
+                        <MenuItem value="">Tất cả trạng thái</MenuItem>
+                        <MenuItem value="active">Đang ngập</MenuItem>
+                        {activeTab === 0 ? <MenuItem value="normal">Bình thường</MenuItem> : <MenuItem value="resolved">Đã kết thúc</MenuItem>}
+                    </TextField>
 
-                        <TextField
-                            select
-                            fullWidth
-                            size={isMobile ? "medium" : "small"}
-                            label="Giao thông"
-                            value={trafficFilter}
-                            onChange={(e) => { setTrafficFilter(e.target.value); setHistoryPage(0); }}
-                            InputProps={{ sx: { borderRadius: 3, fontWeight: 600 } }}
-                        >
-                            <MenuItem value="">Tất cả giao thông</MenuItem>
-                            <MenuItem value="Đi lại bình thường">Bình thường</MenuItem>
-                            <MenuItem value="Đi lại khó khăn">Khó khăn</MenuItem>
-                            <MenuItem value="Không đi lại được">Không đi lại được</MenuItem>
-                        </TextField>
-                    </Stack>
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                        <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>
-                            {activeTab === 0 ? `Hiển thị: ${filteredPoints.length} điểm` : `Tổng cộng: ${totalHistory} báo cáo`}
-                        </Typography>
-                    </Box>
+                    <TextField
+                        select
+                        fullWidth
+                        size={isMobile ? "medium" : "small"}
+                        label="Giao thông"
+                        value={trafficFilter}
+                        onChange={(e) => { setTrafficFilter(e.target.value); setHistoryPage(0); }}
+                        InputProps={{ sx: { borderRadius: 3, fontWeight: 600 } }}
+                        sx={{ width: { xs: '100%', sm: 180 } }}
+                    >
+                        <MenuItem value="">Tất cả giao thông</MenuItem>
+                        <MenuItem value="Đi lại bình thường">Bình thường</MenuItem>
+                        <MenuItem value="Đi lại khó khăn">Khó khăn</MenuItem>
+                        <MenuItem value="Không đi lại được">Không đi lại được</MenuItem>
+                    </TextField>
                 </Stack>
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                    <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>
+                        {activeTab === 0 ? `Hiển thị: ${filteredPoints.length} điểm` : `Tổng cộng: ${totalHistory} báo cáo`}
+                    </Typography>
+                </Box>
             </Box>
 
             {/* Section 1: Điểm trực */}

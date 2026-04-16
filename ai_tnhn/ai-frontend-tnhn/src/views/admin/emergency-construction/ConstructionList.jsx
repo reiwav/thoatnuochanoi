@@ -234,7 +234,7 @@ const ConstructionList = () => {
             </Stack>
 
             <Box sx={{ mb: 3 }}>
-                <Stack spacing={isMobile ? 2 : 1.5} sx={{ mb: 3 }}>
+                <Stack direction={isMobile ? "column" : "row"} spacing={1.5} alignItems="center">
                     <TextField
                         fullWidth
                         size="small"
@@ -242,36 +242,35 @@ const ConstructionList = () => {
                         value={filterInputs.name}
                         onChange={(e) => setFilterInputs({ ...filterInputs, name: e.target.value })}
                         InputProps={{ sx: { borderRadius: 3 } }}
+                        sx={{ flex: 1.5 }}
                     />
-                    <Stack direction={isMobile ? "column" : "row"} spacing={1.5} alignItems="center">
-                        <OrganizationSelect
-                            value={filterInputs.org_id}
-                            onChange={(e) => setFilterInputs({ ...filterInputs, org_id: e.target.value })}
-                            sx={{ width: { xs: '100%', sm: 250 } }}
-                        />
-                        <TextField
-                            select
-                            fullWidth
-                            size="small"
-                            label="Trạng thái"
-                            value={filterInputs.status}
-                            onChange={(e) => setFilterInputs({ ...filterInputs, status: e.target.value })}
-                            InputProps={{ sx: { borderRadius: 3 } }}
-                            sx={{ maxWidth: { xs: '100%', sm: 200 } }}
-                        >
-                            <MenuItem value="">Tất cả</MenuItem>
-                            <MenuItem value="planned">Dự kiến</MenuItem>
-                            <MenuItem value="ongoing">Đang thi công</MenuItem>
-                            <MenuItem value="completed">Hoàn thành</MenuItem>
-                            <MenuItem value="suspended">Tạm dừng</MenuItem>
-                        </TextField>
-                        <Button
-                            variant="contained" color="primary" sx={{ borderRadius: 3, fontWeight: 700, height: 40, px: 4 }}
-                            onClick={handleSearch}
-                        >
-                            Lọc
-                        </Button>
-                    </Stack>
+                    <OrganizationSelect
+                        value={filterInputs.org_id}
+                        onChange={(e) => setFilterInputs({ ...filterInputs, org_id: e.target.value })}
+                        sx={{ width: { xs: '100%', sm: 250 } }}
+                    />
+                    <TextField
+                        select
+                        fullWidth
+                        size="small"
+                        label="Trạng thái"
+                        value={filterInputs.status}
+                        onChange={(e) => setFilterInputs({ ...filterInputs, status: e.target.value })}
+                        InputProps={{ sx: { borderRadius: 3 } }}
+                        sx={{ width: { xs: '100%', sm: 200 } }}
+                    >
+                        <MenuItem value="">Tất cả</MenuItem>
+                        <MenuItem value="planned">Dự kiến</MenuItem>
+                        <MenuItem value="ongoing">Đang thi công</MenuItem>
+                        <MenuItem value="completed">Hoàn thành</MenuItem>
+                        <MenuItem value="suspended">Tạm dừng</MenuItem>
+                    </TextField>
+                    <Button
+                        variant="contained" color="primary" sx={{ borderRadius: 3, fontWeight: 700, height: 40, px: 4 }}
+                        onClick={handleSearch}
+                    >
+                        Lọc
+                    </Button>
                 </Stack>
             </Box>
 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { } from 'react-router-dom';
 import {
-    Button, Grid, TextField, Table, TableBody, Box,
+    Button, Grid, TextField, Table, TableBody, Box, Stack,
     TableCell, TableContainer, TableHead, TableRow, Paper,
     IconButton, CircularProgress, TablePagination, Typography, Chip, Tooltip,
     Collapse, useTheme, useMediaQuery
@@ -217,23 +217,23 @@ const StationRainList = () => {
             )}
         >
             <Box sx={{ mb: 3 }}>
-                <Stack spacing={isMobile ? 2 : 1.5} sx={{ mb: 3 }}>
+                <Stack direction={isMobile ? "column" : "row"} spacing={1.5} alignItems="center">
                     <TextField fullWidth label="Tìm theo tên trạm" value={filterInputs.search}
                         onChange={(e) => setFilterInputs({ ...filterInputs, search: e.target.value })}
                         size="small"
-                        InputProps={{ sx: { borderRadius: 3 } }} />
+                        InputProps={{ sx: { borderRadius: 3 } }}
+                        sx={{ flex: 1 }}
+                    />
 
-                    <Stack direction={isMobile ? "column" : "row"} spacing={isMobile ? 2 : 1} alignItems="center">
-                        <OrganizationSelect
-                            value={filterInputs.org_id}
-                            onChange={(e) => setFilterInputs({ ...filterInputs, org_id: e.target.value })}
-                            sx={{ width: { xs: '100%', sm: 250 } }}
-                        />
-                        <Button variant="contained" color="primary" startIcon={<IconSearch size={22} />}
-                            onClick={handleSearch} sx={{ borderRadius: 3, fontWeight: 700, fontSize: '1rem', py: 1, height: 40, px: 3 }}>
-                            Tìm kiếm
-                        </Button>
-                    </Stack>
+                    <OrganizationSelect
+                        value={filterInputs.org_id}
+                        onChange={(e) => setFilterInputs({ ...filterInputs, org_id: e.target.value })}
+                        sx={{ width: { xs: '100%', sm: 250 } }}
+                    />
+                    <Button variant="contained" color="primary" startIcon={<IconSearch size={22} />}
+                        onClick={handleSearch} sx={{ borderRadius: 3, fontWeight: 700, fontSize: '1rem', py: 1, height: 40, px: 3 }}>
+                        Tìm kiếm
+                    </Button>
                 </Stack>
             </Box>
 

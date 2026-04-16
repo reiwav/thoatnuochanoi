@@ -1698,16 +1698,16 @@ const InundationDashboard = () => {
     }, [activeTab, userInfo, isMobile, historyPage, historyRowsPerPage, historyStatus, historyTrafficStatus, searchQuery, orgFilter]);
 
     const stats = useMemo(() => {
-        const total = points.length;
         const active = points.filter((p) => !!p.report_id).length;
-        return { total, active, normal: total - active };
+        const total = points.length;
+        return { active, total };
     }, [points]);
 
     const filteredPoints = useMemo(() => {
-        let result = activeTab === 2 ? points.filter((p) => p.status === 'active') : points;
+        let result = activeTab === 2 ? points.filter((p) => !!p.report_id) : points;
 
         if (historyStatus) {
-            result = result.filter((p) => p.status === historyStatus);
+            result = result.filter((p) => (historyStatus === 'active' ? !!p.report_id : !p.report_id));
         }
 
         if (historyTrafficStatus) {
@@ -1722,8 +1722,8 @@ const InundationDashboard = () => {
             result = result.filter((p) => p.name?.toLowerCase().includes(q) || p.address?.toLowerCase().includes(q));
         }
         return [...result].sort((a, b) => {
-            if (a.status === 'active' && b.status !== 'active') return -1;
-            if (a.status !== 'active' && b.status === 'active') return 1;
+            if (a.report_id && !b.report_id) return -1;
+            if (!a.report_id && b.report_id) return 1;
             return 0;
         });
     }, [points, activeTab, searchQuery, historyStatus, historyTrafficStatus]);

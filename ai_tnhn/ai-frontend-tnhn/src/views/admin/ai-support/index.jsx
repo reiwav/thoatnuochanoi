@@ -24,7 +24,7 @@ dayjs.locale('vi');
 
 const AiSupport = () => {
     const { user: userInfo, hasPermission } = useAuthStore();
-    
+
     // Safety guard: if not company level and no ai:chat permission, don't render.
     // The MainLayout should have redirected us already.
     if (!hasPermission('ai:chat')) return null;
@@ -869,6 +869,7 @@ const AiSupport = () => {
                     <Box sx={{ px: 3, pb: 2, display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
                         {[
                             { text: 'Lượng mưa hiện tại các điểm?', type: 'rain' },
+                            { text: 'Tình hình vận hành các trạm bơm hiện tại.', type: 'question' },
                             // { text: 'Tổng hợp báo cáo nhanh (AI)?', type: 'dynamic' },
                             { text: 'Những điểm nào đang ngập, tình trạng?', type: 'question' },
                             { text: 'Lượng mưa ở khu vực gần điểm ngập?', type: 'question' }

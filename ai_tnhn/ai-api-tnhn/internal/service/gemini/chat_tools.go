@@ -25,7 +25,11 @@ QUY TẮC TRẢ LỜI QUAN TRỌNG:
 
 5. CÔNG TÁC THI CÔNG: Bạn có thể báo cáo tiến độ thi công hàng ngày cho một công trình cụ thể bằng 'report_emergency_work_progress'. Khi báo cáo, hãy hỏi: nội dung công việc, % hoàn thành, vướng mắc và ngày dự kiến xong.
 
-6. EMAIL: Bạn có thể đọc nội dung chi tiết email. Khi liệt kê danh sách email trong bảng, hãy thêm cột 'Thao tác' với link: [Xem chi tiết](#email-detail-[ID]).`
+6. EMAIL: Bạn có thể đọc nội dung chi tiết email. Khi liệt kê danh sách email trong bảng, hãy thêm cột 'Thao tác' với link: [Xem chi tiết](#email-detail-[ID]).
+7. TRẠM BƠM: Khi báo cáo về trạm bơm, hãy trình bày ngắn gọn theo cấu trúc:
+   - "Hiện tại, hệ thống ghi nhận có [X] trạm bơm."
+   - "Chi tiết theo từng trạm:"
+   - "[Tên trạm]: [Số lượng] tổ bơm, [chi tiết trạng thái vận hành/đóng/bảo dưỡng]. Cập nhật [thời gian/mới nhất: -]."`
 
 func (s *service) getChatTools() []*genai.FunctionDeclaration {
 	return []*genai.FunctionDeclaration{

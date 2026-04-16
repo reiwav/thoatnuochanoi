@@ -763,10 +763,11 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []
 	for _, p := range ownedPoints {
 		allPointsMap[p.ID] = p
 	}
-
+	pIDs := make([]string, 0)
 	points := make([]models.InundationStation, 0, len(allPointsMap))
 	for _, p := range allPointsMap {
 		points = append(points, p)
+		pIDs = append(pIDs, p.ID)
 	}
 
 	if len(points) == 0 {
@@ -782,7 +783,7 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []
 
 	// 2. Get all active reports for managed points (Union of owned and shared)
 	var activeReports []*models.InundationReport
-	err = s.InundationReportRepo.R_SelectMany(ctx, bson.M{"status": "active", "point_id": bson.M{"$in": pointIDs}}, &activeReports)
+	err = s.InundationReportRepo.R_SelectMany(ctx, bson.M{"status": "active", "point_id": bson.M{"$in": pIDs}}, &activeReports)
 	if len(activeReports) == 0 {
 		activeReports = make([]*models.InundationReport, 0)
 	}
@@ -802,20 +803,21 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []
 		if p.LastReportID != "" {
 			lastReport, _ = s.InundationReportRepo.GetByID(ctx, p.LastReportID)
 		}
-		//status := "resolved"
-		// if val, ok := reportsByPoint[p.ID]; ok {
-		// 	status = val.Status
-		// }
 		result[i] = PointStatus{
 			InundationStation: p,
-			//Status:            status,
-			ActiveReport: reportsByPoint[p.ID],
-			LastReport:   lastReport,
+			ActiveReport:      reportsByPoint[p.ID],
+			LastReport:        lastReport,
 		}
 	}
 
 	// Sort points by Name alphabetically
 	sort.Slice(result, func(i, j int) bool {
+		if result[i].ReportID != "" && result[j].ReportID == "" {
+			return true
+		}
+		if result[i].ReportID == "" && result[j].ReportID != "" {
+			return false
+		}
 		return result[i].Name < result[j].Name
 	})
 	return result, nil

@@ -266,7 +266,7 @@ const CollapsiblePumpingStationRow = ({ station, isMobile, navigate, basePath })
     );
 };
 
-const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate, isMobile, basePath, hasPermission, isEmployee }) => {
+const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate, isMobile, basePath, hasPermission, isEmployee, fetchPoints }) => {
     const theme = useTheme();
     const { user, isCompany } = useAuthStore();
     const [open, setOpen] = useState(!!point.report_id);
@@ -383,7 +383,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
             }
             toast.success('Đã gửi nhận xét rà soát');
             setReviewComment('');
-            window.location.reload();
+            if (fetchPoints) fetchPoints();
         } catch (err) {
             toast.error('Lỗi khi gửi nhận xét');
         } finally {
@@ -419,8 +419,8 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
             await inundationApi.updateSurvey(point.active_report.id, fd);
             toast.success('Cập nhật XNTK thành công');
             setSurveyData(prev => ({ ...prev, images: [], previews: [] }));
-            // Trigger refresh - in a real app we might use a context or callback
-            window.location.reload();
+            // Trigger refresh
+            if (fetchPoints) fetchPoints();
         } catch (err) {
             toast.error('Lỗi khi cập nhật khảo sát');
         } finally {
@@ -459,7 +459,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
             await inundationApi.updateMech(point.active_report.id, fd);
             toast.success('Cập nhật cơ giới thành công');
             setMechData(prev => ({ ...prev, images: [], previews: [] }));
-            window.location.reload();
+            if (fetchPoints) fetchPoints();
         } catch (err) {
             toast.error('Lỗi khi cập nhật cơ giới');
         } finally {
@@ -833,7 +833,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                                 try {
                                                     await inundationApi.resolveReport(point.report_id);
                                                     toast.success('Đã kết thúc ngập');
-                                                    window.location.reload();
+                                                    if (fetchPoints) fetchPoints();
                                                 } catch (err) {
                                                     toast.error('Lỗi khi kết thúc ngập');
                                                 }
@@ -1681,7 +1681,7 @@ const InundationDashboard = () => {
     // Interval cập nhật tự động 5s
     useEffect(() => {
         const interval = setInterval(() => {
-            if (activeTab === 1 || activeTab === 2) {
+            if (activeTab === 0 || activeTab === 1 || activeTab === 2) {
                 fetchPoints(true);
             }
             if (activeTab === 3 || (!isMobile && activeTab !== 5)) {
@@ -2121,6 +2121,7 @@ const InundationDashboard = () => {
                                                 basePath={basePath}
                                                 hasPermission={hasPermission}
                                                 isEmployee={isEmployee}
+                                                fetchPoints={fetchPoints}
                                             />
                                         ))}
                                 </TableBody>
@@ -2463,6 +2464,7 @@ const InundationDashboard = () => {
                                 basePath={basePath}
                                 hasPermission={hasPermission}
                                 isEmployee={isEmployee}
+                                fetchPoints={fetchPoints}
                             />
                         ))}
                 </Stack>
@@ -2499,6 +2501,7 @@ const InundationDashboard = () => {
                                         basePath={basePath}
                                         hasPermission={hasPermission}
                                         isEmployee={isEmployee}
+                                        fetchPoints={fetchPoints}
                                     />
                                 ))}
                         </TableBody>

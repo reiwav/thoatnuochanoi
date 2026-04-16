@@ -96,8 +96,10 @@ const getLatestData = (report) => {
         const updateWithImages = sortedUpdates.find(u => u.images && u.images.length > 0);
 
         // Find most recent updates for technical fields to get specific timestamps
-        const surveyUpdate = sortedUpdates.find(u => u.survey_checked || u.survey_note || (u.survey_images && u.survey_images.length > 0));
-        const mechUpdate = sortedUpdates.find(u => u.mech_checked || u.mech_note || u.mech_d || u.mech_r || u.mech_s || (u.mech_images && u.mech_images.length > 0));
+        const surveyUpdate = sortedUpdates.find(u => 'survey_checked' in u || 'surveyChecked' in u || u.survey_note || (u.survey_images && u.survey_images.length > 0));
+        const mechUpdate = sortedUpdates.find(u => 'mech_checked' in u || 'mechChecked' in u || u.mech_note || u.mech_d || u.mech_r || u.mech_s || (u.mech_images && u.mech_images.length > 0));
+
+        const parseBool = (val) => val === true || val === 'true' || val === 1 || val === '1';
 
         return {
             ...data,
@@ -112,24 +114,25 @@ const getLatestData = (report) => {
             status: data.status === 'resolved' || data.status === 'normal' ? 'normal' : data.status,
             traffic_status: (data.status === 'resolved' || data.status === 'normal') ? "" : (updateWithTraffic?.traffic_status || updateWithTraffic?.trafficStatus || data.traffic_status),
 
-            // Technical fields with specific timestamps
-            survey_checked: surveyUpdate ? surveyUpdate.survey_checked : data.survey_checked,
-            survey_note: surveyUpdate ? surveyUpdate.survey_note : data.survey_note,
-            survey_images: (surveyUpdate?.survey_images && surveyUpdate.survey_images.length > 0) ? surveyUpdate.survey_images : data.survey_images,
+            // Technical fields with specific timestamps and robust boolean parsing
+            survey_checked: parseBool(surveyUpdate ? (surveyUpdate.survey_checked || surveyUpdate.surveyChecked) : (data.survey_checked || data.surveyChecked)),
+            survey_note: surveyUpdate ? (surveyUpdate.survey_note || surveyUpdate.surveyNote) : (data.survey_note || data.surveyNote),
+            survey_images: (surveyUpdate?.survey_images && surveyUpdate.survey_images.length > 0) ? surveyUpdate.survey_images : (data.survey_images || []),
             survey_ts: surveyUpdate?.timestamp,
 
-            mech_checked: mechUpdate ? mechUpdate.mech_checked : data.mech_checked,
-            mech_note: mechUpdate ? mechUpdate.mech_note : data.mech_note,
-            mech_d: mechUpdate ? mechUpdate.mech_d : data.mech_d,
-            mech_r: mechUpdate ? mechUpdate.mech_r : data.mech_r,
-            mech_s: mechUpdate ? mechUpdate.mech_s : data.mech_s,
-            mech_images: (mechUpdate?.mech_images && mechUpdate.mech_images.length > 0) ? mechUpdate.mech_images : data.mech_images,
+            mech_checked: parseBool(mechUpdate ? (mechUpdate.mech_checked || mechUpdate.mechChecked) : (data.mech_checked || data.mechChecked)),
+            mech_note: mechUpdate ? (mechUpdate.mech_note || mechUpdate.mechNote) : (data.mech_note || data.mechNote),
+            mech_d: mechUpdate ? (mechUpdate.mech_d || mechUpdate.mechD) : (data.mech_d || data.mechD),
+            mech_r: mechUpdate ? (mechUpdate.mech_r || mechUpdate.mechR) : (data.mech_r || data.mechR),
+            mech_s: mechUpdate ? (mechUpdate.mech_s || mechUpdate.mechS) : (data.mech_s || data.mechS),
+            mech_images: (mechUpdate?.mech_images && mechUpdate.mech_images.length > 0) ? mechUpdate.mech_images : (data.mech_images || []),
             mech_ts: mechUpdate?.timestamp
         };
     }
 
     // Default if no updates
     const startTime = data.start_time || data.startTime || 0;
+    const parseBoolBase = (val) => val === true || val === 'true' || val === 1 || val === '1';
     return {
         ...data,
         timestamp: startTime,
@@ -137,7 +140,9 @@ const getLatestData = (report) => {
         oldest_ts: startTime,
         traffic_status: (data.status === 'resolved' || data.status === 'normal') ? "" : data.traffic_status,
         survey_ts: startTime,
-        mech_ts: startTime
+        mech_ts: startTime,
+        survey_checked: parseBoolBase(data.survey_checked || data.surveyChecked),
+        mech_checked: parseBoolBase(data.mech_checked || data.mechChecked)
     };
 };
 
@@ -555,26 +560,38 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                         </Typography>
                     )}
 
-                    {/* Ưu tiên hiển thị khối Khảo sát cho nhân viên khảo sát */}
+                    {/* Khối Khảo sát thiết kế */}
                     {canSurvey && (latest?.survey_checked || latest?.surveyChecked || latest?.survey_note || latest?.surveyNote) && (
                         <Box sx={{ p: 1.5, bgcolor: 'primary.lighter', borderRadius: 2, border: '1px solid', borderColor: 'primary.main', mb: 1 }}>
-                            <Typography variant="caption" sx={{ fontWeight: 900, color: 'primary.main', display: 'block', mb: 1 }}>
-                                ⚡️ KHẢO SÁT THIẾT KẾ GẦN NHẤT:
-                            </Typography>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                                <Typography variant="caption" sx={{ fontWeight: 900, color: 'primary.main', textTransform: 'uppercase' }}>
+                                    ⚡️ KHẢO SÁT THIẾT KẾ:
+                                </Typography>
+                                <Chip
+                                    label={(latest.survey_checked || latest.surveyChecked) ? "ĐÃ KIỂM TRA" : "CHƯA KIỂM TRA"}
+                                    size="small"
+                                    color={(latest.survey_checked || latest.surveyChecked) ? "success" : "default"}
+                                    sx={{ height: 20, fontSize: '0.65rem', fontWeight: 900 }}
+                                />
+                            </Box>
                             {(latest.survey_note || latest.surveyNote) && <Typography variant="body2" sx={{ fontWeight: 600 }}>{latest.survey_note || latest.surveyNote}</Typography>}
-                            <Chip 
-                                label={latest.survey_checked || latest.surveyChecked ? "Đã khảo sát" : "Chưa khảo sát"} 
-                                size="small" color="primary" sx={{ mt: 1, fontWeight: 800 }} 
-                            />
                         </Box>
                     )}
 
-                    {/* Ưu tiên hiển thị khối Cơ giới cho nhân viên cơ giới */}
-                    {!isSurveyOnly && canMech && (latest?.mech_d || latest?.mechD || latest?.mech_r || latest?.mechR || latest?.mech_s || latest?.mechS || latest?.mech_note || latest?.mechNote) && (
+                    {/* Khối Cơ giới */}
+                    {!isSurveyOnly && canMech && (latest?.mech_d || latest?.mechD || latest?.mech_r || latest?.mechR || latest?.mech_s || latest?.mechS || latest?.mech_note || latest?.mechNote || latest?.mech_checked || latest?.mechChecked) && (
                         <Box sx={{ p: 1.5, bgcolor: 'secondary.lighter', borderRadius: 2, border: '1px solid', borderColor: 'secondary.main', mb: 1 }}>
-                            <Typography variant="caption" sx={{ fontWeight: 900, color: 'secondary.main', display: 'block', mb: 1 }}>
-                                ⚙️ DỮ LIỆU CƠ GIỚI GẦN NHẤT:
-                            </Typography>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                                <Typography variant="caption" sx={{ fontWeight: 900, color: 'secondary.main', textTransform: 'uppercase' }}>
+                                    ⚙️ XN CƠ GIỚI:
+                                </Typography>
+                                <Chip
+                                    label={latest.mech_checked || latest.mechChecked ? "ĐÃ ỨNG TRỰC" : "CHƯA ỨNG TRỰC"}
+                                    size="small"
+                                    color={latest.mech_checked || latest.mechChecked ? "success" : "default"}
+                                    sx={{ height: 20, fontSize: '0.65rem', fontWeight: 900 }}
+                                />
+                            </Box>
                             <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
                                 <Chip label={`D: ${latest.mech_d || latest.mechD || '-'}`} size="small" variant="outlined" color="secondary" sx={{ fontWeight: 800 }} />
                                 <Chip label={`R: ${latest.mech_r || latest.mechR || '-'}`} size="small" variant="outlined" color="secondary" sx={{ fontWeight: 800 }} />
@@ -936,6 +953,10 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                                         ))}
                                                     </Box>
                                                 )}
+
+                                                {latest?.mech_checked && (
+                                                    <Chip icon={<IconCheck size={14} color="white" />} label="ĐÃ ỨNG TRỰC" size="small" sx={{ fontWeight: 800, bgcolor: 'primary.main', color: 'white', py: 1.5, px: 1, borderRadius: 2 }} />
+                                                )}
                                             </Stack>
                                         </Box>
                                     </Grid>
@@ -944,14 +965,16 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                     <Grid item xs={12} md={4}>
                                         <Box sx={{ p: 1.5, height: '100%', bgcolor: 'primary.lighter', borderRadius: 2, border: '1px solid', borderColor: 'primary.main' }}>
                                             <Box sx={{ mb: 1, borderBottom: '1px solid', borderColor: 'primary.light', pb: 0.8 }}>
-                                                <Typography variant="caption" color="primary.main" sx={{ fontWeight: 900, textTransform: 'uppercase', letterSpacing: 1, display: 'block', mb: 0.2 }}>
-                                                    ⚡️ XN KSTK
-                                                </Typography>
-                                                {latest?.survey_ts && (
-                                                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, fontSize: '0.7rem', display: 'block', opacity: 0.8 }}>
-                                                        {formatDateTime(latest.survey_ts)}
+                                                <Box>
+                                                    <Typography variant="caption" color="primary.main" sx={{ fontWeight: 900, textTransform: 'uppercase', letterSpacing: 1, display: 'block', mb: 0.2 }}>
+                                                        ⚡️ XN KSTK
                                                     </Typography>
-                                                )}
+                                                    {latest?.survey_ts && (
+                                                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, fontSize: '0.7rem', display: 'block', opacity: 0.8 }}>
+                                                            {formatDateTime(latest.survey_ts)}
+                                                        </Typography>
+                                                    )}
+                                                </Box>
                                             </Box>
 
                                             <Stack spacing={1.5}>
@@ -972,7 +995,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                                 )}
 
                                                 {latest?.survey_checked && (
-                                                    <Chip icon={<IconCheck size={14} color="white" />} label="Đã kiểm tra" size="small" sx={{ fontWeight: 800, bgcolor: 'primary.main', color: 'white', py: 1.5, px: 1, borderRadius: 2 }} />
+                                                    <Chip icon={<IconCheck size={14} color="white" />} label="ĐÃ KIỂM TRA" size="small" sx={{ fontWeight: 800, bgcolor: 'primary.main', color: 'white', py: 1.5, px: 1, borderRadius: 2 }} />
                                                 )}
                                             </Stack>
                                         </Box>

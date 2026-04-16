@@ -428,9 +428,12 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                             <Grid item xs={12} md={(hasPermission('inundation:survey') || isCompany) ? 4 : 8}>
                                                 <Box sx={{ p: 1.5, height: '100%', bgcolor: 'green.lighter', borderRadius: 2, border: '1px solid', borderColor: 'warning.main' }}>
                                                     <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1, borderBottom: '1px solid', borderColor: 'warning.light', pb: 0.5 }}>
-                                                        <Typography variant="caption" color="green.dark" sx={{ fontWeight: 900, textTransform: 'uppercase', letterSpacing: 1 }}>
-                                                            ⚙️ Cơ giới / Hỗ trợ
-                                                        </Typography>
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                            <Typography variant="caption" color="green.dark" sx={{ fontWeight: 900, textTransform: 'uppercase', letterSpacing: 1 }}>
+                                                                ⚙️ Cơ giới
+                                                            </Typography>
+                                                            {latest?.mech_checked && <Chip label="ĐÃ ỨNG TRỰC" size="small" color="success" sx={{ height: 18, fontSize: '0.6rem', fontWeight: 900 }} />}
+                                                        </Box>
                                                         {latest?.mech_ts && (
                                                             <Typography variant="caption" sx={{ color: 'green.dark', fontWeight: 700 }}>
                                                                 {formatDateTime(latest.mech_ts)}
@@ -485,9 +488,12 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                                 <Grid item xs={12} md={(hasPermission('inundation:mechanic') || isCompany) ? 4 : 8}>
                                                     <Box sx={{ p: 1.5, height: '100%', bgcolor: 'primary.lighter', borderRadius: 2, border: '1px solid', borderColor: 'primary.main' }}>
                                                         <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1, borderBottom: '1px solid', borderColor: 'primary.light', pb: 0.5 }}>
-                                                            <Typography variant="caption" color="primary.main" sx={{ fontWeight: 900, textTransform: 'uppercase', letterSpacing: 1 }}>
-                                                                ⚡️ XNTK
-                                                            </Typography>
+                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                                <Typography variant="caption" color="primary.main" sx={{ fontWeight: 900, textTransform: 'uppercase', letterSpacing: 1 }}>
+                                                                    ⚡️ XNTK
+                                                                </Typography>
+                                                                {latest?.survey_checked && <Chip label="ĐÃ KIỂM TRA" size="small" color="success" sx={{ height: 18, fontSize: '0.6rem', fontWeight: 900 }} />}
+                                                            </Box>
                                                             {latest?.survey_ts && (
                                                                 <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 700 }}>
                                                                     {formatDateTime(latest.survey_ts)}
@@ -510,10 +516,6 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                                                         <Box key={i} component="img" src={getInundationImageUrl(img)} onClick={() => handleOpenViewer(latest.survey_images, i)} sx={{ width: 44, height: 44, borderRadius: 1.5, objectFit: 'cover', cursor: 'pointer', border: '2px solid', borderColor: 'primary.main', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} />
                                                                     ))}
                                                                 </Box>
-                                                            )}
-
-                                                            {latest?.survey_checked && (
-                                                                <Chip icon={<IconCheck size={14} color="white" />} label="Đã hoàn thành khảo sát" size="small" sx={{ fontWeight: 800, bgcolor: 'primary.main', color: 'white', py: 1.5, px: 1, borderRadius: 2 }} />
                                                             )}
                                                         </Stack>
                                                     </Box>

@@ -115,6 +115,8 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
         }
     }, [selectedReport, timelineData]);
 
+    const parseBool = (val) => val === true || val === 'true' || val === 1 || val === '1';
+
     if (loadingReport) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress size={24} /></Box>;
     if (!selectedReport) return (
         <Box sx={{ p: 4, textAlign: 'center' }}>
@@ -243,33 +245,39 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
                                 </Box>
                             )}
 
-                            {(item.survey_checked || item.survey_note) && (
+                            {(parseBool(item.survey_checked || item.surveyChecked) || item.survey_note || item.surveyNote) && (
                                 <Box sx={{ mb: 1.5, p: 1, borderLeft: '3px solid', borderColor: 'primary.main', bgcolor: 'primary.lighter', borderRadius: 1 }}>
-                                    <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', display: 'block', mb: 0.5 }}>⚡️ XNTK:</Typography>
-                                    {item.survey_note && <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.survey_note}</Typography>}
-                                    {item.survey_images?.length > 0 && (
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                                        <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', textTransform: 'uppercase' }}>⚡️ XNTK:</Typography>
+                                        {parseBool(item.survey_checked || item.surveyChecked) && <Chip label="ĐÃ KIỂM TRA" size="small" color="success" sx={{ height: 18, fontSize: '0.6rem', fontWeight: 900 }} />}
+                                    </Box>
+                                    {(item.survey_note || item.surveyNote) && <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.survey_note || item.surveyNote}</Typography>}
+                                    {(item.survey_images || item.surveyImages)?.length > 0 && (
                                         <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5 }}>
-                                            {item.survey_images.map((img, i) => (
-                                                <Box key={i} component="img" src={getInundationImageUrl(img)} onClick={() => handleOpenViewer(item.survey_images, i)} sx={{ width: 40, height: 40, borderRadius: 1, objectFit: 'cover', cursor: 'pointer' }} />
+                                            {(item.survey_images || item.surveyImages).map((img, i) => (
+                                                <Box key={i} component="img" src={getInundationImageUrl(img)} onClick={() => handleOpenViewer(item.survey_images || item.surveyImages, i)} sx={{ width: 40, height: 40, borderRadius: 1, objectFit: 'cover', cursor: 'pointer' }} />
                                             ))}
                                         </Box>
                                     )}
                                 </Box>
                             )}
 
-                            {(item.mech_checked || item.mech_note) && (
+                            {(parseBool(item.mech_checked || item.mechChecked) || item.mech_note || item.mechNote || item.mech_d || item.mechD) && (
                                 <Box sx={{ mb: 1.5, p: 1, borderLeft: '3px solid', borderColor: 'secondary.main', bgcolor: 'secondary.lighter', borderRadius: 1 }}>
-                                    <Typography variant="caption" sx={{ fontWeight: 800, color: 'secondary.main', display: 'block', mb: 0.5 }}>⚙️ Xí nghiệp cơ giới:</Typography>
-                                    {(item.mech_d || item.mech_r || item.mech_s) && (
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                                        <Typography variant="caption" sx={{ fontWeight: 800, color: 'secondary.main', textTransform: 'uppercase' }}>⚙️ XN CƠ GIỚI:</Typography>
+                                        {parseBool(item.mech_checked || item.mechChecked) && <Chip label="ĐÃ ỨNG TRỰC" size="small" color="success" sx={{ height: 18, fontSize: '0.6rem', fontWeight: 900 }} />}
+                                    </Box>
+                                    {(item.mech_d || item.mechD || item.mech_r || item.mechR || item.mech_s || item.mechS) && (
                                         <Typography variant="caption" sx={{ fontWeight: 800, color: 'secondary.dark', mb: 0.5, display: 'block' }}>
-                                            D: {item.mech_d || '-'} | R: {item.mech_r || '-'} | S: {item.mech_s || '-'}
+                                            D: {item.mech_d || item.mechD || '-'} | R: {item.mech_r || item.mechR || '-'} | S: {item.mech_s || item.mechS || '-'}
                                         </Typography>
                                     )}
-                                    {item.mech_note && <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.mech_note}</Typography>}
-                                    {item.mech_images?.length > 0 && (
+                                    {(item.mech_note || item.mechNote) && <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.mech_note || item.mechNote}</Typography>}
+                                    {(item.mech_images || item.mechImages)?.length > 0 && (
                                         <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5 }}>
-                                            {item.mech_images.map((img, i) => (
-                                                <Box key={i} component="img" src={getInundationImageUrl(img)} onClick={() => handleOpenViewer(item.mech_images, i)} sx={{ width: 40, height: 40, borderRadius: 1, objectFit: 'cover', cursor: 'pointer' }} />
+                                            {(item.mech_images || item.mechImages).map((img, i) => (
+                                                <Box key={i} component="img" src={getInundationImageUrl(img)} onClick={() => handleOpenViewer(item.mech_images || item.mechImages, i)} sx={{ width: 40, height: 40, borderRadius: 1, objectFit: 'cover', cursor: 'pointer' }} />
                                             ))}
                                         </Box>
                                     )}

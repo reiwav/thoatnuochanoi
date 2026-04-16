@@ -6,11 +6,13 @@ import {
 import { IconSend, IconCloudUpload } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 import inundationApi from 'api/inundation';
+import { processAndWatermark } from 'utils/imageProcessor';
 
 const InundationMechPanel = ({ report, pointId, onSuccess }) => {
     const [submitting, setSubmitting] = useState(false);
+    const [processing, setProcessing] = useState(false);
     const [mechData, setMechData] = useState({
-        checked: report?.mech_checked || report?.mechChecked || false,
+        checked: !!(report?.mech_checked || report?.mechChecked),
         d: report?.mech_d || report?.mechD || '',
         r: report?.mech_r || report?.mechR || '',
         s: report?.mech_s || report?.mechS || '',
@@ -18,9 +20,22 @@ const InundationMechPanel = ({ report, pointId, onSuccess }) => {
         images: []
     });
 
-    const handleFileChange = (e) => {
+    const handleFileChange = async (e) => {
         const files = Array.from(e.target.files);
-        setMechData(prev => ({ ...prev, images: [...prev.images, ...files] }));
+        if (files.length === 0) return;
+
+        setProcessing(true);
+        try {
+            const watermarkText = report?.street_name || new URLSearchParams(window.location.search).get('name') || '';
+            const processedFiles = await Promise.all(files.map(file => processAndWatermark(file, watermarkText)));
+            setMechData(prev => ({ ...prev, images: [...prev.images, ...processedFiles] }));
+        } catch (error) {
+            console.error('Lỗi xử lý ảnh:', error);
+            toast.error('Không thể xử lý ảnh, vui lòng thử lại');
+        } finally {
+            setProcessing(false);
+            e.target.value = '';
+        }
     };
 
     // Sync state when report changes
@@ -28,7 +43,7 @@ const InundationMechPanel = ({ report, pointId, onSuccess }) => {
         if (report) {
             setMechData(prev => ({
                 ...prev,
-                checked: report.mech_checked || report.mechChecked || false,
+                checked: !!(report.mech_checked || report.mechChecked),
                 d: report.mech_d || report.mechD || '',
                 r: report.mech_r || report.mechR || '',
                 s: report.mech_s || report.mechS || '',
@@ -41,7 +56,7 @@ const InundationMechPanel = ({ report, pointId, onSuccess }) => {
         setSubmitting(true);
         try {
             const formData = new FormData();
-            formData.append('mech_checked', mechData.checked);
+            formData.append('mech_checked', String(mechData.checked));
             formData.append('mech_d', mechData.d);
             formData.append('mech_r', mechData.r);
             formData.append('mech_s', mechData.s);
@@ -128,13 +143,14 @@ const InundationMechPanel = ({ report, pointId, onSuccess }) => {
                         <Button
                             component="label"
                             variant="outlined"
+                            disabled={processing}
                             sx={{
                                 width: 80, height: 80, borderRadius: 2,
                                 border: '2px dashed', borderColor: 'divider',
                                 display: 'flex', flexDirection: 'column', gap: 0.5
                             }}
                         >
-                            <IconCloudUpload size={24} color="#2196f3" />
+                            {processing ? <CircularProgress size={20} color="secondary" /> : <IconCloudUpload size={24} color="#2196f3" />}
                             <input type="file" hidden multiple accept="image/*" onChange={handleFileChange} />
                         </Button>
 

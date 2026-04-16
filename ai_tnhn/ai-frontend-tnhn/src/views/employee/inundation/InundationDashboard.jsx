@@ -1661,6 +1661,14 @@ const InundationDashboard = () => {
         fetchAssignedStation();
     }, [orgFilter, userInfo]);
 
+    // Auto refresh every 5s
+    useEffect(() => {
+        const intervalId = setInterval(() => {
+            fetchPoints(true);
+        }, 5000);
+        return () => clearInterval(intervalId);
+    }, [orgFilter]);
+
     const fetchPumpingHistory = async (silent = false) => {
         if (!userInfo?.assigned_pumping_station_id) return;
         if (!silent) setLoadingPumpingHistory(true);

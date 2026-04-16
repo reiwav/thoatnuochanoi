@@ -1196,7 +1196,7 @@ func (h *GoogleHandler) GenerateAIDynamicReport(c *gin.Context) {
 		}
 		var details []string
 		for _, pt := range summary.OngoingPoints {
-			depth := pt.Depth
+			depth := pt.Length + "x" + pt.Width + "x" + pt.Depth
 			if depth == "" {
 				depth = "chưa rõ"
 			}
@@ -1224,7 +1224,7 @@ func (h *GoogleHandler) GenerateAIDynamicReport(c *gin.Context) {
 		}
 		var details []string
 		for _, st := range summary.Stations {
-			details = append(details, fmt.Sprintf("  - %s: %d tổ bơm, %d đang vận hành, %d không vận hành, %d đang bảo dưỡng. Cập nhật mới nhất: %s.", st.Name, st.PumpCount, st.OperatingCount, st.ClosedCount, st.MaintenanceCount, st.LastUpdate))
+			details = append(details, fmt.Sprintf("  - %s: %d tổ bơm, %d bơm đang vận hành, %d bơm không vận hành, %d bơm đang bảo dưỡng. Cập nhật mới nhất: %s.", st.Name, st.PumpCount, st.OperatingCount, st.ClosedCount, st.MaintenanceCount, st.LastUpdate))
 		}
 		pumpingSummaryStr = fmt.Sprintf("Hiện tại, hệ thống ghi nhận có %d trạm bơm.\nChi tiết theo từng trạm:\n%s", len(summary.Stations), strings.Join(details, "\n"))
 		return nil

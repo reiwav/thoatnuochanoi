@@ -1105,7 +1105,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                                 <TextField fullWidth label="Chiều rộng (R)" size="small" value={mechData.r} onChange={(e) => setMechData({ ...mechData, r: e.target.value })} placeholder="m" sx={{ '& .MuiInputLabel-root': { fontWeight: 800 } }} />
                                             </Grid>
                                             <Grid item xs={4}>
-                                                <TextField fullWidth label="Diện tích (S)" size="small" value={mechData.s} onChange={(e) => setMechData({ ...mechData, s: e.target.value })} placeholder="m2" sx={{ '& .MuiInputLabel-root': { fontWeight: 800 } }} />
+                                                <TextField fullWidth label="Sâu (S)" size="small" value={mechData.s} onChange={(e) => setMechData({ ...mechData, s: e.target.value })} placeholder="m2" sx={{ '& .MuiInputLabel-root': { fontWeight: 800 } }} />
                                             </Grid>
                                         </Grid>
                                         <Box>

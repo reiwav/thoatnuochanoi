@@ -527,7 +527,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                     {canReview && point.status === 'active' && !latest?.needs_correction && (
                                         <Box sx={{ mt: 2, p: 2, bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
                                             <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1.5, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <IconMessage2 size={18} /> Gửi yêu cầu rà soát / Chỉnh sửa:
+                                                <IconMessage2 size={18} /> Phòng KT-CL nhận xét:
                                             </Typography>
                                             <TextField
                                                 fullWidth

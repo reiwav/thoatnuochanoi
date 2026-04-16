@@ -14,7 +14,9 @@ import MainCard from 'ui-component/cards/MainCard';
 import inundationApi from 'api/inundation';
 import InundationReportPanel from './InundationReportPanel';
 import InundationDetail from './InundationDetail';
+import InundationMechPanel from './InundationMechPanel';
 import useAuthStore from 'store/useAuthStore';
+import { IconSettings } from '@tabler/icons-react'; // For Mech tab icon
 
 const InundationForm = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -27,7 +29,7 @@ const InundationForm = () => {
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const basePath = isEmployee ? '/company' : '/admin';
 
-    const [tab, setTab] = useState(0); // 0 = Báo mới/Cập nhật, 1 = Chi tiết
+    const [tab, setTab] = useState(0); // 0 = Báo mới/Cập nhật, 1 = Chi tiết, 'mech' = Cơ giới
     const [selectedReport, setSelectedReport] = useState(null);
     const [loadingReport, setLoadingReport] = useState(false);
 
@@ -49,12 +51,16 @@ const InundationForm = () => {
     }, []);
 
     const reportId = searchParams.get('id');
+    const pointId = searchParams.get('point_id');
     const tabParam = searchParams.get('tab');
     const editUpdateId = searchParams.get('edit_update_id');
     const isEdit = searchParams.get('edit') === 'true' || !!editUpdateId;
 
     useEffect(() => {
-        if (tabParam !== null) setTab(parseInt(tabParam));
+        if (tabParam !== null) {
+            const t = isNaN(tabParam) ? tabParam : parseInt(tabParam);
+            setTab(t);
+        }
     }, [tabParam]);
 
     useEffect(() => {
@@ -86,9 +92,12 @@ const InundationForm = () => {
     };
 
     const TabSwitcher = () => {
+        const isMechWorker = (useAuthStore.getState().hasPermission('inundation:mech') || useAuthStore.getState().hasPermission('inundation:mechanic')) && !useAuthStore.getState().hasPermission('inundation:edit');
+
         const allTabs = [
-            { id: 0, label: selectedReport ? 'Cập nhật' : 'Báo mới', icon: <IconPlus size={18} /> },
-            { id: 1, label: 'Chi tiết', icon: <IconHistory size={18} /> }
+            { id: 0, label: selectedReport ? 'Cập nhật' : 'Báo mới', icon: <IconPlus size={18} />, hidden: isMechWorker || !useAuthStore.getState().hasPermission('inundation:edit') },
+            { id: 1, label: 'Chi tiết', icon: <IconHistory size={18} />, hidden: isMechWorker || !useAuthStore.getState().hasPermission('inundation:view') },
+            { id: 'mech', label: 'Cơ giới', icon: <IconSettings size={18} />, hidden: !(useAuthStore.getState().hasPermission('inundation:mech') || useAuthStore.getState().hasPermission('inundation:mechanic')) }
         ];
 
         const isReadOnly = searchParams.get('readonly') === 'true';
@@ -99,9 +108,15 @@ const InundationForm = () => {
         // Hide "Cập nhật" tab if report is already resolved or in readonly mode (unless needs correction)
         const visibleTabs = (selectedReport?.status === 'resolved' || (isReadOnly && !needsCorrection))
             ? allTabs.filter(t => t.id === 1)
-            : allTabs;
+            : allTabs.filter(t => !t.hidden);
 
-        if (visibleTabs.length <= 1) return null;
+        if (visibleTabs.length <= 1) {
+            // If only one tab is visible, ensure it's selected
+            if (visibleTabs.length === 1 && tab !== visibleTabs[0].id) {
+                setTab(visibleTabs[0].id);
+            }
+            return null;
+        }
 
         return (
             <Box sx={{ display: 'flex', bgcolor: 'grey.100', borderRadius: 100, p: 0.5, mb: 3 }}>
@@ -132,26 +147,30 @@ const InundationForm = () => {
     };
 
     const renderContent = () => {
-        const correctionUpdate = selectedReport?.updates?.find(u => u.needs_correction);
-
         return (
             <Box sx={{ width: '100%' }}>
                 {TabSwitcher()}
                 {tab === 0 ? (
-                <InundationReportPanel
-                    selectedReport={reportToPass}
-                    pointId={searchParams.get('point_id')}
-                    initialStreetName={searchParams.get('name')}
-                    onSuccess={handleSuccess}
-                    isCorrectionMode={isEdit}
-                />
-            ) : (
-                <InundationDetail
-                    selectedReport={selectedReport}
-                    loadingReport={loadingReport}
-                    user={user}
-                />
-            )}
+                    <InundationReportPanel
+                        selectedReport={reportToPass}
+                        pointId={pointId}
+                        initialStreetName={searchParams.get('name')}
+                        onSuccess={handleSuccess}
+                        isCorrectionMode={isEdit}
+                    />
+                ) : tab === 'mech' ? (
+                    <InundationMechPanel 
+                        report={selectedReport}
+                        pointId={pointId}
+                        onSuccess={fetchReport}
+                    />
+                ) : (
+                    <InundationDetail
+                        selectedReport={selectedReport}
+                        loadingReport={loadingReport}
+                        user={user}
+                    />
+                )}
             </Box>
         );
     };

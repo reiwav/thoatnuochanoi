@@ -14,6 +14,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import AnimateButton from 'ui-component/extended/AnimateButton';
 import stationApi from 'api/station';
 import organizationApi from 'api/organization';
+import OrganizationSelect from 'ui-component/filter/OrganizationSelect';
 import StationDialog from './StationDialog';
 import useAuthStore from 'store/useAuthStore';
 
@@ -227,34 +228,31 @@ const StationInundationList = () => {
             title="Quản lý điểm ngập úng"
             secondary={canCreate && (
                 <AnimateButton>
-                    <Button variant="contained" color="secondary" startIcon={<IconPlus size={20} />} onClick={handleOpenCreate} sx={{ fontWeight: 700, fontSize: '1rem', px: 2, py: 1 }}>
+                    <Button variant="contained" color="secondary" startIcon={<IconPlus size={20} />} onClick={handleOpenCreate} sx={{ borderRadius: 3, fontWeight: 700, fontSize: '1rem', px: 2, py: 1 }}>
                         Thêm điểm mới
                     </Button>
                 </AnimateButton>
             )}
         >
             <Box sx={{ mb: 3 }}>
-                <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
+                <Stack spacing={isMobile ? 2 : 1.5} sx={{ mb: 3 }}>
                     <TextField
+                        fullWidth
                         placeholder="Tìm tên điểm, địa chỉ..."
                         value={searchFilter}
                         onChange={(e) => setSearchFilter(e.target.value)}
                         size="small"
-                        sx={{ width: { xs: '100%', sm: 250 } }}
+                        InputProps={{
+                            sx: { borderRadius: 3 }
+                        }}
                     />
-                    <TextField
-                        select
-                        label="Đơn vị quản lý"
-                        value={orgFilter}
-                        onChange={(e) => setOrgFilter(e.target.value)}
-                        size="small"
-                        sx={{ width: { xs: '100%', sm: 200 } }}
-                    >
-                        <MenuItem value="">Tất cả đơn vị</MenuItem>
-                        {(organizations.shared || []).map((org) => (
-                            <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>
-                        ))}
-                    </TextField>
+                    <Stack direction={isMobile ? "column" : "row"} spacing={isMobile ? 2 : 1} alignItems="center">
+                        <OrganizationSelect
+                            value={orgFilter}
+                            onChange={(e) => setOrgFilter(e.target.value)}
+                            sx={{ width: { xs: '100%', sm: 250 } }}
+                        />
+                    </Stack>
                 </Stack>
             </Box>
 

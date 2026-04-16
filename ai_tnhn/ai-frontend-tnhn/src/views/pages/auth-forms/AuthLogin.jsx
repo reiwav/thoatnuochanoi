@@ -56,7 +56,11 @@ export default function AuthLogin() {
         userRole = ROLES.ROLE_SUPER_ADMIN;
       }
 
-      storeLogin({ name, email: searchParams.get('email') }, token, userRole, isEmployeeVal, isCompanyVal, roleLevelVal);
+      storeLogin({ 
+          name, 
+          email: searchParams.get('email'), 
+          org_id: searchParams.get('org_id') 
+      }, token, userRole, isEmployeeVal, isCompanyVal, roleLevelVal);
 
       // Immediate redirection based on is_employee flag
       if (isEmployeeVal) {
@@ -106,7 +110,10 @@ export default function AuthLogin() {
         const roleLevel = tokenData.role_level;
 
         // Store via Zustand
-        storeLogin({ name: tokenData.name, email: values.email }, tokenData.id, role, isEmployee, isCompany, roleLevel);
+        storeLogin({ 
+            ...tokenData, 
+            email: values.email 
+        }, tokenData.id, role, isEmployee, isCompany, roleLevel);
 
         // Redirect based on isEmployee
         if (isEmployee) {

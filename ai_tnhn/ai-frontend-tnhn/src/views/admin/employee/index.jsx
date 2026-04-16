@@ -12,6 +12,7 @@ import { toast } from 'react-hot-toast';
 // project imports
 import MainCard from 'ui-component/cards/MainCard';
 import AnimateButton from 'ui-component/extended/AnimateButton';
+import OrganizationSelect from 'ui-component/filter/OrganizationSelect';
 import employeeApi from 'api/employee';
 import organizationApi from 'api/organization';
 import axiosClient from 'api/axiosClient';
@@ -67,16 +68,16 @@ const EmployeeRow = ({ row, handleOpenEdit, handleDelete, roleLabel, orgName, us
                 )}
                 {!isMobile && (
                     <TableCell>
-                        <Chip 
-                            label={roleTxt} 
-                            size="small" 
-                            sx={{ 
-                                bgcolor: bgColor, 
-                                color: textColor, 
-                                fontWeight: 700, 
+                        <Chip
+                            label={roleTxt}
+                            size="small"
+                            sx={{
+                                bgcolor: bgColor,
+                                color: textColor,
+                                fontWeight: 700,
                                 borderRadius: '8px',
                                 border: 'none'
-                            }} 
+                            }}
                         />
                     </TableCell>
                 )}
@@ -131,16 +132,16 @@ const EmployeeRow = ({ row, handleOpenEdit, handleDelete, roleLabel, orgName, us
                                         <TableRow>
                                             <TableCell component="th" scope="row" sx={{ fontWeight: 600, borderBottom: 'none' }}>Vai trò</TableCell>
                                             <TableCell sx={{ borderBottom: 'none' }}>
-                                                <Chip 
-                                                    label={roleTxt} 
-                                                    size="small" 
-                                                    sx={{ 
-                                                        bgcolor: bgColor, 
-                                                        color: textColor, 
-                                                        fontWeight: 700, 
+                                                <Chip
+                                                    label={roleTxt}
+                                                    size="small"
+                                                    sx={{
+                                                        bgcolor: bgColor,
+                                                        color: textColor,
+                                                        fontWeight: 700,
                                                         borderRadius: '8px',
                                                         border: 'none'
-                                                    }} 
+                                                    }}
                                                 />
                                             </TableCell>
                                         </TableRow>
@@ -309,37 +310,30 @@ const EmployeeList = () => {
             )}
 
             <Grid container spacing={2} sx={{ mb: 3 }} alignItems="center">
-                <Grid item xs={12} sm={organizations.length > 1 ? 3 : 4}>
+                <Grid item xs={12} sm={3}>
                     <TextField fullWidth label="Tên người dùng" value={filterInputs.name}
                         onChange={(e) => setFilterInputs({ ...filterInputs, name: e.target.value })}
-                        size="small" sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }} />
+                        size="small"
+                        InputProps={{ sx: { borderRadius: 3 } }} />
                 </Grid>
-                <Grid item xs={12} sm={organizations.length > 1 ? 3 : 4}>
+                <Grid item xs={12} sm={3}>
                     <TextField fullWidth label="Email" value={filterInputs.email}
                         onChange={(e) => setFilterInputs({ ...filterInputs, email: e.target.value })}
-                        size="small" sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }} />
+                        size="small"
+                        InputProps={{ sx: { borderRadius: 3 } }} />
                 </Grid>
-                {organizations.length > 1 && (
-                    <Grid item xs={12} sm={4}>
-                        <FormControl fullWidth size="small">
-                            <InputLabel>Đơn vị / Xí nghiệp</InputLabel>
-                            <Select
-                                value={filterInputs.org_id}
-                                label="Đơn vị / Xí nghiệp"
-                                onChange={(e) => setFilterInputs({ ...filterInputs, org_id: e.target.value })}
-                                sx={{ borderRadius: '12px', minWidth: '200px' }}
-                            >
-                                <MenuItem value="">Tất cả con/đơn vị</MenuItem>
-                                {organizations.map(org => (
-                                    <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-                    </Grid>
-                )}
+                <Grid item xs={12} sm={4}>
+                    <OrganizationSelect
+                        value={filterInputs.org_id}
+                        onChange={(e) => setFilterInputs({ ...filterInputs, org_id: e.target.value })}
+                        size="small"
+                        label="Đơn vị / Xí nghiệp"
+                        InputProps={{ sx: { borderRadius: 3 } }}
+                    />
+                </Grid>
                 <Grid item xs={12} sm={2}>
                     <Button fullWidth variant="contained" color="primary" startIcon={<IconSearch size={20} />}
-                        onClick={handleSearch} sx={{ borderRadius: '10px' }}>
+                        onClick={handleSearch} sx={{ borderRadius: 3, fontWeight: 700, height: 40 }}>
                         Tìm kiếm
                     </Button>
                 </Grid>

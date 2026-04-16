@@ -83,7 +83,7 @@ const SelectionDialog = ({ open, onClose, onConfirm, title, items = [], initialS
                                     </IconButton>
                                 </InputAdornment>
                             ),
-                            sx: { borderRadius: '10px' }
+                            sx: { borderRadius: 3, fontWeight: 600 }
                         }}
                     />
                     <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mt: 1.5 }}>
@@ -137,8 +137,8 @@ const SelectionDialog = ({ open, onClose, onConfirm, title, items = [], initialS
                 </List>
             </DialogContent>
             <DialogActions sx={{ p: 2 }}>
-                <Button onClick={onClose} color="inherit">Hủy</Button>
-                <Button onClick={handleConfirm} variant="contained" color="primary" sx={{ borderRadius: '8px' }}>
+                <Button onClick={onClose} color="inherit" sx={{ borderRadius: 3 }}>Hủy</Button>
+                <Button onClick={handleConfirm} variant="contained" color="primary" sx={{ borderRadius: 3, fontWeight: 700 }}>
                     Xác nhận
                 </Button>
             </DialogActions>

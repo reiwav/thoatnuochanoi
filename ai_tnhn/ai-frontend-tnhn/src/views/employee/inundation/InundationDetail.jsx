@@ -31,7 +31,7 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
     const canReview = useMemo(() => {
         if (isEmployee) return false;
         if (!hasPermission('inundation:review')) return false;
-        if (isCompany || userRole === 'super_admin') return true;
+        if (isCompany || userRole === 'super_admin' || hasPermission('inundation:review')) return true;
         if (!selectedReport) return false;
         if (selectedReport.org_id === user?.org_id) return true;
         return false;

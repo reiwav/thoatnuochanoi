@@ -73,7 +73,6 @@ func (h *AuthHandler) LogoutHandler(c *gin.Context) {
 
 func (h *AuthHandler) GetProfileHandler(c *gin.Context) {
 	token := h.contextWith.GetToken(c.Request)
-	fmt.Println("token: ", token)
 	res, err := h.authService.GetProfile(c.Request.Context(), token)
 	if err != nil {
 		h.SendError(c, err)
@@ -158,14 +157,15 @@ func (h *AuthHandler) GoogleCallbackHandler(c *gin.Context) {
 		role = "giam_doc_xn"
 	}
 
-	// 5. Redirect to frontend with token, role, and name
-	redirectURL := fmt.Sprintf("%s/?token=%s&role=%s&is_employee=%v&is_company=%v&name=%s",
+	// 5. Redirect to frontend with token, role, name and org_id
+	redirectURL := fmt.Sprintf("%s/?token=%s&role=%s&is_employee=%v&is_company=%v&name=%s&org_id=%s",
 		h.frontendURL,
 		res.ID,
 		role,
 		res.IsEmployee,
 		res.IsCompany,
 		res.Name,
+		res.OrgID,
 	)
 	c.Redirect(http.StatusTemporaryRedirect, redirectURL)
 }

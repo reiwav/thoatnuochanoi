@@ -32,7 +32,11 @@ func (h *InundationHandler) checkPermissions(c *gin.Context) (isAllowedAll bool,
 	if err != nil || user == nil {
 		return false, nil
 	}
-	return user.IsCompany, user
+
+	// Logic động: Super Admin hoặc Role có flag IsCompany=true trong DB mới được xem tất cả
+	isAllowedAll = user.Role == "super_admin" || user.IsCompany
+
+	return isAllowedAll, user
 }
 
 func (h *InundationHandler) CreateReport(c *gin.Context) {

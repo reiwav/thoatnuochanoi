@@ -20,6 +20,7 @@ import { getTrafficStatusColor, getTrafficStatusLabel } from 'utils/trafficStatu
 import { toast } from 'react-hot-toast';
 import useAuthStore from 'store/useAuthStore';
 import { formatDateTime, formatDuration } from 'utils/dataHelper';
+import OrganizationSelect from 'ui-component/filter/OrganizationSelect';
 
 const getLatestData = (report) => {
     if (!report) return null;
@@ -109,7 +110,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
     const canReview = useMemo(() => {
         if (isEmployee) return false;
 
-        const isAllowedAll = isCompany;
+        const isAllowedAll = isCompany || hasPermission('inundation:review');
         if (isAllowedAll) return true;
 
         const report = point.active_report || point.last_report;
@@ -599,7 +600,7 @@ const CollapsibleHistoryRow = ({ report, organizations, handleOpenViewer, naviga
     const canReview = useMemo(() => {
         if (isEmployee) return false;
 
-        const isAllowedAll = isCompany;
+        const isAllowedAll = isCompany || hasPermission('inundation:review');
         if (isAllowedAll) return true;
 
         if (!report) return false;
@@ -949,20 +950,10 @@ const InundationAdminList = () => {
                         }}
                     />
                     <Stack direction={isMobile ? "column" : "row"} spacing={isMobile ? 2 : 1}>
-                        <TextField
-                            select
-                            fullWidth
-                            size={isMobile ? "medium" : "small"}
-                            label="Đơn vị quản lý"
+                        <OrganizationSelect
                             value={orgFilter}
                             onChange={(e) => { setOrgFilter(e.target.value); setHistoryPage(0); }}
-                            InputProps={{ sx: { borderRadius: 3, fontWeight: 600 } }}
-                        >
-                            <MenuItem value="">Tất cả đơn vị</MenuItem>
-                            {organizations.map(org => (
-                                <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>
-                            ))}
-                        </TextField>
+                        />
 
                         <TextField
                             select

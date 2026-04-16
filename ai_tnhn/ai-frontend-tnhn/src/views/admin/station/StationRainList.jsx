@@ -16,6 +16,7 @@ import stationApi from 'api/station';
 import organizationApi from 'api/organization';
 import StationDialog from './StationDialog';
 import useAuthStore from 'store/useAuthStore';
+import OrganizationSelect from 'ui-component/filter/OrganizationSelect';
 
 const StationRow = ({ row, handleOpenEdit, handleDelete, isMobile, canEdit, canDelete, organizationName, organizationNames }) => {
     const [open, setOpen] = useState(false);
@@ -118,8 +119,8 @@ const StationRainList = () => {
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [totalItems, setTotalItems] = useState(0);
 
-    const [filterInputs, setFilterInputs] = useState({ search: '', active: '' });
-    const [params, setParams] = useState({ search: '', active: '' });
+    const [filterInputs, setFilterInputs] = useState({ search: '', active: '', org_id: '' });
+    const [params, setParams] = useState({ search: '', active: '', org_id: '' });
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingStation, setEditingStation] = useState(null);
@@ -195,29 +196,32 @@ const StationRainList = () => {
             title="Quản lý trạm đo mưa"
             secondary={canCreate && (
                 <AnimateButton>
-                    <Button variant="contained" color="secondary" startIcon={<IconPlus size={20} />} onClick={handleOpenCreate} sx={{ fontWeight: 700, fontSize: '1rem', px: 2, py: 1 }}>
+                    <Button variant="contained" color="secondary" startIcon={<IconPlus size={20} />} onClick={handleOpenCreate} sx={{ borderRadius: 3, fontWeight: 700, fontSize: '1rem', px: 2, py: 1 }}>
                         Thêm trạm mới
                     </Button>
                 </AnimateButton>
             )}
         >
-            <Grid container spacing={2} sx={{ mb: 3 }} alignItems="center">
-                <Grid item xs={12} sm={6}>
+            <Box sx={{ mb: 3 }}>
+                <Stack spacing={isMobile ? 2 : 1.5} sx={{ mb: 3 }}>
                     <TextField fullWidth label="Tìm theo tên trạm" value={filterInputs.search}
                         onChange={(e) => setFilterInputs({ ...filterInputs, search: e.target.value })}
-                        sx={{
-                            '& .MuiInputLabel-root': { fontSize: '1rem', fontWeight: 600 },
-                            '& .MuiInputBase-input': { fontSize: '1rem' },
-                            '& .MuiOutlinedInput-root': { borderRadius: '12px' }
-                        }} />
-                </Grid>
-                <Grid item xs={12} sm={3}>
-                    <Button fullWidth variant="contained" color="primary" startIcon={<IconSearch size={22} />}
-                        onClick={handleSearch} sx={{ borderRadius: '10px', fontWeight: 700, fontSize: '1rem', py: 1 }}>
-                        Tìm kiếm
-                    </Button>
-                </Grid>
-            </Grid>
+                        size="small"
+                        InputProps={{ sx: { borderRadius: 3 } }} />
+
+                    <Stack direction={isMobile ? "column" : "row"} spacing={isMobile ? 2 : 1} alignItems="center">
+                        <OrganizationSelect
+                            value={filterInputs.org_id}
+                            onChange={(e) => setFilterInputs({ ...filterInputs, org_id: e.target.value })}
+                            sx={{ width: { xs: '100%', sm: 250 } }}
+                        />
+                        <Button variant="contained" color="primary" startIcon={<IconSearch size={22} />}
+                            onClick={handleSearch} sx={{ borderRadius: 3, fontWeight: 700, fontSize: '1rem', py: 1, height: 40, px: 3 }}>
+                            Tìm kiếm
+                        </Button>
+                    </Stack>
+                </Stack>
+            </Box>
 
             <TableContainer component={Paper} sx={{ border: '1px solid', borderColor: 'divider', boxShadow: 'none', borderRadius: '12px' }}>
                 <Table>

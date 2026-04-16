@@ -275,7 +275,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
     const canReview = useMemo(() => {
         if (isEmployee) return false;
         if (!hasPermission('inundation:review')) return false;
-        if (user?.isCompany || user?.role === 'super_admin') return true;
+        if (user?.isCompany || user?.role === 'super_admin' || hasPermission('inundation:review')) return true;
 
         const report = point.active_report || point.last_report;
         if (!report) return false;
@@ -986,13 +986,6 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                                 {latest?.mech_checked && (
                                                     <Chip icon={<IconCheck size={14} color="white" />} label="ĐÃ ỨNG TRỰC" size="small" sx={{ fontWeight: 800, bgcolor: 'primary.main', color: 'white', py: 1.5, px: 1, borderRadius: 2 }} />
                                                 )}
-
-                                                {(canReview || isEmployee) && latest?.review_comment && (
-                                                    <Box sx={{ p: 1, bgcolor: 'error.lighter', borderRadius: 1.5, borderLeft: '3px solid', borderColor: 'error.main' }}>
-                                                        <Typography variant="caption" sx={{ fontWeight: 800, color: 'error.main', display: 'block' }}>RÀ SOÁT:</Typography>
-                                                        <Typography variant="caption" sx={{ fontWeight: 600, color: 'error.dark', display: 'block' }}>{latest.review_comment}</Typography>
-                                                    </Box>
-                                                )}
                                             </Stack>
                                         </Box>
                                     </Grid>
@@ -1032,13 +1025,6 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
 
                                                 {latest?.survey_checked && (
                                                     <Chip icon={<IconCheck size={14} color="white" />} label="ĐÃ KIỂM TRA" size="small" sx={{ fontWeight: 800, bgcolor: 'primary.main', color: 'white', py: 1.5, px: 1, borderRadius: 2 }} />
-                                                )}
-
-                                                {(canReview || isEmployee) && latest?.review_comment && (
-                                                    <Box sx={{ p: 1, bgcolor: 'error.lighter', borderRadius: 1.5, borderLeft: '3px solid', borderColor: 'error.main' }}>
-                                                        <Typography variant="caption" sx={{ fontWeight: 800, color: 'error.main', display: 'block' }}>RÀ SOÁT:</Typography>
-                                                        <Typography variant="caption" sx={{ fontWeight: 600, color: 'error.dark', display: 'block' }}>{latest.review_comment}</Typography>
-                                                    </Box>
                                                 )}
                                             </Stack>
                                         </Box>

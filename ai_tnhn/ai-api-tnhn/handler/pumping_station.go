@@ -28,14 +28,18 @@ func NewPumpingStationHandler(service pumpingstation.Service, authService auth.S
 	}
 }
 
-func (h *PumpingStationHandler) checkPermissions(c *gin.Context) (isSuperAdmin bool, isAllowedAll bool, user *web.ClientCache) {
-	user = h.contextWith.GetTokenFromContext(c)
-	if user == nil {
+func (h *PumpingStationHandler) checkPermissions(c *gin.Context) (isSuperAdmin bool, isAllowedAll bool, user *models.User) {
+	token := h.contextWith.GetToken(c.Request)
+	user, err := h.authService.GetProfile(c.Request.Context(), token)
+	if err != nil || user == nil {
 		return false, false, nil
 	}
 
-	isAllowedAll = user.IsCompany
-	return false, isAllowedAll, user
+	// Logic động: Super Admin hoặc Role có flag IsCompany=true trong DB mới được xem tất cả
+	isSuperAdmin = user.Role == "super_admin"
+	isAllowedAll = isSuperAdmin || user.IsCompany
+
+	return isSuperAdmin, isAllowedAll, user
 }
 
 func (h *PumpingStationHandler) Create(c *gin.Context) {
@@ -169,17 +173,11 @@ func (h *PumpingStationHandler) List(c *gin.Context) {
 		})
 	} else if user.Role == constant.ROLE_EMPLOYEE || user.IsEmployee {
 		// Employee view: Only their assigned station
-		if user.UserID != "" {
-			// Fetch user details to get assignment
-			profile, err := h.authService.GetProfile(c.Request.Context(), user.Token)
-			if err == nil && profile != nil {
-				if profile.AssignedPumpingStationID != "" {
-					f.AddWhere("id", "_id", profile.AssignedPumpingStationID)
-				} else {
-					h.SendData(c, gin.H{"data": []interface{}{}, "total": 0})
-					return
-				}
-			}
+		if user.AssignedPumpingStationID != "" {
+			f.AddWhere("id", "_id", user.AssignedPumpingStationID)
+		} else {
+			h.SendData(c, gin.H{"data": []interface{}{}, "total": 0})
+			return
 		}
 	}
 

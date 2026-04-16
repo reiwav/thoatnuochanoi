@@ -133,7 +133,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                         fullWidth label="Họ và tên" required size="small"
                         value={formData.name}
                         onChange={(e) => handleChange('name', e.target.value)}
-                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#f8fafc' } }}
+                        InputProps={{ sx: { borderRadius: 3, fontWeight: 600 } }}
                     />
 
                     <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
@@ -141,7 +141,8 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                             fullWidth label="Email" required size="small"
                             value={formData.email}
                             onChange={(e) => handleChange('email', e.target.value)}
-                            sx={{ flex: 1, '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#f8fafc' } }}
+                            sx={{ flex: 1 }}
+                            InputProps={{ sx: { borderRadius: 3, fontWeight: 600 } }}
                         />
                         <FormControl fullWidth size="small" sx={{ flex: 1 }}>
                             <InputLabel>Vai trò</InputLabel>
@@ -149,7 +150,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                                 value={formData.role}
                                 label="Vai trò"
                                 onChange={(e) => handleChange('role', e.target.value)}
-                                sx={{ borderRadius: '12px', bgcolor: '#f8fafc' }}
+                                sx={{ borderRadius: 3, fontWeight: 600 }}
                             >
                                 {fetchingData && roles.length === 0 ? (
                                     <MenuItem value={formData.role}>
@@ -174,7 +175,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                                 value={formData.org_id}
                                 label="Công ty / Xí nghiệp *"
                                 onChange={(e) => handleChange('org_id', e.target.value)}
-                                sx={{ borderRadius: '12px', bgcolor: '#f8fafc' }}
+                                sx={{ borderRadius: 3, fontWeight: 600 }}
                             >
                                 {organizations.map((org) => (
                                     <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>
@@ -271,7 +272,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                                         value={formData.assigned_pumping_station_id}
                                         label="Chọn trạm bơm"
                                         onChange={(e) => handleChange('assigned_pumping_station_id', e.target.value)}
-                                        sx={{ borderRadius: '12px', bgcolor: '#f8fafc' }}
+                                        sx={{ borderRadius: 3, fontWeight: 600 }}
                                     >
                                         <MenuItem value=""><em>Không gán</em></MenuItem>
                                         {(pumpingStations || []).map((station) => (
@@ -289,7 +290,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                         value={formData.password}
                         onChange={(e) => handleChange('password', e.target.value)}
                         placeholder={isEdit ? 'Để trống nếu không đổi' : ''}
-                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#f8fafc' } }}
+                        InputProps={{ sx: { borderRadius: 3, fontWeight: 600 } }}
                     />
 
                     <FormControlLabel
@@ -305,8 +306,8 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                 </Stack>
             </DialogContent>
             <DialogActions sx={{ p: 2 }}>
-                <Button onClick={onClose} color="inherit">Hủy</Button>
-                <Button variant="contained" onClick={handleSave} color="primary">
+                <Button onClick={onClose} color="inherit" sx={{ borderRadius: 3 }}>Hủy</Button>
+                <Button variant="contained" onClick={handleSave} color="primary" sx={{ borderRadius: 3, fontWeight: 700 }}>
                     {isEdit ? 'Cập nhật' : 'Thêm mới'}
                 </Button>
             </DialogActions>

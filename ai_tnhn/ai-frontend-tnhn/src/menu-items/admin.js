@@ -68,20 +68,12 @@ const adminPages = {
       icon: icons.IconTornado,
       children: [
         {
-          id: 'inundation:view',
+          id: ['inundation:view', 'inundation:review'],
           title: 'Cập nhật điểm ngập',
           type: 'item',
           url: '/admin/inundation',
           icon: icons.IconTornado,
           breadcrumbs: false
-        },
-        {
-          id: 'inundation:view',
-          title: 'Giám sát úng ngập',
-          type: 'item',
-          url: '/admin/inundation-list',
-          icon: icons.IconList,
-          breadcrumbs: false,
         },
         {
           id: 'inundation:view',

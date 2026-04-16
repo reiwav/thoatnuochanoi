@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     Box, Button, Grid, TextField, Table, TableBody,
     TableCell, TableContainer, TableHead, TableRow, Paper,
@@ -12,6 +12,7 @@ import emergencyConstructionApi from 'api/emergencyConstruction';
 import ConstructionDialog from './ConstructionDialog';
 import organizationApi from 'api/organization';
 import useAuthStore from 'store/useAuthStore';
+import OrganizationSelect from 'ui-component/filter/OrganizationSelect';
 
 const CollapsibleConstructionRow = ({ row, handleOpenEdit, handleDelete, orgs, getStatusChip, isMobile, userRole, navigate, hasPermission }) => {
     const [open, setOpen] = useState(false);
@@ -135,8 +136,9 @@ const ConstructionList = () => {
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [totalItems, setTotalItems] = useState(0);
 
-    const [filterInputs, setFilterInputs] = useState({ name: '', status: '' });
-    const [params, setParams] = useState({ name: '', status: '' });
+    const [searchParams] = useSearchParams();
+    const [filterInputs, setFilterInputs] = useState({ name: '', status: '', org_id: searchParams.get('org_id') || '' });
+    const [params, setParams] = useState({ name: '', status: '', org_id: searchParams.get('org_id') || '' });
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
@@ -225,47 +227,53 @@ const ConstructionList = () => {
         <Box>
             <Stack direction="row" justifyContent="flex-end" sx={{ mb: 2 }}>
                 {hasPermission('emergency:create') && (
-                    <Button variant="contained" color="secondary" startIcon={<IconPlus size={18} />} onClick={handleOpenCreate}>
+                    <Button variant="contained" color="secondary" startIcon={<IconPlus size={18} />} onClick={handleOpenCreate} sx={{ borderRadius: 3, fontWeight: 700 }}>
                         Thêm công trình
                     </Button>
                 )}
             </Stack>
 
-            <Stack direction={isMobile ? "column" : "row"} spacing={1.5} sx={{ mb: 3 }}>
-                <TextField 
-                    fullWidth 
-                    size={isMobile ? "medium" : "small"} 
-                    placeholder="Tìm tên công trình, địa chỉ..." 
-                    value={filterInputs.name}
-                    onChange={(e) => setFilterInputs({ ...filterInputs, name: e.target.value })}
-                    InputProps={{ 
-                        startAdornment: <IconSearch size={20} sx={{ color: 'text.disabled', mr: 1, ml: 0.5 }} />,
-                        sx: { borderRadius: 3, fontWeight: 600 }
-                    }}
-                />
-                <TextField
-                    select
-                    fullWidth
-                    size={isMobile ? "medium" : "small"}
-                    label="Trạng thái"
-                    value={filterInputs.status}
-                    onChange={(e) => setFilterInputs({ ...filterInputs, status: e.target.value })}
-                    InputProps={{ sx: { borderRadius: 3, fontWeight: 600 } }}
-                    sx={{ maxWidth: isMobile ? '100%' : 200 }}
-                >
-                    <MenuItem value="">Tất cả</MenuItem>
-                    <MenuItem value="planned">Dự kiến</MenuItem>
-                    <MenuItem value="ongoing">Đang thi công</MenuItem>
-                    <MenuItem value="completed">Hoàn thành</MenuItem>
-                    <MenuItem value="suspended">Tạm dừng</MenuItem>
-                </TextField>
-                <Button 
-                    variant="contained" color="primary" sx={{ borderRadius: 3, px: 4, fontWeight: 700, height: isMobile ? 48 : 40 }}
-                    onClick={handleSearch}
-                >
-                    Lọc
-                </Button>
-            </Stack>
+            <Box sx={{ mb: 3 }}>
+                <Stack spacing={isMobile ? 2 : 1.5} sx={{ mb: 3 }}>
+                    <TextField
+                        fullWidth
+                        size="small"
+                        placeholder="Tìm tên công trình..."
+                        value={filterInputs.name}
+                        onChange={(e) => setFilterInputs({ ...filterInputs, name: e.target.value })}
+                        InputProps={{ sx: { borderRadius: 3 } }}
+                    />
+                    <Stack direction={isMobile ? "column" : "row"} spacing={1.5} alignItems="center">
+                        <OrganizationSelect
+                            value={filterInputs.org_id}
+                            onChange={(e) => setFilterInputs({ ...filterInputs, org_id: e.target.value })}
+                            sx={{ width: { xs: '100%', sm: 250 } }}
+                        />
+                        <TextField
+                            select
+                            fullWidth
+                            size="small"
+                            label="Trạng thái"
+                            value={filterInputs.status}
+                            onChange={(e) => setFilterInputs({ ...filterInputs, status: e.target.value })}
+                            InputProps={{ sx: { borderRadius: 3 } }}
+                            sx={{ maxWidth: { xs: '100%', sm: 200 } }}
+                        >
+                            <MenuItem value="">Tất cả</MenuItem>
+                            <MenuItem value="planned">Dự kiến</MenuItem>
+                            <MenuItem value="ongoing">Đang thi công</MenuItem>
+                            <MenuItem value="completed">Hoàn thành</MenuItem>
+                            <MenuItem value="suspended">Tạm dừng</MenuItem>
+                        </TextField>
+                        <Button
+                            variant="contained" color="primary" sx={{ borderRadius: 3, fontWeight: 700, height: 40, px: 4 }}
+                            onClick={handleSearch}
+                        >
+                            Lọc
+                        </Button>
+                    </Stack>
+                </Stack>
+            </Box>
 
             {isMobile ? (
                 <Stack spacing={2} sx={{ mb: 4 }}>

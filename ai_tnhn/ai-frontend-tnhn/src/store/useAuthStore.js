@@ -51,12 +51,13 @@ const useAuthStore = create(
         const { role: currentRole, permissions } = get();
         if (!currentRole) return false;
         
-        // Only super_admin gets automatic all-access. 
-        // Other isCompany users still follow the permission matrix.
+        // Super Admin always has permission
         if (currentRole === 'super_admin') return true;
 
+        // If permissionId is an array, check if user has ANY of the permissions 
+        // OR if their role matches one of the values in the array (legacy support)
         if (Array.isArray(permissionId)) {
-          return permissionId.includes(currentRole);
+          return permissionId.some(p => permissions.includes(p) || p === currentRole);
         }
 
         return permissions.includes(permissionId);

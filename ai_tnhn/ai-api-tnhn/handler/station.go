@@ -34,9 +34,11 @@ func (h *StationHandler) checkPermissions(c *gin.Context) (isSuperAdmin bool, is
 		return false, false, nil
 	}
 
-	// Super Admin or Level 0 has all permissions via IsCompany
-	isAllowedAll = user.IsCompany
-	return false, isAllowedAll, user
+	// Logic động: Super Admin hoặc Role có flag IsCompany=true trong DB mới được xem tất cả
+	isSuperAdmin = user.Role == "super_admin"
+	isAllowedAll = isSuperAdmin || user.IsCompany
+
+	return isSuperAdmin, isAllowedAll, user
 }
 
 // RAIN STATIONS

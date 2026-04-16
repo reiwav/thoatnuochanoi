@@ -63,9 +63,34 @@ const InundationForm = () => {
     }, [tabParam]);
 
     useEffect(() => {
-        if (reportId) fetchReport(reportId);
-        else setSelectedReport(null);
-    }, [reportId, fetchReport]);
+        if (reportId) {
+            fetchReport(reportId);
+        } else if (pointId) {
+            // Find active report for this point
+            const findActive = async () => {
+                setLoadingReport(true);
+                try {
+                    const res = await inundationApi.getPointsStatus();
+                    if (res.data?.status === 'success') {
+                        const points = res.data.data || [];
+                        const p = points.find(item => item.id === pointId);
+                        if (p && p.active_report) {
+                            setSelectedReport(p.active_report);
+                        } else {
+                            setSelectedReport(null);
+                        }
+                    }
+                } catch (err) {
+                    console.error('Failed to find active report for point:', pointId);
+                } finally {
+                    setLoadingReport(false);
+                }
+            };
+            findActive();
+        } else {
+            setSelectedReport(null);
+        }
+    }, [reportId, pointId, fetchReport]);
 
     const reportToPass = useMemo(() => {
         if (!selectedReport) return null;

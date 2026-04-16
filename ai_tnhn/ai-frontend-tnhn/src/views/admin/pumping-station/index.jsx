@@ -12,7 +12,7 @@ import Stack from '@mui/material/Stack';
 import Tooltip from '@mui/material/Tooltip';
 import { IconEdit, IconTrash, IconPlus, IconHistory, IconChevronDown, IconChevronUp, IconEngine, IconClock, IconUser } from '@tabler/icons-react';
 import dayjs from 'dayjs';
-import { CircularProgress, Box, Typography, Collapse, Grid, Divider, Paper, useTheme, Chip } from '@mui/material';
+import { CircularProgress, Box, Typography, Collapse, Grid, Divider, Paper, useTheme, Chip, useMediaQuery } from '@mui/material';
 import pumpingStationApi from 'api/pumpingStation';
 import organizationApi from 'api/organization';
 import PumpingStationDialog from './PumpingStationDialog';
@@ -20,6 +20,7 @@ import PumpingStationHistoryDialog from './PumpingStationHistoryDialog';
 import PumpingStationReport from './PumpingStationReport';
 import { toast } from 'react-hot-toast';
 import useAuthStore from 'store/useAuthStore';
+import OrganizationSelect from 'ui-component/filter/OrganizationSelect';
 
 const PumpingStationRow = ({ item, index, getOrgNames, handleHistory, handleEdit, handleDelete, hasPermission, isCompany, user }) => {
     const theme = useTheme();
@@ -171,6 +172,7 @@ const PumpingStationRow = ({ item, index, getOrgNames, handleHistory, handleEdit
 
 const PumpingStationPage = () => {
     const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const { user, isCompany, hasPermission } = useAuthStore();
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -179,6 +181,7 @@ const PumpingStationPage = () => {
     const [openHistory, setOpenHistory] = useState(false);
     const [selected, setSelected] = useState(null);
     const [orgs, setOrgs] = useState({ primary: [], shared: [] });
+    const [orgFilter, setOrgFilter] = useState('');
 
     const isAdmin = hasPermission('trambom:view');
 
@@ -188,7 +191,7 @@ const PumpingStationPage = () => {
             const promises = [];
 
             if (isAdmin) {
-                promises.push(pumpingStationApi.list({ per_page: 1000 }));
+                promises.push(pumpingStationApi.list({ per_page: 1000, org_id: orgFilter }));
             } else if (user?.assigned_pumping_station_id) {
                 promises.push(pumpingStationApi.get(user.assigned_pumping_station_id));
             }
@@ -218,7 +221,7 @@ const PumpingStationPage = () => {
 
     useEffect(() => {
         loadData();
-    }, []);
+    }, [orgFilter]);
 
     const handleAdd = () => {
         setSelected(null);
@@ -274,12 +277,23 @@ const PumpingStationPage = () => {
             }
             secondary={
                 hasPermission('trambom:edit') && (
-                    <Button variant="contained" startIcon={<IconPlus />} onClick={handleAdd} sx={{ borderRadius: 2 }}>
-                        Thêm trạm bơm
+                    <Button variant="contained" startIcon={<IconPlus />} onClick={handleAdd} sx={{ borderRadius: 3, fontWeight: 700 }}>
+                        {isMobile ? 'Thêm' : 'Thêm trạm bơm'}
                     </Button>
                 )
             }
         >
+            <Box sx={{ mb: 3 }}>
+                <Stack spacing={isMobile ? 2 : 1.5} sx={{ mb: 3 }}>
+                    <Stack direction={isMobile ? "column" : "row"} spacing={isMobile ? 2 : 1} alignItems="center">
+                        <OrganizationSelect
+                            value={orgFilter}
+                            onChange={(e) => setOrgFilter(e.target.value)}
+                            sx={{ width: { xs: '100%', sm: 250 } }}
+                        />
+                    </Stack>
+                </Stack>
+            </Box>
             <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, '& .MuiTableCell-root': { fontSize: { xs: '0.875rem' } } }}>
                 <Table>
                     <TableHead sx={{ bgcolor: 'grey.50' }}>

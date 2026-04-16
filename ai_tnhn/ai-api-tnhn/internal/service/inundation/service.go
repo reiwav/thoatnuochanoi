@@ -39,7 +39,7 @@ type Service interface {
 	UpdateUpdateContent(ctx context.Context, updateID string, update *models.InundationUpdate, userID, userEmail, userName string, images []ImageContent) error
 
 	// Points management
-	GetPointsStatus(ctx context.Context, visibilityOrgID string, targetOrgID string, pointIDs []string) ([]PointStatus, error)
+	GetPointsStatus(ctx context.Context, orgID string, pointIDs []string) ([]PointStatus, error)
 	GetPointByID(ctx context.Context, id string) (*models.InundationStation, error)
 	CreatePoint(ctx context.Context, point models.InundationStation) (string, error)
 	UpdatePoint(ctx context.Context, id string, point models.InundationStation) error
@@ -758,49 +758,28 @@ func (s *service) CreatePoint(ctx context.Context, point models.InundationStatio
 	return s.inundationStationRepo.Create(ctx, point)
 }
 
-func (s *service) GetPointsStatus(ctx context.Context, visibilityOrgID string, targetOrgID string, pointIDs []string) ([]PointStatus, error) {
-	// 1. Get visibility filter (what points the user is allowed to see)
-	var accessFilter bson.M
-	if visibilityOrgID != "" {
-		accessFilter = bson.M{"$or": []bson.M{
-			{"org_id": visibilityOrgID},
-			{"shared_org_ids": visibilityOrgID},
-			{"share_all": true},
-		}}
-	} else {
-		accessFilter = bson.M{}
-	}
-
-	// 2. Combine with targetOrgID filter if provided
-	finalFilter := bson.M{}
-	if targetOrgID != "" {
-		if visibilityOrgID != "" {
-			finalFilter = bson.M{"$and": []bson.M{
-				accessFilter,
-				{"org_id": targetOrgID},
-			}}
-		} else {
-			finalFilter = bson.M{"org_id": targetOrgID}
-		}
-	} else {
-		finalFilter = accessFilter
-	}
-
+func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []string) ([]PointStatus, error) {
+	// 1. Get all managed points (Union of owned points and shared points)
 	allPointsMap := make(map[string]models.InundationStation)
 	var ownedPoints = make([]models.InundationStation, 0)
 	var err error
-
-	// A. Fetch points based on visibility and target filter
-	err = s.inundationStationRepo.R_SelectMany(ctx, finalFilter, &ownedPoints)
-
-	// B. Still allow fetching specific pointIDs (e.g. for employees)
+	// A. Get points owned by or shared with this organization
+	if orgID != "" {
+		err = s.inundationStationRepo.R_SelectMany(ctx, bson.M{"$or": []bson.M{
+			{"org_id": orgID},
+			{"shared_org_ids": orgID},
+			{"share_all": true},
+		}}, &ownedPoints)
+	} else if orgID == "" && len(pointIDs) == 0 {
+		ownedPoints, err = s.inundationStationRepo.ListByOrg(ctx, "")
+	}
 	if len(pointIDs) > 0 {
 		for _, pid := range pointIDs {
-			p, err := s.inundationStationRepo.GetByID(ctx, pid)
-			if err == nil && p != nil {
-				// No extra access check here because GetPointsStatus usually called with valid permissions
-				// but for safety we could verify. For now stick to existing logic.
-				ownedPoints = append(ownedPoints, *p)
+			if _, exists := allPointsMap[pid]; !exists {
+				p, err := s.inundationStationRepo.GetByID(ctx, pid)
+				if err == nil && p != nil {
+					ownedPoints = append(ownedPoints, *p)
+				}
 			}
 		}
 	}
@@ -829,13 +808,8 @@ func (s *service) GetPointsStatus(ctx context.Context, visibilityOrgID string, t
 	}
 
 	// 2. Get all active reports for managed points (Union of owned and shared)
-	allPointIDs := make([]string, 0, len(points))
-	for _, p := range points {
-		allPointIDs = append(allPointIDs, p.ID)
-	}
-
 	var activeReports []*models.InundationReport
-	err = s.InundationReportRepo.R_SelectMany(ctx, bson.M{"status": "active", "point_id": bson.M{"$in": allPointIDs}}, &activeReports)
+	err = s.InundationReportRepo.R_SelectMany(ctx, bson.M{"status": "active", "point_id": bson.M{"$in": pointIDs}}, &activeReports)
 	if len(activeReports) == 0 {
 		activeReports = make([]*models.InundationReport, 0)
 	}

@@ -107,27 +107,27 @@ func (h *InundationHandler) CreateReport(c *gin.Context) {
 	}
 
 	report := &models.InundationReport{
-		OrgID:         user.OrgID,
-		UserID:        user.ID,
-		UserEmail:     user.Email,
-		PointID:       pointID,
-		StreetName:    streetName,
-		Depth:         depth,
-		Length:        length,
-		Width:         width,
-		StartTime:     startTime,
-		Description:   description,
-		TrafficStatus: trafficStatus,
-		MechChecked:   c.PostForm("mech_checked") == "true",
-		MechNote:      c.PostForm("mech_note"),
-		MechD:         mechD,
-		MechR:         mechR,
-		MechS:         mechS,
-		MechUserID:    user.ID,
-		MechUserName:  user.Name,
-		SurveyChecked: surveyChecked,
-		SurveyNote:    surveyNote,
-		SurveyUserID:  user.ID,
+		OrgID:          user.OrgID,
+		UserID:         user.ID,
+		UserEmail:      user.Email,
+		PointID:        pointID,
+		StreetName:     streetName,
+		Depth:          depth,
+		Length:         length,
+		Width:          width,
+		StartTime:      startTime,
+		Description:    description,
+		TrafficStatus:  trafficStatus,
+		MechChecked:    c.PostForm("mech_checked") == "true",
+		MechNote:       c.PostForm("mech_note"),
+		MechD:          mechD,
+		MechR:          mechR,
+		MechS:          mechS,
+		MechUserID:     user.ID,
+		MechUserName:   user.Name,
+		SurveyChecked:  surveyChecked,
+		SurveyNote:     surveyNote,
+		SurveyUserID:   user.ID,
 		SurveyUserName: user.Name,
 	}
 
@@ -367,8 +367,7 @@ func (h *InundationHandler) GetPointsStatus(c *gin.Context) {
 		return
 	}
 
-	var targetOrgID string = c.Query("org_id")
-	var visibilityOrgID string = ""
+	var orgID string
 	var pointIDs []string
 
 	if user.IsEmployee && !isAllowedAll {
@@ -382,12 +381,18 @@ func (h *InundationHandler) GetPointsStatus(c *gin.Context) {
 			h.SendData(c, []inundation.PointStatus{})
 			return
 		}
-	} else if !isAllowedAll {
-		// Manager: visibility limited to their org
-		visibilityOrgID = user.OrgID
+		orgID = "" // không fetch theo org
+	} else if isAllowedAll {
+		// Super admin / Company: lấy tất cả hoặc theo org_id filter
+		if qOrg := c.Query("org_id"); qOrg != "" {
+			orgID = qOrg
+		}
+	} else {
+		// Manager (non-employee, non-superadmin): lấy theo org
+		orgID = user.OrgID
 	}
 
-	res, err := h.service.GetPointsStatus(c.Request.Context(), visibilityOrgID, targetOrgID, pointIDs)
+	res, err := h.service.GetPointsStatus(c.Request.Context(), orgID, pointIDs)
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -836,9 +841,9 @@ func (h *InundationHandler) UpdateSurvey(c *gin.Context) {
 
 	form, _ := c.MultipartForm()
 	updatedField := &models.InundationReport{
-		SurveyChecked: c.PostForm("survey_checked") == "true",
-		SurveyNote:    c.PostForm("survey_note"),
-		SurveyUserID:  user.ID,
+		SurveyChecked:  c.PostForm("survey_checked") == "true",
+		SurveyNote:     c.PostForm("survey_note"),
+		SurveyUserID:   user.ID,
 		SurveyUserName: user.Name,
 	}
 
@@ -912,12 +917,12 @@ func (h *InundationHandler) UpdateMech(c *gin.Context) {
 
 	form, _ := c.MultipartForm()
 	updatedField := &models.InundationReport{
-		MechChecked: c.PostForm("mech_checked") == "true",
-		MechNote:    c.PostForm("mech_note"),
-		MechD:       c.PostForm("mech_d"),
-		MechR:       c.PostForm("mech_r"),
-		MechS:       c.PostForm("mech_s"),
-		MechUserID:  user.ID,
+		MechChecked:  c.PostForm("mech_checked") == "true",
+		MechNote:     c.PostForm("mech_note"),
+		MechD:        c.PostForm("mech_d"),
+		MechR:        c.PostForm("mech_r"),
+		MechS:        c.PostForm("mech_s"),
+		MechUserID:   user.ID,
 		MechUserName: user.Name,
 	}
 

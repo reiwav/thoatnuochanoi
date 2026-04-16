@@ -483,6 +483,8 @@ func (h *InundationHandler) UpdatePoint(c *gin.Context) {
 	} else if req.OrgID == "" {
 		req.OrgID = currentPoint.OrgID
 	}
+	req.LastReportID = currentPoint.LastReportID
+	req.ReportID = currentPoint.ReportID
 
 	err = h.service.UpdatePoint(c.Request.Context(), id, req)
 	if err != nil {

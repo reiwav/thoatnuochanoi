@@ -788,9 +788,17 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []
 		if p.LastReportID != "" {
 			lastReport, _ = s.InundationReportRepo.GetByID(ctx, p.LastReportID)
 		}
+
+		active := reportsByPoint[p.ID]
+		if active != nil {
+			p.ReportID = active.ID
+		} else {
+			p.ReportID = ""
+		}
+
 		result[i] = PointStatus{
 			InundationStation: p,
-			ActiveReport:      reportsByPoint[p.ID],
+			ActiveReport:      active,
 			LastReport:        lastReport,
 		}
 	}

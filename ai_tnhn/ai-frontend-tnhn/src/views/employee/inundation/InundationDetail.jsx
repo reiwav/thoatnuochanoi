@@ -136,7 +136,6 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
             }
             toast.success('Đã gửi phản hồi');
             setReviewDialog({ open: false, itemId: null, type: null, comment: '' });
-            window.location.reload();
         } catch (err) {
             toast.error('Lỗi khi gửi phản hồi');
         }
@@ -445,7 +444,6 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
                         onSuccess={() => {
                             setEditMode({ open: false, item: null });
                             toast.success('Chỉnh sửa đã được lưu');
-                            window.location.reload();
                         }}
                     />
                 </Box>

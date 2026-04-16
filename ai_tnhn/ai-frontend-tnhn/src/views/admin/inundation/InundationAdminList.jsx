@@ -130,7 +130,8 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
         return report?.is_review_updated;
     }, [point]);
 
-    const handleReview = async () => {
+    const handleReview = async (e) => {
+        if (e) e.preventDefault();
         if (!commentInput.trim()) return;
         setIsSubmitting(true);
         try {
@@ -247,6 +248,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
 
                             <Button
                                 fullWidth
+                                type="button"
                                 variant="contained"
                                 color="primary"
                                 size="large"
@@ -337,7 +339,8 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                             color="primary"
                             onClick={() => {
                                 if (point.report_id) {
-                                    navigate(`${basePath}/inundation/form?tab=1&id=${point.report_id}&name=${encodeURIComponent(point.name)}`);
+                                    // Chỉnh lại basePath nếu biến này không tồn tại trong scope của bạn, ở đây tôi dùng template literal của bạn
+                                    navigate(`/admin/inundation/form?tab=1&id=${point.report_id}&name=${encodeURIComponent(point.name)}`);
                                 } else {
                                     navigate(`/admin/inundation/form?tab=0&point_id=${point.id}&name=${encodeURIComponent(point.name)}`);
                                 }
@@ -541,6 +544,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                             />
                                             <Stack direction="row" justifyContent="flex-end">
                                                 <Button
+                                                    type="button"
                                                     variant="contained"
                                                     color="primary"
                                                     size="small"
@@ -576,7 +580,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                     {
                                         isMobile && (
                                             <Box sx={{ mt: 1, textAlign: 'right' }}>
-                                                <Button size="small" variant="contained" color="primary" onClick={() => navigate(`/admin/inundation/form?id=${point.active_report?.id || point.last_report_id}&tab=1&readonly=true`)}>Xem chi tiết</Button>
+                                                <Button type="button" size="small" variant="contained" color="primary" onClick={() => navigate(`/admin/inundation/form?id=${point.active_report?.id || point.last_report_id}&tab=1&readonly=true`)}>Xem chi tiết</Button>
                                             </Box>
                                         )
                                     }
@@ -615,7 +619,8 @@ const CollapsibleHistoryRow = ({ report, organizations, handleOpenViewer, naviga
         return false;
     }, [user, isCompany, isEmployee, report, organizations]);
 
-    const handleReview = async () => {
+    const handleReview = async (e) => {
+        if (e) e.preventDefault();
         if (!commentInput.trim()) return;
         setIsSubmitting(true);
         try {
@@ -689,6 +694,7 @@ const CollapsibleHistoryRow = ({ report, organizations, handleOpenViewer, naviga
 
                             <Button
                                 fullWidth
+                                type="button"
                                 variant="contained"
                                 color="primary"
                                 size="large"
@@ -728,7 +734,7 @@ const CollapsibleHistoryRow = ({ report, organizations, handleOpenViewer, naviga
                 </TableCell>
                 <TableCell><Chip label={report.status === 'active' ? 'Đang ngập' : 'Đã kết thúc'} color={report.status === 'active' ? 'error' : 'success'} size="small" sx={{ fontWeight: 700 }} /></TableCell>
                 <TableCell align="right" sx={{ p: { xs: 1, md: 2 } }}>
-                    <Button size="small" variant="text" onClick={() => navigate(`/admin/inundation/form?id=${report.id}&tab=1&readonly=true`)}>Xem chi tiết</Button>
+                    <Button type="button" size="small" variant="text" onClick={() => navigate(`/admin/inundation/form?id=${report.id}&tab=1&readonly=true`)}>Xem chi tiết</Button>
                 </TableCell>
             </TableRow>
             <TableRow>
@@ -771,7 +777,7 @@ const CollapsibleHistoryRow = ({ report, organizations, handleOpenViewer, naviga
                                 </Box>
                                 {isMobile && (
                                     <Box sx={{ mt: 1, textAlign: 'right' }}>
-                                        <Button size="small" variant="contained" color="primary" onClick={() => navigate(`/admin/inundation/form?id=${report.id}&tab=1&readonly=true`)}>Xem chi tiết</Button>
+                                        <Button type="button" size="small" variant="contained" color="primary" onClick={() => navigate(`/admin/inundation/form?id=${report.id}&tab=1&readonly=true`)}>Xem chi tiết</Button>
                                     </Box>
                                 )}
                             </Stack>
@@ -939,7 +945,7 @@ const InundationAdminList = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
                     <Stack direction="row" alignItems="center" spacing={1}>
                         <IconAlertTriangle size={24} color="red" />
-                        <Typography variant="h3" sx={{ fontWeight: 800 }}>## Cập nhật điểm ngập</Typography>
+                        <Typography variant="h3" sx={{ fontWeight: 800 }}>Cập nhật điểm ngập</Typography>
                     </Stack>
                     <Stack direction="row" spacing={1}>
                         <Chip label="Điểm trực" variant={activeTab === 0 ? 'filled' : 'outlined'} color="primary" onClick={() => setActiveTab(0)} sx={{ fontWeight: 700, cursor: 'pointer' }} />
@@ -957,7 +963,7 @@ const InundationAdminList = () => {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         InputProps={{
-                            startAdornment: <IconSearch size={20} sx={{ color: 'text.disabled', mr: 1, ml: 0.5 }} />,
+                            startAdornment: <IconSearch size={20} style={{ color: '#9e9e9e', marginRight: '8px' }} />,
                             sx: { borderRadius: 3, fontWeight: 600 }
                         }}
                         sx={{ flex: 1 }}
@@ -1042,8 +1048,8 @@ const InundationAdminList = () => {
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {loadingPoints ? [1, 2, 3].map(i => <TableRow key={i}><TableCell colSpan={6}><Skeleton height={40} /></TableCell></TableRow>) :
-                                        filteredPoints.length === 0 ? <TableRow><TableCell colSpan={6} align="center">Trống</TableCell></TableRow> :
+                                    {loadingPoints ? [1, 2, 3].map(i => <TableRow key={i}><TableCell colSpan={7}><Skeleton height={40} /></TableCell></TableRow>) :
+                                        filteredPoints.length === 0 ? <TableRow><TableCell colSpan={7} align="center">Trống</TableCell></TableRow> :
                                             filteredPoints.map(point => (
                                                 <CollapsiblePointRow
                                                     key={point.id}
@@ -1112,8 +1118,8 @@ const InundationAdminList = () => {
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {loadingHistory ? [1, 2, 3].map(i => <TableRow key={i}><TableCell colSpan={7}><Skeleton height={40} /></TableCell></TableRow>) :
-                                        historyReports.length === 0 ? <TableRow><TableCell colSpan={7} align="center">Trống</TableCell></TableRow> :
+                                    {loadingHistory ? [1, 2, 3].map(i => <TableRow key={i}><TableCell colSpan={9}><Skeleton height={40} /></TableCell></TableRow>) :
+                                        historyReports.length === 0 ? <TableRow><TableCell colSpan={9} align="center">Trống</TableCell></TableRow> :
                                             historyReports.map(report => (
                                                 <CollapsibleHistoryRow
                                                     key={report.id}

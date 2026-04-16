@@ -6,18 +6,33 @@ import {
 import { IconSend, IconCloudUpload } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 import inundationApi from 'api/inundation';
+import { processAndWatermark } from 'utils/imageProcessor';
 
 const InundationSurveyPanel = ({ report, pointId, onSuccess }) => {
     const [submitting, setSubmitting] = useState(false);
+    const [processing, setProcessing] = useState(false);
     const [surveyData, setSurveyData] = useState({
-        checked: report?.survey_checked || report?.surveyChecked || false,
+        checked: !!(report?.survey_checked || report?.surveyChecked),
         note: report?.survey_note || report?.surveyNote || '',
         images: []
     });
 
-    const handleFileChange = (e) => {
+    const handleFileChange = async (e) => {
         const files = Array.from(e.target.files);
-        setSurveyData(prev => ({ ...prev, images: [...prev.images, ...files] }));
+        if (files.length === 0) return;
+
+        setProcessing(true);
+        try {
+            const watermarkText = report?.street_name || new URLSearchParams(window.location.search).get('name') || '';
+            const processedFiles = await Promise.all(files.map(file => processAndWatermark(file, watermarkText)));
+            setSurveyData(prev => ({ ...prev, images: [...prev.images, ...processedFiles] }));
+        } catch (error) {
+            console.error('Lỗi xử lý ảnh:', error);
+            toast.error('Không thể xử lý ảnh, vui lòng thử lại');
+        } finally {
+            setProcessing(false);
+            e.target.value = '';
+        }
     };
 
     // Sync state when report changes
@@ -25,7 +40,7 @@ const InundationSurveyPanel = ({ report, pointId, onSuccess }) => {
         if (report) {
             setSurveyData(prev => ({
                 ...prev,
-                checked: report.survey_checked || report.surveyChecked || false,
+                checked: !!(report.survey_checked || report.surveyChecked),
                 note: report.survey_note || report.surveyNote || ''
             }));
         }
@@ -35,7 +50,7 @@ const InundationSurveyPanel = ({ report, pointId, onSuccess }) => {
         setSubmitting(true);
         try {
             const formData = new FormData();
-            formData.append('survey_checked', surveyData.checked);
+            formData.append('survey_checked', String(surveyData.checked));
             formData.append('survey_note', surveyData.note);
             surveyData.images.forEach(img => {
                 formData.append('images', img);
@@ -83,13 +98,14 @@ const InundationSurveyPanel = ({ report, pointId, onSuccess }) => {
                         <Button
                             component="label"
                             variant="outlined"
+                            disabled={processing}
                             sx={{
                                 width: 80, height: 80, borderRadius: 2,
                                 border: '2px dashed', borderColor: 'divider',
                                 display: 'flex', flexDirection: 'column', gap: 0.5
                             }}
                         >
-                            <IconCloudUpload size={24} color="#00bcd4" />
+                            {processing ? <CircularProgress size={20} color="secondary" /> : <IconCloudUpload size={24} color="#00bcd4" />}
                             <input type="file" hidden multiple accept="image/*" onChange={handleFileChange} />
                         </Button>
 

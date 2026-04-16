@@ -631,14 +631,14 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 			if inundationSummary.ActivePoints > 0 {
 				var details []string
 				for _, pt := range inundationSummary.OngoingPoints {
-					// depthInfo := pt.Length + " x " + pt.Width + " x " + pt.Depth
-					// if depthInfo == "" {
-					// 	depthInfo = "chưa rõ độ sâu"
-					// } else {
-					// 	depthInfo = "ngập " + depthInfo
-					// }
-					//details = append(details, fmt.Sprintf("%s (%s)", pt.StreetName, depthInfo))
-					details = append(details, pt.StreetName)
+					depthInfo := pt.Length + " x " + pt.Width + " x " + pt.Depth
+					if depthInfo == "" {
+						depthInfo = "chưa rõ độ sâu"
+					} else {
+						depthInfo = "ngập " + depthInfo
+					}
+					details = append(details, fmt.Sprintf("%s (%s)", pt.StreetName, depthInfo))
+					//details = append(details, pt.StreetName)
 				}
 				chiTietCacDiem = strings.Join(details, ", ")
 			}
@@ -652,10 +652,15 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 		if pumpingSummary, err := h.googleSvc.GetPumpingStationSummary(gCtx, "", nil); err == nil && pumpingSummary != nil {
 			var stInfos []string
 			for _, st := range pumpingSummary.Stations {
-				stInfos = append(stInfos, fmt.Sprintf("%s: %d tổ bơm, trong đó %d đang vận hành, %d đang dừng, %d đang bảo dưỡng. Cập nhật mới nhất: %s.", st.Name, st.PumpCount, st.OperatingCount, st.ClosedCount, st.MaintenanceCount, st.LastUpdate))
+				if st.OperatingCount == 0 {
+					continue
+				}
+				stInfos = append(stInfos, fmt.Sprintf("%s: %d/%d đang vận hành, cập nhật lúc: %s.", st.Name, st.OperatingCount, st.PumpCount, st.LastUpdate))
 			}
 			if len(stInfos) > 0 {
 				noiDungTramBom = strings.Join(stInfos, "\n")
+			} else {
+				noiDungTramBom = "Hiện tại không ghi nhận trạm bơm nào đang vận hành."
 			}
 		}
 		return nil
@@ -812,11 +817,11 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 	if h.geminiSvc != nil && extractedContent != "" {
 		var prompt string
 		if soDiemMua == 0 && hasRainfall {
-			prompt = fmt.Sprintf(constants.PromptRainStopped, extractedContent, rainInfoStr, hh, dd, mm, yyyy)
+			prompt = fmt.Sprintf(constants.PromptRainStopped, extractedContent, hh, dd, mm, yyyy)
 		} else if soDiemMua == 0 {
-			prompt = fmt.Sprintf(constants.PromptNoRain, extractedContent, rainInfoStr, hh, dd, mm, yyyy)
+			prompt = fmt.Sprintf(constants.PromptNoRain, extractedContent, hh, dd, mm, yyyy)
 		} else {
-			prompt = fmt.Sprintf(constants.PromptActiveRain, extractedContent, soDiemMua, rainInfoStr, hh, dd, mm, yyyy)
+			prompt = fmt.Sprintf(constants.PromptActiveRain, extractedContent, soDiemMua, hh, dd, mm, yyyy)
 		}
 
 		if aiResult, err := h.geminiSvc.Chat(ctx, prompt, nil, "system_report", true, "SKIP_LOG"); err == nil && aiResult != "" {

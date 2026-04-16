@@ -83,11 +83,6 @@ func (h *InundationHandler) CreateReport(c *gin.Context) {
 		})
 	}
 
-	// 4. Create Report
-	depth := c.PostForm("depth")
-	length := c.PostForm("length")
-	width := c.PostForm("width")
-
 	mechD := c.PostForm("mech_d")
 	mechR := c.PostForm("mech_r")
 	mechS := c.PostForm("mech_s")

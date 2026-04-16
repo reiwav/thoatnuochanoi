@@ -24,7 +24,9 @@ const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type, organiz
         // Specific for Lake/River
         Loai: '',
         TenTramHTML: '',
-        NguongCanhBao: ''
+        NguongCanhBao: '',
+        ThuTu: 0,
+        TrongSoBaoCao: 0
     });
 
     useEffect(() => {
@@ -41,7 +43,9 @@ const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type, organiz
                     share_all: station.share_all || false,
                     Loai: station.Loai || '',
                     TenTramHTML: station.TenTramHTML || '',
-                    NguongCanhBao: station.NguongCanhBao !== undefined ? station.NguongCanhBao : ''
+                    NguongCanhBao: station.NguongCanhBao !== undefined ? station.NguongCanhBao : '',
+                    ThuTu: station.ThuTu !== undefined ? station.ThuTu : 0,
+                    TrongSoBaoCao: station.TrongSoBaoCao !== undefined ? station.TrongSoBaoCao : 0
                 });
             } else {
                 setFormData({
@@ -55,7 +59,9 @@ const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type, organiz
                     share_all: false,
                     Loai: '',
                     TenTramHTML: '',
-                    NguongCanhBao: ''
+                    NguongCanhBao: '',
+                    ThuTu: 0,
+                    TrongSoBaoCao: 0
                 });
             }
         }
@@ -80,6 +86,8 @@ const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type, organiz
         const submitData = { ...formData };
         if (type !== 'inundation') {
             submitData.NguongCanhBao = submitData.NguongCanhBao !== '' ? parseFloat(submitData.NguongCanhBao) : 0;
+            submitData.ThuTu = parseInt(submitData.ThuTu) || 0;
+            submitData.TrongSoBaoCao = parseInt(submitData.TrongSoBaoCao) || 0;
         }
 
         onSubmit(submitData);
@@ -193,6 +201,26 @@ const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type, organiz
                             value={formData.NguongCanhBao}
                             onChange={(e) => handleChange('NguongCanhBao', e.target.value)}
                         />
+                    )}
+
+                    {type !== 'inundation' && (
+                        <Grid container spacing={2}>
+                            <Grid item xs={12} sm={6}>
+                                <TextField
+                                    fullWidth label="Độ ưu tiên" type="number"
+                                    value={formData.ThuTu}
+                                    onChange={(e) => handleChange('ThuTu', e.target.value)}
+                                    helperText="Số nhỏ = ưu tiên cao"
+                                />
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                                <TextField
+                                    fullWidth label="Trọng số báo cáo" type="number"
+                                    value={formData.TrongSoBaoCao}
+                                    onChange={(e) => handleChange('TrongSoBaoCao', e.target.value)}
+                                />
+                            </Grid>
+                        </Grid>
                     )}
 
                     <FormControlLabel

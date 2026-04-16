@@ -34,7 +34,8 @@ const StationRow = ({ row, handleOpenEdit, handleDelete, isMobile, canEdit, canD
                 {!isMobile && <TableCell sx={{ fontSize: '0.95rem' }}>{row.DiaChi}</TableCell>}
                 <TableCell sx={{ fontSize: '0.95rem', fontWeight: 600 }}>{organizationName || '-'}</TableCell>
                 {!isMobile && <TableCell sx={{ fontSize: '0.85rem' }}>{row.share_all ? 'Tất cả xí nghiệp' : (row.shared_org_ids?.map(id => organizationNames[id]).filter(n => n).join(', ') || '-')}</TableCell>}
-                {!isMobile && <TableCell sx={{ fontSize: '0.85rem' }}>{row.Lat}, {row.Lng}</TableCell>}
+                {!isMobile && <TableCell align="center" sx={{ fontSize: '1rem', fontWeight: 700 }}>{row.ThuTu || 0}</TableCell>}
+                {!isMobile && <TableCell align="center" sx={{ fontSize: '1rem', fontWeight: 700 }}>{row.TrongSoBaoCao || 0}</TableCell>}
                 {!isMobile && <TableCell sx={{ fontSize: '1rem', fontWeight: 700 }}>{row.NguongCanhBao || '-'}</TableCell>}
                 {!isMobile && (
                     <TableCell>
@@ -228,7 +229,8 @@ const StationRainList = () => {
                             {!isMobile && <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Địa chỉ</TableCell>}
                             {!isMobile && <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Xí nghiệp quản lý</TableCell>}
                             {!isMobile && <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Xí nghiệp phối hợp</TableCell>}
-                            {!isMobile && <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Tọa độ</TableCell>}
+                            {!isMobile && <TableCell align="center" sx={{ fontWeight: 800, fontSize: '1rem' }}>Ưu tiên</TableCell>}
+                            {!isMobile && <TableCell align="center" sx={{ fontWeight: 800, fontSize: '1rem' }}>Trọng số</TableCell>}
                             {!isMobile && <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Ngưỡng</TableCell>}
                             {!isMobile && <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Trạng thái</TableCell>}
                             {(canEdit || canDelete) && <TableCell align="right" sx={{ fontWeight: 800, fontSize: '1rem' }}>Thao tác</TableCell>}

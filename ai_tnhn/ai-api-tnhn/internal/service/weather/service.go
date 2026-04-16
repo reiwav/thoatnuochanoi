@@ -72,6 +72,7 @@ type WaterDataResponse struct {
 			TenTram     string `json:"TenTram"`
 			TenTramHTML string `json:"TenTramHTML"`
 			Loai        string `json:"Loai"` // "1" for River, "2" for Lake
+			ThuTu       int    `json:"ThuTu"`
 		} `json:"tram"`
 		Data []struct {
 			TramId       string  `json:"TramId"`
@@ -111,8 +112,8 @@ type service struct {
 	forecast     string
 	lastFetch    time.Time
 
-	geminiForecast    []ForecastDay
-	lastGeminiFetch   time.Time
+	geminiForecast  []ForecastDay
+	lastGeminiFetch time.Time
 }
 
 func NewService(histRepo repository.HistoricalRain) Service {

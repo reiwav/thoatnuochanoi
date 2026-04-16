@@ -9,6 +9,7 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
 import Stack from '@mui/material/Stack';
 import MenuItem from '@mui/material/MenuItem';
+import Grid from '@mui/material/Grid';
 import MultiSelectCheckboxes from 'ui-component/MultiSelectCheckboxes';
 import pumpingStationApi from 'api/pumpingStation';
 import { toast } from 'react-hot-toast';
@@ -25,7 +26,8 @@ const PumpingStationDialog = ({ open, handleClose, item, refresh, organizations 
         is_auto: false,
         org_id: '',
         shared_org_ids: [],
-        share_all: false
+        share_all: false,
+        priority: 0
     });
 
     useEffect(() => {
@@ -46,7 +48,8 @@ const PumpingStationDialog = ({ open, handleClose, item, refresh, organizations 
                     is_auto: false,
                     org_id: '',
                     shared_org_ids: [],
-                    share_all: false
+                    share_all: false,
+                    priority: 0
                 });
             }
         }
@@ -70,6 +73,7 @@ const PumpingStationDialog = ({ open, handleClose, item, refresh, organizations 
             const payload = {
                 ...formData,
                 pump_count: parseInt(formData.pump_count),
+                priority: parseInt(formData.priority) || 0,
             };
             if (item) {
                 await pumpingStationApi.update(item.id, payload);
@@ -108,6 +112,17 @@ const PumpingStationDialog = ({ open, handleClose, item, refresh, organizations 
                         onChange={(e) => handleChange('pump_count', e.target.value)}
                         sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
                     />
+                    <Grid container spacing={2}>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth label="Trọng số BC" type="number"
+                                value={formData.priority}
+                                onChange={(e) => handleChange('priority', e.target.value)}
+                                helperText="Số nhỏ = ưu tiên cao"
+                                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
+                            />
+                        </Grid>
+                    </Grid>
 
                     <TextField
                         fullWidth select label="Đơn vị quản lý" required

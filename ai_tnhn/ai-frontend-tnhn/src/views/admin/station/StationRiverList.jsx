@@ -137,7 +137,8 @@ const StationRiverList = () => {
                             <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Xí nghiệp phối hợp</TableCell>
                             <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Loại</TableCell>
                             <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Địa chỉ</TableCell>
-                            <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Tọa độ</TableCell>
+                            <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Ưu tiên</TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 800, fontSize: '1rem' }}>Trọng số</TableCell>
                             <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Ngưỡng</TableCell>
                             <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Trạng thái</TableCell>
                             {(canEdit || canDelete) && <TableCell align="right" sx={{ fontWeight: 800, fontSize: '1rem' }}>Thao tác</TableCell>}
@@ -156,7 +157,8 @@ const StationRiverList = () => {
                                     <TableCell sx={{ fontSize: '0.85rem' }}>{row.share_all ? 'Tất cả xí nghiệp' : (row.shared_org_ids?.map(id => organizationNamesMap[id]).filter(n => n).join(', ') || '-')}</TableCell>
                                     <TableCell sx={{ fontSize: '1rem' }}>{row.Loai}</TableCell>
                                     <TableCell sx={{ fontSize: '0.95rem' }}>{row.DiaChi}</TableCell>
-                                    <TableCell sx={{ fontSize: '0.85rem' }}>{row.Lat}, {row.Lng}</TableCell>
+                                    <TableCell align="center" sx={{ fontSize: '1rem', fontWeight: 700 }}>{row.ThuTu || 0}</TableCell>
+                                    <TableCell align="center" sx={{ fontSize: '1rem', fontWeight: 700 }}>{row.TrongSoBaoCao || 0}</TableCell>
                                     <TableCell sx={{ fontSize: '1rem', fontWeight: 700 }}>{row.NguongCanhBao || '-'}</TableCell>
                                     <TableCell>
                                         <Chip label={row.Active ? 'Hoạt động' : 'Ngừng'}

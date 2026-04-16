@@ -11,6 +11,7 @@ type RainStation struct {
 	Lat             string   `json:"Lat" bson:"lat"`
 	Lng             string   `json:"Lng" bson:"lng"`
 	ThuTu           int      `json:"ThuTu" bson:"thu_tu"`
+	TrongSoBaoCao   int      `json:"TrongSoBaoCao" bson:"trong_so_bao_cao"`
 	ManHinh         int      `json:"ManHinh" bson:"man_hinh"`
 	PhuongId        int      `json:"PhuongId" bson:"phuong_id"`
 	Active          bool     `json:"Active" bson:"active"`
@@ -31,6 +32,7 @@ type LakeStation struct {
 	Lng             string   `json:"Lng" bson:"lng"`
 	Loai            string   `json:"Loai" bson:"loai"`
 	ThuTu           int      `json:"ThuTu" bson:"thu_tu"`
+	TrongSoBaoCao   int      `json:"TrongSoBaoCao" bson:"trong_so_bao_cao"`
 	ManHinh         int      `json:"ManHinh" bson:"man_hinh"`
 	PhuongId        int      `json:"PhuongId" bson:"phuong_id"`
 	Active          bool     `json:"Active" bson:"active"`
@@ -51,6 +53,7 @@ type RiverStation struct {
 	Lng             string   `json:"Lng" bson:"lng"`
 	Loai            string   `json:"Loai" bson:"loai"`
 	ThuTu           int      `json:"ThuTu" bson:"thu_tu"`
+	TrongSoBaoCao   int      `json:"TrongSoBaoCao" bson:"trong_so_bao_cao"`
 	ManHinh         int      `json:"ManHinh" bson:"man_hinh"`
 	PhuongId        int      `json:"PhuongId" bson:"phuong_id"`
 	Active          bool     `json:"Active" bson:"active"`

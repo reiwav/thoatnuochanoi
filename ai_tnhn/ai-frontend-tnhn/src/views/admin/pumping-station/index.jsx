@@ -61,6 +61,9 @@ const PumpingStationRow = ({ item, index, getOrgNames, handleHistory, handleEdit
                 <TableCell sx={{ p: { xs: 1, md: 2 } }}>
                     <Typography variant="body2" color="textSecondary">{item.share_all ? 'Tất cả xí nghiệp' : (getOrgNames(item.shared_org_ids) || '-')}</Typography>
                 </TableCell>
+                <TableCell sx={{ p: { xs: 1, md: 2 } }} align="center">
+                    <Typography variant="body2" sx={{ fontWeight: 700 }}>{item.priority || 0}</Typography>
+                </TableCell>
                 <TableCell align="center">
                     <Stack direction="row" spacing={1} justifyContent="center">
                         <Tooltip title="Lịch sử vận hành">
@@ -299,6 +302,7 @@ const PumpingStationPage = () => {
                             <TableCell sx={{ fontWeight: 700 }}>Tự động</TableCell>
                             <TableCell sx={{ fontWeight: 700 }}>Đơn vị quản lý</TableCell>
                             <TableCell sx={{ fontWeight: 700 }}>Đơn vị phối hợp</TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 700 }}>Trọng số</TableCell>
                             <TableCell align="center" sx={{ fontWeight: 700 }}>Thao tác</TableCell>
                         </TableRow>
                     </TableHead>

@@ -224,7 +224,7 @@ const CollapsiblePumpingStationRow = ({ station, isMobile, navigate, basePath })
                         </Grid>
                         <Grid item xs={4}>
                             <Box sx={{ textAlign: 'center' }}>
-                                <Typography variant="caption" color="error.main" sx={{ fontWeight: 800, display: 'block', mb: 0.5 }}>ĐANG ĐÓNG</Typography>
+                                <Typography variant="caption" color="error.main" sx={{ fontWeight: 800, display: 'block', mb: 0.5 }}>KHÔNG VẬN HÀNH</Typography>
                                 <Typography variant="h3" sx={{ fontWeight: 900, color: 'error.main' }}>{lastReport?.closed_count || 0}</Typography>
                             </Box>
                         </Grid>
@@ -2493,7 +2493,7 @@ const InundationDashboard = () => {
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                         <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: 'error.main' }} />
                                         <Typography variant="body2" sx={{ fontWeight: 700, color: 'error.main' }}>
-                                            Đóng: {row.closed_count}
+                                            KVH: {row.closed_count}
                                         </Typography>
                                     </Box>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>

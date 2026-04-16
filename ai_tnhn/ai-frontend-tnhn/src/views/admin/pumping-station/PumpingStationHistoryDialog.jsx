@@ -51,7 +51,7 @@ const PumpingStationHistoryDialog = ({ open, handleClose, station }) => {
                                 <TableCell sx={{ fontWeight: 700, color: 'black' }}>Thời gian</TableCell>
                                 <TableCell sx={{ fontWeight: 700, color: 'black' }}>Nhân viên</TableCell>
                                 <TableCell align="center" sx={{ fontWeight: 700, color: 'black' }}>Vận hành</TableCell>
-                                <TableCell align="center" sx={{ fontWeight: 700, color: 'black' }}>Dừng</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 700, color: 'black' }}>Không vận hành</TableCell>
                                 <TableCell align="center" sx={{ fontWeight: 700, color: 'black' }}>Bảo dưỡng</TableCell>
                                 <TableCell align="center" sx={{ fontWeight: 700, color: 'black' }}>Ko tín hiệu</TableCell>
                                 <TableCell sx={{ fontWeight: 700, color: 'black' }}>Ghi chú</TableCell>

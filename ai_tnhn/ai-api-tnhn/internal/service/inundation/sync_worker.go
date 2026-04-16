@@ -31,7 +31,7 @@ type syncTask struct {
 }
 
 type SyncWorker struct {
-	inundationRepo       repository.Inundation
+	InundationReportRepo repository.InundationReport
 	inundationUpdateRepo repository.InundationUpdate
 	orgRepo              repository.Organization
 	driveSvc             googledrive.Service
@@ -48,14 +48,14 @@ type SyncWorker struct {
 }
 
 func NewSyncWorker(
-	inundationRepo repository.Inundation,
+	InundationReportRepo repository.InundationReport,
 	inundationUpdateRepo repository.InundationUpdate,
 	orgRepo repository.Organization,
 	driveSvc googledrive.Service,
 	resolveUploadFolder func(ctx context.Context, org *models.Organization, dataType string, pointID string) (string, error),
 ) *SyncWorker {
 	w := &SyncWorker{
-		inundationRepo:       inundationRepo,
+		InundationReportRepo: InundationReportRepo,
 		inundationUpdateRepo: inundationUpdateRepo,
 		orgRepo:              orgRepo,
 		driveSvc:             driveSvc,
@@ -161,7 +161,7 @@ func (w *SyncWorker) Stop() {
 func (w *SyncWorker) processTask(task syncTask) {
 	ctx := context.Background()
 	if task.Type == TaskTypeReport {
-		report, err := w.inundationRepo.GetByID(ctx, task.ID)
+		report, err := w.InundationReportRepo.GetByID(ctx, task.ID)
 		if err == nil && report != nil {
 			w.processReportSync(ctx, report)
 		}
@@ -230,7 +230,7 @@ func (w *SyncWorker) getActiveLocalPaths(ctx context.Context) (map[string]bool, 
 	rf.PerPage = 1000
 	rf.AddWhere("images", "images", bson.M{"$regex": "^local:"})
 
-	reports, _, err := w.inundationRepo.List(ctx, rf)
+	reports, _, err := w.InundationReportRepo.List(ctx, rf)
 	if err == nil {
 		for _, r := range reports {
 			for _, img := range r.Images {
@@ -294,7 +294,7 @@ func (w *SyncWorker) syncLocalImages() {
 		},
 	})
 
-	reports, _, err := w.inundationRepo.List(ctx, f)
+	reports, _, err := w.InundationReportRepo.List(ctx, f)
 	if err == nil {
 		for _, r := range reports {
 			w.processReportSync(ctx, r)
@@ -339,13 +339,13 @@ func (w *SyncWorker) processReportSync(ctx context.Context, report *models.Inund
 		report.Images = newImages
 		report.SurveyImages = newSurveyImages
 		report.MechImages = newMechImages
-		_ = w.inundationRepo.Update(ctx, report)
+		_ = w.InundationReportRepo.Update(ctx, report)
 		fmt.Printf("SyncWorker: Successfully synced/cleaned images for report %s\n", report.ID)
 	}
 }
 
 func (w *SyncWorker) processUpdateSync(ctx context.Context, update *models.InundationUpdate) {
-	report, err := w.inundationRepo.GetByID(ctx, update.ReportID)
+	report, err := w.InundationReportRepo.GetByID(ctx, update.ReportID)
 	if err != nil {
 		return
 	}

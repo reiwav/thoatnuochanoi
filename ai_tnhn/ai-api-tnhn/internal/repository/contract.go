@@ -1,12 +1,14 @@
 package repository
 
 import (
+	"ai-api-tnhn/internal/base/mgo"
 	"ai-api-tnhn/internal/base/mgo/filter"
 	"ai-api-tnhn/internal/models"
 	"context"
 )
 
 type Contract interface {
+	mgo.BaseTable
 	Upsert(ctx context.Context, contract *models.Contract) error
 	Delete(ctx context.Context, id string) error
 	GetByID(ctx context.Context, id string) (*models.Contract, error)

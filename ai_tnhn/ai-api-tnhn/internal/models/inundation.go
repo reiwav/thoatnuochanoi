@@ -82,4 +82,6 @@ type InundationReport struct {
 	MechR       string   `bson:"mech_r" json:"mech_r"`
 	MechS       string   `bson:"mech_s" json:"mech_s"`
 	MechUserID  string   `bson:"mech_user_id" json:"mech_user_id"`
+
+	LastReportID string `bson:"last_report_id" json:"last_report_id"`
 }

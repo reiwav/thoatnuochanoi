@@ -17,7 +17,7 @@ type inundationRepo struct {
 	*db.Table
 }
 
-func NewInundationRepository(dbase *mongo.Database, collectionName string, prefix string, l logger.Logger) repository.Inundation {
+func NewInundationRepository(dbase *mongo.Database, collectionName string, prefix string, l logger.Logger) repository.InundationReport {
 	return &inundationRepo{
 		Table: db.NewTable(collectionName, prefix, dbase, l),
 	}

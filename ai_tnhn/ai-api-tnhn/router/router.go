@@ -17,7 +17,7 @@ func (h *HandlerFuncs) Create(mid middleware.Middleware, orgHandler *handler.Org
 	r := gin.Default()
 	// ... (cors omitted for brevity in replace_file_content if I were using it, but I'll include enough context)
 	r.Use(
-		h.GinLogger(),
+		//h.GinLogger(),
 		h.GinRecovery(),
 		cors.New(cors.Config{
 			AllowOrigins:     []string{"*"},

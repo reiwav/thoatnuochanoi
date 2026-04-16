@@ -1139,8 +1139,18 @@ func (s *service) ExportYearlyHistory(ctx context.Context, orgID string, year in
 	index, _ := f.NewSheet(sheetName)
 	f.DeleteSheet("Sheet1")
 
+	// Calculate counts per point
+	pointCounts := make(map[string]int)
+	for _, r := range reports {
+		id := r.PointID
+		if id == "" {
+			id = r.StreetName
+		}
+		pointCounts[id]++
+	}
+
 	// Set Headers
-	headers := []string{"STT", "Điểm ngập lụt", "Đơn vị", "Quận", "Bắt đầu ngập", "Thời gian ngập"}
+	headers := []string{"STT", "Điểm ngập lụt", "Đơn vị", "Quận", "Bắt đầu ngập", "Kích thước (DxRxS)", "Thời gian ngập (phút)", "Số lần ngập trong năm"}
 	for i, header := range headers {
 		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
 		f.SetCellValue(sheetName, cell, header)
@@ -1154,14 +1164,22 @@ func (s *service) ExportYearlyHistory(ctx context.Context, orgID string, year in
 		f.SetCellValue(sheetName, "D"+strconv.Itoa(row), r.Address)
 
 		startTime := time.Unix(r.StartTime, 0).Format("02/01/2006 15:04:05")
+		f.SetCellValue(sheetName, "E"+strconv.Itoa(row), startTime)
+
 		dimensions := fmt.Sprintf("%sx%sx%s", r.Length, r.Width, r.Depth)
-		f.SetCellValue(sheetName, "E"+strconv.Itoa(row), fmt.Sprintf("%s - %s", startTime, dimensions))
+		f.SetCellValue(sheetName, "F"+strconv.Itoa(row), dimensions)
 
 		duration := ""
 		if r.EndTime > 0 {
 			duration = strconv.FormatInt((r.EndTime-r.StartTime)/60, 10)
 		}
-		f.SetCellValue(sheetName, "F"+strconv.Itoa(row), duration)
+		f.SetCellValue(sheetName, "G"+strconv.Itoa(row), duration)
+
+		id := r.PointID
+		if id == "" {
+			id = r.StreetName
+		}
+		f.SetCellValue(sheetName, "H"+strconv.Itoa(row), pointCounts[id])
 	}
 
 	f.SetActiveSheet(index)

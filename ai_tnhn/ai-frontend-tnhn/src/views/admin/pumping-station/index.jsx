@@ -106,7 +106,7 @@ const PumpingStationRow = ({ item, index, getOrgNames, handleHistory, handleEdit
                                     </Grid>
                                     <Grid item xs={12} sm={3}>
                                         <Box sx={{ p: 1.5, bgcolor: 'white', borderRadius: 2, border: '1px solid', borderColor: 'success.light', textAlign: 'center' }}>
-                                            <Typography variant="caption" color="success.main" sx={{ fontWeight: 800, display: 'block' }}>ĐANG DỪNG</Typography>
+                                            <Typography variant="caption" color="success.main" sx={{ fontWeight: 800, display: 'block' }}>KHÔNG VẬN HÀNH</Typography>
                                             <Typography variant="h4" sx={{ fontWeight: 900 }}>{lastReport.closed_count}</Typography>
                                         </Box>
                                     </Grid>

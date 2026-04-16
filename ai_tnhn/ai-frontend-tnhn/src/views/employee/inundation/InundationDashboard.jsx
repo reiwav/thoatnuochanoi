@@ -1783,6 +1783,21 @@ const InundationDashboard = () => {
         }
     };
 
+    // Tự động chuyển tab dựa trên phân công của nhân viên
+    useEffect(() => {
+        const urlParams = new URLSearchParams(search);
+        // Chỉ chạy logic redirect nếu là nhân viên, chưa có activeTab trong URL và userInfo đã load xong
+        if (isEmployee && !urlParams.get('activeTab') && userInfo) {
+            if (userInfo.assigned_pumping_station_id) {
+                // Ưu tiên tab trạm bơm (index 1) nếu được gán
+                navigate(`${basePath}/inundation?activeTab=1`, { replace: true });
+            } else if (userInfo.assigned_inundation_station_ids?.length > 0) {
+                // Hoặc tab điểm ngập (index 0) nếu có danh sách điểm ngập
+                navigate(`${basePath}/inundation?activeTab=0`, { replace: true });
+            }
+        }
+    }, [isEmployee, userInfo, search, navigate, basePath]);
+
     const fetchOrgReports = async (silent = false) => {
         if (!silent) setLoadingHistory(true);
         try {
@@ -2303,7 +2318,7 @@ const InundationDashboard = () => {
             <Box sx={{ px: isMobile ? 1.5 : 2, pt: 2, pb: 10 }}>
                 {isEmployee && !assignedStationId ? (
                     assignedStation ? (
-                        <PumpingStationReport station={assignedStation} />
+                        <PumpingStationReport station={assignedStation} onSuccess={fetchAssignedStation} />
                     ) : (
                         <Box sx={{ p: 4, textAlign: 'center', bgcolor: 'error.lighter', borderRadius: 4, border: '1px solid', borderColor: 'error.light' }}>
                             <IconAlertTriangle size={48} color={theme.palette.error.main} style={{ marginBottom: 16 }} />
@@ -2326,7 +2341,7 @@ const InundationDashboard = () => {
                                 >
                                     Quay lại danh sách
                                 </Button>
-                                <PumpingStationReport station={stationToReport} />
+                                <PumpingStationReport station={stationToReport} onSuccess={fetchAssignedStation} />
                             </Box>
                         ) : (
                             <>

@@ -26,16 +26,29 @@ import pumpingStationApi from 'api/pumpingStation';
 import { toast } from 'react-hot-toast';
 import PumpingStationHistoryDialog from './PumpingStationHistoryDialog';
 
-const PumpingStationReport = ({ station }) => {
+const PumpingStationReport = ({ station, onSuccess }) => {
     const theme = useTheme();
     const [openHistory, setOpenHistory] = useState(false);
     const [formData, setFormData] = useState({
-        operating_count: 0,
-        closed_count: 0,
-        maintenance_count: 0,
-        no_signal_count: 0,
-        note: ''
+        operating_count: station.last_report?.operating_count || 0,
+        closed_count: station.last_report?.closed_count || 0,
+        maintenance_count: station.last_report?.maintenance_count || 0,
+        no_signal_count: station.last_report?.no_signal_count || 0,
+        note: station.last_report?.note || ''
     });
+
+    // Cập nhật formData khi station thay đổi (ví dụ sau khi reload dữ liệu)
+    useEffect(() => {
+        if (station?.last_report) {
+            setFormData({
+                operating_count: station.last_report.operating_count || 0,
+                closed_count: station.last_report.closed_count || 0,
+                maintenance_count: station.last_report.maintenance_count || 0,
+                no_signal_count: station.last_report.no_signal_count || 0,
+                note: station.last_report.note || ''
+            });
+        }
+    }, [station]);
 
     const totalPumped = useMemo(() => {
         return Number(formData.operating_count) + Number(formData.closed_count) + Number(formData.maintenance_count) + Number(formData.no_signal_count);
@@ -66,7 +79,13 @@ const PumpingStationReport = ({ station }) => {
 
             await pumpingStationApi.report(payload);
             toast.success('Gửi báo cáo thành công');
-            setFormData({ operating_count: 0, closed_count: 0, maintenance_count: 0, no_signal_count: 0, note: '' });
+
+            // Nếu có hàm callback thì gọi để Dashboard refresh lại dữ liệu station mới nhất
+            if (onSuccess) {
+                onSuccess();
+            } else {
+                setFormData({ operating_count: 0, closed_count: 0, maintenance_count: 0, no_signal_count: 0, note: '' });
+            }
         } catch (error) {
             toast.error(error.response?.data?.message || 'Báo cáo thất bại');
         }
@@ -114,12 +133,12 @@ const PumpingStationReport = ({ station }) => {
                 </Grid>
                 <Grid item xs={12} sm={3}>
                     <Paper elevation={0} sx={{ p: 1.5, textAlign: 'center', borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: alpha(theme.palette.success.main, 0.05) }}>
-                        <Typography variant="subtitle1" color="success.main" sx={{ fontWeight: 800, mb: 1 }}>Đang dừng</Typography>
+                        <Typography variant="subtitle1" color="success.main" sx={{ fontWeight: 800, mb: 1 }}>Không vận hành</Typography>
                         <Typography variant="h3" color="success.main" sx={{ fontWeight: 900, fontSize: '1rem' }}>{formData.closed_count}</Typography>
                     </Paper>
                 </Grid>
                 <Grid item xs={12} sm={3}>
-                    <Paper elevation={0} sx={{ 
+                    <Paper elevation={0} sx={{
                         p: 1.5, textAlign: 'center', borderRadius: 2, border: '1px solid', borderColor: '#FFEB3B', bgcolor: alpha('#FFEB3B', 0.1),
                         animation: 'status-blink 1s ease-in-out infinite'
                     }}>
@@ -169,7 +188,7 @@ const PumpingStationReport = ({ station }) => {
                         <TextField
                             select
                             fullWidth
-                            label="Số lượng đang dừng"
+                            label="Số lượng không vận hành"
                             name="closed_count"
                             value={formData.closed_count}
                             onChange={handleChange}
@@ -182,7 +201,7 @@ const PumpingStationReport = ({ station }) => {
                             }}
                         >
                             {getOptions('closed_count').map(num => (
-                                <MenuItem key={num} value={num} sx={{ fontSize: '1rem' }}>{num} máy tạm dừng</MenuItem>
+                                <MenuItem key={num} value={num} sx={{ fontSize: '1rem' }}>{num} không vận hành</MenuItem>
                             ))}
                         </TextField>
                     </Grid>
@@ -229,25 +248,25 @@ const PumpingStationReport = ({ station }) => {
                         </TextField>
                     </Grid>
                     <Grid item xs={12}>
-                    <TextField
-                        sx={{ mt: 2.5 }}
-                        fullWidth
-                        placeholder="Nhập ghi chú vận hành, sự cố kỹ thuật nếu có..."
-                        name="note"
-                        multiline
-                        rows={4}
-                        value={formData.note}
-                        onChange={(e) => setFormData({ ...formData, note: e.target.value })}
-                        InputProps={{
-                            sx: {
-                                borderRadius: 2,
-                                fontSize: '1rem',
-                                bgcolor: alpha(theme.palette.primary.main, 0.02),
-                                '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.04) }
-                            }
-                        }}
-                    />
-                </Grid>
+                        <TextField
+                            sx={{ mt: 2.5 }}
+                            fullWidth
+                            placeholder="Nhập ghi chú vận hành, sự cố kỹ thuật nếu có..."
+                            name="note"
+                            multiline
+                            rows={4}
+                            value={formData.note}
+                            onChange={(e) => setFormData({ ...formData, note: e.target.value })}
+                            InputProps={{
+                                sx: {
+                                    borderRadius: 2,
+                                    fontSize: '1rem',
+                                    bgcolor: alpha(theme.palette.primary.main, 0.02),
+                                    '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.04) }
+                                }
+                            }}
+                        />
+                    </Grid>
 
                 </Grid>
                 {remainingCount > 0 && (

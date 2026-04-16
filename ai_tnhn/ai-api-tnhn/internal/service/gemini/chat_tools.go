@@ -37,7 +37,7 @@ QUY TẮC TRẢ LỜI QUAN TRỌNG:
 7. TRẠM BƠM: Khi báo cáo về trạm bơm, hãy trình bày ngắn gọn theo cấu trúc:
    - "Hiện tại, hệ thống ghi nhận có [X] trạm bơm."
    - "Chi tiết theo từng trạm:"
-    - "[Tên trạm]: [Số lượng] tổ bơm, [chi tiết trạng thái vận hành/không vận hành/bảo dưỡng]. Cập nhật [thời gian/mới nhất: -]."`
+    - "[Tên trạm]: [Số lượng] tổ bơm, [X] bơm đang vận hành, [Y] bơm không vận hành, [Z] bơm đang bảo dưỡng. Cập nhật [thời gian/mới nhất: -]."`
 
 func (s *service) getChatTools() []*genai.FunctionDeclaration {
 	return []*genai.FunctionDeclaration{

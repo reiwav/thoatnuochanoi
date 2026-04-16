@@ -827,8 +827,13 @@ func (s *service) GetPointsStatus(ctx context.Context, visibilityOrgID string, t
 	}
 
 	// 2. Get all active reports for managed points (Union of owned and shared)
+	allPointIDs := make([]string, 0, len(points))
+	for _, p := range points {
+		allPointIDs = append(allPointIDs, p.ID)
+	}
+
 	var activeReports []*models.InundationReport
-	err = s.InundationReportRepo.R_SelectMany(ctx, bson.M{"status": "active", "point_id": bson.M{"$in": pointIDs}}, &activeReports)
+	err = s.InundationReportRepo.R_SelectMany(ctx, bson.M{"status": "active", "point_id": bson.M{"$in": allPointIDs}}, &activeReports)
 	if len(activeReports) == 0 {
 		activeReports = make([]*models.InundationReport, 0)
 	}

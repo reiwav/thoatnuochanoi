@@ -33,9 +33,11 @@ const InundationForm = () => {
     const [loadingReport, setLoadingReport] = useState(false);
 
     const fetchReport = useCallback(async (reportId) => {
+        const id = reportId || searchParams.get('id');
+        if (!id) return;
         setLoadingReport(true);
         try {
-            const res = await inundationApi.getReport(reportId);
+            const res = await inundationApi.getReport(id);
             if (res.data?.status === 'success') {
                 const report = res.data.data;
                 setSelectedReport(report);

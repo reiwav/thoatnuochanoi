@@ -134,7 +134,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
         if (!commentInput.trim()) return;
         setIsSubmitting(true);
         try {
-            const reportId = point.active_report?.id || point.last_report_id;
+            const reportId = point.report_id || point.active_report?.id || point.last_report_id;
             await inundationApi.reviewReport(reportId, commentInput);
             toast.success('Gửi nhận xét thành công');
             setCommentInput('');

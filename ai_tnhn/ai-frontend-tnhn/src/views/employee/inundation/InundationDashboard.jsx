@@ -567,11 +567,11 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                 <Typography variant="caption" sx={{ fontWeight: 900, color: 'primary.main', textTransform: 'uppercase' }}>
                                     ⚡️ KHẢO SÁT THIẾT KẾ:
                                 </Typography>
-                                <Chip 
-                                    label={(latest.survey_checked || latest.surveyChecked) ? "ĐÃ KIỂM TRA" : "CHƯA KIỂM TRA"} 
-                                    size="small" 
+                                <Chip
+                                    label={(latest.survey_checked || latest.surveyChecked) ? "ĐÃ KIỂM TRA" : "CHƯA KIỂM TRA"}
+                                    size="small"
                                     color={(latest.survey_checked || latest.surveyChecked) ? "success" : "default"}
-                                    sx={{ height: 20, fontSize: '0.65rem', fontWeight: 900 }} 
+                                    sx={{ height: 20, fontSize: '0.65rem', fontWeight: 900 }}
                                 />
                             </Box>
                             {(latest.survey_note || latest.surveyNote) && <Typography variant="body2" sx={{ fontWeight: 600 }}>{latest.survey_note || latest.surveyNote}</Typography>}
@@ -585,7 +585,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                 <Typography variant="caption" sx={{ fontWeight: 900, color: 'secondary.main', textTransform: 'uppercase' }}>
                                     ⚙️ XN CƠ GIỚI:
                                 </Typography>
-                                <Chip 
+                                <Chip
                                     label={latest.mech_checked || latest.mechChecked ? "ĐÃ ỨNG TRỰC" : "CHƯA ỨNG TRỰC"}
                                     size="small"
                                     color={latest.mech_checked || latest.mechChecked ? "success" : "default"}
@@ -1105,7 +1105,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                                 <TextField fullWidth label="Chiều rộng (R)" size="small" value={mechData.r} onChange={(e) => setMechData({ ...mechData, r: e.target.value })} placeholder="m" sx={{ '& .MuiInputLabel-root': { fontWeight: 800 } }} />
                                             </Grid>
                                             <Grid item xs={4}>
-                                                <TextField fullWidth label="Diện tích (S)" size="small" value={mechData.s} onChange={(e) => setMechData({ ...mechData, s: e.target.value })} placeholder="m2" sx={{ '& .MuiInputLabel-root': { fontWeight: 800 } }} />
+                                                <TextField fullWidth label="Sâu (S)" size="small" value={mechData.s} onChange={(e) => setMechData({ ...mechData, s: e.target.value })} placeholder="m2" sx={{ '& .MuiInputLabel-root': { fontWeight: 800 } }} />
                                             </Grid>
                                         </Grid>
                                         <Box>

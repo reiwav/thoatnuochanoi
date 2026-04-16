@@ -75,7 +75,7 @@ const InundationMechPanel = ({ report, pointId, onSuccess }) => {
                 // Also add required fields for new report
                 formData.append('street_name', new URLSearchParams(window.location.search).get('name') || '');
                 formData.append('start_time', Math.floor(Date.now() / 1000));
-                
+
                 await inundationApi.createReport(formData);
                 toast.success('Đã tạo báo cáo và gửi dữ liệu cơ giới');
             } else {
@@ -118,18 +118,18 @@ const InundationMechPanel = ({ report, pointId, onSuccess }) => {
                             size="small"
                             value={mechData.r}
                             onChange={(e) => setMechData({ ...mechData, r: e.target.value })}
-                            placeholder="m"
+                            placeholder="mm"
                             sx={{ '& .MuiInputLabel-root': { fontWeight: 800 } }}
                         />
                     </Grid>
                     <Grid item xs={4}>
                         <TextField
                             fullWidth
-                            label="Diện tích (S)"
+                            label="Sâu (S)"
                             size="small"
                             value={mechData.s}
                             onChange={(e) => setMechData({ ...mechData, s: e.target.value })}
-                            placeholder="m2"
+                            placeholder="mm"
                             sx={{ '& .MuiInputLabel-root': { fontWeight: 800 } }}
                         />
                     </Grid>

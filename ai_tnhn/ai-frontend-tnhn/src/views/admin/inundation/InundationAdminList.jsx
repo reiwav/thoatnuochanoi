@@ -89,7 +89,7 @@ const getLatestData = (report) => {
 };
 
 const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate, isMobile, fetchPoints }) => {
-    const [open, setOpen] = useState(point.status === 'active');
+    const [open, setOpen] = useState(!!point.report_id);
     const latest = useMemo(() => getLatestData(point.active_report || point.last_report), [point]);
     const [commentInput, setCommentInput] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -155,12 +155,12 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                             <Typography variant="h5" sx={{ fontWeight: 900, color: 'primary.dark', lineHeight: 1.2, mb: 1.5 }}>{point.name}</Typography>
                             <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
                                 <Chip
-                                    label={point.status === 'active' ? 'Đang ngập' : 'Bình thường'}
-                                    color={point.status === 'active' ? 'error' : 'success'}
+                                    label={point.report_id ? 'Đang ngập' : 'Bình thường'}
+                                    color={point.report_id ? 'error' : 'success'}
                                     size="small"
                                     sx={{ fontWeight: 800 }}
                                 />
-                                {point.status === 'active' && latest?.traffic_status && (
+                                {point.report_id && latest?.traffic_status && (
                                     <Chip
                                         label={getTrafficStatusLabel(latest.traffic_status)}
                                         size="small"
@@ -215,8 +215,8 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                     </Typography>
 
                                     <Typography variant="caption" color="text.secondary" display="block">Cập nhật lúc:</Typography>
-                                    <Typography variant="caption" color={point.status === 'active' ? "error" : "text.secondary"} sx={{ fontWeight: 700 }}>
-                                        {point.status === 'active'
+                                    <Typography variant="caption" color={point.report_id ? "error" : "text.secondary"} sx={{ fontWeight: 700 }}>
+                                        {point.report_id
                                             ? `${formatDateTime(point.updated_at || latest?.newest_ts)}`
                                             : `Kết thúc: ${formatDateTime(point.end_time || latest?.end_time)}`}
                                     </Typography>
@@ -266,7 +266,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
         <React.Fragment>
             <TableRow hover sx={{ '& .MuiTableCell-root': { borderBottom: '1px solid', borderColor: 'divider' } }}>
                 <TableCell sx={{ width: 40, p: { xs: 1, md: 2 } }}>
-                    {point.status === "active" && (
+                    {point.report_id && (
                         <IconButton aria-label="expand row" size="small" onClick={() => setOpen(!open)}>
                             {open ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />}
                         </IconButton>
@@ -279,10 +279,10 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                 <TableCell><Typography variant="body2" sx={{ fontSize: '0.85rem' }}>{point.shared_org_ids?.map(id => organizations.find(o => o.id === id)?.name).filter(n => n).join(', ') || '-'}</Typography></TableCell>
                 <TableCell align="center">
                     <Stack direction="row" spacing={0.5} justifyContent="center" alignItems="center">
-                        <Chip label={point.status === 'active' ? 'Đang ngập' : 'Bình thường'} color={point.status === 'active' ? 'error' : 'success'} size="small" sx={{ fontWeight: 700 }} />
+                        <Chip label={point.report_id ? 'Đang ngập' : 'Bình thường'} color={point.report_id ? 'error' : 'success'} size="small" sx={{ fontWeight: 700 }} />
                     </Stack>
                 </TableCell>
-                <TableCell>{point.status === 'active' && latest?.traffic_status && <Chip label={getTrafficStatusLabel(latest.traffic_status)} size="small" color={getTrafficStatusColor(latest.traffic_status)} variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem' }} />}</TableCell>
+                <TableCell>{point.report_id && latest?.traffic_status && <Chip label={getTrafficStatusLabel(latest.traffic_status)} size="small" color={getTrafficStatusColor(latest.traffic_status)} variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem' }} />}</TableCell>
                 <TableCell align="right" sx={{ p: { xs: 1, md: 2 } }}>
                     {point.report_id ? (
                         <>
@@ -336,8 +336,8 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                             size="small"
                             color="primary"
                             onClick={() => {
-                                if (point.status === 'active') {
-                                    navigate(`${basePath}/inundation/form?tab=1&id=${point.active_report.id}&name=${encodeURIComponent(point.name)}`);
+                                if (point.report_id) {
+                                    navigate(`${basePath}/inundation/form?tab=1&id=${point.report_id}&name=${encodeURIComponent(point.name)}`);
                                 } else {
                                     navigate(`/admin/inundation/form?tab=0&point_id=${point.id}&name=${encodeURIComponent(point.name)}`);
                                 }
@@ -349,7 +349,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                     )}
                 </TableCell>
             </TableRow>
-            {point.status === "active" && (
+            {point.report_id && (
                 <TableRow>
                     <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider', paddingBottom: 0, paddingTop: 0 }} colSpan={isMobile ? 2 : 6}>
                         <Collapse in={open} timeout="auto" unmountOnExit>
@@ -360,8 +360,8 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                 <Stack spacing={1.5}>
                                     {isMobile && (
                                         <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
-                                            <Chip label={point.status === 'active' ? 'Đang ngập' : 'Bình thường'} color={point.status === 'active' ? 'error' : 'success'} size="small" sx={{ fontWeight: 700 }} />
-                                            {point.status === 'active' && latest?.traffic_status && (
+                                            <Chip label={point.report_id ? 'Đang ngập' : 'Bình thường'} color={point.report_id ? 'error' : 'success'} size="small" sx={{ fontWeight: 700 }} />
+                                            {point.report_id && latest?.traffic_status && (
                                                 <Chip label={getTrafficStatusLabel(latest.traffic_status)} size="small" color={getTrafficStatusColor(latest.traffic_status)} variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem' }} />
                                             )}
                                         </Stack>
@@ -525,7 +525,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                         }
                                     </Grid >
 
-                                    {canReview && point.status === 'active' && !latest?.needs_correction && (
+                                    {canReview && point.report_id && !latest?.needs_correction && (
                                         <Box sx={{ mt: 2, p: 2, bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
                                             <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1.5, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <IconMessage2 size={18} /> Phòng KT-CL nhận xét:
@@ -556,7 +556,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                     )}
 
                                     {
-                                        canReview && point.status === 'active' && latest?.needs_correction && (
+                                        canReview && point.report_id && latest?.needs_correction && (
                                             <Box sx={{ mt: 2, p: 1.5, bgcolor: 'warning.lighter', borderRadius: 2, border: '1px solid', borderColor: 'warning.light', display: 'flex', alignItems: 'center', gap: 1.5 }}>
                                                 <IconMessage2 size={20} color="darkorange" />
                                                 <Box>
@@ -884,7 +884,7 @@ const InundationAdminList = () => {
     const filteredPoints = useMemo(() => {
         let result = points;
         if (statusFilter) {
-            result = result.filter(p => p.status === statusFilter);
+            result = result.filter(p => (statusFilter === 'active' ? !!p.report_id : !p.report_id));
         }
         if (trafficFilter) {
             result = result.filter(p => {
@@ -900,8 +900,8 @@ const InundationAdminList = () => {
             );
         }
         return [...result].sort((a, b) => {
-            if (a.status === 'active' && b.status !== 'active') return -1;
-            if (a.status !== 'active' && b.status === 'active') return 1;
+            if (a.report_id && !b.report_id) return -1;
+            if (!a.report_id && b.report_id) return 1;
             return 0;
         });
     }, [points, searchQuery, statusFilter, trafficFilter]);

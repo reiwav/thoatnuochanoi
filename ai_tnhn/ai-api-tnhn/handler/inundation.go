@@ -124,9 +124,11 @@ func (h *InundationHandler) CreateReport(c *gin.Context) {
 		MechR:         mechR,
 		MechS:         mechS,
 		MechUserID:    user.ID,
+		MechUserName:  user.Name,
 		SurveyChecked: surveyChecked,
 		SurveyNote:    surveyNote,
 		SurveyUserID:  user.ID,
+		SurveyUserName: user.Name,
 	}
 
 	// 4.1 Permission Check for Employee
@@ -837,6 +839,7 @@ func (h *InundationHandler) UpdateSurvey(c *gin.Context) {
 		SurveyChecked: c.PostForm("survey_checked") == "true",
 		SurveyNote:    c.PostForm("survey_note"),
 		SurveyUserID:  user.ID,
+		SurveyUserName: user.Name,
 	}
 
 	var images []inundation.ImageContent
@@ -915,6 +918,7 @@ func (h *InundationHandler) UpdateMech(c *gin.Context) {
 		MechR:       c.PostForm("mech_r"),
 		MechS:       c.PostForm("mech_s"),
 		MechUserID:  user.ID,
+		MechUserName: user.Name,
 	}
 
 	var images []inundation.ImageContent

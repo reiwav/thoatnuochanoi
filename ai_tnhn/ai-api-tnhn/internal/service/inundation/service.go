@@ -470,6 +470,7 @@ func (s *service) UpdateSurvey(ctx context.Context, id string, report *models.In
 	existing.SurveyChecked = report.SurveyChecked
 	existing.SurveyNote = report.SurveyNote
 	existing.SurveyUserID = report.SurveyUserID
+	existing.SurveyUserName = userName
 
 	var savedImages []string
 	if len(images) > 0 {
@@ -529,6 +530,7 @@ func (s *service) UpdateMech(ctx context.Context, id string, report *models.Inun
 	existing.MechR = report.MechR
 	existing.MechS = report.MechS
 	existing.MechUserID = report.MechUserID
+	existing.MechUserName = userName
 
 	// OVERRIDE: Update main report dimensions with worker's data
 	if report.MechD != "" {

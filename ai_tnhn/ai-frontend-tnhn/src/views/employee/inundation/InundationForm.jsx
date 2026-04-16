@@ -76,8 +76,8 @@ const InundationForm = () => {
                     if (res.data?.status === 'success') {
                         const points = res.data.data || [];
                         const p = points.find(item => item.id === pointId);
-                        if (p && p.active_report) {
-                            setSelectedReport(p.active_report);
+                        if (p) {
+                            setSelectedReport(p.active_report || p.last_report || null);
                         } else {
                             setSelectedReport(null);
                         }

@@ -93,14 +93,6 @@ const adminPages = {
         },
         {
           id: 'inundation:view',
-          title: 'Lịch sử',
-          type: 'item',
-          url: '/admin/station/inundation/history',
-          icon: icons.IconHistory,
-          breadcrumbs: false
-        },
-        {
-          id: 'inundation:view',
           title: 'Số liệu theo năm',
           type: 'item',
           url: '/admin/station/inundation/yearly',

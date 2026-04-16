@@ -1139,13 +1139,37 @@ func (s *service) ExportYearlyHistory(ctx context.Context, orgID string, year in
 	index, _ := f.NewSheet(sheetName)
 	f.DeleteSheet("Sheet1")
 
+	// Calculate counts per point
+	pointCounts := make(map[string]int)
+	for _, r := range reports {
+		id := r.PointID
+		if id == "" {
+			id = r.StreetName
+		}
+		pointCounts[id]++
+	}
+
 	// Set Headers
-	headers := []string{"STT", "Điểm ngập lụt", "Đơn vị", "Quận", "Bắt đầu ngập", "Thời gian ngập"}
+	headers := []string{"STT", "Điểm ngập lụt", "Đơn vị", "Quận", "Bắt đầu ngập", "Kích thước (DxRxS)", "Thời gian ngập (phút)", "Số lần ngập trong năm"}
 	for i, header := range headers {
 		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
 		f.SetCellValue(sheetName, cell, header)
 	}
 
+	// Helper to format duration
+	formatDuration := func(seconds int64) string {
+		if seconds <= 0 {
+			return "0ph"
+		}
+		h := seconds / 3600
+		m := (seconds % 3600) / 60
+		if h > 0 {
+			return fmt.Sprintf("%dh %dph", h, m)
+		}
+		return fmt.Sprintf("%dph", m)
+	}
+
+	now := time.Now().Unix()
 	for i, r := range reports {
 		row := i + 2
 		f.SetCellValue(sheetName, "A"+strconv.Itoa(row), i+1)
@@ -1154,14 +1178,23 @@ func (s *service) ExportYearlyHistory(ctx context.Context, orgID string, year in
 		f.SetCellValue(sheetName, "D"+strconv.Itoa(row), r.Address)
 
 		startTime := time.Unix(r.StartTime, 0).Format("02/01/2006 15:04:05")
-		dimensions := fmt.Sprintf("%sx%sx%s", r.Length, r.Width, r.Depth)
-		f.SetCellValue(sheetName, "E"+strconv.Itoa(row), fmt.Sprintf("%s - %s", startTime, dimensions))
+		f.SetCellValue(sheetName, "E"+strconv.Itoa(row), startTime)
 
-		duration := ""
-		if r.EndTime > 0 {
-			duration = strconv.FormatInt((r.EndTime-r.StartTime)/60, 10)
+		dimensions := fmt.Sprintf("%sx%sx%s", r.Length, r.Width, r.Depth)
+		f.SetCellValue(sheetName, "F"+strconv.Itoa(row), dimensions)
+
+		endTime := r.EndTime
+		if endTime <= 0 {
+			endTime = now
 		}
-		f.SetCellValue(sheetName, "F"+strconv.Itoa(row), duration)
+		durationSeconds := endTime - r.StartTime
+		f.SetCellValue(sheetName, "G"+strconv.Itoa(row), formatDuration(durationSeconds))
+
+		id := r.PointID
+		if id == "" {
+			id = r.StreetName
+		}
+		f.SetCellValue(sheetName, "H"+strconv.Itoa(row), pointCounts[id])
 	}
 
 	f.SetActiveSheet(index)

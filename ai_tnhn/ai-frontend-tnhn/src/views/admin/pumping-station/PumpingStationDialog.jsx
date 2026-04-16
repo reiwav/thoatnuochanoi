@@ -46,7 +46,7 @@ const PumpingStationDialog = ({ open, handleClose, item, refresh, organizations 
                     active: true,
                     link: '',
                     is_auto: false,
-                    org_id: '',
+                    org_id: isCompany ? '' : (user?.org_id || ''),
                     shared_org_ids: [],
                     share_all: false,
                     priority: 0
@@ -128,7 +128,7 @@ const PumpingStationDialog = ({ open, handleClose, item, refresh, organizations 
                         fullWidth select label="Đơn vị quản lý" required
                         value={formData.org_id}
                         onChange={(e) => handleChange('org_id', e.target.value)}
-                        disabled={!isCompany}
+
                         sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
                     >
                         {(organizations.primary || []).map((org) => (

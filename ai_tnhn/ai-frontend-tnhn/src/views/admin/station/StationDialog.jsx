@@ -54,7 +54,7 @@ const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type, organiz
                     Lat: '',
                     Lng: '',
                     Active: true,
-                    org_id: '',
+                    org_id: isCompany ? '' : (user?.org_id || ''),
                     shared_org_ids: [],
                     share_all: false,
                     Loai: '',
@@ -153,7 +153,7 @@ const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type, organiz
                         required
                         value={formData.org_id}
                         onChange={(e) => handleChange('org_id', e.target.value)}
-                        disabled={!isCompany}
+
                     >
                         <MenuItem value="">Chọn đơn vị quản lý</MenuItem>
                         {(organizations.primary || []).map((org) => (

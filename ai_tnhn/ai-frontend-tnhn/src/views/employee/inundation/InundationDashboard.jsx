@@ -269,7 +269,7 @@ const CollapsiblePumpingStationRow = ({ station, isMobile, navigate, basePath })
 const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate, isMobile, basePath, hasPermission, isEmployee }) => {
     const theme = useTheme();
     const { user, isCompany } = useAuthStore();
-    const [open, setOpen] = useState(point.status === 'active');
+    const [open, setOpen] = useState(!!point.report_id);
     const canSurvey = useMemo(() => hasPermission('inundation:survey'), [hasPermission]);
     const canMech = useMemo(() => hasPermission('inundation:mechanic') || hasPermission('inundation:mech'), [hasPermission]);
     const canReview = useMemo(() => {
@@ -280,7 +280,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
         const report = point.active_report || point.last_report;
         if (!report) return false;
         if (report.org_id === user?.org_id) return true;
-        
+
         const userOrg = organizations?.find(o => o.id === user?.org_id);
         if (userOrg?.inundation_ids?.includes(report.point_id)) return true;
         return false;
@@ -477,14 +477,13 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
             }}
             onClick={() => {
                 if (canMech && isEmployee) {
-                    if (point.status === 'active') {
-                        navigate(`${basePath}/inundation/form?tab=mech&id=${point.active_report.id}&point_id=${point.id}&name=${encodeURIComponent(point.name)}`);
+                    if (point.report_id) {
+                        navigate(`${basePath}/inundation/form?tab=mech&id=${point.report_id}&point_id=${point.id}&name=${encodeURIComponent(point.name)}`);
                     } else {
                         navigate(`${basePath}/inundation/form?tab=mech&point_id=${point.id}&name=${encodeURIComponent(point.name)}`);
                     }
-                } else if (canSurvey && isEmployee) {
-                    if (point.status === 'active') {
-                        navigate(`${basePath}/inundation/form?tab=survey&id=${point.active_report.id}&point_id=${point.id}&name=${encodeURIComponent(point.name)}`);
+                    if (point.report_id) {
+                        navigate(`${basePath}/inundation/form?tab=survey&id=${point.report_id}&point_id=${point.id}&name=${encodeURIComponent(point.name)}`);
                     } else {
                         navigate(`${basePath}/inundation/form?tab=survey&point_id=${point.id}&name=${encodeURIComponent(point.name)}`);
                     }
@@ -510,11 +509,11 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                     </Typography>
                     <Stack direction="row" spacing={1} flexWrap="wrap">
                         <Chip
-                            label={point.status === 'active' ? 'Đang ngập' : 'Bình thường'}
-                            color={point.status === 'active' ? 'error' : 'success'}
+                            label={point.report_id ? 'Đang ngập' : 'Bình thường'}
+                            color={point.report_id ? 'error' : 'success'}
                             size="small" sx={{ fontWeight: 800 }}
                         />
-                        {point.status === 'active' && latest?.traffic_status && (
+                        {point.report_id && latest?.traffic_status && (
                             <Chip
                                 label={getTrafficStatusLabel(latest.traffic_status)}
                                 size="small" color={getTrafficStatusColor(latest.traffic_status)}
@@ -548,7 +547,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                         )}
                     </Stack>
                 </Box>
-                {point.status === 'active' && !(canMech && isEmployee) && !(canSurvey && isEmployee) && (
+                {point.report_id && !(canMech && isEmployee) && !(canSurvey && isEmployee) && (
                     <IconButton size="small" onClick={(e) => { e.stopPropagation(); setOpen(!open); }} sx={{ mt: -0.5 }}>
                         {open ? <IconChevronUp size={22} /> : <IconChevronDown size={22} />}
                     </IconButton>
@@ -583,10 +582,10 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                             {latest?.survey_images?.length > 0 && (
                                 <Box sx={{ display: 'flex', gap: 0.8, mt: 1, flexWrap: 'wrap' }}>
                                     {latest.survey_images.map((img, i) => (
-                                        <Box 
-                                            key={i} component="img" src={getInundationImageUrl(img)} 
-                                            onClick={(e) => { e.stopPropagation(); handleOpenViewer(latest.survey_images, i); }} 
-                                            sx={{ width: 44, height: 44, borderRadius: 1.5, objectFit: 'cover', cursor: 'pointer', border: '1px solid', borderColor: 'primary.main' }} 
+                                        <Box
+                                            key={i} component="img" src={getInundationImageUrl(img)}
+                                            onClick={(e) => { e.stopPropagation(); handleOpenViewer(latest.survey_images, i); }}
+                                            sx={{ width: 44, height: 44, borderRadius: 1.5, objectFit: 'cover', cursor: 'pointer', border: '1px solid', borderColor: 'primary.main' }}
                                         />
                                     ))}
                                 </Box>
@@ -619,10 +618,10 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                             {latest?.mech_images?.length > 0 && (
                                 <Box sx={{ display: 'flex', gap: 0.8, mt: 1, flexWrap: 'wrap' }}>
                                     {latest.mech_images.map((img, i) => (
-                                        <Box 
-                                            key={i} component="img" src={getInundationImageUrl(img)} 
-                                            onClick={(e) => { e.stopPropagation(); handleOpenViewer(latest.mech_images, i); }} 
-                                            sx={{ width: 44, height: 44, borderRadius: 1.5, objectFit: 'cover', cursor: 'pointer', border: '1px solid', borderColor: 'secondary.main' }} 
+                                        <Box
+                                            key={i} component="img" src={getInundationImageUrl(img)}
+                                            onClick={(e) => { e.stopPropagation(); handleOpenViewer(latest.mech_images, i); }}
+                                            sx={{ width: 44, height: 44, borderRadius: 1.5, objectFit: 'cover', cursor: 'pointer', border: '1px solid', borderColor: 'secondary.main' }}
                                         />
                                     ))}
                                 </Box>
@@ -652,8 +651,8 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                         {latest ? formatDateTime(latest.start_time) : '-'}
                                     </Typography>
                                     {latest && (
-                                        <Typography variant="caption" color={point.status === 'active' ? "error" : "text.secondary"} sx={{ fontWeight: 700, display: 'block', mt: 0.5, fontSize: '0.8rem' }}>
-                                            {point.status === 'active'
+                                        <Typography variant="caption" color={point.report_id ? "error" : "text.secondary"} sx={{ fontWeight: 700, display: 'block', mt: 0.5, fontSize: '0.8rem' }}>
+                                            {point.report_id
                                                 ? `Cập nhật lúc: ${formatDateTime(point.updated_at || latest.newest_ts)} (Đã ngập ${formatDuration(latest.start_time)})`
                                                 : `Đã kết thúc`}
                                         </Typography>
@@ -680,12 +679,12 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                         </>
                     )}
 
-                    {point.status === 'active' ? (
+                    {point.report_id ? (
                         (hasPermission('inundation:edit') || (isEmployee && needsCorrection)) && (
                             <Button
                                 fullWidth variant="contained" color="error" size="large"
                                 onClick={() => {
-                                    let url = `${basePath}/inundation/form?tab=1&id=${point.active_report.id}&name=${encodeURIComponent(point.name)}`;
+                                    let url = `${basePath}/inundation/form?tab=1&id=${point.report_id}&name=${encodeURIComponent(point.name)}`;
                                     if (needsCorrection && needsCorrectionUpdateId) {
                                         url += `&edit_update_id=${needsCorrectionUpdateId}`;
                                     }
@@ -737,15 +736,15 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                             color: 'primary.dark'
                         }}
                         onClick={() => {
-                            if (point.status === 'active') {
+                            if (point.report_id) {
                                 if (hasPermission('inundation:edit') || (isEmployee && needsCorrection)) {
-                                    let url = `${basePath}/inundation/form?tab=1&id=${point.active_report.id}&name=${encodeURIComponent(point.name)}`;
+                                    let url = `${basePath}/inundation/form?tab=1&id=${point.report_id}&name=${encodeURIComponent(point.name)}`;
                                     if (needsCorrection && needsCorrectionUpdateId) {
                                         url += `&edit_update_id=${needsCorrectionUpdateId}`;
                                     }
                                     navigate(url);
                                 } else if (canMech) {
-                                    navigate(`${basePath}/inundation/form?tab=mech&id=${point.active_report.id}&name=${encodeURIComponent(point.name)}`);
+                                    navigate(`${basePath}/inundation/form?tab=mech&id=${point.report_id}&name=${encodeURIComponent(point.name)}`);
                                 } else {
                                     setOpen(!open);
                                 }
@@ -774,15 +773,15 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                 <TableCell align="center">
                     <Stack direction="row" spacing={0.5} justifyContent="center" alignItems="center">
                         <Chip
-                            label={point.status === 'active' ? 'Đang ngập' : 'Bình thường'}
-                            color={point.status === 'active' ? 'error' : 'success'}
+                            label={point.report_id ? 'Đang ngập' : 'Bình thường'}
+                            color={point.report_id ? 'error' : 'success'}
                             size="small"
                             sx={{ fontWeight: 700 }}
                         />
                     </Stack>
                 </TableCell>
                 <TableCell>
-                    {point.status === 'active' && latest?.traffic_status && (
+                    {point.report_id && latest?.traffic_status && (
                         <Chip
                             label={getTrafficStatusLabel(latest.traffic_status)}
                             size="small"

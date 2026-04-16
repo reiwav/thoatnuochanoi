@@ -306,41 +306,22 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
     // NEW: Survey & Mech states
     const [surveyLoading, setSurveyLoading] = useState(false);
     const [surveyData, setSurveyData] = useState({
-        checked: point.active_report?.survey_checked || false,
-        note: point.active_report?.survey_note || '',
+        checked: false,
+        note: '',
         images: [],
         previews: []
     });
 
     const [mechLoading, setMechLoading] = useState(false);
     const [mechData, setMechData] = useState({
-        checked: point.active_report?.mech_checked || false,
-        note: point.active_report?.mech_note || '',
-        d: point.active_report?.mech_d || '',
-        r: point.active_report?.mech_r || '',
-        s: point.active_report?.mech_s || '',
+        checked: false,
+        note: '',
+        d: '',
+        r: '',
+        s: '',
         images: [],
         previews: []
     });
-
-    // Update state when point change (e.g. after refresh)
-    useEffect(() => {
-        if (point.active_report) {
-            setSurveyData(prev => ({
-                ...prev,
-                checked: point.active_report.survey_checked || false,
-                note: point.active_report.survey_note || ''
-            }));
-            setMechData(prev => ({
-                ...prev,
-                checked: point.active_report.mech_checked || false,
-                note: point.active_report.mech_note || '',
-                d: point.active_report.mech_d || '',
-                r: point.active_report.mech_r || '',
-                s: point.active_report.mech_s || ''
-            }));
-        }
-    }, [point.active_report]);
 
     // Action Menu State
     const [anchorEl, setAnchorEl] = useState(null);
@@ -409,20 +390,33 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
     };
 
     const handleSurveySubmit = async () => {
-        if (!point.active_report) return;
         setSurveyLoading(true);
         try {
             const fd = new FormData();
-            fd.append('survey_checked', surveyData.checked);
+            fd.append('survey_checked', String(surveyData.checked));
             fd.append('survey_note', surveyData.note);
             surveyData.images.forEach(img => fd.append('images', img));
-            await inundationApi.updateSurvey(point.active_report.id, fd);
-            toast.success('Cập nhật XNTK thành công');
+
+            if (point.active_report?.id) {
+                await inundationApi.updateSurvey(point.active_report.id, fd);
+                toast.success('Cập nhật XNTK thành công');
+            } else {
+                // Create a new report if none active
+                fd.append('point_id', point.id);
+                fd.append('street_name', point.name);
+                fd.append('start_time', Math.floor(Date.now() / 1000));
+                fd.append('description', 'Báo cáo từ bộ phận KSTK');
+                fd.append('traffic_status', 'Đi lại bình thường');
+                
+                await inundationApi.createReport(fd);
+                toast.success('Đã tạo báo cáo mới và cập nhật KSTK');
+            }
+            
             setSurveyData(prev => ({ ...prev, images: [], previews: [] }));
-            // Trigger refresh - in a real app we might use a context or callback
             window.location.reload();
         } catch (err) {
-            toast.error('Lỗi khi cập nhật khảo sát');
+            console.error('Lỗi khảo sát:', err);
+            toast.error(err.response?.data?.error || 'Lỗi khi cập nhật khảo sát thiết kế');
         } finally {
             setSurveyLoading(false);
         }
@@ -446,22 +440,36 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
     };
 
     const handleMechSubmit = async () => {
-        if (!point.active_report) return;
         setMechLoading(true);
         try {
             const fd = new FormData();
-            fd.append('mech_checked', mechData.checked);
+            fd.append('mech_checked', String(mechData.checked));
             fd.append('mech_note', mechData.note);
             fd.append('mech_d', mechData.d);
             fd.append('mech_r', mechData.r);
             fd.append('mech_s', mechData.s);
             mechData.images.forEach(img => fd.append('images', img));
-            await inundationApi.updateMech(point.active_report.id, fd);
-            toast.success('Cập nhật cơ giới thành công');
+
+            if (point.active_report?.id) {
+                await inundationApi.updateMech(point.active_report.id, fd);
+                toast.success('Cập nhật XN cơ giới thành công');
+            } else {
+                // Create a new report if none active
+                fd.append('point_id', point.id);
+                fd.append('street_name', point.name);
+                fd.append('start_time', Math.floor(Date.now() / 1000));
+                fd.append('description', 'Báo cáo từ bộ phận Cơ giới');
+                fd.append('traffic_status', 'Đi lại bình thường');
+
+                await inundationApi.createReport(fd);
+                toast.success('Đã tạo báo cáo mới và cập nhật cơ giới');
+            }
+            
             setMechData(prev => ({ ...prev, images: [], previews: [] }));
             window.location.reload();
         } catch (err) {
-            toast.error('Lỗi khi cập nhật cơ giới');
+            console.error('Lỗi cơ giới:', err);
+            toast.error(err.response?.data?.error || 'Lỗi khi cập nhật xí nghiệp cơ giới');
         } finally {
             setMechLoading(false);
         }
@@ -897,7 +905,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                                         {latest ? `${latest.length || 0}m x ${latest.width || 0}m x ${latest.depth || 0}m` : '-'}
                                                     </Typography>
                                                     <Typography variant="caption" color={point.report_id ? "error.main" : "success.main"} sx={{ fontWeight: 700, display: 'block' }}>
-                                                        {point.report_id ? `Bắt đầu: ${formatDateTime(latest?.start_time)}` : 'Đã tạnh/Bình thường'}
+                                                        {point.report_id ? `Bắt đầu: ${formatDateTime(latest?.start_time)}` : 'Bình thường'}
                                                     </Typography>
                                                 </Box>
 
@@ -1103,7 +1111,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                             {point.active_report?.survey_user_id && (
                                                 <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.disabled' }}>
-                                                    Cập nhật bởi: {point.active_report.survey_user_id}
+                                                    Cập nhật bởi: {point.active_report.survey_user_name || point.active_report.survey_user_id}
                                                 </Typography>
                                             )}
                                             <Button
@@ -1168,7 +1176,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                             {point.active_report?.mech_user_id && (
                                                 <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.disabled' }}>
-                                                    Cập nhật bởi: {point.active_report.mech_user_id}
+                                                    Cập nhật bởi: {point.active_report.mech_user_name || point.active_report.mech_user_id}
                                                 </Typography>
                                             )}
                                             <Button

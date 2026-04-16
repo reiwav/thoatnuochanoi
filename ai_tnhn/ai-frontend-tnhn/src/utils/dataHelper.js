@@ -53,3 +53,10 @@ export const formatDuration = (startTime, endTime) => {
     
     return result.trim();
 };
+
+export const formatTotalMinutes = (startTime, endTime) => {
+    if (!startTime) return 0;
+    const start = dayjs.unix(startTime);
+    const end = endTime ? dayjs.unix(endTime) : dayjs();
+    return Math.floor(end.diff(start, 'minute'));
+};

@@ -66,7 +66,7 @@ const InundationMechPanel = ({ report, pointId, onSuccess }) => {
                 formData.append('images', img);
             });
 
-            if (report?.id) {
+            if (report?.id && report?.status === 'active') {
                 await inundationApi.updateMech(report.id, formData);
                 toast.success('Cập nhật dữ liệu cơ giới thành công');
             } else if (pointId) {
@@ -76,9 +76,11 @@ const InundationMechPanel = ({ report, pointId, onSuccess }) => {
                 // Also add required fields for new report
                 formData.append('street_name', new URLSearchParams(window.location.search).get('name') || '');
                 formData.append('start_time', Math.floor(Date.now() / 1000));
+                formData.append('description', 'Báo cáo từ bộ phận Cơ giới');
+                formData.append('traffic_status', 'Đi lại bình thường');
 
                 await inundationApi.createReport(formData);
-                toast.success('Đã tạo báo cáo và gửi dữ liệu cơ giới');
+                toast.success('Đã tạo báo cáo mới và cập nhật cơ giới');
             } else {
                 toast.error('Không xác định được điểm ngập');
                 return;

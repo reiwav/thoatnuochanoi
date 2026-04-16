@@ -57,7 +57,7 @@ const InundationSurveyPanel = ({ report, pointId, onSuccess }) => {
                 formData.append('images', img);
             });
 
-            if (report?.id) {
+            if (report?.id && report?.status === 'active') {
                 await inundationApi.updateSurvey(report.id, formData);
                 toast.success('Cập nhật dữ liệu khảo sát thành công');
             } else if (pointId) {
@@ -67,9 +67,11 @@ const InundationSurveyPanel = ({ report, pointId, onSuccess }) => {
                 // Also add required fields for new report
                 formData.append('street_name', new URLSearchParams(window.location.search).get('name') || '');
                 formData.append('start_time', Math.floor(Date.now() / 1000));
+                formData.append('description', 'Báo cáo từ bộ phận KSTK');
+                formData.append('traffic_status', 'Đi lại bình thường');
 
                 await inundationApi.createReport(formData);
-                toast.success('Đã tạo báo cáo và gửi dữ liệu khảo sát');
+                toast.success('Đã tạo báo cáo mới và cập nhật khảo sát');
             } else {
                 toast.error('Không xác định được điểm ngập');
                 return;

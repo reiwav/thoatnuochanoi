@@ -29,6 +29,7 @@ type InundationUpdate struct {
 	SurveyImages  []string `bson:"survey_images" json:"survey_images"`
 	SurveyNote    string   `bson:"survey_note" json:"survey_note"`
 	SurveyUserID  string   `bson:"survey_user_id" json:"survey_user_id"`
+	SurveyUserName string   `bson:"survey_user_name" json:"survey_user_name"`
 	MechChecked   bool     `bson:"mech_checked" json:"mech_checked"`
 	MechImages    []string `bson:"mech_images" json:"mech_images"`
 	MechNote      string   `bson:"mech_note" json:"mech_note"`
@@ -73,15 +74,17 @@ type InundationReport struct {
 	SurveyImages  []string `bson:"survey_images" json:"survey_images"`
 	SurveyNote    string   `bson:"survey_note" json:"survey_note"`
 	SurveyUserID  string   `bson:"survey_user_id" json:"survey_user_id"`
+	SurveyUserName string   `bson:"survey_user_name" json:"survey_user_name"`
 
 	// Mechanization Data
-	MechChecked bool     `bson:"mech_checked" json:"mech_checked"`
-	MechImages  []string `bson:"mech_images" json:"mech_images"`
-	MechNote    string   `bson:"mech_note" json:"mech_note"`
-	MechD       string   `bson:"mech_d" json:"mech_d"`
-	MechR       string   `bson:"mech_r" json:"mech_r"`
-	MechS       string   `bson:"mech_s" json:"mech_s"`
-	MechUserID  string   `bson:"mech_user_id" json:"mech_user_id"`
+	MechChecked  bool     `bson:"mech_checked" json:"mech_checked"`
+	MechImages   []string `bson:"mech_images" json:"mech_images"`
+	MechNote     string   `bson:"mech_note" json:"mech_note"`
+	MechD        string   `bson:"mech_d" json:"mech_d"`
+	MechR        string   `bson:"mech_r" json:"mech_r"`
+	MechS        string   `bson:"mech_s" json:"mech_s"`
+	MechUserID   string   `bson:"mech_user_id" json:"mech_user_id"`
+	MechUserName string   `bson:"mech_user_name" json:"mech_user_name"`
 
 	LastReportID string `bson:"last_report_id" json:"last_report_id"`
 }

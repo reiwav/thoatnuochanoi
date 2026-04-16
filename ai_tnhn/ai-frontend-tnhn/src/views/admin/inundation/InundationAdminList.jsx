@@ -19,7 +19,7 @@ import { getInundationImageUrl } from 'utils/imageHelper';
 import { getTrafficStatusColor, getTrafficStatusLabel } from 'utils/trafficStatusHelper';
 import { toast } from 'react-hot-toast';
 import useAuthStore from 'store/useAuthStore';
-import { formatDateTime, formatDuration } from 'utils/dataHelper';
+import { formatDateTime, formatDuration, formatTotalMinutes } from 'utils/dataHelper';
 import OrganizationSelect from 'ui-component/filter/OrganizationSelect';
 
 const getLatestData = (report) => {
@@ -221,7 +221,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                             : `Kết thúc: ${formatDateTime(point.end_time || latest?.end_time)}`}
                                     </Typography>
                                     <Typography variant="caption" sx={{ fontWeight: 800, display: 'block', color: 'primary.main' }}>
-                                        Tổng: {formatDuration(point.start_time || latest?.start_time, point.end_time || latest?.end_time)}
+                                        Tổng: {formatDuration(point.start_time || latest?.start_time, point.end_time || latest?.end_time)} ({formatTotalMinutes(point.start_time || latest?.start_time, point.end_time || latest?.end_time)} phút)
                                     </Typography>
                                 </Grid>
                             </Grid>
@@ -400,7 +400,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                                             Bắt đầu: {formatDateTime(point.start_time || latest?.start_time)}
                                                         </Typography>
                                                         <Typography variant="caption" sx={{ fontWeight: 700, display: 'block', color: 'primary.main' }}>
-                                                            Sơ kết: {formatDuration(point.start_time || latest?.start_time, point.end_time || latest?.end_time)}
+                                                            Sơ kết: {formatDuration(point.start_time || latest?.start_time, point.end_time || latest?.end_time)} ({formatTotalMinutes(point.start_time || latest?.start_time, point.end_time || latest?.end_time)} phút)
                                                         </Typography>
                                                     </Box>
 

@@ -10,6 +10,14 @@ QUY TẮC TRẢ LỜI QUAN TRỌNG:
    + Lượng mưa (mm)
    + Giờ bắt đầu mưa (start_time)
    + Giờ kết thúc/Cập nhật mới nhất (end_time)
+   + QUY TẮC HIỂN THỊ TRONG CHAT:        - Trạng thái mưa: Dùng trường 'rainy_stations' để biết số lượng. 
+            * Nếu 'rainy_stations' > 0: Báo "Hiện tại có [rainy_stations] điểm đang ghi nhận có mưa".
+            * Nếu 'rainy_stations' = 0: Khẳng định "Hiện tại trên địa bàn thành phố không còn mưa" (TUYỆT ĐỐI KHÔNG nhắc lại số lượng trạm đang mưa là 0).
+       - Danh sách chi tiết: Liệt kê TOÀN BỘ các trạm có trong danh sách 'measurements'.
+       - Trạng thái từng trạm: 
+           * Nếu 'is_raining' là true: Báo là "Đang mưa".
+           * Nếu 'is_raining' là false: Báo là "Đã tạnh (lúc [end_time])" hoặc "Không còn mưa".
+       - TUYỆT ĐỐI KHÔNG được tóm tắt hay bỏ bớt bất kỳ trạm nào trong danh sách 'measurements' khi báo cáo chi tiết.
 
 2. TÌNH TRẠNG NGẬP LỤT:
    + Chỉ sử dụng dữ liệu từ công cụ 'get_live_inundation_summary' hoặc dữ liệu về điểm ngập trong hệ thống.
@@ -25,7 +33,11 @@ QUY TẮC TRẢ LỜI QUAN TRỌNG:
 
 5. CÔNG TÁC THI CÔNG: Bạn có thể báo cáo tiến độ thi công hàng ngày cho một công trình cụ thể bằng 'report_emergency_work_progress'. Khi báo cáo, hãy hỏi: nội dung công việc, % hoàn thành, vướng mắc và ngày dự kiến xong.
 
-6. EMAIL: Bạn có thể đọc nội dung chi tiết email. Khi liệt kê danh sách email trong bảng, hãy thêm cột 'Thao tác' với link: [Xem chi tiết](#email-detail-[ID]).`
+6. EMAIL: Bạn có thể đọc nội dung chi tiết email. Khi liệt kê danh sách email trong bảng, hãy thêm cột 'Thao tác' với link: [Xem chi tiết](#email-detail-[ID]).
+7. TRẠM BƠM: Khi báo cáo về trạm bơm, hãy trình bày ngắn gọn theo cấu trúc:
+   - "Hiện tại, hệ thống ghi nhận có [X] trạm bơm."
+   - "Chi tiết theo từng trạm:"
+    - "[Tên trạm]: [Số lượng] tổ bơm, [chi tiết trạng thái vận hành/dừng/bảo dưỡng]. Cập nhật [thời gian/mới nhất: -]."`
 
 func (s *service) getChatTools() []*genai.FunctionDeclaration {
 	return []*genai.FunctionDeclaration{
@@ -114,7 +126,7 @@ func (s *service) getChatTools() []*genai.FunctionDeclaration {
 		},
 		{
 			Name:        "get_live_pumping_summary",
-			Description: "Lấy thông tin tổng hợp tình hình hoạt động của các trạm bơm hiện tại (số lượng máy bơm đang chạy, bảo dưỡng, đóng).",
+			Description: "Lấy thông tin tổng hợp tình hình hoạt động của các trạm bơm hiện tại (số lượng máy bơm đang chạy, bảo dưỡng, dừng).",
 		},
 		{
 			Name:        "get_rain_summary_by_ward",

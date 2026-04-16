@@ -13,8 +13,9 @@ import (
 	"sync"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
 	"mime"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type TaskType string
@@ -30,11 +31,11 @@ type syncTask struct {
 }
 
 type SyncWorker struct {
-	inundationRepo       repository.Inundation
+	InundationReportRepo repository.InundationReport
 	inundationUpdateRepo repository.InundationUpdate
 	orgRepo              repository.Organization
 	driveSvc             googledrive.Service
-	
+
 	// Helper functions from the service for dynamic folder resolution
 	resolveUploadFolder func(ctx context.Context, org *models.Organization, dataType string, pointID string) (string, error)
 
@@ -47,14 +48,14 @@ type SyncWorker struct {
 }
 
 func NewSyncWorker(
-	inundationRepo repository.Inundation,
+	InundationReportRepo repository.InundationReport,
 	inundationUpdateRepo repository.InundationUpdate,
 	orgRepo repository.Organization,
 	driveSvc googledrive.Service,
 	resolveUploadFolder func(ctx context.Context, org *models.Organization, dataType string, pointID string) (string, error),
 ) *SyncWorker {
 	w := &SyncWorker{
-		inundationRepo:       inundationRepo,
+		InundationReportRepo: InundationReportRepo,
 		inundationUpdateRepo: inundationUpdateRepo,
 		orgRepo:              orgRepo,
 		driveSvc:             driveSvc,
@@ -71,11 +72,11 @@ func (w *SyncWorker) Enqueue(id string, taskType TaskType) {
 	if id == "" {
 		return
 	}
-	
+
 	w.mu.Lock()
 	w.queue = append(w.queue, syncTask{ID: id, Type: taskType})
 	w.mu.Unlock()
-	
+
 	// Wake up one worker to process the task
 	w.cond.Signal()
 }
@@ -115,7 +116,7 @@ func (w *SyncWorker) workerLoop(id int) {
 	fmt.Printf("SyncWorker Pool [%d]: Starting...\n", id)
 	for {
 		var task syncTask
-		
+
 		w.mu.Lock()
 		for len(w.queue) == 0 {
 			// Check if we are shutting down
@@ -129,10 +130,10 @@ func (w *SyncWorker) workerLoop(id int) {
 				w.cond.Wait()
 			}
 		}
-		
+
 		// If we reached here, there is at least one task in the queue
 		// and we hold the lock.
-		
+
 		// Double check if we are stopping before popping
 		select {
 		case <-w.done:
@@ -160,7 +161,7 @@ func (w *SyncWorker) Stop() {
 func (w *SyncWorker) processTask(task syncTask) {
 	ctx := context.Background()
 	if task.Type == TaskTypeReport {
-		report, err := w.inundationRepo.GetByID(ctx, task.ID)
+		report, err := w.InundationReportRepo.GetByID(ctx, task.ID)
 		if err == nil && report != nil {
 			w.processReportSync(ctx, report)
 		}
@@ -194,9 +195,9 @@ func (w *SyncWorker) cleanOrphanedFiles() {
 		if entry.IsDir() {
 			continue
 		}
-		
+
 		relPath := filepath.Join("inundation_tmp", entry.Name())
-		
+
 		// If file is still referenced in DB as local, DO NOT DELETE IT
 		if activePaths[relPath] {
 			continue
@@ -229,10 +230,20 @@ func (w *SyncWorker) getActiveLocalPaths(ctx context.Context) (map[string]bool, 
 	rf.PerPage = 1000
 	rf.AddWhere("images", "images", bson.M{"$regex": "^local:"})
 
-	reports, _, err := w.inundationRepo.List(ctx, rf)
+	reports, _, err := w.InundationReportRepo.List(ctx, rf)
 	if err == nil {
 		for _, r := range reports {
 			for _, img := range r.Images {
+				if strings.HasPrefix(img, "local:") {
+					activePaths[strings.TrimPrefix(img, "local:")] = true
+				}
+			}
+			for _, img := range r.SurveyImages {
+				if strings.HasPrefix(img, "local:") {
+					activePaths[strings.TrimPrefix(img, "local:")] = true
+				}
+			}
+			for _, img := range r.MechImages {
 				if strings.HasPrefix(img, "local:") {
 					activePaths[strings.TrimPrefix(img, "local:")] = true
 				}
@@ -253,6 +264,16 @@ func (w *SyncWorker) getActiveLocalPaths(ctx context.Context) (map[string]bool, 
 					activePaths[strings.TrimPrefix(img, "local:")] = true
 				}
 			}
+			for _, img := range u.SurveyImages {
+				if strings.HasPrefix(img, "local:") {
+					activePaths[strings.TrimPrefix(img, "local:")] = true
+				}
+			}
+			for _, img := range u.MechImages {
+				if strings.HasPrefix(img, "local:") {
+					activePaths[strings.TrimPrefix(img, "local:")] = true
+				}
+			}
 		}
 	}
 
@@ -265,9 +286,15 @@ func (w *SyncWorker) syncLocalImages() {
 	// 1. Scan Reports
 	f := filter.NewPaginationFilter()
 	f.PerPage = 100
-	f.AddWhere("images", "images", bson.M{"$regex": "^local:"})
+	f.AddWhere("has_local_files", "", bson.M{
+		"$or": []bson.M{
+			{"images": bson.M{"$regex": "^local:"}},
+			{"survey_images": bson.M{"$regex": "^local:"}},
+			{"mech_images": bson.M{"$regex": "^local:"}},
+		},
+	})
 
-	reports, _, err := w.inundationRepo.List(ctx, f)
+	reports, _, err := w.InundationReportRepo.List(ctx, f)
 	if err == nil {
 		for _, r := range reports {
 			w.processReportSync(ctx, r)
@@ -277,7 +304,13 @@ func (w *SyncWorker) syncLocalImages() {
 	// 2. Scan Updates
 	uf := filter.NewPaginationFilter()
 	uf.PerPage = 100
-	uf.AddWhere("images", "images", bson.M{"$regex": "^local:"})
+	uf.AddWhere("has_local_files", "", bson.M{
+		"$or": []bson.M{
+			{"images": bson.M{"$regex": "^local:"}},
+			{"survey_images": bson.M{"$regex": "^local:"}},
+			{"mech_images": bson.M{"$regex": "^local:"}},
+		},
+	})
 
 	updates, _, err := w.inundationUpdateRepo.List(ctx, uf)
 	if err == nil {
@@ -298,10 +331,53 @@ func (w *SyncWorker) processReportSync(ctx context.Context, report *models.Inund
 		return
 	}
 
-	newImages := make([]string, 0, len(report.Images))
+	newImages, modified := w.uploadImageSlice(ctx, folderID, report.Images)
+	newSurveyImages, surveyMod := w.uploadImageSlice(ctx, folderID, report.SurveyImages)
+	newMechImages, mechMod := w.uploadImageSlice(ctx, folderID, report.MechImages)
+
+	if modified || surveyMod || mechMod {
+		report.Images = newImages
+		report.SurveyImages = newSurveyImages
+		report.MechImages = newMechImages
+		_ = w.InundationReportRepo.Update(ctx, report)
+		fmt.Printf("SyncWorker: Successfully synced/cleaned images for report %s\n", report.ID)
+	}
+}
+
+func (w *SyncWorker) processUpdateSync(ctx context.Context, update *models.InundationUpdate) {
+	report, err := w.InundationReportRepo.GetByID(ctx, update.ReportID)
+	if err != nil {
+		return
+	}
+
+	org, err := w.orgRepo.GetByID(ctx, report.OrgID)
+	if err != nil {
+		return
+	}
+
+	folderID, err := w.resolveUploadFolder(ctx, org, "FLOOD", report.PointID)
+	if err != nil {
+		return
+	}
+
+	newImages, modified := w.uploadImageSlice(ctx, folderID, update.Images)
+	newSurveyImages, surveyMod := w.uploadImageSlice(ctx, folderID, update.SurveyImages)
+	newMechImages, mechMod := w.uploadImageSlice(ctx, folderID, update.MechImages)
+
+	if modified || surveyMod || mechMod {
+		update.Images = newImages
+		update.SurveyImages = newSurveyImages
+		update.MechImages = newMechImages
+		_ = w.inundationUpdateRepo.Update(ctx, update)
+		fmt.Printf("SyncWorker: Successfully synced/cleaned images for update %s\n", update.ID)
+	}
+}
+
+func (w *SyncWorker) uploadImageSlice(ctx context.Context, folderID string, images []string) ([]string, bool) {
+	newImages := make([]string, 0, len(images))
 	modified := false
 
-	for _, imgPath := range report.Images {
+	for _, imgPath := range images {
 		if strings.HasPrefix(imgPath, "local:") {
 			relPath := strings.TrimPrefix(imgPath, "local:")
 			fullPath := filepath.Join("uploads", relPath)
@@ -311,7 +387,6 @@ func (w *SyncWorker) processReportSync(ctx context.Context, report *models.Inund
 				if os.IsNotExist(err) {
 					fmt.Printf("SyncWorker: Local file %s missing, removing reference\n", fullPath)
 					modified = true
-					// Don't append to newImages, effectively removing it
 				} else {
 					fmt.Printf("SyncWorker: Error opening local file %s: %v\n", fullPath, err)
 					newImages = append(newImages, imgPath)
@@ -343,74 +418,5 @@ func (w *SyncWorker) processReportSync(ctx context.Context, report *models.Inund
 		}
 	}
 
-	if modified {
-		report.Images = newImages
-		_ = w.inundationRepo.Update(ctx, report)
-		fmt.Printf("SyncWorker: Successfully synced/cleaned images for report %s\n", report.ID)
-	}
-}
-
-func (w *SyncWorker) processUpdateSync(ctx context.Context, update *models.InundationUpdate) {
-	report, err := w.inundationRepo.GetByID(ctx, update.ReportID)
-	if err != nil {
-		return
-	}
-
-	org, err := w.orgRepo.GetByID(ctx, report.OrgID)
-	if err != nil {
-		return
-	}
-
-	folderID, err := w.resolveUploadFolder(ctx, org, "FLOOD", report.PointID)
-	if err != nil {
-		return
-	}
-
-	newImages := make([]string, 0, len(update.Images))
-	modified := false
-
-	for _, imgPath := range update.Images {
-		if strings.HasPrefix(imgPath, "local:") {
-			relPath := strings.TrimPrefix(imgPath, "local:")
-			fullPath := filepath.Join("uploads", relPath)
-
-			file, err := os.Open(fullPath)
-			if err != nil {
-				if os.IsNotExist(err) {
-					fmt.Printf("SyncWorker: Local file %s missing for update, removing reference\n", fullPath)
-					modified = true
-				} else {
-					newImages = append(newImages, imgPath)
-				}
-				continue
-			}
-
-			fileName := filepath.Base(relPath)
-			ext := filepath.Ext(fileName)
-			mimeType := mime.TypeByExtension(ext)
-			if mimeType == "" {
-				mimeType = "image/jpeg" // Fallback
-			}
-
-			driveID, err := w.driveSvc.UploadFileSimple(ctx, folderID, fileName, mimeType, file)
-			file.Close()
-
-			if err != nil {
-				newImages = append(newImages, imgPath)
-				continue
-			}
-
-			newImages = append(newImages, driveID)
-			modified = true
-			_ = os.Remove(fullPath)
-		} else {
-			newImages = append(newImages, imgPath)
-		}
-	}
-
-	if modified {
-		update.Images = newImages
-		_ = w.inundationUpdateRepo.Update(ctx, update)
-		fmt.Printf("SyncWorker: Successfully synced/cleaned images for update %s\n", update.ID)
-	}
+	return newImages, modified
 }

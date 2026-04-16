@@ -73,6 +73,7 @@ const StationWaterSummary = () => {
                 id: station.Id,
                 stt: index + 1,
                 name: station.TenTram,
+                thuTu: station.ThuTu || 0,
                 type: station.Loai === "1" ? "Sông" : "Hồ",
                 level: level,
                 time: formatDateTime(time),
@@ -82,8 +83,8 @@ const StationWaterSummary = () => {
     };
 
     const tableData = getTableData();
-    const riverStations = tableData.filter(d => d.type === "Sông");
-    const lakeStations = tableData.filter(d => d.type === "Hồ");
+    const riverStations = tableData.filter(d => d.type === "Sông").sort((a, b) => a.thuTu - b.thuTu);
+    const lakeStations = tableData.filter(d => d.type === "Hồ").sort((a, b) => a.thuTu - b.thuTu);
 
     const activeData = tabValue === 0 ? riverStations : lakeStations;
 
@@ -264,6 +265,11 @@ const StationWaterSummary = () => {
                                     >
                                         {row.name}
                                     </Typography>
+                                    {row.thuTu > 0 && (
+                                        <Typography variant="caption" sx={{ color: '#ff6f00', fontWeight: 800, fontSize: '0.7rem' }}>
+                                            Ưu tiên: {row.thuTu}
+                                        </Typography>
+                                    )}
                                 </Box>
 
                                 <Box sx={{ my: 1 }}>

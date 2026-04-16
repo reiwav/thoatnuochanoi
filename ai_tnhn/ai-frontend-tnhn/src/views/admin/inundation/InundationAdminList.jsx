@@ -823,8 +823,8 @@ const InundationAdminList = () => {
         }
     };
 
-    const fetchPoints = async () => {
-        setLoadingPoints(true);
+    const fetchPoints = async (silent = false) => {
+        if (!silent) setLoadingPoints(true);
         try {
             const params = {};
             if (orgFilter) params.org_id = orgFilter;
@@ -833,12 +833,12 @@ const InundationAdminList = () => {
         } catch (error) {
             console.error('Failed to fetch points:', error);
         } finally {
-            setLoadingPoints(false);
+            if (!silent) setLoadingPoints(false);
         }
     };
 
-    const fetchHistory = async () => {
-        setLoadingHistory(true);
+    const fetchHistory = async (silent = false) => {
+        if (!silent) setLoadingHistory(true);
         try {
             const res = await inundationApi.listReports(historyPage, historyRowsPerPage, {
                 status: statusFilter,
@@ -851,9 +851,9 @@ const InundationAdminList = () => {
                 setTotalHistory(res.data.data.total || 0);
             }
         } catch (error) {
-            toast.error('Lỗi khi tải lịch sử báo cáo');
+            if (!silent) toast.error('Lỗi khi tải lịch sử báo cáo');
         } finally {
-            setLoadingHistory(false);
+            if (!silent) setLoadingHistory(false);
         }
     };
 
@@ -868,6 +868,18 @@ const InundationAdminList = () => {
     useEffect(() => {
         if (activeTab === 1) fetchHistory();
     }, [activeTab, historyPage, historyRowsPerPage, statusFilter, trafficFilter, searchQuery, orgFilter]);
+
+    // Khởi tạo interval cập nhật tự động 5s
+    useEffect(() => {
+        const interval = setInterval(() => {
+            if (activeTab === 0) {
+                fetchPoints(true);
+            } else if (activeTab === 1) {
+                fetchHistory(true);
+            }
+        }, 5000);
+        return () => clearInterval(interval);
+    }, [activeTab, orgFilter, historyPage, historyRowsPerPage, statusFilter, trafficFilter, searchQuery]);
 
     const filteredPoints = useMemo(() => {
         let result = points;

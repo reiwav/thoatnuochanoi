@@ -12,6 +12,7 @@ import (
 
 type PumpingStationStat struct {
 	Name             string `json:"name"`
+	Priority         int    `json:"priority"`
 	OrgName          string `json:"org_name"`
 	PumpCount        int    `json:"pump_count"`
 	OperatingCount   int    `json:"operating_count"`
@@ -85,6 +86,7 @@ func (s *service) GetPumpingStationSummary(ctx context.Context, orgID string, as
 
 		stationStats = append(stationStats, PumpingStationStat{
 			Name:             st.Name,
+			Priority:         st.Priority,
 			OrgName:          orgMap[st.OrgID],
 			PumpCount:        st.PumpCount,
 			OperatingCount:   ops,
@@ -95,8 +97,11 @@ func (s *service) GetPumpingStationSummary(ctx context.Context, orgID string, as
 		})
 	}
 
-	// Sort station stats by Name alphabetically
+	// Sort station stats by Priority (ascending), then by Name alphabetically
 	sort.Slice(stationStats, func(i, j int) bool {
+		if stationStats[i].Priority != stationStats[j].Priority {
+			return stationStats[i].Priority < stationStats[j].Priority
+		}
 		return stationStats[i].Name < stationStats[j].Name
 	})
 

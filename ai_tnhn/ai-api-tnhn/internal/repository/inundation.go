@@ -7,7 +7,7 @@ import (
 	"context"
 )
 
-type Inundation interface {
+type InundationReport interface {
 	mgo.BaseTable
 	Create(ctx context.Context, report *models.InundationReport) error
 	GetByID(ctx context.Context, id string) (*models.InundationReport, error)

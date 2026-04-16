@@ -62,6 +62,9 @@ const PumpingStationRow = ({ item, index, getOrgNames, handleHistory, handleEdit
                 <TableCell sx={{ p: { xs: 1, md: 2 } }}>
                     <Typography variant="body2" color="textSecondary">{item.share_all ? 'Tất cả xí nghiệp' : (getOrgNames(item.shared_org_ids) || '-')}</Typography>
                 </TableCell>
+                <TableCell sx={{ p: { xs: 1, md: 2 } }} align="center">
+                    <Typography variant="body2" sx={{ fontWeight: 700 }}>{item.priority || 0}</Typography>
+                </TableCell>
                 <TableCell align="center">
                     <Stack direction="row" spacing={1} justifyContent="center">
                         <Tooltip title="Lịch sử vận hành">
@@ -185,38 +188,37 @@ const PumpingStationPage = () => {
 
     const isAdmin = hasPermission('trambom:view');
 
-    const loadData = async () => {
+    const fetchStations = async (silent = false) => {
         try {
-            setLoading(true);
-            const promises = [];
-
+            if (!silent) setLoading(true);
             if (isAdmin) {
                 promises.push(pumpingStationApi.list({ per_page: 1000, org_id: orgFilter }));
             } else if (user?.assigned_pumping_station_id) {
-                promises.push(pumpingStationApi.get(user.assigned_pumping_station_id));
-            }
-
-            promises.push(organizationApi.getSelectionList());
-
-            const results = await Promise.all(promises);
-
-            if (isAdmin) {
-                const stRes = results[0];
-                setData(stRes.data.data?.data || []);
-            } else if (user?.assigned_pumping_station_id) {
-                const stRes = results[0];
-                setAssignedStation(stRes.data.data || null);
-            }
-
-            const orgRes = results[results.length - 1];
-            if (orgRes.data?.status === 'success') {
-                setOrgs(orgRes.data.data || { primary: [], shared: [] });
+                const res = await pumpingStationApi.get(user.assigned_pumping_station_id);
+                setAssignedStation(res.data.data || null);
             }
         } catch (error) {
-            console.error('Failed to load data', error);
+            console.error('Failed to fetch stations', error);
         } finally {
-            setLoading(false);
+            if (!silent) setLoading(false);
         }
+    };
+
+    const fetchOrgs = async () => {
+        try {
+            const res = await organizationApi.getSelectionList();
+            if (res.data?.status === 'success') {
+                setOrgs(res.data.data || { primary: [], shared: [] });
+            }
+        } catch (error) {
+            console.error('Failed to fetch orgs', error);
+        }
+    };
+
+    const loadData = async () => {
+        setLoading(true);
+        await Promise.all([fetchStations(true), fetchOrgs()]);
+        setLoading(false);
     };
 
     useEffect(() => {
@@ -306,6 +308,7 @@ const PumpingStationPage = () => {
                             <TableCell sx={{ fontWeight: 700 }}>Tự động</TableCell>
                             <TableCell sx={{ fontWeight: 700 }}>Đơn vị quản lý</TableCell>
                             <TableCell sx={{ fontWeight: 700 }}>Đơn vị phối hợp</TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 700 }}>Trọng số</TableCell>
                             <TableCell align="center" sx={{ fontWeight: 700 }}>Thao tác</TableCell>
                         </TableRow>
                     </TableHead>

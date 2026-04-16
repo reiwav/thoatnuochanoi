@@ -5,6 +5,7 @@ import (
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/repository"
 	"ai-api-tnhn/internal/service/googledrive"
+	"ai-api-tnhn/utils/web"
 	"context"
 	"fmt"
 	"io"
@@ -12,9 +13,9 @@ import (
 	"sync"
 	"time"
 
-	"strconv"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"github.com/xuri/excelize/v2"
 	"go.mongodb.org/mongo-driver/bson"
@@ -55,21 +56,10 @@ type Service interface {
 }
 
 type PointStatus struct {
-	ID           string                   `json:"id"`
-	OrgID        string                   `json:"org_id"`
-	OrgName      string                   `json:"org_name"`
-	Name         string                   `json:"name"`
-	Address      string                   `json:"address"`
-	Lat          string                   `json:"lat"`
-	Lng          string                   `json:"lng"`
-	Status       string                   `json:"status"` // active, normal
-	ReportID     string                   `json:"report_id"`
+	models.InundationStation
+	Status       string                   `json:"status"`
 	ActiveReport *models.InundationReport `json:"active_report,omitempty"`
 	LastReport   *models.InundationReport `json:"last_report,omitempty"`
-	LastReportID string                   `json:"last_report_id"`
-	SharedOrgIDs []string                 `json:"shared_org_ids"`
-	Active       bool                     `json:"active"`
-	CreatedAt    int64                    `json:"created_at"`
 }
 
 type ImageContent struct {
@@ -79,7 +69,7 @@ type ImageContent struct {
 }
 
 type service struct {
-	inundationRepo        repository.Inundation
+	InundationReportRepo  repository.InundationReport
 	inundationUpdateRepo  repository.InundationUpdate
 	inundationStationRepo repository.InundationStation
 	orgRepo               repository.Organization
@@ -90,14 +80,14 @@ type service struct {
 }
 
 func NewService(
-	inundationRepo repository.Inundation,
+	inundationRepo repository.InundationReport,
 	inundationUpdateRepo repository.InundationUpdate,
 	inundationStationRepo repository.InundationStation,
 	orgRepo repository.Organization,
 	driveSvc googledrive.Service,
 ) Service {
 	svc := &service{
-		inundationRepo:        inundationRepo,
+		InundationReportRepo:  inundationRepo,
 		inundationUpdateRepo:  inundationUpdateRepo,
 		inundationStationRepo: inundationStationRepo,
 		orgRepo:               orgRepo,
@@ -106,22 +96,25 @@ func NewService(
 	}
 
 	// 1. Initialize background sync worker
-	svc.syncWorker = NewSyncWorker(
-		inundationRepo,
-		inundationUpdateRepo,
-		orgRepo,
-		driveSvc,
-		svc.resolveUploadFolder, // Pass helper function
-	)
+	// svc.syncWorker = NewSyncWorker(
+	// 	inundationRepo,
+	// 	inundationUpdateRepo,
+	// 	orgRepo,
+	// 	driveSvc,
+	// 	svc.resolveUploadFolder, // Pass helper function
+	// )
 
 	// 2. Start the worker loop (Startup scan + channel listener)
-	svc.syncWorker.Start()
+	//svc.syncWorker.Start()
 
 	return svc
 }
 
 func (s *service) CreateReport(ctx context.Context, report *models.InundationReport, images []ImageContent) error {
 	// 1. Get Org to find Drive Folder
+	if report.PointID == "" {
+		return web.BadRequest("Point ID is required")
+	}
 	// 3. Save images locally for async upload
 	if len(images) > 0 {
 		prefix := report.ID
@@ -144,26 +137,29 @@ func (s *service) CreateReport(ctx context.Context, report *models.InundationRep
 	if report.Status == "" {
 		report.Status = "active"
 	}
-
-	// 2. Check if point already has an active report. If so, convert this to an update.
-	if report.Status == "active" && report.PointID != "" {
-		point, err := s.inundationStationRepo.GetByID(ctx, report.PointID)
-		if err == nil && point != nil && point.ReportID != "" {
-			// Transparently route to AddUpdate to avoid duplicate active sessions
-			update := &models.InundationUpdate{
-				Description:   report.Description,
-				Depth:         report.Depth,
-				Length:        report.Length,
-				Width:         report.Width,
-				TrafficStatus: report.TrafficStatus,
-				Timestamp:     time.Now().Unix(),
-			}
-			return s.AddUpdate(ctx, point.ReportID, update, report.UserID, report.UserEmail, images)
-		}
+	point, err := s.inundationStationRepo.GetByID(ctx, report.PointID)
+	if err != nil {
+		return err
 	}
+	// 2. Check if point already has an active report. If so, convert this to an update.
+	// if report.Status == "active" && report.PointID != "" {
+	// 	if err == nil && point != nil && point.ReportID != "" {
+	// 		// Transparently route to AddUpdate to avoid duplicate active sessions
+	// 		update := &models.InundationUpdate{
+	// 			Description:   report.Description,
+	// 			Depth:         report.Depth,
+	// 			Length:        report.Length,
+	// 			Width:         report.Width,
+	// 			TrafficStatus: report.TrafficStatus,
+	// 			Timestamp:     time.Now().Unix(),
+	// 		}
+	// 		return s.AddUpdate(ctx, point.ReportID, update, report.UserID, report.UserEmail, images)
+	// 	}
+	// }
 
 	// 3. Save report to DB
-	err := s.inundationRepo.Create(ctx, report)
+	err = s.InundationReportRepo.Create(ctx, report)
+	fmt.Println("====== err 2======", report, err)
 	if err != nil {
 		return err
 	}
@@ -188,16 +184,16 @@ func (s *service) CreateReport(ctx context.Context, report *models.InundationRep
 
 	// NEW: Update station's report_id if it's an active report
 	if report.Status == "active" && report.PointID != "" {
-		point, err := s.inundationStationRepo.GetByID(ctx, report.PointID)
 		if err == nil && point != nil {
 			point.ReportID = report.ID
+			point.LastReportID = report.ID
 			_ = s.inundationStationRepo.Update(ctx, *point)
 		}
 	}
-
+	fmt.Println("====== DONE ======", report)
 	// Trigger immediate sync task
 	if len(images) > 0 {
-		s.syncWorker.Enqueue(report.ID, TaskTypeReport)
+		// s.syncWorker.Enqueue(report.ID, TaskTypeReport)
 	}
 
 	return nil
@@ -205,7 +201,7 @@ func (s *service) CreateReport(ctx context.Context, report *models.InundationRep
 
 func (s *service) AddUpdate(ctx context.Context, reportID string, update *models.InundationUpdate, userID string, userEmail string, images []ImageContent) error {
 	// 1. Get Report to find Org/Folder
-	report, err := s.inundationRepo.GetByID(ctx, reportID)
+	report, err := s.InundationReportRepo.GetByID(ctx, reportID)
 	if err != nil {
 		return err
 	}
@@ -260,14 +256,14 @@ func (s *service) AddUpdate(ctx context.Context, reportID string, update *models
 		report.TrafficStatus = ""
 	}
 
-	err = s.inundationRepo.Update(ctx, report)
+	err = s.InundationReportRepo.Update(ctx, report)
 	if err != nil {
 		return err
 	}
 
 	// Trigger immediate sync task
 	if len(images) > 0 {
-		s.syncWorker.Enqueue(update.ID, TaskTypeUpdate)
+		// s.syncWorker.Enqueue(update.ID, TaskTypeUpdate)
 	}
 
 	return nil
@@ -280,7 +276,7 @@ func (s *service) ListReports(ctx context.Context, orgID string) ([]*models.Inun
 		f.AddWhere("org_id", "org_id", orgID)
 	}
 	f.SetOrderBy("-created_at")
-	return s.inundationRepo.List(ctx, f)
+	return s.InundationReportRepo.List(ctx, f)
 }
 
 func (s *service) ListReportsWithFilter(ctx context.Context, orgID, status, trafficStatus, query string, pointIDs []string, page, size int) ([]*models.InundationReport, int64, error) {
@@ -307,7 +303,7 @@ func (s *service) ListReportsWithFilter(ctx context.Context, orgID, status, traf
 	}
 
 	f.SetOrderBy("-created_at")
-	reports, total, err := s.inundationRepo.List(ctx, f)
+	reports, total, err := s.InundationReportRepo.List(ctx, f)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -347,7 +343,7 @@ func (s *service) ListReportsWithFilter(ctx context.Context, orgID, status, traf
 }
 
 func (s *service) GetReport(ctx context.Context, reportID string) (*models.InundationReport, error) {
-	report, err := s.inundationRepo.GetByID(ctx, reportID)
+	report, err := s.InundationReportRepo.GetByID(ctx, reportID)
 	if err != nil {
 		return nil, err
 	}
@@ -370,7 +366,7 @@ func (s *service) Resolve(ctx context.Context, reportID string, endTime int64) e
 	}
 
 	// NEW: Clear station's report_id when report is resolved
-	report, err := s.inundationRepo.GetByID(ctx, reportID)
+	report, err := s.InundationReportRepo.GetByID(ctx, reportID)
 	if err == nil && report != nil && report.PointID != "" {
 		point, err := s.inundationStationRepo.GetByID(ctx, report.PointID)
 		if err == nil && point != nil && point.ReportID == reportID {
@@ -379,11 +375,11 @@ func (s *service) Resolve(ctx context.Context, reportID string, endTime int64) e
 		}
 	}
 
-	return s.inundationRepo.Resolve(ctx, reportID, endTime)
+	return s.InundationReportRepo.Resolve(ctx, reportID, endTime)
 }
 
 func (s *service) UpdateReport(ctx context.Context, id string, report *models.InundationReport, userID, userEmail, userName string, images []ImageContent) error {
-	existing, err := s.inundationRepo.GetByID(ctx, id)
+	existing, err := s.InundationReportRepo.GetByID(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -410,7 +406,7 @@ func (s *service) UpdateReport(ctx context.Context, id string, report *models.In
 		}
 	}
 
-	err = s.inundationRepo.Update(ctx, existing)
+	err = s.InundationReportRepo.Update(ctx, existing)
 	if err != nil {
 		return err
 	}
@@ -434,14 +430,14 @@ func (s *service) UpdateReport(ctx context.Context, id string, report *models.In
 
 	// Trigger immediate sync task
 	if len(images) > 0 {
-		s.syncWorker.Enqueue(id, TaskTypeReport)
+		// s.syncWorker.Enqueue(id, TaskTypeReport)
 	}
 
 	return nil
 }
 
 func (s *service) UpdateSurvey(ctx context.Context, id string, report *models.InundationReport, userEmail, userName string, images []ImageContent) error {
-	existing, err := s.inundationRepo.GetByID(ctx, id)
+	existing, err := s.InundationReportRepo.GetByID(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -464,7 +460,7 @@ func (s *service) UpdateSurvey(ctx context.Context, id string, report *models.In
 		}
 	}
 
-	err = s.inundationRepo.Update(ctx, existing)
+	err = s.InundationReportRepo.Update(ctx, existing)
 	if err != nil {
 		return err
 	}
@@ -490,14 +486,14 @@ func (s *service) UpdateSurvey(ctx context.Context, id string, report *models.In
 
 	// Trigger immediate sync task
 	if len(images) > 0 {
-		s.syncWorker.Enqueue(id, TaskTypeReport)
+		// s.syncWorker.Enqueue(id, TaskTypeReport)
 	}
 
 	return nil
 }
 
 func (s *service) UpdateMech(ctx context.Context, id string, report *models.InundationReport, userEmail, userName string, images []ImageContent) error {
-	existing, err := s.inundationRepo.GetByID(ctx, id)
+	existing, err := s.InundationReportRepo.GetByID(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -534,7 +530,7 @@ func (s *service) UpdateMech(ctx context.Context, id string, report *models.Inun
 		}
 	}
 
-	err = s.inundationRepo.Update(ctx, existing)
+	err = s.InundationReportRepo.Update(ctx, existing)
 	if err != nil {
 		return err
 	}
@@ -563,14 +559,14 @@ func (s *service) UpdateMech(ctx context.Context, id string, report *models.Inun
 
 	// Trigger immediate sync task
 	if len(images) > 0 {
-		s.syncWorker.Enqueue(id, TaskTypeReport)
+		// s.syncWorker.Enqueue(id, TaskTypeReport)
 	}
 
 	return nil
 }
 
 func (s *service) ReviewReport(ctx context.Context, reportID, comment, reviewerID, reviewerEmail, reviewerName string) error {
-	report, err := s.inundationRepo.GetByID(ctx, reportID)
+	report, err := s.InundationReportRepo.GetByID(ctx, reportID)
 	if err != nil {
 		return err
 	}
@@ -584,7 +580,7 @@ func (s *service) ReviewReport(ctx context.Context, reportID, comment, reviewerI
 	report.ReviewerName = reviewerName
 	report.NeedsCorrection = true
 	report.IsReviewUpdated = false
-	if err := s.inundationRepo.Update(ctx, report); err != nil {
+	if err := s.InundationReportRepo.Update(ctx, report); err != nil {
 		return err
 	}
 
@@ -602,7 +598,7 @@ func (s *service) ReviewReport(ctx context.Context, reportID, comment, reviewerI
 
 		// Cập nhật NeedsCorrectionUpdateID trên report
 		report.NeedsCorrectionUpdateID = latestUpdate.ID
-		_ = s.inundationRepo.Update(ctx, report)
+		_ = s.InundationReportRepo.Update(ctx, report)
 	}
 
 	return nil
@@ -614,7 +610,7 @@ func (s *service) ReviewUpdate(ctx context.Context, updateID, comment, reviewerI
 		return err
 	}
 
-	report, err := s.inundationRepo.GetByID(ctx, update.ReportID)
+	report, err := s.InundationReportRepo.GetByID(ctx, update.ReportID)
 	if err != nil {
 		return err
 	}
@@ -649,7 +645,7 @@ func (s *service) ReviewUpdate(ctx context.Context, updateID, comment, reviewerI
 		}
 	}
 
-	return s.inundationRepo.Update(ctx, report)
+	return s.InundationReportRepo.Update(ctx, report)
 }
 
 func (s *service) GetUpdateByID(ctx context.Context, updateID string) (*models.InundationUpdate, error) {
@@ -697,7 +693,7 @@ func (s *service) UpdateUpdateContent(ctx context.Context, updateID string, upda
 
 		if latest.ID == update.ID {
 			// This IS the latest record -> Sync to main report
-			mainReport, rErr := s.inundationRepo.GetByID(ctx, update.ReportID)
+			mainReport, rErr := s.InundationReportRepo.GetByID(ctx, update.ReportID)
 			if rErr == nil {
 				mainReport.Depth = update.Depth
 				mainReport.Length = update.Length
@@ -708,15 +704,15 @@ func (s *service) UpdateUpdateContent(ctx context.Context, updateID string, upda
 				mainReport.NeedsCorrection = false
 				mainReport.NeedsCorrectionUpdateID = ""
 				mainReport.IsReviewUpdated = true
-				_ = s.inundationRepo.Update(ctx, mainReport)
+				_ = s.InundationReportRepo.Update(ctx, mainReport)
 			}
 		} else {
 			// Not latest -> Just clear the correction flag on report if this was the one targeted
-			mainReport, rErr := s.inundationRepo.GetByID(ctx, update.ReportID)
+			mainReport, rErr := s.InundationReportRepo.GetByID(ctx, update.ReportID)
 			if rErr == nil && mainReport.NeedsCorrectionUpdateID == update.ID {
 				mainReport.NeedsCorrection = false
 				mainReport.NeedsCorrectionUpdateID = ""
-				_ = s.inundationRepo.Update(ctx, mainReport)
+				_ = s.InundationReportRepo.Update(ctx, mainReport)
 			}
 		}
 	}
@@ -738,45 +734,34 @@ func (s *service) CreatePoint(ctx context.Context, point models.InundationStatio
 func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []string) ([]PointStatus, error) {
 	// 1. Get all managed points (Union of owned points and shared points)
 	allPointsMap := make(map[string]models.InundationStation)
-
+	var ownedPoints = make([]models.InundationStation, 0)
+	var err error
 	// A. Get points owned by or shared with this organization
 	if orgID != "" {
-		pf := filter.NewPaginationFilter()
-		pf.PerPage = 1000
-		pf.AddWhere("org_id_or_shared", "$or", []bson.M{
+		err = s.inundationStationRepo.R_SelectMany(ctx, bson.M{"$or": []bson.M{
 			{"org_id": orgID},
 			{"shared_org_ids": orgID},
 			{"share_all": true},
-		})
-		ownedPoints, _, err := s.inundationStationRepo.List(ctx, pf)
-		if err == nil {
-			for _, p := range ownedPoints {
-				allPointsMap[p.ID] = p
-			}
-		}
+		}}, &ownedPoints)
+	} else if orgID == "" && len(pointIDs) == 0 {
+		ownedPoints, err = s.inundationStationRepo.ListByOrg(ctx, "")
 	}
-
-	// B. Get points explicitly shared via pointIDs list
 	if len(pointIDs) > 0 {
 		for _, pid := range pointIDs {
 			if _, exists := allPointsMap[pid]; !exists {
 				p, err := s.inundationStationRepo.GetByID(ctx, pid)
 				if err == nil && p != nil {
-					allPointsMap[p.ID] = *p
+					ownedPoints = append(ownedPoints, *p)
 				}
 			}
 		}
 	}
-
-	// C. If both are empty and user is likely a Super Admin (orgID == "" and pointIDs empty),
-	// ListByOrg("") will fetch all active points.
-	if orgID == "" && len(pointIDs) == 0 {
-		allPoints, err := s.inundationStationRepo.ListByOrg(ctx, "")
-		if err == nil {
-			for _, p := range allPoints {
-				allPointsMap[p.ID] = p
-			}
-		}
+	fmt.Println("====== err ", err)
+	if err != nil {
+		return nil, err
+	}
+	for _, p := range ownedPoints {
+		allPointsMap[p.ID] = p
 	}
 
 	points := make([]models.InundationStation, 0, len(allPointsMap))
@@ -796,27 +781,10 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []
 	}
 
 	// 2. Get all active reports for managed points (Union of owned and shared)
-	f := filter.NewPaginationFilter()
-	if len(pointIDs) > 0 && orgID != "" {
-		f.AddWhere("org_id_or_points", "$or", []bson.M{
-			{"org_id": orgID},
-			{"shared_org_ids": orgID},
-			{"share_all": true},
-			{"point_id": bson.M{"$in": pointIDs}},
-		})
-	} else if len(pointIDs) > 0 {
-		f.AddWhere("point_id", "point_id", bson.M{"$in": pointIDs})
-	} else if orgID != "" {
-		f.AddWhere("org_id_or_shared", "$or", []bson.M{
-			{"org_id": orgID},
-			{"shared_org_ids": orgID},
-			{"share_all": true},
-		})
-	}
-	f.AddWhere("status", "status", "active")
-	activeReports, _, err := s.inundationRepo.List(ctx, f)
-	if err != nil {
-		return nil, err
+	var activeReports []*models.InundationReport
+	err = s.InundationReportRepo.R_SelectMany(ctx, bson.M{"status": "active", "point_id": bson.M{"$in": pointIDs}}, &activeReports)
+	if len(activeReports) == 0 {
+		activeReports = make([]*models.InundationReport, 0)
 	}
 
 	// 3. Map reports to points
@@ -827,110 +795,22 @@ func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []
 		}
 	}
 
-	// 3.5 Find last report ID for each point (even if resolved)
-	lastReportIDs := make(map[string]string)
-	pipeline := []bson.M{
-		{"$match": bson.M{"deleted_at": 0}},
-		{"$sort": bson.M{"start_time": -1}},
-		{"$group": bson.M{"_id": "$point_id", "last_id": bson.M{"$first": "$_id"}}},
-	}
-	if len(pointIDs) > 0 && orgID != "" {
-		pipeline[0]["$match"].(bson.M)["$or"] = []bson.M{
-			{"org_id": orgID},
-			{"share_all": true},
-			{"point_id": bson.M{"$in": pointIDs}},
-		}
-	} else if len(pointIDs) > 0 {
-		pipeline[0]["$match"].(bson.M)["point_id"] = bson.M{"$in": pointIDs}
-	} else if orgID != "" {
-		pipeline[0]["$match"].(bson.M)["$or"] = []bson.M{
-			{"org_id": orgID},
-			{"shared_org_ids": orgID},
-			{"share_all": true},
-		}
-	}
-
-	var pipeRes []struct {
-		PointID string `bson:"_id"`
-		LastID  string `bson:"last_id"`
-	}
-	// We use the underlying R_Pipe from the table if available
-	if repo, ok := s.inundationRepo.(interface {
-		R_Pipe(ctx context.Context, pipeline []bson.M, res interface{}) error
-	}); ok {
-		_ = repo.R_Pipe(ctx, pipeline, &pipeRes)
-		for _, item := range pipeRes {
-			if item.PointID != "" {
-				lastReportIDs[item.PointID] = item.LastID
-			}
-		}
-	}
-
-	// NEW: Fetch all last reports to get images
-	var lastIDs []string
-	for _, id := range lastReportIDs {
-		lastIDs = append(lastIDs, id)
-	}
-
-	lastReportsMap := make(map[string]*models.InundationReport)
-	if len(lastIDs) > 0 {
-		hf := filter.NewPaginationFilter()
-		hf.PerPage = 1000
-		hf.AddWhere("_id", "_id", bson.M{"$in": lastIDs})
-		reports, _, _ := s.inundationRepo.List(ctx, hf)
-		for _, r := range reports {
-			// Populate updates for last reports too
-			updates, _ := s.inundationUpdateRepo.ListByReportID(ctx, r.ID)
-			if len(updates) > 0 {
-				r.Updates = make([]models.InundationUpdate, len(updates))
-				for i, u := range updates {
-					r.Updates[i] = *u
-				}
-			}
-			lastReportsMap[r.ID] = r
-		}
-	}
-
 	// 4. Build merged result
 	result := make([]PointStatus, len(points))
 	for i, p := range points {
-		status := "normal"
-		var activeReport *models.InundationReport
-		if report, ok := reportsByPoint[p.ID]; ok {
-			status = "active"
-			// Fetch updates for active report so dashboard can show history/latest info
-			updates, _ := s.inundationUpdateRepo.ListByReportID(ctx, report.ID)
-			if len(updates) > 0 {
-				report.Updates = make([]models.InundationUpdate, len(updates))
-				for i, u := range updates {
-					report.Updates[i] = *u
-				}
-			}
-			activeReport = report
+		var lastReport *models.InundationReport
+		if p.LastReportID != "" {
+			lastReport, _ = s.InundationReportRepo.GetByID(ctx, p.LastReportID)
 		}
-
-		lastID := lastReportIDs[p.ID]
-		lastReport := lastReportsMap[lastID]
-		if lastReport != nil && (lastReport.Status == "resolved" || lastReport.Status == "normal") {
-			lastReport.TrafficStatus = ""
-		}
-
+		//status := "resolved"
+		// if val, ok := reportsByPoint[p.ID]; ok {
+		// 	status = val.Status
+		// }
 		result[i] = PointStatus{
-			ID:           p.ID,
-			OrgID:        p.OrgID,
-			OrgName:      orgMap[p.OrgID],
-			Name:         p.Name,
-			Address:      p.Address,
-			Lat:          p.Lat,
-			Lng:          p.Lng,
-			Status:       status,
-			ReportID:     p.ReportID,
-			ActiveReport: activeReport,
+			InundationStation: p,
+			//Status:            status,
+			ActiveReport: reportsByPoint[p.ID],
 			LastReport:   lastReport,
-			LastReportID: lastID,
-			SharedOrgIDs: p.SharedOrgIDs,
-			Active:       p.Active,
-			CreatedAt:    p.CTime,
 		}
 	}
 
@@ -1093,7 +973,7 @@ func (s *service) saveLocalImages(prefix string, images []ImageContent) ([]strin
 }
 
 func (s *service) GetYearlyHistory(ctx context.Context, orgID string, year int) ([]*models.InundationReport, error) {
-	reports, err := s.inundationRepo.ListByYear(ctx, orgID, year)
+	reports, err := s.InundationReportRepo.ListByYear(ctx, orgID, year)
 	if err != nil {
 		return nil, err
 	}

@@ -102,6 +102,7 @@ const StationRainSummary = () => {
                 stt: index + 1,
                 name: station.TenPhuong,
                 address: station.DiaChi,
+                thuTu: station.ThuTu || 0,
                 startTimeRaw: startTime,
                 currentTimeRaw: currentTime,
                 startTime: formatDateTime(startTime),
@@ -116,7 +117,7 @@ const StationRainSummary = () => {
         });
     };
 
-    const tableData = getTableData();
+    const tableData = getTableData().sort((a, b) => a.thuTu - b.thuTu);
     const rainingCount = tableData.filter(d => d.isRaining).length;
     const notRainingCount = tableData.length - rainingCount;
 
@@ -257,6 +258,11 @@ const StationRainSummary = () => {
                                     >
                                         {row.name}
                                     </Typography>
+                                    {row.thuTu > 0 && (
+                                        <Typography variant="caption" sx={{ color: '#ff6f00', fontWeight: 800, fontSize: '0.7rem' }}>
+                                            Ưu tiên: {row.thuTu}
+                                        </Typography>
+                                    )}
 
                                     <Typography
                                         variant="caption"

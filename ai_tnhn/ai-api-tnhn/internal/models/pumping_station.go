@@ -13,6 +13,7 @@ type PumpingStation struct {
 	OrgID           string                 `json:"org_id" bson:"org_id"`
 	SharedOrgIDs    []string               `json:"shared_org_ids" bson:"shared_org_ids"`
 	ShareAll        bool                   `json:"share_all" bson:"share_all"`
+	Priority        int                    `json:"priority" bson:"priority"`
 	LastReport      *PumpingStationHistory `json:"last_report" bson:"last_report"`
 }
 

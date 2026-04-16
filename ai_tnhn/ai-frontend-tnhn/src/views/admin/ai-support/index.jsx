@@ -24,7 +24,7 @@ dayjs.locale('vi');
 
 const AiSupport = () => {
     const { user: userInfo, hasPermission } = useAuthStore();
-    
+
     // Safety guard: if not company level and no ai:chat permission, don't render.
     // The MainLayout should have redirected us already.
     if (!hasPermission('ai:chat')) return null;
@@ -209,28 +209,8 @@ const AiSupport = () => {
         setLoading(true);
 
         try {
-            const res = await axiosClient.get('/admin/google/rain-summary');
-            const data = res.data?.data;
-            let displayText = '';
-
-            if (typeof data === 'string') {
-                displayText = data;
-            } else if (data && typeof data === 'object') {
-                if (data.rainy_stations === 0) {
-                    displayText = 'Hiện tại ghi nhận không có mưa tại tất cả các trạm.';
-                } else {
-                    displayText = `Tình hình mưa hiện tại:\n` +
-                        `- Tổng số trạm: ${data.total_stations}\n` +
-                        `- Số trạm đang có mưa: ${data.rainy_stations}\n` +
-                        `- Trạm mưa lớn nhất: ${data.max_rain_station?.name} (${data.max_rain_station?.total_rain}mm)\n\n` +
-                        `Chi tiết danh sách các trạm mưa:\n` +
-                        data.measurements.map(m =>
-                            `- ${m.name}: ${m.total_rain}mm (${m.start_time} - ${m.end_time || 'Đang mưa'})`
-                        ).join('\n');
-                }
-            } else {
-                displayText = 'Không thể lấy thông tin lượng mưa lúc này.';
-            }
+            const res = await axiosClient.get('/admin/google/rain-summary-text');
+            const displayText = res.data?.data || 'Không thể lấy thông tin lượng mưa lúc này.';
 
             const aiMsg = {
                 id: Date.now() + 1,
@@ -869,6 +849,7 @@ const AiSupport = () => {
                     <Box sx={{ px: 3, pb: 2, display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
                         {[
                             { text: 'Lượng mưa hiện tại các điểm?', type: 'rain' },
+                            { text: 'Tình hình vận hành các trạm bơm hiện tại.', type: 'question' },
                             // { text: 'Tổng hợp báo cáo nhanh (AI)?', type: 'dynamic' },
                             { text: 'Những điểm nào đang ngập, tình trạng?', type: 'question' },
                             { text: 'Lượng mưa ở khu vực gần điểm ngập?', type: 'question' }

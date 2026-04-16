@@ -688,11 +688,16 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 	phuongDataRaw := [][]string{{"Phường", "Lượng mưa (mm)"}}
 	xaDataRaw := [][]string{{"Xã", "Lượng mưa (mm)"}}
 
+	// Định nghĩa danh sách các trạm cố định (fix cứng)
+	fixedLakes := []string{"Hồ Hoàn Kiếm", "Hồ Tây A TL", "Hồ Linh Đàm", "Hồ Đống Đa", "Hồ Định Công"}
+	fixedRivers := []string{"Sông Tô Lịch (Đập Thanh Liệt)", "Sông Nhuệ (Cống Hà Đông)", "Sông Tô Lịch (Hoàng Quốc Việt)", "Sông Kim Ngưu (Cống Lò Đúc)", "Sông Lừ -HL CĐT Lừ Sét"}
+	fixedXas := []string{"Xã Tân Triều", "Xã Thanh Liệt", "Xã Vĩnh Quỳnh", "Xã Tam Hiệp", "Xã Tứ Hiệp", "Xã Ngũ Hiệp", "Xã Vạn Phúc", "Xã Hữu Hòa", "Xã Tả Thanh Oai", "Xã Đại Áng"}
+
 	type itemVal struct {
 		name string
 		val  float64
 	}
-	var lakes, rivers, phuongs, xas []itemVal
+	var phuongs, xas []itemVal
 
 	parseNum := func(v interface{}) float64 {
 		if f, ok := v.(float64); ok {
@@ -705,56 +710,78 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 		return 0
 	}
 
+	// Thu thập dữ liệu mực nước vào map để tra cứu
+	waterDataMap := make(map[string]float64)
 	for _, d := range waterResp.Content.Data {
 		tid, _ := d["TramId"].(string)
 		val := parseNum(d["ThuongLuu_HT"])
-		loai := parseNum(d["Loai"])
 		name := waterStations[tid]
-		if name == "" {
-			continue
-		}
-		if loai == 2 {
-			lakes = append(lakes, itemVal{name, val})
-		} else {
-			rivers = append(rivers, itemVal{name, val})
+		if name != "" {
+			waterDataMap[name] = val
 		}
 	}
 
+	// Đổ dữ liệu vào bảng Sông và Hồ theo đúng danh sách fix cứng
+	for _, name := range fixedLakes {
+		val := waterDataMap[name]
+		lakeDataRaw = append(lakeDataRaw, []string{name, fmt.Sprintf("%.2fm", val/100.0)})
+	}
+	for _, name := range fixedRivers {
+		val := waterDataMap[name]
+		riverDataRaw = append(riverDataRaw, []string{name, fmt.Sprintf("%.2fm", val/100.0)})
+	}
+
+	// Xử lý dữ liệu lượng mưa
+	anyXaRain := false
 	if rainSum != nil {
 		for _, m := range rainSum.Measurements {
 			val := m.TotalRain
 			name := m.Name
 			if strings.Contains(strings.ToLower(name), "xã") {
 				xas = append(xas, itemVal{name, val})
+				if val > 0 {
+					anyXaRain = true
+				}
 			} else {
 				phuongs = append(phuongs, itemVal{name, val})
 			}
 		}
 	}
 
-	sort.Slice(lakes, func(i, j int) bool { return lakes[i].val > lakes[j].val })
-	sort.Slice(rivers, func(i, j int) bool { return rivers[i].val > rivers[j].val })
+	// Sắp xếp Phường theo lượng mưa cao nhất
 	sort.Slice(phuongs, func(i, j int) bool { return phuongs[i].val > phuongs[j].val })
-	sort.Slice(xas, func(i, j int) bool { return xas[i].val > xas[j].val })
 
+	// Điền dữ liệu Phường (Top 10)
 	limit := func(vals []itemVal, n int) []itemVal {
 		if len(vals) > n {
 			return vals[:n]
 		}
 		return vals
 	}
-
-	for _, v := range limit(lakes, 5) {
-		lakeDataRaw = append(lakeDataRaw, []string{v.name, fmt.Sprintf("%.2fm", v.val/100.0)})
-	}
-	for _, v := range limit(rivers, 5) {
-		riverDataRaw = append(riverDataRaw, []string{v.name, fmt.Sprintf("%.2fm", v.val/100.0)})
-	}
 	for _, v := range limit(phuongs, 10) {
 		phuongDataRaw = append(phuongDataRaw, []string{v.name, fmt.Sprintf("%.1f", v.val)})
 	}
-	for _, v := range limit(xas, 10) {
-		xaDataRaw = append(xaDataRaw, []string{v.name, fmt.Sprintf("%.1f", v.val)})
+
+	// Điền dữ liệu Xã: Nếu có mưa ở bất kỳ xã nào, lấy 10 xã gần trung tâm (fix cứng)
+	if anyXaRain {
+		// Tạo map tra cứu lượng mưa xã hiện tại
+		xaRainMap := make(map[string]float64)
+		for _, x := range xas {
+			xaRainMap[x.name] = x.val
+		}
+		// Hiển thị 10 xã trong danh sách ưu tiên
+		for _, name := range fixedXas {
+			val := xaRainMap[name]
+			xaDataRaw = append(xaDataRaw, []string{name, fmt.Sprintf("%.1f", val)})
+		}
+	} else {
+		// Nếu không có mưa, có thể để trống hoặc lấy theo mặc định (ở đây chọn lấy top theo lượng mưa như cũ nếu cần, 
+		// nhưng theo yêu cầu "đều fix cứng" và "nếu xã có mưa thì lấy 10 xã gần trung tâm", 
+		// ta sẽ lấy 10 xã gần trung tâm luôn cho đồng nhất hoặc để trống nếu không có mưa)
+		sort.Slice(xas, func(i, j int) bool { return xas[i].val > xas[j].val })
+		for _, v := range limit(xas, 10) {
+			xaDataRaw = append(xaDataRaw, []string{v.name, fmt.Sprintf("%.1f", v.val)})
+		}
 	}
 
 	timeMua := ""

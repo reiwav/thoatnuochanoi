@@ -628,7 +628,7 @@ const AiSupport = () => {
                                         onClick={() => handleConstructionReport('')}
                                         sx={{ borderRadius: '8px', borderColor: 'divider', color: 'text.primary', '&:hover': { borderColor: 'primary.main', color: 'primary.main', bgcolor: 'transparent' } }}
                                     >
-                                        BC CT KC
+
                                     </Button>
                                 )}
                             </>
@@ -657,7 +657,7 @@ const AiSupport = () => {
                                     </Tooltip>
                                 )}
                                 {hasPermission('ai:report-emergency') && (
-                                    <Tooltip title="BC CT KC">
+                                    <Tooltip title="BC CT KC ccc">
                                         <IconButton color="secondary" onClick={() => handleConstructionReport('')} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', ml: 1 }}>
                                             <IconDatabase size={20} />
                                         </IconButton>

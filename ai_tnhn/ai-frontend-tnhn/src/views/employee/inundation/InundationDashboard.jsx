@@ -323,7 +323,8 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
         previews: []
     });
 
-    // Update state when point change (e.g. after refresh)
+    // Removed automatic sync to prevent input revert during polling
+    /*
     useEffect(() => {
         if (point.active_report) {
             setSurveyData(prev => ({
@@ -341,6 +342,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
             }));
         }
     }, [point.active_report]);
+    */
 
     // Action Menu State
     const [anchorEl, setAnchorEl] = useState(null);
@@ -418,9 +420,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
             surveyData.images.forEach(img => fd.append('images', img));
             await inundationApi.updateSurvey(point.active_report.id, fd);
             toast.success('Cập nhật XNTK thành công');
-            setSurveyData(prev => ({ ...prev, images: [], previews: [] }));
-            // Trigger refresh
-            if (fetchPoints) fetchPoints();
+            setTimeout(() => window.location.reload(), 1000);
         } catch (err) {
             toast.error('Lỗi khi cập nhật khảo sát');
         } finally {
@@ -458,8 +458,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
             mechData.images.forEach(img => fd.append('images', img));
             await inundationApi.updateMech(point.active_report.id, fd);
             toast.success('Cập nhật cơ giới thành công');
-            setMechData(prev => ({ ...prev, images: [], previews: [] }));
-            if (fetchPoints) fetchPoints();
+            setTimeout(() => window.location.reload(), 1000);
         } catch (err) {
             toast.error('Lỗi khi cập nhật cơ giới');
         } finally {

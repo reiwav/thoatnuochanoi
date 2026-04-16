@@ -601,13 +601,14 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 			if inundationSummary.ActivePoints > 0 {
 				var details []string
 				for _, pt := range inundationSummary.OngoingPoints {
-					depthInfo := pt.Length + " x " + pt.Width + " x " + pt.Depth
-					if depthInfo == "" {
-						depthInfo = "chưa rõ độ sâu"
-					} else {
-						depthInfo = "ngập " + depthInfo
-					}
-					details = append(details, fmt.Sprintf("%s (%s)", pt.StreetName, depthInfo))
+					// depthInfo := pt.Length + " x " + pt.Width + " x " + pt.Depth
+					// if depthInfo == "" {
+					// 	depthInfo = "chưa rõ độ sâu"
+					// } else {
+					// 	depthInfo = "ngập " + depthInfo
+					// }
+					//details = append(details, fmt.Sprintf("%s (%s)", pt.StreetName, depthInfo))
+					details = append(details, pt.StreetName)
 				}
 				chiTietCacDiem = strings.Join(details, ", ")
 			}

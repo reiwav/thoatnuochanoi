@@ -106,13 +106,13 @@ func NewService(
 	}
 
 	// 1. Initialize background sync worker
-	svc.syncWorker = NewSyncWorker(
-		inundationRepo,
-		inundationUpdateRepo,
-		orgRepo,
-		driveSvc,
-		svc.resolveUploadFolder, // Pass helper function
-	)
+	// svc.syncWorker = NewSyncWorker(
+	// 	inundationRepo,
+	// 	inundationUpdateRepo,
+	// 	orgRepo,
+	// 	driveSvc,
+	// 	svc.resolveUploadFolder, // Pass helper function
+	// )
 
 	// 2. Start the worker loop (Startup scan + channel listener)
 	//svc.syncWorker.Start()

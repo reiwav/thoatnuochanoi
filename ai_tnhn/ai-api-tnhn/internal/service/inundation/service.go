@@ -1156,6 +1156,20 @@ func (s *service) ExportYearlyHistory(ctx context.Context, orgID string, year in
 		f.SetCellValue(sheetName, cell, header)
 	}
 
+	// Helper to format duration
+	formatDuration := func(seconds int64) string {
+		if seconds <= 0 {
+			return "0ph"
+		}
+		h := seconds / 3600
+		m := (seconds % 3600) / 60
+		if h > 0 {
+			return fmt.Sprintf("%dh %dph", h, m)
+		}
+		return fmt.Sprintf("%dph", m)
+	}
+
+	now := time.Now().Unix()
 	for i, r := range reports {
 		row := i + 2
 		f.SetCellValue(sheetName, "A"+strconv.Itoa(row), i+1)
@@ -1169,11 +1183,12 @@ func (s *service) ExportYearlyHistory(ctx context.Context, orgID string, year in
 		dimensions := fmt.Sprintf("%sx%sx%s", r.Length, r.Width, r.Depth)
 		f.SetCellValue(sheetName, "F"+strconv.Itoa(row), dimensions)
 
-		duration := ""
-		if r.EndTime > 0 {
-			duration = strconv.FormatInt((r.EndTime-r.StartTime)/60, 10)
+		endTime := r.EndTime
+		if endTime <= 0 {
+			endTime = now
 		}
-		f.SetCellValue(sheetName, "G"+strconv.Itoa(row), duration)
+		durationSeconds := endTime - r.StartTime
+		f.SetCellValue(sheetName, "G"+strconv.Itoa(row), formatDuration(durationSeconds))
 
 		id := r.PointID
 		if id == "" {

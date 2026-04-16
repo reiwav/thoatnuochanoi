@@ -58,9 +58,20 @@ const InundationYearlyHistory = () => {
         loadHistory();
     }, [loadHistory]);
 
+    // Helper to format duration (seconds) into "Xh Yph"
+    const formatDuration = (seconds) => {
+        if (!seconds || seconds <= 0) return '0 ph';
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        if (h > 0) return `${h}h ${m}ph`;
+        return `${m}ph`;
+    };
+
     // Aggregate data by Point
     const aggregatedData = useMemo(() => {
         const groups = {};
+        const now = dayjs().unix();
+
         history.forEach(item => {
             const id = item.point_id || item.street_name;
             if (!groups[id]) {
@@ -72,11 +83,15 @@ const InundationYearlyHistory = () => {
                 };
             }
             groups[id].count += 1;
-            const duration = item.end_time ? Math.round((item.end_time - item.start_time) / 60) : 0;
-            groups[id].total_duration += duration;
+            
+            // If not resolved, use current time - start_time
+            const endTime = item.end_time > 0 ? item.end_time : now;
+            const durationSeconds = Math.max(0, endTime - item.start_time);
+            
+            groups[id].total_duration += durationSeconds;
             groups[id].events.push({
                 ...item,
-                duration
+                durationSeconds
             });
         });
 
@@ -129,14 +144,14 @@ const InundationYearlyHistory = () => {
                                 <TableCell align="center" sx={{ fontWeight: 800, width: '100px', borderRight: '1px solid #ddd' }}>Đơn vị</TableCell>
                                 <TableCell sx={{ fontWeight: 800, borderRight: '1px solid #ddd' }}>Địa điểm / Quận</TableCell>
                                 <TableCell align="center" sx={{ fontWeight: 800, width: '120px', borderRight: '1px solid #ddd' }}>Số lần ngập</TableCell>
-                                <TableCell align="center" sx={{ fontWeight: 800, width: '150px', borderRight: '1px solid #ddd' }}>Tổng TG ngập (phút)</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 800, width: '180px', borderRight: '1px solid #ddd' }}>Tổng thời gian ngập</TableCell>
                                 <TableCell align="center" sx={{ fontWeight: 800, width: '100px' }}>Thao tác</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {loading ? (
                                 <TableRow>
-                                    <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
+                                    <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
                                         <CircularProgress size={24} color="secondary" />
                                     </TableCell>
                                 </TableRow>
@@ -157,7 +172,7 @@ const InundationYearlyHistory = () => {
                                             {row.count}
                                         </TableCell>
                                         <TableCell align="center" sx={{ borderRight: '1px solid #eee', fontWeight: 600 }}>
-                                            {row.total_duration}
+                                            {formatDuration(row.total_duration)}
                                         </TableCell>
                                         <TableCell align="center">
                                             <IconButton color="primary" onClick={() => handleViewDetails(row)}>
@@ -215,11 +230,11 @@ const InundationYearlyHistory = () => {
                             <Table size="small">
                                 <TableHead sx={{ bgcolor: '#f1f3f4' }}>
                                     <TableRow>
-                                        <TableCell align="center" sx={{ fontWeight: 700 }}>Đợt ngập</TableCell>
+                                        <TableCell align="center" sx={{ fontWeight: 700, width: '80px' }}>Đợt ngập</TableCell>
                                         <TableCell sx={{ fontWeight: 700 }}>Thời gian bắt đầu</TableCell>
                                         <TableCell sx={{ fontWeight: 700 }}>Kích thước (DxRxS)</TableCell>
-                                        <TableCell align="center" sx={{ fontWeight: 700 }}>Thời gian (phút)</TableCell>
-                                        <TableCell align="center" sx={{ fontWeight: 700 }}>Thao tác</TableCell>
+                                        <TableCell align="center" sx={{ fontWeight: 700 }}>Thời gian ngập</TableCell>
+                                        <TableCell align="center" sx={{ fontWeight: 700, width: '100px' }}>Thao tác</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
@@ -243,7 +258,7 @@ const InundationYearlyHistory = () => {
                                                 </Stack>
                                             </TableCell>
                                             <TableCell align="center" sx={{ fontWeight: 600 }}>
-                                                {event.duration > 0 ? event.duration : '-'}
+                                                {formatDuration(event.durationSeconds)}
                                             </TableCell>
                                             <TableCell align="center">
                                                 <Button 

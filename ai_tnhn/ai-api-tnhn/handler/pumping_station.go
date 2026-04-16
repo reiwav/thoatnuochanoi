@@ -150,35 +150,35 @@ func (h *PumpingStationHandler) List(c *gin.Context) {
 	size, _ := strconv.Atoi(sizeStr)
 	f.SetOrderBy("priority")
 
-	// Permission-based filtering
+	// 1. Permission/Visibility Check
 	_, isAllowedAll, user := h.checkPermissions(c)
 	if user == nil {
 		h.SendError(c, web.Unauthorized("vui lòng đăng nhập lại"))
 		return
 	}
 
-	targetOrgID := ""
+	// 2. Base Visibility & Search Filter
 	if isAllowedAll {
-		targetOrgID = c.Query("org_id")
-	} else {
-		targetOrgID = user.OrgID
-	}
-
-	if targetOrgID != "" {
-		// UNION logic: Owned by Org OR in SharedOrgIDs list
-		f.AddWhere("org_id_or_shared", "$or", []bson.M{
-			{"org_id": targetOrgID},
-			{"shared_org_ids": targetOrgID},
-			{"share_all": true},
-		})
+		// Privileged users: unfiltered by default, strict when org_id is provided
+		qOrgID := c.Query("org_id")
+		if qOrgID != "" {
+			f.AddWhere("org_id", "org_id", qOrgID)
+		}
 	} else if user.Role == constant.ROLE_EMPLOYEE || user.IsEmployee {
-		// Employee view: Only their assigned station
+		// Employee: ONLY their assigned station
 		if user.AssignedPumpingStationID != "" {
 			f.AddWhere("id", "_id", user.AssignedPumpingStationID)
 		} else {
 			h.SendData(c, gin.H{"data": []interface{}{}, "total": 0})
 			return
 		}
+	} else {
+		// Unit Admin: Access-based view (owned, shared specifically, or shared globally)
+		f.AddWhere("visibility", "$or", []bson.M{
+			{"org_id": user.OrgID},
+			{"shared_org_ids": user.OrgID},
+			{"share_all": true},
+		})
 	}
 
 	res, total, err := h.service.List(c.Request.Context(), f)

@@ -11,6 +11,7 @@ type StationListRequest struct {
 	Search string `form:"search"`
 	Active string `form:"active"`
 	Loai   string `form:"loai"`
+	OrgID  string `form:"org_id"`
 }
 
 func (f *StationListRequest) GetWhere() filter.Where {
@@ -23,6 +24,9 @@ func (f *StationListRequest) GetWhere() filter.Where {
 	}
 	if f.Loai != "" {
 		f.AddWhere("loai", "loai", f.Loai)
+	}
+	if f.OrgID != "" {
+		f.AddWhere("org_id", "org_id", f.OrgID)
 	}
 	return f.BasicFilter.GetWhere()
 }

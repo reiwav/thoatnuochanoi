@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -15,6 +16,7 @@ type RainStationStat struct {
 	SessionRain float64 `json:"session_rain"`
 	StartTime   string  `json:"start_time"`
 	EndTime     string  `json:"end_time"`
+	IsRaining   bool    `json:"is_raining"`
 }
 
 type RainSummaryData struct {
@@ -79,7 +81,10 @@ func (s *service) GetRainSummary(ctx context.Context, orgID string) (*RainSummar
 		stationMap[id] = t.TenPhuong
 	}
 
+	now := time.Now().In(time.FixedZone("Asia/Ho_Chi_Minh", 7*60*60))
 	var measurements []RainStationStat
+	rainyCount := 0
+
 	for _, d := range rainData.Content.Data {
 		if d.LuongMua_HT > 0 {
 			var id int
@@ -91,6 +96,24 @@ func (s *service) GetRainSummary(ctx context.Context, orgID string) (*RainSummar
 
 			if orgID != "" && orgID != "all" && !permitted[id] {
 				continue
+			}
+
+			// Parse ThoiGian_HT to check if it's currently raining (last update within 5 minutes)
+			isRaining := false
+			var lastUpdate time.Time
+			layout := "2006-01-02T15:04:05" // From weather.convertUTCToVietnam
+			if t, err := time.ParseInLocation(layout, d.ThoiGian_HT, now.Location()); err == nil {
+				lastUpdate = t
+			} else {
+				layoutSecondary := "2006-01-02 15:04:05"
+				if t, err := time.ParseInLocation(layoutSecondary, d.ThoiGian_HT, now.Location()); err == nil {
+					lastUpdate = t
+				}
+			}
+
+			if !lastUpdate.IsZero() && now.Sub(lastUpdate) <= 5*time.Minute {
+				isRaining = true
+				rainyCount++
 			}
 
 			tBD := d.ThoiGian_BD
@@ -112,6 +135,7 @@ func (s *service) GetRainSummary(ctx context.Context, orgID string) (*RainSummar
 				SessionRain: sessionRain,
 				StartTime:   tBD,
 				EndTime:     tHT,
+				IsRaining:   isRaining,
 			})
 		}
 	}
@@ -130,7 +154,7 @@ func (s *service) GetRainSummary(ctx context.Context, orgID string) (*RainSummar
 
 	return &RainSummaryData{
 		TotalStations:  len(rainData.Content.Tram),
-		RainyStations:  len(measurements),
+		RainyStations:  rainyCount,
 		MaxRainStation: measurements[0],
 		Measurements:   measurements,
 	}, nil

@@ -195,10 +195,10 @@ const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type, organiz
                             value={formData.Loai || ''}
                             onChange={(e) => handleChange('Loai', e.target.value)}
                         >
-                            <MenuItem value="">Trống</MenuItem>
+                            <MenuItem value="">Chọn</MenuItem>
                             <MenuItem value="phuong">Phường</MenuItem>
                             <MenuItem value="xa">Xã</MenuItem>
-                            <MenuItem value="thitran">Thị trấn</MenuItem>
+                            {/* <MenuItem value="thitran">Thị trấn</MenuItem> */}
                         </TextField>
                     )}
 

@@ -554,7 +554,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                 )}
             </Box>
 
-            <Collapse in={open} timeout="auto" unmountOnExit>
+            <Collapse in={open} timeout="auto" unmountOnExit onClick={(e) => e.stopPropagation()}>
                 <Stack spacing={2} sx={{ mt: 2, pt: 2, borderTop: '1px dashed', borderColor: 'divider' }}>
                     {!isMechOnly && !isSurveyOnly && (
                         <Typography variant="body1" sx={{ fontWeight: 700, color: 'primary.main' }}>
@@ -677,6 +677,165 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                                 )}
                             </Box>
                         </>
+                    )}
+
+                    {point.report_id && canViewTabs && (
+                        <Box sx={{ mt: 2, borderTop: '1px solid', borderColor: 'divider', pt: 2 }}>
+                            <Box sx={{ mb: 2 }}>
+                                <Tabs
+                                    value={tabValue}
+                                    onChange={(e, v) => setTabValue(v)}
+                                    variant="scrollable"
+                                    scrollButtons="auto"
+                                    sx={{
+                                        borderBottom: '1px solid',
+                                        borderColor: 'divider',
+                                        '& .MuiTab-root': { fontWeight: 800, fontSize: '0.8rem', minHeight: 48 }
+                                    }}
+                                >
+                                    {canReview && <Tab value="review" label="NHẬN XÉT" />}
+                                    {canSurvey && <Tab value="survey" label="XNTK" />}
+                                    {canMech && <Tab value="mech" label="CƠ GIỚI" />}
+                                </Tabs>
+                            </Box>
+
+                            {tabValue === 'survey' && canSurvey && (
+                                <Box sx={{ p: 1 }}>
+                                    <Stack spacing={2}>
+                                        <FormControlLabel
+                                            control={<Checkbox size="small" checked={surveyData.checked} onChange={(e) => setSurveyData({ ...surveyData, checked: e.target.checked })} />}
+                                            label={<Typography variant="body2" sx={{ fontWeight: 700 }}>Đã kiểm tra</Typography>}
+                                        />
+                                        <Box>
+                                            <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', mb: 1, display: 'block' }}>ẢNH HIỆN TRƯỜNG:</Typography>
+                                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 1 }}>
+                                                <Box component="label" sx={{ width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed', borderColor: 'divider', borderRadius: 1, cursor: 'pointer', bgcolor: 'grey.50' }}>
+                                                    <input type="file" hidden multiple accept="image/*" onChange={handleSurveyImageChange} />
+                                                    <IconCloudUpload size={20} color={theme.palette.primary.main} />
+                                                </Box>
+                                                {surveyData.previews.map((src, i) => (
+                                                    <Box key={i} sx={{ position: 'relative', width: 48, height: 48 }}>
+                                                        <Box component="img" src={src} sx={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 1, border: '1px solid', borderColor: 'divider' }} />
+                                                        <IconButton size="small" onClick={() => {
+                                                            const ni = [...surveyData.images]; ni.splice(i, 1);
+                                                            const np = [...surveyData.previews]; URL.revokeObjectURL(np[i]); np.splice(i, 1);
+                                                            setSurveyData({ ...surveyData, images: ni, previews: np });
+                                                        }} sx={{ position: 'absolute', top: -4, right: -4, bgcolor: 'error.main', color: 'white', p: 0.1 }}>
+                                                            <IconX size={8} />
+                                                        </IconButton>
+                                                    </Box>
+                                                ))}
+                                            </Box>
+                                        </Box>
+                                        <TextField
+                                            fullWidth label="Ghi chú XNTK" multiline rows={2} size="small"
+                                            value={surveyData.note} onChange={(e) => setSurveyData({ ...surveyData, note: e.target.value })}
+                                            sx={{ '& .MuiInputLabel-root': { fontSize: '0.85rem' } }}
+                                        />
+                                        <Button
+                                            fullWidth variant="contained" color="primary" onClick={handleSurveySubmit}
+                                            disabled={surveyLoading} startIcon={surveyLoading ? <CircularProgress size={16} color="inherit" /> : <IconSend size={16} />}
+                                            sx={{ borderRadius: 2, fontWeight: 800 }}
+                                        >
+                                            GỬI CẬP NHẬT XNTK
+                                        </Button>
+                                    </Stack>
+                                </Box>
+                            )}
+
+                            {tabValue === 'mech' && canMech && (
+                                <Box sx={{ p: 1 }}>
+                                    <Stack spacing={2}>
+                                        <FormControlLabel
+                                            control={<Checkbox size="small" checked={mechData.checked} onChange={(e) => setMechData({ ...mechData, checked: e.target.checked })} />}
+                                            label={<Typography variant="body2" sx={{ fontWeight: 700 }}>Đã ứng trực</Typography>}
+                                        />
+                                        <Grid container spacing={1}>
+                                            <Grid item xs={4}>
+                                                <TextField fullWidth label="D" size="small" value={mechData.d} onChange={(e) => setMechData({ ...mechData, d: e.target.value })} />
+                                            </Grid>
+                                            <Grid item xs={4}>
+                                                <TextField fullWidth label="R" size="small" value={mechData.r} onChange={(e) => setMechData({ ...mechData, r: e.target.value })} />
+                                            </Grid>
+                                            <Grid item xs={4}>
+                                                <TextField fullWidth label="S" size="small" value={mechData.s} onChange={(e) => setMechData({ ...mechData, s: e.target.value })} />
+                                            </Grid>
+                                        </Grid>
+                                        <Box>
+                                            <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', mb: 1, display: 'block' }}>ẢNH HIỆN TRƯỜNG:</Typography>
+                                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 1 }}>
+                                                <Box component="label" sx={{ width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed', borderColor: 'divider', borderRadius: 1, cursor: 'pointer', bgcolor: 'grey.50' }}>
+                                                    <input type="file" hidden multiple accept="image/*" onChange={handleMechImageChange} />
+                                                    <IconCloudUpload size={20} color={theme.palette.secondary.main} />
+                                                </Box>
+                                                {mechData.previews.map((src, i) => (
+                                                    <Box key={i} sx={{ position: 'relative', width: 48, height: 48 }}>
+                                                        <Box component="img" src={src} sx={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 1, border: '1px solid', borderColor: 'divider' }} />
+                                                        <IconButton size="small" onClick={() => {
+                                                            const ni = [...mechData.images]; ni.splice(i, 1);
+                                                            const np = [...mechData.previews]; URL.revokeObjectURL(np[i]); np.splice(i, 1);
+                                                            setMechData({ ...mechData, images: ni, previews: np });
+                                                        }} sx={{ position: 'absolute', top: -4, right: -4, bgcolor: 'error.main', color: 'white', p: 0.1 }}>
+                                                            <IconX size={8} />
+                                                        </IconButton>
+                                                    </Box>
+                                                ))}
+                                            </Box>
+                                        </Box>
+                                        <TextField
+                                            fullWidth label="Ghi chú Cơ giới" multiline rows={2} size="small"
+                                            value={mechData.note} onChange={(e) => setMechData({ ...mechData, note: e.target.value })}
+                                            sx={{ '& .MuiInputLabel-root': { fontSize: '0.85rem' } }}
+                                        />
+                                        <Button
+                                            fullWidth variant="contained" color="secondary" onClick={handleMechSubmit}
+                                            disabled={mechLoading} startIcon={mechLoading ? <CircularProgress size={16} color="inherit" /> : <IconSend size={16} />}
+                                            sx={{ borderRadius: 2, fontWeight: 800, bgcolor: 'secondary.main' }}
+                                        >
+                                            GỬI CẬP NHẬT CƠ GIỚI
+                                        </Button>
+                                    </Stack>
+                                </Box>
+                            )}
+
+                            {tabValue === 'review' && canReview && (
+                                <Box sx={{ p: 1 }}>
+                                    {!latest?.needs_correction ? (
+                                        <Stack spacing={2}>
+                                            <TextField
+                                                fullWidth multiline rows={3} size="small"
+                                                placeholder="Nhập nội dung nhận xét hoặc yêu cầu chỉnh sửa..."
+                                                value={reviewComment}
+                                                onChange={(e) => setReviewComment(e.target.value)}
+                                                sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'grey.50' } }}
+                                            />
+                                            <Button
+                                                fullWidth variant="contained" color="error" onClick={handleReviewSubmit}
+                                                disabled={reviewLoading || !reviewComment.trim()}
+                                                startIcon={reviewLoading ? <CircularProgress size={16} color="inherit" /> : <IconSend size={16} />}
+                                                sx={{ borderRadius: 2, fontWeight: 800 }}
+                                            >
+                                                GỬI PHẢN HỒI RÀ SOÁT
+                                            </Button>
+                                        </Stack>
+                                    ) : (
+                                        <Box sx={{ p: 1.5, bgcolor: 'warning.lighter', borderRadius: 2, border: '1px solid', borderColor: 'warning.light', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                            <IconMessage2 size={20} color="darkorange" />
+                                            <Box>
+                                                <Typography variant="caption" sx={{ fontWeight: 800, color: 'warning.dark', display: 'block' }}>
+                                                    Đang chờ nhân viên chỉnh sửa
+                                                </Typography>
+                                                {latest?.review_comment && (
+                                                    <Typography variant="caption" sx={{ color: 'warning.dark', fontStyle: 'italic', display: 'block', mt: 0.5 }}>
+                                                        "{latest.review_comment}"
+                                                    </Typography>
+                                                )}
+                                            </Box>
+                                        </Box>
+                                    )}
+                                </Box>
+                            )}
+                        </Box>
                     )}
 
                     {point.report_id ? (
@@ -1693,7 +1852,7 @@ const InundationDashboard = () => {
             if (activeTab === 5) {
                 fetchPumpingHistory(true);
             }
-        }, 500000);
+        }, 8000);
         return () => clearInterval(interval);
     }, [activeTab, userInfo, isMobile, historyPage, historyRowsPerPage, historyStatus, historyTrafficStatus, searchQuery, orgFilter]);
 

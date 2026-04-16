@@ -249,6 +249,7 @@ const StationInundationList = () => {
                     />
                     <OrganizationSelect
                         value={orgFilter}
+                        allowAny
                         onChange={(e) => setOrgFilter(e.target.value)}
                         sx={{ width: { xs: '100%', sm: 250 } }}
                     />

@@ -308,17 +308,14 @@ func (h *InundationHandler) ListReports(c *gin.Context) {
 		return
 	}
 
-	orgID := user.OrgID
+	targetOrgID := c.Query("org_id")
+	visibilityOrgID := ""
+
 	if isAllowedAll {
-		// Privileged users (Super Admin or Company level) can manage all
-		if qOrg := c.Query("org_id"); qOrg != "" {
-			orgID = qOrg
-		} else {
-			orgID = "" // Default to all if no filter provided
-		}
+		// Privileged users: no visibility limit, targetOrgID is used as filter
 	} else {
-		// Restricted users stick to their own OrgID
-		orgID = user.OrgID
+		// Restricted users: visibility limited to their own Org (owned + shared)
+		visibilityOrgID = user.OrgID
 	}
 
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "0"))
@@ -329,14 +326,6 @@ func (h *InundationHandler) ListReports(c *gin.Context) {
 
 	// Determine which points to show
 	var pointIDs []string
-
-	// Use target organization's configured InundationIDs if available
-	targetOrgID := ""
-	if qOrg := c.Query("org_id"); qOrg != "" && isAllowedAll {
-		targetOrgID = qOrg
-	} else if !isAllowedAll {
-		targetOrgID = user.OrgID
-	}
 
 	if user.IsEmployee && !isAllowedAll {
 		// Filter out empty strings if any
@@ -353,17 +342,11 @@ func (h *InundationHandler) ListReports(c *gin.Context) {
 			})
 			return
 		}
-	} else if targetOrgID != "" {
-		// Manager or Admin: search for points owned by OR shared with targetOrgID
-		res, err := h.service.GetPointsStatus(c.Request.Context(), targetOrgID, nil) // passing nil pointIDs will fetch by org
-		if err == nil {
-			for _, p := range res {
-				pointIDs = append(pointIDs, p.ID)
-			}
-		}
+		// If employee has points, we don't need targetOrgID filter (it's implicit in pointIDs)
+		targetOrgID = ""
 	}
 
-	reports, total, err := h.service.ListReportsWithFilter(c.Request.Context(), orgID, status, trafficStatus, query, pointIDs, page, size)
+	reports, total, err := h.service.ListReportsWithFilter(c.Request.Context(), visibilityOrgID, targetOrgID, status, trafficStatus, query, pointIDs, page, size)
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -382,8 +365,8 @@ func (h *InundationHandler) GetPointsStatus(c *gin.Context) {
 		return
 	}
 
-	var orgID string
-	var pointIDs []string
+	var targetOrgID string = c.Query("org_id")
+	var visibilityOrgID string = ""
 
 	if user.IsEmployee && !isAllowedAll {
 		// Employee: chỉ lấy điểm ngập đã gắn trong tài khoản
@@ -396,18 +379,12 @@ func (h *InundationHandler) GetPointsStatus(c *gin.Context) {
 			h.SendData(c, []inundation.PointStatus{})
 			return
 		}
-		orgID = "" // không fetch theo org
-	} else if isAllowedAll {
-		// Super admin / Company: lấy tất cả hoặc theo org_id filter
-		if qOrg := c.Query("org_id"); qOrg != "" {
-			orgID = qOrg
-		}
-	} else {
-		// Manager (non-employee, non-superadmin): lấy theo org
-		orgID = user.OrgID
+	} else if !isAllowedAll {
+		// Manager: visibility limited to their org
+		visibilityOrgID = user.OrgID
 	}
 
-	res, err := h.service.GetPointsStatus(c.Request.Context(), orgID, pointIDs)
+	res, err := h.service.GetPointsStatus(c.Request.Context(), visibilityOrgID, targetOrgID, pointIDs)
 	if err != nil {
 		h.SendError(c, err)
 		return

@@ -187,6 +187,21 @@ const StationDialog = ({ open, onClose, onSubmit, station, isEdit, type, organiz
                         />
                     )}
 
+                    {type === 'rain' && (
+                        <TextField
+                            select
+                            fullWidth
+                            label="Thuộc (Xã/Phường)"
+                            value={formData.Loai || ''}
+                            onChange={(e) => handleChange('Loai', e.target.value)}
+                        >
+                            <MenuItem value="">Trống</MenuItem>
+                            <MenuItem value="phuong">Phường</MenuItem>
+                            <MenuItem value="xa">Xã</MenuItem>
+                            <MenuItem value="thitran">Thị trấn</MenuItem>
+                        </TextField>
+                    )}
+
                     {(type === 'lake' || type === 'river') && (
                         <TextField
                             fullWidth label="Loại"

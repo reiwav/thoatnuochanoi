@@ -32,6 +32,19 @@ const StationRow = ({ row, handleOpenEdit, handleDelete, isMobile, canEdit, canD
                 )}
                 <TableCell sx={{ fontWeight: 800, fontSize: '1.05rem', color: 'primary.dark' }}>{row.TenTram}</TableCell>
                 {!isMobile && <TableCell sx={{ fontSize: '0.95rem' }}>{row.DiaChi}</TableCell>}
+                {!isMobile && (
+                    <TableCell sx={{ fontSize: '0.95rem' }}>
+                        {row.Loai ? (
+                            <Chip
+                                label={row.Loai === 'phuong' ? 'Phường' : (row.Loai === 'xa' ? 'Xã' : 'Thị trấn')}
+                                color={row.Loai === 'phuong' ? 'primary' : (row.Loai === 'xa' ? 'secondary' : 'info')}
+                                size="small"
+                                variant="outlined"
+                                sx={{ fontWeight: 700, borderRadius: '6px' }}
+                            />
+                        ) : '-'}
+                    </TableCell>
+                )}
                 <TableCell sx={{ fontSize: '0.95rem', fontWeight: 600 }}>{organizationName || '-'}</TableCell>
                 {!isMobile && <TableCell sx={{ fontSize: '0.85rem' }}>{row.share_all ? 'Tất cả xí nghiệp' : (row.shared_org_ids?.map(id => organizationNames[id]).filter(n => n).join(', ') || '-')}</TableCell>}
                 {!isMobile && <TableCell align="center" sx={{ fontSize: '1rem', fontWeight: 700 }}>{row.ThuTu || 0}</TableCell>}
@@ -227,6 +240,7 @@ const StationRainList = () => {
                             {isMobile && <TableCell width="40px" />}
                             <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Tên trạm</TableCell>
                             {!isMobile && <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Địa chỉ</TableCell>}
+                            {!isMobile && <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Thuộc</TableCell>}
                             {!isMobile && <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Xí nghiệp quản lý</TableCell>}
                             {!isMobile && <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Xí nghiệp phối hợp</TableCell>}
                             {!isMobile && <TableCell align="center" sx={{ fontWeight: 800, fontSize: '1rem' }}>Ưu tiên</TableCell>}

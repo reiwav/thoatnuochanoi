@@ -192,7 +192,10 @@ const PumpingStationPage = () => {
         try {
             if (!silent) setLoading(true);
             if (isAdmin) {
-                promises.push(pumpingStationApi.list({ per_page: 1000, org_id: orgFilter }));
+                const res = await pumpingStationApi.list({ per_page: 1000, org_id: orgFilter });
+                if (res.data?.status === 'success') {
+                    setData(res.data.data.data || []);
+                }
             } else if (user?.assigned_pumping_station_id) {
                 const res = await pumpingStationApi.get(user.assigned_pumping_station_id);
                 setAssignedStation(res.data.data || null);
@@ -223,7 +226,7 @@ const PumpingStationPage = () => {
 
     useEffect(() => {
         loadData();
-    }, [orgFilter]);
+    }, [orgFilter, isAdmin]);
 
     const handleAdd = () => {
         setSelected(null);

@@ -30,11 +30,12 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
 
     const canReview = useMemo(() => {
         if (isEmployee) return false;
-        if (isCompany) return true;
+        if (!hasPermission('inundation:review')) return false;
+        if (isCompany || userRole === 'super_admin') return true;
         if (!selectedReport) return false;
         if (selectedReport.org_id === user?.org_id) return true;
         return false;
-    }, [user, isCompany, isEmployee, selectedReport]);
+    }, [user, isCompany, isEmployee, selectedReport, hasPermission, userRole]);
 
     const handleOpenViewer = (imgs, idx = 0) => {
         if (!imgs || imgs.length === 0) {

@@ -7,6 +7,7 @@ import { IconSend, IconCloudUpload } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 import inundationApi from 'api/inundation';
 import { processAndWatermark } from 'utils/imageProcessor';
+import { getInundationImageUrl } from 'utils/imageHelper';
 
 const InundationMechPanel = ({ report, pointId, onSuccess }) => {
     const [submitting, setSubmitting] = useState(false);
@@ -160,6 +161,16 @@ const InundationMechPanel = ({ report, pointId, onSuccess }) => {
                                 component="img"
                                 src={URL.createObjectURL(file)}
                                 sx={{ width: 80, height: 80, borderRadius: 2, objectFit: 'cover', border: '1px solid', borderColor: 'divider' }}
+                            />
+                        ))}
+
+                        {/* Hiển thị ảnh cũ nếu có */}
+                        {!mechData.images.length && (report?.mech_images || report?.mechImages)?.map((img, idx) => (
+                            <Box
+                                key={`old-${idx}`}
+                                component="img"
+                                src={getInundationImageUrl(img)}
+                                sx={{ width: 80, height: 80, borderRadius: 2, objectFit: 'cover', border: '1px solid', borderColor: 'divider', opacity: 0.8 }}
                             />
                         ))}
                     </Stack>

@@ -964,6 +964,7 @@ const InundationAdminList = () => {
                     />
                     <OrganizationSelect
                         value={orgFilter}
+                        allowAny
                         onChange={(e) => { setOrgFilter(e.target.value); setHistoryPage(0); }}
                         sx={{ width: { xs: '100%', sm: 220 } }}
                     />

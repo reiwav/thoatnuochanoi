@@ -11,6 +11,7 @@ const OrganizationSelect = ({
     fullWidth = true,
     showAll = true,
     disabled: customDisabled = false,
+    allowAny = false,
     sx = {},
     InputProps: customInputProps = {}
 }) => {
@@ -49,7 +50,7 @@ const OrganizationSelect = ({
         fetchOrgs();
     }, [user?.id]);
 
-    const isLocked = !isCompanyLevel && !!user?.org_id;
+    const isLocked = !isCompanyLevel && !!user?.org_id && !allowAny;
     const currentValue = isLocked ? user.org_id : value;
 
     useEffect(() => {
@@ -75,7 +76,7 @@ const OrganizationSelect = ({
                 endAdornment: loading ? <CircularProgress color="inherit" size={20} sx={{ mr: 3 }} /> : customInputProps?.endAdornment || null
             }}
         >
-            {showAll && isCompanyLevel && <MenuItem value="">Tất cả đơn vị</MenuItem>}
+            {showAll && (isCompanyLevel || allowAny) && <MenuItem value="">Tất cả đơn vị</MenuItem>}
             {organizations.map((org) => (
                 <MenuItem key={org.id} value={org.id}>
                     {org.name}

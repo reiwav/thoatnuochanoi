@@ -25,7 +25,7 @@ type Service interface {
 	CreateReport(ctx context.Context, report *models.InundationReport, images []ImageContent) error
 	AddUpdate(ctx context.Context, reportID string, update *models.InundationUpdate, userID string, userEmail string, images []ImageContent) error
 	ListReports(ctx context.Context, orgID string) ([]*models.InundationReport, int64, error)
-	ListReportsWithFilter(ctx context.Context, orgID, status, trafficStatus, query string, pointIDs []string, page, size int) ([]*models.InundationReport, int64, error)
+	ListReportsWithFilter(ctx context.Context, visibilityOrgID, targetOrgID, status, trafficStatus, query string, pointIDs []string, page, size int) ([]*models.InundationReport, int64, error)
 	GetReport(ctx context.Context, reportID string) (*models.InundationReport, error)
 	Resolve(ctx context.Context, reportID string, endTime int64) error
 	UpdateReport(ctx context.Context, id string, report *models.InundationReport, userID, userEmail, userName string, images []ImageContent) error
@@ -39,7 +39,7 @@ type Service interface {
 	UpdateUpdateContent(ctx context.Context, updateID string, update *models.InundationUpdate, userID, userEmail, userName string, images []ImageContent) error
 
 	// Points management
-	GetPointsStatus(ctx context.Context, orgID string, pointIDs []string) ([]PointStatus, error)
+	GetPointsStatus(ctx context.Context, visibilityOrgID string, targetOrgID string, pointIDs []string) ([]PointStatus, error)
 	GetPointByID(ctx context.Context, id string) (*models.InundationStation, error)
 	CreatePoint(ctx context.Context, point models.InundationStation) (string, error)
 	UpdatePoint(ctx context.Context, id string, point models.InundationStation) error
@@ -156,6 +156,13 @@ func (s *service) CreateReport(ctx context.Context, report *models.InundationRep
 	// 		return s.AddUpdate(ctx, point.ReportID, update, report.UserID, report.UserEmail, images)
 	// 	}
 	// }
+
+	// Inherit sharing from station
+	if point != nil {
+		report.OrgID = point.OrgID
+		report.SharedOrgIDs = point.SharedOrgIDs
+		report.ShareAll = point.ShareAll
+	}
 
 	// 3. Save report to DB
 	err = s.InundationReportRepo.Create(ctx, report)
@@ -279,18 +286,36 @@ func (s *service) ListReports(ctx context.Context, orgID string) ([]*models.Inun
 	return s.InundationReportRepo.List(ctx, f)
 }
 
-func (s *service) ListReportsWithFilter(ctx context.Context, orgID, status, trafficStatus, query string, pointIDs []string, page, size int) ([]*models.InundationReport, int64, error) {
+func (s *service) ListReportsWithFilter(ctx context.Context, visibilityOrgID, targetOrgID, status, trafficStatus, query string, pointIDs []string, page, size int) ([]*models.InundationReport, int64, error) {
 	f := filter.NewPaginationFilter()
 	f.Page = int64(page + 1) // filter uses 1-based page
 	f.PerPage = int64(size)
 
+	// Visibility Logic
+	var accessFilter bson.M
+	if visibilityOrgID != "" {
+		accessFilter = bson.M{"$or": []bson.M{
+			{"org_id": visibilityOrgID},
+			{"shared_org_ids": visibilityOrgID},
+			{"share_all": true},
+		}}
+	}
+
+	// Filter Logic
 	if len(pointIDs) > 0 {
-		f.AddWhere("point_id", "point_id", bson.M{"$in": pointIDs})
-	} else if orgID != "" {
-		f.AddWhere("org_id_or_shared", "$or", []bson.M{
-			{"org_id": orgID},
-			{"shared_org_ids": orgID},
-		})
+		f.AddWhere("point_ids", "point_id", bson.M{"$in": pointIDs})
+	} else if targetOrgID != "" {
+		if visibilityOrgID != "" {
+			// Intersection: Owned by targetOrg AND Visible to visibilityOrg
+			f.AddWhere("visibility_and_filter", "$and", []bson.M{
+				accessFilter,
+				{"org_id": targetOrgID},
+			})
+		} else {
+			f.AddWhere("org_id", "org_id", targetOrgID)
+		}
+	} else if visibilityOrgID != "" {
+		f.AddWhere("visibility", "$or", accessFilter["$or"])
 	}
 	if status != "" {
 		f.AddWhere("status", "status", status)
@@ -731,28 +756,49 @@ func (s *service) CreatePoint(ctx context.Context, point models.InundationStatio
 	return s.inundationStationRepo.Create(ctx, point)
 }
 
-func (s *service) GetPointsStatus(ctx context.Context, orgID string, pointIDs []string) ([]PointStatus, error) {
-	// 1. Get all managed points (Union of owned points and shared points)
+func (s *service) GetPointsStatus(ctx context.Context, visibilityOrgID string, targetOrgID string, pointIDs []string) ([]PointStatus, error) {
+	// 1. Get visibility filter (what points the user is allowed to see)
+	var accessFilter bson.M
+	if visibilityOrgID != "" {
+		accessFilter = bson.M{"$or": []bson.M{
+			{"org_id": visibilityOrgID},
+			{"shared_org_ids": visibilityOrgID},
+			{"share_all": true},
+		}}
+	} else {
+		accessFilter = bson.M{}
+	}
+
+	// 2. Combine with targetOrgID filter if provided
+	finalFilter := bson.M{}
+	if targetOrgID != "" {
+		if visibilityOrgID != "" {
+			finalFilter = bson.M{"$and": []bson.M{
+				accessFilter,
+				{"org_id": targetOrgID},
+			}}
+		} else {
+			finalFilter = bson.M{"org_id": targetOrgID}
+		}
+	} else {
+		finalFilter = accessFilter
+	}
+
 	allPointsMap := make(map[string]models.InundationStation)
 	var ownedPoints = make([]models.InundationStation, 0)
 	var err error
-	// A. Get points owned by or shared with this organization
-	if orgID != "" {
-		err = s.inundationStationRepo.R_SelectMany(ctx, bson.M{"$or": []bson.M{
-			{"org_id": orgID},
-			{"shared_org_ids": orgID},
-			{"share_all": true},
-		}}, &ownedPoints)
-	} else if orgID == "" && len(pointIDs) == 0 {
-		ownedPoints, err = s.inundationStationRepo.ListByOrg(ctx, "")
-	}
+
+	// A. Fetch points based on visibility and target filter
+	err = s.inundationStationRepo.R_SelectMany(ctx, finalFilter, &ownedPoints)
+
+	// B. Still allow fetching specific pointIDs (e.g. for employees)
 	if len(pointIDs) > 0 {
 		for _, pid := range pointIDs {
-			if _, exists := allPointsMap[pid]; !exists {
-				p, err := s.inundationStationRepo.GetByID(ctx, pid)
-				if err == nil && p != nil {
-					ownedPoints = append(ownedPoints, *p)
-				}
+			p, err := s.inundationStationRepo.GetByID(ctx, pid)
+			if err == nil && p != nil {
+				// No extra access check here because GetPointsStatus usually called with valid permissions
+				// but for safety we could verify. For now stick to existing logic.
+				ownedPoints = append(ownedPoints, *p)
 			}
 		}
 	}

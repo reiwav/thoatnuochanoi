@@ -84,13 +84,12 @@ func (h *InundationHandler) CreateReport(c *gin.Context) {
 	}
 
 	// 4. Create Report
-	depth := c.PostForm("depth")
-	length := c.PostForm("length")
-	width := c.PostForm("width")
-
 	mechD := c.PostForm("mech_d")
 	mechR := c.PostForm("mech_r")
 	mechS := c.PostForm("mech_s")
+
+	surveyChecked := c.PostForm("survey_checked") == "true"
+	surveyNote := c.PostForm("survey_note")
 
 	// If mech data provided, prioritize it for main dimensions too
 	if depth == "" && mechD != "" {
@@ -121,6 +120,9 @@ func (h *InundationHandler) CreateReport(c *gin.Context) {
 		MechR:         mechR,
 		MechS:         mechS,
 		MechUserID:    user.ID,
+		SurveyChecked: surveyChecked,
+		SurveyNote:    surveyNote,
+		SurveyUserID:  user.ID,
 	}
 
 	// 4.1 Permission Check for Employee
@@ -245,8 +247,32 @@ func (h *InundationHandler) GetReport(c *gin.Context) {
 	user, err := h.authService.GetProfile(c.Request.Context(), token)
 	if err == nil && user != nil {
 		if !user.IsCompany && report.OrgID != user.OrgID {
-			h.SendError(c, web.Unauthorized("Access denied: You do not have permission to view this report"))
-			return
+			// Check if shared or assigned
+			isAuthorized := false
+			point, err := h.service.GetPointByID(c.Request.Context(), report.PointID)
+			if err == nil && point != nil {
+				// 1. Check if shared with user's org
+				for _, sid := range point.SharedOrgIDs {
+					if sid == user.OrgID {
+						isAuthorized = true
+						break
+					}
+				}
+				// 2. Check if assigned specifically to this employee
+				if !isAuthorized && user.IsEmployee {
+					for _, pid := range user.AssignedInundationStationIDs {
+						if pid == point.ID {
+							isAuthorized = true
+							break
+						}
+					}
+				}
+			}
+
+			if !isAuthorized {
+				h.SendError(c, web.Unauthorized("Access denied: You do not have permission to view this report"))
+				return
+			}
 		}
 	}
 
@@ -807,6 +833,15 @@ func (h *InundationHandler) UpdateSurvey(c *gin.Context) {
 						break
 					}
 				}
+				// 2. Check if assigned specifically to this employee
+				if !isAuthorized && user.IsEmployee {
+					for _, pid := range user.AssignedInundationStationIDs {
+						if pid == existing.PointID {
+							isAuthorized = true
+							break
+						}
+					}
+				}
 			}
 		}
 		if !isAuthorized {
@@ -871,6 +906,15 @@ func (h *InundationHandler) UpdateMech(c *gin.Context) {
 					if sid == user.OrgID {
 						isAuthorized = true
 						break
+					}
+				}
+				// 2. Check if assigned specifically to this employee
+				if !isAuthorized && user.IsEmployee {
+					for _, pid := range user.AssignedInundationStationIDs {
+						if pid == existing.PointID {
+							isAuthorized = true
+							break
+						}
 					}
 				}
 			}

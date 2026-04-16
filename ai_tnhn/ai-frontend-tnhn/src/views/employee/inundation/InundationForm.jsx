@@ -6,7 +6,7 @@ import {
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import {
-    IconArrowLeft, IconPlus, IconHistory
+    IconPlus, IconHistory, IconSettings, IconArrowLeft, IconRuler
 } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 
@@ -15,9 +15,8 @@ import inundationApi from 'api/inundation';
 import InundationReportPanel from './InundationReportPanel';
 import InundationDetail from './InundationDetail';
 import InundationMechPanel from './InundationMechPanel';
+import InundationSurveyPanel from './InundationSurveyPanel';
 import useAuthStore from 'store/useAuthStore';
-import { IconSettings } from '@tabler/icons-react'; // For Mech tab icon
-
 const InundationForm = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const navigate = useNavigate();
@@ -93,11 +92,13 @@ const InundationForm = () => {
 
     const TabSwitcher = () => {
         const isMechWorker = (useAuthStore.getState().hasPermission('inundation:mech') || useAuthStore.getState().hasPermission('inundation:mechanic')) && !useAuthStore.getState().hasPermission('inundation:edit');
+        const isSurveyWorker = useAuthStore.getState().hasPermission('inundation:survey') && !useAuthStore.getState().hasPermission('inundation:edit');
 
         const allTabs = [
-            { id: 0, label: selectedReport ? 'Cập nhật' : 'Báo mới', icon: <IconPlus size={18} />, hidden: isMechWorker || !useAuthStore.getState().hasPermission('inundation:edit') },
-            { id: 1, label: 'Chi tiết', icon: <IconHistory size={18} />, hidden: isMechWorker || !useAuthStore.getState().hasPermission('inundation:view') },
-            { id: 'mech', label: 'Cơ giới', icon: <IconSettings size={18} />, hidden: !(useAuthStore.getState().hasPermission('inundation:mech') || useAuthStore.getState().hasPermission('inundation:mechanic')) }
+            { id: 0, label: selectedReport ? 'Cập nhật' : 'Báo mới', icon: <IconPlus size={18} />, hidden: isMechWorker || isSurveyWorker || !useAuthStore.getState().hasPermission('inundation:edit') },
+            { id: 1, label: 'Chi tiết', icon: <IconHistory size={18} />, hidden: isMechWorker || isSurveyWorker || !useAuthStore.getState().hasPermission('inundation:view') },
+            { id: 'mech', label: 'Cơ giới', icon: <IconSettings size={18} />, hidden: !(useAuthStore.getState().hasPermission('inundation:mech') || useAuthStore.getState().hasPermission('inundation:mechanic')) },
+            { id: 'survey', label: 'Khảo sát', icon: <IconRuler size={18} />, hidden: !useAuthStore.getState().hasPermission('inundation:survey') }
         ];
 
         const isReadOnly = searchParams.get('readonly') === 'true';
@@ -161,7 +162,13 @@ const InundationForm = () => {
                 ) : tab === 'mech' ? (
                     <InundationMechPanel 
                         report={selectedReport}
-                        pointId={pointId}
+                        pointId={pointId || selectedReport?.point_id}
+                        onSuccess={fetchReport}
+                    />
+                ) : tab === 'survey' ? (
+                    <InundationSurveyPanel 
+                        report={selectedReport}
+                        pointId={pointId || selectedReport?.point_id}
                         onSuccess={fetchReport}
                     />
                 ) : (

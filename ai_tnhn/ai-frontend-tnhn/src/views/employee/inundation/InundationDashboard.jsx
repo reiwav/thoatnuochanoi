@@ -279,6 +279,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
     }, [user, point, organizations, isEmployee]);
 
     const isMechOnly = useMemo(() => hasPermission('inundation:mechanic') && !hasPermission('inundation:edit'), [hasPermission]);
+    const isSurveyOnly = useMemo(() => hasPermission('inundation:survey') && !hasPermission('inundation:edit'), [hasPermission]);
 
     const canViewTabs = canSurvey || canMech || canReview;
     const [tabValue, setTabValue] = useState('');
@@ -467,11 +468,17 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                 '&:hover': { borderColor: 'primary.main', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }
             }}
             onClick={() => {
-                if (canMech) {
+                if (canMech && isEmployee) {
                     if (point.status === 'active') {
-                        navigate(`${basePath}/inundation/form?tab=mech&id=${point.active_report.id}&name=${encodeURIComponent(point.name)}`);
+                        navigate(`${basePath}/inundation/form?tab=mech&id=${point.active_report.id}&point_id=${point.id}&name=${encodeURIComponent(point.name)}`);
                     } else {
-                        navigate(`${basePath}/inundation/form?tab=0&point_id=${point.id}&name=${encodeURIComponent(point.name)}`);
+                        navigate(`${basePath}/inundation/form?tab=mech&point_id=${point.id}&name=${encodeURIComponent(point.name)}`);
+                    }
+                } else if (canSurvey && isEmployee) {
+                    if (point.status === 'active') {
+                        navigate(`${basePath}/inundation/form?tab=survey&id=${point.active_report.id}&point_id=${point.id}&name=${encodeURIComponent(point.name)}`);
+                    } else {
+                        navigate(`${basePath}/inundation/form?tab=survey&point_id=${point.id}&name=${encodeURIComponent(point.name)}`);
                     }
                 } else {
                     setOpen(!open);
@@ -533,7 +540,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                         )}
                     </Stack>
                 </Box>
-                {point.status === 'active' && !canMech && (
+                {point.status === 'active' && !(canMech && isEmployee) && !(canSurvey && isEmployee) && (
                     <IconButton size="small" onClick={(e) => { e.stopPropagation(); setOpen(!open); }} sx={{ mt: -0.5 }}>
                         {open ? <IconChevronUp size={22} /> : <IconChevronDown size={22} />}
                     </IconButton>
@@ -542,14 +549,28 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
 
             <Collapse in={open} timeout="auto" unmountOnExit>
                 <Stack spacing={2} sx={{ mt: 2, pt: 2, borderTop: '1px dashed', borderColor: 'divider' }}>
-                    {!isMechOnly && (
+                    {!isMechOnly && !isSurveyOnly && (
                         <Typography variant="body1" sx={{ fontWeight: 700, color: 'primary.main' }}>
                             {point.address}
                         </Typography>
                     )}
 
+                    {/* Ưu tiên hiển thị khối Khảo sát cho nhân viên khảo sát */}
+                    {canSurvey && (latest?.survey_checked || latest?.surveyChecked || latest?.survey_note || latest?.surveyNote) && (
+                        <Box sx={{ p: 1.5, bgcolor: 'primary.lighter', borderRadius: 2, border: '1px solid', borderColor: 'primary.main', mb: 1 }}>
+                            <Typography variant="caption" sx={{ fontWeight: 900, color: 'primary.main', display: 'block', mb: 1 }}>
+                                ⚡️ KHẢO SÁT THIẾT KẾ GẦN NHẤT:
+                            </Typography>
+                            {(latest.survey_note || latest.surveyNote) && <Typography variant="body2" sx={{ fontWeight: 600 }}>{latest.survey_note || latest.surveyNote}</Typography>}
+                            <Chip 
+                                label={latest.survey_checked || latest.surveyChecked ? "Đã khảo sát" : "Chưa khảo sát"} 
+                                size="small" color="primary" sx={{ mt: 1, fontWeight: 800 }} 
+                            />
+                        </Box>
+                    )}
+
                     {/* Ưu tiên hiển thị khối Cơ giới cho nhân viên cơ giới */}
-                    {canMech && (latest?.mech_d || latest?.mechD || latest?.mech_r || latest?.mechR || latest?.mech_s || latest?.mechS || latest?.mech_note || latest?.mechNote) && (
+                    {!isSurveyOnly && canMech && (latest?.mech_d || latest?.mechD || latest?.mech_r || latest?.mechR || latest?.mech_s || latest?.mechS || latest?.mech_note || latest?.mechNote) && (
                         <Box sx={{ p: 1.5, bgcolor: 'secondary.lighter', borderRadius: 2, border: '1px solid', borderColor: 'secondary.main', mb: 1 }}>
                             <Typography variant="caption" sx={{ fontWeight: 900, color: 'secondary.main', display: 'block', mb: 1 }}>
                                 ⚙️ DỮ LIỆU CƠ GIỚI GẦN NHẤT:
@@ -563,7 +584,7 @@ const CollapsiblePointRow = ({ point, organizations, handleOpenViewer, navigate,
                         </Box>
                     )}
 
-                    {!isMechOnly && (
+                    {!isMechOnly && !isSurveyOnly && (
                         <>
                             <Box>
                                 <Typography variant="body2" color="text.secondary">Đơn vị quản lý:</Typography>

@@ -367,6 +367,7 @@ func (h *InundationHandler) GetPointsStatus(c *gin.Context) {
 
 	var targetOrgID string = c.Query("org_id")
 	var visibilityOrgID string = ""
+	var pointIDs []string
 
 	if user.IsEmployee && !isAllowedAll {
 		// Employee: chỉ lấy điểm ngập đã gắn trong tài khoản

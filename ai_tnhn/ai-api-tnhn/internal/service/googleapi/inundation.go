@@ -33,7 +33,7 @@ func (s *service) GetInundationSummary(ctx context.Context, orgID string, assign
 	if orgID == "all" {
 		orgID = ""
 	}
-	reports, _, err := s.inuSvc.ListReportsWithFilter(ctx, orgID, "active", "", "", assignedInuIDs, 0, 1000)
+	reports, _, err := s.inuSvc.ListReportsWithFilter(ctx, orgID, "", "active", "", "", assignedInuIDs, 0, 1000)
 	if err != nil {
 		return nil, err
 	}

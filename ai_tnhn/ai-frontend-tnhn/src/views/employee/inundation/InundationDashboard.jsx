@@ -1693,7 +1693,7 @@ const InundationDashboard = () => {
             if (activeTab === 5) {
                 fetchPumpingHistory(true);
             }
-        }, 5000);
+        }, 500000);
         return () => clearInterval(interval);
     }, [activeTab, userInfo, isMobile, historyPage, historyRowsPerPage, historyStatus, historyTrafficStatus, searchQuery, orgFilter]);
 

@@ -141,21 +141,6 @@ func (s *service) CreateReport(ctx context.Context, report *models.InundationRep
 	if err != nil {
 		return err
 	}
-	// 2. Check if point already has an active report. If so, convert this to an update.
-	// if report.Status == "active" && report.PointID != "" {
-	// 	if err == nil && point != nil && point.ReportID != "" {
-	// 		// Transparently route to AddUpdate to avoid duplicate active sessions
-	// 		update := &models.InundationUpdate{
-	// 			Description:   report.Description,
-	// 			Depth:         report.Depth,
-	// 			Length:        report.Length,
-	// 			Width:         report.Width,
-	// 			TrafficStatus: report.TrafficStatus,
-	// 			Timestamp:     time.Now().Unix(),
-	// 		}
-	// 		return s.AddUpdate(ctx, point.ReportID, update, report.UserID, report.UserEmail, images)
-	// 	}
-	// }
 
 	// 3. Save report to DB
 	err = s.InundationReportRepo.Create(ctx, report)
@@ -184,7 +169,7 @@ func (s *service) CreateReport(ctx context.Context, report *models.InundationRep
 
 	// NEW: Update station's report_id if it's an active report
 	if report.Status == "active" && report.PointID != "" {
-		if err == nil && point != nil {
+		if point != nil {
 			point.ReportID = report.ID
 			point.LastReportID = report.ID
 			_ = s.inundationStationRepo.Update(ctx, *point)

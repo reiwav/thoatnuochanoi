@@ -20,10 +20,10 @@ import useAuthStore from 'store/useAuthStore';
 const InundationForm = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const navigate = useNavigate();
-    
+
     // Get auth state from Zustand
     const { isEmployee, role: userRole, user } = useAuthStore();
-    
+
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const basePath = isEmployee ? '/company' : '/admin';
@@ -128,8 +128,8 @@ const InundationForm = () => {
 
         const isReadOnly = searchParams.get('readonly') === 'true';
 
-        const needsCorrection = selectedReport?.needs_correction || 
-                                selectedReport?.updates?.some(u => u.needs_correction);
+        const needsCorrection = selectedReport?.needs_correction ||
+            selectedReport?.updates?.some(u => u.needs_correction);
 
         // Hide "Cập nhật" tab if report is already resolved or in readonly mode (unless needs correction)
         const visibleTabs = (selectedReport?.status === 'resolved' || (isReadOnly && !needsCorrection))
@@ -185,13 +185,15 @@ const InundationForm = () => {
                         isCorrectionMode={isEdit}
                     />
                 ) : tab === 'mech' ? (
-                    <InundationMechPanel 
+                    <InundationMechPanel
+                        key={selectedReport?.id || pointId || 'new-mech'}
                         report={selectedReport}
                         pointId={pointId || selectedReport?.point_id}
                         onSuccess={fetchReport}
                     />
                 ) : tab === 'survey' ? (
-                    <InundationSurveyPanel 
+                    <InundationSurveyPanel
+                        key={selectedReport?.id || pointId || 'new-survey'}
                         report={selectedReport}
                         pointId={pointId || selectedReport?.point_id}
                         onSuccess={fetchReport}

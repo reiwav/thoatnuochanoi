@@ -13,8 +13,8 @@ const InundationSurveyPanel = ({ report, pointId, onSuccess }) => {
     const [submitting, setSubmitting] = useState(false);
     const [processing, setProcessing] = useState(false);
     const [surveyData, setSurveyData] = useState({
-        checked: !!(report?.survey_checked || report?.surveyChecked),
-        note: report?.survey_note || report?.surveyNote || '',
+        survey_checked: !!(report?.survey_checked || report?.surveyChecked),
+        survey_note: report?.survey_note || report?.surveyNote || '',
         images: []
     });
 
@@ -41,8 +41,8 @@ const InundationSurveyPanel = ({ report, pointId, onSuccess }) => {
         if (report) {
             setSurveyData(prev => ({
                 ...prev,
-                checked: !!(report.survey_checked || report.surveyChecked),
-                note: report.survey_note || report.surveyNote || ''
+                survey_checked: !!(report.survey_checked || report.surveyChecked),
+                survey_note: report.survey_note || report.surveyNote || ''
             }));
         }
     }, [report]);
@@ -51,8 +51,8 @@ const InundationSurveyPanel = ({ report, pointId, onSuccess }) => {
         setSubmitting(true);
         try {
             const formData = new FormData();
-            formData.append('survey_checked', String(surveyData.checked));
-            formData.append('survey_note', surveyData.note);
+            formData.append('survey_checked', String(!!surveyData.survey_checked));
+            formData.append('survey_note', surveyData.survey_note || '');
             surveyData.images.forEach(img => {
                 formData.append('images', img);
             });
@@ -87,7 +87,7 @@ const InundationSurveyPanel = ({ report, pointId, onSuccess }) => {
         <Box sx={{ p: 2 }}>
             <Stack spacing={3}>
                 <FormControlLabel
-                    control={<Checkbox checked={surveyData.checked} onChange={(e) => setSurveyData({ ...surveyData, checked: e.target.checked })} />}
+                    control={<Checkbox checked={surveyData.survey_checked} onChange={(e) => setSurveyData(prev => ({ ...prev, survey_checked: e.target.checked }))} />}
                     label={<Typography sx={{ fontWeight: 700 }}>Đã khảo sát thiết kế</Typography>}
                 />
 
@@ -137,8 +137,8 @@ const InundationSurveyPanel = ({ report, pointId, onSuccess }) => {
                     rows={4}
                     label="Ghi chú khảo sát"
                     placeholder="Nhập nội dung khảo sát thiết kế..."
-                    value={surveyData.note}
-                    onChange={(e) => setSurveyData({ ...surveyData, note: e.target.value })}
+                    value={surveyData.survey_note}
+                    onChange={(e) => setSurveyData(prev => ({ ...prev, survey_note: e.target.value }))}
                     sx={{ '& .MuiInputLabel-root': { fontWeight: 800 } }}
                 />
 

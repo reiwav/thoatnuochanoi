@@ -13,11 +13,11 @@ const InundationMechPanel = ({ report, pointId, onSuccess }) => {
     const [submitting, setSubmitting] = useState(false);
     const [processing, setProcessing] = useState(false);
     const [mechData, setMechData] = useState({
-        checked: !!(report?.mech_checked || report?.mechChecked),
-        d: report?.mech_d || report?.mechD || '',
-        r: report?.mech_r || report?.mechR || '',
-        s: report?.mech_s || report?.mechS || '',
-        note: report?.mech_note || report?.mechNote || '',
+        mech_checked: !!(report?.mech_checked || report?.mechChecked),
+        mech_d: report?.mech_d || report?.mechD || '',
+        mech_r: report?.mech_r || report?.mechR || '',
+        mech_s: report?.mech_s || report?.mechS || '',
+        mech_note: report?.mech_note || report?.mechNote || '',
         images: []
     });
 
@@ -44,11 +44,11 @@ const InundationMechPanel = ({ report, pointId, onSuccess }) => {
         if (report) {
             setMechData(prev => ({
                 ...prev,
-                checked: !!(report.mech_checked || report.mechChecked),
-                d: report.mech_d || report.mechD || '',
-                r: report.mech_r || report.mechR || '',
-                s: report.mech_s || report.mechS || '',
-                note: report.mech_note || report.mechNote || ''
+                mech_checked: !!(report.mech_checked || report.mechChecked),
+                mech_d: report.mech_d || report.mechD || '',
+                mech_r: report.mech_r || report.mechR || '',
+                mech_s: report.mech_s || report.mechS || '',
+                mech_note: report.mech_note || report.mechNote || ''
             }));
         }
     }, [report]);
@@ -57,11 +57,11 @@ const InundationMechPanel = ({ report, pointId, onSuccess }) => {
         setSubmitting(true);
         try {
             const formData = new FormData();
-            formData.append('mech_checked', String(mechData.checked));
-            formData.append('mech_d', mechData.d);
-            formData.append('mech_r', mechData.r);
-            formData.append('mech_s', mechData.s);
-            formData.append('mech_note', mechData.note);
+            formData.append('mech_checked', String(!!mechData.mech_checked));
+            formData.append('mech_d', mechData.mech_d || '');
+            formData.append('mech_r', mechData.mech_r || '');
+            formData.append('mech_s', mechData.mech_s || '');
+            formData.append('mech_note', mechData.mech_note || '');
             mechData.images.forEach(img => {
                 formData.append('images', img);
             });
@@ -96,7 +96,7 @@ const InundationMechPanel = ({ report, pointId, onSuccess }) => {
         <Box sx={{ p: 2 }}>
             <Stack spacing={3}>
                 <FormControlLabel
-                    control={<Checkbox checked={mechData.checked} onChange={(e) => setMechData({ ...mechData, checked: e.target.checked })} />}
+                    control={<Checkbox checked={mechData.mech_checked} onChange={(e) => setMechData(prev => ({ ...prev, mech_checked: e.target.checked }))} />}
                     label={<Typography sx={{ fontWeight: 700 }}>Đã ứng trực</Typography>}
                 />
 
@@ -106,8 +106,8 @@ const InundationMechPanel = ({ report, pointId, onSuccess }) => {
                             fullWidth
                             label="Chiều sâu (D)"
                             size="small"
-                            value={mechData.d}
-                            onChange={(e) => setMechData({ ...mechData, d: e.target.value })}
+                            value={mechData.mech_d}
+                            onChange={(e) => setMechData(prev => ({ ...prev, mech_d: e.target.value }))}
                             placeholder="mm"
                             sx={{ '& .MuiInputLabel-root': { fontWeight: 800 } }}
                         />
@@ -117,8 +117,8 @@ const InundationMechPanel = ({ report, pointId, onSuccess }) => {
                             fullWidth
                             label="Chiều rộng (R)"
                             size="small"
-                            value={mechData.r}
-                            onChange={(e) => setMechData({ ...mechData, r: e.target.value })}
+                            value={mechData.mech_r}
+                            onChange={(e) => setMechData(prev => ({ ...prev, mech_r: e.target.value }))}
                             placeholder="mm"
                             sx={{ '& .MuiInputLabel-root': { fontWeight: 800 } }}
                         />
@@ -128,8 +128,8 @@ const InundationMechPanel = ({ report, pointId, onSuccess }) => {
                             fullWidth
                             label="Sâu (S)"
                             size="small"
-                            value={mechData.s}
-                            onChange={(e) => setMechData({ ...mechData, s: e.target.value })}
+                            value={mechData.mech_s}
+                            onChange={(e) => setMechData(prev => ({ ...prev, mech_s: e.target.value }))}
                             placeholder="mm"
                             sx={{ '& .MuiInputLabel-root': { fontWeight: 800 } }}
                         />
@@ -182,8 +182,8 @@ const InundationMechPanel = ({ report, pointId, onSuccess }) => {
                     rows={3}
                     label="Thông tin khác"
                     placeholder="Nhập ghi chú thêm..."
-                    value={mechData.note}
-                    onChange={(e) => setMechData({ ...mechData, note: e.target.value })}
+                    value={mechData.mech_note}
+                    onChange={(e) => setMechData(prev => ({ ...prev, mech_note: e.target.value }))}
                 />
 
                 <Button

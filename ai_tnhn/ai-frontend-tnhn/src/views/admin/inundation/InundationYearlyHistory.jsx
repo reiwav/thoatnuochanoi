@@ -10,6 +10,7 @@ import dayjs from 'dayjs';
 // project imports
 import MainCard from 'ui-component/cards/MainCard';
 import inundationApi from 'api/inundation';
+import organizationApi from 'api/organization';
 import useAuthStore from 'store/useAuthStore';
 
 const InundationYearlyHistory = () => {
@@ -19,16 +20,31 @@ const InundationYearlyHistory = () => {
     const [history, setHistory] = useState([]);
     const [selectedPoint, setSelectedPoint] = useState(null);
     const [detailOpen, setDetailOpen] = useState(false);
+    
+    const [orgs, setOrgs] = useState([]);
+    const [selectedOrgId, setSelectedOrgId] = useState('');
+    const { role, isCompany } = useAuthStore();
+    const canFilterAllOrgs = role === 'super_admin' || isCompany;
 
     const years = [];
     for (let y = dayjs().year(); y >= 2024; y--) {
         years.push(y);
     }
 
+    useEffect(() => {
+        if (canFilterAllOrgs) {
+            organizationApi.getSelectionList().then(res => {
+                if (res.data?.status === 'success') {
+                    setOrgs(res.data.data?.shared || []);
+                }
+            });
+        }
+    }, [canFilterAllOrgs]);
+
     const loadHistory = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await inundationApi.getYearlyHistory(year);
+            const res = await inundationApi.getYearlyHistory(year, selectedOrgId);
             if (res.data?.status === 'success') {
                 setHistory(res.data.data || []);
             }
@@ -37,11 +53,11 @@ const InundationYearlyHistory = () => {
         } finally {
             setLoading(false);
         }
-    }, [year]);
+    }, [year, selectedOrgId]);
 
     const handleExport = async () => {
         try {
-            const response = await inundationApi.exportYearlyHistory(year);
+            const response = await inundationApi.exportYearlyHistory(year, selectedOrgId);
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
@@ -124,6 +140,23 @@ const InundationYearlyHistory = () => {
                             ))}
                         </Select>
                     </FormControl>
+
+                    {canFilterAllOrgs && (
+                        <FormControl size="small" sx={{ minWidth: 200 }}>
+                            <InputLabel>Chọn xí nghiệp</InputLabel>
+                            <Select
+                                value={selectedOrgId}
+                                label="Chọn xí nghiệp"
+                                onChange={(e) => setSelectedOrgId(e.target.value)}
+                            >
+                                <MenuItem value="">Tất cả</MenuItem>
+                                {orgs.map((o) => (
+                                    <MenuItem key={o.id} value={o.id}>{o.name}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    )}
+
                     <Button
                         variant="contained"
                         color="secondary"

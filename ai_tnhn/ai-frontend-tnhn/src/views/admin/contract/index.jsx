@@ -12,10 +12,11 @@ import {
 import { toast } from 'react-hot-toast';
 import MainCard from 'ui-component/cards/MainCard';
 import AnimateButton from 'ui-component/extended/AnimateButton';
-import contractApi from 'api/contract';
 import ContractDialog from './ContractDialog';
 import dayjs from 'dayjs';
 import useAuthStore from 'store/useAuthStore';
+import useContractStore from 'store/useContractStore';
+import PermissionGuard from 'ui-component/PermissionGuard';
 
 const Row = ({ row, handleOpenEdit, handleDelete, isMobile, formatPrice, getTotalPrice, hasPermission }) => {
     const [open, setOpen] = useState(false);
@@ -53,16 +54,16 @@ const Row = ({ row, handleOpenEdit, handleDelete, isMobile, formatPrice, getTota
                 )}
                 <TableCell align="right">
                     <Stack direction="row" spacing={1} justifyContent="flex-end">
-                        {hasPermission('contract:edit') && (
+                        <PermissionGuard permission="contract:edit">
                             <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>
                                 <IconEdit size={20} />
                             </IconButton>
-                        )}
-                        {hasPermission('contract:delete') && (
+                        </PermissionGuard>
+                        <PermissionGuard permission="contract:delete">
                             <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}>
                                 <IconTrash size={20} />
                             </IconButton>
-                        )}
+                        </PermissionGuard>
                     </Stack>
                 </TableCell>
             </TableRow>
@@ -153,46 +154,29 @@ const ContractList = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const { hasPermission } = useAuthStore();
-    const [loading, setLoading] = useState(false);
-    const [contracts, setContracts] = useState([]);
+    
+    const { 
+        contracts, loading, filters, 
+        fetchContracts, setFilters, 
+        createContract, updateContract, deleteContract 
+    } = useContractStore();
+
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingContract, setEditingContract] = useState(null);
-    const [filter, setFilter] = useState({
-        name: ''
-    });
-
-    const loadContracts = async () => {
-        setLoading(true);
-        try {
-            const res = await contractApi.getAll({
-                name: filter.name
-            });
-            console.log('Contracts API response:', res.data);
-            if (res.data?.status === 'success') {
-                const dataArray = res.data.data?.data || res.data.data;
-                setContracts(Array.isArray(dataArray) ? dataArray : []);
-            } else {
-                setContracts([]);
-            }
-        } catch (err) {
-            console.error('Failed to load contracts');
-            toast.error('Không thể tải danh sách hợp đồng');
-        } finally {
-            setLoading(false);
-        }
-    };
+    const [filterInput, setFilterInput] = useState(filters.name);
 
     useEffect(() => {
-        loadContracts();
-    }, []);
+        fetchContracts();
+    }, [fetchContracts]);
 
-    const handleSearchChange = (event) => {
-        setFilter({ ...filter, name: event.target.value });
+    const handleSearch = () => {
+        setFilters({ name: filterInput });
+        fetchContracts();
     };
 
     const handleKeyDown = (event) => {
         if (event.key === 'Enter') {
-            loadContracts();
+            handleSearch();
         }
     };
 
@@ -209,11 +193,8 @@ const ContractList = () => {
     const handleDelete = async (id) => {
         if (!window.confirm('Bạn có chắc chắn muốn xóa hợp đồng này?')) return;
         try {
-            const res = await contractApi.delete(id);
-            if (res.data?.status === 'success') {
-                toast.success('Xóa hợp đồng thành công');
-                loadContracts();
-            }
+            await deleteContract(id);
+            toast.success('Xóa hợp đồng thành công');
         } catch (err) {
             toast.error('Lỗi khi xóa hợp đồng');
         }
@@ -221,14 +202,13 @@ const ContractList = () => {
 
     const handleSubmit = async (values) => {
         try {
-            const res = editingContract
-                ? await contractApi.update(editingContract.id, values)
-                : await contractApi.create(values);
-            if (res.data?.status === 'success') {
-                toast.success(editingContract ? 'Cập nhật thành công' : 'Thêm mới thành công');
-                setDialogOpen(false);
-                loadContracts();
+            if (editingContract) {
+                await updateContract(editingContract.id, values);
+            } else {
+                await createContract(values);
             }
+            toast.success(editingContract ? 'Cập nhật thành công' : 'Thêm mới thành công');
+            setDialogOpen(false);
         } catch (err) {
             toast.error(err.response?.data?.error || 'Đã có lỗi xảy ra');
         }
@@ -250,13 +230,13 @@ const ContractList = () => {
                     <TextField
                         size="small"
                         placeholder="Tìm tên hợp đồng..."
-                        value={filter.name}
-                        onChange={handleSearchChange}
+                        value={filterInput}
+                        onChange={(e) => setFilterInput(e.target.value)}
                         onKeyDown={handleKeyDown}
                         InputProps={{
                             endAdornment: (
                                 <InputAdornment position="end">
-                                    <IconButton size="small" color="primary" onClick={loadContracts} edge="end">
+                                    <IconButton size="small" color="primary" onClick={handleSearch} edge="end">
                                         <IconSearch size={18} />
                                     </IconButton>
                                 </InputAdornment>
@@ -267,11 +247,11 @@ const ContractList = () => {
                     />
                     <Box sx={{ display: 'flex', gap: 1 }}>
                         <AnimateButton>
-                            <IconButton color="primary" onClick={loadContracts} disabled={loading}>
+                            <IconButton color="primary" onClick={handleSearch} disabled={loading}>
                                 <IconRefresh size={20} />
                             </IconButton>
                         </AnimateButton>
-                        {hasPermission('contract:create') && (
+                        <PermissionGuard permission="contract:create">
                             <AnimateButton>
                                 <Button
                                     variant="contained"
@@ -283,7 +263,7 @@ const ContractList = () => {
                                     {!isMobile && 'Thêm hợp đồng'}
                                 </Button>
                             </AnimateButton>
-                        )}
+                        </PermissionGuard>
                     </Box>
                 </Box>
             }

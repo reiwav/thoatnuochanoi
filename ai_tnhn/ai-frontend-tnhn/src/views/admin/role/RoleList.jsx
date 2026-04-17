@@ -10,37 +10,28 @@ import { toast } from 'react-hot-toast';
 // project imports
 import MainCard from 'ui-component/cards/MainCard';
 import AnimateButton from 'ui-component/extended/AnimateButton';
-import axiosClient from 'api/axiosClient';
 import RoleDialog from './RoleDialog';
 import useAuthStore from 'store/useAuthStore';
+import useRoleStore from 'store/useRoleStore';
+import PermissionGuard from 'ui-component/PermissionGuard';
 import * as ROLES from 'constants/role';
 
 const RoleList = () => {
     const theme = useTheme();
     const { hasPermission } = useAuthStore();
-    const [loading, setLoading] = useState(false);
-    const [roles, setRoles] = useState([]);
-    const [searchQuery, setSearchQuery] = useState('');
+    
+    const {
+        roles, loading,
+        fetchRoles, createRole, updateRole, deleteRole
+    } = useRoleStore();
 
+    const [searchQuery, setSearchQuery] = useState('');
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingRole, setEditingRole] = useState(null);
 
-    const loadRoles = async () => {
-        setLoading(true);
-        try {
-            const res = await axiosClient.get('/admin/roles');
-            setRoles(res || []);
-        } catch (err) {
-            console.error('Lỗi tải danh sách vai trò:', err);
-            toast.error('Không thể tải danh sách vai trò');
-        } finally {
-            setLoading(false);
-        }
-    };
-
     useEffect(() => {
-        loadRoles();
-    }, []);
+        fetchRoles();
+    }, [fetchRoles]);
 
     const handleOpenCreate = () => {
         setEditingRole(null);
@@ -59,9 +50,8 @@ const RoleList = () => {
         }
         if (!window.confirm('Bạn có chắc chắn muốn xóa vai trò này?')) return;
         try {
-            await axiosClient.delete(`/admin/roles/${id}`);
+            await deleteRole(id);
             toast.success('Xóa thành công');
-            loadRoles();
         } catch (err) {
             toast.error(err.response?.data?.error || 'Lỗi xóa vai trò');
         }
@@ -69,12 +59,13 @@ const RoleList = () => {
 
     const handleSubmit = async (values) => {
         try {
-            await (editingRole
-                ? axiosClient.put(`/admin/roles/${editingRole.id}`, values)
-                : axiosClient.post('/admin/roles', values));
+            if (editingRole) {
+                await updateRole(editingRole.id, values);
+            } else {
+                await createRole(values);
+            }
             toast.success(editingRole ? 'Cập nhật thành công' : 'Thêm mới thành công');
             setDialogOpen(false);
-            loadRoles();
         } catch (err) {
             toast.error(err.response?.data?.error || 'Đã có lỗi xảy ra');
         }
@@ -94,13 +85,13 @@ const RoleList = () => {
                 </Box>
             }
             secondary={
-                hasPermission('role:edit') && (
+                <PermissionGuard permission="role:edit">
                     <AnimateButton>
                         <Button variant="contained" color="secondary" startIcon={<IconPlus size={18} />} onClick={handleOpenCreate}>
                             Thêm Vai trò
                         </Button>
                     </AnimateButton>
-                )
+                </PermissionGuard>
             }
         >
             <Grid container spacing={2} sx={{ mb: 3 }} alignItems="center">
@@ -180,7 +171,7 @@ const RoleList = () => {
                                         </Typography>
                                     </TableCell>
                                     <TableCell align="right" sx={{ pr: 3 }}>
-                                        {hasPermission('role:edit') && (
+                                        <PermissionGuard permission="role:edit">
                                             <Stack direction="row" spacing={0.5} justifyContent="flex-end">
                                                 <Tooltip title="Chỉnh sửa">
                                                     <IconButton color="primary" onClick={() => handleOpenEdit(row)}>
@@ -195,7 +186,7 @@ const RoleList = () => {
                                                     </Tooltip>
                                                 )}
                                             </Stack>
-                                        )}
+                                        </PermissionGuard>
                                     </TableCell>
                                 </TableRow>
                             ))

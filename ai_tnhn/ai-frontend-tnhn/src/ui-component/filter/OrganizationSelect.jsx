@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { MenuItem, TextField, CircularProgress } from '@mui/material';
-import organizationApi from 'api/organization';
 import useAuthStore from 'store/useAuthStore';
+import useOrganizationStore from 'store/useOrganizationStore';
 
 const OrganizationSelect = ({
     value,
@@ -17,21 +17,22 @@ const OrganizationSelect = ({
     const [organizations, setOrganizations] = useState([]);
     const [loading, setLoading] = useState(false);
     const { user, role, isCompany } = useAuthStore();
+    const { fetchSelectionList } = useOrganizationStore();
 
     // Role động: Dựa vào flag isCompany từ backend trả về trong token
     // Super Admin mặc định là Company Level
     const isCompanyLevel = useMemo(() => {
         const result = isCompany || role === 'super_admin';
         return result;
-    }, [isCompany, role, user?.org_id]);
+    }, [isCompany, role]);
 
     useEffect(() => {
         const fetchOrgs = async () => {
             if (!user) return;
             setLoading(true);
             try {
-                const res = await organizationApi.getSelectionList();
-                const list = Array.isArray(res) ? res : [...(res.primary || []), ...(res.shared || [])];
+                const res = await fetchSelectionList();
+                const list = Array.isArray(res) ? res : [...(res?.primary || []), ...(res?.shared || [])];
 
                 // Deduplicate by ID
                 const uniqueList = Array.from(new Map(list.map(item => [item.id, item])).values());
@@ -44,7 +45,7 @@ const OrganizationSelect = ({
         };
 
         fetchOrgs();
-    }, [user?.id]);
+    }, [user?.id, fetchSelectionList]);
 
     const isLocked = !isCompanyLevel && !!user?.org_id;
     const currentValue = isLocked ? user.org_id : value;

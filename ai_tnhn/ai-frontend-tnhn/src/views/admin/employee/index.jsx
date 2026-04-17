@@ -13,11 +13,11 @@ import { toast } from 'react-hot-toast';
 import MainCard from 'ui-component/cards/MainCard';
 import AnimateButton from 'ui-component/extended/AnimateButton';
 import OrganizationSelect from 'ui-component/filter/OrganizationSelect';
-import employeeApi from 'api/employee';
-import organizationApi from 'api/organization';
-import axiosClient from 'api/axiosClient';
 import EmployeeDialog from './EmployeeDialog';
 import useAuthStore from 'store/useAuthStore';
+import useEmployeeStore from 'store/useEmployeeStore';
+import useOrganizationStore from 'store/useOrganizationStore';
+import axiosClient from 'api/axiosClient';
 import * as ROLES from 'constants/role';
 
 const stringToColor = (string) => {
@@ -166,39 +166,37 @@ const EmployeeList = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-    // Get auth state from Zustand
     const { role: userRole, user: userInfo, hasPermission } = useAuthStore();
     const userOrgId = userInfo?.org_id || '';
 
-    const [loading, setLoading] = useState(false);
-    const [employees, setEmployees] = useState([]);
+    const {
+        employees, loading, totalItems, page, rowsPerPage, filters,
+        fetchEmployees, setPage, setRowsPerPage, setFilters,
+        createEmployee, updateEmployee, deleteEmployee
+    } = useEmployeeStore();
+
+    const { fetchSelectionList } = useOrganizationStore();
     const [organizations, setOrganizations] = useState([]);
     const [roles, setRoles] = useState([]);
-    const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
-    const [totalItems, setTotalItems] = useState(0);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingEmployee, setEditingEmployee] = useState(null);
 
     const [searchParams] = useSearchParams();
-    const urlOrgId = searchParams.get('org_id') || (organizations.length > 1 ? '' : userOrgId);
+    const urlOrgId = searchParams.get('org_id') || filters.org_id || userOrgId;
     const urlOrgName = searchParams.get('org_name') || '';
 
-    const [filterInputs, setFilterInputs] = useState({ name: '', email: '', org_id: urlOrgId });
-    const [params, setParams] = useState({ name: '', email: '', org_id: urlOrgId });
+    const [filterInputs, setFilterInputs] = useState({ ...filters, org_id: urlOrgId });
 
-    // Fetch all orgs for the dialog dropdown
-    const loadOrganizations = async () => {
+    const loadMetadata = async () => {
         try {
             const [orgRes, roleRes] = await Promise.all([
-                organizationApi.getAll({ per_page: 1000 }),
+                fetchSelectionList(),
                 axiosClient.get('/admin/roles')
             ]);
 
             if (orgRes) {
-                let orgs = Array.isArray(orgRes.data) ? orgRes.data : [];
-                orgs = orgs.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'vi', { sensitivity: 'base' }));
-                setOrganizations(orgs);
+                const list = Array.isArray(orgRes) ? orgRes : [...(orgRes.primary || []), ...(orgRes.shared || [])];
+                setOrganizations(list);
             }
             if (roleRes) {
                 setRoles(roleRes || []);
@@ -208,44 +206,27 @@ const EmployeeList = () => {
         }
     };
 
-    const loadEmployees = async () => {
-        setLoading(true);
-        try {
-            const res = await employeeApi.getAll({
-                ...params,
-                page: page + 1,
-                per_page: rowsPerPage,
-                order_by: '-created_at'
-            });
-            setEmployees(Array.isArray(res.data) ? res.data : []);
-            setTotalItems(res.total || 0);
-        } catch (err) {
-            console.error('Lỗi tải nhân viên:', err);
-            setEmployees([]);
-        } finally {
-            setLoading(false);
-        }
+    useEffect(() => {
+        loadMetadata();
+    }, [fetchSelectionList]);
+
+    useEffect(() => {
+        fetchEmployees();
+    }, [page, rowsPerPage, filters, fetchEmployees]);
+
+    const handleSearch = () => {
+        setFilters(filterInputs);
+        fetchEmployees();
     };
 
-    useEffect(() => {
-        loadOrganizations();
-    }, []);
-
-    useEffect(() => {
-        loadEmployees();
-    }, [page, rowsPerPage, params]);
-
-    const handleSearch = () => { setPage(0); setParams(filterInputs); };
     const handleOpenCreate = () => { setEditingEmployee(null); setDialogOpen(true); };
     const handleOpenEdit = (employee) => { setEditingEmployee(employee); setDialogOpen(true); };
 
     const handleDelete = async (id) => {
         if (!window.confirm('Bạn có chắc chắn muốn xóa người dùng này?')) return;
         try {
-            await employeeApi.delete(id);
+            await deleteEmployee(id);
             toast.success('Xóa thành công');
-            setEmployees(prev => prev.filter(emp => emp.id !== id));
-            setTotalItems(prev => prev - 1);
         } catch (err) {
             toast.error(err.response?.data?.error || 'Lỗi xóa người dùng');
         }
@@ -257,12 +238,13 @@ const EmployeeList = () => {
             if (editingEmployee && !dataToSubmit.password) {
                 delete dataToSubmit.password;
             }
-            await (editingEmployee
-                ? employeeApi.update(editingEmployee.id, dataToSubmit)
-                : employeeApi.create(dataToSubmit));
+            if (editingEmployee) {
+                await updateEmployee(editingEmployee.id, dataToSubmit);
+            } else {
+                await createEmployee(dataToSubmit);
+            }
             toast.success(editingEmployee ? 'Cập nhật thành công' : 'Thêm mới thành công');
             setDialogOpen(false);
-            loadEmployees();
         } catch (err) {
             toast.error(err.response?.data?.error || 'Đã có lỗi xảy ra');
         }

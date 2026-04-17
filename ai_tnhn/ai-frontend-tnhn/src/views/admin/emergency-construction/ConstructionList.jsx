@@ -8,11 +8,12 @@ import {
 } from '@mui/material';
 import { IconTrash, IconPlus, IconEdit, IconSearch, IconChevronDown, IconChevronUp, IconMapPin, IconCalendar, IconUser, IconAlertTriangle } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
-import emergencyConstructionApi from 'api/emergencyConstruction';
 import ConstructionDialog from './ConstructionDialog';
-import organizationApi from 'api/organization';
 import useAuthStore from 'store/useAuthStore';
+import useEmergencyStore from 'store/useEmergencyStore';
+import useOrganizationStore from 'store/useOrganizationStore';
 import OrganizationSelect from 'ui-component/filter/OrganizationSelect';
+import PermissionGuard from 'ui-component/PermissionGuard';
 
 const CollapsibleConstructionRow = ({ row, handleOpenEdit, handleDelete, orgs, getStatusChip, isMobile, userRole, navigate, hasPermission }) => {
     const [open, setOpen] = useState(false);
@@ -59,12 +60,12 @@ const CollapsibleConstructionRow = ({ row, handleOpenEdit, handleDelete, orgs, g
 
 
                             <Stack direction="row" justifyContent="flex-end" spacing={1} sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-                                {hasPermission('emergency:edit') && (
+                                <PermissionGuard permission="emergency:edit">
                                     <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}><IconEdit size={20} /></IconButton>
-                                )}
-                                {hasPermission('emergency:delete') && (
+                                </PermissionGuard>
+                                <PermissionGuard permission="emergency:delete">
                                     <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}><IconTrash size={20} /></IconButton>
-                                )}
+                                </PermissionGuard>
                             </Stack>
                         </Box>
                     </Collapse>
@@ -90,12 +91,12 @@ const CollapsibleConstructionRow = ({ row, handleOpenEdit, handleDelete, orgs, g
                 <TableCell align="center">{getStatusChip(row.status)}</TableCell>
                 <TableCell align="right">
                     <Stack direction="row" spacing={1} justifyContent="flex-end">
-                        {hasPermission('emergency:edit') && (
+                        <PermissionGuard permission="emergency:edit">
                             <Tooltip title="Chỉnh sửa"><IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}><IconEdit size={18} /></IconButton></Tooltip>
-                        )}
-                        {hasPermission('emergency:delete') && (
+                        </PermissionGuard>
+                        <PermissionGuard permission="emergency:delete">
                             <Tooltip title="Xóa"><IconButton color="error" size="small" onClick={() => handleDelete(row.id)}><IconTrash size={18} /></IconButton></Tooltip>
-                        )}
+                        </PermissionGuard>
                     </Stack>
                 </TableCell>
             </TableRow>
@@ -130,26 +131,25 @@ const ConstructionList = () => {
     const { role: userRole, user: userInfo, hasPermission } = useAuthStore();
     const userOrgId = userInfo?.org_id || '';
     
-    const [loading, setLoading] = useState(false);
-    const [items, setItems] = useState([]);
-    const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
-    const [totalItems, setTotalItems] = useState(0);
+    const { 
+        items, loading, totalItems, page, rowsPerPage, filters,
+        fetchItems, setPage, setRowsPerPage, setFilters,
+        createItem, updateItem, deleteItem
+    } = useEmergencyStore();
 
     const [searchParams] = useSearchParams();
-    const [filterInputs, setFilterInputs] = useState({ name: '', status: '', org_id: searchParams.get('org_id') || '' });
-    const [params, setParams] = useState({ name: '', status: '', org_id: searchParams.get('org_id') || '' });
+    const initialOrgId = searchParams.get('org_id') || filters.org_id || '';
+    const [filterInputs, setFilterInputs] = useState({ ...filters, org_id: initialOrgId });
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
+    const { fetchSelectionList } = useOrganizationStore();
     const [orgs, setOrgs] = useState({ primary: [], shared: [] });
 
     const fetchOrgs = async () => {
         try {
-            const res = await organizationApi.getSelectionList();
-            if (res.data?.status === 'success') {
-                setOrgs(res.data.data || { primary: [], shared: [] });
-            }
+            const res = await fetchSelectionList();
+            setOrgs(res || { primary: [], shared: [] });
         } catch (err) {
             console.error('Lỗi tải danh sách công ty:', err);
         }
@@ -160,38 +160,27 @@ const ConstructionList = () => {
         return acc;
     }, {});
 
-    const loadItems = async () => {
-        setLoading(true);
-        try {
-            const res = await emergencyConstructionApi.getAll({ ...params, page: page + 1, per_page: rowsPerPage });
-            if (res.data?.status === 'success') {
-                setItems(res.data.data?.data || []);
-                setTotalItems(res.data.data?.total || 0);
-            }
-        } catch (err) {
-            console.error('Lỗi tải danh sách công trình:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
     useEffect(() => {
         fetchOrgs();
-    }, []);
+    }, [fetchSelectionList]);
 
     useEffect(() => {
-        loadItems();
-    }, [page, rowsPerPage, params]);
+        fetchItems();
+    }, [page, rowsPerPage, filters, fetchItems]);
 
-    const handleSearch = () => { setPage(0); setParams(filterInputs); };
+    const handleSearch = () => {
+        setFilters(filterInputs);
+        fetchItems();
+    };
+
     const handleOpenCreate = () => { setEditingItem(null); setDialogOpen(true); };
     const handleOpenEdit = (item) => { setEditingItem(item); setDialogOpen(true); };
 
     const handleDelete = async (id) => {
         if (!window.confirm('Bạn có chắc chắn muốn xóa công trình này?')) return;
         try {
-            const res = await emergencyConstructionApi.delete(id);
-            if (res.data?.status === 'success') { toast.success('Xóa thành công'); loadItems(); }
+            await deleteItem(id);
+            toast.success('Xóa thành công');
         } catch (err) {
             toast.error(err.response?.data?.error || 'Lỗi xóa công trình');
         }
@@ -199,14 +188,13 @@ const ConstructionList = () => {
 
     const handleSubmit = async (values) => {
         try {
-            const res = editingItem
-                ? await emergencyConstructionApi.update(editingItem.id, values)
-                : await emergencyConstructionApi.create(values);
-            if (res.data?.status === 'success') {
-                toast.success(editingItem ? 'Cập nhật thành công' : 'Thêm mới thành công');
-                setDialogOpen(false);
-                loadItems();
+            if (editingItem) {
+                await updateItem(editingItem.id, values);
+            } else {
+                await createItem(values);
             }
+            toast.success(editingItem ? 'Cập nhật thành công' : 'Thêm mới thành công');
+            setDialogOpen(false);
         } catch (err) {
             toast.error(err.response?.data?.error || 'Đã có lỗi xảy ra');
         }
@@ -226,11 +214,11 @@ const ConstructionList = () => {
     return (
         <Box>
             <Stack direction="row" justifyContent="flex-end" sx={{ mb: 2 }}>
-                {hasPermission('emergency:create') && (
+                <PermissionGuard permission="emergency:create">
                     <Button variant="contained" color="secondary" startIcon={<IconPlus size={18} />} onClick={handleOpenCreate} sx={{ borderRadius: 3, fontWeight: 700 }}>
                         Thêm công trình
                     </Button>
-                )}
+                </PermissionGuard>
             </Stack>
 
             <Box sx={{ mb: 3 }}>

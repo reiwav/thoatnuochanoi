@@ -8,13 +8,13 @@ import {
 } from '@mui/material';
 import { IconTrash, IconPlus, IconEdit, IconSearch, IconUsers, IconChevronDown, IconChevronUp, IconClipboardCheck } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
-import organizationApi from 'api/organization';
 
 // project imports
 import MainCard from 'ui-component/cards/MainCard';
 import AnimateButton from 'ui-component/extended/AnimateButton';
 import OrganizationDialog from './OrganizationDialog';
 import useAuthStore from 'store/useAuthStore';
+import useOrganizationStore from 'store/useOrganizationStore';
 
 const OrgRow = ({ row, handleManageUsers, handleOpenEdit, handleDelete, isMobile, hasPermission }) => {
     const [open, setOpen] = useState(false);
@@ -116,44 +116,31 @@ const OrgRow = ({ row, handleManageUsers, handleOpenEdit, handleDelete, isMobile
     );
 };
 
-
 const OrganizationList = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const navigate = useNavigate();
     const { hasPermission } = useAuthStore();
-    const [loading, setLoading] = useState(false);
-    const [organizations, setOrganizations] = useState([]);
-    const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
-    const [totalItems, setTotalItems] = useState(0);
+    
+    const {
+        organizations, loading, totalItems, page, rowsPerPage, filters,
+        fetchOrganizations, setPage, setRowsPerPage, setFilters,
+        createOrganization, updateOrganization, deleteOrganization
+    } = useOrganizationStore();
 
-    const [filterInputs, setFilterInputs] = useState({ name: '', code: '' });
-    const [params, setParams] = useState({ name: '', code: '' });
-
+    const [filterInputs, setFilterInputs] = useState(filters);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingOrg, setEditingOrg] = useState(null);
 
+    useEffect(() => {
+        fetchOrganizations();
+    }, [page, rowsPerPage, fetchOrganizations]);
 
-    const loadOrganizations = async () => {
-        setLoading(true);
-        try {
-            const res = await organizationApi.getAll({ ...params, page: page + 1, per_page: rowsPerPage });
-            setOrganizations(Array.isArray(res.data) ? res.data : []);
-            setTotalItems(res.total || 0);
-        } catch (err) {
-            console.error('Lỗi tải danh sách công ty:', err);
-            setOrganizations([]);
-        } finally {
-            setLoading(false);
-        }
+    const handleSearch = () => {
+        setFilters(filterInputs);
+        fetchOrganizations();
     };
 
-    useEffect(() => {
-        loadOrganizations();
-    }, [page, rowsPerPage, params]);
-
-    const handleSearch = () => { setPage(0); setParams(filterInputs); };
     const handleOpenCreate = () => { setEditingOrg(null); setDialogOpen(true); };
     const handleOpenEdit = (org) => { setEditingOrg(org); setDialogOpen(true); };
     const handleManageUsers = (org) => {
@@ -163,8 +150,8 @@ const OrganizationList = () => {
     const handleDelete = async (id) => {
         if (!window.confirm('Bạn có chắc chắn muốn xóa công ty này?')) return;
         try {
-            await organizationApi.delete(id);
-            toast.success('Xóa thành công'); loadOrganizations();
+            await deleteOrganization(id);
+            toast.success('Xóa thành công');
         } catch (err) {
             toast.error(err.response?.data?.error || 'Lỗi xóa công ty');
         }
@@ -172,12 +159,13 @@ const OrganizationList = () => {
 
     const handleSubmit = async (values) => {
         try {
-            const res = editingOrg
-                ? await organizationApi.update(editingOrg.id, values)
-                : await organizationApi.create(values);
+            if (editingOrg) {
+                await updateOrganization(editingOrg.id, values);
+            } else {
+                await createOrganization(values);
+            }
             toast.success(editingOrg ? 'Cập nhật thành công' : 'Thêm mới thành công');
             setDialogOpen(false);
-            loadOrganizations();
         } catch (err) {
             toast.error(err.response?.data?.error || 'Đã có lỗi xảy ra');
         }

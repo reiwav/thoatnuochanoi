@@ -89,13 +89,18 @@ const AiSupport = () => {
                 }));
 
                 if (before) {
-                    const prevScrollHeight = scrollRef.current?.scrollHeight || 0;
+                    const scrollContainer = scrollRef.current;
+                    const prevScrollHeight = scrollContainer?.scrollHeight || 0;
+                    
                     setMessages(prev => [...historyLogs, ...prev]);
-                    setTimeout(() => {
-                        if (scrollRef.current) {
-                            scrollRef.current.scrollTop = scrollRef.current.scrollHeight - prevScrollHeight;
+                    
+                    // Maintain scroll position after state update
+                    requestAnimationFrame(() => {
+                        if (scrollContainer) {
+                            scrollContainer.scrollTop = scrollContainer.scrollHeight - prevScrollHeight;
                         }
-                    }, 10);
+                    });
+                    
                     if (historyLogs.length < limit) setHasMore(false);
                 } else {
                     if (historyLogs.length > 0) {
@@ -126,8 +131,8 @@ const AiSupport = () => {
         // Show/hide scroll to bottom button
         setShowScrollBottom(scrollHeight - scrollTop - clientHeight > 300);
 
-        // Load more history
-        if (scrollTop === 0 && !loadingMore && hasMore) {
+        // Load more history when reaching top (with safety margin)
+        if (scrollTop <= 10 && !loadingMore && hasMore && messages.length > 0) {
             const oldestMsg = messages.find(m => m.id !== 'welcome');
             if (oldestMsg && oldestMsg.timestamp) {
                 fetchHistory(oldestMsg.timestamp);
@@ -364,7 +369,6 @@ const AiSupport = () => {
             borderColor: 'divider'
         }}>
             <ChatHeader 
-                isMobile={isMobile}
                 showStats={showStats}
                 setShowStats={setShowStats}
                 hasPermission={hasPermission}
@@ -389,11 +393,13 @@ const AiSupport = () => {
                     '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(0,0,0,0.1)', borderRadius: '10px' }
                 }}
             >
-                {loadingMore && (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-                        <CircularProgress size={20} />
-                    </Box>
-                )}
+                <Box sx={{ minHeight: loadingMore ? '40px' : 0, transition: 'min-height 0.2s' }}>
+                    {loadingMore && (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
+                            <CircularProgress size={18} thickness={5} sx={{ color: 'rgba(0,0,0,0.2)' }} />
+                        </Box>
+                    )}
+                </Box>
                 {messages.map((msg) => (
                     <MessageItem 
                         key={msg.id} 

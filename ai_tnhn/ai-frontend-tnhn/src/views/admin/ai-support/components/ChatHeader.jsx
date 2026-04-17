@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Typography, Avatar, IconButton, Tooltip, Button, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
+import { Box, Typography, Avatar, IconButton, Tooltip, Button, Menu, MenuItem, ListItemIcon, ListItemText, Divider } from '@mui/material';
 import { 
     IconRobot, 
     IconRefresh, 
@@ -12,7 +12,6 @@ import {
 } from '@tabler/icons-react';
 
 const ChatHeader = ({ 
-    isMobile, 
     showStats, 
     setShowStats, 
     hasPermission, 
@@ -38,7 +37,7 @@ const ChatHeader = ({
             bgcolor: 'white',
             zIndex: 10
         }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
                 <Avatar sx={{ 
                     bgcolor: '#f0f2f5', 
                     color: '#0084FF',
@@ -47,70 +46,44 @@ const ChatHeader = ({
                 }}>
                     <IconRobot size={20} />
                 </Avatar>
-                <Box>
-                    <Typography variant="subtitle1" fontWeight={800} sx={{ lineHeight: 1.2, color: 'text.primary' }}>Hệ thống báo cáo AI</Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: { xs: 'none', sm: 'block' } }}>Vietnam / Thoát nước Hà Nội</Typography>
+                <Box sx={{ minWidth: 0, flexShrink: 1 }}>
+                    <Typography variant="subtitle2" fontWeight={800} noWrap sx={{ lineHeight: 1.2, color: 'text.primary' }}>Báo cáo AI</Typography>
+                    <Typography variant="caption" color="text.secondary" noWrap sx={{ fontWeight: 600, display: { xs: 'none', sm: 'block' } }}>Vietnam / TNHN</Typography>
                 </Box>
             </Box>
 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                {!isMobile && (
-                    <>
-                        {hasPermission('ai:report') && (
-                            <Tooltip title="Tin nhắn báo cáo">
-                                <IconButton color="success" onClick={handleQuickReportText} sx={{ bgcolor: 'rgba(46, 125, 50, 0.05)' }}>
-                                    <IconRefresh size={20} />
-                                </IconButton>
-                            </Tooltip>
-                        )}
-                        {hasPermission('ai:synthesis') && (
-                            <Tooltip title="Báo cáo tổng hợp">
-                                <IconButton color="secondary" onClick={handleAIDynamicReport} sx={{ bgcolor: 'rgba(123, 31, 162, 0.05)' }}>
-                                    <IconRobot size={20} />
-                                </IconButton>
-                            </Tooltip>
-                        )}
-                        {hasPermission('ai:post-rain') && (
-                            <Tooltip title="Xuất báo cáo Words">
-                                <IconButton onClick={handleQuickReport} color="primary" sx={{ bgcolor: 'rgba(25, 118, 210, 0.05)' }}>
-                                    <IconBolt size={20} />
-                                </IconButton>
-                            </Tooltip>
-                        )}
-                    </>
-                )}
-
-                {isMobile ? (
-                    <IconButton onClick={handleMenuOpen} sx={{ color: '#0084FF' }}>
-                        <IconDotsVertical size={22} />
-                    </IconButton>
-                ) : (
-                    <IconButton onClick={handleMenuOpen} sx={{ color: 'text.secondary' }}>
-                        <IconDotsVertical size={22} />
-                    </IconButton>
-                )}
+                {/* Unified Menu for all devices */}
+                <IconButton onClick={handleMenuOpen} sx={{ color: '#0084FF' }}>
+                    <IconDotsVertical size={24} />
+                </IconButton>
 
                 <Menu
                     anchorEl={anchorEl}
                     open={openMenu}
                     onClose={handleMenuClose}
-                    PaperProps={{ sx: { borderRadius: '12px', minWidth: 200, mt: 1, boxShadow: '0 4px 20px rgba(0,0,0,0.1)' } }}
+                    PaperProps={{ 
+                        sx: { 
+                            borderRadius: '16px', 
+                            minWidth: 220, 
+                            mt: 1, 
+                            boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                            border: '1px solid',
+                            borderColor: 'divider'
+                        } 
+                    }}
                 >
-                    {isMobile && (
-                        <>
-                            {hasPermission('ai:report') && (
-                                <MenuItem onClick={() => { handleQuickReportText(); handleMenuClose(); }}>
-                                    <ListItemIcon><IconRefresh size={20} color="#2e7d32" /></ListItemIcon>
-                                    <ListItemText primary="Tin nhắn báo cáo" primaryTypographyProps={{ fontWeight: 600 }} />
-                                </MenuItem>
-                            )}
-                            {hasPermission('ai:synthesis') && (
-                                <MenuItem onClick={() => { handleAIDynamicReport(); handleMenuClose(); }}>
-                                    <ListItemIcon><IconRobot size={20} color="#7b1fa2" /></ListItemIcon>
-                                    <ListItemText primary="Báo cáo tổng hợp" primaryTypographyProps={{ fontWeight: 600 }} />
-                                </MenuItem>
-                            )}
-                        </>
+                    {hasPermission('ai:report') && (
+                        <MenuItem onClick={() => { handleQuickReportText(); handleMenuClose(); }}>
+                            <ListItemIcon><IconRefresh size={20} color="#2e7d32" /></ListItemIcon>
+                            <ListItemText primary="Tin nhắn báo cáo" primaryTypographyProps={{ fontWeight: 600 }} />
+                        </MenuItem>
+                    )}
+                    {hasPermission('ai:synthesis') && (
+                        <MenuItem onClick={() => { handleAIDynamicReport(); handleMenuClose(); }}>
+                            <ListItemIcon><IconRobot size={20} color="#7b1fa2" /></ListItemIcon>
+                            <ListItemText primary="Báo cáo tổng hợp" primaryTypographyProps={{ fontWeight: 600 }} />
+                        </MenuItem>
                     )}
                     {hasPermission('ai:post-rain') && (
                         <MenuItem onClick={() => { handleQuickReport(); handleMenuClose(); }}>
@@ -127,22 +100,24 @@ const ChatHeader = ({
                     <Divider />
                     <MenuItem onClick={() => { setShowStats(!showStats); handleMenuClose(); }}>
                         <ListItemIcon>
-                            {showStats ? <IconLayoutSidebarRightCollapse size={20} /> : <IconLayoutSidebarRightExpand size={20} />}
+                            {showStats ? <IconLayoutSidebarRightCollapse size={20} color="#0084FF" /> : <IconLayoutSidebarRightExpand size={20} />}
                         </ListItemIcon>
                         <ListItemText primary={showStats ? "Ẩn thống kê hệ thống" : "Hiện thống kê hệ thống"} primaryTypographyProps={{ fontWeight: 600 }} />
                     </MenuItem>
                 </Menu>
 
-                {!isMobile && (
-                    <Tooltip title="Thống kê hệ thống">
-                        <IconButton
-                            onClick={() => setShowStats(!showStats)}
-                            sx={{ color: showStats ? '#0084FF' : 'text.secondary', bgcolor: showStats ? 'rgba(0, 132, 255, 0.05)' : 'transparent' }}
-                        >
-                            {showStats ? <IconLayoutSidebarRightCollapse size={22} /> : <IconLayoutSidebarRightExpand size={22} />}
-                        </IconButton>
-                    </Tooltip>
-                )}
+                <Tooltip title="Thống kê">
+                    <IconButton
+                        onClick={() => setShowStats(!showStats)}
+                        sx={{ 
+                            color: showStats ? '#0084FF' : 'text.secondary', 
+                            bgcolor: showStats ? 'rgba(0, 132, 255, 0.05)' : 'transparent',
+                            display: { xs: 'none', md: 'inline-flex' } // Only show shortcut on Desktop
+                        }}
+                    >
+                        {showStats ? <IconLayoutSidebarRightCollapse size={22} /> : <IconLayoutSidebarRightExpand size={22} />}
+                    </IconButton>
+                </Tooltip>
             </Box>
         </Box>
     );

@@ -13,16 +13,18 @@ const SuggestedQuestions = ({ loading, handleRainSummary, handleAIDynamicReport,
 
     return (
         <Box sx={{ 
-            pb: 2, 
             display: 'flex', 
-            gap: 1.5,
+            flexDirection: 'row',
+            flexWrap: 'nowrap',
+            gap: 1,
             overflowX: 'auto',
             width: '100%',
-            maxWidth: '100%',
-            '&::-webkit-scrollbar': { display: 'none' },
-            msOverflowStyle: 'none',
+            maxWidth: '100%', // Critical for preventing container expansion
+            '&::-webkit-scrollbar': { height: '3px' },
+            '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(0,0,0,0.1)', borderRadius: '10px' },
+            msOverflowStyle: 'none', 
             scrollbarWidth: 'none',
-            py: 1,
+            pb: 1,
             ...sx
         }}>
             {questions.map((q, i) => (

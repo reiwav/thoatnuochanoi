@@ -112,34 +112,48 @@ func (w *worker) runSignalRJob(ctx context.Context, station *models.PumpingStati
 	for {
 		select {
 		case <-ctx.Done():
+			w.logger.GetLogger().Infof("Stopping worker for %s due to context cancellation", station.Name)
 			return
 		default:
 			err := w.connectAndListen(ctx, baseUrl, station)
 			if err != nil {
-				w.logger.GetLogger().Errorf("SignalR connection error for %s: %v. Retrying in 10s...", station.Name, err)
-				time.Sleep(10 * time.Second)
+				w.logger.GetLogger().Errorf("SignalR connection error for %s: %v. Retrying in 15s...", station.Name, err)
+				
+				// Reset any active sync if it fails
+				select {
+				case <-ctx.Done():
+					return
+				case <-time.After(15 * time.Second):
+					continue
+				}
 			}
 		}
 	}
 }
 
 func (w *worker) connectAndListen(ctx context.Context, baseUrl string, station *models.PumpingStation) error {
-	// 1. Negotiate
+	// 1. Negotiate with timeout
 	negotiateUrl := fmt.Sprintf("%s/negotiate?clientProtocol=1.5&connectionData=%%5B%%7B%%22name%%22%%3A%%22pumphub%%22%%7D%%5D", baseUrl)
-	resp, err := http.Get(negotiateUrl)
+	
+	client := &http.Client{Timeout: 15 * time.Second}
+	resp, err := client.Get(negotiateUrl)
 	if err != nil {
-		return err
+		return fmt.Errorf("negotiate failed: %v", err)
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("negotiate returned status %d", resp.StatusCode)
+	}
 
 	var negData struct {
 		ConnectionToken string `json:"ConnectionToken"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&negData); err != nil {
-		return err
+		return fmt.Errorf("decode negotiate response failed: %v", err)
 	}
 
-	// 2. Connect via SSE
+	// 2. Connect via SSE with Context control
 	connectUrl := fmt.Sprintf("%s/connect?transport=serverSentEvents&clientProtocol=1.5&connectionToken=%s&connectionData=%%5B%%7B%%22name%%22%%3A%%22pumphub%%22%%7D%%5D", baseUrl, url.QueryEscape(negData.ConnectionToken))
 	
 	req, err := http.NewRequestWithContext(ctx, "GET", connectUrl, nil)
@@ -147,19 +161,52 @@ func (w *worker) connectAndListen(ctx context.Context, baseUrl string, station *
 		return err
 	}
 
-	client := &http.Client{}
-	connResp, err := client.Do(req)
+	// No global timeout for long-running SSE connection, but we will handle it via Context
+	sseClient := &http.Client{}
+	connResp, err := sseClient.Do(req)
 	if err != nil {
-		return err
+		return fmt.Errorf("SSE connection failed: %v", err)
 	}
 	defer connResp.Body.Close()
 
+	if connResp.StatusCode != http.StatusOK {
+		return fmt.Errorf("SSE returned status %d", connResp.StatusCode)
+	}
+
+	// Use a scanner with a custom split function or just read line by line
+	// We'll use a timer to detect if we stop receiving data (stuck connection)
+	heartbeatTimeout := 5 * time.Minute
+	timer := time.NewTimer(heartbeatTimeout)
+	defer timer.Stop()
+
+	// Monitoring goroutine to close connection if no heartbeat
+	done := make(chan bool)
+	go func() {
+		select {
+		case <-timer.C:
+			w.logger.GetLogger().Warnf("SignalR connection for %s timed out (no data for %v). Forcing reconnect.", station.Name, heartbeatTimeout)
+			connResp.Body.Close() // This will cause scanner.Scan() to fail
+		case <-done:
+			return
+		}
+	}()
+	defer close(done)
+
 	scanner := bufio.NewScanner(connResp.Body)
 	for scanner.Scan() {
+		// Reset timer on any received data
+		if !timer.Stop() {
+			select {
+			case <-timer.C:
+			default:
+			}
+		}
+		timer.Reset(heartbeatTimeout)
+
 		line := scanner.Text()
 		if strings.HasPrefix(line, "data: ") {
 			data := strings.TrimPrefix(line, "data: ")
-			if data == "initialized" {
+			if data == "initialized" || data == "{}" {
 				continue
 			}
 			w.handleIncomingData(ctx, station, data)
@@ -167,7 +214,7 @@ func (w *worker) connectAndListen(ctx context.Context, baseUrl string, station *
 	}
 
 	if err := scanner.Err(); err != nil {
-		return err
+		return fmt.Errorf("scanner error: %v", err)
 	}
 
 	return nil
@@ -176,6 +223,7 @@ func (w *worker) connectAndListen(ctx context.Context, baseUrl string, station *
 func (w *worker) handleIncomingData(ctx context.Context, station *models.PumpingStation, raw string) {
 	var res SignalRResponse
 	if err := json.Unmarshal([]byte(raw), &res); err != nil {
+		w.logger.GetLogger().Errorf("Failed to unmarshal SignalR data for %s: %v. Raw: %s", station.Name, err, raw)
 		return
 	}
 
@@ -188,6 +236,7 @@ func (w *worker) handleIncomingData(ctx context.Context, station *models.Pumping
 
 func (w *worker) parseAndSaveStatus(ctx context.Context, station *models.PumpingStation, args []interface{}) {
 	if len(args) < 120 {
+		w.logger.GetLogger().Warnf("Skipping pump status for %s: expected at least 120 args, got %d", station.Name, len(args))
 		return
 	}
 
@@ -219,5 +268,8 @@ func (w *worker) parseAndSaveStatus(ctx context.Context, station *models.Pumping
 		MaintenanceCount: maintenance,
 	}
 
-	_, _ = w.service.CreateHistory(ctx, nil, history)
+	_, err := w.service.CreateHistory(ctx, nil, history)
+	if err != nil {
+		w.logger.GetLogger().Errorf("Failed to save pumping station history for %s: %v", station.Name, err)
+	}
 }

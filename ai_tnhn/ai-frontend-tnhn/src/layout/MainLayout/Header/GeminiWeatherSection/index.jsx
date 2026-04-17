@@ -26,16 +26,15 @@ const pulse = keyframes`
 const ForecastCard = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
-  padding: '8px 16px',
+  padding: '8px 12px',
   borderRadius: '16px',
-  border: '1px solid #e0e0e0',
+  border: '1px solid #e2e8f0',
   background: '#ffffff',
-  boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-  minWidth: '240px',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
   transition: 'all 0.3s ease',
   cursor: 'pointer',
   '&:hover': {
-    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
     transform: 'translateY(-2px)'
   }
 }));
@@ -43,8 +42,9 @@ const ForecastCard = styled(Box)(({ theme }) => ({
 const VerticalDivider = styled(Box)(({ theme }) => ({
   width: '1px',
   height: '24px',
-  background: '#e0e0e0',
-  margin: '0 12px'
+  background: '#e2e8f0',
+  margin: '0 10px',
+  flexShrink: 0
 }));
 
 const GeminiWeatherSection = () => {
@@ -56,8 +56,6 @@ const GeminiWeatherSection = () => {
     const fetchWeather = async () => {
       try {
         const res = await weatherApi.getGeminiForecast();
-        console.log('Gemini Forecast Response:', res);
-        // axiosClient interceptor already returns res.data.data
         if (res && Array.isArray(res)) {
           setForecast(res);
         } else if (res && res.data && Array.isArray(res.data)) {
@@ -88,9 +86,9 @@ const GeminiWeatherSection = () => {
 
   if (loading) {
     return (
-      <Stack direction="row" spacing={2} sx={{ display: 'flex' }}>
-        {[1, 2, 3].map((i) => (
-          <Skeleton key={i} variant="rounded" width={240} height={56} sx={{ borderRadius: '16px' }} />
+      <Stack direction="row" spacing={1} sx={{ overflow: 'hidden' }}>
+        {[1, 2].map((i) => (
+          <Skeleton key={i} variant="rounded" width={220} height={56} sx={{ borderRadius: '16px' }} />
         ))}
       </Stack>
     );
@@ -103,55 +101,56 @@ const GeminiWeatherSection = () => {
       display: 'flex', 
       gap: 1.5, 
       overflowX: 'auto',
-      maxWidth: '100%',
+      maxWidth: '100vw',
       py: 1,
-      '&::-webkit-scrollbar': { display: 'none' }, // Hide scrollbar for a clean header Look
+      px: { xs: 1, md: 0 },
+      '&::-webkit-scrollbar': { display: 'none' },
       msOverflowStyle: 'none',
       scrollbarWidth: 'none'
     }}>
       {forecast.slice(0, 3).map((day, index) => (
         <ForecastCard key={index} sx={{ 
-          minWidth: { md: '200px', lg: '240px' },
-          px: { md: 1, lg: 2 }
+          minWidth: { xs: '190px', sm: '210px', md: '230px' },
+          flexShrink: 0
         }}>
-          {/* Icon Section */}
-          <Box sx={{ display: 'flex', alignItems: 'center', mr: 1 }}>
-            {getWeatherIcon(day.description)}
-          </Box>
+            {/* Icon Section */}
+            <Box sx={{ display: 'flex', alignItems: 'center', mr: 1, flexShrink: 0 }}>
+              {getWeatherIcon(day.description)}
+            </Box>
 
-          {/* Date Section */}
-          <Box sx={{ textAlign: 'center' }}>
-            <Typography sx={{ fontSize: '0.85rem', color: '#2196F3', fontWeight: 700, lineHeight: 1 }}>
-              Ngày
-            </Typography>
-            <Typography sx={{ fontSize: '1rem', color: '#2d3436', fontWeight: 800 }}>
-              {day.date}
-            </Typography>
-          </Box>
+            {/* Date Section */}
+            <Box sx={{ textAlign: 'center', flexShrink: 0, minWidth: '45px' }}>
+              <Typography sx={{ fontSize: '0.75rem', color: '#2196F3', fontWeight: 700, lineHeight: 1, textTransform: 'uppercase' }}>
+                Ngày
+              </Typography>
+              <Typography sx={{ fontSize: '0.95rem', color: '#2d3436', fontWeight: 800, whiteSpace: 'nowrap' }}>
+                {day.date}
+              </Typography>
+            </Box>
 
-          <VerticalDivider />
+            <VerticalDivider />
 
-          {/* Info Section */}
-          <Box sx={{ flexGrow: 1 }}>
-            <Typography sx={{ fontSize: '0.9rem', color: '#636e72', fontWeight: 700, lineHeight: 1.2 }}>
-              {day.description}
-            </Typography>
-            <Typography sx={{ fontSize: '1.1rem', color: '#2196F3', fontWeight: 800 }}>
-              {day.temperature_min}-{day.temperature_max}°C
-            </Typography>
-          </Box>
+            {/* Info Section */}
+            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+              <Typography noWrap sx={{ fontSize: '0.85rem', color: '#636e72', fontWeight: 700, lineHeight: 1.2 }}>
+                {day.description}
+              </Typography>
+              <Typography sx={{ fontSize: '1rem', color: '#2196F3', fontWeight: 800, whiteSpace: 'nowrap' }}>
+                {day.temperature_min}-{day.temperature_max}°C
+              </Typography>
+            </Box>
 
-          {/* Rain Section */}
-          <Box sx={{ ml: 1, minWidth: '90px', textAlign: 'right' }}>
-            <Typography sx={{ fontSize: '0.95rem', color: '#636e72', fontWeight: 600 }}>
-              Mưa: <Box component="span" sx={{ color: '#2196F3', fontWeight: 800, fontSize: '1.1rem' }}>{day.rain_probability}%</Box>
-              {day.rain_fall > 0 && (
-                <Box component="span" sx={{ display: 'block', fontSize: '0.85rem', color: '#2196F3', fontWeight: 700 }}>
-                  ({day.rain_fall}mm)
-                </Box>
-              )}
-            </Typography>
-          </Box>
+            {/* Rain Section */}
+            <Box sx={{ ml: 1, flexShrink: 0, textAlign: 'right' }}>
+              <Typography sx={{ fontSize: '0.85rem', color: '#636e72', fontWeight: 600, lineHeight: 1.1 }}>
+                Mưa: <Box component="span" sx={{ color: '#2196F3', fontWeight: 800 }}>{day.rain_probability}%</Box>
+                {day.rain_fall > 0 && (
+                  <Box component="span" sx={{ display: 'block', fontSize: '0.75rem', color: '#2196F3', fontWeight: 700 }}>
+                    ({day.rain_fall}mm)
+                  </Box>
+                )}
+              </Typography>
+            </Box>
         </ForecastCard>
       ))}
     </Box>

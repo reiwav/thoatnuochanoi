@@ -12,8 +12,8 @@ const SuggestedQuestions = ({ loading, handleRainSummary, handleAIDynamicReport,
     ];
 
     return (
-        <Box sx={{ 
-            display: 'flex', 
+        <Box sx={{
+            display: 'flex',
             flexDirection: 'row',
             flexWrap: 'nowrap',
             gap: 1,
@@ -22,7 +22,7 @@ const SuggestedQuestions = ({ loading, handleRainSummary, handleAIDynamicReport,
             maxWidth: '100%', // Critical for preventing container expansion
             '&::-webkit-scrollbar': { height: '3px' },
             '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(0,0,0,0.1)', borderRadius: '10px' },
-            msOverflowStyle: 'none', 
+            msOverflowStyle: 'none',
             scrollbarWidth: 'none',
             pb: 1,
             ...sx
@@ -36,21 +36,21 @@ const SuggestedQuestions = ({ loading, handleRainSummary, handleAIDynamicReport,
                         else handleSendQuestion(q.text);
                     }}
                     sx={{
-                        px: 2, py: 0.8, 
-                        borderRadius: '18px', 
+                        px: 2, py: 0.8,
+                        borderRadius: '18px',
                         cursor: 'pointer',
                         whiteSpace: 'nowrap',
                         bgcolor: 'white',
-                        border: '1px solid', 
+                        border: '1px solid',
                         borderColor: '#0084FF',
-                        color: '#0084FF', 
-                        fontSize: '13px', 
+                        color: '#0084FF',
+                        fontSize: '13px',
                         fontWeight: 600,
                         flexShrink: 0,
                         transition: 'all 0.2s',
                         boxShadow: 'none',
-                        '&:hover': { 
-                            bgcolor: 'rgba(0, 132, 255, 0.05)', 
+                        '&:hover': {
+                            bgcolor: 'rgba(0, 132, 255, 0.05)',
                             transform: 'translateY(-1px)'
                         },
                         '&:active': { transform: 'scale(0.96)' }

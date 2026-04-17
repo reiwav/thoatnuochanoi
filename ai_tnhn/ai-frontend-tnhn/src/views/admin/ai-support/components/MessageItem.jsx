@@ -23,19 +23,19 @@ const MessageItem = memo(({ msg, userInfo, handleEmailDetail, handleEmcHistory }
                 px: { xs: 1, md: 2 }
             }}>
                 <Paper sx={{
-                    p: { xs: '10px 14px', md: '12px 18px' },
+                    p: { xs: '8px 12px', md: '12px 18px' },
                     borderRadius: isUser ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
                     width: 'fit-content',
-                    maxWidth: isUser ? { xs: '85%', sm: '75%', md: '70%' } : { xs: '85%', sm: '85%', md: '80%' },
+                    maxWidth: isUser ? { xs: '90%', sm: '80%', md: '70%' } : { xs: '92%', sm: '88%', md: '80%' },
                     bgcolor: isUser ? '#0084FF' : '#E4E6EB',
                     color: isUser ? 'white' : 'black',
-                    boxShadow: 'none', // Messenger doesn't use heavy shadows
+                    boxShadow: 'none', 
                     border: 'none',
                     position: 'relative',
                     wordBreak: 'break-word',
                     overflowWrap: 'anywhere',
-                    fontSize: { xs: '0.95rem', md: '1rem' },
-                    lineHeight: 1.5
+                    fontSize: { xs: '1rem', md: '1.05rem' }, // Slightly larger for readability
+                    lineHeight: 1.4
                 }}>
                     <Box sx={{
                         '& p': { m: 0, '&:not(:last-child)': { mb: 1.5 } },

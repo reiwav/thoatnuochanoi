@@ -91,16 +91,16 @@ const AiSupport = () => {
                 if (before) {
                     const scrollContainer = scrollRef.current;
                     const prevScrollHeight = scrollContainer?.scrollHeight || 0;
-                    
+
                     setMessages(prev => [...historyLogs, ...prev]);
-                    
+
                     // Maintain scroll position after state update
                     requestAnimationFrame(() => {
                         if (scrollContainer) {
                             scrollContainer.scrollTop = scrollContainer.scrollHeight - prevScrollHeight;
                         }
                     });
-                    
+
                     if (historyLogs.length < limit) setHasMore(false);
                 } else {
                     if (historyLogs.length > 0) {
@@ -125,9 +125,9 @@ const AiSupport = () => {
 
     const handleScroll = useCallback(() => {
         if (!scrollRef.current) return;
-        
+
         const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-        
+
         // Show/hide scroll to bottom button
         setShowScrollBottom(scrollHeight - scrollTop - clientHeight > 300);
 
@@ -356,25 +356,30 @@ const AiSupport = () => {
     }, [stats.drive_quota]);
 
     return (
-        <Box sx={{ 
-            height: 'calc(100vh - 120px)', 
-            display: 'flex', 
+        <Box sx={{
+            height: { xs: 'calc(100vh - 64px)', md: 'calc(100vh - 120px)' },
+            display: 'flex',
             flexDirection: 'column',
-            gap: 0, 
+            gap: 0,
             position: 'relative',
-            bgcolor: '#f0f2f5', // Messenger gray background
-            borderRadius: '24px',
+            bgcolor: '#f0f2f5',
+            borderRadius: { xs: 0, md: '24px' },
             overflow: 'hidden',
-            border: '1px solid',
-            borderColor: 'divider'
+            border: { xs: 'none', md: '1px solid' },
+            borderColor: 'divider',
+            // Safer expansion to avoid horizontal scrollbar
+            mx: { xs: '-16px', sm: '-24px', md: 0 },
+            mt: { xs: '-40px', sm: '-24px', md: 0 },
+            mb: { xs: '-40px', sm: '-24px', md: 0 },
+            width: { xs: 'calc(100% + 32px)', sm: 'calc(100% + 48px)', md: '100%' }
         }}>
-            <ChatHeader 
+            <ChatHeader
                 showStats={showStats}
                 setShowStats={setShowStats}
                 hasPermission={hasPermission}
                 handleQuickReportText={handleQuickReportText}
                 handleAIDynamicReport={handleAIDynamicReport}
-                handleQuickReport={() => {/* impl */}}
+                handleQuickReport={() => {/* impl */ }}
                 openReportDialog={() => setOpenReportDialog(true)}
                 sx={{ bgcolor: 'white' }}
             />
@@ -382,14 +387,17 @@ const AiSupport = () => {
             <Box
                 ref={scrollRef}
                 onScroll={handleScroll}
-                sx={{ 
-                    flex: 1, 
-                    p: { xs: 1.5, md: 2 }, 
-                    overflowY: 'auto', 
-                    display: 'flex', 
+                sx={{
+                    flexGrow: 1,
+                    overflowY: 'auto',
+                    overflowX: 'hidden', // Prevent unintentional horizontal scroll
+                    p: { xs: 1, md: 2.5 },
+                    display: 'flex',
                     flexDirection: 'column',
+                    bgcolor: 'transparent',
                     scrollBehavior: 'smooth',
                     '&::-webkit-scrollbar': { width: '6px' },
+                    '&::-webkit-scrollbar-track': { bgcolor: 'transparent' },
                     '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(0,0,0,0.1)', borderRadius: '10px' }
                 }}
             >
@@ -401,9 +409,9 @@ const AiSupport = () => {
                     )}
                 </Box>
                 {messages.map((msg) => (
-                    <MessageItem 
-                        key={msg.id} 
-                        msg={msg} 
+                    <MessageItem
+                        key={msg.id}
+                        msg={msg}
                         userInfo={userInfo}
                         handleEmailDetail={handleEmailDetail}
                         handleEmcHistory={handleEmcHistory}
@@ -411,12 +419,12 @@ const AiSupport = () => {
                 ))}
                 {loading && (
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', mb: 2, width: '100%', px: { xs: 1, md: 2 } }}>
-                        <Box sx={{ 
-                            p: '10px 14px', 
-                            bgcolor: '#E4E6EB', 
-                            borderRadius: '18px 18px 18px 4px', 
+                        <Box sx={{
+                            p: '10px 14px',
+                            bgcolor: '#E4E6EB',
+                            borderRadius: '18px 18px 18px 4px',
                             width: 'fit-content',
-                            maxWidth: '85%'
+                            maxWidth: '90%'
                         }}>
                             <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>Gemini đang trả lời...</Typography>
                             <CircularProgress size={10} color="inherit" sx={{ ml: 1, opacity: 0.5 }} />
@@ -425,18 +433,24 @@ const AiSupport = () => {
                 )}
             </Box>
 
-            {/* Input Area & Suggestions */}
-            <Box sx={{ p: { xs: 1.5, md: 2 }, bgcolor: 'white', borderTop: '1px solid', borderColor: 'divider' }}>
-                <SuggestedQuestions 
+            {/* Input Area */}
+            <Box sx={{
+                p: { xs: 1, md: 2 },
+                bgcolor: 'white',
+                borderTop: '1px solid',
+                borderColor: 'divider'
+            }}>
+                <SuggestedQuestions
                     loading={loading}
                     handleRainSummary={handleRainSummary}
                     handleAIDynamicReport={handleAIDynamicReport}
                     handleSendQuestion={handleSend}
-                    sx={{ mb: 1.5 }}
+                    sx={{ mb: 1, px: 0.5 }}
                 />
 
                 <TextField
                     fullWidth
+                    size={isMobile ? "small" : "medium"}
                     placeholder="Aa"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
@@ -445,18 +459,18 @@ const AiSupport = () => {
                     autoComplete="off"
                     InputProps={{
                         endAdornment: (
-                            <IconButton 
-                                color="primary" 
-                                onClick={() => handleSend()} 
+                            <IconButton
+                                color="primary"
+                                onClick={() => handleSend()}
                                 disabled={!input.trim() || loading}
                                 sx={{ color: '#0084FF' }}
                             >
                                 <IconSend size={24} />
                             </IconButton>
                         ),
-                        sx: { 
-                            borderRadius: '22px', 
-                            bgcolor: '#f0f2f5', 
+                        sx: {
+                            borderRadius: '22px',
+                            bgcolor: '#f0f2f5',
                             px: 2,
                             '& fieldset': { border: 'none' } // Remove border for Messenger look
                         }
@@ -466,9 +480,9 @@ const AiSupport = () => {
 
             {/* Scroll to Bottom Button */}
             <Zoom in={showScrollBottom}>
-                <Fab 
-                    size="small" 
-                    color="primary" 
+                <Fab
+                    size="small"
+                    color="primary"
                     onClick={scrollToBottom}
                     sx={{ position: 'absolute', bottom: 120, right: 30, bgcolor: 'white', color: '#0084FF', '&:hover': { bgcolor: '#f0f2f5' } }}
                 >
@@ -486,11 +500,11 @@ const AiSupport = () => {
                     sx: { width: { xs: '85%', sm: 400 }, p: 0, borderTopLeftRadius: '24px', borderBottomLeftRadius: '24px' }
                 }}
             >
-                <StatsContent 
-                    stats={stats} 
-                    statsLoading={statsLoading} 
-                    fetchStats={fetchStats} 
-                    formatBytes={formatBytes} 
+                <StatsContent
+                    stats={stats}
+                    statsLoading={statsLoading}
+                    fetchStats={fetchStats}
+                    formatBytes={formatBytes}
                     quotaPercentage={quotaPercentage}
                     handleListEmails={handleListEmails}
                     handleListConstructions={handleListConstructions}

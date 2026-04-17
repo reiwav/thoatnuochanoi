@@ -70,7 +70,7 @@ const RiverDialog = ({ open, onClose, onSubmit, station, isEdit, organizations }
 
     const handleSave = () => {
         if (!formData.TenTram) return toast.error('Vui lòng nhập tên trạm');
-        const submitData = {
+        const submitData = { 
             ...formData,
             NguongCanhBao: formData.NguongCanhBao !== '' ? parseFloat(formData.NguongCanhBao) : 0,
             ThuTu: parseInt(formData.ThuTu) || 0,
@@ -88,12 +88,12 @@ const RiverDialog = ({ open, onClose, onSubmit, station, isEdit, organizations }
             isEdit={isEdit}
         >
             <Stack spacing={2.5}>
-                <StationBaseFields
-                    formData={formData}
-                    handleChange={handleChange}
-                    organizations={organizations}
+                <StationBaseFields 
+                    formData={formData} 
+                    handleChange={handleChange} 
+                    organizations={organizations} 
                 />
-
+                
                 <TextField
                     fullWidth label="Loại"
                     placeholder="Ví dụ: Sông Nhuệ, Sông Hồng..."

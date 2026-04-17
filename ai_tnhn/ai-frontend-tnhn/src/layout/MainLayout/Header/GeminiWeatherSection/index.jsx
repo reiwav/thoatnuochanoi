@@ -56,8 +56,12 @@ const GeminiWeatherSection = () => {
     const fetchWeather = async () => {
       try {
         const res = await weatherApi.getGeminiForecast();
-        if (res.data?.status === 'success') {
-          setForecast(res.data.data || []);
+        console.log('Gemini Forecast Response:', res);
+        // axiosClient interceptor already returns res.data.data
+        if (res && Array.isArray(res)) {
+          setForecast(res);
+        } else if (res && res.data && Array.isArray(res.data)) {
+          setForecast(res.data);
         }
       } catch (err) {
         console.error('Failed to fetch Gemini weather:', err);
@@ -84,7 +88,7 @@ const GeminiWeatherSection = () => {
 
   if (loading) {
     return (
-      <Stack direction="row" spacing={2}>
+      <Stack direction="row" spacing={2} sx={{ display: { xs: 'none', md: 'flex' } }}>
         {[1, 2, 3].map((i) => (
           <Skeleton key={i} variant="rounded" width={240} height={56} sx={{ borderRadius: '16px' }} />
         ))}
@@ -95,9 +99,12 @@ const GeminiWeatherSection = () => {
   if (!forecast || forecast.length === 0) return null;
 
   return (
-    <Box sx={{ display: { xs: 'none', lg: 'flex' }, gap: 2 }}>
-      {forecast.map((day, index) => (
-        <ForecastCard key={index}>
+    <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1.5, overflow: 'hidden' }}>
+      {forecast.slice(0, 3).map((day, index) => (
+        <ForecastCard key={index} sx={{ 
+          minWidth: { md: '200px', lg: '240px' },
+          px: { md: 1, lg: 2 }
+        }}>
           {/* Icon Section */}
           <Box sx={{ display: 'flex', alignItems: 'center', mr: 1 }}>
             {getWeatherIcon(day.description)}

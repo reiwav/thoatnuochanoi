@@ -9,7 +9,8 @@ import Loadable from 'ui-component/Loadable';
 const EmployeePage = Loadable(lazy(() => import('views/admin/employee/index')));
 const OrganizationPage = Loadable(lazy(() => import('views/admin/organization')));
 const InundationForm = Loadable(lazy(() => import('views/employee/inundation/InundationForm')));
-const InundationDashboard = Loadable(lazy(() => import('views/employee/inundation/InundationDashboard')));
+const EmployeeInundationDashboard = Loadable(lazy(() => import('views/employee/inundation/EmployeeInundationDashboard')));
+const AdminInundationDashboard = Loadable(lazy(() => import('views/admin/inundation/AdminInundationDashboard')));
 const StationRainList = Loadable(lazy(() => import('views/admin/station/StationRainList')));
 const StationRainSummary = Loadable(lazy(() => import('views/admin/station-rain-summary')));
 const StationWaterSummary = Loadable(lazy(() => import('views/admin/station-water-summary')));
@@ -22,10 +23,11 @@ const InundationStationHistory = Loadable(lazy(() => import('views/admin/station
 const AiSupportPage = Loadable(lazy(() => import('views/admin/ai-support')));
 const AiContractPage = Loadable(lazy(() => import('views/admin/ai-contract')));
 const EmergencyConstructionPage = Loadable(lazy(() => import('views/admin/emergency-construction')));
+const EmployeePumpingStationDashboard = Loadable(lazy(() => import('views/employee/pumping-station/EmployeePumpingStationDashboard')));
 const ConstructionReportingPage = Loadable(lazy(() => import('views/employee/emergency-construction/ConstructionReporting')));
 const ConstructionFormPage = Loadable(lazy(() => import('views/employee/emergency-construction/ConstructionForm')));
 const ConstructionProgressHistoryPage = Loadable(lazy(() => import('views/admin/emergency-construction/ConstructionProgressHistory')));
-const InundationAdminList = Loadable(lazy(() => import('views/admin/inundation/InundationAdminList')));
+// const InundationAdminList = Loadable(lazy(() => import('views/admin/inundation/InundationAdminList')));
 const InundationYearlyHistory = Loadable(lazy(() => import('views/admin/inundation/InundationYearlyHistory')));
 const ContractCategoryPage = Loadable(lazy(() => import('views/admin/contract-category')));
 const ContractPage = Loadable(lazy(() => import('views/admin/contract')));
@@ -54,8 +56,8 @@ const MainRoutes = {
         { path: 'emergency-construction/dashboard', element: <ConstructionReportingPage /> },
         { path: 'emergency-construction/report-history', element: <ConstructionProgressHistoryPage /> },
         { path: 'emergency-construction/form', element: <ConstructionFormPage /> },
-        { path: 'inundation', element: <InundationDashboard /> },
-        { path: 'inundation-list', element: <InundationAdminList /> },
+        { path: 'inundation', element: <AdminInundationDashboard /> },
+        { path: 'inundation-list', element: <AdminInundationDashboard /> },
         { path: 'inundation/form', element: <InundationForm /> },
         { path: 'station/rain/summary', element: <StationRainSummary /> },
         { path: 'station/water/summary', element: <StationWaterSummary /> },
@@ -85,14 +87,14 @@ const MainRoutes = {
       element: <ContextOutlet />,
       children: [
         { path: 'emergency-construction', element: <EmergencyConstructionPage /> },
-        { path: 'inundation', element: <InundationDashboard /> },
+        { path: 'inundation', element: <EmployeeInundationDashboard /> },
         { path: 'inundation/form', element: <InundationForm /> },
         { path: 'emergency-construction/dashboard', element: <ConstructionReportingPage /> },
         { path: 'emergency-construction/form', element: <ConstructionFormPage /> },
         { path: 'station/rain/summary', element: <StationRainSummary /> },
         { path: 'station/water/summary', element: <StationWaterSummary /> },
         { path: 'station/rain/compare', element: <StationRainCompare /> },
-        { path: 'tram-bom', element: <PumpingStationPage /> }
+        { path: 'tram-bom', element: <EmployeePumpingStationDashboard /> }
       ]
     }
   ]

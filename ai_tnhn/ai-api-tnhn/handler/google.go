@@ -688,9 +688,30 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 	phuongDataRaw := [][]string{{"Phường", "Lượng mưa (mm)"}}
 	xaDataRaw := [][]string{{"Xã", "Lượng mưa (mm)"}}
 
-	// Định nghĩa danh sách các trạm cố định (fix cứng)
-	fixedLakes := []string{"Hồ Hoàn Kiếm", "Hồ Tây A TL", "Hồ Linh Đàm", "Hồ Đống Đa", "Hồ Định Công"}
-	fixedRivers := []string{"Sông Tô Lịch (Đập Thanh Liệt)", "Sông Nhuệ (Cống Hà Đông)", "Sông Tô Lịch (Hoàng Quốc Việt)", "Sông Kim Ngưu (Cống Lò Đúc)", "Sông Lừ -HL CĐT Lừ Sét"}
+	// Định nghĩa danh sách các trạm cố định kèm ID (BẢNG TRẢ VỀ TỪ API NOIBO)
+	// Sông: 3 (Thanh Liệt), 170 (Hà Đông), 4 (HQV), 23 (Lò Đúc), 28 (Lừ)
+	// Hồ: 35 (Hoàn Kiếm), 33 (Tây A), 39 (Linh Đàm), 40 (Đống Đa), 42 (Định Công)
+	riverConfigs := []struct {
+		id   string
+		name string
+	}{
+		{"3", "Sông Tô Lịch (Đập Thanh Liệt)"},
+		{"170", "Sông Nhuệ (Cống Hà Đông)"},
+		{"4", "Sông Tô Lịch (Hoàng Quốc Việt)"},
+		{"23", "Sông Kim Ngưu (Cống Lò Đúc)"},
+		{"28", "Sông Lừ -HL CĐT Lừ Sét"},
+	}
+	lakeConfigs := []struct {
+		id   string
+		name string
+	}{
+		{"35", "Hồ Hoàn Kiếm"},
+		{"33", "Hồ Tây A TL"},
+		{"39", "Hồ Linh Đàm"},
+		{"40", "Hồ Đống Đa"},
+		{"42", "Hồ Định Công"},
+	}
+
 	fixedXas := []string{"Xã Tân Triều", "Xã Thanh Liệt", "Xã Vĩnh Quỳnh", "Xã Tam Hiệp", "Xã Tứ Hiệp", "Xã Ngũ Hiệp", "Xã Vạn Phúc", "Xã Hữu Hòa", "Xã Tả Thanh Oai", "Xã Đại Áng"}
 
 	type itemVal struct {
@@ -710,25 +731,22 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 		return 0
 	}
 
-	// Thu thập dữ liệu mực nước vào map để tra cứu
-	waterDataMap := make(map[string]float64)
+	// Tra cứu mực nước theo ID cho chắc chắn
+	waterDataByID := make(map[string]float64)
 	for _, d := range waterResp.Content.Data {
 		tid, _ := d["TramId"].(string)
 		val := parseNum(d["ThuongLuu_HT"])
-		name := waterStations[tid]
-		if name != "" {
-			waterDataMap[name] = val
-		}
+		waterDataByID[tid] = val
 	}
 
-	// Đổ dữ liệu vào bảng Sông và Hồ theo đúng danh sách fix cứng
-	for _, name := range fixedLakes {
-		val := waterDataMap[name]
-		lakeDataRaw = append(lakeDataRaw, []string{name, fmt.Sprintf("%.2fm", val/100.0)})
+	// Đổ dữ liệu vào bảng Sông và Hồ theo danh sách ID cố định
+	for _, cfg := range lakeConfigs {
+		val := waterDataByID[cfg.id]
+		lakeDataRaw = append(lakeDataRaw, []string{cfg.name, fmt.Sprintf("%.2fm", val/100.0)})
 	}
-	for _, name := range fixedRivers {
-		val := waterDataMap[name]
-		riverDataRaw = append(riverDataRaw, []string{name, fmt.Sprintf("%.2fm", val/100.0)})
+	for _, cfg := range riverConfigs {
+		val := waterDataByID[cfg.id]
+		riverDataRaw = append(riverDataRaw, []string{cfg.name, fmt.Sprintf("%.2fm", val/100.0)})
 	}
 
 	// Xử lý dữ liệu lượng mưa

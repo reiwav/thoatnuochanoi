@@ -219,6 +219,48 @@ export default function MainLayout() {
 
   const showMobileAppLayout = isEmployee && (isInundationPath || isConstructionPath || isPumpingPath);
 
+  // Global Bottom Navigation items for Employee
+  const employeeNavItems = useMemo(() => {
+    if (!isEmployee || !userInfo) return [];
+    
+    return [
+      {
+        id: 'inundation',
+        label: 'Trực ngập',
+        icon: (
+          <Badge badgeContent={activeFloodCount} color="error" max={99}>
+            <WarningIcon sx={{ fontSize: '1.6rem' }} />
+          </Badge>
+        ),
+        path: `${basePath}/inundation`,
+        active: isInundationPath && !pathname.includes('activeTab=3')
+      },
+      {
+        id: 'pumping',
+        label: 'Trạm bơm',
+        icon: <EngineeringIcon sx={{ fontSize: '1.6rem' }} />,
+        path: `${basePath}/tram-bom`,
+        active: isPumpingPath,
+        show: !isEmployee || (userInfo?.assigned_pumping_station_id && userInfo.assigned_pumping_station_id.trim() !== "")
+      },
+      {
+        id: 'construction',
+        label: 'Công trình',
+        icon: <DashboardIcon sx={{ fontSize: '1.6rem' }} />,
+        path: `${basePath}/emergency-construction/dashboard`,
+        active: isConstructionPath,
+        show: !isEmployee || (userInfo?.assigned_emergency_construction_ids?.filter(id => id && id.trim() !== "").length > 0)
+      },
+      {
+        id: 'profile',
+        label: 'Cá nhân',
+        icon: <PersonIcon sx={{ fontSize: '1.6rem' }} />,
+        path: `${basePath}/inundation?activeTab=3`,
+        active: pathname.includes('activeTab=3')
+      }
+    ].filter(item => item.show !== false);
+  }, [isEmployee, userInfo, activeFloodCount, isInundationPath, isPumpingPath, isConstructionPath, pathname, basePath]);
+
   // Auto-collapse sidebar on AI Support page (only for mobile)
   useEffect(() => {
     if (isAiSupportPath && downSM) {
@@ -243,69 +285,12 @@ export default function MainLayout() {
     return () => clearInterval(interval);
   }, [isEmployee]);
 
-  const inundationNavItems = useMemo(() => {
-    const items = [
-      { id: 'all', label: 'Tổng quan', icon: <DashboardIcon sx={{ fontSize: '1.4rem' }} />, tab: '0' },
-      { 
-        id: 'pumping', 
-        label: 'Trạm bơm', 
-        icon: <EngineeringIcon sx={{ fontSize: '1.4rem' }} />, 
-        tab: '1',
-        show: !isEmployee || (userInfo?.assigned_pumping_station_id && userInfo.assigned_pumping_station_id.trim() !== "")
-      },
-      { 
-        id: 'active', 
-        label: 'Đang ngập', 
-        icon: (
-          <Badge badgeContent={activeFloodCount} color="error" max={99}>
-            <WarningIcon sx={{ fontSize: '1.4rem' }} />
-          </Badge>
-        ), 
-        tab: '2' 
-      },
-      { id: 'profile', label: 'Tài khoản', icon: <PersonIcon sx={{ fontSize: '1.4rem' }} />, tab: '4' }
-    ];
-    return items.filter(i => i.show !== false);
-  }, [isEmployee, userInfo, activeFloodCount]);
-
-  // Redirect if no tabs available (for employee)
-  useEffect(() => {
-    if (isEmployee && !isChecking && userInfo && availableTabs.length === 0) {
-      if (isInundationPath || isPumpingPath || isConstructionPath) {
-        const activeTab = searchParams.get('activeTab');
-        if (activeTab !== '4') {
-          navigate(`${basePath}/inundation?activeTab=4`, { replace: true });
-        }
-      }
-    }
-  }, [isEmployee, isChecking, userInfo, availableTabs.length, isInundationPath, isPumpingPath, isConstructionPath, navigate, basePath, searchParams]);
-
   // Always open sidebar on desktop/tablet
   useEffect(() => {
     if (!downSM && !drawerOpen) {
       handlerDrawerOpen(true);
     }
   }, [drawerOpen, downSM]);
-
-  const handleTopTabChange = (event, newValue) => {
-    if (availableTabs[newValue]) {
-      navigate(availableTabs[newValue].path);
-    }
-  };
-  // Determine which bottom nav tab is active
-  const getBottomNavValue = () => {
-    if (pathname === '/admin/inundation/form') return -1; // "Báo mới" sub-page — highlight nothing or form
-    if (pathname.startsWith('/admin/inundation')) return 0;
-    return 0;
-  };
-
-  // Map bottom nav route from query param ?tab or pathname
-  const getMobileNavValue = () => {
-    const params = new URLSearchParams(window.location.search);
-    const tab = params.get('tab');
-    if (pathname === `${basePath}/inundation/form`) return tab === '1' ? 1 : 3; // 3 = "Tạo mới"
-    return 0; // dashboard
-  };
 
   if (menuMasterLoading || isChecking || !permissionsLoaded) return <Loader />;
 
@@ -322,102 +307,55 @@ export default function MainLayout() {
       {!showMobileAppLayout && <Sidebar />}
 
       {showMobileAppLayout ? (
-        <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'background.paper', display: 'flex', flexDirection: 'column', pb: 8, pt: 6 }}>
-          {/* Global Top Tabs for Mobile Layout */}
-          <Paper
-            sx={{
-              position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1200,
-              borderRadius: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-              bgcolor: 'background.paper'
-            }}
-            elevation={0}
-          >
-            <Tabs
-              value={(() => {
-                const index = availableTabs.findIndex(tab => tab.active);
-                return index !== -1 ? index : 0;
-              })()}
-              onChange={handleTopTabChange}
-              variant="fullWidth"
-              indicatorColor="primary"
-              textColor="primary"
-            >
-              {availableTabs.map((tab) => (
-                <Tab key={tab.id} label={tab.label} sx={{ fontWeight: 700, fontSize: '0.95rem' }} />
-              ))}
-            </Tabs>
-          </Paper>
+        <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'background.paper', display: 'flex', flexDirection: 'column', pb: 10 }}>
+          <Box sx={{ flexGrow: 1, p: 0 }}>
+             <Outlet context={{ userInfo }} />
+          </Box>
 
-          <Outlet context={{ userInfo }} />
-
-          {/* Persistent Mobile Bottom Navigation */}
+          {/* New Global Mobile Bottom Navigation */}
           <Paper
             sx={{
               position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1200,
-              borderRadius: '16px 16px 0 0', overflow: 'hidden',
-              boxShadow: '0 -2px 12px rgba(0,0,0,0.08)'
+              borderRadius: '24px 24px 0 0', overflow: 'hidden',
+              boxShadow: '0 -4px 20px rgba(0,0,0,0.1)',
+              background: 'rgba(255, 255, 255, 0.9)',
+              backdropFilter: 'blur(10px)',
+              borderTop: '1px solid',
+              borderColor: 'divider'
             }}
             elevation={0}
           >
-            {isConstructionPath ? (
-              <BottomNavigation
-                showLabels
-                value={(() => {
-                  const p = new URLSearchParams(window.location.search);
-                  const activeTab = p.get('activeTab');
-                  if (pathname.includes('/form')) return -1; // hide indicator in form
-                  if (activeTab === '1') return 1;
-                  if (activeTab === '2') return 2;
-                  if (activeTab === '3') return 3;
-                  return 0; // dashboard
-                })()}
-                onChange={(_, val) => {
-                  if (val === 0) navigate(`${basePath}/emergency-construction/dashboard`);
-                  else if (val === 1) navigate(`${basePath}/emergency-construction/dashboard?activeTab=1`);
-                  else if (val === 2) navigate(`${basePath}/emergency-construction/dashboard?activeTab=2`);
-                  else if (val === 3) navigate(`${basePath}/emergency-construction/dashboard?activeTab=3`);
-                }}
-                sx={{
-                  height: 72,
-                  '& .MuiBottomNavigationAction-root': { py: 1 },
-                  '& .MuiBottomNavigationAction-label': { fontWeight: 700, fontSize: '0.85rem', mt: 0.3 }
-                }}
-              >
-                <BottomNavigationAction label="Tổng quan" icon={<DashboardIcon sx={{ fontSize: '1.6rem' }} />} />
-                <BottomNavigationAction label="Chưa xong" icon={<EngineeringIcon sx={{ fontSize: '1.6rem' }} />} />
-                <BottomNavigationAction label="Lịch sử" icon={<HistoryIcon sx={{ fontSize: '1.6rem' }} />} />
-                <BottomNavigationAction label="Tài khoản" icon={<PersonIcon sx={{ fontSize: '1.6rem' }} />} />
-              </BottomNavigation>
-            ) : (
-              <BottomNavigation
-                showLabels
-                value={(() => {
-                  if (pathname === `${basePath}/inundation/form`) {
-                    const p = new URLSearchParams(window.location.search);
-                    return p.get('tab') === '1' ? 2 : -1;
-                  }
-                  const p = new URLSearchParams(window.location.search);
-                  const activeTab = p.get('activeTab') || '0';
-                  const index = inundationNavItems.findIndex(item => item.tab === activeTab);
-                  return index !== -1 ? index : 0;
-                })()}
-                onChange={(_, val) => {
-                  const targetTab = inundationNavItems[val]?.tab;
-                  if (targetTab) {
-                    navigate(`${basePath}/inundation?activeTab=${targetTab}`);
-                  }
-                }}
-                sx={{
-                  height: 72,
-                  '& .MuiBottomNavigationAction-root': { py: 1, minWidth: 'auto' },
-                  '& .MuiBottomNavigationAction-label': { fontWeight: 700, fontSize: '0.7rem', mt: 0.3 }
-                }}
-              >
-                {inundationNavItems.map((item) => (
-                  <BottomNavigationAction key={item.id} label={item.label} icon={item.icon} />
-                ))}
-              </BottomNavigation>
-            )}
+            <BottomNavigation
+              showLabels
+              value={employeeNavItems.findIndex(item => item.active)}
+              onChange={(_, newValue) => {
+                const target = employeeNavItems[newValue];
+                if (target) navigate(target.path);
+              }}
+              sx={{
+                height: 80,
+                bgcolor: 'transparent',
+                '& .MuiBottomNavigationAction-root': { 
+                  minWidth: 'auto',
+                  color: 'text.secondary',
+                  '&.Mui-selected': { color: 'primary.main' }
+                },
+                '& .MuiBottomNavigationAction-label': { 
+                  fontWeight: 800, 
+                  fontSize: '0.75rem', 
+                  mt: 0.5,
+                  '&.Mui-selected': { fontSize: '0.8rem' }
+                }
+              }}
+            >
+              {employeeNavItems.map((item) => (
+                <BottomNavigationAction 
+                  key={item.id} 
+                  label={item.label} 
+                  icon={item.icon} 
+                />
+              ))}
+            </BottomNavigation>
           </Paper>
         </Box>
       ) : (
@@ -430,7 +368,6 @@ export default function MainLayout() {
         </MainContentStyled>
       )}
       {!showMobileAppLayout && isCompany && <FloatingChat />}
-      {/* {!showMobileAppLayout && <Customization />} */}
     </Box>
   );
 }

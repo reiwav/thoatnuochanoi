@@ -44,7 +44,7 @@ const SuggestedQuestions = ({ loading, handleRainSummary, handleAIDynamicReport,
                         border: '1px solid',
                         borderColor: '#0084FF',
                         color: '#0084FF',
-                        fontSize: '13px',
+                        fontSize: '14.5px', // Increased as requested
                         fontWeight: 600,
                         flexShrink: 0,
                         transition: 'all 0.2s',

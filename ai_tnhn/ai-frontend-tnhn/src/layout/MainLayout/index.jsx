@@ -69,10 +69,9 @@ export default function MainLayout() {
           window.history.replaceState({}, document.title, window.location.pathname);
         }
 
-        const response = await authApi.getProfile();
-        const result = response.data;
-        if (result.status === 'success') {
-          const user = result.data;
+        const user = await authApi.getProfile();
+        // Since it's flattened, a successful call means user is the profile object
+        if (user && user.id) {
           storeLogin(user, currentToken, user.role, user.is_employee, user.is_company);
           setIsChecking(false);
         } else {

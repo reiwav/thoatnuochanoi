@@ -32,8 +32,9 @@ const StationHistory = ({ type }) => {
                 river: stationApi.river
             };
             const res = await apiMap[type].getAll({ per_page: 1000 });
-            if (res.data?.status === 'success') {
-                const data = res.data.data.data || [];
+            // Interceptor đã bóc tách dữ liệu
+            if (res) {
+                const data = res.data || (Array.isArray(res) ? res : []);
                 setStations(data);
                 if (data.length > 0) setSelectedStation(data[0].Id);
             }
@@ -56,8 +57,9 @@ const StationHistory = ({ type }) => {
                 params.date = selectedDate.format('YYYY-MM-DD');
             }
             const res = await apiMap[type].getHistory(selectedStation, params);
-            if (res.data?.status === 'success') {
-                setHistory(res.data.data || []);
+            // Interceptor đã trả về data (mảng) trực tiếp
+            if (res) {
+                setHistory(Array.isArray(res) ? res : (res.data || []));
             }
         } catch (err) {
             console.error('Failed to load history:', err);

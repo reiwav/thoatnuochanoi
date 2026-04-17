@@ -139,9 +139,9 @@ const ConstructionReporting = () => {
         setLoading(true);
         try {
             const res = await emergencyConstructionApi.getAll({ org_id: userOrgId, per_page: 100 });
-            if (res.data?.status === 'success') {
-                setConstructions(res.data.data?.data || []);
-            }
+            // Interceptor đã bóc tách dữ liệu
+            const dataArray = res?.data || (Array.isArray(res) ? res : []);
+            setConstructions(dataArray);
         } catch (err) {
             toast.error('Lỗi tải danh sách công trình');
         } finally {
@@ -155,9 +155,10 @@ const ConstructionReporting = () => {
         try {
             const allHistory = [];
             for (const c of constructions) {
-                const res = await emergencyConstructionApi.getProgressHistory(c.id);
-                if (res.data?.status === 'success' && res.data.data) {
-                    allHistory.push(...res.data.data.map(h => ({ ...h, construction_name: c.name })));
+                const data = await emergencyConstructionApi.getProgressHistory(c.id);
+                // Interceptor đã trả về data (mảng) trực tiếp
+                if (Array.isArray(data)) {
+                    allHistory.push(...data.map(h => ({ ...h, construction_name: c.name })));
                 }
             }
             allHistory.sort((a, b) => b.report_date - a.report_date);

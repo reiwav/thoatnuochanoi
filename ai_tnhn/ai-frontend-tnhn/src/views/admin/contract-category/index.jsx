@@ -83,9 +83,10 @@ const ContractCategoryList = () => {
     const loadCategories = async () => {
         setLoading(true);
         try {
-            const res = await contractCategoryApi.getTree();
-            if (res.data?.status === 'success') {
-                setCategories(res.data.data || []);
+            const data = await contractCategoryApi.getTree();
+            // Interceptor đã bóc tách dữ liệu
+            if (data) {
+                setCategories(Array.isArray(data) ? data : []);
             }
         } catch (err) {
             console.error('Lỗi tải danh mục:', err);
@@ -112,11 +113,9 @@ const ContractCategoryList = () => {
     const handleDelete = async (id) => {
         if (!window.confirm('Bạn có chắc chắn muốn xóa danh mục này? Các danh mục con có thể bị ảnh hưởng.')) return;
         try {
-            const res = await contractCategoryApi.delete(id);
-            if (res.data?.status === 'success') {
-                toast.success('Xóa thành công');
-                loadCategories();
-            }
+            await contractCategoryApi.delete(id);
+            toast.success('Xóa thành công');
+            loadCategories();
         } catch (err) {
             toast.error(err.response?.data?.error || 'Lỗi xóa danh mục');
         }
@@ -127,7 +126,8 @@ const ContractCategoryList = () => {
             const res = editingCategory
                 ? await contractCategoryApi.update(editingCategory.id, values)
                 : await contractCategoryApi.create(values);
-            if (res.data?.status === 'success') {
+            
+            if (res) {
                 toast.success(editingCategory ? 'Cập nhật thành công' : 'Thêm mới thành công');
                 setDialogOpen(false);
                 loadCategories();

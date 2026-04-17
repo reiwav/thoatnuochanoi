@@ -78,21 +78,11 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                     axiosClient.get('/admin/roles')
                 ]);
 
-                if (pointsRes.data?.status === 'success') {
-                    setPoints(Array.isArray(pointsRes.data.data) ? pointsRes.data.data : []);
-                }
-
-                if (consRes.data?.status === 'success') {
-                    setConstructions(Array.isArray(consRes.data.data?.data) ? consRes.data.data.data : []);
-                }
-
-                if (pumpRes.data?.status === 'success') {
-                    setPumpingStations(Array.isArray(pumpRes.data.data?.data) ? pumpRes.data.data.data : []);
-                }
-
-                if (rolesRes.data?.status === 'success') {
-                    setRoles(rolesRes.data.data || []);
-                }
+                // Interceptor đã bóc tách dữ liệu, nên chúng ta nhận được payload trực tiếp
+                setPoints(Array.isArray(pointsRes) ? pointsRes : (pointsRes?.data || []));
+                setConstructions(Array.isArray(consRes?.data) ? consRes.data : (Array.isArray(consRes) ? consRes : []));
+                setPumpingStations(Array.isArray(pumpRes?.data) ? pumpRes.data : (Array.isArray(pumpRes) ? pumpRes : []));
+                setRoles(Array.isArray(rolesRes) ? rolesRes : []);
             } catch (err) {
                 console.error('Lỗi tải dữ liệu:', err);
             } finally {

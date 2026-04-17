@@ -36,7 +36,7 @@ const useInundationStore = create((set, get) => ({
             
             set({
                 points: pointsRes || [],
-                organizations: orgsRes?.data || orgsRes || [],
+                organizations: orgsRes || [],
                 loading: false
             });
         } catch (err) {
@@ -59,7 +59,7 @@ const useInundationStore = create((set, get) => ({
         try {
             const res = await inundationApi.listReports(page, limit);
             set({
-                historyReports: res?.data || res || [],
+                historyReports: res?.data || (Array.isArray(res) ? res : []),
                 loadingHistory: false
             });
             return res; // Return for pagination total

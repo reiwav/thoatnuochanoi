@@ -47,8 +47,9 @@ const RoleMatrix = () => {
                 axiosClient.get('/admin/roles')
             ]);
 
-            const { roles: rolePerms, permissions: perms } = matrixRes.data.data;
-            const rolesList = rolesRes.data.data || [];
+            // Interceptor đã bóc tách dữ liệu
+            const { roles: rolePerms, permissions: perms } = matrixRes;
+            const rolesList = rolesRes || [];
 
             setPermissionsList(perms || []);
             // Roles are now dynamic; no hardcoded filtering

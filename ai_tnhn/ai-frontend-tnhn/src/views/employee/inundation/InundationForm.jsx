@@ -68,15 +68,14 @@ const InundationForm = () => {
             const findActive = async () => {
                 setLoadingReport(true);
                 try {
-                    const res = await inundationApi.getPointsStatus();
-                    if (res.data?.status === 'success') {
-                        const points = res.data.data || [];
-                        const p = points.find(item => item.id === pointId);
-                        if (p && p.active_report) {
-                            setSelectedReport(p.active_report);
-                        } else {
-                            setSelectedReport(null);
-                        }
+                    const points = await inundationApi.getPointsStatus();
+                    // Interceptor đã bóc tách nên points đã là mảng hoặc payload chính
+                    const pointsArray = Array.isArray(points) ? points : (points?.data || []);
+                    const p = pointsArray.find(item => item.id === pointId);
+                    if (p && p.active_report) {
+                        setSelectedReport(p.active_report);
+                    } else {
+                        setSelectedReport(null);
                     }
                 } catch (err) {
                     console.error('Failed to find active report for point:', pointId);

@@ -89,9 +89,9 @@ const ConstructionForm = () => {
     const fetchConstructions = async () => {
         try {
             const res = await emergencyConstructionApi.getAll({ per_page: 1000 });
-            if (res.data?.status === 'success') {
-                setConstructions(res.data.data?.data || []);
-            }
+            // Interceptor đã bóc tách, res là payload { data: [], total: 0 } hoặc mảng trực tiếp
+            const dataArray = res?.data || (Array.isArray(res) ? res : []);
+            setConstructions(dataArray);
         } catch (err) {
             console.error('Lỗi tải danh sách công trình:', err);
         }
@@ -118,9 +118,9 @@ const ConstructionForm = () => {
     const loadReportDetails = async () => {
         setFetching(true);
         try {
-            const res = await emergencyConstructionApi.getProgressById(editReportId);
-            if (res.data?.status === 'success') {
-                const data = res.data.data;
+            const data = await emergencyConstructionApi.getProgressById(editReportId);
+            // Interceptor đã trả về data (payload) trực tiếp
+            if (data) {
                 setWorkDone(data.work_done || '');
                 setIssues(data.issues || '');
                 setOrder(data.order || '');
@@ -141,12 +141,11 @@ const ConstructionForm = () => {
         if (!selectedConstructionId) return;
         setLoading(true);
         try {
-            const res = await emergencyConstructionApi.getProgressHistory(selectedConstructionId);
-            if (res.data?.status === 'success') {
-                const data = res.data.data || [];
-                // Sort descending by date
-                data.sort((a, b) => b.report_date - a.report_date);
-                setHistory(data);
+            const data = await emergencyConstructionApi.getProgressHistory(selectedConstructionId);
+            // Interceptor đã trả về data (mảng payload)
+            if (Array.isArray(data)) {
+                const sortedData = [...data].sort((a, b) => b.report_date - a.report_date);
+                setHistory(sortedData);
             }
         } catch (err) {
             toast.error('Lỗi tải Theo dõi tiến độ');
@@ -268,7 +267,7 @@ const ConstructionForm = () => {
                 ? await emergencyConstructionApi.updateProgress(editReportId, formData)
                 : await emergencyConstructionApi.createProgress(formData);
 
-            if (res.data) {
+            if (res) {
                 toast.success(editReportId ? 'Cập nhật Cập nhật tiến độ thành công' : 'Cập nhật tiến độ tiến độ thành công');
                 if (editReportId) {
                     navigate(`${basePath}/emergency-construction/report-history`);

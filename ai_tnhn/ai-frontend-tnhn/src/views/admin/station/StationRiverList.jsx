@@ -42,14 +42,16 @@ const StationRiverList = () => {
                 organizationApi.getSelectionList()
             ]);
 
-            if (stRes.data?.status === 'success') {
-                const result = stRes.data.data;
-                setStations(Array.isArray(result.data) ? result.data : []);
-                setTotalItems(result.total || 0);
+            // Interceptor đã bóc tách dữ liệu
+            if (stRes) {
+                const stationsData = Array.isArray(stRes.data) ? stRes.data : (Array.isArray(stRes) ? stRes : []);
+                const total = stRes.total || (Array.isArray(stRes) ? stRes.length : 0);
+                setStations(stationsData);
+                setTotalItems(total);
             }
 
-            if (orgRes.data?.status === 'success') {
-                setOrganizations(orgRes.data.data || { primary: [], shared: [] });
+            if (orgRes) {
+                setOrganizations(orgRes || { primary: [], shared: [] });
             }
         } catch (err) {
             console.error('Lỗi tải dữ liệu:', err);
@@ -67,8 +69,9 @@ const StationRiverList = () => {
     const handleDelete = async (id) => {
         if (!window.confirm('Bạn có chắc chắn muốn xóa trạm này?')) return;
         try {
-            const res = await stationApi.river.delete(id);
-            if (res.data?.status === 'success') { toast.success('Xóa thành công'); loadData(); }
+            await stationApi.river.delete(id);
+            toast.success('Xóa thành công');
+            loadData();
         } catch (err) {
             toast.error(err.response?.data?.error || 'Lỗi xóa trạm');
         }
@@ -79,7 +82,8 @@ const StationRiverList = () => {
             const res = editingStation
                 ? await stationApi.river.update(editingStation.id, values)
                 : await stationApi.river.create(values);
-            if (res.data?.status === 'success') {
+            
+            if (res) {
                 toast.success(editingStation ? 'Cập nhật thành công' : 'Thêm mới thành công');
                 setDialogOpen(false);
                 loadData();

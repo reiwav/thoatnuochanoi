@@ -139,19 +139,20 @@ const StationInundationList = () => {
             // but we can filter locally or update backend if needed.
             // For now let's assume we might update backend or just filter here.
 
-            const res = await stationApi.inundation.getAll(params);
-            if (res.data?.status === 'success') {
-                let data = Array.isArray(res.data.data) ? res.data.data : [];
+            const data = await stationApi.inundation.getAll(params);
+            // Interceptor đã bóc tách dữ liệu
+            if (data) {
+                let pointsData = Array.isArray(data) ? data : (data.data || []);
                 if (searchFilter) {
                     const q = searchFilter.toLowerCase();
-                    data = data.filter(p =>
+                    pointsData = pointsData.filter(p =>
                         p.name?.toLowerCase().includes(q) ||
                         p.address?.toLowerCase().includes(q)
                     );
                 }
                 // Sort by created_at DESC
-                data.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
-                setPoints(data);
+                const sortedData = [...pointsData].sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
+                setPoints(sortedData);
             } else {
                 setPoints([]);
             }
@@ -165,9 +166,9 @@ const StationInundationList = () => {
 
     const loadOrganizations = async () => {
         try {
-            const res = await organizationApi.getSelectionList();
-            if (res.data?.status === 'success') {
-                setOrganizations(res.data.data || { primary: [], shared: [] });
+            const data = await organizationApi.getSelectionList();
+            if (data) {
+                setOrganizations(data || { primary: [], shared: [] });
             }
         } catch (err) {
             console.error('Lỗi tải danh sách đơn vị:', err);
@@ -188,11 +189,9 @@ const StationInundationList = () => {
     const handleDelete = async (id) => {
         if (!window.confirm('Bạn có chắc chắn muốn xóa điểm ngập này?')) return;
         try {
-            const res = await stationApi.inundation.delete(id);
-            if (res.data?.status === 'success') {
-                toast.success('Xóa thành công');
-                setPoints(prev => prev.filter(p => p.id !== id));
-            }
+            await stationApi.inundation.delete(id);
+            toast.success('Xóa thành công');
+            setPoints(prev => prev.filter(p => p.id !== id));
         } catch (err) {
             toast.error(err.response?.data?.error || 'Lỗi xóa điểm ngập');
         }
@@ -213,7 +212,8 @@ const StationInundationList = () => {
             const res = editingPoint
                 ? await stationApi.inundation.update(editingPoint.id, payload)
                 : await stationApi.inundation.create(payload);
-            if (res.data?.status === 'success') {
+            
+            if (res) {
                 toast.success(editingPoint ? 'Cập nhật thành công' : 'Thêm mới thành công');
                 setDialogOpen(false);
                 loadPoints();

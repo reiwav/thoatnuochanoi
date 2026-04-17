@@ -29,9 +29,7 @@ const RoleList = () => {
         setLoading(true);
         try {
             const res = await axiosClient.get('/admin/roles');
-            if (res.data?.status === 'success') {
-                setRoles(res.data.data || []);
-            }
+            setRoles(res || []);
         } catch (err) {
             console.error('Lỗi tải danh sách vai trò:', err);
             toast.error('Không thể tải danh sách vai trò');
@@ -61,11 +59,9 @@ const RoleList = () => {
         }
         if (!window.confirm('Bạn có chắc chắn muốn xóa vai trò này?')) return;
         try {
-            const res = await axiosClient.delete(`/admin/roles/${id}`);
-            if (res.data?.status === 'success') {
-                toast.success('Xóa thành công');
-                loadRoles();
-            }
+            await axiosClient.delete(`/admin/roles/${id}`);
+            toast.success('Xóa thành công');
+            loadRoles();
         } catch (err) {
             toast.error(err.response?.data?.error || 'Lỗi xóa vai trò');
         }
@@ -73,14 +69,12 @@ const RoleList = () => {
 
     const handleSubmit = async (values) => {
         try {
-            const res = editingRole
-                ? await axiosClient.put(`/admin/roles/${editingRole.id}`, values)
-                : await axiosClient.post('/admin/roles', values);
-            if (res.data?.status === 'success') {
-                toast.success(editingRole ? 'Cập nhật thành công' : 'Thêm mới thành công');
-                setDialogOpen(false);
-                loadRoles();
-            }
+            await (editingRole
+                ? axiosClient.put(`/admin/roles/${editingRole.id}`, values)
+                : axiosClient.post('/admin/roles', values));
+            toast.success(editingRole ? 'Cập nhật thành công' : 'Thêm mới thành công');
+            setDialogOpen(false);
+            loadRoles();
         } catch (err) {
             toast.error(err.response?.data?.error || 'Đã có lỗi xảy ra');
         }

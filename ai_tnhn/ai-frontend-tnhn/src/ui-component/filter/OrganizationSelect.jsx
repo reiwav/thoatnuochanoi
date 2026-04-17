@@ -31,14 +31,11 @@ const OrganizationSelect = ({
             setLoading(true);
             try {
                 const res = await organizationApi.getSelectionList();
-                if (res.data?.status === 'success') {
-                    const data = res.data.data;
-                    const list = Array.isArray(data) ? data : [...(data.primary || []), ...(data.shared || [])];
+                const list = Array.isArray(res) ? res : [...(res.primary || []), ...(res.shared || [])];
 
-                    // Deduplicate by ID
-                    const uniqueList = Array.from(new Map(list.map(item => [item.id, item])).values());
-                    setOrganizations(uniqueList);
-                }
+                // Deduplicate by ID
+                const uniqueList = Array.from(new Map(list.map(item => [item.id, item])).values());
+                setOrganizations(uniqueList);
             } catch (error) {
                 console.error('Failed to fetch organizations:', error);
             } finally {

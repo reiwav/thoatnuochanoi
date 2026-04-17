@@ -33,9 +33,7 @@ const EmployeePumpingStationDashboard = () => {
                 setFetchingAssigned(true);
                 try {
                     const res = await pumpingStationApi.get(user.assigned_pumping_station_id);
-                    if (res.data?.status === 'success') {
-                        setAssignedStation(res.data.data);
-                    }
+                    setAssignedStation(res);
                 } catch (err) {
                     console.error('Failed to fetch assigned station:', err);
                 } finally {
@@ -62,7 +60,7 @@ const EmployeePumpingStationDashboard = () => {
     const handleRefreshAssigned = async () => {
         if (user?.assigned_pumping_station_id) {
             const res = await pumpingStationApi.get(user.assigned_pumping_station_id);
-            if (res.data?.status === 'success') setAssignedStation(res.data.data);
+            setAssignedStation(res);
         }
     };
 

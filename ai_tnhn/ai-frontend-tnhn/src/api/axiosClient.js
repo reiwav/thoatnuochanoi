@@ -8,15 +8,11 @@ const axiosClient = axios.create({
 axiosClient.interceptors.request.use((config) => {
   let token = null;
   try {
-    // Break circular dependency by using a dynamic check or localStorage
-    // Since zustand-persist uses a specific key, we can use that or a cleaner way
     const authStorage = localStorage.getItem('auth-storage');
     if (authStorage) {
       const state = JSON.parse(authStorage);
       token = state?.state?.token;
     }
-    
-    // Fallback if needed
     if (!token) {
       token = localStorage.getItem('admin_token');
     }
@@ -28,8 +24,6 @@ axiosClient.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
-  // Nếu dữ liệu là FormData, hãy để trình duyệt tự quyết định Content-Type
-  // Không nên ép cứng application/json cho tất cả request
   if (config.data instanceof FormData) {
     delete config.headers['Content-Type'];
   } else if (!config.headers['Content-Type']) {
@@ -38,4 +32,36 @@ axiosClient.interceptors.request.use((config) => {
 
   return config;
 });
+
+// Response interceptor: Tự động bóc tách dữ liệu và xử lý lỗi tập trung
+axiosClient.interceptors.response.use(
+  (response) => {
+    // Axios luôn bọc body trong response.data
+    const data = response.data;
+
+    // Kiểm tra cấu trúc chuẩn của backend { status: 'success', data: ... }
+    if (data && data.status === 'success') {
+      return data.data; // Trả về thẳng phần payload (là mảng hoặc object hoặc {data: [], total: 0})
+    }
+
+    // Nếu API trả về lỗi nghiệp vụ { status: 'error', error: '...' }
+    if (data && data.status === 'error') {
+      return Promise.reject(new Error(data.error || 'Đã có lỗi xảy ra từ máy chủ'));
+    }
+
+    // Trường hợp khác (ví dụ phản hồi blob hoặc không đúng format chuẩn)
+    return response;
+  },
+  (error) => {
+    // Xử lý các lỗi HTTP (401, 403, 500, ...)
+    const ADMIN_TOKEN_KEY = 'admin_token';
+    if (error.response?.status === 401) {
+      localStorage.removeItem(ADMIN_TOKEN_KEY);
+      window.location.href = '/pages/login';
+    }
+    const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message;
+    return Promise.reject(new Error(errorMessage));
+  }
+);
+
 export default axiosClient;

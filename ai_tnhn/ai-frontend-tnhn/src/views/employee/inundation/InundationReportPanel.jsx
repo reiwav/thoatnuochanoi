@@ -45,9 +45,7 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
         setFetchingPoints(true);
         try {
             const res = await inundationApi.getPointsStatus({ per_page: 1000 });
-            if (res.data?.status === 'success') {
-                setPoints(res.data.data || []);
-            }
+            setPoints(res || []);
         } catch (err) {
             console.error('Lỗi tải danh sách điểm ngập:', err);
         } finally {
@@ -132,10 +130,8 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
                 }
             } else {
                 // Normal update (adding a new record to the history)
-                const res = await inundationApi.updateSituation(selectedReport.id, fd);
-                if (res.data?.status === 'success') {
-                    toast.success(resolveOnUpdate ? 'Đã kết thúc đợt ngập' : 'Cập nhật thành công');
-                }
+                await inundationApi.updateSituation(selectedReport.id, fd);
+                toast.success(resolveOnUpdate ? 'Đã kết thúc đợt ngập' : 'Cập nhật thành công');
             }
 
             setValues(v => ({ ...v, description: '', traffic_status: 'Đi lại bình thường' }));
@@ -161,13 +157,11 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
             if (pId) fd.append('point_id', pId);
             fd.append('start_time', Math.floor(Date.now() / 1000));
             images.forEach(img => fd.append('images', img));
-            const res = await inundationApi.createReport(fd);
-            if (res.data?.status === 'success') {
-                toast.success('Gửi báo cáo thành công');
-                setValues({ ...values, length: '', width: '', depth: '', description: '', traffic_status: 'Đi lại bình thường', start_time: new Date().toISOString().slice(0, 16) });
-                setImages([]); setPreviews([]);
-                if (onSuccess) onSuccess();
-            }
+            await inundationApi.createReport(fd);
+            toast.success('Gửi báo cáo thành công');
+            setValues({ ...values, length: '', width: '', depth: '', description: '', traffic_status: 'Đi lại bình thường', start_time: new Date().toISOString().slice(0, 16) });
+            setImages([]); setPreviews([]);
+            if (onSuccess) onSuccess();
         } catch (err) { toast.error(err.response?.data?.error || 'Đã có lỗi xảy ra'); }
         finally { setLoading(false); }
     };

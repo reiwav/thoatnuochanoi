@@ -25,7 +25,7 @@ const PumpingStationHistoryDialog = ({ open, handleClose, station }) => {
     const loadHistory = async () => {
         try {
             const response = await pumpingStationApi.getHistory(station.id);
-            setHistory(response.data.data?.data || []);
+            setHistory(response.data || response || []);
         } catch (error) {
             console.error('Failed to load history', error);
         }

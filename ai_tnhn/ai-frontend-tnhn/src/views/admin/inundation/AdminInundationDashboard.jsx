@@ -53,7 +53,7 @@ const AdminInundationDashboard = () => {
     useEffect(() => {
         if (activeTab === 1) {
             fetchHistory(historyPage, historyRowsPerPage).then(res => {
-                if (res?.data) setTotalHistory(res.data.total || 0);
+                if (res) setTotalHistory(res.total || 0);
             });
         }
     }, [activeTab, historyPage, historyRowsPerPage, filters.orgFilter, filters.statusFilter, filters.searchQuery]);

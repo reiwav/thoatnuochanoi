@@ -195,13 +195,13 @@ const EmployeeList = () => {
                 axiosClient.get('/admin/roles')
             ]);
 
-            if (orgRes.data?.status === 'success') {
-                let orgs = Array.isArray(orgRes.data.data?.data) ? orgRes.data.data.data : [];
+            if (orgRes) {
+                let orgs = Array.isArray(orgRes.data) ? orgRes.data : [];
                 orgs = orgs.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'vi', { sensitivity: 'base' }));
                 setOrganizations(orgs);
             }
-            if (roleRes.data?.status === 'success') {
-                setRoles(roleRes.data.data || []);
+            if (roleRes) {
+                setRoles(roleRes || []);
             }
         } catch (err) {
             console.error('Lỗi tải danh sách cấu hình:', err);
@@ -217,13 +217,8 @@ const EmployeeList = () => {
                 per_page: rowsPerPage,
                 order_by: '-created_at'
             });
-            if (res.data?.status === 'success') {
-                const result = res.data.data;
-                setEmployees(Array.isArray(result.data) ? result.data : []);
-                setTotalItems(result.total || 0);
-            } else {
-                setEmployees([]);
-            }
+            setEmployees(Array.isArray(res.data) ? res.data : []);
+            setTotalItems(res.total || 0);
         } catch (err) {
             console.error('Lỗi tải nhân viên:', err);
             setEmployees([]);
@@ -247,12 +242,10 @@ const EmployeeList = () => {
     const handleDelete = async (id) => {
         if (!window.confirm('Bạn có chắc chắn muốn xóa người dùng này?')) return;
         try {
-            const res = await employeeApi.delete(id);
-            if (res.data?.status === 'success') {
-                toast.success('Xóa thành công');
-                setEmployees(prev => prev.filter(emp => emp.id !== id));
-                setTotalItems(prev => prev - 1);
-            }
+            await employeeApi.delete(id);
+            toast.success('Xóa thành công');
+            setEmployees(prev => prev.filter(emp => emp.id !== id));
+            setTotalItems(prev => prev - 1);
         } catch (err) {
             toast.error(err.response?.data?.error || 'Lỗi xóa người dùng');
         }
@@ -264,14 +257,12 @@ const EmployeeList = () => {
             if (editingEmployee && !dataToSubmit.password) {
                 delete dataToSubmit.password;
             }
-            const res = editingEmployee
-                ? await employeeApi.update(editingEmployee.id, dataToSubmit)
-                : await employeeApi.create(dataToSubmit);
-            if (res.data?.status === 'success') {
-                toast.success(editingEmployee ? 'Cập nhật thành công' : 'Thêm mới thành công');
-                setDialogOpen(false);
-                loadEmployees();
-            }
+            await (editingEmployee
+                ? employeeApi.update(editingEmployee.id, dataToSubmit)
+                : employeeApi.create(dataToSubmit));
+            toast.success(editingEmployee ? 'Cập nhật thành công' : 'Thêm mới thành công');
+            setDialogOpen(false);
+            loadEmployees();
         } catch (err) {
             toast.error(err.response?.data?.error || 'Đã có lỗi xảy ra');
         }

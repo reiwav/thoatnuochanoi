@@ -62,10 +62,8 @@ const WeatherSection = () => {
     const fetchWeather = async () => {
       try {
         const res = await weatherApi.getForecast();
-        if (res.data?.status === 'success') {
-          memoizedForecast = res.data.data;
-          setForecast(memoizedForecast);
-        }
+        memoizedForecast = res;
+        setForecast(memoizedForecast);
       } catch (err) {
         console.error('Failed to fetch weather:', err);
       } finally {

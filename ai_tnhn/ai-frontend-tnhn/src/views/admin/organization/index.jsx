@@ -139,13 +139,8 @@ const OrganizationList = () => {
         setLoading(true);
         try {
             const res = await organizationApi.getAll({ ...params, page: page + 1, per_page: rowsPerPage });
-            if (res.data?.status === 'success') {
-                const result = res.data.data;
-                setOrganizations(Array.isArray(result.data) ? result.data : []);
-                setTotalItems(result.total || 0);
-            } else {
-                setOrganizations([]);
-            }
+            setOrganizations(Array.isArray(res.data) ? res.data : []);
+            setTotalItems(res.total || 0);
         } catch (err) {
             console.error('Lỗi tải danh sách công ty:', err);
             setOrganizations([]);
@@ -168,8 +163,8 @@ const OrganizationList = () => {
     const handleDelete = async (id) => {
         if (!window.confirm('Bạn có chắc chắn muốn xóa công ty này?')) return;
         try {
-            const res = await organizationApi.delete(id);
-            if (res.data?.status === 'success') { toast.success('Xóa thành công'); loadOrganizations(); }
+            await organizationApi.delete(id);
+            toast.success('Xóa thành công'); loadOrganizations();
         } catch (err) {
             toast.error(err.response?.data?.error || 'Lỗi xóa công ty');
         }
@@ -180,11 +175,9 @@ const OrganizationList = () => {
             const res = editingOrg
                 ? await organizationApi.update(editingOrg.id, values)
                 : await organizationApi.create(values);
-            if (res.data?.status === 'success') {
-                toast.success(editingOrg ? 'Cập nhật thành công' : 'Thêm mới thành công');
-                setDialogOpen(false);
-                loadOrganizations();
-            }
+            toast.success(editingOrg ? 'Cập nhật thành công' : 'Thêm mới thành công');
+            setDialogOpen(false);
+            loadOrganizations();
         } catch (err) {
             toast.error(err.response?.data?.error || 'Đã có lỗi xảy ra');
         }

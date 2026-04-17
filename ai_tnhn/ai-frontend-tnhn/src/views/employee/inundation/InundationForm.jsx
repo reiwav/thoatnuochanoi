@@ -36,12 +36,10 @@ const InundationForm = () => {
         setLoadingReport(true);
         try {
             const res = await inundationApi.getReport(reportId);
-            if (res.data?.status === 'success') {
-                const report = res.data.data;
-                setSelectedReport(report);
-                // Auto-switch to detail tab if report is already resolved
-                if (report.status === 'resolved') setTab(1);
-            }
+            const report = res;
+            setSelectedReport(report);
+            // Auto-switch to detail tab if report is already resolved
+            if (report.status === 'resolved') setTab(1);
         } catch (err) {
             toast.error('Lỗi khi tải thông tin đợt ngập');
         } finally {

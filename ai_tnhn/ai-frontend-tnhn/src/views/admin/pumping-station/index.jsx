@@ -193,12 +193,10 @@ const PumpingStationPage = () => {
             if (!silent) setLoading(true);
             if (isAdmin) {
                 const res = await pumpingStationApi.list({ per_page: 1000, org_id: orgFilter });
-                if (res.data?.status === 'success') {
-                    setData(res.data.data.data || []);
-                }
+                setData(res.data || res || []);
             } else if (user?.assigned_pumping_station_id) {
                 const res = await pumpingStationApi.get(user.assigned_pumping_station_id);
-                setAssignedStation(res.data.data || null);
+                setAssignedStation(res || null);
             }
         } catch (error) {
             console.error('Failed to fetch stations', error);
@@ -210,9 +208,7 @@ const PumpingStationPage = () => {
     const fetchOrgs = async () => {
         try {
             const res = await organizationApi.getSelectionList();
-            if (res.data?.status === 'success') {
-                setOrgs(res.data.data || { primary: [], shared: [] });
-            }
+            setOrgs(res || { primary: [], shared: [] });
         } catch (error) {
             console.error('Failed to fetch orgs', error);
         }

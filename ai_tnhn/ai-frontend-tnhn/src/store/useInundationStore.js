@@ -35,8 +35,8 @@ const useInundationStore = create((set, get) => ({
             ]);
             
             set({
-                points: Array.isArray(pointsRes?.data?.data) ? pointsRes.data.data : [],
-                organizations: Array.isArray(orgsRes?.data?.data?.data) ? orgsRes.data.data.data : (Array.isArray(orgsRes?.data?.data) ? orgsRes.data.data : []),
+                points: pointsRes || [],
+                organizations: orgsRes?.data || orgsRes || [],
                 loading: false
             });
         } catch (err) {
@@ -48,7 +48,7 @@ const useInundationStore = create((set, get) => ({
     fetchPoints: async () => {
         try {
             const res = await inundationApi.getPointsStatus();
-            set({ points: res?.data?.data || [] });
+            set({ points: res || [] });
         } catch (err) {
             console.error('Fetch points failed', err);
         }
@@ -58,9 +58,8 @@ const useInundationStore = create((set, get) => ({
         set({ loadingHistory: true });
         try {
             const res = await inundationApi.listReports(page, limit);
-            const rawData = res?.data?.data;
             set({
-                historyReports: Array.isArray(rawData?.data) ? rawData.data : (Array.isArray(rawData) ? rawData : []),
+                historyReports: res?.data || res || [],
                 loadingHistory: false
             });
             return res; // Return for pagination total

@@ -274,10 +274,8 @@ export default function MainLayout() {
     const fetchCount = async () => {
       try {
         const res = await inundationApi.listReports();
-        if (res.data?.status === 'success') {
-          const active = (res.data.data || []).filter(r => r.status !== 'resolved').length;
-          setActiveFloodCount(active);
-        }
+        const active = (res.data || res || []).filter(r => r.status !== 'resolved').length;
+        setActiveFloodCount(active);
       } catch { /* silent */ }
     };
     fetchCount();

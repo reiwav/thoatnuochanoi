@@ -37,11 +37,12 @@ const useAuthStore = create(
         if (!token) return;
         try {
           // Dynamic permissions endpoint
-          const response = await axiosClient.get('/admin/permissions/my');
-          set({ permissions: response.data?.data || [], permissionsLoaded: true });
+          const permissions = await axiosClient.get('/admin/permissions/my');
+          // Since it's flattened by interceptor, permissions is already the payload
+          set({ permissions: Array.isArray(permissions) ? permissions : [], permissionsLoaded: true });
         } catch (error) {
           console.error('Failed to fetch permissions', error);
-          if (error.response?.status === 401) {
+          if (error.message?.includes('401')) {
             set({ permissions: [], permissionsLoaded: true });
           }
         }

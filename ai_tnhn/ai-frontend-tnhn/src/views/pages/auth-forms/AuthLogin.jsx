@@ -92,45 +92,37 @@ export default function AuthLogin() {
 
     try {
       // Gọi API thực tế
-      const response = await authApi.login(values);
-      console.log(response);
-      const result = response.data;
+      const tokenData = await authApi.login(values);
+      console.log('Login success data:', tokenData);
 
-      // 2. Kiểm tra status từ server trả về
-      if (result.status === 'success') {
-        const tokenData = result.data;
+      // Vì đã qua interceptor, nếu code chạy đến đây nghĩa là status đã là 'success'
+      let role = tokenData.role || ROLES.ROLE_EMPLOYEE;
+      if (role === 'supper_admin' || role === 'super_admib' || role === 'super_admin ') {
+        role = ROLES.ROLE_SUPER_ADMIN;
+      }
 
-        let role = tokenData.role || ROLES.ROLE_EMPLOYEE;
-        if (role === 'supper_admin' || role === 'super_admib' || role === 'super_admin ') {
-          role = ROLES.ROLE_SUPER_ADMIN;
-        }
+      const isEmployee = !!tokenData.is_employee;
+      const isCompany = !!tokenData.is_company;
+      const roleLevel = tokenData.role_level;
 
-        const isEmployee = !!tokenData.is_employee;
-        const isCompany = !!tokenData.is_company;
-        const roleLevel = tokenData.role_level;
+      // Store via Zustand
+      storeLogin({ 
+          ...tokenData, 
+          email: values.email 
+      }, tokenData.id, role, isEmployee, isCompany, roleLevel);
 
-        // Store via Zustand
-        storeLogin({ 
-            ...tokenData, 
-            email: values.email 
-        }, tokenData.id, role, isEmployee, isCompany, roleLevel);
-
-        // Redirect based on isEmployee
-        if (isEmployee) {
-          navigate('/company/inundation');
-        } else if (role === 'manager_contract') {
-          navigate('/admin/ai-contract');
-        } else if (role === 'reviewer') {
-          navigate('/admin/inundation-list');
-        } else {
-          navigate('/admin/ai-support');
-        }
+      // Redirect based on isEmployee
+      if (isEmployee) {
+        navigate('/company/inundation');
+      } else if (role === 'manager_contract') {
+        navigate('/admin/ai-contract');
+      } else if (role === 'reviewer') {
+        navigate('/admin/inundation-list');
       } else {
-        // Trường hợp code 200 nhưng status không phải success (nếu backend thiết kế vậy)
-        setError(result.message || 'Đăng nhập không thành công');
+        navigate('/admin/ai-support');
       }
     } catch (err) {
-      setError(err.response?.data?.error || 'Email hoặc mật khẩu không đúng');
+      setError(err.message || 'Email hoặc mật khẩu không đúng');
     }
   };
 

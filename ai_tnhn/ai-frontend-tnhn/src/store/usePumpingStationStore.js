@@ -14,8 +14,9 @@ const usePumpingStationStore = create((set) => ({
         set({ loading: true });
         try {
             const res = await pumpingStationApi.getAll();
+            const rawData = res?.data?.data;
             set({
-                pumpingStations: res?.data || [],
+                pumpingStations: Array.isArray(rawData?.data) ? rawData.data : (Array.isArray(rawData) ? rawData : []),
                 loading: false
             });
         } catch (err) {
@@ -27,7 +28,8 @@ const usePumpingStationStore = create((set) => ({
     fetchPumpingStations: async () => {
         try {
             const res = await pumpingStationApi.getAll();
-            set({ pumpingStations: res?.data || [] });
+            const rawData = res?.data?.data;
+            set({ pumpingStations: Array.isArray(rawData?.data) ? rawData.data : (Array.isArray(rawData) ? rawData : []) });
         } catch (err) {
             console.error('Fetch pumping stations failed', err);
         }

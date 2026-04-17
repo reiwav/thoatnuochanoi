@@ -362,16 +362,16 @@ const AiSupport = () => {
             flexDirection: 'column',
             gap: 0,
             position: 'relative',
-            bgcolor: '#f0f2f5',
+            bgcolor: '#ffffff', // Set to white background as requested
             borderRadius: { xs: 0, md: '24px' },
             overflow: 'hidden',
             border: { xs: 'none', md: '1px solid' },
             borderColor: 'divider',
-            // Safer expansion to avoid horizontal scrollbar
-            mx: { xs: '-16px', sm: '-24px', md: 0 },
-            mt: { xs: '-40px', sm: '-24px', md: 0 },
-            mb: { xs: '-40px', sm: '-24px', md: 0 },
-            width: { xs: 'calc(100% + 32px)', sm: 'calc(100% + 48px)', md: '100%' }
+            // Safe alignment on mobile
+            mx: { xs: '-10px', sm: '-16px', md: 0 },
+            mt: { xs: '-20px', sm: '-24px', md: 0 },
+            mb: { xs: '-20px', sm: '-24px', md: 0 },
+            width: { xs: '100.2%', sm: '100.5%', md: '100%' }
         }}>
             <ChatHeader
                 showStats={showStats}

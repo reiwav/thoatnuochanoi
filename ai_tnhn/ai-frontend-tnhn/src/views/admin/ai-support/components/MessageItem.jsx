@@ -27,7 +27,7 @@ const MessageItem = memo(({ msg, userInfo, handleEmailDetail, handleEmcHistory }
                     borderRadius: isUser ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
                     width: 'fit-content',
                     maxWidth: isUser ? { xs: '90%', sm: '80%', md: '70%' } : { xs: '92%', sm: '88%', md: '80%' },
-                    bgcolor: isUser ? '#0084FF' : '#E4E6EB',
+                    bgcolor: isUser ? '#0084FF' : '#f0f2f5',
                     color: isUser ? 'white' : 'black',
                     boxShadow: 'none', 
                     border: 'none',

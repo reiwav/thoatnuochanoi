@@ -38,7 +38,7 @@ const InundationPointCard = ({ point, isMobile, navigate, basePath, handleOpenVi
         const report = point.active_report || point.last_report;
         if (!report) return false;
         if (report.org_id === user?.org_id) return true;
-        const userOrg = organizations?.find(o => o.id === user?.org_id);
+        const userOrg = Array.isArray(organizations) ? organizations.find(o => o.id === user?.org_id) : null;
         return userOrg?.inundation_ids?.includes(report.point_id);
     }, [user, point, organizations, isEmployee, hasPermission]);
 
@@ -150,7 +150,7 @@ const InundationPointCard = ({ point, isMobile, navigate, basePath, handleOpenVi
                         {!isMechOnly && !isSurveyOnly && (
                             <>
                                 <Box>
-                                    <Typography variant="body2" color="text.secondary">Đơn vị quản lý: <b>{point.org_name || organizations.find(o => o.id === point.org_id)?.name || ''}</b></Typography>
+                                    <Typography variant="body2" color="text.secondary">Đơn vị quản lý: <b>{point.org_name || (Array.isArray(organizations) ? organizations.find(o => o.id === point.org_id)?.name : '') || ''}</b></Typography>
                                 </Box>
                                 <Grid container spacing={2}>
                                     <Grid item xs={12} sm={6}>
@@ -193,7 +193,7 @@ const InundationPointCard = ({ point, isMobile, navigate, basePath, handleOpenVi
                 <TableCell sx={{ p: 2 }}>
                     <Typography variant="body2" sx={{ fontWeight: 800, cursor: 'pointer', color: 'primary.dark' }} onClick={() => setOpen(!open)}>{point.name}</Typography>
                 </TableCell>
-                <TableCell><Typography variant="body2" color="primary">{point.org_name || organizations.find(o => o.id === point.org_id)?.name || ''}</Typography></TableCell>
+                <TableCell><Typography variant="body2" color="primary">{point.org_name || (Array.isArray(organizations) ? organizations.find(o => o.id === point.org_id)?.name : '') || ''}</Typography></TableCell>
                 <TableCell align="center">
                     <Chip label={point.report_id ? 'Đang ngập' : 'Bình thường'} color={point.report_id ? 'error' : 'success'} size="small" sx={{ fontWeight: 700 }} />
                 </TableCell>

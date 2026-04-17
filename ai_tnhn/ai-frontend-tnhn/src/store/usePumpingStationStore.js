@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import pumpingStationApi from 'api/pumpingStation';
 import { toast } from 'react-hot-toast';
+import { getDataArray } from 'utils/apiHelper';
 
 const usePumpingStationStore = create((set) => ({
     pumpingStations: [],
@@ -13,9 +14,9 @@ const usePumpingStationStore = create((set) => ({
     fetchInitialData: async () => {
         set({ loading: true });
         try {
-            const res = await pumpingStationApi.getAll();
+            const res = await pumpingStationApi.list();
             set({
-                pumpingStations: res?.data || res || [],
+                pumpingStations: getDataArray(res),
                 loading: false
             });
         } catch (err) {
@@ -26,8 +27,8 @@ const usePumpingStationStore = create((set) => ({
 
     fetchPumpingStations: async () => {
         try {
-            const res = await pumpingStationApi.getAll();
-            set({ pumpingStations: res?.data || res || [] });
+            const res = await pumpingStationApi.list();
+            set({ pumpingStations: getDataArray(res) });
         } catch (err) {
             console.error('Fetch pumping stations failed', err);
         }

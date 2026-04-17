@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import organizationApi from 'api/organization';
+import { getDataArray, getTotalItems } from 'utils/apiHelper';
 
 const useOrganizationStore = create((set, get) => ({
     // State
@@ -27,8 +28,8 @@ const useOrganizationStore = create((set, get) => ({
                 per_page: rowsPerPage
             });
             set({
-                organizations: Array.isArray(res.data) ? res.data : [],
-                totalItems: res.total || 0,
+                organizations: getDataArray(res),
+                totalItems: getTotalItems(res),
                 loading: false
             });
         } catch (error) {
@@ -44,6 +45,8 @@ const useOrganizationStore = create((set, get) => ({
 
         try {
             const res = await organizationApi.getSelectionList();
+            // Đối với selectionList, res đã được bóc tách bởi interceptor 
+            // và thường có cấu trúc { primary: [], shared: [] }
             set({ selectionList: res });
             return res;
         } catch (error) {

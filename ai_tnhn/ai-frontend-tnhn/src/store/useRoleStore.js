@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import axiosClient from 'api/axiosClient';
+import { getDataArray } from 'utils/apiHelper';
 
 const useRoleStore = create((set, get) => ({
     // State
@@ -12,7 +13,7 @@ const useRoleStore = create((set, get) => ({
         try {
             const res = await axiosClient.get('/admin/roles');
             set({
-                roles: Array.isArray(res) ? res : [],
+                roles: getDataArray(res),
                 loading: false
             });
         } catch (error) {

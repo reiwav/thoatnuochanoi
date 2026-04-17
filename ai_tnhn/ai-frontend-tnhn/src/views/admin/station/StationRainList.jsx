@@ -17,6 +17,7 @@ import organizationApi from 'api/organization';
 import StationDialog from './StationDialog';
 import useAuthStore from 'store/useAuthStore';
 import OrganizationSelect from 'ui-component/filter/OrganizationSelect';
+import { getDataArray, getTotalItems } from 'utils/apiHelper';
 
 const StationRow = ({ row, handleOpenEdit, handleDelete, isMobile, canEdit, canDelete, organizationName, organizationNames }) => {
     const [open, setOpen] = useState(false);
@@ -147,12 +148,13 @@ const StationRainList = () => {
                 organizationApi.getSelectionList()
             ]);
 
-            // Interceptor đã bóc tách dữ liệu
+            // Interceptor đã bóc tách dữ liệu (.data cấp 1)
             if (stRes) {
-                const stationsData = Array.isArray(stRes.data) ? stRes.data : (Array.isArray(stRes) ? stRes : []);
-                const total = stRes.total || (Array.isArray(stRes) ? stRes.length : 0);
-                setStations(stationsData);
-                setTotalItems(total);
+                // Đối với API trạm đo mưa, danh sách trạm nằm trong trường 'tram'
+                // Trường 'data' chứa các bản ghi đo đạc (weather records)
+                const stationList = stRes.tram || getDataArray(stRes);
+                setStations(stationList);
+                setTotalItems(stRes.total || stationList.length);
             }
 
             if (orgRes) {

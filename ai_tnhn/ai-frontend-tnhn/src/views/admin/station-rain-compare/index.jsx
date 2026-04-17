@@ -68,8 +68,9 @@ const StationRainCompare = () => {
         setLoading(true);
         try {
             const res = await axiosClient.get(`/admin/weather/rain/compare?year1=${year1}&year2=${year2}`);
-            if (res.data?.status === 'success') {
-                setReportData(res.data.data);
+            // Interceptor đã bóc tách lớp .data và status === 'success'
+            if (res) {
+                setReportData(res);
             }
         } catch (err) {
             console.error('Lỗi tải báo cáo so sánh:', err);

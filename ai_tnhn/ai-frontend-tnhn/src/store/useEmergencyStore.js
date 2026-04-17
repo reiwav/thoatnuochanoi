@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import emergencyConstructionApi from 'api/emergencyConstruction';
+import { getDataArray, getTotalItems } from 'utils/apiHelper';
 
 const useEmergencyStore = create((set, get) => ({
     // State
@@ -25,8 +26,8 @@ const useEmergencyStore = create((set, get) => ({
                 per_page: rowsPerPage
             });
             set({
-                items: res.data || [],
-                totalItems: res.total || 0,
+                items: getDataArray(res),
+                totalItems: getTotalItems(res),
                 loading: false
             });
         } catch (error) {

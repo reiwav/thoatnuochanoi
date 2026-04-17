@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import contractApi from 'api/contract';
+import { getDataArray } from 'utils/apiHelper';
 
 const useContractStore = create((set, get) => ({
     // State
@@ -15,10 +16,8 @@ const useContractStore = create((set, get) => ({
         set({ loading: true });
         try {
             const res = await contractApi.getAll(filters);
-            // Handling both {data: []} and [] response formats
-            const dataArray = res.data || res;
             set({
-                contracts: Array.isArray(dataArray) ? dataArray : [],
+                contracts: getDataArray(res),
                 loading: false
             });
         } catch (error) {

@@ -32,11 +32,12 @@ const StationHistory = ({ type }) => {
                 river: stationApi.river
             };
             const res = await apiMap[type].getAll({ per_page: 1000 });
-            // Interceptor đã bóc tách dữ liệu
+            // Interceptor đã bóc tách dữ liệu (.data cấp 1)
             if (res) {
-                const data = res.data || (Array.isArray(res) ? res : []);
+                // Ưu tiên lấy từ 'tram' nếu có (API weather), nếu không mới lấy 'data'
+                const data = res.tram || res.data || (Array.isArray(res) ? res : []);
                 setStations(data);
-                if (data.length > 0) setSelectedStation(data[0].Id);
+                if (data.length > 0) setSelectedStation(data[0].Id || data[0].id);
             }
         } catch (err) {
             console.error('Failed to load stations:', err);

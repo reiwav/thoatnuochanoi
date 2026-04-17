@@ -17,11 +17,11 @@ const StationWaterSummary = () => {
         setLoading(true);
         try {
             const res = await axiosClient.get('/admin/weather/water');
-            if (res.data?.status === 'success') {
-                const raw = res.data.data;
-                const tramList = raw.tram || [];
-                const dataList = raw.data || [];
-
+            // Interceptor đã bóc tách lớp .data và status === 'success'
+            if (res) {
+                const tramList = res.tram || [];
+                const dataList = res.data || [];
+                
                 setStations(tramList);
                 setWaterData(dataList);
             }

@@ -12,7 +12,7 @@ const InundationHistoryCard = ({ report, isMobile, navigate, basePath, handleOpe
     const latest = useMemo(() => getLatestData(report), [report]);
 
     const orgName = useMemo(() => {
-        return organizations.find(o => o.id === report.org_id)?.name || report.org_id;
+        return (Array.isArray(organizations) ? organizations.find(o => o.id === report.org_id)?.name : '') || report.org_id;
     }, [organizations, report.org_id]);
 
     const renderDetails = () => (

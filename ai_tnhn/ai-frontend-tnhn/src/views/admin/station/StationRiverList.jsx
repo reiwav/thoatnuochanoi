@@ -14,6 +14,7 @@ import stationApi from 'api/station';
 import organizationApi from 'api/organization';
 import StationDialog from './StationDialog';
 import useAuthStore from 'store/useAuthStore';
+import { getDataArray, getTotalItems } from 'utils/apiHelper';
 
 const StationRiverList = () => {
     const { user, isCompany, hasPermission } = useAuthStore();
@@ -42,12 +43,13 @@ const StationRiverList = () => {
                 organizationApi.getSelectionList()
             ]);
 
-            // Interceptor đã bóc tách dữ liệu
+            // Interceptor đã bóc tách dữ liệu (.data cấp 1)
             if (stRes) {
-                const stationsData = Array.isArray(stRes.data) ? stRes.data : (Array.isArray(stRes) ? stRes : []);
-                const total = stRes.total || (Array.isArray(stRes) ? stRes.length : 0);
-                setStations(stationsData);
-                setTotalItems(total);
+                // Ưu tiên lấy danh sách trạm từ trường 'tram' nếu có (API weather)
+                // Nếu không có 'tram', sử dụng getDataArray để lấy từ 'data' hoặc mảng trực tiếp
+                const stationList = stRes.tram || getDataArray(stRes);
+                setStations(stationList);
+                setTotalItems(stRes.total || stationList.length);
             }
 
             if (orgRes) {

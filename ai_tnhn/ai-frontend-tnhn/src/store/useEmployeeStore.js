@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import employeeApi from 'api/employee';
+import { getDataArray, getTotalItems } from 'utils/apiHelper';
 
 const useEmployeeStore = create((set, get) => ({
     // State
@@ -26,8 +27,8 @@ const useEmployeeStore = create((set, get) => ({
                 order_by: '-created_at'
             });
             set({
-                employees: Array.isArray(res.data) ? res.data : [],
-                totalItems: res.total || 0,
+                employees: getDataArray(res),
+                totalItems: getTotalItems(res),
                 loading: false
             });
         } catch (error) {

@@ -11,6 +11,7 @@ import { IconSearch, IconAlertTriangle, IconRefresh, IconLayoutDashboard } from 
 import MainCard from 'ui-component/cards/MainCard';
 import useInundationStore from 'store/useInundationStore';
 import OrganizationSelect from 'ui-component/filter/OrganizationSelect';
+import { getTotalItems } from 'utils/apiHelper';
 
 // Shared Components
 import InundationPointCard from 'views/employee/inundation/components/InundationPointCard';
@@ -53,7 +54,7 @@ const AdminInundationDashboard = () => {
     useEffect(() => {
         if (activeTab === 1) {
             fetchHistory(historyPage, historyRowsPerPage).then(res => {
-                if (res) setTotalHistory(res.total || 0);
+                if (res) setTotalHistory(getTotalItems(res));
             });
         }
     }, [activeTab, historyPage, historyRowsPerPage, filters.orgFilter, filters.statusFilter, filters.searchQuery]);

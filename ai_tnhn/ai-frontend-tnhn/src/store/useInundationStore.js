@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import inundationApi from 'api/inundation';
 import organizationApi from 'api/organization';
-import pumpingStationApi from 'api/pumpingStation';
 import { toast } from 'react-hot-toast';
+import { getDataArray } from 'utils/apiHelper';
 
 const useInundationStore = create((set, get) => ({
     points: [],
@@ -35,8 +35,8 @@ const useInundationStore = create((set, get) => ({
             ]);
             
             set({
-                points: pointsRes || [],
-                organizations: orgsRes || [],
+                points: getDataArray(pointsRes),
+                organizations: getDataArray(orgsRes),
                 loading: false
             });
         } catch (err) {
@@ -48,7 +48,7 @@ const useInundationStore = create((set, get) => ({
     fetchPoints: async () => {
         try {
             const res = await inundationApi.getPointsStatus();
-            set({ points: res || [] });
+            set({ points: getDataArray(res) });
         } catch (err) {
             console.error('Fetch points failed', err);
         }
@@ -59,10 +59,10 @@ const useInundationStore = create((set, get) => ({
         try {
             const res = await inundationApi.listReports(page, limit);
             set({
-                historyReports: res?.data || (Array.isArray(res) ? res : []),
+                historyReports: getDataArray(res),
                 loadingHistory: false
             });
-            return res; // Return for pagination total
+            return res; // Trả về để lấy tổng số trang ở UI
         } catch (err) {
             set({ loadingHistory: false });
             toast.error('Lỗi khi tải lịch sử');

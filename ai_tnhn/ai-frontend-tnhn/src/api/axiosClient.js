@@ -39,17 +39,27 @@ axiosClient.interceptors.response.use(
     // Axios luôn bọc body trong response.data
     const data = response.data;
 
-    // Kiểm tra cấu trúc chuẩn của backend { status: 'success', data: ... }
-    if (data && data.status === 'success') {
-      return data.data; // Trả về thẳng phần payload (là mảng hoặc object hoặc {data: [], total: 0})
+    // 1. Kiểm tra cấu trúc chuẩn của backend { status: 'success', data: ... }
+    if (data && typeof data === 'object' && data.status === 'success') {
+      return data.data; // Trả về thẳng phần payload
     }
 
-    // Nếu API trả về lỗi nghiệp vụ { status: 'error', error: '...' }
-    if (data && data.status === 'error') {
+    // 2. Nếu API trả về lỗi nghiệp vụ { status: 'error', error: '...' }
+    if (data && typeof data === 'object' && data.status === 'error') {
       return Promise.reject(new Error(data.error || 'Đã có lỗi xảy ra từ máy chủ'));
     }
 
-    // Trường hợp khác (ví dụ phản hồi blob hoặc không đúng format chuẩn)
+    // 3. Nếu là Blob (thường dùng cho Export file), trả về toàn bộ response để lấy headers nếu cần
+    if (data instanceof Blob) {
+      return response;
+    }
+
+    // 4. Nếu không có wrapper chuẩn nhưng có dữ liệu, trả về dữ liệu trực tiếp (Robustness)
+    // Điều này giúp FE vẫn chạy được nếu BE trả về mảng/object trực tiếp (ví dụ Proxy từ API khác)
+    if (data !== undefined && data !== null) {
+      return data;
+    }
+
     return response;
   },
   (error) => {

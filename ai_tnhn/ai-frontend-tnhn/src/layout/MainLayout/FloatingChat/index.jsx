@@ -50,7 +50,7 @@ const FloatingChat = () => {
             const aiMsg = {
                 id: Date.now() + 1,
                 role: 'ai',
-                text: res.data?.data || 'Xin lỗi sếp, tôi gặp chút trục trặc.'
+                text: res || 'Xin lỗi sếp, tôi gặp chút trục trặc.'
             };
             setMessages(prev => [...prev, aiMsg]);
         } catch (error) {

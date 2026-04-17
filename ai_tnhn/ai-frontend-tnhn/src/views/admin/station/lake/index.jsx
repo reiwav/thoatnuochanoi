@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     Button, Grid, TextField, Table, TableBody,
     TableCell, TableContainer, TableHead, TableRow, Paper,
-    IconButton, CircularProgress, TablePagination, Typography, Chip, Tooltip,
-    useTheme, useMediaQuery, Box, Stack, Card, CardContent, Divider
+    CircularProgress, TablePagination, Typography,
+    useTheme, useMediaQuery, Box, InputAdornment
 } from '@mui/material';
-import { IconTrash, IconPlus, IconEdit, IconSearch } from '@tabler/icons-react';
+import { IconPlus, IconSearch } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 
 // project imports
@@ -17,111 +17,15 @@ import LakeDialog from './LakeDialog';
 import useAuthStore from 'store/useAuthStore';
 import { getDataArray } from 'utils/apiHelper';
 
-// Shared Components for Clean Architecture
-const StatusChip = ({ active }) => (
-    <Chip
-        label={active ? 'Hoạt động' : 'Ngừng'}
-        color={active ? 'success' : 'default'}
-        size="small"
-        variant="outlined"
-        sx={{ fontWeight: 800, fontSize: '0.75rem', height: 24 }}
-    />
-);
-
-const ActionButtons = ({ row, canEdit, canDelete, handleOpenEdit, handleDelete }) => (
-    <Stack direction="row" spacing={0.5} justifyContent="flex-end">
-        {canEdit && (
-            <Tooltip title="Chỉnh sửa">
-                <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>
-                    <IconEdit size={20} />
-                </IconButton>
-            </Tooltip>
-        )}
-        {canDelete && (
-            <Tooltip title="Xóa">
-                <IconButton color="error" size="small" onClick={() => handleDelete(row.id || row.Id)}>
-                    <IconTrash size={20} />
-                </IconButton>
-            </Tooltip>
-        )}
-    </Stack>
-);
-
-const StationMobileCard = ({ row, canEdit, canDelete, handleOpenEdit, handleDelete, organizationName }) => (
-    <Card sx={{ mb: 2, borderRadius: 3, border: '1px solid', borderColor: 'divider', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-        <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-            <Stack spacing={1.5}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <Typography variant="h5" sx={{ fontWeight: 800, color: 'primary.dark' }}>{row.TenTram}</Typography>
-                    <StatusChip active={row.Active} />
-                </Box>
-                
-                <Box>
-                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>ĐƠN VỊ QUẢN LÝ</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: 'secondary.main' }}>{organizationName || '-'}</Typography>
-                </Box>
-
-                <Grid container spacing={2}>
-                    <Grid item xs={6}>
-                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>ƯU TIÊN</Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 700 }}>{row.ThuTu || 0}</Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>MÃ LOẠI</Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 700 }}>{row.Loai || '-'}</Typography>
-                    </Grid>
-                </Grid>
-
-                <Divider sx={{ borderStyle: 'dashed' }} />
-
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Box>
-                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>{row.DiaChi}</Typography>
-                    </Box>
-                    <ActionButtons 
-                        row={row} 
-                        canEdit={canEdit} 
-                        canDelete={canDelete} 
-                        handleOpenEdit={handleOpenEdit} 
-                        handleDelete={handleDelete} 
-                    />
-                </Box>
-            </Stack>
-        </CardContent>
-    </Card>
-);
-
-const StationDesktopRow = ({ row, canEdit, canDelete, handleOpenEdit, handleDelete, organizationName, organizationNamesMap }) => (
-    <TableRow hover>
-        <TableCell sx={{ fontWeight: 800, fontSize: '1.05rem', color: 'primary.dark' }}>{row.TenTram}</TableCell>
-        <TableCell sx={{ fontSize: '0.95rem', fontWeight: 600 }}>{organizationName || '-'}</TableCell>
-        <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, fontSize: '0.85rem' }}>
-            {row.share_all ? 'Tất cả xí nghiệp' : (row.shared_org_ids?.map(id => organizationNamesMap[id]).filter(n => n).join(', ') || '-')}
-        </TableCell>
-        <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, fontSize: '1rem' }}>{row.Loai}</TableCell>
-        <TableCell sx={{ display: { xs: 'none', xl: 'table-cell' }, fontSize: '0.95rem' }}>{row.DiaChi}</TableCell>
-        <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' }, fontSize: '1rem', fontWeight: 700 }}>{row.ThuTu || 0}</TableCell>
-        <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' }, fontSize: '1rem', fontWeight: 700 }}>{row.TrongSoBaoCao || 0}</TableCell>
-        <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, fontSize: '1rem', fontWeight: 700 }}>{row.NguongCanhBao || '-'}</TableCell>
-        <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
-            <StatusChip active={row.Active} />
-        </TableCell>
-        {(canEdit || canDelete) && (
-            <TableCell align="right">
-                <ActionButtons 
-                    row={row} 
-                    canEdit={canEdit} 
-                    canDelete={canDelete} 
-                    handleOpenEdit={handleOpenEdit} 
-                    handleDelete={handleDelete} 
-                />
-            </TableCell>
-        )}
-    </TableRow>
-);
+// Sub-components
+import StationMobileCard from './components/StationMobileCard';
+import StationDesktopRow from './components/StationDesktopRow';
 
 const StationLakeList = () => {
     const { user, isCompany, hasPermission } = useAuthStore();
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
     const canCreate = hasPermission('water:create');
     const canEdit = hasPermission('water:edit');
     const canDelete = hasPermission('water:delete');
@@ -139,7 +43,7 @@ const StationLakeList = () => {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingStation, setEditingStation] = useState(null);
 
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
         setLoading(true);
         try {
             const [stRes, orgRes] = await Promise.all([
@@ -158,18 +62,30 @@ const StationLakeList = () => {
             }
         } catch (err) {
             console.error('Lỗi tải dữ liệu:', err);
+            toast.error('Không thể tải danh sách trạm');
         } finally {
             setLoading(false);
         }
-    };
+    }, [page, rowsPerPage, params]);
 
-    useEffect(() => { loadData(); }, [page, rowsPerPage, params]);
+    useEffect(() => { loadData(); }, [loadData]);
 
-    const handleSearch = () => { setPage(0); setParams(filterInputs); };
-    const handleOpenCreate = () => { setEditingStation(null); setDialogOpen(true); };
-    const handleOpenEdit = (station) => { setEditingStation(station); setDialogOpen(true); };
+    const handleSearch = useCallback(() => { 
+        setPage(0); 
+        setParams(filterInputs); 
+    }, [filterInputs]);
 
-    const handleDelete = async (id) => {
+    const handleOpenCreate = useCallback(() => { 
+        setEditingStation(null); 
+        setDialogOpen(true); 
+    }, []);
+
+    const handleOpenEdit = useCallback((station) => { 
+        setEditingStation(station); 
+        setDialogOpen(true); 
+    }, []);
+
+    const handleDelete = useCallback(async (id) => {
         if (!window.confirm('Bạn có chắc chắn muốn xóa trạm này?')) return;
         try {
             await stationApi.lake.delete(id);
@@ -178,9 +94,9 @@ const StationLakeList = () => {
         } catch (err) {
             toast.error(err.response?.data?.error || 'Lỗi xóa trạm');
         }
-    };
+    }, [loadData]);
 
-    const handleSubmit = async (values) => {
+    const handleSubmit = useCallback(async (values) => {
         try {
             const res = editingStation
                 ? await stationApi.lake.update(editingStation.id, values)
@@ -194,44 +110,74 @@ const StationLakeList = () => {
         } catch (err) {
             toast.error(err.response?.data?.error || 'Đã có lỗi xảy ra');
         }
-    };
+    }, [editingStation, loadData]);
 
-    const getOrgName = (orgId) => {
-        const org = organizations.shared?.find(o => o.id === orgId);
-        return org ? org.name : '';
-    };
+    const organizationNamesMap = useMemo(() => {
+        return (organizations.shared || []).reduce((acc, org) => {
+            acc[org.id] = org.name;
+            return acc;
+        }, {});
+    }, [organizations.shared]);
 
-    const organizationNamesMap = (organizations.shared || []).reduce((acc, org) => {
-        acc[org.id] = org.name;
-        return acc;
-    }, {});
-
-    const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const getOrgName = useCallback((orgId) => {
+        return organizationNamesMap[orgId] || '';
+    }, [organizationNamesMap]);
 
     return (
         <MainCard
-            title="Quản lý trạm đo mực nước hồ"
+            title={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="h3" fontWeight={800}>Quản lý Trạm đo mực nước hồ</Typography>
+                </Box>
+            }
             secondary={canCreate && (
                 <AnimateButton>
-                    <Button variant="contained" color="secondary" startIcon={<IconPlus size={20} />} onClick={handleOpenCreate} sx={{ borderRadius: 3, fontWeight: 700, fontSize: '1rem', px: 2, py: 1 }}>
+                    <Button 
+                        variant="contained" 
+                        color="secondary" 
+                        startIcon={<IconPlus size={20} />} 
+                        onClick={handleOpenCreate} 
+                        sx={{ 
+                            borderRadius: '12px', 
+                            fontWeight: 800, 
+                            fontSize: '0.875rem', 
+                            px: 2.5, 
+                            py: 1,
+                            boxShadow: '0 4px 12px rgba(103, 58, 183, 0.2)'
+                        }}
+                    >
                         Thêm trạm mới
                     </Button>
                 </AnimateButton>
             )}
         >
-            <Grid container spacing={2} sx={{ mb: 3 }} alignItems="center">
-                <Grid item xs={12} sm={6}>
-                    <TextField fullWidth label="Tìm theo tên trạm" value={filterInputs.search}
-                        placeholder="Nhập tên trạm..."
+            <Grid container spacing={2} sx={{ mb: 4 }} alignItems="center">
+                <Grid item xs={12} sm={8} md={6}>
+                    <TextField 
+                        fullWidth 
+                        placeholder="Tìm kiếm theo tên trạm..." 
+                        value={filterInputs.search}
                         onChange={(e) => setFilterInputs({ ...filterInputs, search: e.target.value })}
+                        onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                         size="small"
-                        InputProps={{ sx: { borderRadius: 3 } }}
+                        InputProps={{ 
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <IconSearch size={20} color={theme.palette.grey[500]} />
+                                </InputAdornment>
+                            ),
+                            sx: { borderRadius: '12px', bgcolor: 'grey.50' } 
+                        }}
                     />
                 </Grid>
-                <Grid item xs={12} sm={3}>
-                    <Button fullWidth variant="contained" color="primary" startIcon={<IconSearch size={22} />}
-                        onClick={handleSearch} sx={{ borderRadius: 3, fontWeight: 700, fontSize: '1rem', py: 1, height: 40 }}>
+                <Grid item xs={12} sm={4} md={2}>
+                    <Button 
+                        fullWidth 
+                        variant="contained" 
+                        color="primary" 
+                        onClick={handleSearch} 
+                        sx={{ borderRadius: '12px', fontWeight: 800, py: 1, height: 40 }}
+                    >
                         Tìm kiếm
                     </Button>
                 </Grid>
@@ -240,9 +186,13 @@ const StationLakeList = () => {
             {/* Mobile View */}
             <Box sx={{ display: { xs: 'block', sm: 'none' } }}>
                 {loading ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}><CircularProgress size={32} color="secondary" /></Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
+                        <CircularProgress size={32} color="secondary" />
+                    </Box>
                 ) : stations.length === 0 ? (
-                    <Typography align="center" sx={{ py: 3, color: 'text.secondary' }}>Không tìm thấy trạm</Typography>
+                    <Box sx={{ py: 8, textAlign: 'center' }}>
+                        <Typography variant="h4" color="text.secondary" fontWeight={600}>Không tìm thấy trạm</Typography>
+                    </Box>
                 ) : (
                     stations.map((row) => (
                         <StationMobileCard
@@ -264,28 +214,37 @@ const StationLakeList = () => {
                 border: '1px solid', 
                 borderColor: 'divider', 
                 boxShadow: 'none', 
-                borderRadius: '12px' 
+                borderRadius: '16px',
+                overflow: 'hidden'
             }}>
                 <Table>
                     <TableHead sx={{ bgcolor: 'grey.50' }}>
                         <TableRow>
-                            <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Tên trạm</TableCell>
-                            <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Xí nghiệp quản lý</TableCell>
-                            <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, fontWeight: 800, fontSize: '1rem' }}>Xí nghiệp phối hợp</TableCell>
-                            <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, fontWeight: 800, fontSize: '1rem' }}>Loại</TableCell>
-                            <TableCell sx={{ display: { xs: 'none', xl: 'table-cell' }, fontWeight: 800, fontSize: '1rem' }}>Địa chỉ</TableCell>
-                            <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' }, fontWeight: 800, fontSize: '1rem' }}>Ưu tiên</TableCell>
-                            <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' }, fontWeight: 800, fontSize: '1rem' }}>Trọng số</TableCell>
-                            <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, fontWeight: 800, fontSize: '1rem' }}>Ngưỡng</TableCell>
-                            <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, fontWeight: 800, fontSize: '1rem' }}>Trạng thái</TableCell>
-                            {(canEdit || canDelete) && <TableCell align="right" sx={{ fontWeight: 800, fontSize: '1rem' }}>Thao tác</TableCell>}
+                            <TableCell sx={{ fontWeight: 800, fontSize: '0.9rem' }}>Tên trạm</TableCell>
+                            <TableCell sx={{ fontWeight: 800, fontSize: '0.9rem' }}>Xí nghiệp quản lý</TableCell>
+                            <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, fontWeight: 800, fontSize: '0.9rem' }}>Xí nghiệp phối hợp</TableCell>
+                            <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, fontWeight: 800, fontSize: '0.9rem' }}>Loại</TableCell>
+                            <TableCell sx={{ display: { xs: 'none', xl: 'table-cell' }, fontWeight: 800, fontSize: '0.9rem' }}>Địa chỉ</TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 800, fontSize: '0.9rem' }}>Thứ tự</TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 800, fontSize: '0.9rem' }}>Trọng số</TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 800, fontSize: '0.9rem' }}>Ngưỡng</TableCell>
+                            <TableCell sx={{ fontWeight: 800, fontSize: '0.9rem' }}>Trạng thái</TableCell>
+                            {(canEdit || canDelete) && <TableCell align="right" sx={{ fontWeight: 800, fontSize: '0.9rem' }}>Thao tác</TableCell>}
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {loading ? (
-                            <TableRow><TableCell colSpan={10} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
+                            <TableRow>
+                                <TableCell colSpan={10} align="center" sx={{ py: 5 }}>
+                                    <CircularProgress size={32} color="secondary" />
+                                </TableCell>
+                            </TableRow>
                         ) : stations.length === 0 ? (
-                            <TableRow><TableCell colSpan={10} align="center" sx={{ py: 3 }}>Không tìm thấy trạm</TableCell></TableRow>
+                            <TableRow>
+                                <TableCell colSpan={10} align="center" sx={{ py: 8 }}>
+                                    <Typography variant="h4" color="text.secondary" fontWeight={600}>Không tìm thấy trạm</Typography>
+                                </TableCell>
+                            </TableRow>
                         ) : (
                             stations.map((row) => (
                                 <StationDesktopRow
@@ -304,19 +263,31 @@ const StationLakeList = () => {
                 </Table>
             </TableContainer>
 
-            <Box sx={{ mt: 2, display: 'flex', justifyContent: { xs: 'center', sm: 'flex-end' } }}>
+            <Box sx={{ mt: 3, display: 'flex', justifyContent: { xs: 'center', sm: 'flex-end' } }}>
                 <TablePagination
-                    rowsPerPageOptions={[10, 25, 50]} component="div" count={totalItems}
-                    rowsPerPage={rowsPerPage} page={page}
+                    rowsPerPageOptions={[10, 25, 50]} 
+                    component="div" 
+                    count={totalItems}
+                    rowsPerPage={rowsPerPage} 
+                    page={page}
                     onPageChange={(e, newPage) => setPage(newPage)}
                     onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
                     labelRowsPerPage={isMobile ? "" : "Số dòng:"}
+                    sx={{
+                        '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+                            fontWeight: 700,
+                            color: 'text.secondary'
+                        }
+                    }}
                 />
             </Box>
 
             <LakeDialog
-                open={dialogOpen} onClose={() => setDialogOpen(false)}
-                onSubmit={handleSubmit} station={editingStation} isEdit={!!editingStation}
+                open={dialogOpen} 
+                onClose={() => setDialogOpen(false)}
+                onSubmit={handleSubmit} 
+                station={editingStation} 
+                isEdit={!!editingStation}
                 organizations={organizations}
             />
         </MainCard>

@@ -88,7 +88,7 @@ const GeminiWeatherSection = () => {
 
   if (loading) {
     return (
-      <Stack direction="row" spacing={2} sx={{ display: { xs: 'none', md: 'flex' } }}>
+      <Stack direction="row" spacing={2} sx={{ display: 'flex' }}>
         {[1, 2, 3].map((i) => (
           <Skeleton key={i} variant="rounded" width={240} height={56} sx={{ borderRadius: '16px' }} />
         ))}
@@ -99,7 +99,16 @@ const GeminiWeatherSection = () => {
   if (!forecast || forecast.length === 0) return null;
 
   return (
-    <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1.5, overflow: 'hidden' }}>
+    <Box sx={{ 
+      display: 'flex', 
+      gap: 1.5, 
+      overflowX: 'auto',
+      maxWidth: '100%',
+      py: 1,
+      '&::-webkit-scrollbar': { display: 'none' }, // Hide scrollbar for a clean header Look
+      msOverflowStyle: 'none',
+      scrollbarWidth: 'none'
+    }}>
       {forecast.slice(0, 3).map((day, index) => (
         <ForecastCard key={index} sx={{ 
           minWidth: { md: '200px', lg: '240px' },

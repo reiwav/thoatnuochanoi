@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { } from 'react-router-dom';
 import {
     Button, Stack, TextField, Table, TableBody,
     TableCell, TableContainer, TableHead, TableRow, Paper,
     IconButton, CircularProgress, Typography, Chip, Tooltip, Box,
-    MenuItem, Collapse, useTheme, useMediaQuery, Grid
+    Collapse, useTheme, useMediaQuery, Grid
 } from '@mui/material';
 import { IconTrash, IconPlus, IconEdit, IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
@@ -15,7 +14,7 @@ import AnimateButton from 'ui-component/extended/AnimateButton';
 import stationApi from 'api/station';
 import organizationApi from 'api/organization';
 import OrganizationSelect from 'ui-component/filter/OrganizationSelect';
-import StationDialog from './StationDialog';
+import InundationDialog from './InundationDialog';
 import useAuthStore from 'store/useAuthStore';
 
 const CollapsibleStationRow = ({ row, handleOpenEdit, handleDelete, isMobile, canEdit, canDelete, organizationNamesMap }) => {
@@ -135,12 +134,8 @@ const StationInundationList = () => {
         try {
             const params = {};
             if (orgFilter) params.org_id = orgFilter;
-            // The backend GetPointsStatus might not support 'query' yet, 
-            // but we can filter locally or update backend if needed.
-            // For now let's assume we might update backend or just filter here.
 
             const data = await stationApi.inundation.getAll(params);
-            // Interceptor đã bóc tách dữ liệu
             if (data) {
                 let pointsData = Array.isArray(data) ? data : (data.data || []);
                 if (searchFilter) {
@@ -150,7 +145,6 @@ const StationInundationList = () => {
                         p.address?.toLowerCase().includes(q)
                     );
                 }
-                // Sort by created_at DESC
                 const sortedData = [...pointsData].sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
                 setPoints(sortedData);
             } else {
@@ -294,10 +288,9 @@ const StationInundationList = () => {
                 </Table>
             </TableContainer>
 
-            <StationDialog
+            <InundationDialog
                 open={dialogOpen} onClose={() => setDialogOpen(false)}
                 onSubmit={handleSubmit} station={editingPoint} isEdit={!!editingPoint}
-                type="inundation"
                 organizations={organizations}
             />
         </MainCard>

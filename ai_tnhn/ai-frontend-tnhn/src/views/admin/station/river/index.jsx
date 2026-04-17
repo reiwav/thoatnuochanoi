@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import {
     Button, Grid, TextField, Table, TableBody,
     TableCell, TableContainer, TableHead, TableRow, Paper,
-    IconButton, CircularProgress, TablePagination, Typography, Chip, Tooltip
+    IconButton, CircularProgress, TablePagination, Typography, Chip, Tooltip,
+    useTheme, useMediaQuery, Box, Stack, Card, CardContent, Divider
 } from '@mui/material';
 import { IconTrash, IconPlus, IconEdit, IconSearch } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
@@ -12,12 +13,9 @@ import MainCard from 'ui-component/cards/MainCard';
 import AnimateButton from 'ui-component/extended/AnimateButton';
 import stationApi from 'api/station';
 import organizationApi from 'api/organization';
-import StationDialog from './StationDialog';
+import RiverDialog from './RiverDialog';
 import useAuthStore from 'store/useAuthStore';
-import { getDataArray, getTotalItems } from 'utils/apiHelper';
-import { useTheme } from '@mui/material/styles';
-import useMediaQuery from '@mui/material/useMediaQuery';
-import { Box, Stack, Card, CardContent, Divider } from '@mui/material';
+import { getDataArray } from 'utils/apiHelper';
 
 // Shared Components for Clean Architecture
 const StatusChip = ({ active }) => (
@@ -149,10 +147,7 @@ const StationRiverList = () => {
                 organizationApi.getSelectionList()
             ]);
 
-            // Interceptor đã bóc tách dữ liệu (.data cấp 1)
             if (stRes) {
-                // Ưu tiên lấy danh sách trạm từ trường 'tram' nếu có (API weather)
-                // Nếu không có 'tram', sử dụng getDataArray để lấy từ 'data' hoặc mảng trực tiếp
                 const stationList = stRes.tram || getDataArray(stRes);
                 setStations(stationList);
                 setTotalItems(stRes.total || stationList.length);
@@ -319,10 +314,10 @@ const StationRiverList = () => {
                 />
             </Box>
 
-            <StationDialog
+            <RiverDialog
                 open={dialogOpen} onClose={() => setDialogOpen(false)}
                 onSubmit={handleSubmit} station={editingStation} isEdit={!!editingStation}
-                type="river" organizations={organizations}
+                organizations={organizations}
             />
         </MainCard>
     );

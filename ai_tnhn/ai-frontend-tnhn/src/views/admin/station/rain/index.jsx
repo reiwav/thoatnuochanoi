@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
-import { } from 'react-router-dom';
 import {
     Button, Grid, TextField, Table, TableBody, Box, Stack,
     TableCell, TableContainer, TableHead, TableRow, Paper,
     IconButton, CircularProgress, TablePagination, Typography, Chip, Tooltip,
-    Collapse, useTheme, useMediaQuery, Card, CardContent, Divider
+    useTheme, useMediaQuery, Card, CardContent, Divider
 } from '@mui/material';
-import { IconTrash, IconPlus, IconEdit, IconSearch, IconChevronDown, IconChevronUp } from '@tabler/icons-react';
+import { IconTrash, IconPlus, IconEdit, IconSearch } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 
 // project imports
@@ -14,10 +13,10 @@ import MainCard from 'ui-component/cards/MainCard';
 import AnimateButton from 'ui-component/extended/AnimateButton';
 import stationApi from 'api/station';
 import organizationApi from 'api/organization';
-import StationDialog from './StationDialog';
+import RainDialog from './RainDialog';
 import useAuthStore from 'store/useAuthStore';
 import OrganizationSelect from 'ui-component/filter/OrganizationSelect';
-import { getDataArray, getTotalItems } from 'utils/apiHelper';
+import { getDataArray } from 'utils/apiHelper';
 
 // Shared Components for Clean Architecture
 const StatusChip = ({ active }) => (
@@ -161,10 +160,7 @@ const StationRainList = () => {
                 organizationApi.getSelectionList()
             ]);
 
-            // Interceptor đã bóc tách dữ liệu (.data cấp 1)
             if (stRes) {
-                // Đối với API trạm đo mưa, danh sách trạm nằm trong trường 'tram'
-                // Trường 'data' chứa các bản ghi đo đạc (weather records)
                 const stationList = stRes.tram || getDataArray(stRes);
                 setStations(stationList);
                 setTotalItems(stRes.total || stationList.length);
@@ -199,7 +195,6 @@ const StationRainList = () => {
 
     const handleSubmit = async (values) => {
         try {
-            const payload = { ...values };
             const res = editingStation
                 ? await stationApi.rain.update(editingStation.id, values)
                 : await stationApi.rain.create(values);
@@ -238,6 +233,7 @@ const StationRainList = () => {
             <Box sx={{ mb: 3 }}>
                 <Stack direction={isMobile ? "column" : "row"} spacing={1.5} alignItems="center">
                     <TextField fullWidth label="Tìm theo tên trạm" value={filterInputs.search}
+                        placeholder="Nhập tên trạm..."
                         onChange={(e) => setFilterInputs({ ...filterInputs, search: e.target.value })}
                         size="small"
                         InputProps={{ sx: { borderRadius: 3 } }}
@@ -331,10 +327,10 @@ const StationRainList = () => {
                 />
             </Box>
 
-            <StationDialog
+            <RainDialog
                 open={dialogOpen} onClose={() => setDialogOpen(false)}
                 onSubmit={handleSubmit} station={editingStation} isEdit={!!editingStation}
-                type="rain" organizations={organizations}
+                organizations={organizations}
             />
         </MainCard>
     );

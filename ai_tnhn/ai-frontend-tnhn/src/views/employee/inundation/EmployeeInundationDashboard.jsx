@@ -2,17 +2,24 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
     Box, Typography, Stack, Chip, Badge, Avatar, TextField, MenuItem,
-    Paper, Skeleton, CircularProgress
+    Paper, Skeleton, CircularProgress, IconButton, Tooltip,
+    Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
+    useMediaQuery, Grid, Divider
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { IconSearch, IconAlertTriangle, IconTools, IconHistory, IconUser, IconLogout } from '@tabler/icons-react';
+import { 
+    IconSearch, IconAlertTriangle, IconUser, IconLogout, 
+    IconSend, IconChecklist, IconEngine, IconChevronRight,
+    IconHistory, IconClock
+} from '@tabler/icons-react';
 
 import useAuthStore from 'store/useAuthStore';
 import useInundationStore from 'store/useInundationStore';
 
 // Common Components
+import PermissionGuard from 'ui-component/PermissionGuard';
+import EmployeeActionDialog from '../components/EmployeeActionDialog';
 import InundationPointCard from './components/InundationPointCard';
-import PumpingStationCard from './components/PumpingStationCard';
 import InundationHistoryCard from './components/InundationHistoryCard';
 import ImageViewer from './components/ImageViewer';
 
@@ -20,9 +27,10 @@ const EmployeeInundationDashboard = () => {
     const theme = useTheme();
     const navigate = useNavigate();
     const { search } = useLocation();
+    const downSM = useMediaQuery(theme.breakpoints.down('sm'));
     const basePath = '/employee';
 
-    const { user: userInfo, logout } = useAuthStore();
+    const { user: userInfo, logout, hasPermission } = useAuthStore();
     const {
         points, organizations, historyReports,
         loading, loadingHistory,
@@ -35,6 +43,9 @@ const EmployeeInundationDashboard = () => {
     const [historyPage, setHistoryPage] = useState(0);
     const [historyRowsPerPage] = useState(10);
     const [totalHistory, setTotalHistory] = useState(0);
+
+    // Dialog state
+    const [taskDialog, setTaskDialog] = useState({ open: false, mode: '', data: null });
 
     // Read activeTab from URL
     const params = new URLSearchParams(search);
@@ -98,35 +109,67 @@ const EmployeeInundationDashboard = () => {
 
     const handleOpenViewer = (imgs, idx = 0) => setViewer({ open: true, images: imgs, index: idx });
 
+    const openTask = (mode, point) => {
+        setTaskDialog({ open: true, mode, data: point });
+    };
+
     const renderFilterBar = () => (
-        <Stack direction="column" spacing={1.5} sx={{ mb: 2 }}>
+        <Box sx={{ mb: 2 }}>
             <TextField
-                fullWidth size="small" placeholder="Tìm tên đường, địa chỉ..."
+                fullWidth 
+                placeholder="Tìm tên đường, địa chỉ..."
                 value={filters.searchQuery}
                 onChange={(e) => setFilters({ searchQuery: e.target.value })}
-                InputProps={{ startAdornment: <IconSearch size={18} style={{ marginRight: 8, opacity: 0.5 }} />, sx: { borderRadius: 3 } }}
+                InputProps={{ 
+                    startAdornment: <IconSearch size={20} style={{ marginRight: 12, opacity: 0.6 }} />, 
+                    sx: { 
+                        borderRadius: 4, 
+                        bgcolor: 'background.paper',
+                        boxShadow: theme.shadows[1],
+                        '&:hover': { boxShadow: theme.shadows[3] },
+                        '& .MuiOutlinedInput-notchedOutline': { border: '1px solid', borderColor: 'divider' }
+                    } 
+                }}
             />
-            <Stack direction="row" spacing={1}>
-                <TextField
-                    select fullWidth size="small" label="Đơn vị" value={filters.orgFilter}
-                    onChange={(e) => setFilters({ orgFilter: e.target.value })}
-                    InputProps={{ sx: { borderRadius: 3 } }}
-                >
-                    <MenuItem value="all">Tất cả đơn vị</MenuItem>
-                    {organizations.map(org => <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>)}
-                </TextField>
-                <TextField
-                    select fullWidth size="small" label="Trạng thái" value={filters.statusFilter}
-                    onChange={(e) => setFilters({ statusFilter: e.target.value })}
-                    InputProps={{ sx: { borderRadius: 3 } }}
-                >
-                    <MenuItem value="all">Tất cả</MenuItem>
-                    <MenuItem value="active">Đang ngập</MenuItem>
-                    <MenuItem value="normal">Bình thường</MenuItem>
-                </TextField>
-            </Stack>
-        </Stack>
+        </Box>
     );
+
+    const renderPointList = () => {
+        if (loading) {
+            return (
+                <Grid container spacing={2}>
+                    {[1, 2, 3, 4, 5, 6].map(i => (
+                        <Grid item xs={12} sm={6} md={4} key={i}>
+                            <Skeleton variant="rectangular" height={160} sx={{ borderRadius: 4 }} />
+                        </Grid>
+                    ))}
+                </Grid>
+            );
+        }
+        
+        if (filteredPoints.length === 0) {
+            return (
+                <Box sx={{ py: 8, textAlign: 'center' }}>
+                    <Typography variant="h4" color="textSecondary" sx={{ mb: 1, fontWeight: 700 }}>Không tìm thấy kết quả</Typography>
+                    <Typography variant="body2" color="textSecondary">Hãy thử tìm kiếm với từ khóa khác</Typography>
+                </Box>
+            );
+        }
+
+        return (
+            <Grid container spacing={2}>
+                {filteredPoints.map(point => (
+                    <Grid item xs={12} sm={6} md={4} key={point.id}>
+                        <InundationPointCard 
+                            point={point} 
+                            openTask={openTask} 
+                            handleOpenViewer={handleOpenViewer} 
+                        />
+                    </Grid>
+                ))}
+            </Grid>
+        );
+    };
 
     return (
         <Box sx={{ px: 1.5, pt: 2, pb: 10 }}>
@@ -143,11 +186,11 @@ const EmployeeInundationDashboard = () => {
             </Box>
 
             {/* Quick Tabs */}
-            <Stack direction="row" spacing={1} sx={{ mb: 2, overflowX: 'auto', pb: 1 }}>
-                <Chip label={`Tất cả (${stats.total})`} variant={activeTab === 0 ? 'filled' : 'outlined'} color="primary" onClick={() => navigate(`${basePath}/inundation?activeTab=0`)} sx={{ fontWeight: 800, flexShrink: 0 }} />
-                <Chip label={`Đang diễn biến (${stats.active})`} color="error" variant={activeTab === 1 ? 'filled' : 'outlined'} onClick={() => navigate(`${basePath}/inundation?activeTab=1`)} sx={{ fontWeight: 800, flexShrink: 0 }} />
-                <Chip label="Lịch sử đợt ngập" variant={activeTab === 2 ? 'filled' : 'outlined'} color="primary" onClick={() => navigate(`${basePath}/inundation?activeTab=2`)} sx={{ fontWeight: 800, flexShrink: 0 }} />
-                <Chip label="Cá nhân" variant={activeTab === 3 ? 'filled' : 'outlined'} color="primary" onClick={() => navigate(`${basePath}/inundation?activeTab=3`)} sx={{ fontWeight: 800, flexShrink: 0 }} />
+            <Stack direction="row" spacing={1} sx={{ mb: 2, overflowX: 'auto', pb: 1, '&::-webkit-scrollbar': { display: 'none' } }}>
+                <Chip icon={<IconChecklist size={16}/>} label={`Tất cả (${stats.total})`} variant={activeTab === 0 ? 'filled' : 'outlined'} color="primary" onClick={() => navigate(`${basePath}/inundation?activeTab=0`)} sx={{ fontWeight: 800, flexShrink: 0 }} />
+                <Chip icon={<IconAlertTriangle size={16}/>} label={`Đang diễn biến (${stats.active})`} color="error" variant={activeTab === 1 ? 'filled' : 'outlined'} onClick={() => navigate(`${basePath}/inundation?activeTab=1`)} sx={{ fontWeight: 800, flexShrink: 0 }} />
+                <Chip icon={<IconHistory size={16}/>} label="Lịch sử đợt ngập" variant={activeTab === 2 ? 'filled' : 'outlined'} color="primary" onClick={() => navigate(`${basePath}/inundation?activeTab=2`)} sx={{ fontWeight: 800, flexShrink: 0 }} />
+                <Chip icon={<IconUser size={16}/>} label="Cá nhân" variant={activeTab === 3 ? 'filled' : 'outlined'} color="primary" onClick={() => navigate(`${basePath}/inundation?activeTab=3`)} sx={{ fontWeight: 800, flexShrink: 0 }} />
             </Stack>
 
             {/* Content Area */}
@@ -156,11 +199,6 @@ const EmployeeInundationDashboard = () => {
                     {renderFilterBar()}
                     {loadingHistory ? [1, 2, 3].map(i => <Skeleton key={i} variant="rectangular" height={100} sx={{ borderRadius: 3 }} />)
                         : historyReports.map(report => <InundationHistoryCard key={report.id} report={report} isMobile navigate={navigate} basePath={basePath} handleOpenViewer={handleOpenViewer} />)}
-                    {totalHistory > historyRowsPerPage && (
-                         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-                             <CircularProgress size={24} />
-                         </Box>
-                    )}
                 </Stack>
             ) : activeTab === 3 ? (
                 <Box sx={{ textAlign: 'center', py: 4 }}>
@@ -174,12 +212,23 @@ const EmployeeInundationDashboard = () => {
                     </Paper>
                 </Box>
             ) : (
-                <Stack spacing={1.5}>
+                <Box>
                     {renderFilterBar()}
-                    {loading ? [1, 2, 3].map(i => <Skeleton key={i} variant="rectangular" height={100} sx={{ borderRadius: 3 }} />)
-                        : filteredPoints.map(point => <InundationPointCard key={point.id} point={point} isMobile navigate={navigate} basePath={basePath} handleOpenViewer={handleOpenViewer} />)}
-                </Stack>
+                    {renderPointList()}
+                </Box>
             )}
+
+            {/* Common Task Dialog */}
+            <EmployeeActionDialog 
+                open={taskDialog.open}
+                mode={taskDialog.mode}
+                data={taskDialog.data}
+                onClose={() => setTaskDialog({ ...taskDialog, open: false })}
+                onFinished={() => {
+                    setTaskDialog({ ...taskDialog, open: false });
+                    fetchPoints();
+                }}
+            />
 
             <ImageViewer viewer={viewer} onClose={() => setViewer({ ...viewer, open: false })} onPrev={() => setViewer(v => ({ ...v, index: (v.index - 1 + v.images.length) % v.images.length }))} onNext={() => setViewer(v => ({ ...v, index: (v.index + 1) % v.images.length }))} />
         </Box>

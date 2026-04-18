@@ -1,13 +1,37 @@
 import {
   IconFaceId, IconUser, IconCloudRain, IconRipple, IconTable, IconChartBar,
   IconDroplets, IconMapPin, IconBuilding, IconUsers, IconList, IconHistory, IconAlertTriangle, IconMessageChatbot, IconClipboardList,
-  IconDoor, IconEngine, IconMap, IconTornado
+  IconDoor, IconEngine, IconMap, IconTornado, IconClipboardCheck
 } from '@tabler/icons-react';
 
 const icons = {
   IconFaceId, IconUser, IconCloudRain, IconRipple, IconTable, IconChartBar,
   IconDroplets, IconMapPin, IconBuilding, IconUsers, IconList, IconHistory, IconAlertTriangle, IconMessageChatbot, IconClipboardList,
-  IconDoor, IconEngine, IconMap, IconTornado
+  IconDoor, IconEngine, IconMap, IconTornado, IconClipboardCheck
+};
+
+const companyPages = {
+  id: 'company-tasks',
+  title: 'CÔNG VIỆC HIỆN TRƯỜNG',
+  type: 'group',
+  children: [
+    {
+      id: ['inundation:survey', 'inundation:mechanic', 'inundation:review'],
+      title: 'Điểm trực ngập',
+      type: 'item',
+      url: '/company/inundation',
+      icon: icons.IconTornado,
+      breadcrumbs: false
+    },
+    {
+      id: 'trambom:view',
+      title: 'Trạm bơm',
+      type: 'item',
+      url: '/company/tram-bom',
+      icon: icons.IconEngine,
+      breadcrumbs: false
+    }
+  ]
 };
 
 const adminPages = {
@@ -280,4 +304,5 @@ const adminPages = {
   ]
 };
 
+export { adminPages, companyPages };
 export default adminPages;

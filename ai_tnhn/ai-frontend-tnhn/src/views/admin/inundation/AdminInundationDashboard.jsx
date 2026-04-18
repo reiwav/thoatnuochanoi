@@ -14,9 +14,10 @@ import OrganizationSelect from 'ui-component/filter/OrganizationSelect';
 import { getTotalItems } from 'utils/apiHelper';
 
 // Shared Components
-import InundationPointCard from 'views/employee/inundation/components/InundationPointCard';
-import InundationHistoryCard from 'views/employee/inundation/components/InundationHistoryCard';
-import ImageViewer from 'views/employee/inundation/components/ImageViewer';
+import InundationHistoryCard from './components/InundationHistoryCard';
+import ImageViewer from './components/ImageViewer';
+import { Grid, Button, IconButton, Tooltip, Divider } from '@mui/material';
+import { IconChevronRight, IconEye } from '@tabler/icons-react';
 
 const AdminInundationDashboard = () => {
     const theme = useTheme();
@@ -170,7 +171,39 @@ const AdminInundationDashboard = () => {
                                 <TableRow><TableCell colSpan={6} align="center" sx={{ py: 4 }}>Không tìm thấy điểm ngập nào</TableCell></TableRow>
                             ) : (
                                 filteredPoints.map(point => (
-                                    <InundationPointCard key={point.id} point={point} navigate={navigate} basePath={basePath} handleOpenViewer={handleOpenViewer} />
+                                    <TableRow key={point.id} hover onClick={() => navigate(`${basePath}/inundation/${point.id}`)} sx={{ cursor: 'pointer' }}>
+                                        <TableCell align="center">
+                                            {point.report_id ? <IconAlertTriangle size={20} color={theme.palette.error.main} /> : <Box sx={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid', borderColor: 'success.light' }} />}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{point.name}</Typography>
+                                            <Typography variant="caption" color="textSecondary">{point.address}</Typography>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Typography variant="body2">{point.org_name || 'HMC'}</Typography>
+                                        </TableCell>
+                                        <TableCell align="center">
+                                            <Chip 
+                                                label={point.report_id ? 'Đang ngập' : 'Bình thường'} 
+                                                color={point.report_id ? 'error' : 'success'} 
+                                                size="small" 
+                                                variant="light"
+                                                sx={{ fontWeight: 700 }}
+                                            />
+                                        </TableCell>
+                                        <TableCell align="center">
+                                            <Typography variant="body2" sx={{ color: point.traffic_status === 'heavy' ? 'error.main' : 'text.primary' }}>
+                                                {point.traffic_status === 'heavy' ? 'Ùn tắc' : point.traffic_status === 'slow' ? 'Chậm' : 'Bình thường'}
+                                            </Typography>
+                                        </TableCell>
+                                        <TableCell align="center">
+                                            <Tooltip title="Xem chi tiết">
+                                                <IconButton size="small" color="primary">
+                                                    <IconChevronRight size={18} />
+                                                </IconButton>
+                                            </Tooltip>
+                                        </TableCell>
+                                    </TableRow>
                                 ))
                             )}
                         </TableBody>
@@ -215,8 +248,5 @@ const AdminInundationDashboard = () => {
         </MainCard>
     );
 };
-
-// Wrapper for Grid layout (since Grid is used above but not imported)
-import { Grid, Button } from '@mui/material';
 
 export default AdminInundationDashboard;

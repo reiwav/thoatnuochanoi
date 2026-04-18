@@ -3,7 +3,7 @@ import {
     Button, Stack, TextField, Table, TableBody,
     TableCell, TableContainer, TableHead, TableRow, Paper,
     IconButton, CircularProgress, Typography, Chip, Tooltip, Box,
-    Collapse, useTheme, useMediaQuery, Grid
+    Collapse, useTheme, useMediaQuery, Grid, Card, CardContent, Divider
 } from '@mui/material';
 import { IconTrash, IconPlus, IconEdit, IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
@@ -17,95 +17,115 @@ import OrganizationSelect from 'ui-component/filter/OrganizationSelect';
 import InundationDialog from './InundationDialog';
 import useAuthStore from 'store/useAuthStore';
 
-const CollapsibleStationRow = ({ row, handleOpenEdit, handleDelete, isMobile, canEdit, canDelete, organizationNamesMap }) => {
+// Shared Components
+const ActionButtons = ({ row, canEdit, canDelete, handleOpenEdit, handleDelete }) => (
+    <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+        {canEdit && (
+            <Tooltip title="Chỉnh sửa">
+                <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>
+                    <IconEdit size={20} />
+                </IconButton>
+            </Tooltip>
+        )}
+        {canDelete && (
+            <Tooltip title="Xóa">
+                <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}>
+                    <IconTrash size={20} />
+                </IconButton>
+            </Tooltip>
+        )}
+    </Stack>
+);
+
+const InundationMobileCard = ({ row, canEdit, canDelete, handleOpenEdit, handleDelete }) => {
     const [open, setOpen] = useState(false);
     return (
-        <React.Fragment>
-            <TableRow hover sx={{ '& .MuiTableCell-root': { borderBottom: 'none' } }}>
-                <TableCell sx={{ width: 40, p: { xs: 1, md: 2 } }}>
-                    <IconButton aria-label="expand row" size="small" onClick={() => setOpen(!open)}>
-                        {open ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />}
-                    </IconButton>
-                </TableCell>
-                <TableCell sx={{ p: { xs: 1, md: 2 } }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'primary.dark', fontSize: { xs: '0.875rem', md: 'inherit' } }}>{row.name}</Typography>
-                    {isMobile && (
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: 'secondary.main', mt: 0.5 }}>
-                            {row.org_name || '-'}
-                        </Typography>
-                    )}
-                </TableCell>
-                {!isMobile && (
-                    <>
-                        <TableCell>
-                            <Typography variant="body2" sx={{ fontWeight: 700, color: 'secondary.main' }}>
-                                {row.org_name || '-'}
-                            </Typography>
-                        </TableCell>
-                        <TableCell>
-                            <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>
-                                {row.share_all ? 'Tất cả xí nghiệp' : (row.shared_org_ids?.map(id => organizationNamesMap[id]).filter(n => n).join(', ') || '-')}
-                            </Typography>
-                        </TableCell>
-                        <TableCell>
-                            <Chip label={row.active ? 'Hoạt động' : 'Ngừng'}
-                                color={row.active ? 'success' : 'default'} size="small" variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem', height: 24 }} />
-                        </TableCell>
-                    </>
-                )}
-                {!isMobile && (canEdit || canDelete) && (
-                    <TableCell align="right" sx={{ p: { xs: 1, md: 2 } }}>
-                        {canEdit && (
-                            <Tooltip title="Chỉnh sửa">
-                                <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>
-                                    <IconEdit size={20} />
-                                </IconButton>
-                            </Tooltip>
-                        )}
-                        {canDelete && (
-                            <Tooltip title="Xóa">
-                                <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}>
-                                    <IconTrash size={20} />
-                                </IconButton>
-                            </Tooltip>
-                        )}
-                    </TableCell>
-                )}
-            </TableRow>
-            <TableRow>
-                <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider', paddingBottom: 0, paddingTop: 0 }} colSpan={isMobile ? 2 : 5}>
+        <Card sx={{ mb: 2, borderRadius: '16px', border: '1px solid', borderColor: 'divider', boxShadow: '0 2px 12px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
+            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                <Stack spacing={1.5}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <Typography variant="h5" sx={{ fontWeight: 800, color: 'primary.dark' }}>{row.name}</Typography>
+                        <Chip
+                            label={row.active ? 'Hoạt động' : 'Ngừng'}
+                            size="small"
+                            color={row.active ? 'success' : 'default'}
+                            variant="outlined"
+                            sx={{ fontWeight: 800, height: 24 }}
+                        />
+                    </Box>
+
+                    <Box>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>ĐƠN VỊ QUẢN LÝ</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: 'secondary.main' }}>{row.org_name || '-'}</Typography>
+                    </Box>
+
+                    <Divider sx={{ borderStyle: 'dashed' }} />
+
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ maxWidth: '60%' }}>{row.address}</Typography>
+                        <ActionButtons 
+                            row={row} 
+                            canEdit={canEdit} 
+                            canDelete={canDelete} 
+                            handleOpenEdit={handleOpenEdit} 
+                            handleDelete={handleDelete} 
+                        />
+                    </Box>
+
+                    <Button 
+                        fullWidth size="small" 
+                        variant="light" 
+                        onClick={() => setOpen(!open)}
+                        endIcon={open ? <IconChevronUp size={16} /> : <IconChevronDown size={16} />}
+                        sx={{ borderRadius: '8px', bgcolor: 'grey.50', py: 0.8, fontWeight: 700 }}
+                    >
+                        {open ? 'Ẩn tọa độ' : 'Xem tọa độ'}
+                    </Button>
+
                     <Collapse in={open} timeout="auto" unmountOnExit>
-                        <Box sx={{ m: { xs: 1, md: 2 }, p: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-                            <Typography variant="h6" gutterBottom component="div" sx={{ fontWeight: 700, color: 'primary.main', mb: 2, fontSize: { xs: '0.875rem', md: 'inherit' } }}>
-                                {row.address}
-                            </Typography>
-                            <Stack spacing={1.5}>
-                                {isMobile && (
-                                    <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
-                                        <Chip label={row.active ? 'Hoạt động' : 'Ngừng'}
-                                            color={row.active ? 'success' : 'default'} size="small" variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem', height: 24 }} />
-                                    </Stack>
-                                )}
-                                <Grid container spacing={2}>
-                                    <Grid item xs={12} sm={6}>
-                                        <Typography variant="body2" color="text.secondary">Tọa độ:</Typography>
-                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{row.lat}, {row.lng}</Typography>
-                                    </Grid>
-                                </Grid>
-                                {isMobile && (canEdit || canDelete) && (
-                                    <Box sx={{ mt: 1, textAlign: 'right', display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                                        {canEdit && <Button size="small" color="primary" variant="contained" startIcon={<IconEdit size={16} />} onClick={() => handleOpenEdit(row)}>Chỉnh sửa</Button>}
-                                        {canDelete && <Button size="small" color="error" variant="outlined" startIcon={<IconTrash size={16} />} onClick={() => handleDelete(row.id)}>Xóa</Button>}
-                                    </Box>
-                                )}
-                            </Stack>
+                        <Box sx={{ p: 1.5, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider', textAlign: 'center' }}>
+                            <Typography variant="body2" sx={{ fontWeight: 700, color: 'primary.main' }}>{row.lat}, {row.lng}</Typography>
                         </Box>
                     </Collapse>
-                </TableCell>
-            </TableRow>
-        </React.Fragment>
+                </Stack>
+            </CardContent>
+        </Card>
     );
 };
+
+const InundationDesktopRow = ({ row, canEdit, canDelete, handleOpenEdit, handleDelete, organizationNamesMap }) => (
+    <TableRow hover>
+        <TableCell>
+            <Typography variant="body2" sx={{ fontWeight: 800, color: 'primary.dark' }}>{row.name}</Typography>
+        </TableCell>
+        <TableCell>
+            <Typography variant="body2" color="textSecondary">{row.address || '-'}</Typography>
+        </TableCell>
+        <TableCell>
+            <Typography variant="body2" sx={{ fontWeight: 700, color: 'secondary.main' }}>{row.org_name || '-'}</Typography>
+        </TableCell>
+        <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>
+            <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>
+                {row.share_all ? 'Tất cả xí nghiệp' : (row.shared_org_ids?.map(id => organizationNamesMap[id]).filter(n => n).join(', ') || '-')}
+            </Typography>
+        </TableCell>
+        <TableCell>
+            <Chip label={row.active ? 'Hoạt động' : 'Ngừng'}
+                color={row.active ? 'success' : 'default'} size="small" variant="outlined" sx={{ fontWeight: 800, fontSize: '0.75rem', height: 24 }} />
+        </TableCell>
+        {(canEdit || canDelete) && (
+            <TableCell align="right">
+                <ActionButtons 
+                    row={row} 
+                    canEdit={canEdit} 
+                    canDelete={canDelete} 
+                    handleOpenEdit={handleOpenEdit} 
+                    handleDelete={handleDelete} 
+                />
+            </TableCell>
+        )}
+    </TableRow>
+);
 
 const StationInundationList = () => {
     const theme = useTheme();
@@ -219,11 +239,15 @@ const StationInundationList = () => {
 
     return (
         <MainCard
-            title="Quản lý điểm ngập úng"
+            title={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>QUẢN LÝ ĐIỂM NGẬP ÚNG</Typography>
+                </Box>
+            }
             secondary={canCreate && (
                 <AnimateButton>
                     <Button variant="contained" color="secondary" startIcon={<IconPlus size={20} />} onClick={handleOpenCreate} sx={{ borderRadius: 3, fontWeight: 700, fontSize: '1rem', px: 2, py: 1 }}>
-                        Thêm điểm mới
+                        {isMobile ? 'Thêm' : 'Thêm điểm mới'}
                     </Button>
                 </AnimateButton>
             )}
@@ -231,7 +255,6 @@ const StationInundationList = () => {
             <Box sx={{ mb: 3 }}>
                 <Stack direction={isMobile ? "column" : "row"} spacing={1.5} alignItems="center">
                     <TextField
-                        fullWidth
                         placeholder="Tìm tên điểm, địa chỉ..."
                         value={searchFilter}
                         onChange={(e) => setSearchFilter(e.target.value)}
@@ -239,7 +262,7 @@ const StationInundationList = () => {
                         InputProps={{
                             sx: { borderRadius: 3 }
                         }}
-                        sx={{ flex: 1 }}
+                        sx={{ width: { xs: '100%', sm: 300 } }}
                     />
                     <OrganizationSelect
                         value={orgFilter}
@@ -249,35 +272,58 @@ const StationInundationList = () => {
                 </Stack>
             </Box>
 
-            <TableContainer component={Paper} sx={{ border: '1px solid', borderColor: 'divider', boxShadow: 'none', borderRadius: '12px', '& .MuiTableCell-root': { fontSize: { xs: '0.875rem' } } }}>
-                <Table sx={{ minWidth: isMobile ? 300 : 800 }}>
+            {/* Mobile View */}
+            <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+                {loading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}><CircularProgress size={32} color="secondary" /></Box>
+                ) : points.length === 0 ? (
+                    <Typography align="center" sx={{ py: 3, color: 'text.secondary' }}>Không tìm thấy điểm ngập</Typography>
+                ) : (
+                    points.map((row) => (
+                        <InundationMobileCard
+                            key={row.id}
+                            row={row}
+                            handleOpenEdit={handleOpenEdit}
+                            handleDelete={handleDelete}
+                            canEdit={canEdit && (isCompany || user?.org_id === row.org_id)}
+                            canDelete={canDelete && (isCompany || user?.org_id === row.org_id)}
+                        />
+                    ))
+                )}
+            </Box>
+
+            {/* Desktop Table View */}
+            <TableContainer component={Paper} elevation={0} sx={{ 
+                display: { xs: 'none', md: 'block' },
+                border: '1px solid', 
+                borderColor: 'divider', 
+                boxShadow: 'none', 
+                borderRadius: '16px',
+                overflow: 'hidden'
+            }}>
+                <Table>
                     <TableHead sx={{ bgcolor: 'grey.50' }}>
                         <TableRow>
-                            <TableCell sx={{ width: 40 }} />
-                            <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Tên điểm</TableCell>
-                            {!isMobile && (
-                                <>
-                                    <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Đơn vị quản lý</TableCell>
-                                    <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Đơn vị phối hợp</TableCell>
-                                    <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Trạng thái</TableCell>
-                                    {(canEdit || canDelete) && <TableCell align="right" sx={{ fontWeight: 800, fontSize: '1rem' }}>Thao tác</TableCell>}
-                                </>
-                            )}
+                            <TableCell sx={{ fontWeight: 800, fontSize: '0.95rem' }}>Tên điểm</TableCell>
+                            <TableCell sx={{ fontWeight: 800, fontSize: '0.95rem' }}>Địa chỉ</TableCell>
+                            <TableCell sx={{ fontWeight: 800, fontSize: '0.95rem' }}>Đơn vị quản lý</TableCell>
+                            <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, fontWeight: 800, fontSize: '0.95rem' }}>Đơn vị phối hợp</TableCell>
+                            <TableCell sx={{ fontWeight: 800, fontSize: '0.95rem' }}>Trạng thái</TableCell>
+                            {(canEdit || canDelete) && <TableCell align="right" sx={{ fontWeight: 800, fontSize: '0.95rem' }}>Thao tác</TableCell>}
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {loading ? (
-                            <TableRow><TableCell colSpan={isMobile ? 2 : 6} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
+                            <TableRow><TableCell colSpan={6} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
                         ) : points.length === 0 ? (
-                            <TableRow><TableCell colSpan={isMobile ? 2 : 6} align="center" sx={{ py: 3 }}>Không tìm thấy điểm ngập</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={6} align="center" sx={{ py: 3 }}>Không tìm thấy điểm ngập</TableCell></TableRow>
                         ) : (
                             points.map((row) => (
-                                <CollapsibleStationRow
+                                <InundationDesktopRow
                                     key={row.id}
                                     row={row}
                                     handleOpenEdit={handleOpenEdit}
                                     handleDelete={handleDelete}
-                                    isMobile={isMobile}
                                     canEdit={canEdit && (isCompany || user?.org_id === row.org_id)}
                                     canDelete={canDelete && (isCompany || user?.org_id === row.org_id)}
                                     organizationNamesMap={organizationNamesMap}

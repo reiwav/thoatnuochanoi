@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => {
       open: true,
       // this sets a default port to 3000
       port: PORT,
-      host: true
+      host: '0.0.0.0'
     },
     build: {
       chunkSizeWarningLimit: 1600,
@@ -26,7 +26,7 @@ export default defineConfig(({ mode }) => {
     },
     preview: {
       open: true,
-      host: true
+      host: '0.0.0.0'
     },
     define: {
       global: 'window'

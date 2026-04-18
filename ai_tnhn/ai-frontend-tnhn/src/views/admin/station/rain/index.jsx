@@ -49,7 +49,7 @@ const ActionButtons = ({ row, canEdit, canDelete, handleOpenEdit, handleDelete }
 );
 
 const StationMobileCard = ({ row, canEdit, canDelete, handleOpenEdit, handleDelete, organizationName }) => (
-    <Card sx={{ mb: 2, borderRadius: 3, border: '1px solid', borderColor: 'divider', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+    <Card sx={{ mb: 2, borderRadius: '16px', border: '1px solid', borderColor: 'divider', boxShadow: '0 2px 12px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
         <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
             <Stack spacing={1.5}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -176,9 +176,18 @@ const StationRainList = () => {
         }
     };
 
-    useEffect(() => { loadData(); }, [page, rowsPerPage, params]);
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setParams(filterInputs);
+            setPage(0);
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [filterInputs]);
 
-    const handleSearch = () => { setPage(0); setParams(filterInputs); };
+    useEffect(() => {
+        loadData();
+    }, [page, rowsPerPage, params]);
+
     const handleOpenCreate = () => { setEditingStation(null); setDialogOpen(true); };
     const handleOpenEdit = (station) => { setEditingStation(station); setDialogOpen(true); };
 
@@ -210,7 +219,7 @@ const StationRainList = () => {
     };
 
     const getOrgName = (orgId) => {
-        const org = organizations.shared?.find(o => o.id === orgId);
+        const org = (organizations.shared || []).find(o => o.id === orgId);
         return org ? org.name : '';
     };
 
@@ -221,23 +230,29 @@ const StationRainList = () => {
 
     return (
         <MainCard
-            title="Quản lý trạm đo mưa"
+            title={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>QUẢN LÝ TRẠM ĐO MƯA</Typography>
+                </Box>
+            }
             secondary={canCreate && (
                 <AnimateButton>
                     <Button variant="contained" color="secondary" startIcon={<IconPlus size={20} />} onClick={handleOpenCreate} sx={{ borderRadius: 3, fontWeight: 700, fontSize: '1rem', px: 2, py: 1 }}>
-                        Thêm trạm mới
+                        {isMobile ? 'Thêm' : 'Thêm trạm mới'}
                     </Button>
                 </AnimateButton>
             )}
         >
             <Box sx={{ mb: 3 }}>
                 <Stack direction={isMobile ? "column" : "row"} spacing={1.5} alignItems="center">
-                    <TextField fullWidth label="Tìm theo tên trạm" value={filterInputs.search}
+                    <TextField 
+                        label="Tìm theo tên trạm" 
+                        value={filterInputs.search}
                         placeholder="Nhập tên trạm..."
                         onChange={(e) => setFilterInputs({ ...filterInputs, search: e.target.value })}
                         size="small"
                         InputProps={{ sx: { borderRadius: 3 } }}
-                        sx={{ flex: 1 }}
+                        sx={{ width: { xs: '100%', sm: 300 } }}
                     />
 
                     <OrganizationSelect
@@ -245,13 +260,10 @@ const StationRainList = () => {
                         onChange={(e) => setFilterInputs({ ...filterInputs, org_id: e.target.value })}
                         sx={{ width: { xs: '100%', sm: 250 } }}
                     />
-                    <Button variant="contained" color="primary" startIcon={<IconSearch size={22} />}
-                        onClick={handleSearch} sx={{ borderRadius: 3, fontWeight: 700, fontSize: '1rem', py: 1, height: 40, px: 3 }}>
-                        Tìm kiếm
-                    </Button>
                 </Stack>
             </Box>
 
+            {/* Mobile View */}
             <Box sx={{ display: { xs: 'block', sm: 'none' } }}>
                 {loading ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}><CircularProgress size={32} color="secondary" /></Box>
@@ -272,26 +284,28 @@ const StationRainList = () => {
                 )}
             </Box>
 
-            <TableContainer component={Paper} sx={{ 
+            {/* Desktop Table View */}
+            <TableContainer component={Paper} elevation={0} sx={{ 
                 display: { xs: 'none', sm: 'block' },
                 border: '1px solid', 
                 borderColor: 'divider', 
                 boxShadow: 'none', 
-                borderRadius: '12px' 
+                borderRadius: '16px',
+                overflow: 'hidden'
             }}>
                 <Table>
                     <TableHead sx={{ bgcolor: 'grey.50' }}>
                         <TableRow>
-                            <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Tên trạm</TableCell>
-                            <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, fontWeight: 800, fontSize: '1rem' }}>Địa chỉ</TableCell>
-                            <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, fontWeight: 800, fontSize: '1rem' }}>Thuộc</TableCell>
-                            <TableCell sx={{ fontWeight: 800, fontSize: '1rem' }}>Xí nghiệp quản lý</TableCell>
-                            <TableCell sx={{ display: { xs: 'none', xl: 'table-cell' }, fontWeight: 800, fontSize: '1rem' }}>Xí nghiệp phối hợp</TableCell>
-                            <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' }, fontWeight: 800, fontSize: '1rem' }}>Ưu tiên</TableCell>
-                            <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' }, fontWeight: 800, fontSize: '1rem' }}>Trọng số</TableCell>
-                            <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, fontWeight: 800, fontSize: '1rem' }}>Ngưỡng</TableCell>
-                            <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, fontWeight: 800, fontSize: '1rem' }}>Trạng thái</TableCell>
-                            {(canEdit || canDelete) && <TableCell align="right" sx={{ fontWeight: 800, fontSize: '1rem' }}>Thao tác</TableCell>}
+                            <TableCell sx={{ fontWeight: 800, fontSize: '0.95rem' }}>Tên trạm</TableCell>
+                            <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, fontWeight: 800, fontSize: '0.95rem' }}>Địa chỉ</TableCell>
+                            <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, fontWeight: 800, fontSize: '0.95rem' }}>Thuộc</TableCell>
+                            <TableCell sx={{ fontWeight: 800, fontSize: '0.95rem' }}>Xí nghiệp quản lý</TableCell>
+                            <TableCell sx={{ display: { xs: 'none', xl: 'table-cell' }, fontWeight: 800, fontSize: '0.95rem' }}>Xí nghiệp phối hợp</TableCell>
+                            <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' }, fontWeight: 800, fontSize: '0.95rem' }}>Ưu tiên</TableCell>
+                            <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' }, fontWeight: 800, fontSize: '0.95rem' }}>Trọng số</TableCell>
+                            <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, fontWeight: 800, fontSize: '0.95rem' }}>Ngưỡng</TableCell>
+                            <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, fontWeight: 800, fontSize: '0.95rem' }}>Trạng thái</TableCell>
+                            {(canEdit || canDelete) && <TableCell align="right" sx={{ fontWeight: 800, fontSize: '0.95rem' }}>Thao tác</TableCell>}
                         </TableRow>
                     </TableHead>
                     <TableBody>

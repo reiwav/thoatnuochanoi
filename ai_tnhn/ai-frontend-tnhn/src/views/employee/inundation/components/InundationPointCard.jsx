@@ -56,6 +56,10 @@ const InundationPointCard = ({ point, openTask, handleOpenViewer }) => {
             sx={{
                 p: 2.5,
                 borderRadius: 5,
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
                 border: '1px solid',
                 borderColor: isHighPriority ? alpha(theme.palette.error.main, 0.2) : 'divider',
                 boxShadow: isHighPriority 
@@ -135,7 +139,7 @@ const InundationPointCard = ({ point, openTask, handleOpenViewer }) => {
                         {point.name}
                     </Typography>
                     <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <IconMapPin size={12} /> {point.address}
+                        <IconMapPin size={12} /> {point.address || 'Hà Nội, Việt Nam'}
                     </Typography>
                 </Box>
             </Stack>
@@ -160,7 +164,7 @@ const InundationPointCard = ({ point, openTask, handleOpenViewer }) => {
                         </Box>
                         <Typography variant="caption" sx={{ fontWeight: 800, flex: 1 }}>
                             {(latest.depth != null || latest.length != null || latest.width != null) 
-                                ? `${latest.length || '?'}m x ${latest.width || '?'}m x ${latest.depth || 0}mm` 
+                                ? `${latest.length || '?'} x ${latest.width || '?'} x ${latest.depth || 0}` 
                                 : 'Chưa có thông số kích thước'}
                         </Typography>
                         <Chip 
@@ -172,21 +176,22 @@ const InundationPointCard = ({ point, openTask, handleOpenViewer }) => {
                         />
                     </Stack>
 
-                    {/* 2. Dữ liệu Cơ giới (Mechanic) */}
-                    {(latest.mech_d != null || latest.mech_r != null || latest.mech_s != null) && (
-                        <Stack direction="row" spacing={1}>
-                            <MetricItem icon={IconDroplets} label="Sâu (D)" value={latest.mech_d} color={theme.palette.primary.main} />
-                            <MetricItem icon={IconCloudRain} label="Mưa (R)" value={latest.mech_r} color={theme.palette.info.main} />
-                            <MetricItem icon={IconRipple} label="Nước (S)" value={latest.mech_s} color={theme.palette.success.main} />
+                    {/* 2. Trạng thái TK Giám sát (Survey) */}
+                    {latest.survey_checked && (
+                        <Stack direction="row" spacing={1} alignItems="center" sx={{ px: 1 }}>
+                            <IconClipboardCheck size={14} color={theme.palette.primary.main} />
+                            <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.dark' }}>
+                                TK Giám sát: Đã nhận xét
+                            </Typography>
                         </Stack>
                     )}
 
-                    {/* 3. Trạng thái XNTK (Survey) */}
-                    {latest.survey_checked && (
+                    {/* 3. Trạng thái CG xử lý (Mechanic) */}
+                    {latest.mech_checked && (
                         <Stack direction="row" spacing={1} alignItems="center" sx={{ px: 1 }}>
-                            <IconClipboardCheck size={14} color={theme.palette.success.main} />
-                            <Typography variant="caption" sx={{ fontWeight: 700, color: 'success.dark' }}>
-                                XNTK: Đã phối hợp xử lý
+                            <IconEngine size={14} color={theme.palette.secondary.main} />
+                            <Typography variant="caption" sx={{ fontWeight: 800, color: 'secondary.dark' }}>
+                                CG xử lý: Đã xử lý
                             </Typography>
                         </Stack>
                     )}
@@ -201,7 +206,7 @@ const InundationPointCard = ({ point, openTask, handleOpenViewer }) => {
             )}
 
             {/* Actions Bar */}
-            <Divider sx={{ mb: 2, borderStyle: 'dashed' }} />
+            <Divider sx={{ mt: 'auto', mb: 2, borderStyle: 'dashed' }} />
             <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="center">
                 <Button
                     size="small"

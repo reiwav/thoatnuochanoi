@@ -30,7 +30,7 @@ const EmployeeInundationDashboard = () => {
     const downSM = useMediaQuery(theme.breakpoints.down('sm'));
     const basePath = '/employee';
 
-    const { user: userInfo, logout, hasPermission } = useAuthStore();
+    const { user: userInfo, logout, hasPermission, fetchPermissions } = useAuthStore();
     const {
         points, organizations, historyReports,
         loading, loadingHistory,
@@ -54,6 +54,7 @@ const EmployeeInundationDashboard = () => {
     // Initial Fetch
     useEffect(() => {
         fetchInitialData();
+        fetchPermissions();
     }, []);
 
     // Polling Logic (8s)

@@ -15,7 +15,7 @@ export const ReportInfoSection = ({ latest, handleOpenViewer }) => {
             
             <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
                 <Chip 
-                    label={`${latest.length || '?'}m x ${latest.width || '?'}m x ${latest.depth || 0}mm`} 
+                    label={`${latest.length || '?'} x ${latest.width || '?'} x ${latest.depth || 0}`} 
                     size="small" 
                     variant="outlined" 
                     color="secondary" 

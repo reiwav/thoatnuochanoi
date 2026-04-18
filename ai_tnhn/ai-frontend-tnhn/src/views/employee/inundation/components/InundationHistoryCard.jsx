@@ -1,12 +1,14 @@
 import React, { useState, useMemo } from 'react';
-import { Box, Typography, Chip, Stack, IconButton, Collapse, Paper, Grid, TableRow, TableCell, Button } from '@mui/material';
-import { IconChevronUp, IconChevronDown, IconInfoCircle } from '@tabler/icons-react';
+import { Box, Typography, Chip, Stack, IconButton, Collapse, Paper, Grid, TableRow, TableCell, Button, Divider, alpha } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import { IconChevronUp, IconChevronDown, IconInfoCircle, IconMapPin, IconClock } from '@tabler/icons-react';
 import { getLatestData } from 'utils/inundationUtils';
 import { formatDateTime, formatDuration } from 'utils/dataHelper';
 import useInundationStore from 'store/useInundationStore';
 import { SurveyInfoSection, MechInfoSection, ReviewCommentSection } from './TechnicalSections';
 
 const InundationHistoryCard = ({ report, isMobile, navigate, basePath, handleOpenViewer }) => {
+    const theme = useTheme();
     const [open, setOpen] = useState(false);
     const organizations = useInundationStore(state => state.organizations);
     const latest = useMemo(() => getLatestData(report), [report]);
@@ -28,6 +30,9 @@ const InundationHistoryCard = ({ report, isMobile, navigate, basePath, handleOpe
                         <Typography variant="caption" sx={{ fontWeight: 800, display: 'block', mb: 1 }}>ℹ️ TỔNG QUAN</Typography>
                         <ReviewCommentSection latest={latest} />
                         <Typography variant="body2" sx={{ mt: 1 }}>Chiều sâu: <b>{latest?.depth || 0}mm</b></Typography>
+                        {(latest?.length || latest?.width) && (
+                            <Typography variant="body2">Kích thước: <b>{latest.length || '?'}m x {latest.width || '?'}m</b></Typography>
+                        )}
                         <Typography variant="body2">Thời gian: <b>{formatDuration(report.start_time, report.end_time)}</b></Typography>
                     </Box>
                 </Grid>
@@ -44,17 +49,71 @@ const InundationHistoryCard = ({ report, isMobile, navigate, basePath, handleOpe
 
     if (isMobile) {
         return (
-            <Paper elevation={0} sx={{ p: 2, mb: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 3, bgcolor: 'background.paper' }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1 }}>
-                    <Box sx={{ flex: 1 }}>
-                        <Typography variant="h5" sx={{ fontWeight: 900, color: 'primary.dark', mb: 1 }}>{report.street_name}</Typography>
-                        <Stack direction="row" spacing={1}>
-                            <Chip label={report.status === 'active' ? 'Đang ngập' : 'Đã kết thúc'} color={report.status === 'active' ? 'error' : 'success'} size="small" sx={{ fontWeight: 800 }} />
-                            {report.needs_correction && <Chip label="CẦN SỬA" size="small" color="error" sx={{ fontWeight: 800 }} />}
+            <Paper 
+                elevation={0} 
+                sx={{ 
+                    p: 2.5, 
+                    mb: 2, 
+                    border: '1px solid', 
+                    borderColor: 'divider', 
+                    borderRadius: 4, 
+                    bgcolor: 'background.paper',
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                        borderColor: 'primary.light',
+                        boxShadow: theme.shadows[4]
+                    }
+                }}
+            >
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
+                    <Box sx={{ pr: 2 }}>
+                        <Typography variant="h4" sx={{ fontWeight: 900, color: 'text.primary', mb: 0.5 }}>{report.street_name}</Typography>
+                        <Typography variant="caption" color="textSecondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1.5 }}>
+                            <IconMapPin size={12} /> {report.address || 'Hà Nội'}
+                        </Typography>
+                        
+                        <Stack direction="row" spacing={1} alignItems="center">
+                            <Chip 
+                                label={report.status === 'active' ? 'Đang ngập' : 'Đã kết thúc'} 
+                                size="small"
+                                sx={{ 
+                                    height: 22,
+                                    fontSize: '0.65rem',
+                                    fontWeight: 900,
+                                    bgcolor: report.status === 'active' ? alpha(theme.palette.error.main, 0.1) : alpha(theme.palette.success.main, 0.1),
+                                    color: report.status === 'active' ? 'error.main' : 'success.main',
+                                    borderRadius: 1.5,
+                                    textTransform: 'uppercase'
+                                }} 
+                            />
+                            {report.needs_correction && (
+                                <Chip 
+                                    label="CẦN SỬA" 
+                                    size="small" 
+                                    color="error" 
+                                    sx={{ height: 22, fontSize: '0.65rem', fontWeight: 900, borderRadius: 1.5 }} 
+                                />
+                            )}
                         </Stack>
                     </Box>
-                    <IconButton size="small" onClick={() => setOpen(!open)}>{open ? <IconChevronUp size={22} /> : <IconChevronDown size={22} />}</IconButton>
+                    <IconButton 
+                        size="small" 
+                        onClick={() => setOpen(!open)}
+                        sx={{ bgcolor: 'grey.50' }}
+                    >
+                        {open ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />}
+                    </IconButton>
                 </Box>
+                
+                <Stack direction="row" spacing={2} sx={{ mb: open ? 0 : 0 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <IconClock size={14} color={theme.palette.text.secondary} />
+                        <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600 }}>
+                            {formatDateTime(report.start_time)}
+                        </Typography>
+                    </Box>
+                </Stack>
+
                 <Collapse in={open} timeout="auto" unmountOnExit>{renderDetails()}</Collapse>
             </Paper>
         );

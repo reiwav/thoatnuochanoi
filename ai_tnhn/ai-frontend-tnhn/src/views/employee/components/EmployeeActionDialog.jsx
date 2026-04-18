@@ -16,6 +16,7 @@ import { IconX } from '@tabler/icons-react';
 // Form imports
 import { SurveyActionForm, MechActionForm, ReviewActionForm } from '../inundation/components/ActionForms';
 import PumpingStationReport from './PumpingStationReportForm';
+import InundationReportPanel from '../inundation/InundationReportPanel';
 
 const EmployeeActionDialog = ({ open, onClose, mode, data, onFinished }) => {
     const theme = useTheme();
@@ -23,12 +24,14 @@ const EmployeeActionDialog = ({ open, onClose, mode, data, onFinished }) => {
 
     const getTitle = () => {
         switch (mode) {
+            case 'REPORT':
+                return `Báo cáo: ${data?.name}`;
             case 'SURVEY':
-                return `Báo cáo Hiện trường: ${data?.name}`;
+                return `TK Giám sát: ${data?.name}`;
             case 'MECH':
-                return `Báo cáo Cơ giới: ${data?.name}`;
+                return `CG xử lý: ${data?.name}`;
             case 'REVIEW':
-                return `Rà soát & Nhận xét: ${data?.name}`;
+                return `Nhận xét: ${data?.name}`;
             case 'PUMPING':
                 return `Báo cáo Trạm bơm: ${data?.name}`;
             default:
@@ -40,6 +43,16 @@ const EmployeeActionDialog = ({ open, onClose, mode, data, onFinished }) => {
         if (!data) return null;
 
         switch (mode) {
+            case 'REPORT':
+                return (
+                    <InundationReportPanel 
+                        selectedReport={data.active_report} 
+                        pointId={data.id} 
+                        initialStreetName={data.name} 
+                        onSuccess={onFinished} 
+                        isCorrectionMode={data.active_report?.needs_correction}
+                    />
+                );
             case 'SURVEY':
                 return <SurveyActionForm point={data} onFinished={onFinished} onClose={onClose} />;
             case 'MECH':

@@ -7,8 +7,8 @@ import {
     useMediaQuery, Grid, Divider
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { 
-    IconSearch, IconAlertTriangle, IconUser, IconLogout, 
+import {
+    IconSearch, IconAlertTriangle, IconUser, IconLogout,
     IconSend, IconChecklist, IconEngine, IconChevronRight,
     IconHistory, IconClock
 } from '@tabler/icons-react';
@@ -82,7 +82,7 @@ const EmployeeInundationDashboard = () => {
 
     const filteredPoints = useMemo(() => {
         let result = activeTab === 1 ? points.filter(p => !!p.report_id) : points;
-        
+
         if (filters.statusFilter === 'active') result = result.filter(p => !!p.report_id);
         if (filters.statusFilter === 'normal') result = result.filter(p => !p.report_id);
 
@@ -116,19 +116,19 @@ const EmployeeInundationDashboard = () => {
     const renderFilterBar = () => (
         <Box sx={{ mb: 2 }}>
             <TextField
-                fullWidth 
+                fullWidth
                 placeholder="Tìm tên đường, địa chỉ..."
                 value={filters.searchQuery}
                 onChange={(e) => setFilters({ searchQuery: e.target.value })}
-                InputProps={{ 
-                    startAdornment: <IconSearch size={20} style={{ marginRight: 12, opacity: 0.6 }} />, 
-                    sx: { 
-                        borderRadius: 4, 
+                InputProps={{
+                    startAdornment: <IconSearch size={20} style={{ marginRight: 12, opacity: 0.6 }} />,
+                    sx: {
+                        borderRadius: 4,
                         bgcolor: 'background.paper',
                         boxShadow: theme.shadows[1],
                         '&:hover': { boxShadow: theme.shadows[3] },
                         '& .MuiOutlinedInput-notchedOutline': { border: '1px solid', borderColor: 'divider' }
-                    } 
+                    }
                 }}
             />
         </Box>
@@ -146,7 +146,7 @@ const EmployeeInundationDashboard = () => {
                 </Grid>
             );
         }
-        
+
         if (filteredPoints.length === 0) {
             return (
                 <Box sx={{ py: 8, textAlign: 'center' }}>
@@ -160,10 +160,10 @@ const EmployeeInundationDashboard = () => {
             <Grid container spacing={2}>
                 {filteredPoints.map(point => (
                     <Grid item xs={12} sm={6} md={4} key={point.id}>
-                        <InundationPointCard 
-                            point={point} 
-                            openTask={openTask} 
-                            handleOpenViewer={handleOpenViewer} 
+                        <InundationPointCard
+                            point={point}
+                            openTask={openTask}
+                            handleOpenViewer={handleOpenViewer}
                         />
                     </Grid>
                 ))}
@@ -185,13 +185,7 @@ const EmployeeInundationDashboard = () => {
                 </Badge>
             </Box>
 
-            {/* Quick Tabs */}
-            <Stack direction="row" spacing={1} sx={{ mb: 2, overflowX: 'auto', pb: 1, '&::-webkit-scrollbar': { display: 'none' } }}>
-                <Chip icon={<IconChecklist size={16}/>} label={`Tất cả (${stats.total})`} variant={activeTab === 0 ? 'filled' : 'outlined'} color="primary" onClick={() => navigate(`${basePath}/inundation?activeTab=0`)} sx={{ fontWeight: 800, flexShrink: 0 }} />
-                <Chip icon={<IconAlertTriangle size={16}/>} label={`Đang diễn biến (${stats.active})`} color="error" variant={activeTab === 1 ? 'filled' : 'outlined'} onClick={() => navigate(`${basePath}/inundation?activeTab=1`)} sx={{ fontWeight: 800, flexShrink: 0 }} />
-                <Chip icon={<IconHistory size={16}/>} label="Lịch sử đợt ngập" variant={activeTab === 2 ? 'filled' : 'outlined'} color="primary" onClick={() => navigate(`${basePath}/inundation?activeTab=2`)} sx={{ fontWeight: 800, flexShrink: 0 }} />
-                <Chip icon={<IconUser size={16}/>} label="Cá nhân" variant={activeTab === 3 ? 'filled' : 'outlined'} color="primary" onClick={() => navigate(`${basePath}/inundation?activeTab=3`)} sx={{ fontWeight: 800, flexShrink: 0 }} />
-            </Stack>
+
 
             {/* Content Area */}
             {activeTab === 2 ? (
@@ -219,7 +213,7 @@ const EmployeeInundationDashboard = () => {
             )}
 
             {/* Common Task Dialog */}
-            <EmployeeActionDialog 
+            <EmployeeActionDialog
                 open={taskDialog.open}
                 mode={taskDialog.mode}
                 data={taskDialog.data}

@@ -1,18 +1,43 @@
 import React, { useState, useMemo } from 'react';
 import {
-    Box, Typography, Stack, Chip, Paper, IconButton, Collapse, Button, Divider, Grid, Tooltip, alpha
+    Box, Typography, Stack, Avatar, Paper, IconButton, Collapse, Button, Tooltip, alpha, Chip, Divider, Grid
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import {
     IconChevronDown, IconChevronUp, IconSend, IconEngine, IconChecklist,
-    IconMapPin, IconInfoCircle, IconCheck, IconX, IconAlertTriangle
+    IconMapPin, IconAlertTriangle, IconClock, IconDroplets, IconCloudRain, IconRipple,
+    IconRuler, IconCar, IconClipboardCheck
 } from '@tabler/icons-react';
 
 import PermissionGuard from 'ui-component/PermissionGuard';
-import InundationStatus from './InundationStatus';
-import { SurveyInfoSection, MechInfoSection, ReviewCommentSection } from './TechnicalSections';
+import { SurveyInfoSection, MechInfoSection, ReviewCommentSection, ReportInfoSection } from './TechnicalSections';
 import { getLatestData } from 'utils/inundationUtils';
 import { formatDuration } from 'utils/dataHelper';
+
+const MetricItem = ({ icon: Icon, label, value, color }) => (
+    <Box sx={{ 
+        flex: 1, 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center', 
+        gap: 0.5,
+        p: 1,
+        borderRadius: 2,
+        bgcolor: alpha(color, 0.05),
+        border: '1px solid',
+        borderColor: alpha(color, 0.1)
+    }}>
+        <Stack direction="row" spacing={0.5} alignItems="center">
+            <Icon size={14} color={color} />
+            <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', fontSize: '0.65rem', textTransform: 'uppercase' }}>
+                {label}
+            </Typography>
+        </Stack>
+        <Typography variant="h5" sx={{ fontWeight: 900, color: color }}>
+            {value || '-'}
+        </Typography>
+    </Box>
+);
 
 const InundationPointCard = ({ point, openTask, handleOpenViewer }) => {
     const theme = useTheme();
@@ -27,173 +52,254 @@ const InundationPointCard = ({ point, openTask, handleOpenViewer }) => {
 
     return (
         <Paper
-            elevation={isHighPriority ? 4 : 1}
+            elevation={0}
             sx={{
-                borderRadius: 4,
-                overflow: 'hidden',
+                p: 2.5,
+                borderRadius: 5,
                 border: '1px solid',
-                borderColor: isHighPriority ? 'error.light' : 'divider',
-                background: isHighPriority
-                    ? `linear-gradient(135deg, ${alpha(theme.palette.error.light, 0.05)} 0%, ${theme.palette.background.paper} 100%)`
-                    : theme.palette.background.paper,
-                transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
+                borderColor: isHighPriority ? alpha(theme.palette.error.main, 0.2) : 'divider',
+                boxShadow: isHighPriority 
+                    ? `0 10px 30px -10px ${alpha(theme.palette.error.main, 0.15)}`
+                    : 'none',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                background: isHighPriority 
+                    ? `linear-gradient(135deg, ${alpha(theme.palette.error.main, 0.01)} 0%, #ffffff 100%)`
+                    : '#ffffff',
+                position: 'relative',
+                overflow: 'hidden',
                 '&:hover': {
                     transform: 'translateY(-4px)',
-                    boxShadow: theme.shadows[8],
+                    boxShadow: isHighPriority 
+                        ? `0 20px 40px -12px ${alpha(theme.palette.error.main, 0.2)}`
+                        : theme.shadows[8],
                     borderColor: isHighPriority ? 'error.main' : 'primary.light'
                 }
             }}
         >
-            <Box sx={{ p: 2.5 }}>
-                {/* Header: Title and Status */}
-                <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 1.5 }}>
-                    <Box sx={{ flex: 1 }}>
-                        <Typography variant="h4" sx={{ fontWeight: 900, color: isHighPriority ? 'error.dark' : 'text.primary', mb: 0.5 }}>
-                            {point.name}
-                        </Typography>
-                        <Stack direction="row" spacing={1} alignItems="center">
-                            <IconMapPin size={14} color={theme.palette.text.secondary} />
-                            <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600 }}>
-                                {point.address}
-                            </Typography>
-                        </Stack>
-                    </Box>
-                    <Box sx={{ textAlign: 'right', flexShrink: 0, ml: 1 }}>
-                        <InundationStatus
-                            reportId={point.report_id}
-                            latest={latest}
-                            needsCorrection={latest?.needs_correction}
-                        />
-                    </Box>
-                </Stack>
-
-                {/* Operating Indicators (Quick Summary) */}
-                {isHighPriority && (
-                    <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
-                        <Tooltip title="Trạng thái Khảo sát">
-                            <Box sx={{
-                                px: 1, py: 0.5, borderRadius: 1.5, display: 'flex', alignItems: 'center', gap: 0.5,
-                                bgcolor: latest?.survey_checked ? 'success.lighter' : 'grey.100',
-                                border: '1px solid', borderColor: latest?.survey_checked ? 'success.light' : 'divider'
-                            }}>
-                                {latest?.survey_checked ? <IconCheck size={14} color={theme.palette.success.main} /> : <IconX size={14} color={theme.palette.text.disabled} />}
-                                <Typography variant="caption" sx={{ fontWeight: 800, color: latest?.survey_checked ? 'success.dark' : 'text.disabled' }}>XNTK</Typography>
-                            </Box>
-                        </Tooltip>
-                        <Tooltip title="Trạng thái Cơ giới">
-                            <Box sx={{
-                                px: 1, py: 0.5, borderRadius: 1.5, display: 'flex', alignItems: 'center', gap: 0.5,
-                                bgcolor: latest?.mech_checked ? 'secondary.lighter' : 'grey.100',
-                                border: '1px solid', borderColor: latest?.mech_checked ? 'secondary.light' : 'divider'
-                            }}>
-                                {latest?.mech_checked ? <IconCheck size={14} color={theme.palette.secondary.main} /> : <IconX size={14} color={theme.palette.text.disabled} />}
-                                <Typography variant="caption" sx={{ fontWeight: 800, color: latest?.mech_checked ? 'secondary.dark' : 'text.disabled' }}>Cơ giới</Typography>
-                            </Box>
-                        </Tooltip>
-                        {latest?.needs_correction && (
-                            <Tooltip title="Chờ rà soát lại">
-                                <Box sx={{ px: 1, py: 0.5, borderRadius: 1.5, display: 'flex', alignItems: 'center', gap: 0.5, bgcolor: 'warning.lighter', border: '1px solid', borderColor: 'warning.light' }}>
-                                    <IconAlertTriangle size={14} color={theme.palette.warning.main} />
-                                    <Typography variant="caption" sx={{ fontWeight: 800, color: 'warning.dark' }}>Cần sửa</Typography>
-                                </Box>
-                            </Tooltip>
-                        )}
-                    </Stack>
+            {/* Status Badge - Floating Style */}
+            <Box sx={{ 
+                position: 'absolute', 
+                top: 16, 
+                right: 16,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1
+            }}>
+                {latest?.needs_correction && (
+                    <Tooltip title="Nội dung báo cáo cần sửa lại">
+                        <Avatar sx={{ bgcolor: 'warning.main', width: 24, height: 24, animation: 'pulse 2s infinite' }}>
+                            <IconAlertTriangle size={15} color="white" />
+                        </Avatar>
+                    </Tooltip>
                 )}
+                <Chip 
+                    label={isHighPriority ? 'ĐANG NGẬP' : 'BÌNH THƯỜNG'}
+                    size="small"
+                    sx={{ 
+                        height: 24,
+                        fontSize: '0.65rem',
+                        fontWeight: 900,
+                        bgcolor: isHighPriority ? alpha(theme.palette.error.main, 0.1) : alpha(theme.palette.success.main, 0.1),
+                        color: isHighPriority ? 'error.main' : 'success.main',
+                        border: '1px solid',
+                        borderColor: isHighPriority ? alpha(theme.palette.error.main, 0.2) : alpha(theme.palette.success.main, 0.2),
+                        borderRadius: 1.5,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px'
+                    }}
+                />
+            </Box>
 
-                {/* Main Actions Bar */}
-                <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="center">
-                    <Button
-                        size="small"
-                        color="inherit"
-                        startIcon={expanded ? <IconChevronUp size={18} /> : <IconChevronDown size={18} />}
-                        onClick={() => setExpanded(!expanded)}
-                        sx={{
-                            fontWeight: 800,
-                            borderRadius: 2,
-                            textTransform: 'none',
-                            color: 'text.secondary',
-                            '&:hover': { bgcolor: 'grey.100' }
+            {/* Header: Avatar and Title */}
+            <Stack direction="row" spacing={2} alignItems="flex-start" sx={{ mb: 2.5 }}>
+                <Avatar sx={{
+                    bgcolor: isHighPriority ? 'error.main' : 'success.main',
+                    width: 48,
+                    height: 48,
+                    borderRadius: 3,
+                    boxShadow: `0 8px 16px ${alpha(isHighPriority ? theme.palette.error.main : theme.palette.success.main, 0.25)}`
+                }}>
+                    <IconMapPin size={24} color="#fff" />
+                </Avatar>
+                <Box sx={{ pr: 12 }}>
+                    <Typography 
+                        variant="h4" 
+                        sx={{ 
+                            fontWeight: 900, 
+                            color: isHighPriority ? 'error.dark' : 'text.primary',
+                            lineHeight: 1.2,
+                            mb: 0.5,
+                            fontSize: '1.1rem'
                         }}
                     >
-                        Chi tiết
-                    </Button>
+                        {point.name}
+                    </Typography>
+                    <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <IconMapPin size={12} /> {point.address}
+                    </Typography>
+                </Box>
+            </Stack>
 
-                    <Stack direction="row" spacing={1}>
-                        <PermissionGuard permission="inundation:survey">
-                            <Tooltip title="Báo cáo XNTK">
-                                <IconButton
-                                    size="small"
-                                    color="primary"
-                                    onClick={() => openTask('SURVEY', point)}
-                                    sx={{ bgcolor: alpha(theme.palette.primary.main, 0.1), '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.2) } }}
-                                >
-                                    <IconSend size={20} />
-                                </IconButton>
-                            </Tooltip>
-                        </PermissionGuard>
-                        <PermissionGuard permission="inundation:mechanic">
-                            <Tooltip title="Báo cáo Cơ giới">
-                                <IconButton
-                                    size="small"
-                                    color="secondary"
-                                    onClick={() => openTask('MECH', point)}
-                                    sx={{ bgcolor: alpha(theme.palette.secondary.main, 0.1), '&:hover': { bgcolor: alpha(theme.palette.secondary.main, 0.2) } }}
-                                >
-                                    <IconEngine size={20} />
-                                </IconButton>
-                            </Tooltip>
-                        </PermissionGuard>
-                        <PermissionGuard permission="inundation:review">
-                            <Tooltip title="Rà soát nội dung">
-                                <IconButton
-                                    size="small"
-                                    color="error"
-                                    onClick={() => openTask('REVIEW', point)}
-                                    sx={{ bgcolor: alpha(theme.palette.error.main, 0.1), '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.2) } }}
-                                >
-                                    <IconChecklist size={20} />
-                                </IconButton>
-                            </Tooltip>
-                        </PermissionGuard>
-                    </Stack>
+            {/* Sub-Header: Start Time for Active Reports */}
+            {isHighPriority && point.active_report?.start_time && (
+                <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2, px: 1, py: 0.5, bgcolor: alpha(theme.palette.error.main, 0.05), borderRadius: 1.5 }}>
+                    <IconClock size={14} color={theme.palette.error.main} />
+                    <Typography variant="caption" sx={{ fontWeight: 800, color: 'error.main' }}>
+                        Bắt đầu từ: {new Date(point.active_report.start_time).toLocaleTimeString()} ({formatDuration(point.active_report.start_time)})
+                    </Typography>
                 </Stack>
+            )}
 
-                {/* Expandable Details Section */}
-                <Collapse in={expanded} timeout="auto" unmountOnExit>
-                    <Box sx={{ mt: 2, pt: 2, borderTop: '1px dashed', borderColor: 'divider' }}>
-                        {latest ? (
-                            <Stack spacing={2}>
-                                {isHighPriority && (
-                                    <Box sx={{ p: 1.5, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-                                        <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
-                                            <IconInfoCircle size={14} /> THÔNG TIN NGẬP:
-                                        </Typography>
-                                        <Grid container spacing={1}>
-                                            <Grid item xs={6}>
-                                                <Typography variant="caption" color="textSecondary">Độ sâu:</Typography>
-                                                <Typography variant="body2" sx={{ fontWeight: 800 }}>{latest.depth || 0} mm</Typography>
-                                            </Grid>
-                                            <Grid item xs={6}>
-                                                <Typography variant="caption" color="textSecondary">Thời gian ngập:</Typography>
-                                                <Typography variant="body2" sx={{ fontWeight: 800 }}>{formatDuration(point.active_report?.start_time)}</Typography>
-                                            </Grid>
-                                        </Grid>
-                                    </Box>
-                                )}
+            {/* Role-based Metrics Section */}
+            {isHighPriority && latest && (
+                <Stack spacing={1.5} sx={{ mb: 2.5 }}>
+                    {/* 1. Báo cáo Tình hình (Report) */}
+                    <Stack direction="row" spacing={1} alignItems="center" sx={{ bgcolor: alpha(theme.palette.secondary.main, 0.03), p: 1, borderRadius: 2, border: '1px solid', borderColor: alpha(theme.palette.secondary.main, 0.1) }}>
+                        <Box sx={{ bgcolor: 'secondary.main', p: 0.5, borderRadius: 1, display: 'flex' }}>
+                            <IconMapPin size={14} color="#fff" />
+                        </Box>
+                        <Typography variant="caption" sx={{ fontWeight: 800, flex: 1 }}>
+                            {(latest.depth != null || latest.length != null || latest.width != null) 
+                                ? `${latest.length || '?'}m x ${latest.width || '?'}m x ${latest.depth || 0}mm` 
+                                : 'Chưa có thông số kích thước'}
+                        </Typography>
+                        <Chip 
+                            label={latest.traffic_status || 'Bình thường'} 
+                            size="small" 
+                            variant="outlined" 
+                            color={latest.traffic_status === 'Không đi lại được' ? 'error' : (latest.traffic_status === 'Đi lại khó khăn' ? 'warning' : 'success')}
+                            sx={{ height: 20, fontSize: '0.65rem', fontWeight: 800 }}
+                        />
+                    </Stack>
 
-                                <SurveyInfoSection latest={latest} handleOpenViewer={handleOpenViewer} />
-                                <MechInfoSection latest={latest} handleOpenViewer={handleOpenViewer} />
-                                <ReviewCommentSection latest={latest} />
-                            </Stack>
-                        ) : (
-                            <Typography variant="body2" color="textSecondary" align="center" sx={{ py: 2, fontStyle: 'italic' }}>
-                                Chưa có dữ liệu vận hành gần nhất
+                    {/* 2. Dữ liệu Cơ giới (Mechanic) */}
+                    {(latest.mech_d != null || latest.mech_r != null || latest.mech_s != null) && (
+                        <Stack direction="row" spacing={1}>
+                            <MetricItem icon={IconDroplets} label="Sâu (D)" value={latest.mech_d} color={theme.palette.primary.main} />
+                            <MetricItem icon={IconCloudRain} label="Mưa (R)" value={latest.mech_r} color={theme.palette.info.main} />
+                            <MetricItem icon={IconRipple} label="Nước (S)" value={latest.mech_s} color={theme.palette.success.main} />
+                        </Stack>
+                    )}
+
+                    {/* 3. Trạng thái XNTK (Survey) */}
+                    {latest.survey_checked && (
+                        <Stack direction="row" spacing={1} alignItems="center" sx={{ px: 1 }}>
+                            <IconClipboardCheck size={14} color={theme.palette.success.main} />
+                            <Typography variant="caption" sx={{ fontWeight: 700, color: 'success.dark' }}>
+                                XNTK: Đã phối hợp xử lý
                             </Typography>
-                        )}
-                    </Box>
-                </Collapse>
-            </Box>
+                        </Stack>
+                    )}
+                </Stack>
+            )}
+
+            {/* Secondary Data Preview */}
+            {!isHighPriority && latest?.updated_at && (
+                <Typography variant="caption" color="textSecondary" sx={{ display: 'block', mb: 2, fontStyle: 'italic', opacity: 0.7 }}>
+                    Cập nhật lần cuối: {new Date(latest.updated_at).toLocaleString()}
+                </Typography>
+            )}
+
+            {/* Actions Bar */}
+            <Divider sx={{ mb: 2, borderStyle: 'dashed' }} />
+            <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="center">
+                <Button
+                    size="small"
+                    color="inherit"
+                    startIcon={expanded ? <IconChevronUp size={18} /> : <IconChevronDown size={18} />}
+                    onClick={() => setExpanded(!expanded)}
+                    sx={{
+                        fontWeight: 800,
+                        borderRadius: 2.5,
+                        textTransform: 'none',
+                        color: 'text.secondary',
+                        px: 1.5,
+                        '&:hover': { bgcolor: 'grey.100' }
+                    }}
+                >
+                    {expanded ? 'Thu gọn' : 'Chi tiết'}
+                </Button>
+
+                <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ gap: 1 }}>
+                    <PermissionGuard permission="inundation:report">
+                        <Button
+                            variant="contained"
+                            size="small"
+                            color="secondary"
+                            startIcon={<IconSend size={16} />}
+                            onClick={() => openTask('REPORT', point)}
+                            sx={{ borderRadius: 2.5, fontWeight: 800, px: 1.5 }}
+                        >
+                            Báo cáo
+                        </Button>
+                    </PermissionGuard>
+
+                    <PermissionGuard permission="inundation:survey">
+                        <Button
+                            variant="contained"
+                            size="small"
+                            color="primary"
+                            startIcon={<IconClipboardCheck size={16} />}
+                            onClick={() => openTask('SURVEY', point)}
+                            sx={{ borderRadius: 2.5, fontWeight: 800, px: 1.5 }}
+                        >
+                            TK Giám sát
+                        </Button>
+                    </PermissionGuard>
+                    
+                    <PermissionGuard permission="inundation:mechanic">
+                        <Button
+                            variant="contained"
+                            size="small"
+                            color="info"
+                            startIcon={<IconEngine size={16} />}
+                            onClick={() => openTask('MECH', point)}
+                            sx={{ borderRadius: 2.5, fontWeight: 800, px: 1.5 }}
+                        >
+                            CG xử lý
+                        </Button>
+                    </PermissionGuard>
+
+                    <PermissionGuard permission="inundation:review">
+                        <Button
+                            variant="contained"
+                            size="small"
+                            color="error"
+                            startIcon={<IconChecklist size={16} />}
+                            onClick={() => openTask('REVIEW', point)}
+                            sx={{ borderRadius: 2.5, fontWeight: 800, px: 1.5 }}
+                        >
+                            Nhận xét
+                        </Button>
+                    </PermissionGuard>
+                </Stack>
+            </Stack>
+
+            {/* Detail Content */}
+            <Collapse in={expanded} timeout="auto" unmountOnExit>
+                <Box sx={{ mt: 2.5, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+                    {latest ? (
+                        <Stack spacing={2}>
+                            {/* Detailed Info Sections */}
+                            {isHighPriority && <ReportInfoSection latest={latest} handleOpenViewer={handleOpenViewer} />}
+                            <SurveyInfoSection latest={latest} handleOpenViewer={handleOpenViewer} />
+                            <MechInfoSection latest={latest} handleOpenViewer={handleOpenViewer} />
+                            <ReviewCommentSection latest={latest} />
+                        </Stack>
+                    ) : (
+                        <Typography variant="body2" color="textSecondary" align="center" sx={{ py: 3, fontStyle: 'italic' }}>
+                            Chưa có dữ liệu vận hành gần nhất
+                        </Typography>
+                    )}
+                </Box>
+            </Collapse>
+            <style>{`
+                @keyframes pulse { 
+                    0% { transform: scale(1); opacity: 1; } 
+                    50% { transform: scale(1.1); opacity: 0.8; } 
+                    100% { transform: scale(1); opacity: 1; } 
+                }
+            `}</style>
         </Paper>
     );
 };

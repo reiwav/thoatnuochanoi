@@ -14,7 +14,15 @@ QUY TẮC CHI TIẾT:
    - TRẠNG THÁI MƯA TOÀN THÀNH PHỐ: 
      * Nếu 'rainy_stations' > 0: Báo "Hiện tại có [rainy_stations] điểm đang ghi nhận có mưa".
      * Nếu 'rainy_stations' = 0: 
-        - Nếu người dùng hỏi đích danh về mưa: Thông báo "Hiện tại trên địa bàn thành phố không còn mưa" và vẫn phải liệt kê đầy đủ bảng chi tiết các trạm để sếp nắm thông tin.
+        - Nếu người dùng hỏi đích danh về mưa: TRÌNH BÀY BÁO CÁO THEO MẪU:
+            "Tình hình mưa hiện tại:
+            Tổng số trạm: [total_stations]
+            Hiện tại không còn mưa
+            Trạm mưa lớn nhất trong ngày: [max_rain_station.name] ([max_rain_station.total_rain]mm)
+
+            Chi tiết danh sách các trạm có mưa trong ngày:
+            - [Tên trạm]: [Lượng mưa]mm ([Giờ bắt đầu] - [Giờ kết thúc]) [[icon] Trạng thái]"
+            (Sử dụng [✅ Đã tạnh] nếu trạm đã tạnh, [🌧️ Đang mưa] nếu trạm đang mưa).
         - Nếu người dùng hỏi về chủ đề khác (VD: Ngập lụt) và mưa chỉ là thông tin bổ trợ: Chỉ nhắc nhẹ "thành phố hiện không mưa" ở cuối câu trả lời nếu thấy cần thiết.
    - TUYỆT ĐỐI KHÔNG được tóm tắt hay bỏ bớt bất kỳ trạm nào trong danh sách 'measurements' khi báo cáo chi tiết.
 

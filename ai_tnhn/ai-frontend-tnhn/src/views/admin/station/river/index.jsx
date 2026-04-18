@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
     Button, Grid, TextField, Table, TableBody,
     TableCell, TableContainer, TableHead, TableRow, Paper,
@@ -17,6 +17,7 @@ import OrganizationSelect from 'ui-component/filter/OrganizationSelect';
 import RiverDialog from './RiverDialog';
 import useAuthStore from 'store/useAuthStore';
 import { getDataArray } from 'utils/apiHelper';
+import PermissionGuard from 'ui-component/PermissionGuard';
 
 // Shared Components for Clean Architecture
 const StatusChip = ({ active }) => (
@@ -133,9 +134,13 @@ const StationRiverList = () => {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [totalItems, setTotalItems] = useState(0);
+    
+    // Khởi tạo bộ lọc đơn vị thông minh: Tránh việc gọi API 2 lần (1 lần không có org_id, 1 lần có org_id do OrganizationSelect ép vào)
+    const isCompanyLevel = isCompany || user?.role === 'super_admin';
+    const initialOrgId = (!isCompanyLevel && user?.org_id) ? user.org_id : '';
 
-    const [filterInputs, setFilterInputs] = useState({ search: '', active: '', org_id: '' });
-    const [params, setParams] = useState({ search: '', active: '', org_id: '' });
+    const [filterInputs, setFilterInputs] = useState({ search: '', active: '', org_id: initialOrgId });
+    const [params, setParams] = useState({ search: '', active: '', org_id: initialOrgId });
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingStation, setEditingStation] = useState(null);
@@ -164,7 +169,12 @@ const StationRiverList = () => {
         }
     };
 
+    const isFirstRender = useRef(true);
     useEffect(() => {
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            return;
+        }
         const timer = setTimeout(() => {
             setParams(filterInputs);
             setPage(0);
@@ -220,19 +230,22 @@ const StationRiverList = () => {
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
     return (
+        <PermissionGuard permission="water:view" fallback={<Box sx={{ p: 3, textAlign: 'center' }}><Typography color="error" variant="h4">Bạn không có quyền truy cập vùng dữ liệu này.</Typography></Box>}>
         <MainCard
             title={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                     <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>QUẢN LÝ TRẠM ĐO MỰC NƯỚC SÔNG</Typography>
                 </Box>
             }
-            secondary={canCreate && (
-                <AnimateButton>
-                    <Button variant="contained" color="secondary" startIcon={<IconPlus size={20} />} onClick={handleOpenCreate} sx={{ borderRadius: 3, fontWeight: 700, fontSize: '1rem', px: 2, py: 1 }}>
-                        {isMobile ? 'Thêm' : 'Thêm trạm mới'}
-                    </Button>
-                </AnimateButton>
-            )}
+            secondary={
+                <PermissionGuard permission="water:create">
+                    <AnimateButton>
+                        <Button variant="contained" color="secondary" startIcon={<IconPlus size={20} />} onClick={handleOpenCreate} sx={{ borderRadius: 3, fontWeight: 700, fontSize: '1rem', px: 2, py: 1 }}>
+                            {isMobile ? 'Thêm' : 'Thêm trạm mới'}
+                        </Button>
+                    </AnimateButton>
+                </PermissionGuard>
+            }
         >
             <Box sx={{ mb: 3 }}>
                 <Stack direction={isMobile ? "column" : "row"} spacing={1.5} alignItems="center">
@@ -242,7 +255,7 @@ const StationRiverList = () => {
                         placeholder="Nhập tên trạm..."
                         onChange={(e) => setFilterInputs({ ...filterInputs, search: e.target.value })}
                         size="small"
-                        InputProps={{ sx: { borderRadius: 3 } }}
+                        slotProps={{ input: { sx: { borderRadius: 3 } } }}
                         sx={{ width: { xs: '100%', sm: 300 } }}
                     />
 
@@ -338,6 +351,7 @@ const StationRiverList = () => {
                 organizations={organizations}
             />
         </MainCard>
+        </PermissionGuard>
     );
 };
 

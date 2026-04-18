@@ -15,11 +15,6 @@ import useAuthStore from 'store/useAuthStore';
 // ==============================|| APP ||============================== //
 
 export default function App() {
-  // Always fetch latest permissions on page reload to ensure UI is up-to-date with backend role matrices
-  useEffect(() => {
-    useAuthStore.getState().fetchPermissions();
-  }, []);
-
   return (
     <>
       <Toaster

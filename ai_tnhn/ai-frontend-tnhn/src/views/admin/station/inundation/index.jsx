@@ -5,6 +5,7 @@ import {
     IconButton, CircularProgress, Typography, Chip, Tooltip, Box,
     Collapse, useTheme, useMediaQuery, Grid, Card, CardContent, Divider
 } from '@mui/material';
+import PermissionGuard from 'ui-component/PermissionGuard';
 import { IconTrash, IconPlus, IconEdit, IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 
@@ -147,7 +148,12 @@ const StationInundationList = () => {
     const [editingPoint, setEditingPoint] = useState(null);
 
     const [searchFilter, setSearchFilter] = useState('');
-    const [orgFilter, setOrgFilter] = useState('');
+    
+    // Khởi tạo orgFilter thông minh: Nếu không phải cấp Công ty/Super Admin thì mặc định gán theo org_id của user
+    // Điều này giúp tránh việc mount với giá trị '' rồi bị OrganizationSelect ép về org_id (gây gọi API 2 lần)
+    const isCompanyLevel = isCompany || user?.role === 'super_admin';
+    const initialOrgFilter = (!isCompanyLevel && user?.org_id) ? user.org_id : '';
+    const [orgFilter, setOrgFilter] = useState(initialOrgFilter);
 
     const loadPoints = async () => {
         setLoading(true);
@@ -238,19 +244,22 @@ const StationInundationList = () => {
     };
 
     return (
+        <PermissionGuard permission="inundation:view" fallback={<Box sx={{ p: 3, textAlign: 'center' }}><Typography color="error" variant="h4">Bạn không có quyền truy cập vùng dữ liệu này.</Typography></Box>}>
         <MainCard
             title={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                     <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>QUẢN LÝ ĐIỂM NGẬP ÚNG</Typography>
                 </Box>
             }
-            secondary={canCreate && (
-                <AnimateButton>
-                    <Button variant="contained" color="secondary" startIcon={<IconPlus size={20} />} onClick={handleOpenCreate} sx={{ borderRadius: 3, fontWeight: 700, fontSize: '1rem', px: 2, py: 1 }}>
-                        {isMobile ? 'Thêm' : 'Thêm điểm mới'}
-                    </Button>
-                </AnimateButton>
-            )}
+            secondary={
+                <PermissionGuard permission="inundation:create">
+                    <AnimateButton>
+                        <Button variant="contained" color="secondary" startIcon={<IconPlus size={20} />} onClick={handleOpenCreate} sx={{ borderRadius: 3, fontWeight: 700, fontSize: '1rem', px: 2, py: 1 }}>
+                            {isMobile ? 'Thêm' : 'Thêm điểm mới'}
+                        </Button>
+                    </AnimateButton>
+                </PermissionGuard>
+            }
         >
             <Box sx={{ mb: 3 }}>
                 <Stack direction={isMobile ? "column" : "row"} spacing={1.5} alignItems="center">
@@ -259,9 +268,7 @@ const StationInundationList = () => {
                         value={searchFilter}
                         onChange={(e) => setSearchFilter(e.target.value)}
                         size="small"
-                        InputProps={{
-                            sx: { borderRadius: 3 }
-                        }}
+                        slotProps={{ input: { sx: { borderRadius: 3 } } }}
                         sx={{ width: { xs: '100%', sm: 300 } }}
                     />
                     <OrganizationSelect
@@ -334,12 +341,9 @@ const StationInundationList = () => {
                 </Table>
             </TableContainer>
 
-            <InundationDialog
-                open={dialogOpen} onClose={() => setDialogOpen(false)}
-                onSubmit={handleSubmit} station={editingPoint} isEdit={!!editingPoint}
-                organizations={organizations}
-            />
+            {dialogOpen && <InundationDialog open={dialogOpen} handleClose={() => setDialogOpen(false)} point={editingPoint} handleSubmit={handleSubmit} organizations={organizations.shared} />}
         </MainCard>
+        </PermissionGuard>
     );
 };
 

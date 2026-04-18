@@ -63,6 +63,24 @@ export default function MainLayout() {
         return;
       }
 
+      // Optimization: If user and token already exist in store, stop loading immediately
+      // and perform a "silent" background check/update to prevent UI flicker
+      if (storeState.user && storeState.token === currentToken) {
+        setIsChecking(false);
+        authApi.getProfile().then((user) => {
+          if (user && user.id) {
+            storeLogin(user, currentToken, user.role, user.is_employee, user.is_company);
+          }
+        }).catch((err) => {
+          console.error('Background profile refresh failed:', err);
+          if (err.response?.status === 401) {
+             storeLogout();
+             navigate('/pages/login', { replace: true });
+          }
+        });
+        return;
+      }
+
       try {
         if (urlToken) {
           localStorage.setItem(ADMIN_TOKEN, urlToken);

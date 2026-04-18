@@ -14,36 +14,52 @@ const useAuthStore = create(
       isCompany: false, // New state
       permissions: [],
       permissionsLoaded: false,
+      permissionsLoading: false,
 
       // Actions
       login: (userData, token, role, isEmployee = false, isCompany = false) => {
+        const { token: currentToken, user: currentUser } = get();
+        
+        // Prevent redundant state reset if token and user ID are identical
+        if (currentToken === token && currentUser?.id === userData?.id) {
+          return;
+        }
+
         set({
           user: userData,
           token,
           role: role,
           isEmployee: !!isEmployee,
           isCompany: !!isCompany,
-          permissionsLoaded: false
+          permissionsLoaded: false,
+          permissionsLoading: false
         });
         // Fetch permissions immediately after login if token exists
         get().fetchPermissions();
       },
       logout: () => {
-        set({ user: null, token: null, role: null, isEmployee: false, isCompany: false, permissions: [], permissionsLoaded: false });
+        set({ user: null, token: null, role: null, isEmployee: false, isCompany: false, permissions: [], permissionsLoaded: false, permissionsLoading: false });
         localStorage.removeItem('admin_token');
       },
       fetchPermissions: async () => {
-        const { token } = get();
-        if (!token) return;
+        const { token, permissionsLoading, permissionsLoaded } = get();
+        if (!token || permissionsLoading || permissionsLoaded) return;
+
+        set({ permissionsLoading: true });
         try {
           // Dynamic permissions endpoint
           const permissions = await axiosClient.get('/admin/permissions/my');
-          // Since it's flattened by interceptor, permissions is already the payload
-          set({ permissions: Array.isArray(permissions) ? permissions : [], permissionsLoaded: true });
+          set({ 
+            permissions: Array.isArray(permissions) ? permissions : [], 
+            permissionsLoaded: true,
+            permissionsLoading: false 
+          });
         } catch (error) {
           console.error('Failed to fetch permissions', error);
           if (error.message?.includes('401')) {
-            set({ permissions: [], permissionsLoaded: true });
+            set({ permissions: [], permissionsLoaded: true, permissionsLoading: false });
+          } else {
+            set({ permissionsLoading: false });
           }
         }
       },

@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
     Button, Grid, TextField, Table, TableBody,
     TableCell, TableContainer, TableHead, TableRow, Paper,
     CircularProgress, TablePagination, Typography,
-    useTheme, useMediaQuery, Box, InputAdornment
+    useTheme, useMediaQuery, Box, InputAdornment, Stack
 } from '@mui/material';
+import PermissionGuard from 'ui-component/PermissionGuard';
 import { IconPlus, IconSearch } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 
@@ -36,9 +37,13 @@ const StationLakeList = () => {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [totalItems, setTotalItems] = useState(0);
+    
+    // Khởi tạo bộ lọc đơn vị thông minh: Tránh việc gọi API 2 lần (1 lần không có org_id, 1 lần có org_id do OrganizationSelect ép vào)
+    const isCompanyLevel = isCompany || user?.role === 'super_admin';
+    const initialOrgId = (!isCompanyLevel && user?.org_id) ? user.org_id : '';
 
-    const [filterInputs, setFilterInputs] = useState({ search: '', active: '' });
-    const [params, setParams] = useState({ search: '', active: '' });
+    const [filterInputs, setFilterInputs] = useState({ search: '', active: '', org_id: initialOrgId });
+    const [params, setParams] = useState({ search: '', active: '', org_id: initialOrgId });
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingStation, setEditingStation] = useState(null);
@@ -68,12 +73,22 @@ const StationLakeList = () => {
         }
     }, [page, rowsPerPage, params]);
 
-    useEffect(() => { loadData(); }, [loadData]);
-
-    const handleSearch = useCallback(() => { 
-        setPage(0); 
-        setParams(filterInputs); 
+    const isFirstRender = useRef(true);
+    useEffect(() => {
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            return;
+        }
+        const timer = setTimeout(() => {
+            setParams(filterInputs);
+            setPage(0);
+        }, 500);
+        return () => clearTimeout(timer);
     }, [filterInputs]);
+
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
 
     const handleOpenCreate = useCallback(() => { 
         setEditingStation(null); 
@@ -124,64 +139,49 @@ const StationLakeList = () => {
     }, [organizationNamesMap]);
 
     return (
+        <PermissionGuard permission="water:view" fallback={<Box sx={{ p: 3, textAlign: 'center' }}><Typography color="error" variant="h4">Bạn không có quyền truy cập vùng dữ liệu này.</Typography></Box>}>
         <MainCard
             title={
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography variant="h3" fontWeight={800}>Quản lý Trạm đo mực nước hồ</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>QUẢN LÝ TRẠM ĐO MỰC NƯỚC HỒ</Typography>
                 </Box>
             }
-            secondary={canCreate && (
-                <AnimateButton>
-                    <Button 
-                        variant="contained" 
-                        color="secondary" 
-                        startIcon={<IconPlus size={20} />} 
-                        onClick={handleOpenCreate} 
-                        sx={{ 
-                            borderRadius: '12px', 
-                            fontWeight: 800, 
-                            fontSize: '0.875rem', 
-                            px: 2.5, 
-                            py: 1,
-                            boxShadow: '0 4px 12px rgba(103, 58, 183, 0.2)'
-                        }}
-                    >
-                        Thêm trạm mới
-                    </Button>
-                </AnimateButton>
-            )}
+            secondary={
+                <PermissionGuard permission="water:create">
+                    <AnimateButton>
+                        <Button 
+                            variant="contained" 
+                            color="secondary" 
+                            startIcon={<IconPlus size={20} />} 
+                            onClick={handleOpenCreate} 
+                            sx={{ 
+                                borderRadius: '12px', 
+                                fontWeight: 800, 
+                                fontSize: '0.875rem', 
+                                px: 2.5, 
+                                py: 1,
+                                boxShadow: '0 4px 12px rgba(103, 58, 183, 0.2)'
+                            }}
+                        >
+                            {isMobile ? 'Thêm' : 'Thêm trạm mới'}
+                        </Button>
+                    </AnimateButton>
+                </PermissionGuard>
+            }
         >
-            <Grid container spacing={2} sx={{ mb: 4 }} alignItems="center">
-                <Grid item xs={12} sm={8} md={6}>
+            <Box sx={{ mb: 3 }}>
+                <Stack direction={isMobile ? "column" : "row"} spacing={1.5} alignItems="center">
                     <TextField 
-                        fullWidth 
-                        placeholder="Tìm kiếm theo tên trạm..." 
+                        label="Tìm theo tên trạm" 
                         value={filterInputs.search}
+                        placeholder="Nhập tên trạm..."
                         onChange={(e) => setFilterInputs({ ...filterInputs, search: e.target.value })}
-                        onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                         size="small"
-                        InputProps={{ 
-                            startAdornment: (
-                                <InputAdornment position="start">
-                                    <IconSearch size={20} color={theme.palette.grey[500]} />
-                                </InputAdornment>
-                            ),
-                            sx: { borderRadius: '12px', bgcolor: 'grey.50' } 
-                        }}
+                        slotProps={{ input: { sx: { borderRadius: 3 } } }}
+                        sx={{ width: { xs: '100%', sm: 300 } }}
                     />
-                </Grid>
-                <Grid item xs={12} sm={4} md={2}>
-                    <Button 
-                        fullWidth 
-                        variant="contained" 
-                        color="primary" 
-                        onClick={handleSearch} 
-                        sx={{ borderRadius: '12px', fontWeight: 800, py: 1, height: 40 }}
-                    >
-                        Tìm kiếm
-                    </Button>
-                </Grid>
-            </Grid>
+                </Stack>
+            </Box>
 
             {/* Mobile View */}
             <Box sx={{ display: { xs: 'block', sm: 'none' } }}>
@@ -291,6 +291,7 @@ const StationLakeList = () => {
                 organizations={organizations}
             />
         </MainCard>
+        </PermissionGuard>
     );
 };
 

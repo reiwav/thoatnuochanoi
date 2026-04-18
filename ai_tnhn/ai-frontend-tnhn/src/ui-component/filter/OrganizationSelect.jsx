@@ -67,10 +67,12 @@ const OrganizationSelect = ({
             onChange={onChange}
             disabled={isLocked || loading || customDisabled}
             sx={{ minWidth: 200, ...sx }}
-            InputProps={{
-                sx: { borderRadius: 3, ...customInputProps?.sx },
-                ...customInputProps,
-                endAdornment: loading ? <CircularProgress color="inherit" size={20} sx={{ mr: 3 }} /> : customInputProps?.endAdornment || null
+            slotProps={{
+                input: {
+                    sx: { borderRadius: 3, ...customInputProps?.sx },
+                    ...customInputProps,
+                    endAdornment: loading ? <CircularProgress color="inherit" size={20} sx={{ mr: 3 }} /> : customInputProps?.endAdornment || null
+                }
             }}
         >
             {showAll && isCompanyLevel && <MenuItem value="">Tất cả đơn vị</MenuItem>}

@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
     Button, Grid, TextField, Table, TableBody, Box, Stack,
     TableCell, TableContainer, TableHead, TableRow, Paper,
     IconButton, CircularProgress, TablePagination, Typography, Chip, Tooltip,
     useTheme, useMediaQuery, Card, CardContent, Divider
 } from '@mui/material';
+import PermissionGuard from 'ui-component/PermissionGuard';
 import { IconTrash, IconPlus, IconEdit, IconSearch } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 
@@ -146,8 +147,12 @@ const StationRainList = () => {
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [totalItems, setTotalItems] = useState(0);
 
-    const [filterInputs, setFilterInputs] = useState({ search: '', active: '', org_id: '' });
-    const [params, setParams] = useState({ search: '', active: '', org_id: '' });
+    // Khởi tạo bộ lọc đơn vị thông minh: Tránh việc gọi API 2 lần (1 lần không có org_id, 1 lần có org_id do OrganizationSelect ép vào)
+    const isCompanyLevel = isCompany || user?.role === 'super_admin';
+    const initialOrgId = (!isCompanyLevel && user?.org_id) ? user.org_id : '';
+    
+    const [filterInputs, setFilterInputs] = useState({ search: '', active: '', org_id: initialOrgId });
+    const [params, setParams] = useState({ search: '', active: '', org_id: initialOrgId });
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingStation, setEditingStation] = useState(null);
@@ -176,7 +181,12 @@ const StationRainList = () => {
         }
     };
 
+    const isFirstRender = useRef(true);
     useEffect(() => {
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            return;
+        }
         const timer = setTimeout(() => {
             setParams(filterInputs);
             setPage(0);
@@ -229,19 +239,22 @@ const StationRainList = () => {
     }, {});
 
     return (
+        <PermissionGuard permission="rain:view" fallback={<Box sx={{ p: 3, textAlign: 'center' }}><Typography color="error" variant="h4">Bạn không có quyền truy cập vùng dữ liệu này.</Typography></Box>}>
         <MainCard
             title={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                     <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>QUẢN LÝ TRẠM ĐO MƯA</Typography>
                 </Box>
             }
-            secondary={canCreate && (
-                <AnimateButton>
-                    <Button variant="contained" color="secondary" startIcon={<IconPlus size={20} />} onClick={handleOpenCreate} sx={{ borderRadius: 3, fontWeight: 700, fontSize: '1rem', px: 2, py: 1 }}>
-                        {isMobile ? 'Thêm' : 'Thêm trạm mới'}
-                    </Button>
-                </AnimateButton>
-            )}
+            secondary={
+                <PermissionGuard permission="rain:create">
+                    <AnimateButton>
+                        <Button variant="contained" color="secondary" startIcon={<IconPlus size={20} />} onClick={handleOpenCreate} sx={{ borderRadius: 3, fontWeight: 700, fontSize: '1rem', px: 2, py: 1 }}>
+                            {isMobile ? 'Thêm' : 'Thêm trạm mới'}
+                        </Button>
+                    </AnimateButton>
+                </PermissionGuard>
+            }
         >
             <Box sx={{ mb: 3 }}>
                 <Stack direction={isMobile ? "column" : "row"} spacing={1.5} alignItems="center">
@@ -251,7 +264,7 @@ const StationRainList = () => {
                         placeholder="Nhập tên trạm..."
                         onChange={(e) => setFilterInputs({ ...filterInputs, search: e.target.value })}
                         size="small"
-                        InputProps={{ sx: { borderRadius: 3 } }}
+                        slotProps={{ input: { sx: { borderRadius: 3 } } }}
                         sx={{ width: { xs: '100%', sm: 300 } }}
                     />
 
@@ -347,6 +360,7 @@ const StationRainList = () => {
                 organizations={organizations}
             />
         </MainCard>
+        </PermissionGuard>
     );
 };
 

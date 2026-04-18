@@ -21,6 +21,7 @@ import PumpingStationReport from './PumpingStationReport';
 import { toast } from 'react-hot-toast';
 import useAuthStore from 'store/useAuthStore';
 import OrganizationSelect from 'ui-component/filter/OrganizationSelect';
+import PermissionGuard from 'ui-component/PermissionGuard';
 
 // Shared Status Component
 const LogStatusChip = ({ report }) => {
@@ -99,16 +100,16 @@ const PumpingStationMobileCard = ({ item, getOrgNames, handleHistory, handleEdit
 
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Typography variant="caption" color="text.secondary" sx={{ maxWidth: '60%' }}>{item.address}</Typography>
-                        <ActionButtons 
+                        <ActionButtons
                             item={item} hasPermission={hasPermission} isCompany={isCompany} user={user}
                             handleHistory={handleHistory} handleEdit={handleEdit} handleDelete={handleDelete}
                         />
                     </Box>
 
                     {lastReport && (
-                        <Button 
-                            fullWidth size="small" 
-                            variant="light" 
+                        <Button
+                            fullWidth size="small"
+                            variant="light"
                             onClick={() => setOpen(!open)}
                             endIcon={open ? <IconChevronUp size={16} /> : <IconChevronDown size={16} />}
                             sx={{ borderRadius: '8px', bgcolor: 'grey.50', py: 1, fontWeight: 700 }}
@@ -197,7 +198,7 @@ const PumpingStationDesktopRow = ({ item, index, getOrgNames, handleHistory, han
                     <Typography variant="body2" sx={{ fontWeight: 700 }}>{item.priority || 0}</Typography>
                 </TableCell>
                 <TableCell align="right">
-                    <ActionButtons 
+                    <ActionButtons
                         item={item} hasPermission={hasPermission} isCompany={isCompany} user={user}
                         handleHistory={handleHistory} handleEdit={handleEdit} handleDelete={handleDelete}
                     />
@@ -298,7 +299,11 @@ const PumpingStationPage = () => {
     const [openHistory, setOpenHistory] = useState(false);
     const [selected, setSelected] = useState(null);
     const [orgs, setOrgs] = useState({ primary: [], shared: [] });
-    const [orgFilter, setOrgFilter] = useState('');
+
+    // Khởi tạo bộ lọc đơn vị thông minh: Tránh việc gọi API 2 lần
+    const isCompanyLevel = isCompany || user?.role === 'super_admin';
+    const initialOrgFilter = (!isCompanyLevel && user?.org_id) ? user.org_id : '';
+    const [orgFilter, setOrgFilter] = useState(initialOrgFilter);
     const [searchFilter, setSearchFilter] = useState('');
     const [filteredData, setFilteredData] = useState([]);
 
@@ -341,14 +346,24 @@ const PumpingStationPage = () => {
         loadData();
     }, [orgFilter, isAdmin]);
 
+    const NoAccessView = () => (
+        <Box sx={{ p: 3 }}>
+            {assignedStation ? (
+                <PumpingStationReport station={assignedStation} />
+            ) : (
+                <Typography color="error">Bạn chưa được gán vào trạm bơm nào. Vui lòng liên hệ quản lý.</Typography>
+            )}
+        </Box>
+    );
+
     useEffect(() => {
         if (!Array.isArray(data)) {
             setFilteredData([]);
             return;
         }
         const q = searchFilter.toLowerCase();
-        const filtered = data.filter(item => 
-            item.name?.toLowerCase().includes(q) || 
+        const filtered = data.filter(item =>
+            item.name?.toLowerCase().includes(q) ||
             item.address?.toLowerCase().includes(q)
         );
         setFilteredData(filtered);
@@ -393,124 +408,115 @@ const PumpingStationPage = () => {
 
     if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}><CircularProgress /></Box>;
 
-    if (!isAdmin) {
-        if (!assignedStation) return <Box sx={{ p: 3 }}><Typography color="error">Bạn chưa được gán vào trạm bơm nào. Vui lòng liên hệ quản lý.</Typography></Box>;
-        return <PumpingStationReport station={assignedStation} />;
-    }
-
     return (
-        <MainCard
-            title={
-                <Stack direction="row" alignItems="center" spacing={1}>
-                    <IconEngine size={24} color={theme.palette.primary.main} />
-                    <Typography variant="h3" sx={{ fontWeight: 800 }}>QUẢN LÝ TRẠM BƠM</Typography>
-                </Stack>
-            }
-            secondary={
-                hasPermission('trambom:edit') && (
-                    <Button variant="contained" startIcon={<IconPlus />} onClick={handleAdd} sx={{ borderRadius: 3, fontWeight: 700 }}>
-                        {isMobile ? 'Thêm' : 'Thêm trạm bơm'}
-                    </Button>
-                )
-            }
-        >
-            <Box sx={{ mb: 3 }}>
-                <Stack direction={isMobile ? "column" : "row"} spacing={1.5} alignItems="center">
-                    <TextField 
-                        label="Tìm theo tên trạm bơm" 
-                        value={searchFilter}
-                        placeholder="Nhập tên hoặc địa chỉ..."
-                        onChange={(e) => setSearchFilter(e.target.value)}
-                        size="small"
-                        InputProps={{ sx: { borderRadius: 3 } }}
-                        sx={{ width: { xs: '100%', sm: 300 } }}
-                    />
-
-                    <OrganizationSelect
-                        value={orgFilter}
-                        onChange={(e) => setOrgFilter(e.target.value)}
-                        sx={{ width: { xs: '100%', sm: 300 } }}
-                    />
-                </Stack>
-            </Box>
-
-            {/* Mobile View */}
-            <Box sx={{ display: { xs: 'block', sm: 'none' } }}>
-                {filteredData.length === 0 ? (
-                    <Typography align="center" sx={{ py: 3, color: 'text.secondary' }}>Không tìm thấy trạm bơm</Typography>
-                ) : (
-                    filteredData.map((item) => (
-                        <PumpingStationMobileCard 
-                            key={item.id} 
-                            item={item} 
-                            getOrgNames={getOrgNames} 
-                            handleHistory={handleHistory} 
-                            handleEdit={handleEdit} 
-                            handleDelete={handleDelete} 
-                            hasPermission={hasPermission} 
-                            isCompany={isCompany} 
-                            user={user}
+        <PermissionGuard permission="trambom:view" fallback={<NoAccessView />}>
+            <MainCard
+                title={
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                        <IconEngine size={24} color={theme.palette.primary.main} />
+                        <Typography variant="h3" sx={{ fontWeight: 800 }}>QUẢN LÝ TRẠM BƠM</Typography>
+                    </Stack>
+                }
+                secondary={
+                    <PermissionGuard permission="trambom:edit">
+                        <Button variant="contained" startIcon={<IconPlus />} onClick={handleAdd} sx={{ borderRadius: 3, fontWeight: 700 }}>
+                            {isMobile ? 'Thêm' : 'Thêm trạm bơm'}
+                        </Button>
+                    </PermissionGuard>
+                }
+            >
+                <Box sx={{ mb: 3 }}>
+                    <Stack direction={isMobile ? "column" : "row"} spacing={1.5} alignItems="center">
+                        <TextField
+                            label="Tìm theo tên trạm bơm"
+                            value={searchFilter}
+                            placeholder="Nhập tên hoặc địa chỉ..."
+                            onChange={(e) => setSearchFilter(e.target.value)}
+                            size="small"
+                            slotProps={{ input: { sx: { borderRadius: 3 } } }}
+                            sx={{ width: { xs: '100%', sm: 300 } }}
                         />
-                    ))
-                )}
-            </Box>
 
-            {/* Desktop Table View */}
-            <TableContainer component={Paper} elevation={0} sx={{ display: { xs: 'none', sm: 'block' }, border: '1px solid', borderColor: 'divider', borderRadius: 3, overflow: 'hidden' }}>
-                <Table>
-                    <TableHead sx={{ bgcolor: 'grey.50' }}>
-                        <TableRow>
-                            <TableCell sx={{ width: 40 }} />
-                            <TableCell sx={{ fontWeight: 800 }}>STT</TableCell>
-                            <TableCell sx={{ fontWeight: 800 }}>Tên trạm bơm</TableCell>
-                            <TableCell sx={{ fontWeight: 800 }}>Địa chỉ</TableCell>
-                            <TableCell sx={{ fontWeight: 800 }}>Số lượng bơm</TableCell>
-                            <TableCell sx={{ fontWeight: 800 }}>Tự động</TableCell>
-                            <TableCell sx={{ fontWeight: 800 }}>Đơn vị quản lý</TableCell>
-                            <TableCell sx={{ fontWeight: 800, display: { xs: 'none', lg: 'table-cell' } }}>Đơn vị phối hợp</TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 800 }}>Trọng số</TableCell>
-                            <TableCell align="right" sx={{ fontWeight: 800 }}>Thao tác</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {filteredData.length === 0 ? (
-                            <TableRow><TableCell colSpan={10} align="center" sx={{ py: 3 }}>Không tìm thấy trạm bơm</TableCell></TableRow>
-                        ) : (
-                            filteredData.map((item, index) => (
-                                <PumpingStationDesktopRow
-                                    key={item.id}
-                                    item={item}
-                                    index={index}
-                                    getOrgNames={getOrgNames}
-                                    handleHistory={handleHistory}
-                                    handleEdit={handleEdit}
-                                    handleDelete={handleDelete}
-                                    hasPermission={hasPermission}
-                                    isCompany={isCompany}
-                                    user={user}
-                                />
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
-            </TableContainer>
+                        <OrganizationSelect
+                            value={orgFilter}
+                            onChange={(e) => setOrgFilter(e.target.value)}
+                            sx={{ width: { xs: '100%', sm: 300 } }}
+                        />
+                    </Stack>
+                </Box>
 
-            <PumpingStationDialog
-                open={open}
-                handleClose={() => setOpen(false)}
-                item={selected}
-                refresh={loadData}
-                organizations={orgs}
-            />
+                {/* Mobile View */}
+                <Box sx={{ display: { xs: 'block', sm: 'none' } }}>
+                    {filteredData.length === 0 ? (
+                        <Typography align="center" sx={{ py: 3, color: 'text.secondary' }}>Không tìm thấy trạm bơm</Typography>
+                    ) : (
+                        filteredData.map((item) => (
+                            <PumpingStationMobileCard
+                                key={item.id}
+                                item={item}
+                                getOrgNames={getOrgNames}
+                                handleHistory={handleHistory}
+                                handleEdit={handleEdit}
+                                handleDelete={handleDelete}
+                                hasPermission={hasPermission}
+                                isCompany={isCompany}
+                                user={user}
+                            />
+                        ))
+                    )}
+                </Box>
 
-            {selected && (
-                <PumpingStationHistoryDialog
-                    open={openHistory}
-                    handleClose={() => setOpenHistory(false)}
-                    station={selected}
+                {/* Desktop Table View */}
+                <TableContainer component={Paper} elevation={0} sx={{ display: { xs: 'none', sm: 'block' }, border: '1px solid', borderColor: 'divider', borderRadius: 3, overflow: 'hidden' }}>
+                    <Table>
+                        <TableHead sx={{ bgcolor: 'grey.50' }}>
+                            <TableRow>
+                                <TableCell sx={{ width: 40 }} />
+                                <TableCell sx={{ fontWeight: 800 }}>STT</TableCell>
+                                <TableCell sx={{ fontWeight: 800 }}>Tên trạm bơm</TableCell>
+                                <TableCell sx={{ fontWeight: 800 }}>Địa chỉ</TableCell>
+                                <TableCell sx={{ fontWeight: 800 }}>Số lượng bơm</TableCell>
+                                <TableCell sx={{ fontWeight: 800 }}>Tự động</TableCell>
+                                <TableCell sx={{ fontWeight: 800 }}>Đơn vị quản lý</TableCell>
+                                <TableCell sx={{ fontWeight: 800, display: { xs: 'none', lg: 'table-cell' } }}>Đơn vị phối hợp</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 800 }}>Trọng số</TableCell>
+                                <TableCell align="right" sx={{ fontWeight: 800 }}>Thao tác</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {filteredData.length === 0 ? (
+                                <TableRow><TableCell colSpan={10} align="center" sx={{ py: 3 }}>Không tìm thấy trạm bơm</TableCell></TableRow>
+                            ) : (
+                                filteredData.map((item, index) => (
+                                    <PumpingStationDesktopRow
+                                        key={item.id}
+                                        item={item}
+                                        index={index}
+                                        getOrgNames={getOrgNames}
+                                        handleHistory={handleHistory}
+                                        handleEdit={handleEdit}
+                                        handleDelete={handleDelete}
+                                        hasPermission={hasPermission}
+                                        isCompany={isCompany}
+                                        user={user}
+                                    />
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+
+                <PumpingStationDialog
+                    open={open}
+                    handleClose={() => setOpen(false)}
+                    item={selected}
+                    refresh={loadData}
+                    organizations={orgs}
                 />
-            )}
-        </MainCard>
+
+                {openHistory && <PumpingStationHistoryDialog open={openHistory} handleClose={() => setOpenHistory(false)} item={selected} />}
+            </MainCard>
+        </PermissionGuard>
     );
 };
 

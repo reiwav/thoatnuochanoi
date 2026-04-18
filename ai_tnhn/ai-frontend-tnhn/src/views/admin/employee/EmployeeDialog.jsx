@@ -96,6 +96,11 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
     const handleChange = (field, value) => {
         setFormData(prev => {
             const newData = { ...prev, [field]: value };
+            
+            // Nếu không có quyền chọn đơn vị, luôn giữ org_id theo mặc định
+            if (field === 'org_id' && !canSelectOrg) {
+                newData.org_id = defaultOrgId;
+            }
 
             return newData;
         });
@@ -123,7 +128,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                         fullWidth label="Họ và tên" required size="small"
                         value={formData.name}
                         onChange={(e) => handleChange('name', e.target.value)}
-                        InputProps={{ sx: { borderRadius: 3, fontWeight: 600 } }}
+                        slotProps={{ input: { sx: { borderRadius: 3, fontWeight: 600 } } }}
                     />
 
                     <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
@@ -132,7 +137,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                             value={formData.email}
                             onChange={(e) => handleChange('email', e.target.value)}
                             sx={{ flex: 1 }}
-                            InputProps={{ sx: { borderRadius: 3, fontWeight: 600 } }}
+                            slotProps={{ input: { sx: { borderRadius: 3, fontWeight: 600 } } }}
                         />
                         <FormControl fullWidth size="small" sx={{ flex: 1 }}>
                             <InputLabel>Vai trò</InputLabel>
@@ -280,7 +285,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                         value={formData.password}
                         onChange={(e) => handleChange('password', e.target.value)}
                         placeholder={isEdit ? 'Để trống nếu không đổi' : ''}
-                        InputProps={{ sx: { borderRadius: 3, fontWeight: 600 } }}
+                        slotProps={{ input: { sx: { borderRadius: 3, fontWeight: 600 } } }}
                     />
 
                     <FormControlLabel

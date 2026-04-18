@@ -7,6 +7,7 @@ import {
 } from '@mui/material';
 import { IconTrash, IconPlus, IconEdit, IconSearch } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
+import ConfirmDialog from 'ui-component/ConfirmDialog';
 
 // project imports
 import MainCard from 'ui-component/cards/MainCard';
@@ -144,6 +145,8 @@ const StationRiverList = () => {
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingStation, setEditingStation] = useState(null);
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [deletingItem, setDeletingItem] = useState(null);
 
     const loadData = async () => {
         setLoading(true);
@@ -189,14 +192,24 @@ const StationRiverList = () => {
     const handleOpenCreate = () => { setEditingStation(null); setDialogOpen(true); };
     const handleOpenEdit = (station) => { setEditingStation(station); setDialogOpen(true); };
 
-    const handleDelete = async (id) => {
-        if (!window.confirm('Bạn có chắc chắn muốn xóa trạm này?')) return;
+    const handleDelete = (item) => {
+        setDeletingItem(item);
+        setConfirmOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!deletingItem) return;
+        setLoading(true);
         try {
-            await stationApi.river.delete(id);
+            await stationApi.river.delete(deletingItem.id);
             toast.success('Xóa thành công');
+            setConfirmOpen(false);
+            setDeletingItem(null);
             loadData();
         } catch (err) {
             toast.error(err.response?.data?.error || 'Lỗi xóa trạm');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -279,7 +292,7 @@ const StationRiverList = () => {
                             key={row.id}
                             row={row}
                             handleOpenEdit={handleOpenEdit}
-                            handleDelete={handleDelete}
+                            handleDelete={() => handleDelete(row)}
                             canEdit={canEdit && (isCompany || user?.org_id === row.org_id)}
                             canDelete={canDelete && (isCompany || user?.org_id === row.org_id)}
                             organizationName={getOrgName(row.org_id)}
@@ -323,7 +336,7 @@ const StationRiverList = () => {
                                     key={row.id}
                                     row={row}
                                     handleOpenEdit={handleOpenEdit}
-                                    handleDelete={handleDelete}
+                                    handleDelete={() => handleDelete(row)}
                                     canEdit={canEdit && (isCompany || user?.org_id === row.org_id)}
                                     canDelete={canDelete && (isCompany || user?.org_id === row.org_id)}
                                     organizationName={getOrgName(row.org_id)}
@@ -349,6 +362,16 @@ const StationRiverList = () => {
                 open={dialogOpen} onClose={() => setDialogOpen(false)}
                 onSubmit={handleSubmit} station={editingStation} isEdit={!!editingStation}
                 organizations={organizations}
+            />
+
+            <ConfirmDialog
+                open={confirmOpen}
+                onClose={() => setConfirmOpen(false)}
+                onConfirm={handleConfirmDelete}
+                loading={loading}
+                itemName={deletingItem?.TenTram}
+                title="Xóa trạm đo mực nước"
+                description="Bạn có chắc muốn xóa trạm đo mực nước sông này? Dữ liệu lịch sử sẽ bị gỡ bỏ."
             />
         </MainCard>
         </PermissionGuard>

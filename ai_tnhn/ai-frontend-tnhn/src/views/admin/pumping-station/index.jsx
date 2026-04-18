@@ -22,6 +22,7 @@ import { toast } from 'react-hot-toast';
 import useAuthStore from 'store/useAuthStore';
 import OrganizationSelect from 'ui-component/filter/OrganizationSelect';
 import PermissionGuard from 'ui-component/PermissionGuard';
+import ConfirmDialog from 'ui-component/ConfirmDialog';
 
 // Shared Status Component
 const LogStatusChip = ({ report }) => {
@@ -50,7 +51,7 @@ const ActionButtons = ({ item, hasPermission, isCompany, user, handleHistory, ha
         )}
         {hasPermission('trambom:delete') && (isCompany || user?.org_id === item.org_id) && (
             <Tooltip title="Xóa">
-                <IconButton color="error" size="small" onClick={() => handleDelete(item.id)}>
+                <IconButton color="error" size="small" onClick={() => handleDelete(item)}>
                     <IconTrash size={20} />
                 </IconButton>
             </Tooltip>
@@ -298,6 +299,8 @@ const PumpingStationPage = () => {
     const [open, setOpen] = useState(false);
     const [openHistory, setOpenHistory] = useState(false);
     const [selected, setSelected] = useState(null);
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [deletingItem, setDeletingItem] = useState(null);
     const [orgs, setOrgs] = useState({ primary: [], shared: [] });
 
     // Khởi tạo bộ lọc đơn vị thông minh: Tránh việc gọi API 2 lần
@@ -384,15 +387,24 @@ const PumpingStationPage = () => {
         setOpenHistory(true);
     };
 
-    const handleDelete = async (id) => {
-        if (window.confirm('Bạn có chắc chắn muốn xóa trạm bơm này?')) {
-            try {
-                await pumpingStationApi.delete(id);
-                loadData();
-                toast.success('Xóa thành công');
-            } catch (error) {
-                toast.error('Xóa thất bại');
-            }
+    const handleDelete = (item) => {
+        setDeletingItem(item);
+        setConfirmOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!deletingItem) return;
+        setLoading(true);
+        try {
+            await pumpingStationApi.delete(deletingItem.id);
+            setConfirmOpen(false);
+            setDeletingItem(null);
+            loadData();
+            toast.success('Xóa thành công');
+        } catch (error) {
+            toast.error('Xóa thất bại');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -515,6 +527,16 @@ const PumpingStationPage = () => {
                 />
 
                 {openHistory && <PumpingStationHistoryDialog open={openHistory} handleClose={() => setOpenHistory(false)} item={selected} />}
+
+                <ConfirmDialog
+                    open={confirmOpen}
+                    onClose={() => setConfirmOpen(false)}
+                    onConfirm={handleConfirmDelete}
+                    loading={loading}
+                    itemName={deletingItem?.name}
+                    title="Xóa trạm bơm"
+                    description="Bạn có chắc muốn xóa trạm bơm này? Dữ liệu lịch sử vận hành cũng sẽ bị gỡ bỏ."
+                />
             </MainCard>
         </PermissionGuard>
     );

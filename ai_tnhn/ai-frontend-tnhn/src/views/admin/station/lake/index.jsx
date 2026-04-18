@@ -8,6 +8,7 @@ import {
 import PermissionGuard from 'ui-component/PermissionGuard';
 import { IconPlus, IconSearch } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
+import ConfirmDialog from 'ui-component/ConfirmDialog';
 
 // project imports
 import MainCard from 'ui-component/cards/MainCard';
@@ -47,6 +48,8 @@ const StationLakeList = () => {
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingStation, setEditingStation] = useState(null);
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [deletingItem, setDeletingItem] = useState(null);
 
     const loadData = useCallback(async () => {
         setLoading(true);
@@ -100,16 +103,26 @@ const StationLakeList = () => {
         setDialogOpen(true); 
     }, []);
 
-    const handleDelete = useCallback(async (id) => {
-        if (!window.confirm('Bạn có chắc chắn muốn xóa trạm này?')) return;
+    const handleDelete = useCallback((item) => {
+        setDeletingItem(item);
+        setConfirmOpen(true);
+    }, []);
+
+    const handleConfirmDelete = useCallback(async () => {
+        if (!deletingItem) return;
+        setLoading(true);
         try {
-            await stationApi.lake.delete(id);
+            await stationApi.lake.delete(deletingItem.id);
             toast.success('Xóa thành công');
+            setConfirmOpen(false);
+            setDeletingItem(null);
             loadData();
         } catch (err) {
             toast.error(err.response?.data?.error || 'Lỗi xóa trạm');
+        } finally {
+            setLoading(false);
         }
-    }, [loadData]);
+    }, [deletingItem, loadData]);
 
     const handleSubmit = useCallback(async (values) => {
         try {
@@ -199,7 +212,7 @@ const StationLakeList = () => {
                             key={row.id}
                             row={row}
                             handleOpenEdit={handleOpenEdit}
-                            handleDelete={handleDelete}
+                            handleDelete={() => handleDelete(row)}
                             canEdit={canEdit && (isCompany || user?.org_id === row.org_id)}
                             canDelete={canDelete && (isCompany || user?.org_id === row.org_id)}
                             organizationName={getOrgName(row.org_id)}
@@ -251,7 +264,7 @@ const StationLakeList = () => {
                                     key={row.id}
                                     row={row}
                                     handleOpenEdit={handleOpenEdit}
-                                    handleDelete={handleDelete}
+                                    handleDelete={() => handleDelete(row)}
                                     canEdit={canEdit && (isCompany || user?.org_id === row.org_id)}
                                     canDelete={canDelete && (isCompany || user?.org_id === row.org_id)}
                                     organizationName={getOrgName(row.org_id)}
@@ -289,6 +302,16 @@ const StationLakeList = () => {
                 station={editingStation} 
                 isEdit={!!editingStation}
                 organizations={organizations}
+            />
+
+            <ConfirmDialog
+                open={confirmOpen}
+                onClose={() => setConfirmOpen(false)}
+                onConfirm={handleConfirmDelete}
+                loading={loading}
+                itemName={deletingItem?.TenTram}
+                title="Xóa trạm mước hồ"
+                description="Bạn có chắc muốn xóa trạm đo mực nước hồ này? Dữ liệu lịch sử sẽ bị gỡ bỏ."
             />
         </MainCard>
         </PermissionGuard>

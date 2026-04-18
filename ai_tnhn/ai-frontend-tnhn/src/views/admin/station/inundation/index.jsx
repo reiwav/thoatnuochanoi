@@ -6,6 +6,7 @@ import {
     Collapse, useTheme, useMediaQuery, Grid, Card, CardContent, Divider
 } from '@mui/material';
 import PermissionGuard from 'ui-component/PermissionGuard';
+import ConfirmDialog from 'ui-component/ConfirmDialog';
 import { IconTrash, IconPlus, IconEdit, IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 
@@ -146,6 +147,8 @@ const StationInundationList = () => {
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingPoint, setEditingPoint] = useState(null);
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [deletingItem, setDeletingItem] = useState(null);
 
     const [searchFilter, setSearchFilter] = useState('');
     
@@ -206,14 +209,24 @@ const StationInundationList = () => {
     const handleOpenCreate = () => { setEditingPoint(null); setDialogOpen(true); };
     const handleOpenEdit = (point) => { setEditingPoint(point); setDialogOpen(true); };
 
-    const handleDelete = async (id) => {
-        if (!window.confirm('Bạn có chắc chắn muốn xóa điểm ngập này?')) return;
+    const handleDelete = (item) => {
+        setDeletingItem(item);
+        setConfirmOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!deletingItem) return;
+        setLoading(true);
         try {
-            await stationApi.inundation.delete(id);
+            await stationApi.inundation.delete(deletingItem.id);
             toast.success('Xóa thành công');
-            setPoints(prev => prev.filter(p => p.id !== id));
+            setPoints(prev => prev.filter(p => p.id !== deletingItem.id));
+            setConfirmOpen(false);
+            setDeletingItem(null);
         } catch (err) {
             toast.error(err.response?.data?.error || 'Lỗi xóa điểm ngập');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -291,7 +304,7 @@ const StationInundationList = () => {
                             key={row.id}
                             row={row}
                             handleOpenEdit={handleOpenEdit}
-                            handleDelete={handleDelete}
+                            handleDelete={() => handleDelete(row)}
                             canEdit={canEdit && (isCompany || user?.org_id === row.org_id)}
                             canDelete={canDelete && (isCompany || user?.org_id === row.org_id)}
                         />
@@ -330,7 +343,7 @@ const StationInundationList = () => {
                                     key={row.id}
                                     row={row}
                                     handleOpenEdit={handleOpenEdit}
-                                    handleDelete={handleDelete}
+                                    handleDelete={() => handleDelete(row)}
                                     canEdit={canEdit && (isCompany || user?.org_id === row.org_id)}
                                     canDelete={canDelete && (isCompany || user?.org_id === row.org_id)}
                                     organizationNamesMap={organizationNamesMap}
@@ -341,7 +354,23 @@ const StationInundationList = () => {
                 </Table>
             </TableContainer>
 
-            {dialogOpen && <InundationDialog open={dialogOpen} handleClose={() => setDialogOpen(false)} point={editingPoint} handleSubmit={handleSubmit} organizations={organizations.shared} />}
+            <InundationDialog 
+                open={dialogOpen} 
+                handleClose={() => setDialogOpen(false)} 
+                item={editingPoint} 
+                onSubmit={handleSubmit} 
+                organizations={organizations} 
+            />
+
+            <ConfirmDialog
+                open={confirmOpen}
+                onClose={() => setConfirmOpen(false)}
+                onConfirm={handleConfirmDelete}
+                loading={loading}
+                itemName={deletingItem?.name}
+                title="Xóa điểm ngập"
+                description="Bạn có chắc muốn xóa điểm ngập này? Dữ liệu thống kê có liên quan cũng sẽ bị gỡ bỏ."
+            />
         </MainCard>
         </PermissionGuard>
     );

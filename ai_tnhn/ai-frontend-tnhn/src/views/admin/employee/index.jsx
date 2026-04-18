@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
     Button, Grid, TextField, Table, TableBody,
@@ -13,6 +13,7 @@ import { toast } from 'react-hot-toast';
 import MainCard from 'ui-component/cards/MainCard';
 import AnimateButton from 'ui-component/extended/AnimateButton';
 import OrganizationSelect from 'ui-component/filter/OrganizationSelect';
+import ConfirmDialog from 'ui-component/ConfirmDialog';
 import EmployeeDialog from './EmployeeDialog';
 import useAuthStore from 'store/useAuthStore';
 import useEmployeeStore from 'store/useEmployeeStore';
@@ -180,12 +181,19 @@ const EmployeeList = () => {
     const [roles, setRoles] = useState([]);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingEmployee, setEditingEmployee] = useState(null);
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [deletingItem, setDeletingItem] = useState(null);
 
     const [searchParams] = useSearchParams();
     const urlOrgId = searchParams.get('org_id') || filters.org_id || userOrgId;
     const urlOrgName = searchParams.get('org_name') || '';
 
-    const [filterInputs, setFilterInputs] = useState({ ...filters, org_id: urlOrgId });
+    // Khởi tạo bộ lọc thông minh: Tránh việc gọi API 2 lần (1 lần không có org_id, 1 lần có org_id do OrganizationSelect ép vào)
+    const isCompanyLevel = userRole === 'super_admin' || userInfo?.is_company;
+    const initialOrgId = (!isCompanyLevel && userInfo?.org_id) ? userInfo.org_id : (urlOrgId || '');
+
+    const [filterInputs, setFilterInputs] = useState({ ...filters, org_id: initialOrgId });
+    const isFirstRender = useRef(true);
 
     const loadMetadata = async () => {
         try {
@@ -206,27 +214,45 @@ const EmployeeList = () => {
         }
     };
 
+    // Cơ chế Auto-search với debounce 500ms
+    useEffect(() => {
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            // Nếu giá trị khởi tạo khác với filters hiện tại của store, ta cập nhật lại store
+            if (JSON.stringify(filterInputs) !== JSON.stringify(filters)) {
+                setFilters(filterInputs);
+            }
+            return;
+        }
+
+        const timer = setTimeout(() => {
+            setFilters(filterInputs);
+            setPage(0);
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [filterInputs, setFilters, setPage]);
+
     useEffect(() => {
         loadMetadata();
-    }, [fetchSelectionList]);
-
-    useEffect(() => {
         fetchEmployees();
     }, [page, rowsPerPage, filters, fetchEmployees]);
-
-    const handleSearch = () => {
-        setFilters(filterInputs);
-        fetchEmployees();
-    };
 
     const handleOpenCreate = () => { setEditingEmployee(null); setDialogOpen(true); };
     const handleOpenEdit = (employee) => { setEditingEmployee(employee); setDialogOpen(true); };
 
-    const handleDelete = async (id) => {
-        if (!window.confirm('Bạn có chắc chắn muốn xóa người dùng này?')) return;
+    const handleDelete = (item) => {
+        setDeletingItem(item);
+        setConfirmOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!deletingItem) return;
         try {
-            await deleteEmployee(id);
+            await deleteEmployee(deletingItem.id);
             toast.success('Xóa thành công');
+            setConfirmOpen(false);
+            setDeletingItem(null);
         } catch (err) {
             toast.error(err.response?.data?.error || 'Lỗi xóa người dùng');
         }
@@ -284,16 +310,16 @@ const EmployeeList = () => {
 
             <Box sx={{ mb: 3 }}>
                 <Stack direction={isMobile ? "column" : "row"} spacing={1.5} alignItems="center">
-                    <TextField fullWidth label="Tên người dùng" value={filterInputs.name}
+                    <TextField fullWidth label="Tìm theo tên" value={filterInputs.name || ''}
                         onChange={(e) => setFilterInputs({ ...filterInputs, name: e.target.value })}
                         size="small"
-                        InputProps={{ sx: { borderRadius: 3 } }}
+                        slotProps={{ input: { sx: { borderRadius: 3 } } }}
                         sx={{ flex: 1 }}
                     />
-                    <TextField fullWidth label="Email" value={filterInputs.email}
+                    <TextField fullWidth label="Email" value={filterInputs.email || ''}
                         onChange={(e) => setFilterInputs({ ...filterInputs, email: e.target.value })}
                         size="small"
-                        InputProps={{ sx: { borderRadius: 3 } }}
+                        slotProps={{ input: { sx: { borderRadius: 3 } } }}
                         sx={{ flex: 1 }}
                     />
                     <OrganizationSelect
@@ -303,10 +329,6 @@ const EmployeeList = () => {
                         label="Đơn vị / Xí nghiệp"
                         sx={{ width: { xs: '100%', sm: 250 } }}
                     />
-                    <Button variant="contained" color="primary" startIcon={<IconSearch size={20} />}
-                        onClick={handleSearch} sx={{ borderRadius: 3, fontWeight: 700, height: 40, px: 3 }}>
-                        Tìm kiếm
-                    </Button>
                 </Stack>
             </Box>
 
@@ -342,7 +364,7 @@ const EmployeeList = () => {
                                     key={row.id}
                                     row={row}
                                     handleOpenEdit={handleOpenEdit}
-                                    handleDelete={handleDelete}
+                                    handleDelete={() => handleDelete(row)}
                                     roleLabel={roleLabel}
                                     orgName={orgName}
                                     userRole={userRole}
@@ -369,9 +391,19 @@ const EmployeeList = () => {
                 employee={editingEmployee}
                 isEdit={!!editingEmployee}
                 organizations={organizations}
-                defaultOrgId={urlOrgId || userOrgId}
+                defaultOrgId={initialOrgId}
                 userRole={userRole}
-                canSelectOrg={organizations.length > 1}
+                canSelectOrg={isCompanyLevel}
+            />
+
+            <ConfirmDialog
+                open={confirmOpen}
+                onClose={() => setConfirmOpen(false)}
+                onConfirm={handleConfirmDelete}
+                loading={loading}
+                itemName={deletingItem?.name}
+                title="Xóa người dùng"
+                description="Bạn có chắc muốn xóa nhân viên này? Dữ liệu người dùng sẽ bị gỡ bỏ khỏi hệ thống."
             />
         </MainCard>
     );

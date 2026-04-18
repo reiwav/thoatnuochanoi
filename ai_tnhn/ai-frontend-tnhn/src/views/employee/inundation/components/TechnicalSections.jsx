@@ -22,10 +22,13 @@ export const ReportInfoSection = ({ latest, handleOpenViewer }) => {
                     sx={{ fontWeight: 800, borderRadius: 1 }} 
                 />
                 <Chip 
-                    label={latest.traffic_status || 'Giao thông bình thường'} 
+                    label={latest.traffic_status || 'Đi lại bình thường'} 
                     size="small" 
                     variant="outlined" 
-                    color="secondary" 
+                    color={
+                        latest.traffic_status === 'Không đi lại được' ? 'error' : 
+                        (latest.traffic_status === 'Đi lại khó khăn' ? 'warning' : 'success')
+                    }
                     sx={{ fontWeight: 800, borderRadius: 1 }} 
                 />
             </Stack>

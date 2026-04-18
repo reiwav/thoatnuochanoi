@@ -234,44 +234,48 @@ const InundationPointCard = ({ point, openTask, handleOpenViewer }) => {
                         </Button>
                     </PermissionGuard>
 
-                    <PermissionGuard permission="inundation:survey">
-                        <Button
-                            variant="contained"
-                            size="small"
-                            color="primary"
-                            startIcon={<IconClipboardCheck size={16} />}
-                            onClick={() => openTask('SURVEY', point)}
-                            sx={{ borderRadius: 2.5, fontWeight: 800, px: 1.5 }}
-                        >
-                            TK Giám sát
-                        </Button>
-                    </PermissionGuard>
-                    
-                    <PermissionGuard permission="inundation:mechanic">
-                        <Button
-                            variant="contained"
-                            size="small"
-                            color="info"
-                            startIcon={<IconEngine size={16} />}
-                            onClick={() => openTask('MECH', point)}
-                            sx={{ borderRadius: 2.5, fontWeight: 800, px: 1.5 }}
-                        >
-                            CG xử lý
-                        </Button>
-                    </PermissionGuard>
+                    {isHighPriority && (
+                        <>
+                            <PermissionGuard permission="inundation:survey">
+                                <Button
+                                    variant="contained"
+                                    size="small"
+                                    color="primary"
+                                    startIcon={<IconClipboardCheck size={16} />}
+                                    onClick={() => openTask('SURVEY', point)}
+                                    sx={{ borderRadius: 2.5, fontWeight: 800, px: 1.5 }}
+                                >
+                                    TK Giám sát
+                                </Button>
+                            </PermissionGuard>
+                            
+                            <PermissionGuard permission="inundation:mechanic">
+                                <Button
+                                    variant="contained"
+                                    size="small"
+                                    color="info"
+                                    startIcon={<IconEngine size={16} />}
+                                    onClick={() => openTask('MECH', point)}
+                                    sx={{ borderRadius: 2.5, fontWeight: 800, px: 1.5 }}
+                                >
+                                    CG xử lý
+                                </Button>
+                            </PermissionGuard>
 
-                    <PermissionGuard permission="inundation:review">
-                        <Button
-                            variant="contained"
-                            size="small"
-                            color="error"
-                            startIcon={<IconChecklist size={16} />}
-                            onClick={() => openTask('REVIEW', point)}
-                            sx={{ borderRadius: 2.5, fontWeight: 800, px: 1.5 }}
-                        >
-                            Nhận xét
-                        </Button>
-                    </PermissionGuard>
+                            <PermissionGuard permission="inundation:review">
+                                <Button
+                                    variant="contained"
+                                    size="small"
+                                    color="error"
+                                    startIcon={<IconChecklist size={16} />}
+                                    onClick={() => openTask('REVIEW', point)}
+                                    sx={{ borderRadius: 2.5, fontWeight: 800, px: 1.5 }}
+                                >
+                                    Nhận xét
+                                </Button>
+                            </PermissionGuard>
+                        </>
+                    )}
                 </Stack>
             </Stack>
 

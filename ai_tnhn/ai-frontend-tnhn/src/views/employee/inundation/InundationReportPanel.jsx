@@ -215,7 +215,13 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
                                 const checked = e.target.checked;
                                 setResolveOnUpdate(checked);
                                 if (checked) {
-                                    setValues(prev => ({ ...prev, traffic_status: 'Đi lại bình thường' }));
+                                    setValues(prev => ({ 
+                                        ...prev, 
+                                        length: '0',
+                                        width: '0',
+                                        depth: '0',
+                                        traffic_status: 'Đi lại bình thường' 
+                                    }));
                                 }
                             }}
                             color="error"

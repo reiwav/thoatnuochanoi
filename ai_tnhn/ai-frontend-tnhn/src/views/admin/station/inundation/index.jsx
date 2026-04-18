@@ -267,7 +267,20 @@ const StationInundationList = () => {
             secondary={
                 <PermissionGuard permission="inundation:create">
                     <AnimateButton>
-                        <Button variant="contained" color="secondary" startIcon={<IconPlus size={20} />} onClick={handleOpenCreate} sx={{ borderRadius: 3, fontWeight: 700, fontSize: '1rem', px: 2, py: 1 }}>
+                        <Button 
+                            variant="contained" 
+                            color="secondary" 
+                            startIcon={<IconPlus size={20} />} 
+                            onClick={handleOpenCreate} 
+                            sx={{ 
+                                borderRadius: '12px', 
+                                fontWeight: 800, 
+                                fontSize: '0.95rem', 
+                                px: 2.5, 
+                                py: 1,
+                                boxShadow: '0 4px 12px rgba(103, 58, 183, 0.2)'
+                            }}
+                        >
                             {isMobile ? 'Thêm' : 'Thêm điểm mới'}
                         </Button>
                     </AnimateButton>

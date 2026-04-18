@@ -170,7 +170,7 @@ const StationLakeList = () => {
                             sx={{ 
                                 borderRadius: '12px', 
                                 fontWeight: 800, 
-                                fontSize: '0.875rem', 
+                                fontSize: '0.95rem', 
                                 px: 2.5, 
                                 py: 1,
                                 boxShadow: '0 4px 12px rgba(103, 58, 183, 0.2)'

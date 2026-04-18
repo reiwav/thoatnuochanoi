@@ -23,6 +23,7 @@ import useAuthStore from 'store/useAuthStore';
 import OrganizationSelect from 'ui-component/filter/OrganizationSelect';
 import PermissionGuard from 'ui-component/PermissionGuard';
 import ConfirmDialog from 'ui-component/ConfirmDialog';
+import AnimateButton from 'ui-component/extended/AnimateButton';
 
 // Shared Status Component
 const LogStatusChip = ({ report }) => {
@@ -431,9 +432,24 @@ const PumpingStationPage = () => {
                 }
                 secondary={
                     <PermissionGuard permission="trambom:edit">
-                        <Button variant="contained" startIcon={<IconPlus />} onClick={handleAdd} sx={{ borderRadius: 3, fontWeight: 700 }}>
-                            {isMobile ? 'Thêm' : 'Thêm trạm bơm'}
-                        </Button>
+                        <AnimateButton>
+                            <Button 
+                                variant="contained" 
+                                color="secondary"
+                                startIcon={<IconPlus size={20} />} 
+                                onClick={handleAdd} 
+                                sx={{ 
+                                    borderRadius: '12px', 
+                                    fontWeight: 800, 
+                                    fontSize: '0.95rem', 
+                                    px: 2.5, 
+                                    py: 1,
+                                    boxShadow: '0 4px 12px rgba(103, 58, 183, 0.2)'
+                                }}
+                            >
+                                {isMobile ? 'Thêm' : 'Thêm trạm bơm'}
+                            </Button>
+                        </AnimateButton>
                     </PermissionGuard>
                 }
             >

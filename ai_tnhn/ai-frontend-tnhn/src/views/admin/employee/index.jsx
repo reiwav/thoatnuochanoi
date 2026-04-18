@@ -295,7 +295,20 @@ const EmployeeList = () => {
             secondary={
                 hasPermission('employee:create') && (
                     <AnimateButton>
-                        <Button variant="contained" color="secondary" startIcon={<IconPlus size={18} />} onClick={handleOpenCreate}>
+                        <Button 
+                            variant="contained" 
+                            color="secondary" 
+                            startIcon={<IconPlus size={20} />} 
+                            onClick={handleOpenCreate}
+                            sx={{ 
+                                borderRadius: '12px', 
+                                fontWeight: 800, 
+                                fontSize: '0.95rem', 
+                                px: 2.5, 
+                                py: 1,
+                                boxShadow: '0 4px 12px rgba(103, 58, 183, 0.2)'
+                            }}
+                        >
                             Thêm người dùng
                         </Button>
                     </AnimateButton>

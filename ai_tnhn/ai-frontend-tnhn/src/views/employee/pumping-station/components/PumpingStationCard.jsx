@@ -11,7 +11,7 @@ const PumpingStationCard = ({ station, onUpdate }) => {
 
     const stats = [
         { label: 'Vận hành', value: lastReport.operating_count || 0, color: theme.palette.error.main, bg: alpha(theme.palette.error.main, 0.05) },
-        { label: 'Dừng', value: lastReport.closed_count || 0, color: theme.palette.success.main, bg: alpha(theme.palette.success.main, 0.05) },
+        { label: 'Không vận hành', value: lastReport.closed_count || 0, color: theme.palette.success.main, bg: alpha(theme.palette.success.main, 0.05) },
         { label: 'Bảo dưỡng', value: lastReport.maintenance_count || 0, color: '#FBC02D', bg: alpha('#FFEB3B', 0.1) },
         { label: 'Mất tín hiệu', value: lastReport.no_signal_count || 0, color: theme.palette.text.secondary, bg: 'grey.100' }
     ];
@@ -90,9 +90,12 @@ const PumpingStationCard = ({ station, onUpdate }) => {
             </Grid>
 
             {station.pump_count > 0 && (
-                <Box sx={{ mt: 2, pt: 1.5, borderTop: '1px dashed', borderColor: 'divider' }}>
-                    <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 700 }}>
-                        Tổng số máy bơm: <b>{station.pump_count}</b>
+                <Box sx={{ mt: 2, pt: 1.5, borderTop: '1px dashed', borderColor: 'divider', display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 800, color: 'text.secondary' }}>
+                        Tổng số máy bơm:
+                    </Typography>
+                    <Typography variant="h3" sx={{ fontWeight: 900, color: 'primary.main' }}>
+                        {station.pump_count}
                     </Typography>
                 </Box>
             )}

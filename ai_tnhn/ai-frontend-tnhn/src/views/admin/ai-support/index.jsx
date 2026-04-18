@@ -300,50 +300,57 @@ const AiSupport = () => {
     }, []);
 
     const handleQuickReportText = useCallback(async () => {
+        const text = 'Lấy báo cáo nhanh tình hình (Văn bản)';
+        setMessages(prev => [...prev, { id: Date.now(), role: 'user', text, timestamp: new Date() }]);
         setLoading(true);
         try {
             const res = await axiosClient.post('/admin/google/quick-report-text');
-            if (res) setMessages(prev => [...prev, { id: Date.now(), role: 'ai', text: res }]);
+            if (res) setMessages(prev => [...prev, { id: Date.now() + 1, role: 'ai', text: res, timestamp: new Date() }]);
             shouldScrollToBottom.current = true;
         } catch (error) {
             setLoading(false);
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [messages]);
 
     const handleAIDynamicReport = useCallback(async () => {
+        const text = 'Tổng hợp tình hình toàn hệ thống (AI)';
+        setMessages(prev => [...prev, { id: Date.now(), role: 'user', text, timestamp: new Date() }]);
         setLoading(true);
         try {
             const res = await axiosClient.post('/admin/google/dynamic-report');
-            if (res) setMessages(prev => [...prev, { id: Date.now(), role: 'ai', text: res }]);
+            if (res) setMessages(prev => [...prev, { id: Date.now() + 1, role: 'ai', text: res, timestamp: new Date() }]);
             shouldScrollToBottom.current = true;
         } catch (error) {
             setLoading(false);
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [messages]);
 
     const handleQuickReport = useCallback(async () => {
+        const text = 'Tạo báo cáo nhanh (Word/Google Docs)';
+        setMessages(prev => [...prev, { id: Date.now(), role: 'user', text, timestamp: new Date() }]);
         setLoading(true);
         try {
             const res = await axiosClient.post('/admin/google/quick-report');
             if (res && res.report_url) {
-                setMessages(prev => [...prev, { 
-                    id: Date.now(), 
-                    role: 'ai', 
-                    text: `### Đã tạo báo cáo nhanh (Word)\n[Mở file Google Docs tại đây](${res.report_url})` 
+                setMessages(prev => [...prev, {
+                    id: Date.now() + 1,
+                    role: 'ai',
+                    text: `### Đã tạo báo cáo nhanh (Word)\n[Mở file Google Docs tại đây](${res.report_url})`,
+                    timestamp: new Date()
                 }]);
             }
             shouldScrollToBottom.current = true;
         } catch (error) {
             console.error('Failed to generate quick report:', error);
-            setMessages(prev => [...prev, { id: Date.now(), role: 'ai', text: 'Lỗi khi tạo báo cáo Word. Vui lòng thử lại.' }]);
+            setMessages(prev => [...prev, { id: Date.now() + 1, role: 'ai', text: 'Lỗi khi tạo báo cáo Word. Vui lòng thử lại.', timestamp: new Date() }]);
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [messages]);
 
     const handleConstructionReport = useCallback(async (customDate = null) => {
         const dateToUse = customDate !== null ? customDate : reportDate;
@@ -446,8 +453,8 @@ const AiSupport = () => {
                             width: 'fit-content',
                             maxWidth: '90%'
                         }}>
-                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>Gemini đang trả lời...</Typography>
-                            <CircularProgress size={10} color="inherit" sx={{ ml: 1, opacity: 0.5 }} />
+                            {/* <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>Đang phân tích...</Typography> */}
+                            <CircularProgress size={30} color="inherit" sx={{ ml: 1, opacity: 0.5 }} />
                         </Box>
                     </Box>
                 )}

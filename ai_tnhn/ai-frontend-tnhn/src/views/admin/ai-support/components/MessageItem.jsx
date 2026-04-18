@@ -34,7 +34,7 @@ const MessageItem = memo(({ msg, userInfo, handleEmailDetail, handleEmcHistory }
                     position: 'relative',
                     wordBreak: 'break-word',
                     overflowWrap: 'anywhere',
-                    fontSize: { xs: '1rem', md: '1.05rem' }, // Slightly larger for readability
+                    fontSize: { xs: '0.95rem', md: '0.935rem' }, 
                     lineHeight: 1.4
                 }}>
                     <Box sx={{

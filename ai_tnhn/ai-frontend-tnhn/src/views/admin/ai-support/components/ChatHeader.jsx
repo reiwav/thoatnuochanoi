@@ -1,47 +1,52 @@
 import React, { useState } from 'react';
-import { Box, Typography, Avatar, IconButton, Tooltip, Button, Menu, MenuItem, ListItemIcon, ListItemText, Divider } from '@mui/material';
-import { 
-    IconRobot, 
-    IconRefresh, 
-    IconBolt, 
-    IconDatabase, 
-    IconLayoutSidebarRightExpand, 
+import { Box, Typography, Avatar, IconButton, Tooltip, Button, Menu, MenuItem, ListItemIcon, ListItemText, Divider, Stack } from '@mui/material';
+import {
+    IconRobot,
+    IconRefresh,
+    IconBolt,
+    IconLayoutSidebarRightExpand,
     IconLayoutSidebarRightCollapse,
     IconDotsVertical,
-    IconFileDescription
+    IconFileDescription,
+    IconChartBar
 } from '@tabler/icons-react';
+import PermissionGuard from 'ui-component/PermissionGuard';
+import { useTheme } from '@mui/material/styles';
+import { useMediaQuery } from '@mui/material';
 
-const ChatHeader = ({ 
-    showStats, 
-    setShowStats, 
-    hasPermission, 
-    handleQuickReportText, 
-    handleAIDynamicReport, 
-    handleQuickReport, 
-    openReportDialog 
+const ChatHeader = ({
+    showStats,
+    setShowStats,
+    hasPermission,
+    handleQuickReportText,
+    handleAIDynamicReport,
+    handleQuickReport,
+    openReportDialog
 }) => {
+    const theme = useTheme();
+    const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
     const [anchorEl, setAnchorEl] = useState(null);
     const openMenu = Boolean(anchorEl);
-    
+
     const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
     const handleMenuClose = () => setAnchorEl(null);
 
     return (
-        <Box sx={{ 
-            p: { xs: 1, md: 1.5 }, 
-            borderBottom: '1px solid', 
-            borderColor: 'divider', 
-            display: 'flex', 
-            alignItems: 'center', 
+        <Box sx={{
+            p: { xs: 1, md: 1.5 },
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            display: 'flex',
+            alignItems: 'center',
             justifyContent: 'space-between',
             bgcolor: 'white',
             zIndex: 10
         }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
-                <Avatar sx={{ 
-                    bgcolor: '#f0f2f5', 
+                <Avatar sx={{
+                    bgcolor: '#f0f2f5',
                     color: '#0084FF',
-                    width: { xs: 32, md: 40 }, 
+                    width: { xs: 32, md: 40 },
                     height: { xs: 32, md: 40 },
                 }}>
                     <IconRobot size={20} />
@@ -52,9 +57,66 @@ const ChatHeader = ({
                 </Box>
             </Box>
 
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                {/* Unified Menu for all devices */}
-                <IconButton onClick={handleMenuOpen} sx={{ color: '#0084FF' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                {/* Desktop Buttons */}
+                {isDesktop && (
+                    <Stack direction="row" spacing={1} sx={{ mr: 1 }}>
+                        <PermissionGuard permission="ai:report">
+                            <Button
+                                variant="light"
+                                sx={{
+                                    borderRadius: '10px',
+                                    fontWeight: 700,
+                                    color: '#2e7d32',
+                                    bgcolor: 'rgba(46, 125, 50, 0.08)',
+                                    '&:hover': { bgcolor: 'rgba(46, 125, 50, 0.15)' }
+                                }}
+                                size="small"
+                                startIcon={<IconRefresh size={18} color="#2e7d32" />}
+                                onClick={handleQuickReportText}
+                            >
+                                Tin nhắn BC
+                            </Button>
+                        </PermissionGuard>
+                        <PermissionGuard permission="ai:synthesis">
+                            <Button
+                                variant="light"
+                                sx={{
+                                    borderRadius: '10px',
+                                    fontWeight: 700,
+                                    color: '#7b1fa2',
+                                    bgcolor: 'rgba(123, 31, 162, 0.08)',
+                                    '&:hover': { bgcolor: 'rgba(123, 31, 162, 0.15)' }
+                                }}
+                                size="small"
+                                startIcon={<IconRobot size={18} color="#7b1fa2" />}
+                                onClick={handleAIDynamicReport}
+                            >
+                                BC tổng hợp
+                            </Button>
+                        </PermissionGuard>
+                        <PermissionGuard permission="ai:post-rain">
+                            <Button
+                                variant="light"
+                                sx={{
+                                    borderRadius: '10px',
+                                    fontWeight: 700,
+                                    color: '#0084FF',
+                                    bgcolor: 'rgba(0, 132, 255, 0.08)',
+                                    '&:hover': { bgcolor: 'rgba(0, 132, 255, 0.15)' }
+                                }}
+                                size="small"
+                                startIcon={<IconBolt size={18} color="#0084FF" />}
+                                onClick={handleQuickReport}
+                            >
+                                BC nhanh (Word)
+                            </Button>
+                        </PermissionGuard>
+                    </Stack>
+                )}
+
+                {/* More Menu */}
+                <IconButton onClick={handleMenuOpen} sx={{ color: '#0084FF', bgcolor: openMenu ? 'rgba(0, 132, 255, 0.05)' : 'transparent' }}>
                     <IconDotsVertical size={24} />
                 </IconButton>
 
@@ -62,45 +124,57 @@ const ChatHeader = ({
                     anchorEl={anchorEl}
                     open={openMenu}
                     onClose={handleMenuClose}
-                    PaperProps={{ 
-                        sx: { 
-                            borderRadius: '16px', 
-                            minWidth: 220, 
-                            mt: 1, 
+                    transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                    anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                    PaperProps={{
+                        sx: {
+                            borderRadius: '16px',
+                            minWidth: 220,
+                            mt: 1,
                             boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
                             border: '1px solid',
                             borderColor: 'divider'
-                        } 
+                        }
                     }}
                 >
-                    {hasPermission('ai:report') && (
-                        <MenuItem onClick={() => { handleQuickReportText(); handleMenuClose(); }}>
-                            <ListItemIcon><IconRefresh size={20} color="#2e7d32" /></ListItemIcon>
-                            <ListItemText primary="Tin nhắn báo cáo" primaryTypographyProps={{ fontWeight: 600 }} />
-                        </MenuItem>
+                    {/* Primary Report buttons (only for Mobile in menu) */}
+                    {!isDesktop && (
+                        <Box>
+                            <PermissionGuard permission="ai:report">
+                                <MenuItem onClick={() => { handleQuickReportText(); handleMenuClose(); }}>
+                                    <ListItemIcon><IconRefresh size={20} color="#2e7d32" /></ListItemIcon>
+                                    <ListItemText primary="Tin nhắn báo cáo" primaryTypographyProps={{ fontWeight: 600, color: '#2e7d32' }} />
+                                </MenuItem>
+                            </PermissionGuard>
+                            <PermissionGuard permission="ai:synthesis">
+                                <MenuItem onClick={() => { handleAIDynamicReport(); handleMenuClose(); }}>
+                                    <ListItemIcon><IconRobot size={20} color="#7b1fa2" /></ListItemIcon>
+                                    <ListItemText primary="Báo cáo tổng hợp" primaryTypographyProps={{ fontWeight: 600, color: '#7b1fa2' }} />
+                                </MenuItem>
+                            </PermissionGuard>
+                            <PermissionGuard permission="ai:post-rain">
+                                <MenuItem onClick={() => { handleQuickReport(); handleMenuClose(); }}>
+                                    <ListItemIcon><IconBolt size={20} color="#0084FF" /></ListItemIcon>
+                                    <ListItemText primary="Báo cáo nhanh (Word)" primaryTypographyProps={{ fontWeight: 600, color: '#0084FF' }} />
+                                </MenuItem>
+                            </PermissionGuard>
+                        </Box>
                     )}
-                    {hasPermission('ai:synthesis') && (
-                        <MenuItem onClick={() => { handleAIDynamicReport(); handleMenuClose(); }}>
-                            <ListItemIcon><IconRobot size={20} color="#7b1fa2" /></ListItemIcon>
-                            <ListItemText primary="Báo cáo tổng hợp" primaryTypographyProps={{ fontWeight: 600 }} />
-                        </MenuItem>
-                    )}
-                    {hasPermission('ai:post-rain') && (
-                        <MenuItem onClick={() => { handleQuickReport(); handleMenuClose(); }}>
-                            <ListItemIcon><IconBolt size={20} color="#1976d2" /></ListItemIcon>
-                            <ListItemText primary="Báo cáo sau mưa (Word)" primaryTypographyProps={{ fontWeight: 600 }} />
-                        </MenuItem>
-                    )}
-                    {hasPermission('ai:report-emergency') && (
+
+                    {/* Secondary Report - Export construction (always in menu for both) */}
+                    <PermissionGuard permission="ai:report-emergency">
                         <MenuItem onClick={() => { openReportDialog(); handleMenuClose(); }}>
                             <ListItemIcon><IconFileDescription size={20} color="#ef6c00" /></ListItemIcon>
-                            <ListItemText primary="Xuất BC công trình" primaryTypographyProps={{ fontWeight: 600 }} />
+                            <ListItemText primary="Xuất BC công trình" primaryTypographyProps={{ fontWeight: 600, color: '#ef6c00' }} />
                         </MenuItem>
-                    )}
+                    </PermissionGuard>
+
                     <Divider />
+
+                    {/* Secondary items for both desktop and mobile */}
                     <MenuItem onClick={() => { setShowStats(!showStats); handleMenuClose(); }}>
                         <ListItemIcon>
-                            {showStats ? <IconLayoutSidebarRightCollapse size={20} color="#0084FF" /> : <IconLayoutSidebarRightExpand size={20} />}
+                            <IconChartBar size={20} color="#0084FF" />
                         </ListItemIcon>
                         <ListItemText primary={showStats ? "Ẩn thống kê hệ thống" : "Hiện thống kê hệ thống"} primaryTypographyProps={{ fontWeight: 600 }} />
                     </MenuItem>
@@ -109,10 +183,10 @@ const ChatHeader = ({
                 <Tooltip title="Thống kê">
                     <IconButton
                         onClick={() => setShowStats(!showStats)}
-                        sx={{ 
-                            color: showStats ? '#0084FF' : 'text.secondary', 
+                        sx={{
+                            color: showStats ? '#0084FF' : 'text.secondary',
                             bgcolor: showStats ? 'rgba(0, 132, 255, 0.05)' : 'transparent',
-                            display: { xs: 'none', md: 'inline-flex' } // Only show shortcut on Desktop
+                            display: { xs: 'none', md: 'inline-flex' }
                         }}
                     >
                         {showStats ? <IconLayoutSidebarRightCollapse size={22} /> : <IconLayoutSidebarRightExpand size={22} />}

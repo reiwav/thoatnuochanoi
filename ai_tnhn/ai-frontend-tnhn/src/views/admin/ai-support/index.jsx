@@ -325,6 +325,26 @@ const AiSupport = () => {
         }
     }, []);
 
+    const handleQuickReport = useCallback(async () => {
+        setLoading(true);
+        try {
+            const res = await axiosClient.post('/admin/google/quick-report');
+            if (res && res.report_url) {
+                setMessages(prev => [...prev, { 
+                    id: Date.now(), 
+                    role: 'ai', 
+                    text: `### Đã tạo báo cáo nhanh (Word)\n[Mở file Google Docs tại đây](${res.report_url})` 
+                }]);
+            }
+            shouldScrollToBottom.current = true;
+        } catch (error) {
+            console.error('Failed to generate quick report:', error);
+            setMessages(prev => [...prev, { id: Date.now(), role: 'ai', text: 'Lỗi khi tạo báo cáo Word. Vui lòng thử lại.' }]);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
     const handleConstructionReport = useCallback(async (customDate = null) => {
         const dateToUse = customDate !== null ? customDate : reportDate;
         setExporting(true);
@@ -379,7 +399,7 @@ const AiSupport = () => {
                 hasPermission={hasPermission}
                 handleQuickReportText={handleQuickReportText}
                 handleAIDynamicReport={handleAIDynamicReport}
-                handleQuickReport={() => {/* impl */ }}
+                handleQuickReport={handleQuickReport}
                 openReportDialog={() => setOpenReportDialog(true)}
                 sx={{ bgcolor: 'white' }}
             />

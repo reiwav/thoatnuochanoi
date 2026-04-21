@@ -277,7 +277,7 @@ func (h *InundationHandler) CreatePoint(c *gin.Context) {
 		return
 	}
 
-	if !isAllowedAll && user.OrgID != req.OrgID && !req.ShareAll && !web.Contains(req.SharedOrgIDs, user.OrgID) {
+	if !isAllowedAll && user.OrgID != req.OrgID && (!req.ShareAll || !web.Contains(req.SharedOrgIDs, user.OrgID)) {
 		h.SendError(c, web.Unauthorized("Bạn không có quyền thêm điểm đo cho đơn vị khác"))
 		return
 	}
@@ -330,7 +330,7 @@ func (h *InundationHandler) UpdatePoint(c *gin.Context) {
 	}
 
 	// Ownership check: Only owner org or Company admin can modify
-	if !isAllowedAll && currentPoint.OrgID != user.OrgID {
+	if !isAllowedAll && currentPoint.OrgID != user.OrgID && (!req.ShareAll || !web.Contains(req.SharedOrgIDs, user.OrgID)) {
 		h.SendError(c, web.Unauthorized("Bạn không có quyền chỉnh sửa điểm ngập của đơn vị khác"))
 		return
 	}
@@ -383,7 +383,7 @@ func (h *InundationHandler) DeletePoint(c *gin.Context) {
 		return
 	}
 
-	if !isAllowedAll && currentPoint.OrgID != user.OrgID {
+	if !isAllowedAll && currentPoint.OrgID != user.OrgID && !(currentPoint.ShareAll || web.Contains(currentPoint.SharedOrgIDs, user.OrgID)) {
 		h.SendError(c, web.Unauthorized("Bạn không có quyền xóa điểm ngập của đơn vị khác"))
 		return
 	}

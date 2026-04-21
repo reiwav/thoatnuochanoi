@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"ai-api-tnhn/handler/filters"
 	"ai-api-tnhn/internal/dto"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/service/auth"
@@ -41,7 +42,7 @@ func (h *InundationHandler) checkPermissions(c *gin.Context) (isAllowedAll bool,
 }
 
 // CreateReport godoc
-// @Summary Tạo báo cáo ngập lụt mới
+// @Summary Tạo báo cáo ngập lụt mới (nhân viên xí nghiệp tạo)
 // @Description Tạo một báo cáo ngập lụt mới với tùy chọn đính kèm hình ảnh
 // @Tags Ngập lụt
 // @Accept multipart/form-data
@@ -62,7 +63,7 @@ func (h *InundationHandler) CreateReport(c *gin.Context) {
 	}
 
 	// 2. Bind Request DTO
-	var req dto.CreateReportRequest
+	var req models.InundationReportBase
 	if err := c.ShouldBind(&req); err != nil {
 		h.SendError(c, web.BadRequest("Invalid request data: "+err.Error()))
 		return
@@ -87,32 +88,7 @@ func (h *InundationHandler) CreateReport(c *gin.Context) {
 		}
 	}
 
-	// 4. Map DTO to Model
-	if req.StartTime == 0 {
-		req.StartTime = time.Now().Unix()
-	}
-
-	report := &models.InundationReport{
-		PointID:       req.PointID,
-		StreetName:    req.StreetName,
-		Depth:         req.Depth,
-		Length:        req.Length,
-		Width:         req.Width,
-		StartTime:     req.StartTime,
-		Description:   req.Description,
-		TrafficStatus: req.TrafficStatus,
-		MechChecked:   req.MechChecked,
-		MechNote:      req.MechNote,
-		MechD:         req.MechD,
-		MechR:         req.MechR,
-		MechS:         req.MechS,
-		MechUserID:    user.ID,
-		SurveyChecked: req.SurveyChecked,
-		SurveyNote:    req.SurveyNote,
-		SurveyUserID:  user.ID,
-	}
-
-	err := h.service.CreateReport(c.Request.Context(), user, report, images)
+	report, err := h.service.CreateReport(c.Request.Context(), user, req, images)
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -263,14 +239,13 @@ func (h *InundationHandler) ListReports(c *gin.Context) {
 		return
 	}
 
-	status := c.Query("status")
-	trafficStatus := c.Query("traffic_status")
-	query := c.Query("query")
-	orgIDFilter := c.Query("org_id")
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "0"))
-	size, _ := strconv.Atoi(c.DefaultQuery("size", "20"))
+	req := filters.NewInundationReportListRequest()
+	if err := c.ShouldBindQuery(req); err != nil {
+		h.SendError(c, web.BadRequest("Invalid filter parameters: "+err.Error()))
+		return
+	}
 
-	reports, total, err := h.service.ListReportsWithFilter(c.Request.Context(), user, isAllowedAll, orgIDFilter, status, trafficStatus, query, page, size)
+	reports, total, err := h.service.ListReportsWithFilter(c.Request.Context(), user, isAllowedAll, req.OrgID, req)
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -452,6 +427,7 @@ func (h *InundationHandler) DeletePoint(c *gin.Context) {
 	}
 	h.SendData(c, true)
 }
+
 // ReviewUpdate godoc
 // @Summary Đánh giá cập nhật tình hình
 // @Description Thêm nhận xét đánh giá cho một bản cập nhật tình hình ngập
@@ -553,7 +529,7 @@ func (h *InundationHandler) UpdateReport(c *gin.Context) {
 	}
 
 	id := c.Param("id")
-	var req dto.UpdateReportRequest
+	var req models.InundationReportBase
 	if err := c.ShouldBind(&req); err != nil {
 		h.SendError(c, web.BadRequest("Invalid request data: "+err.Error()))
 		return
@@ -576,15 +552,7 @@ func (h *InundationHandler) UpdateReport(c *gin.Context) {
 		}
 	}
 
-	report := &models.InundationReport{
-		Description:   req.Description,
-		Depth:         req.Depth,
-		Length:        req.Length,
-		Width:         req.Width,
-		TrafficStatus: req.TrafficStatus,
-	}
-
-	err := h.service.UpdateReport(c.Request.Context(), user, id, report, images)
+	err := h.service.UpdateReport(c.Request.Context(), user, id, &req, images)
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -652,6 +620,7 @@ func (h *InundationHandler) UpdateSituationUpdateContent(c *gin.Context) {
 	}
 	h.SendData(c, true)
 }
+
 // UpdateSurvey godoc
 // @Summary Cập nhật trạng thái khảo sát
 // @Description Cập nhật trạng thái đã kiểm tra và ghi chú khảo sát của báo cáo
@@ -673,7 +642,7 @@ func (h *InundationHandler) UpdateSurvey(c *gin.Context) {
 	}
 
 	id := c.Param("id")
-	var req dto.CreateReportRequest
+	var req models.ReportSurveyBase
 	if err := c.ShouldBind(&req); err != nil {
 		h.SendError(c, web.BadRequest("Invalid request data: "+err.Error()))
 		return
@@ -696,12 +665,7 @@ func (h *InundationHandler) UpdateSurvey(c *gin.Context) {
 		}
 	}
 
-	updatedField := &models.InundationReport{
-		SurveyChecked: req.SurveyChecked,
-		SurveyNote:    req.SurveyNote,
-	}
-
-	err := h.service.UpdateSurvey(c.Request.Context(), user, id, updatedField, images)
+	err := h.service.UpdateSurvey(c.Request.Context(), user, id, &req, images)
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -730,7 +694,7 @@ func (h *InundationHandler) UpdateMech(c *gin.Context) {
 	}
 
 	id := c.Param("id")
-	var req dto.CreateReportRequest
+	var req models.ReportMechBase
 	if err := c.ShouldBind(&req); err != nil {
 		h.SendError(c, web.BadRequest("Invalid request data: "+err.Error()))
 		return
@@ -752,16 +716,7 @@ func (h *InundationHandler) UpdateMech(c *gin.Context) {
 			}
 		}
 	}
-
-	updatedField := &models.InundationReport{
-		MechChecked: req.MechChecked,
-		MechNote:    req.MechNote,
-		MechD:       req.MechD,
-		MechR:       req.MechR,
-		MechS:       req.MechS,
-	}
-
-	err := h.service.UpdateMech(c.Request.Context(), user, id, updatedField, images)
+	err := h.service.UpdateMech(c.Request.Context(), user, id, &req, images)
 	if err != nil {
 		h.SendError(c, err)
 		return

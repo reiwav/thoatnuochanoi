@@ -5243,7 +5243,7 @@ const docTemplate = `{
                 "tags": [
                     "Ngập lụt"
                 ],
-                "summary": "Tạo báo cáo ngập lụt mới",
+                "summary": "Tạo báo cáo ngập lụt mới (nhân viên xí nghiệp tạo)",
                 "parameters": [
                     {
                         "type": "string",
@@ -6684,6 +6684,9 @@ const docTemplate = `{
         },
         "models.InundationReport": {
             "type": "object",
+            "required": [
+                "point_id"
+            ],
             "properties": {
                 "address": {
                     "type": "string"
@@ -6696,11 +6699,11 @@ const docTemplate = `{
                 },
                 "depth": {
                     "type": "string",
-                    "example": "20cm"
+                    "example": "20-30cm"
                 },
                 "description": {
                     "type": "string",
-                    "example": "Ngập cục bộ tại ngã tư"
+                    "example": "Ngập nhẹ"
                 },
                 "end_time": {
                     "type": "integer",
@@ -6722,21 +6725,22 @@ const docTemplate = `{
                 },
                 "is_review_updated": {
                     "type": "boolean",
-                    "example": false
+                    "example": true
                 },
                 "last_report_id": {
                     "type": "string"
                 },
                 "length": {
                     "type": "string",
-                    "example": "20m"
+                    "example": "100m"
                 },
                 "mech_checked": {
-                    "description": "Mechanization Data",
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": true
                 },
                 "mech_d": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "D1"
                 },
                 "mech_images": {
                     "type": "array",
@@ -6745,24 +6749,27 @@ const docTemplate = `{
                     }
                 },
                 "mech_note": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Máy xúc đã đến"
                 },
                 "mech_r": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "R1"
                 },
                 "mech_s": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "S1"
                 },
                 "mech_user_id": {
                     "type": "string"
                 },
                 "needs_correction": {
                     "type": "boolean",
-                    "example": false
+                    "example": true
                 },
                 "needs_correction_update_id": {
                     "type": "string",
-                    "example": ""
+                    "example": "update_123"
                 },
                 "org_code": {
                     "type": "string"
@@ -6775,21 +6782,20 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "point_id": {
-                    "description": "Link to InundationStation (optional if new location)",
                     "type": "string",
-                    "example": "60f222222222"
+                    "example": "point_123"
                 },
                 "review_comment": {
                     "type": "string",
-                    "example": "Đang theo dõi"
+                    "example": "Đã xử lý"
                 },
                 "reviewer_email": {
                     "type": "string",
-                    "example": "admin@hsdc.com.vn"
+                    "example": "[EMAIL_ADDRESS]"
                 },
                 "reviewer_id": {
                     "type": "string",
-                    "example": "60a111111111"
+                    "example": "user_123"
                 },
                 "reviewer_name": {
                     "type": "string",
@@ -6810,7 +6816,7 @@ const docTemplate = `{
                 },
                 "start_time": {
                     "type": "integer",
-                    "example": 1682055000
+                    "example": 1620000000
                 },
                 "status": {
                     "description": "active, resolved",
@@ -6822,8 +6828,8 @@ const docTemplate = `{
                     "example": "Phố Huế"
                 },
                 "survey_checked": {
-                    "description": "Design Survey Data",
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": true
                 },
                 "survey_images": {
                     "type": "array",
@@ -6832,14 +6838,15 @@ const docTemplate = `{
                     }
                 },
                 "survey_note": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Đã khảo sát"
                 },
                 "survey_user_id": {
                     "type": "string"
                 },
                 "traffic_status": {
                     "type": "string",
-                    "example": "Tắc nghẽn"
+                    "example": "DI_CHUYEN_CHAM"
                 },
                 "updated_at": {
                     "type": "integer"
@@ -6860,7 +6867,7 @@ const docTemplate = `{
                 },
                 "width": {
                     "type": "string",
-                    "example": "10m"
+                    "example": "50m"
                 }
             }
         },

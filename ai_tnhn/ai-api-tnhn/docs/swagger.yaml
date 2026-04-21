@@ -292,10 +292,10 @@ definitions:
       deleted_at:
         type: integer
       depth:
-        example: 20cm
+        example: 20-30cm
         type: string
       description:
-        example: Ngập cục bộ tại ngã tư
+        example: Ngập nhẹ
         type: string
       end_time:
         example: 0
@@ -311,35 +311,39 @@ definitions:
           type: string
         type: array
       is_review_updated:
-        example: false
+        example: true
         type: boolean
       last_report_id:
         type: string
       length:
-        example: 20m
+        example: 100m
         type: string
       mech_checked:
-        description: Mechanization Data
+        example: true
         type: boolean
       mech_d:
+        example: D1
         type: string
       mech_images:
         items:
           type: string
         type: array
       mech_note:
+        example: Máy xúc đã đến
         type: string
       mech_r:
+        example: R1
         type: string
       mech_s:
+        example: S1
         type: string
       mech_user_id:
         type: string
       needs_correction:
-        example: false
+        example: true
         type: boolean
       needs_correction_update_id:
-        example: ""
+        example: update_123
         type: string
       org_code:
         type: string
@@ -349,17 +353,16 @@ definitions:
       org_name:
         type: string
       point_id:
-        description: Link to InundationStation (optional if new location)
-        example: 60f222222222
+        example: point_123
         type: string
       review_comment:
-        example: Đang theo dõi
+        example: Đã xử lý
         type: string
       reviewer_email:
-        example: admin@hsdc.com.vn
+        example: '[EMAIL_ADDRESS]'
         type: string
       reviewer_id:
-        example: 60a111111111
+        example: user_123
         type: string
       reviewer_name:
         example: Admin
@@ -374,7 +377,7 @@ definitions:
           type: string
         type: array
       start_time:
-        example: 1682055000
+        example: 1620000000
         type: integer
       status:
         description: active, resolved
@@ -384,18 +387,19 @@ definitions:
         example: Phố Huế
         type: string
       survey_checked:
-        description: Design Survey Data
+        example: true
         type: boolean
       survey_images:
         items:
           type: string
         type: array
       survey_note:
+        example: Đã khảo sát
         type: string
       survey_user_id:
         type: string
       traffic_status:
-        example: Tắc nghẽn
+        example: DI_CHUYEN_CHAM
         type: string
       updated_at:
         type: integer
@@ -410,8 +414,10 @@ definitions:
         example: 60a123456789
         type: string
       width:
-        example: 10m
+        example: 50m
         type: string
+    required:
+    - point_id
     type: object
   models.InundationStation:
     properties:
@@ -4300,7 +4306,7 @@ paths:
             $ref: '#/definitions/web.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Tạo báo cáo ngập lụt mới
+      summary: Tạo báo cáo ngập lụt mới (nhân viên xí nghiệp tạo)
       tags:
       - Ngập lụt
   /inundation/report/{id}:

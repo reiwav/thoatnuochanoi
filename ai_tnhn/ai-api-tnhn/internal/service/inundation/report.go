@@ -11,30 +11,18 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func (s *service) CreateReport(ctx context.Context, user *models.User, report *models.InundationReport, images []ImageContent) error {
+func (s *service) CreateReport(ctx context.Context, user *models.User, input models.InundationReportBase, images []ImageContent) (*models.InundationReport, error) {
+	report := &models.InundationReport{
+		InundationReportBase: input,
+	}
+	// 3. Get Point info
+	if report.PointID == "" {
+		return nil, web.BadRequest("Point ID is required")
+	}
 	// 1. Permission Check for Employee
-	if user.IsEmployee {
-		isAssigned := false
-		for _, pid := range user.AssignedInundationStationIDs {
-			if pid == report.PointID {
-				isAssigned = true
-				break
-			}
-		}
-		if !isAssigned {
-			return web.Forbidden("Bạn không có quyền gửi báo cáo cho địa điểm này")
-		}
-	}
-
-	// 2. Defaulting Logic (prioritize mechanical data if provided)
-	if report.Depth == "" && report.MechD != "" {
-		report.Depth = report.MechD
-	}
-	if report.Length == "" && report.MechS != "" {
-		report.Length = report.MechS
-	}
-	if report.Width == "" && report.MechR != "" {
-		report.Width = report.MechR
+	err := s.validAssigned(ctx, user, report.PointID)
+	if err != nil {
+		return nil, err
 	}
 
 	// Initialize basic fields if not set
@@ -44,13 +32,9 @@ func (s *service) CreateReport(ctx context.Context, user *models.User, report *m
 	report.UserID = user.ID
 	report.UserEmail = user.Email
 
-	// 3. Get Point info
-	if report.PointID == "" {
-		return web.BadRequest("Point ID is required")
-	}
 	point, err := s.inundationStationRepo.GetByID(ctx, report.PointID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// 4. Save images locally for async upload
@@ -79,7 +63,7 @@ func (s *service) CreateReport(ctx context.Context, user *models.User, report *m
 	// 5. Save report to DB
 	err = s.InundationReportRepo.Create(ctx, report)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// ALWAYS Create an initial update record for history/timeline consistency
@@ -109,8 +93,25 @@ func (s *service) CreateReport(ctx context.Context, user *models.User, report *m
 		}
 	}
 
+	return report, nil
+}
+
+func (s *service) validAssigned(ctx context.Context, user *models.User, pointID string) error {
+	if user.IsEmployee {
+		isAssigned := false
+		for _, pid := range user.AssignedInundationStationIDs {
+			if pid == pointID {
+				isAssigned = true
+				break
+			}
+		}
+		if !isAssigned {
+			return web.Forbidden("Bạn không có quyền gửi báo cáo cho địa điểm này")
+		}
+	}
 	return nil
 }
+
 func (s *service) AddUpdate(ctx context.Context, user *models.User, reportID string, update *models.InundationUpdate, images []ImageContent, resolve bool) error {
 	// 1. Get Report to find Org/Folder
 	report, err := s.InundationReportRepo.GetByID(ctx, reportID)
@@ -119,17 +120,9 @@ func (s *service) AddUpdate(ctx context.Context, user *models.User, reportID str
 	}
 
 	// 2. Permission Check for Employee
-	if user.IsEmployee {
-		isAssigned := false
-		for _, pid := range user.AssignedInundationStationIDs {
-			if pid == report.PointID {
-				isAssigned = true
-				break
-			}
-		}
-		if !isAssigned {
-			return web.Forbidden("Bạn không có quyền cập nhật cho địa điểm này")
-		}
+	err = s.validAssigned(ctx, user, report.PointID)
+	if err != nil {
+		return err
 	}
 
 	// 3. Save images locally
@@ -203,7 +196,7 @@ func (s *service) ListReports(ctx context.Context, orgID string) ([]*models.Inun
 	f.SetOrderBy("-created_at")
 	return s.InundationReportRepo.List(ctx, f)
 }
-func (s *service) ListReportsWithFilter(ctx context.Context, user *models.User, isAllowedAll bool, orgIDFilter, status, trafficStatus, query string, page, size int) ([]*models.InundationReport, int64, error) {
+func (s *service) ListReportsWithFilter(ctx context.Context, user *models.User, isAllowedAll bool, orgIDFilter string, f filter.Filter) ([]*models.InundationReport, int64, error) {
 	orgID := user.OrgID
 	if isAllowedAll {
 		if orgIDFilter != "" {
@@ -242,29 +235,15 @@ func (s *service) ListReportsWithFilter(ctx context.Context, user *models.User, 
 		}
 	}
 
-	f := filter.NewPaginationFilter()
-	f.Page = int64(page + 1) // filter uses 1-based page
-	f.PerPage = int64(size)
-
 	if len(pointIDs) > 0 {
-		f.AddWhere("point_id", "point_id", bson.M{"$in": pointIDs})
+		f.AddWhere("point_ids", "point_id", bson.M{"$in": pointIDs})
 	} else if orgID != "" {
 		f.AddWhere("org_id_or_shared", "$or", []bson.M{
 			{"org_id": orgID},
 			{"shared_org_ids": orgID},
 		})
 	}
-	if status != "" {
-		f.AddWhere("status", "status", status)
-	}
-	if trafficStatus != "" {
-		f.AddWhere("traffic_status", "traffic_status", trafficStatus)
-	}
-	if query != "" {
-		f.AddWhere("street_name", "street_name", bson.M{"$regex": query, "$options": "i"})
-	}
 
-	f.SetOrderBy("-created_at")
 	reports, total, err := s.InundationReportRepo.List(ctx, f)
 	if err != nil {
 		return nil, 0, err
@@ -363,7 +342,7 @@ func (s *service) Resolve(ctx context.Context, reportID string, endTime int64) e
 
 	return s.InundationReportRepo.Resolve(ctx, reportID, endTime)
 }
-func (s *service) UpdateReport(ctx context.Context, user *models.User, id string, report *models.InundationReport, images []ImageContent) error {
+func (s *service) UpdateReport(ctx context.Context, user *models.User, id string, report *models.InundationReportBase, images []ImageContent) error {
 	existing, err := s.InundationReportRepo.GetByID(ctx, id)
 	if err != nil {
 		return err
@@ -444,7 +423,7 @@ func (s *service) UpdateReport(ctx context.Context, user *models.User, id string
 
 	return nil
 }
-func (s *service) UpdateSurvey(ctx context.Context, user *models.User, id string, reportData *models.InundationReport, images []ImageContent) error {
+func (s *service) UpdateSurvey(ctx context.Context, user *models.User, id string, input *models.ReportSurveyBase, images []ImageContent) error {
 	existing, err := s.InundationReportRepo.GetByID(ctx, id)
 	if err != nil {
 		return err
@@ -478,8 +457,8 @@ func (s *service) UpdateSurvey(ctx context.Context, user *models.User, id string
 		}
 	}
 
-	existing.SurveyChecked = reportData.SurveyChecked
-	existing.SurveyNote = reportData.SurveyNote
+	existing.SurveyChecked = input.SurveyChecked
+	existing.SurveyNote = input.SurveyNote
 	existing.SurveyUserID = user.ID
 
 	if len(images) > 0 {
@@ -515,7 +494,7 @@ func (s *service) UpdateSurvey(ctx context.Context, user *models.User, id string
 
 	return nil
 }
-func (s *service) UpdateMech(ctx context.Context, user *models.User, id string, reportData *models.InundationReport, images []ImageContent) error {
+func (s *service) UpdateMech(ctx context.Context, user *models.User, id string, input *models.ReportMechBase, images []ImageContent) error {
 	existing, err := s.InundationReportRepo.GetByID(ctx, id)
 	if err != nil {
 		return err
@@ -549,22 +528,22 @@ func (s *service) UpdateMech(ctx context.Context, user *models.User, id string, 
 		}
 	}
 
-	existing.MechChecked = reportData.MechChecked
-	existing.MechNote = reportData.MechNote
-	existing.MechD = reportData.MechD
-	existing.MechR = reportData.MechR
-	existing.MechS = reportData.MechS
+	existing.MechChecked = input.MechChecked
+	existing.MechNote = input.MechNote
+	existing.MechD = input.MechD
+	existing.MechR = input.MechR
+	existing.MechS = input.MechS
 	existing.MechUserID = user.ID
 
 	// OVERRIDE: Update main report dimensions with worker's data
-	if reportData.MechD != "" {
-		existing.Depth = reportData.MechD
+	if input.MechD != "" {
+		existing.Depth = input.MechD
 	}
-	if reportData.MechS != "" {
-		existing.Length = reportData.MechS
+	if input.MechS != "" {
+		existing.Length = input.MechS
 	}
-	if reportData.MechR != "" {
-		existing.Width = reportData.MechR
+	if input.MechR != "" {
+		existing.Width = input.MechR
 	}
 
 	if len(images) > 0 {

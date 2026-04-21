@@ -1,6 +1,7 @@
 package inundation
 
 import (
+	"ai-api-tnhn/internal/base/mgo/filter"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/repository"
 	"ai-api-tnhn/internal/service/googledrive"
@@ -15,15 +16,15 @@ import (
 )
 
 type Service interface {
-	CreateReport(ctx context.Context, user *models.User, report *models.InundationReport, images []ImageContent) error
+	CreateReport(ctx context.Context, user *models.User, report models.InundationReportBase, images []ImageContent) (*models.InundationReport, error)
 	AddUpdate(ctx context.Context, user *models.User, reportID string, update *models.InundationUpdate, images []ImageContent, resolve bool) error
 	ListReports(ctx context.Context, orgID string) ([]*models.InundationReport, int64, error)
-	ListReportsWithFilter(ctx context.Context, user *models.User, isAllowedAll bool, orgIDFilter, status, trafficStatus, query string, page, size int) ([]*models.InundationReport, int64, error)
+	ListReportsWithFilter(ctx context.Context, user *models.User, isAllowedAll bool, orgIDFilter string, f filter.Filter) ([]*models.InundationReport, int64, error)
 	GetReport(ctx context.Context, user *models.User, reportID string) (*models.InundationReport, error)
 	Resolve(ctx context.Context, reportID string, endTime int64) error
-	UpdateReport(ctx context.Context, user *models.User, id string, report *models.InundationReport, images []ImageContent) error
-	UpdateSurvey(ctx context.Context, user *models.User, id string, report *models.InundationReport, images []ImageContent) error
-	UpdateMech(ctx context.Context, user *models.User, id string, report *models.InundationReport, images []ImageContent) error
+	UpdateReport(ctx context.Context, user *models.User, id string, report *models.InundationReportBase, images []ImageContent) error
+	UpdateSurvey(ctx context.Context, user *models.User, id string, report *models.ReportSurveyBase, images []ImageContent) error
+	UpdateMech(ctx context.Context, user *models.User, id string, report *models.ReportMechBase, images []ImageContent) error
 
 	// Review and Correction
 	ReviewReport(ctx context.Context, user *models.User, reportID, comment string) error

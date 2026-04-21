@@ -1,6 +1,7 @@
 package googleapi
 
 import (
+	"ai-api-tnhn/internal/base/mgo/filter"
 	"ai-api-tnhn/internal/models"
 	"context"
 	"sort"
@@ -39,7 +40,12 @@ func (s *service) GetInundationSummary(ctx context.Context, orgID string, isAllo
 		AssignedInundationStationIDs: assignedInuIDs,
 		IsEmployee:                   !isAllowedAll && len(assignedInuIDs) > 0,
 	}
-	reports, _, err := s.inuSvc.ListReportsWithFilter(ctx, dummyUser, isAllowedAll, orgID, "active", "", "", 0, 1000)
+	f := filter.NewPaginationFilter()
+	f.Page = 1
+	f.PerPage = 1000
+	f.AddWhere("status", "status", "active")
+
+	reports, _, err := s.inuSvc.ListReportsWithFilter(ctx, dummyUser, isAllowedAll, orgID, f)
 	if err != nil {
 		return nil, err
 	}

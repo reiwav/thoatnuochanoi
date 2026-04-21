@@ -28,7 +28,7 @@ func NewPermissionHandler(permService permission.Service, contextWith web.Contex
 // @Security BearerAuth
 // @Success 200 {object} web.Response{data=object{roles=[]models.Role,permissions=[]models.Permission}}
 // @Failure 401 {object} web.ErrorResponse
-// @Router /permissions/matrix [get]
+// @Router /admin/permissions/matrix [get]
 func (h *PermissionHandler) GetMatrix(c *gin.Context) {
 	roles, perms, err := h.permService.GetMatrix(c.Request.Context())
 	if err != nil {
@@ -51,7 +51,7 @@ func (h *PermissionHandler) GetMatrix(c *gin.Context) {
 // @Param request body object{role=string,permissions=[]string} true "Dữ liệu vai trò và danh sách mã quyền hạn"
 // @Success 200 {boolean} bool
 // @Failure 401 {object} web.ErrorResponse
-// @Router /permissions/matrix [post]
+// @Router /admin/permissions/matrix [post]
 func (h *PermissionHandler) UpdateMatrix(c *gin.Context) {
 	var req struct {
 		Role        string   `json:"role"`
@@ -77,7 +77,7 @@ func (h *PermissionHandler) UpdateMatrix(c *gin.Context) {
 // @Security BearerAuth
 // @Success 200 {object} web.Response{data=[]string}
 // @Failure 401 {object} web.ErrorResponse
-// @Router /permissions/my [get]
+// @Router /admin/permissions/my [get]
 func (h *PermissionHandler) GetMyPermissions(c *gin.Context) {
 	client := h.contextWith.GetTokenFromContext(c)
 	if client == nil {

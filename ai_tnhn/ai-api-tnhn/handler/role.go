@@ -31,7 +31,7 @@ func NewRoleHandler(service role.Service, contextWith web.ContextWith) *RoleHand
 // @Param role body models.Role true "Dữ liệu vai trò"
 // @Success 200 {object} web.Response{data=models.Role}
 // @Failure 401 {object} web.ErrorResponse
-// @Router /roles [post]
+// @Router /admin/roles [post]
 func (h *RoleHandler) Create(c *gin.Context) {
 	var m models.Role
 	if err := c.ShouldBindJSON(&m); err != nil {
@@ -58,7 +58,7 @@ func (h *RoleHandler) Create(c *gin.Context) {
 // @Param role body models.Role true "Dữ liệu vai trò cập nhật"
 // @Success 200 {object} web.Response{data=models.Role}
 // @Failure 401 {object} web.ErrorResponse
-// @Router /roles/{id} [put]
+// @Router /admin/roles/{id} [put]
 func (h *RoleHandler) Update(c *gin.Context) {
 	id := c.Param("id")
 	var m models.Role
@@ -83,7 +83,7 @@ func (h *RoleHandler) Update(c *gin.Context) {
 // @Param id path string true "ID vai trò"
 // @Success 200 {boolean} bool
 // @Failure 401 {object} web.ErrorResponse
-// @Router /roles/{id} [delete]
+// @Router /admin/roles/{id} [delete]
 func (h *RoleHandler) Delete(c *gin.Context) {
 	id := c.Param("id")
 
@@ -106,7 +106,7 @@ func (h *RoleHandler) Delete(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Success 200 {object} web.Response{data=[]models.Role}
-// @Router /roles [get]
+// @Router /admin/roles [get]
 func (h *RoleHandler) List(c *gin.Context) {
 	currentRole, _ := h.contextWith.GetRole(c)
 	list, err := h.service.GetAll(c.Request.Context(), currentRole)

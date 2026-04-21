@@ -76,7 +76,7 @@ func NewGoogleHandler(googleSvc googleapi.Service, geminiSvc gemini.Service, dri
 // @Produce json
 // @Security BearerAuth
 // @Success 200 {object} web.Response{data=object}
-// @Router /google/weather-forecast [get]
+// @Router /admin/google/weather/forecast [get]
 func (h *GoogleHandler) GetWeatherForecast(c *gin.Context) {
 	forecast, err := h.weatherSvc.GetForecast(c.Request.Context())
 	if err != nil {
@@ -98,7 +98,7 @@ func (h *GoogleHandler) GetWeatherForecast(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Success 200 {object} web.Response{data=object}
-// @Router /google/gemini-forecast [get]
+// @Router /admin/google/weather/forecast/gemini [get]
 func (h *GoogleHandler) GetGeminiWeatherForecast(c *gin.Context) {
 	forecast, err := h.weatherSvc.GetGeminiForecast(c.Request.Context())
 	if err != nil {
@@ -163,7 +163,7 @@ func (h *GoogleHandler) getLatestOCRText(ctx context.Context) string {
 // @Produce json
 // @Security BearerAuth
 // @Success 200 {object} web.Response{data=object}
-// @Router /google/status [get]
+// @Router /admin/google/status [get]
 func (h *GoogleHandler) GetStatus(c *gin.Context) {
 	status, err := h.googleSvc.GetStatus(c.Request.Context())
 	if err != nil {
@@ -185,7 +185,7 @@ func (h *GoogleHandler) GetStatus(c *gin.Context) {
 // @Security BearerAuth
 // @Param is_chat query bool false "Có lưu hành động vào lịch sử chat không"
 // @Success 200 {object} web.Response{data=object}
-// @Router /google/rain-summary [get]
+// @Router /admin/google/rain-summary [get]
 func (h *GoogleHandler) GetRainSummary(c *gin.Context) {
 	token := h.contextWith.GetTokenFromContext(c)
 	orgID := token.OrgID
@@ -228,7 +228,7 @@ func (h *GoogleHandler) GetRainSummary(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Success 200 {object} web.Response{data=string}
-// @Router /google/rain-summary-text [get]
+// @Router /admin/google/rain-summary-text [get]
 func (h *GoogleHandler) GetRainSummaryText(c *gin.Context) {
 	token := h.contextWith.GetTokenFromContext(c)
 	orgID := token.OrgID
@@ -289,7 +289,7 @@ func (h *GoogleHandler) formatRainSummary(summary *googleapi.RainSummaryData) st
 // @Produce json
 // @Security BearerAuth
 // @Success 200 {object} web.Response{data=object}
-// @Router /google/water-summary [get]
+// @Router /admin/google/water-summary [get]
 func (h *GoogleHandler) GetWaterSummary(c *gin.Context) {
 	token := h.contextWith.GetTokenFromContext(c)
 	orgID := token.OrgID
@@ -345,7 +345,7 @@ func (h *GoogleHandler) GetWaterSummary(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Success 200 {object} web.Response{data=object}
-// @Router /google/inundation-summary [get]
+// @Router /admin/google/inundation-summary [get]
 func (h *GoogleHandler) GetInundationSummary(c *gin.Context) {
 	token := h.contextWith.GetTokenFromContext(c)
 	orgID := token.OrgID
@@ -403,7 +403,7 @@ func (h *GoogleHandler) GetInundationSummary(c *gin.Context) {
 // @Security BearerAuth
 // @Param request body object{prompt=string,history=[]object} true "Câu hỏi và lịch sử chat"
 // @Success 200 {object} web.Response{data=string}
-// @Router /google/chat-contract [post]
+// @Router /admin/google/contract-chat [post]
 func (h *GoogleHandler) ChatContract(c *gin.Context) {
 	if h.geminiSvc == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Gemini AI service is not initialized. Please check GEMINI_API_KEY."})
@@ -441,7 +441,7 @@ func (h *GoogleHandler) ChatContract(c *gin.Context) {
 // @Security BearerAuth
 // @Param request body object{prompt=string,history=[]object} true "Câu hỏi và lịch sử chat"
 // @Success 200 {object} web.Response{data=string}
-// @Router /google/chat [post]
+// @Router /admin/google/chat [post]
 func (h *GoogleHandler) Chat(c *gin.Context) {
 	var body struct {
 		Prompt  string               `json:"prompt"`
@@ -476,7 +476,7 @@ func (h *GoogleHandler) Chat(c *gin.Context) {
 // @Param limit query int false "Số lượng bản ghi" default(50)
 // @Param before query string false "Mốc thời gian ISO-8601 để phân trang"
 // @Success 200 {object} web.Response{data=[]models.AiChatLog}
-// @Router /google/chat-history [get]
+// @Router /admin/google/chat/history [get]
 func (h *GoogleHandler) GetChatHistory(c *gin.Context) {
 	userID, _ := h.contextWith.GetUserID(c)
 	chatType := c.DefaultQuery("chat_type", "support")
@@ -527,7 +527,7 @@ func (h *GoogleHandler) GetChatHistory(c *gin.Context) {
 // @Security BearerAuth
 // @Param id path int true "ID Email (uint32)"
 // @Success 200 {object} web.Response{data=object}
-// @Router /google/email/{id} [get]
+// @Router /admin/google/email/{id} [get]
 func (h *GoogleHandler) GetEmailDetail(c *gin.Context) {
 	idStr := c.Param("id")
 	var id uint32
@@ -574,7 +574,7 @@ func (h *GoogleHandler) GetEmailDetail(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Success 200 {object} web.Response{data=[]object}
-// @Router /google/emails/recent [get]
+// @Router /admin/google/emails/recent [get]
 func (h *GoogleHandler) GetRecentEmails(c *gin.Context) {
 	emails, err := h.googleSvc.GetRecentEmails(c.Request.Context(), 10)
 	if err != nil {
@@ -622,7 +622,7 @@ func (h *GoogleHandler) GetRecentEmails(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Success 200 {object} web.Response{data=[]object}
-// @Router /google/emails/unread [get]
+// @Router /admin/google/emails/unread [get]
 func (h *GoogleHandler) GetUnreadEmails(c *gin.Context) {
 	emails, err := h.googleSvc.GetUnreadEmails(c.Request.Context(), 10)
 	if err != nil {
@@ -674,7 +674,7 @@ func (h *GoogleHandler) GenerateQuickReport(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Success 200 {object} web.Response{data=object}
-// @Router /google/generate-report [post]
+// @Router /admin/google/quick-report [post]
 func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 	if h.driveSvc == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Google Drive service is not initialized."})
@@ -1080,6 +1080,14 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 	})
 }
 
+// GenerateQuickReportText godoc
+// @Summary Tạo báo cáo nhanh dạng văn bản
+// @Description Tổng hợp thông tin thời tiết và úng ngập thành văn bản tóm tắt qua AI
+// @Tags Tiện ích
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} web.Response{data=string}
+// @Router /admin/google/quick-report-text [post]
 func (h *GoogleHandler) GenerateQuickReportText(c *gin.Context) {
 	if h.geminiSvc == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Gemini AI service is not initialized."})
@@ -1272,6 +1280,14 @@ Công ty Thoát nước Hà Nội báo cáo UBND Thành phố tình hình PCUN �
 	c.JSON(http.StatusOK, gin.H{"status": "success", "data": aiResult})
 }
 
+// GenerateAIDynamicReport godoc
+// @Summary Tạo báo cáo tổng hợp hệ thống (AI Dynamic)
+// @Description Sử dụng AI để phân tích toàn diện dữ liệu mưa, nước, ngập lụt và trạm bơm
+// @Tags Tiện ích
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} web.Response{data=string}
+// @Router /admin/google/dynamic-report [post]
 func (h *GoogleHandler) GenerateAIDynamicReport(c *gin.Context) {
 	if h.geminiSvc == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Gemini AI service is not initialized."})

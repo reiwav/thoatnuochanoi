@@ -52,7 +52,7 @@ func (h *StationHandler) checkPermissions(c *gin.Context) (isSuperAdmin bool, is
 // @Param station body models.RainStation true "Dữ liệu trạm"
 // @Success 200 {object} web.Response{data=models.RainStation}
 // @Failure 400 {object} web.ErrorResponse
-// @Router /stations/rain [post]
+// @Router /admin/stations/rain [post]
 func (h *StationHandler) CreateRain(c *gin.Context) {
 	var m models.RainStation
 	if err := c.ShouldBindJSON(&m); err != nil {
@@ -99,7 +99,7 @@ func (h *StationHandler) CreateRain(c *gin.Context) {
 // @Param station body models.RainStation true "Dữ liệu trạm cập nhật"
 // @Success 200 {object} web.Response{data=models.RainStation}
 // @Failure 401 {object} web.ErrorResponse
-// @Router /stations/rain/{id} [put]
+// @Router /admin/stations/rain/{id} [put]
 func (h *StationHandler) UpdateRain(c *gin.Context) {
 	id := c.Param("id")
 	var m models.RainStation
@@ -147,7 +147,7 @@ func (h *StationHandler) UpdateRain(c *gin.Context) {
 // @Param id path string true "ID trạm"
 // @Success 200 {boolean} bool
 // @Failure 401 {object} web.ErrorResponse
-// @Router /stations/rain/{id} [delete]
+// @Router /admin/stations/rain/{id} [delete]
 func (h *StationHandler) DeleteRain(c *gin.Context) {
 	id := c.Param("id")
 	_, isAllowedAll, user := h.checkPermissions(c)
@@ -175,7 +175,7 @@ func (h *StationHandler) DeleteRain(c *gin.Context) {
 // @Security BearerAuth
 // @Param id path string true "ID trạm"
 // @Success 200 {object} web.Response{data=models.RainStation}
-// @Router /stations/rain/{id} [get]
+// @Router /admin/stations/rain/{id} [get]
 func (h *StationHandler) GetRainByID(c *gin.Context) {
 	id := c.Param("id")
 	res, err := h.service.GetRainStation(c.Request.Context(), id)
@@ -195,7 +195,7 @@ func (h *StationHandler) GetRainByID(c *gin.Context) {
 // @Param page query int false "Số trang"
 // @Param size query int false "Số bản ghi mỗi trang"
 // @Success 200 {object} web.Response{data=object{data=[]models.RainStation,total=int}}
-// @Router /stations/rain [get]
+// @Router /admin/stations/rain [get]
 func (h *StationHandler) ListRain(c *gin.Context) {
 	req := filters.NewStationListRequest()
 	if err := c.ShouldBindQuery(req); err != nil {
@@ -230,7 +230,7 @@ func (h *StationHandler) ListRain(c *gin.Context) {
 // @Param station body models.LakeStation true "Dữ liệu trạm"
 // @Success 200 {object} web.Response{data=models.LakeStation}
 // @Failure 400 {object} web.ErrorResponse
-// @Router /stations/lake [post]
+// @Router /admin/stations/lake [post]
 func (h *StationHandler) CreateLake(c *gin.Context) {
 	var m models.LakeStation
 	if err := c.ShouldBindJSON(&m); err != nil {
@@ -275,7 +275,7 @@ func (h *StationHandler) CreateLake(c *gin.Context) {
 // @Param station body models.LakeStation true "Dữ liệu trạm cập nhật"
 // @Success 200 {object} web.Response{data=models.LakeStation}
 // @Failure 401 {object} web.ErrorResponse
-// @Router /stations/lake/{id} [put]
+// @Router /admin/stations/lake/{id} [put]
 func (h *StationHandler) UpdateLake(c *gin.Context) {
 	id := c.Param("id")
 	var m models.LakeStation
@@ -323,7 +323,7 @@ func (h *StationHandler) UpdateLake(c *gin.Context) {
 // @Param id path string true "ID trạm"
 // @Success 200 {boolean} bool
 // @Failure 401 {object} web.ErrorResponse
-// @Router /stations/lake/{id} [delete]
+// @Router /admin/stations/lake/{id} [delete]
 func (h *StationHandler) DeleteLake(c *gin.Context) {
 	id := c.Param("id")
 	_, isAllowedAll, user := h.checkPermissions(c)
@@ -351,7 +351,7 @@ func (h *StationHandler) DeleteLake(c *gin.Context) {
 // @Security BearerAuth
 // @Param id path string true "ID trạm"
 // @Success 200 {object} web.Response{data=models.LakeStation}
-// @Router /stations/lake/{id} [get]
+// @Router /admin/stations/lake/{id} [get]
 func (h *StationHandler) GetLakeByID(c *gin.Context) {
 	id := c.Param("id")
 	res, err := h.service.GetLakeStation(c.Request.Context(), id)
@@ -371,7 +371,7 @@ func (h *StationHandler) GetLakeByID(c *gin.Context) {
 // @Param page query int false "Số trang"
 // @Param size query int false "Số bản ghi mỗi trang"
 // @Success 200 {object} web.Response{data=object{data=[]models.LakeStation,total=int}}
-// @Router /stations/lake [get]
+// @Router /admin/stations/lake [get]
 func (h *StationHandler) ListLake(c *gin.Context) {
 	req := filters.NewStationListRequest()
 	if err := c.ShouldBindQuery(req); err != nil {
@@ -406,7 +406,7 @@ func (h *StationHandler) ListLake(c *gin.Context) {
 // @Param station body models.RiverStation true "Dữ liệu trạm"
 // @Success 200 {object} web.Response{data=models.RiverStation}
 // @Failure 400 {object} web.ErrorResponse
-// @Router /stations/river [post]
+// @Router /admin/stations/river [post]
 func (h *StationHandler) CreateRiver(c *gin.Context) {
 	var m models.RiverStation
 	if err := c.ShouldBindJSON(&m); err != nil {
@@ -451,7 +451,7 @@ func (h *StationHandler) CreateRiver(c *gin.Context) {
 // @Param station body models.RiverStation true "Dữ liệu trạm cập nhật"
 // @Success 200 {object} web.Response{data=models.RiverStation}
 // @Failure 401 {object} web.ErrorResponse
-// @Router /stations/river/{id} [put]
+// @Router /admin/stations/river/{id} [put]
 func (h *StationHandler) UpdateRiver(c *gin.Context) {
 	id := c.Param("id")
 	var m models.RiverStation
@@ -499,7 +499,7 @@ func (h *StationHandler) UpdateRiver(c *gin.Context) {
 // @Param id path string true "ID trạm"
 // @Success 200 {boolean} bool
 // @Failure 401 {object} web.ErrorResponse
-// @Router /stations/river/{id} [delete]
+// @Router /admin/stations/river/{id} [delete]
 func (h *StationHandler) DeleteRiver(c *gin.Context) {
 	id := c.Param("id")
 	_, isAllowedAll, user := h.checkPermissions(c)
@@ -527,7 +527,7 @@ func (h *StationHandler) DeleteRiver(c *gin.Context) {
 // @Security BearerAuth
 // @Param id path string true "ID trạm"
 // @Success 200 {object} web.Response{data=models.RiverStation}
-// @Router /stations/river/{id} [get]
+// @Router /admin/stations/river/{id} [get]
 func (h *StationHandler) GetRiverByID(c *gin.Context) {
 	id := c.Param("id")
 	res, err := h.service.GetRiverStation(c.Request.Context(), id)
@@ -547,7 +547,7 @@ func (h *StationHandler) GetRiverByID(c *gin.Context) {
 // @Param page query int false "Số trang"
 // @Param size query int false "Số bản ghi mỗi trang"
 // @Success 200 {object} web.Response{data=object{data=[]models.RiverStation,total=int}}
-// @Router /stations/river [get]
+// @Router /admin/stations/river [get]
 func (h *StationHandler) ListRiver(c *gin.Context) {
 	req := filters.NewStationListRequest()
 	if err := c.ShouldBindQuery(req); err != nil {

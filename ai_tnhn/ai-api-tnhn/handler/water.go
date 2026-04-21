@@ -29,7 +29,7 @@ func NewWaterHandler(service water.Service) *WaterHandler {
 // @Param limit query int false "Số bản ghi tối đa" default(100)
 // @Param date query string false "Lọc theo ngày (YYYY-MM-DD)"
 // @Success 200 {object} web.Response{data=[]object}
-// @Router /water/rain/{id}/history [get]
+// @Router /admin/water/rain/{id}/history [get]
 func (h *WaterHandler) GetRainHistory(c *gin.Context) {
 	stationID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 	limit, _ := strconv.ParseInt(c.DefaultQuery("limit", "100"), 10, 64)
@@ -50,7 +50,7 @@ func (h *WaterHandler) GetRainHistory(c *gin.Context) {
 // @Param limit query int false "Số bản ghi tối đa" default(100)
 // @Param date query string false "Lọc theo ngày (YYYY-MM-DD)"
 // @Success 200 {object} web.Response{data=[]object}
-// @Router /water/lake/{id}/history [get]
+// @Router /admin/water/lake/{id}/history [get]
 func (h *WaterHandler) GetLakeHistory(c *gin.Context) {
 	stationID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 	limit, _ := strconv.ParseInt(c.DefaultQuery("limit", "100"), 10, 64)
@@ -71,7 +71,7 @@ func (h *WaterHandler) GetLakeHistory(c *gin.Context) {
 // @Param limit query int false "Số bản ghi tối đa" default(100)
 // @Param date query string false "Lọc theo ngày (YYYY-MM-DD)"
 // @Success 200 {object} web.Response{data=[]object}
-// @Router /water/river/{id}/history [get]
+// @Router /admin/water/river/{id}/history [get]
 func (h *WaterHandler) GetRiverHistory(c *gin.Context) {
 	stationID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 	limit, _ := strconv.ParseInt(c.DefaultQuery("limit", "100"), 10, 64)
@@ -90,7 +90,7 @@ func (h *WaterHandler) GetRiverHistory(c *gin.Context) {
 // @Security BearerAuth
 // @Param date query string true "Ngày lọc (YYYY-MM-DD)"
 // @Success 200 {object} web.Response{data=[]object}
-// @Router /water/rain/by-date [get]
+// @Router /admin/water/rain/by-date [get]
 func (h *WaterHandler) GetRainDataByDate(c *gin.Context) {
 	date := c.Query("date") // Expected format: YYYY-MM-DD
 	if date == "" {

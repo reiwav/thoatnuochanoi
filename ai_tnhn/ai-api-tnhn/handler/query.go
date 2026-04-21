@@ -26,7 +26,7 @@ func NewQueryHandler(querySvc query.Service) *QueryHandler {
 // @Success 200 {object} object{status=string,count=int,data=[]object}
 // @Failure 400 {object} web.ErrorResponse
 // @Failure 403 {object} web.ErrorResponse
-// @Router /query [post]
+// @Router /admin/database/query [post]
 func (h *QueryHandler) Query(c *gin.Context) {
 	var body struct {
 		Collection string                 `json:"collection" binding:"required"`

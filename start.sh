@@ -33,6 +33,8 @@ trap cleanup SIGINT SIGTERM
 # Start Backend
 echo -e "${GREEN}[Backend] Starting ai-api-tnhn...${NC}"
 cd "$BASE_DIR/ai_tnhn/ai-api-tnhn" || exit
+echo -e "${GREEN}[Swagger] Generating API documentation...${NC}"
+PATH=$PATH:/usr/local/go/bin /Users/longtran/go/bin/swag init
 go run main.go &
 BACKEND_PID=$!
 

@@ -52,7 +52,7 @@ func (h *PumpingStationHandler) checkPermissions(c *gin.Context) (isSuperAdmin b
 // @Param station body models.PumpingStation true "Dữ liệu trạm bơm"
 // @Success 200 {object} web.Response{data=models.PumpingStation}
 // @Failure 401 {object} web.ErrorResponse
-// @Router /stations/pumping [post]
+// @Router /admin/stations/pumping [post]
 func (h *PumpingStationHandler) Create(c *gin.Context) {
 	var req models.PumpingStation
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -83,7 +83,7 @@ func (h *PumpingStationHandler) Create(c *gin.Context) {
 // @Param station body models.PumpingStation true "Dữ liệu trạm bơm cập nhật"
 // @Success 200 {boolean} bool
 // @Failure 401 {object} web.ErrorResponse
-// @Router /stations/pumping/{id} [put]
+// @Router /admin/stations/pumping/{id} [put]
 func (h *PumpingStationHandler) Update(c *gin.Context) {
 	id := c.Param("id")
 	var req models.PumpingStation
@@ -130,7 +130,7 @@ func (h *PumpingStationHandler) Update(c *gin.Context) {
 // @Param id path string true "ID trạm bơm"
 // @Success 200 {boolean} bool
 // @Failure 401 {object} web.ErrorResponse
-// @Router /stations/pumping/{id} [delete]
+// @Router /admin/stations/pumping/{id} [delete]
 func (h *PumpingStationHandler) Delete(c *gin.Context) {
 	id := c.Param("id")
 	_, isAllowedAll, user := h.checkPermissions(c)
@@ -167,7 +167,7 @@ func (h *PumpingStationHandler) Delete(c *gin.Context) {
 // @Param id path string true "ID trạm bơm"
 // @Success 200 {object} web.Response{data=models.PumpingStation}
 // @Failure 404 {object} web.ErrorResponse
-// @Router /stations/pumping/{id} [get]
+// @Router /admin/stations/pumping/{id} [get]
 func (h *PumpingStationHandler) Get(c *gin.Context) {
 	id := c.Param("id")
 	res, err := h.service.GetByID(c.Request.Context(), id)
@@ -192,7 +192,7 @@ func (h *PumpingStationHandler) Get(c *gin.Context) {
 // @Param page query int false "Số trang"
 // @Param size query int false "Số bản ghi mỗi trang"
 // @Success 200 {object} web.Response{data=object{data=[]models.PumpingStation,total=int}}
-// @Router /stations/pumping [get]
+// @Router /admin/stations/pumping [get]
 func (h *PumpingStationHandler) List(c *gin.Context) {
 	f := filter.NewBasicFilter()
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "0"))
@@ -259,7 +259,7 @@ func (h *PumpingStationHandler) List(c *gin.Context) {
 // @Param history body models.PumpingStationHistory true "Dữ liệu vận hành"
 // @Success 200 {object} web.Response{data=models.PumpingStationHistory}
 // @Failure 401 {object} web.ErrorResponse
-// @Router /stations/pumping/report [post]
+// @Router /admin/stations/pumping/report [post]
 func (h *PumpingStationHandler) CreateHistory(c *gin.Context) {
 	token := h.contextWith.GetToken(c.Request)
 	user, err := h.authService.GetProfile(c.Request.Context(), token)
@@ -290,7 +290,7 @@ func (h *PumpingStationHandler) CreateHistory(c *gin.Context) {
 // @Security BearerAuth
 // @Param id path string true "ID trạm bơm"
 // @Success 200 {object} web.Response{data=object{data=[]models.PumpingStationHistory,total=int}}
-// @Router /stations/pumping/{id}/history [get]
+// @Router /admin/stations/pumping/{id}/history [get]
 func (h *PumpingStationHandler) ListHistory(c *gin.Context) {
 	id := c.Param("id")
 	f := filter.NewBasicFilter()

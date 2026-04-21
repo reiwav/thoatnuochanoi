@@ -1067,20 +1067,930 @@ definitions:
         example: success
         type: string
     type: object
-host: localhost:8080
+host: localhost:8089
 info:
   contact:
     email: support@swagger.io
     name: API Support
     url: http://www.swagger.io/support
-  description: Máy chủ API cho Hệ thống Giám sát Ngập lụt Hà Nội.
+  description: Máy chủ API cho Hệ thống.
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   termsOfService: http://swagger.io/terms/
-  title: API Hệ thống Giám sát Ngập lụt Hà Nội
+  title: API Hệ thống
   version: "1.0"
 paths:
+  /admin/contract-category:
+    get:
+      description: Truy xuất danh sách các danh mục hợp đồng có phân trang
+      parameters:
+      - description: Số trang
+        in: query
+        name: page
+        type: integer
+      - description: Số bản ghi mỗi trang
+        in: query
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  properties:
+                    data:
+                      items:
+                        $ref: '#/definitions/models.ContractCategory'
+                      type: array
+                    total:
+                      type: integer
+                  type: object
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Danh sách danh mục hợp đồng
+      tags:
+      - Danh mục hợp đồng
+    post:
+      consumes:
+      - application/json
+      description: Tạo mới một danh mục để tổ chức và quản lý các hợp đồng
+      parameters:
+      - description: Dữ liệu danh mục
+        in: body
+        name: category
+        required: true
+        schema:
+          $ref: '#/definitions/models.ContractCategory'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.ContractCategory'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Tạo mới một danh mục hợp đồng
+      tags:
+      - Danh mục hợp đồng
+  /admin/contract-category/{id}:
+    delete:
+      description: Loại bỏ một danh mục hợp đồng ra khỏi hệ thống theo ID
+      parameters:
+      - description: ID danh mục
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: boolean
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Xóa danh mục hợp đồng
+      tags:
+      - Danh mục hợp đồng
+    get:
+      description: Truy xuất thông tin chi tiết của một danh mục hợp đồng cụ thể
+      parameters:
+      - description: ID danh mục
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.ContractCategory'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Lấy thông tin danh mục theo ID
+      tags:
+      - Danh mục hợp đồng
+    put:
+      consumes:
+      - application/json
+      description: Cập nhật thông tin chi tiết của một danh mục hợp đồng hiện có
+      parameters:
+      - description: ID danh mục
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dữ liệu danh mục cập nhật
+        in: body
+        name: category
+        required: true
+        schema:
+          $ref: '#/definitions/models.ContractCategory'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.ContractCategory'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Cập nhật danh mục hợp đồng
+      tags:
+      - Danh mục hợp đồng
+  /admin/contract-category/tree:
+    get:
+      description: Truy xuất toàn bộ danh mục dưới dạng cấu trúc cây phân cấp
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  items:
+                    type: object
+                  type: array
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Lấy cấu trúc cây danh mục
+      tags:
+      - Danh mục hợp đồng
+  /admin/contracts:
+    get:
+      description: Truy xuất danh sách các hợp đồng với tính năng lọc và phân trang
+      parameters:
+      - description: Tìm kiếm theo mã hoặc tên
+        in: query
+        name: search
+        type: string
+      - description: Lọc theo danh mục
+        in: query
+        name: category_id
+        type: string
+      - description: Lọc theo đơn vị quản lý
+        in: query
+        name: org_id
+        type: string
+      - description: Số trang
+        in: query
+        name: page
+        type: integer
+      - description: Số bản ghi mỗi trang
+        in: query
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  properties:
+                    data:
+                      items:
+                        $ref: '#/definitions/models.Contract'
+                      type: array
+                    total:
+                      type: integer
+                  type: object
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Danh sách hợp đồng
+      tags:
+      - Hợp đồng
+    post:
+      consumes:
+      - application/json
+      description: Tạo mới một hợp đồng với thông tin cơ bản
+      parameters:
+      - description: Dữ liệu hợp đóng
+        in: body
+        name: contract
+        required: true
+        schema:
+          $ref: '#/definitions/models.Contract'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Contract'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Tạo mới một hợp đồng
+      tags:
+      - Hợp đồng
+  /admin/contracts/{id}:
+    delete:
+      description: Loại bỏ một hợp đồng khỏi hệ thống theo ID
+      parameters:
+      - description: ID hợp đồng
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: boolean
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Xóa hợp đồng
+      tags:
+      - Hợp đồng
+    get:
+      description: Truy xuất thông tin chi tiết của một hợp đồng cụ thể
+      parameters:
+      - description: ID hợp đồng
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Contract'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Lấy thông tin hợp đồng theo ID
+      tags:
+      - Hợp đồng
+    put:
+      consumes:
+      - application/json
+      description: Cập nhật thông tin chi tiết của một hợp đồng hiện có
+      parameters:
+      - description: ID hợp đồng
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dữ liệu hợp đồng cập nhật
+        in: body
+        name: contract
+        required: true
+        schema:
+          $ref: '#/definitions/models.Contract'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Contract'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Cập nhật hợp đồng
+      tags:
+      - Hợp đồng
+  /admin/contracts/{id}/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Tải một tệp tin liên quan đến hợp đồng lên Google Drive
+      parameters:
+      - description: ID hợp đồng
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Tệp tin tải lên
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  properties:
+                    file_id:
+                      type: string
+                    link:
+                      type: string
+                    name:
+                      type: string
+                  type: object
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Tải lên tài liệu cho hợp đồng
+      tags:
+      - Hợp đồng
+  /admin/contracts/delete-file:
+    delete:
+      description: Loại bỏ một tệp tin khỏi Google Drive
+      parameters:
+      - description: ID tệp tin Drive
+        in: query
+        name: file_id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: boolean
+      security:
+      - BearerAuth: []
+      summary: Xóa tệp khỏi Drive
+      tags:
+      - Hợp đồng
+  /admin/contracts/prepare-folder:
+    post:
+      consumes:
+      - application/json
+      description: Tạo một thư mục riêng trên Google Drive cho danh mục hợp đồng
+      parameters:
+      - description: Thông tin thư mục
+        in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            category_id:
+              type: string
+            name:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  properties:
+                    drive_folder_id:
+                      type: string
+                    drive_folder_link:
+                      type: string
+                  type: object
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Chuẩn bị thư mục Drive cho hợp đồng
+      tags:
+      - Hợp đồng
+  /admin/contracts/upload-to-folder:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Tải trực tiếp một tệp tin lên một thư mục Google Drive đã chỉ định
+      parameters:
+      - description: ID thư mục Drive
+        in: query
+        name: folder_id
+        required: true
+        type: string
+      - description: Tệp tin tải lên
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  properties:
+                    file_id:
+                      type: string
+                    link:
+                      type: string
+                    name:
+                      type: string
+                  type: object
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Tải lên tệp vào thư mục cụ thể
+      tags:
+      - Hợp đồng
+  /admin/database/query:
+    post:
+      consumes:
+      - application/json
+      description: Thực hiện truy vấn linh hoạt trên một collection được chỉ định
+        với các bộ lọc tùy chọn
+      parameters:
+      - description: Tham số truy vấn
+        in: body
+        name: query
+        required: true
+        schema:
+          properties:
+            collection:
+              type: string
+            filter:
+              type: object
+            limit:
+              type: integer
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              count:
+                type: integer
+              data:
+                items:
+                  type: object
+                type: array
+              status:
+                type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Truy vấn MongoDB linh hoạt
+      tags:
+      - Tiện ích
+  /admin/emergency-constructions:
+    get:
+      description: Truy xuất danh sách các dự án công trình khẩn cấp với các bộ lọc
+      parameters:
+      - description: Lọc theo đơn vị
+        in: query
+        name: org_id
+        type: string
+      - description: Tìm kiếm theo tên
+        in: query
+        name: search
+        type: string
+      - description: Số trang
+        in: query
+        name: page
+        type: integer
+      - description: Số bản ghi mỗi trang
+        in: query
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  properties:
+                    data:
+                      items:
+                        $ref: '#/definitions/models.EmergencyConstruction'
+                      type: array
+                    total:
+                      type: integer
+                  type: object
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Danh sách các dự án công trình khẩn cấp
+      tags:
+      - Công trình khẩn cấp
+    post:
+      consumes:
+      - application/json
+      description: Đăng ký một dự án công trình khẩn cấp mới vào hệ thống
+      parameters:
+      - description: Dữ liệu dự án
+        in: body
+        name: construction
+        required: true
+        schema:
+          $ref: '#/definitions/models.EmergencyConstruction'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.EmergencyConstruction'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Tạo mới một dự án công trình khẩn cấp
+      tags:
+      - Công trình khẩn cấp
+  /admin/emergency-constructions/{id}:
+    delete:
+      description: Loại bỏ một dự án công trình khẩn cấp ra khỏi hệ thống theo ID
+      parameters:
+      - description: ID dự án
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: boolean
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Xóa dự án công trình khẩn cấp
+      tags:
+      - Công trình khẩn cấp
+    get:
+      description: Truy xuất thông tin chi tiết của một dự án công trình khẩn cấp
+        cụ thể
+      parameters:
+      - description: ID dự án
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.EmergencyConstruction'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Lấy thông tin công trình khẩn cấp theo ID
+      tags:
+      - Công trình khẩn cấp
+    put:
+      consumes:
+      - application/json
+      description: Cập nhật thông tin chi tiết của một dự án công trình khẩn cấp hiện
+        có
+      parameters:
+      - description: ID dự án
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dư liệu dự án cập nhật
+        in: body
+        name: construction
+        required: true
+        schema:
+          $ref: '#/definitions/models.EmergencyConstruction'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.EmergencyConstruction'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Cập nhật dự án công trình khẩn cấp
+      tags:
+      - Công trình khẩn cấp
+  /admin/emergency-constructions/{id}/history:
+    get:
+      description: Truy xuất toàn bộ báo cáo tiến độ của dự án và lưu hành động vào
+        lịch sử chat AI
+      parameters:
+      - description: ID dự án
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.EmergencyConstructionProgress'
+                  type: array
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Lấy lịch sử dự án (bao gồm lưu vào chat AI)
+      tags:
+      - Công trình khẩn cấp
+  /admin/emergency-constructions/{id}/progress:
+    get:
+      description: Truy xuất trạng thái tiến độ hiện tại của một dự án cụ thể
+      parameters:
+      - description: ID dự án
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.EmergencyConstructionProgress'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Lấy thông tin tiến độ dự án
+      tags:
+      - Công trình khẩn cấp
+  /admin/emergency-constructions/export:
+    get:
+      description: Tạo và tải lên bản báo cáo Excel các công trình lên Google Drive
+      parameters:
+      - description: Ngày báo cáo (YYYY-MM-DD)
+        in: query
+        name: date
+        type: string
+      - description: Lọc theo đơn vị
+        in: query
+        name: org_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  properties:
+                    file_id:
+                      type: string
+                    url:
+                      type: string
+                  type: object
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Xuất báo cáo trạng thái dự án ra Excel
+      tags:
+      - Công trình khẩn cấp
+  /admin/emergency-constructions/history:
+    get:
+      description: Truy xuất lịch sử toàn bộ các cập nhật tiến độ cho các dự án
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  properties:
+                    data:
+                      items:
+                        $ref: '#/definitions/models.EmergencyConstructionProgress'
+                      type: array
+                    total:
+                      type: integer
+                  type: object
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Danh sách lịch sử cập nhật công việc
+      tags:
+      - Công trình khẩn cấp
+  /admin/emergency-constructions/history/{id}:
+    get:
+      description: Truy xuất thông tin chi tiết của một bản ghi cập nhật tiến độ duy
+        nhất
+      parameters:
+      - description: ID bản ghi lịch sử
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.EmergencyConstructionProgress'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Lấy thông tin chi tiết một bản cập nhật
+      tags:
+      - Công trình khẩn cấp
+  /admin/emergency-constructions/progress/{id}:
+    put:
+      consumes:
+      - multipart/form-data
+      - application/json
+      description: Cập nhật một bản ghi báo cáo tiến độ đã tồn tại
+      parameters:
+      - description: ID báo cáo tiến độ
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Nội dung công việc cập nhật
+        in: formData
+        name: work_done
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.EmergencyConstructionProgress'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Cập nhật bản báo cáo tiến độ
+      tags:
+      - Công trình khẩn cấp
+  /admin/emergency-constructions/report:
+    post:
+      consumes:
+      - multipart/form-data
+      - application/json
+      description: Gửi một báo cáo tiến độ mới cho dự án công trình khẩn cấp, có hỗ
+        trợ hình ảnh
+      parameters:
+      - description: ID dự án
+        in: formData
+        name: construction_id
+        required: true
+        type: string
+      - description: Khối lượng công việc đã thực hiện
+        in: formData
+        name: work_done
+        required: true
+        type: string
+      - description: Hình ảnh tiến độ
+        in: formData
+        name: images
+        type: file
+      - description: Phần trăm tiến độ (%)
+        in: formData
+        name: progress_percentage
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.EmergencyConstructionProgress'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Báo cáo tiến độ thi công công trình
+      tags:
+      - Công trình khẩn cấp
   /admin/employees:
     get:
       description: Truy xuất danh sách nhân viên với tính năng lọc
@@ -1241,6 +2151,396 @@ paths:
       summary: Cập nhật thông tin nhân viên
       tags:
       - Nhân viên
+  /admin/google/chat:
+    post:
+      consumes:
+      - application/json
+      description: Trợ lý ảo đa năng hỗ trợ công việc vận hành bởi Gemini
+      parameters:
+      - description: Câu hỏi và lịch sử chat
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            history:
+              items:
+                type: object
+              type: array
+            prompt:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Chat với AI Gemini
+      tags:
+      - AI Chat
+  /admin/google/chat/history:
+    get:
+      description: Truy xuất các bản ghi lịch sử chat của người dùng hiện tại
+      parameters:
+      - default: support
+        description: Loại chat (support/contract)
+        in: query
+        name: chat_type
+        type: string
+      - default: 50
+        description: Số lượng bản ghi
+        in: query
+        name: limit
+        type: integer
+      - description: Mốc thời gian ISO-8601 để phân trang
+        in: query
+        name: before
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.AiChatLog'
+                  type: array
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Lấy lịch sử chat AI
+      tags:
+      - AI Chat
+  /admin/google/contract-chat:
+    post:
+      consumes:
+      - application/json
+      description: Chat AI hỗ trợ phân tích và truy xuất thông tin hợp đồng
+      parameters:
+      - description: Câu hỏi và lịch sử chat
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            history:
+              items:
+                type: object
+              type: array
+            prompt:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Chat với Gemini về hợp đồng
+      tags:
+      - AI Chat
+  /admin/google/dynamic-report:
+    post:
+      description: Sử dụng AI để phân tích toàn diện dữ liệu mưa, nước, ngập lụt và
+        trạm bơm
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Tạo báo cáo tổng hợp hệ thống (AI Dynamic)
+      tags:
+      - Tiện ích
+  /admin/google/email/{id}:
+    get:
+      description: Truy xuất toàn bộ nội dung và tệp đính kèm của một tin nhắn Gmail
+        cụ thể
+      parameters:
+      - description: ID Email (uint32)
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  type: object
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Lấy thông tin chi tiết email
+      tags:
+      - Tiện ích
+  /admin/google/emails/recent:
+    get:
+      description: Truy xuất danh sách 10 email gần đây nhất từ hòm thư thời tiết
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  items:
+                    type: object
+                  type: array
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Lấy các email gần đây
+      tags:
+      - Tiện ích
+  /admin/google/emails/unread:
+    get:
+      description: Truy xuất danh sách 10 email chưa đọc gần đây nhất
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  items:
+                    type: object
+                  type: array
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Lấy các email chưa đọc
+      tags:
+      - Tiện ích
+  /admin/google/inundation-summary:
+    get:
+      description: Truy xuất các điểm nóng và trạng thái ngập lụt hiện tại cho AI
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  type: object
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Lấy tóm tắt ngập lụt cho AI
+      tags:
+      - AI & Giám sát
+  /admin/google/quick-report:
+    post:
+      description: Tổng hợp dữ liệu mưa, mực nước, ngập lụt và trạm bơm vào một báo
+        cáo PDF/Drive duy nhất
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  type: object
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Tạo báo cáo nhanh tự động (V3)
+      tags:
+      - Tiện ích
+  /admin/google/quick-report-text:
+    post:
+      description: Tổng hợp thông tin thời tiết và úng ngập thành văn bản tóm tắt
+        qua AI
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Tạo báo cáo nhanh dạng văn bản
+      tags:
+      - Tiện ích
+  /admin/google/rain-summary:
+    get:
+      description: Truy xuất dữ liệu tóm tắt lượng mưa có cấu trúc để AI xử lý hoặc
+        hiển thị
+      parameters:
+      - description: Có lưu hành động vào lịch sử chat không
+        in: query
+        name: is_chat
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  type: object
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Lấy tóm tắt lượng mưa cho AI
+      tags:
+      - AI & Giám sát
+  /admin/google/rain-summary-text:
+    get:
+      description: Truy xuất bản tóm tắt văn bản đã được định dạng sẵn về tình hình
+        mưa hiện tại
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Lấy tóm tắt lượng mưa (dạng văn bản)
+      tags:
+      - AI & Giám sát
+  /admin/google/status:
+    get:
+      description: Kiểm tra trạng thái tích hợp các dịch vụ của Google
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  type: object
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Lấy trạng thái tích hợp Google API
+      tags:
+      - Tiện ích
+  /admin/google/water-summary:
+    get:
+      description: Truy xuất dữ liệu mực nước có cấu trúc để AI xử lý
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  type: object
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Lấy tóm tắt mực nước cho AI
+      tags:
+      - AI & Giám sát
+  /admin/google/weather/forecast:
+    get:
+      description: Truy xuất dữ liệu dự báo thời tiết truyền thống
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  type: object
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Lấy dự báo thời tiết
+      tags:
+      - AI & Dự báo
+  /admin/google/weather/forecast/gemini:
+    get:
+      description: Truy xuất dữ liệu dự báo thời tiết được tăng cường bởi AI Gemini
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  type: object
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Lấy dự báo thời tiết từ AI Gemini
+      tags:
+      - AI & Dự báo
   /admin/organizations:
     get:
       description: Truy xuất danh sách các đơn vị với tùy chọn lọc
@@ -1435,6 +2735,1182 @@ paths:
       summary: Lấy danh sách đơn vị để lựa chọn
       tags:
       - Đơn vị
+  /admin/permissions/matrix:
+    get:
+      description: Truy xuất danh sách vai trò và quyền hạn tương ứng để quản trị
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  properties:
+                    permissions:
+                      items:
+                        $ref: '#/definitions/models.Permission'
+                      type: array
+                    roles:
+                      items:
+                        $ref: '#/definitions/models.Role'
+                      type: array
+                  type: object
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Lấy ma trận quyền hạn
+      tags:
+      - Quyền hạn
+    post:
+      consumes:
+      - application/json
+      description: Cập nhật các quyền hạn được gán cho một vai trò cụ thể
+      parameters:
+      - description: Dữ liệu vai trò và danh sách mã quyền hạn
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            permissions:
+              items:
+                type: string
+              type: array
+            role:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: boolean
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Cập nhật ma trận quyền hạn
+      tags:
+      - Quyền hạn
+  /admin/permissions/my:
+    get:
+      description: Truy xuất danh sách quyền được gán cho vai trò của người dùng hiện
+        tại
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  items:
+                    type: string
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Lấy quyền hạn của tôi
+      tags:
+      - Quyền hạn
+  /admin/roles:
+    get:
+      description: Truy xuất danh sách các vai trò có sẵn để gán cho người dùng
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.Role'
+                  type: array
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Danh sách vai trò
+      tags:
+      - Vai trò
+    post:
+      consumes:
+      - application/json
+      description: Tạo mới một vai trò người dùng trong hệ thống
+      parameters:
+      - description: Dữ liệu vai trò
+        in: body
+        name: role
+        required: true
+        schema:
+          $ref: '#/definitions/models.Role'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Role'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Tạo mới một vai trò
+      tags:
+      - Vai trò
+  /admin/roles/{id}:
+    delete:
+      description: Loại bỏ một vai trò khỏi hệ thống theo ID
+      parameters:
+      - description: ID vai trò
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: boolean
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Xóa vai trò
+      tags:
+      - Vai trò
+    put:
+      consumes:
+      - application/json
+      description: Cập nhật thông tin chi tiết của một vai trò hiện có
+      parameters:
+      - description: ID vai trò
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dữ liệu vai trò cập nhật
+        in: body
+        name: role
+        required: true
+        schema:
+          $ref: '#/definitions/models.Role'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Role'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Cập nhật vai trò
+      tags:
+      - Vai trò
+  /admin/stations/lake:
+    get:
+      description: Truy xuất danh sách các trạm hồ với bộ lọc
+      parameters:
+      - description: Tìm kiếm theo tên trạm
+        in: query
+        name: search
+        type: string
+      - description: Lọc theo trạng thái hoạt động (true/false)
+        in: query
+        name: active
+        type: string
+      - description: Lọc theo ID đơn vị
+        in: query
+        name: org_id
+        type: string
+      - description: Số trang
+        in: query
+        name: page
+        type: integer
+      - description: Số bản ghi mỗi trang
+        in: query
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  properties:
+                    data:
+                      items:
+                        $ref: '#/definitions/models.LakeStation'
+                      type: array
+                    total:
+                      type: integer
+                  type: object
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Danh sách trạm hồ
+      tags:
+      - Trạm quan trắc - Hồ
+    post:
+      consumes:
+      - application/json
+      description: Tạo mới một trạm quan trắc cho hồ
+      parameters:
+      - description: Dữ liệu trạm
+        in: body
+        name: station
+        required: true
+        schema:
+          $ref: '#/definitions/models.LakeStation'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.LakeStation'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Tạo mới trạm hồ
+      tags:
+      - Trạm quan trắc - Hồ
+  /admin/stations/lake/{id}:
+    delete:
+      description: Loại bỏ một trạm hồ theo ID
+      parameters:
+      - description: ID trạm
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: boolean
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Xóa trạm hồ
+      tags:
+      - Trạm quan trắc - Hồ
+    get:
+      description: Truy xuất thông tin chi tiết của một trạm hồ cụ thể
+      parameters:
+      - description: ID trạm
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.LakeStation'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Lấy thông tin trạm hồ theo ID
+      tags:
+      - Trạm quan trắc - Hồ
+    put:
+      consumes:
+      - application/json
+      description: Cập nhật thông tin chi tiết của một trạm hồ hiện có
+      parameters:
+      - description: ID trạm
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dữ liệu trạm cập nhật
+        in: body
+        name: station
+        required: true
+        schema:
+          $ref: '#/definitions/models.LakeStation'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.LakeStation'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Cập nhật trạm hồ
+      tags:
+      - Trạm quan trắc - Hồ
+  /admin/stations/pumping:
+    get:
+      description: Truy xuất danh sách các trạm bơm với bộ lọc
+      parameters:
+      - description: Lọc theo ID đơn vị
+        in: query
+        name: org_id
+        type: string
+      - description: Số trang
+        in: query
+        name: page
+        type: integer
+      - description: Số bản ghi mỗi trang
+        in: query
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  properties:
+                    data:
+                      items:
+                        $ref: '#/definitions/models.PumpingStation'
+                      type: array
+                    total:
+                      type: integer
+                  type: object
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Danh sách trạm bơm
+      tags:
+      - Trạm bơm
+    post:
+      consumes:
+      - application/json
+      description: Tạo mới một trạm quan trắc cho hệ thống bơm cưỡng bức
+      parameters:
+      - description: Dữ liệu trạm bơm
+        in: body
+        name: station
+        required: true
+        schema:
+          $ref: '#/definitions/models.PumpingStation'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.PumpingStation'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Tạo mới trạm bơm
+      tags:
+      - Trạm bơm
+  /admin/stations/pumping/{id}:
+    delete:
+      description: Loại bỏ một trạm bơm khỏi hệ thống theo ID
+      parameters:
+      - description: ID trạm bơm
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: boolean
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Xóa trạm bơm
+      tags:
+      - Trạm bơm
+    get:
+      description: Truy xuất thông tin chi tiết của một trạm bơm cụ thể
+      parameters:
+      - description: ID trạm bơm
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.PumpingStation'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Lấy thông tin trạm bơm theo ID
+      tags:
+      - Trạm bơm
+    put:
+      consumes:
+      - application/json
+      description: Cập nhật thông tin chi tiết của một trạm bơm hiện có
+      parameters:
+      - description: ID trạm bơm
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dữ liệu trạm bơm cập nhật
+        in: body
+        name: station
+        required: true
+        schema:
+          $ref: '#/definitions/models.PumpingStation'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: boolean
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Cập nhật trạm bơm
+      tags:
+      - Trạm bơm
+  /admin/stations/pumping/{id}/history:
+    get:
+      description: Truy xuất danh sách các báo cáo lịch sử vận hành cho một trạm cụ
+        thể
+      parameters:
+      - description: ID trạm bơm
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  properties:
+                    data:
+                      items:
+                        $ref: '#/definitions/models.PumpingStationHistory'
+                      type: array
+                    total:
+                      type: integer
+                  type: object
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Lấy lịch sử vận hành trạm bơm
+      tags:
+      - Trạm bơm
+  /admin/stations/pumping/report:
+    post:
+      consumes:
+      - application/json
+      description: Ghi nhận trạng thái hoặc lịch sử vận hành cho một trạm bơm
+      parameters:
+      - description: Dữ liệu vận hành
+        in: body
+        name: history
+        required: true
+        schema:
+          $ref: '#/definitions/models.PumpingStationHistory'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.PumpingStationHistory'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Báo cáo trạng thái vận hành trạm bơm
+      tags:
+      - Trạm bơm
+  /admin/stations/rain:
+    get:
+      description: Truy xuất danh sách các trạm đo mưa với bộ lọc
+      parameters:
+      - description: Tìm kiếm theo tên trạm
+        in: query
+        name: search
+        type: string
+      - description: Lọc theo trạng thái hoạt động (true/false)
+        in: query
+        name: active
+        type: string
+      - description: Lọc theo ID đơn vị
+        in: query
+        name: org_id
+        type: string
+      - description: Số trang
+        in: query
+        name: page
+        type: integer
+      - description: Số bản ghi mỗi trang
+        in: query
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  properties:
+                    data:
+                      items:
+                        $ref: '#/definitions/models.RainStation'
+                      type: array
+                    total:
+                      type: integer
+                  type: object
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Danh sách trạm đo mưa
+      tags:
+      - Trạm quan trắc - Mưa
+    post:
+      consumes:
+      - application/json
+      description: Tạo mới một trạm quan trắc lượng mưa
+      parameters:
+      - description: Dữ liệu trạm
+        in: body
+        name: station
+        required: true
+        schema:
+          $ref: '#/definitions/models.RainStation'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.RainStation'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Tạo mới trạm đo mưa
+      tags:
+      - Trạm quan trắc - Mưa
+  /admin/stations/rain/{id}:
+    delete:
+      description: Loại bỏ một trạm đo mưa theo ID
+      parameters:
+      - description: ID trạm
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: boolean
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Xóa trạm đo mưa
+      tags:
+      - Trạm quan trắc - Mưa
+    get:
+      description: Truy xuất thông tin chi tiết của một trạm đo mưa cụ thể
+      parameters:
+      - description: ID trạm
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.RainStation'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Lấy thông tin trạm đo mưa theo ID
+      tags:
+      - Trạm quan trắc - Mưa
+    put:
+      consumes:
+      - application/json
+      description: Cập nhật thông tin chi tiết của một trạm đo mưa hiện có
+      parameters:
+      - description: ID trạm
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dữ liệu trạm cập nhật
+        in: body
+        name: station
+        required: true
+        schema:
+          $ref: '#/definitions/models.RainStation'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.RainStation'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Cập nhật trạm đo mưa
+      tags:
+      - Trạm quan trắc - Mưa
+  /admin/stations/river:
+    get:
+      description: Truy xuất danh sách các trạm sông với bộ lọc
+      parameters:
+      - description: Tìm kiếm theo tên trạm
+        in: query
+        name: search
+        type: string
+      - description: Lọc theo trạng thái hoạt động (true/false)
+        in: query
+        name: active
+        type: string
+      - description: Lọc theo ID đơn vị
+        in: query
+        name: org_id
+        type: string
+      - description: Số trang
+        in: query
+        name: page
+        type: integer
+      - description: Số bản ghi mỗi trang
+        in: query
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  properties:
+                    data:
+                      items:
+                        $ref: '#/definitions/models.RiverStation'
+                      type: array
+                    total:
+                      type: integer
+                  type: object
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Danh sách trạm sông
+      tags:
+      - Trạm quan trắc - Sông
+    post:
+      consumes:
+      - application/json
+      description: Tạo mới một trạm quan trắc cho sông
+      parameters:
+      - description: Dữ liệu trạm
+        in: body
+        name: station
+        required: true
+        schema:
+          $ref: '#/definitions/models.RiverStation'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.RiverStation'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Tạo mới trạm sông
+      tags:
+      - Trạm quan trắc - Sông
+  /admin/stations/river/{id}:
+    delete:
+      description: Loại bỏ một trạm sông theo ID
+      parameters:
+      - description: ID trạm
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: boolean
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Xóa trạm sông
+      tags:
+      - Trạm quan trắc - Sông
+    get:
+      description: Truy xuất thông tin chi tiết của một trạm sông cụ thể
+      parameters:
+      - description: ID trạm
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.RiverStation'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Lấy thông tin trạm sông theo ID
+      tags:
+      - Trạm quan trắc - Sông
+    put:
+      consumes:
+      - application/json
+      description: Cập nhật thông tin chi tiết của một trạm sông hiện có
+      parameters:
+      - description: ID trạm
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dữ liệu trạm cập nhật
+        in: body
+        name: station
+        required: true
+        schema:
+          $ref: '#/definitions/models.RiverStation'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.RiverStation'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Cập nhật trạm sông
+      tags:
+      - Trạm quan trắc - Sông
+  /admin/water/lake/{id}/history:
+    get:
+      description: Truy xuất dữ liệu mực nước hồ lịch sử của một trạm cụ thể
+      parameters:
+      - description: ID trạm
+        in: path
+        name: id
+        required: true
+        type: integer
+      - default: 100
+        description: Số bản ghi tối đa
+        in: query
+        name: limit
+        type: integer
+      - description: Lọc theo ngày (YYYY-MM-DD)
+        in: query
+        name: date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  items:
+                    type: object
+                  type: array
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Lấy lịch sử dữ liệu trạm hồ
+      tags:
+      - Thủy văn
+  /admin/water/rain/{id}/history:
+    get:
+      description: Truy xuất dữ liệu mưa lịch sử của một trạm cụ thể
+      parameters:
+      - description: ID trạm
+        in: path
+        name: id
+        required: true
+        type: integer
+      - default: 100
+        description: Số bản ghi tối đa
+        in: query
+        name: limit
+        type: integer
+      - description: Lọc theo ngày (YYYY-MM-DD)
+        in: query
+        name: date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  items:
+                    type: object
+                  type: array
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Lấy lịch sử dữ liệu trạm mưa
+      tags:
+      - Thủy văn
+  /admin/water/rain/by-date:
+    get:
+      description: Truy xuất dữ liệu mưa của tất cả các trạm trong một ngày cụ thể
+      parameters:
+      - description: Ngày lọc (YYYY-MM-DD)
+        in: query
+        name: date
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  items:
+                    type: object
+                  type: array
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Lấy dữ liệu mưa tất cả trạm theo ngày
+      tags:
+      - Thủy văn
+  /admin/water/river/{id}/history:
+    get:
+      description: Truy xuất dữ liệu mực nước sông lịch sử của một trạm cụ thể
+      parameters:
+      - description: ID trạm
+        in: path
+        name: id
+        required: true
+        type: integer
+      - default: 100
+        description: Số bản ghi tối đa
+        in: query
+        name: limit
+        type: integer
+      - description: Lọc theo ngày (YYYY-MM-DD)
+        in: query
+        name: date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  items:
+                    type: object
+                  type: array
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Lấy lịch sử dữ liệu trạm sông
+      tags:
+      - Thủy văn
+  /admin/weather/rain:
+    get:
+      description: Truy xuất dữ liệu lượng mưa hiện tại của tất cả các trạm quan trắc
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Lấy tổng hợp lượng mưa hiện tại
+      tags:
+      - Thời tiết
+  /admin/weather/rain/comparison:
+    get:
+      description: Truy xuất báo cáo so sánh dữ liệu lượng mưa giữa hai năm cụ thể
+      parameters:
+      - description: Năm thứ nhất
+        in: query
+        name: year1
+        required: true
+        type: integer
+      - description: Năm thứ hai
+        in: query
+        name: year2
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Báo cáo so sánh lượng mưa giữa hai năm
+      tags:
+      - Thời tiết
+  /admin/weather/rain/history:
+    get:
+      description: Truy xuất dữ liệu lượng mưa lịch sử của tất cả các trạm
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Lấy dữ liệu lịch sử lượng mưa
+      tags:
+      - Thời tiết
+  /admin/weather/water:
+    get:
+      description: Truy xuất dữ liệu mực nước hiện tại của tất cả các trạm quan trắc
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Lấy tổng hợp mực nước hiện tại
+      tags:
+      - Thời tiết
   /auth/change-password:
     put:
       consumes:
@@ -1560,1215 +4036,6 @@ paths:
       summary: Cập nhật thông tin cá nhân
       tags:
       - Xác thực
-  /contract-category:
-    get:
-      description: Truy xuất danh sách các danh mục hợp đồng có phân trang
-      parameters:
-      - description: Số trang
-        in: query
-        name: page
-        type: integer
-      - description: Số bản ghi mỗi trang
-        in: query
-        name: size
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  properties:
-                    data:
-                      items:
-                        $ref: '#/definitions/models.ContractCategory'
-                      type: array
-                    total:
-                      type: integer
-                  type: object
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Danh sách danh mục hợp đồng
-      tags:
-      - Danh mục hợp đồng
-    post:
-      consumes:
-      - application/json
-      description: Tạo mới một danh mục để tổ chức và quản lý các hợp đồng
-      parameters:
-      - description: Dữ liệu danh mục
-        in: body
-        name: category
-        required: true
-        schema:
-          $ref: '#/definitions/models.ContractCategory'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.ContractCategory'
-              type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Tạo mới một danh mục hợp đồng
-      tags:
-      - Danh mục hợp đồng
-  /contract-category/{id}:
-    delete:
-      description: Loại bỏ một danh mục hợp đồng ra khỏi hệ thống theo ID
-      parameters:
-      - description: ID danh mục
-        in: path
-        name: id
-        required: true
-        type: string
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: boolean
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Xóa danh mục hợp đồng
-      tags:
-      - Danh mục hợp đồng
-    get:
-      description: Truy xuất thông tin chi tiết của một danh mục hợp đồng cụ thể
-      parameters:
-      - description: ID danh mục
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.ContractCategory'
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Lấy thông tin danh mục theo ID
-      tags:
-      - Danh mục hợp đồng
-    put:
-      consumes:
-      - application/json
-      description: Cập nhật thông tin chi tiết của một danh mục hợp đồng hiện có
-      parameters:
-      - description: ID danh mục
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Dữ liệu danh mục cập nhật
-        in: body
-        name: category
-        required: true
-        schema:
-          $ref: '#/definitions/models.ContractCategory'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.ContractCategory'
-              type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Cập nhật danh mục hợp đồng
-      tags:
-      - Danh mục hợp đồng
-  /contract-category/tree:
-    get:
-      description: Truy xuất toàn bộ danh mục dưới dạng cấu trúc cây phân cấp
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  items:
-                    type: object
-                  type: array
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Lấy cấu trúc cây danh mục
-      tags:
-      - Danh mục hợp đồng
-  /contracts:
-    get:
-      description: Truy xuất danh sách các hợp đồng với tính năng lọc và phân trang
-      parameters:
-      - description: Tìm kiếm theo mã hoặc tên
-        in: query
-        name: search
-        type: string
-      - description: Lọc theo danh mục
-        in: query
-        name: category_id
-        type: string
-      - description: Lọc theo đơn vị quản lý
-        in: query
-        name: org_id
-        type: string
-      - description: Số trang
-        in: query
-        name: page
-        type: integer
-      - description: Số bản ghi mỗi trang
-        in: query
-        name: size
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  properties:
-                    data:
-                      items:
-                        $ref: '#/definitions/models.Contract'
-                      type: array
-                    total:
-                      type: integer
-                  type: object
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Danh sách hợp đồng
-      tags:
-      - Hợp đồng
-    post:
-      consumes:
-      - application/json
-      description: Tạo mới một hợp đồng với thông tin cơ bản
-      parameters:
-      - description: Dữ liệu hợp đóng
-        in: body
-        name: contract
-        required: true
-        schema:
-          $ref: '#/definitions/models.Contract'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.Contract'
-              type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Tạo mới một hợp đồng
-      tags:
-      - Hợp đồng
-  /contracts/{id}:
-    delete:
-      description: Loại bỏ một hợp đồng khỏi hệ thống theo ID
-      parameters:
-      - description: ID hợp đồng
-        in: path
-        name: id
-        required: true
-        type: string
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: boolean
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Xóa hợp đồng
-      tags:
-      - Hợp đồng
-    get:
-      description: Truy xuất thông tin chi tiết của một hợp đồng cụ thể
-      parameters:
-      - description: ID hợp đồng
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.Contract'
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Lấy thông tin hợp đồng theo ID
-      tags:
-      - Hợp đồng
-    put:
-      consumes:
-      - application/json
-      description: Cập nhật thông tin chi tiết của một hợp đồng hiện có
-      parameters:
-      - description: ID hợp đồng
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Dữ liệu hợp đồng cập nhật
-        in: body
-        name: contract
-        required: true
-        schema:
-          $ref: '#/definitions/models.Contract'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.Contract'
-              type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Cập nhật hợp đồng
-      tags:
-      - Hợp đồng
-  /contracts/{id}/upload:
-    post:
-      consumes:
-      - multipart/form-data
-      description: Tải một tệp tin liên quan đến hợp đồng lên Google Drive
-      parameters:
-      - description: ID hợp đồng
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Tệp tin tải lên
-        in: formData
-        name: file
-        required: true
-        type: file
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  properties:
-                    file_id:
-                      type: string
-                    link:
-                      type: string
-                    name:
-                      type: string
-                  type: object
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Tải lên tài liệu cho hợp đồng
-      tags:
-      - Hợp đồng
-  /contracts/delete-file:
-    delete:
-      description: Loại bỏ một tệp tin khỏi Google Drive
-      parameters:
-      - description: ID tệp tin Drive
-        in: query
-        name: file_id
-        required: true
-        type: string
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: boolean
-      security:
-      - BearerAuth: []
-      summary: Xóa tệp khỏi Drive
-      tags:
-      - Hợp đồng
-  /contracts/prepare-folder:
-    post:
-      consumes:
-      - application/json
-      description: Tạo một thư mục riêng trên Google Drive cho danh mục hợp đồng
-      parameters:
-      - description: Thông tin thư mục
-        in: body
-        name: body
-        required: true
-        schema:
-          properties:
-            category_id:
-              type: string
-            name:
-              type: string
-          type: object
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  properties:
-                    drive_folder_id:
-                      type: string
-                    drive_folder_link:
-                      type: string
-                  type: object
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Chuẩn bị thư mục Drive cho hợp đồng
-      tags:
-      - Hợp đồng
-  /contracts/upload-to-folder:
-    post:
-      consumes:
-      - multipart/form-data
-      description: Tải trực tiếp một tệp tin lên một thư mục Google Drive đã chỉ định
-      parameters:
-      - description: ID thư mục Drive
-        in: query
-        name: folder_id
-        required: true
-        type: string
-      - description: Tệp tin tải lên
-        in: formData
-        name: file
-        required: true
-        type: file
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  properties:
-                    file_id:
-                      type: string
-                    link:
-                      type: string
-                    name:
-                      type: string
-                  type: object
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Tải lên tệp vào thư mục cụ thể
-      tags:
-      - Hợp đồng
-  /emergency-constructions:
-    get:
-      description: Truy xuất danh sách các dự án công trình khẩn cấp với các bộ lọc
-      parameters:
-      - description: Lọc theo đơn vị
-        in: query
-        name: org_id
-        type: string
-      - description: Tìm kiếm theo tên
-        in: query
-        name: search
-        type: string
-      - description: Số trang
-        in: query
-        name: page
-        type: integer
-      - description: Số bản ghi mỗi trang
-        in: query
-        name: size
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  properties:
-                    data:
-                      items:
-                        $ref: '#/definitions/models.EmergencyConstruction'
-                      type: array
-                    total:
-                      type: integer
-                  type: object
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Danh sách các dự án công trình khẩn cấp
-      tags:
-      - Công trình khẩn cấp
-    post:
-      consumes:
-      - application/json
-      description: Đăng ký một dự án công trình khẩn cấp mới vào hệ thống
-      parameters:
-      - description: Dữ liệu dự án
-        in: body
-        name: construction
-        required: true
-        schema:
-          $ref: '#/definitions/models.EmergencyConstruction'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.EmergencyConstruction'
-              type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Tạo mới một dự án công trình khẩn cấp
-      tags:
-      - Công trình khẩn cấp
-  /emergency-constructions/{id}:
-    delete:
-      description: Loại bỏ một dự án công trình khẩn cấp ra khỏi hệ thống theo ID
-      parameters:
-      - description: ID dự án
-        in: path
-        name: id
-        required: true
-        type: string
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: boolean
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Xóa dự án công trình khẩn cấp
-      tags:
-      - Công trình khẩn cấp
-    get:
-      description: Truy xuất thông tin chi tiết của một dự án công trình khẩn cấp
-        cụ thể
-      parameters:
-      - description: ID dự án
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.EmergencyConstruction'
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Lấy thông tin công trình khẩn cấp theo ID
-      tags:
-      - Công trình khẩn cấp
-    put:
-      consumes:
-      - application/json
-      description: Cập nhật thông tin chi tiết của một dự án công trình khẩn cấp hiện
-        có
-      parameters:
-      - description: ID dự án
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Dư liệu dự án cập nhật
-        in: body
-        name: construction
-        required: true
-        schema:
-          $ref: '#/definitions/models.EmergencyConstruction'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.EmergencyConstruction'
-              type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Cập nhật dự án công trình khẩn cấp
-      tags:
-      - Công trình khẩn cấp
-  /emergency-constructions/{id}/history:
-    get:
-      description: Truy xuất toàn bộ báo cáo tiến độ của dự án và lưu hành động vào
-        lịch sử chat AI
-      parameters:
-      - description: ID dự án
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  items:
-                    $ref: '#/definitions/models.EmergencyConstructionProgress'
-                  type: array
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Lấy lịch sử dự án (bao gồm lưu vào chat AI)
-      tags:
-      - Công trình khẩn cấp
-  /emergency-constructions/{id}/progress:
-    get:
-      description: Truy xuất trạng thái tiến độ hiện tại của một dự án cụ thể
-      parameters:
-      - description: ID dự án
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.EmergencyConstructionProgress'
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Lấy thông tin tiến độ dự án
-      tags:
-      - Công trình khẩn cấp
-  /emergency-constructions/export:
-    get:
-      description: Tạo và tải lên bản báo cáo Excel các công trình lên Google Drive
-      parameters:
-      - description: Ngày báo cáo (YYYY-MM-DD)
-        in: query
-        name: date
-        type: string
-      - description: Lọc theo đơn vị
-        in: query
-        name: org_id
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  properties:
-                    file_id:
-                      type: string
-                    url:
-                      type: string
-                  type: object
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Xuất báo cáo trạng thái dự án ra Excel
-      tags:
-      - Công trình khẩn cấp
-  /emergency-constructions/history:
-    get:
-      description: Truy xuất lịch sử toàn bộ các cập nhật tiến độ cho các dự án
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  properties:
-                    data:
-                      items:
-                        $ref: '#/definitions/models.EmergencyConstructionProgress'
-                      type: array
-                    total:
-                      type: integer
-                  type: object
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Danh sách lịch sử cập nhật công việc
-      tags:
-      - Công trình khẩn cấp
-  /emergency-constructions/history/{id}:
-    get:
-      description: Truy xuất thông tin chi tiết của một bản ghi cập nhật tiến độ duy
-        nhất
-      parameters:
-      - description: ID bản ghi lịch sử
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.EmergencyConstructionProgress'
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Lấy thông tin chi tiết một bản cập nhật
-      tags:
-      - Công trình khẩn cấp
-  /emergency-constructions/progress/{id}:
-    put:
-      consumes:
-      - multipart/form-data
-      - application/json
-      description: Cập nhật một bản ghi báo cáo tiến độ đã tồn tại
-      parameters:
-      - description: ID báo cáo tiến độ
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Nội dung công việc cập nhật
-        in: formData
-        name: work_done
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.EmergencyConstructionProgress'
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Cập nhật bản báo cáo tiến độ
-      tags:
-      - Công trình khẩn cấp
-  /emergency-constructions/report:
-    post:
-      consumes:
-      - multipart/form-data
-      - application/json
-      description: Gửi một báo cáo tiến độ mới cho dự án công trình khẩn cấp, có hỗ
-        trợ hình ảnh
-      parameters:
-      - description: ID dự án
-        in: formData
-        name: construction_id
-        required: true
-        type: string
-      - description: Khối lượng công việc đã thực hiện
-        in: formData
-        name: work_done
-        required: true
-        type: string
-      - description: Hình ảnh tiến độ
-        in: formData
-        name: images
-        type: file
-      - description: Phần trăm tiến độ (%)
-        in: formData
-        name: progress_percentage
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.EmergencyConstructionProgress'
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Báo cáo tiến độ thi công công trình
-      tags:
-      - Công trình khẩn cấp
-  /google/chat:
-    post:
-      consumes:
-      - application/json
-      description: Trợ lý ảo đa năng hỗ trợ công việc vận hành bởi Gemini
-      parameters:
-      - description: Câu hỏi và lịch sử chat
-        in: body
-        name: request
-        required: true
-        schema:
-          properties:
-            history:
-              items:
-                type: object
-              type: array
-            prompt:
-              type: string
-          type: object
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  type: string
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Chat với AI Gemini
-      tags:
-      - AI Chat
-  /google/chat-contract:
-    post:
-      consumes:
-      - application/json
-      description: Chat AI hỗ trợ phân tích và truy xuất thông tin hợp đồng
-      parameters:
-      - description: Câu hỏi và lịch sử chat
-        in: body
-        name: request
-        required: true
-        schema:
-          properties:
-            history:
-              items:
-                type: object
-              type: array
-            prompt:
-              type: string
-          type: object
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  type: string
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Chat với Gemini về hợp đồng
-      tags:
-      - AI Chat
-  /google/chat-history:
-    get:
-      description: Truy xuất các bản ghi lịch sử chat của người dùng hiện tại
-      parameters:
-      - default: support
-        description: Loại chat (support/contract)
-        in: query
-        name: chat_type
-        type: string
-      - default: 50
-        description: Số lượng bản ghi
-        in: query
-        name: limit
-        type: integer
-      - description: Mốc thời gian ISO-8601 để phân trang
-        in: query
-        name: before
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  items:
-                    $ref: '#/definitions/models.AiChatLog'
-                  type: array
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Lấy lịch sử chat AI
-      tags:
-      - AI Chat
-  /google/email/{id}:
-    get:
-      description: Truy xuất toàn bộ nội dung và tệp đính kèm của một tin nhắn Gmail
-        cụ thể
-      parameters:
-      - description: ID Email (uint32)
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  type: object
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Lấy thông tin chi tiết email
-      tags:
-      - Tiện ích
-  /google/emails/recent:
-    get:
-      description: Truy xuất danh sách 10 email gần đây nhất từ hòm thư thời tiết
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  items:
-                    type: object
-                  type: array
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Lấy các email gần đây
-      tags:
-      - Tiện ích
-  /google/emails/unread:
-    get:
-      description: Truy xuất danh sách 10 email chưa đọc gần đây nhất
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  items:
-                    type: object
-                  type: array
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Lấy các email chưa đọc
-      tags:
-      - Tiện ích
-  /google/gemini-forecast:
-    get:
-      description: Truy xuất dữ liệu dự báo thời tiết được tăng cường bởi AI Gemini
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  type: object
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Lấy dự báo thời tiết từ AI Gemini
-      tags:
-      - AI & Dự báo
-  /google/generate-report:
-    post:
-      description: Tổng hợp dữ liệu mưa, mực nước, ngập lụt và trạm bơm vào một báo
-        cáo PDF/Drive duy nhất
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  type: object
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Tạo báo cáo nhanh tự động (V3)
-      tags:
-      - Tiện ích
-  /google/inundation-summary:
-    get:
-      description: Truy xuất các điểm nóng và trạng thái ngập lụt hiện tại cho AI
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  type: object
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Lấy tóm tắt ngập lụt cho AI
-      tags:
-      - AI & Giám sát
-  /google/rain-summary:
-    get:
-      description: Truy xuất dữ liệu tóm tắt lượng mưa có cấu trúc để AI xử lý hoặc
-        hiển thị
-      parameters:
-      - description: Có lưu hành động vào lịch sử chat không
-        in: query
-        name: is_chat
-        type: boolean
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  type: object
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Lấy tóm tắt lượng mưa cho AI
-      tags:
-      - AI & Giám sát
-  /google/rain-summary-text:
-    get:
-      description: Truy xuất bản tóm tắt văn bản đã được định dạng sẵn về tình hình
-        mưa hiện tại
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  type: string
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Lấy tóm tắt lượng mưa (dạng văn bản)
-      tags:
-      - AI & Giám sát
-  /google/status:
-    get:
-      description: Kiểm tra trạng thái tích hợp các dịch vụ của Google
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  type: object
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Lấy trạng thái tích hợp Google API
-      tags:
-      - Tiện ích
-  /google/water-summary:
-    get:
-      description: Truy xuất dữ liệu mực nước có cấu trúc để AI xử lý
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  type: object
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Lấy tóm tắt mực nước cho AI
-      tags:
-      - AI & Giám sát
-  /google/weather-forecast:
-    get:
-      description: Truy xuất dữ liệu dự báo thời tiết truyền thống
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  type: object
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Lấy dự báo thời tiết
-      tags:
-      - AI & Dự báo
   /inundation/{id}/update:
     post:
       consumes:
@@ -3570,1231 +4837,6 @@ paths:
       summary: Xuất lịch sử ngập lụt theo năm ra Excel
       tags:
       - Ngập lụt
-  /permissions/matrix:
-    get:
-      description: Truy xuất danh sách vai trò và quyền hạn tương ứng để quản trị
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  properties:
-                    permissions:
-                      items:
-                        $ref: '#/definitions/models.Permission'
-                      type: array
-                    roles:
-                      items:
-                        $ref: '#/definitions/models.Role'
-                      type: array
-                  type: object
-              type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Lấy ma trận quyền hạn
-      tags:
-      - Quyền hạn
-    post:
-      consumes:
-      - application/json
-      description: Cập nhật các quyền hạn được gán cho một vai trò cụ thể
-      parameters:
-      - description: Dữ liệu vai trò và danh sách mã quyền hạn
-        in: body
-        name: request
-        required: true
-        schema:
-          properties:
-            permissions:
-              items:
-                type: string
-              type: array
-            role:
-              type: string
-          type: object
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: boolean
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Cập nhật ma trận quyền hạn
-      tags:
-      - Quyền hạn
-  /permissions/my:
-    get:
-      description: Truy xuất danh sách quyền được gán cho vai trò của người dùng hiện
-        tại
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  items:
-                    type: string
-                  type: array
-              type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Lấy quyền hạn của tôi
-      tags:
-      - Quyền hạn
-  /query:
-    post:
-      consumes:
-      - application/json
-      description: Thực hiện truy vấn linh hoạt trên một collection được chỉ định
-        với các bộ lọc tùy chọn
-      parameters:
-      - description: Tham số truy vấn
-        in: body
-        name: query
-        required: true
-        schema:
-          properties:
-            collection:
-              type: string
-            filter:
-              type: object
-            limit:
-              type: integer
-          type: object
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            properties:
-              count:
-                type: integer
-              data:
-                items:
-                  type: object
-                type: array
-              status:
-                type: string
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Truy vấn MongoDB linh hoạt
-      tags:
-      - Tiện ích
-  /roles:
-    get:
-      description: Truy xuất danh sách các vai trò có sẵn để gán cho người dùng
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  items:
-                    $ref: '#/definitions/models.Role'
-                  type: array
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Danh sách vai trò
-      tags:
-      - Vai trò
-    post:
-      consumes:
-      - application/json
-      description: Tạo mới một vai trò người dùng trong hệ thống
-      parameters:
-      - description: Dữ liệu vai trò
-        in: body
-        name: role
-        required: true
-        schema:
-          $ref: '#/definitions/models.Role'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.Role'
-              type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Tạo mới một vai trò
-      tags:
-      - Vai trò
-  /roles/{id}:
-    delete:
-      description: Loại bỏ một vai trò khỏi hệ thống theo ID
-      parameters:
-      - description: ID vai trò
-        in: path
-        name: id
-        required: true
-        type: string
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: boolean
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Xóa vai trò
-      tags:
-      - Vai trò
-    put:
-      consumes:
-      - application/json
-      description: Cập nhật thông tin chi tiết của một vai trò hiện có
-      parameters:
-      - description: ID vai trò
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Dữ liệu vai trò cập nhật
-        in: body
-        name: role
-        required: true
-        schema:
-          $ref: '#/definitions/models.Role'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.Role'
-              type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Cập nhật vai trò
-      tags:
-      - Vai trò
-  /stations/lake:
-    get:
-      description: Truy xuất danh sách các trạm hồ với bộ lọc
-      parameters:
-      - description: Tìm kiếm theo tên trạm
-        in: query
-        name: search
-        type: string
-      - description: Lọc theo trạng thái hoạt động (true/false)
-        in: query
-        name: active
-        type: string
-      - description: Lọc theo ID đơn vị
-        in: query
-        name: org_id
-        type: string
-      - description: Số trang
-        in: query
-        name: page
-        type: integer
-      - description: Số bản ghi mỗi trang
-        in: query
-        name: size
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  properties:
-                    data:
-                      items:
-                        $ref: '#/definitions/models.LakeStation'
-                      type: array
-                    total:
-                      type: integer
-                  type: object
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Danh sách trạm hồ
-      tags:
-      - Trạm quan trắc - Hồ
-    post:
-      consumes:
-      - application/json
-      description: Tạo mới một trạm quan trắc cho hồ
-      parameters:
-      - description: Dữ liệu trạm
-        in: body
-        name: station
-        required: true
-        schema:
-          $ref: '#/definitions/models.LakeStation'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.LakeStation'
-              type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Tạo mới trạm hồ
-      tags:
-      - Trạm quan trắc - Hồ
-  /stations/lake/{id}:
-    delete:
-      description: Loại bỏ một trạm hồ theo ID
-      parameters:
-      - description: ID trạm
-        in: path
-        name: id
-        required: true
-        type: string
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: boolean
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Xóa trạm hồ
-      tags:
-      - Trạm quan trắc - Hồ
-    get:
-      description: Truy xuất thông tin chi tiết của một trạm hồ cụ thể
-      parameters:
-      - description: ID trạm
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.LakeStation'
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Lấy thông tin trạm hồ theo ID
-      tags:
-      - Trạm quan trắc - Hồ
-    put:
-      consumes:
-      - application/json
-      description: Cập nhật thông tin chi tiết của một trạm hồ hiện có
-      parameters:
-      - description: ID trạm
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Dữ liệu trạm cập nhật
-        in: body
-        name: station
-        required: true
-        schema:
-          $ref: '#/definitions/models.LakeStation'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.LakeStation'
-              type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Cập nhật trạm hồ
-      tags:
-      - Trạm quan trắc - Hồ
-  /stations/pumping:
-    get:
-      description: Truy xuất danh sách các trạm bơm với bộ lọc
-      parameters:
-      - description: Lọc theo ID đơn vị
-        in: query
-        name: org_id
-        type: string
-      - description: Số trang
-        in: query
-        name: page
-        type: integer
-      - description: Số bản ghi mỗi trang
-        in: query
-        name: size
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  properties:
-                    data:
-                      items:
-                        $ref: '#/definitions/models.PumpingStation'
-                      type: array
-                    total:
-                      type: integer
-                  type: object
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Danh sách trạm bơm
-      tags:
-      - Trạm bơm
-    post:
-      consumes:
-      - application/json
-      description: Tạo mới một trạm quan trắc cho hệ thống bơm cưỡng bức
-      parameters:
-      - description: Dữ liệu trạm bơm
-        in: body
-        name: station
-        required: true
-        schema:
-          $ref: '#/definitions/models.PumpingStation'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.PumpingStation'
-              type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Tạo mới trạm bơm
-      tags:
-      - Trạm bơm
-  /stations/pumping/{id}:
-    delete:
-      description: Loại bỏ một trạm bơm khỏi hệ thống theo ID
-      parameters:
-      - description: ID trạm bơm
-        in: path
-        name: id
-        required: true
-        type: string
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: boolean
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Xóa trạm bơm
-      tags:
-      - Trạm bơm
-    get:
-      description: Truy xuất thông tin chi tiết của một trạm bơm cụ thể
-      parameters:
-      - description: ID trạm bơm
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.PumpingStation'
-              type: object
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Lấy thông tin trạm bơm theo ID
-      tags:
-      - Trạm bơm
-    put:
-      consumes:
-      - application/json
-      description: Cập nhật thông tin chi tiết của một trạm bơm hiện có
-      parameters:
-      - description: ID trạm bơm
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Dữ liệu trạm bơm cập nhật
-        in: body
-        name: station
-        required: true
-        schema:
-          $ref: '#/definitions/models.PumpingStation'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: boolean
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Cập nhật trạm bơm
-      tags:
-      - Trạm bơm
-  /stations/pumping/{id}/history:
-    get:
-      description: Truy xuất danh sách các báo cáo lịch sử vận hành cho một trạm cụ
-        thể
-      parameters:
-      - description: ID trạm bơm
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  properties:
-                    data:
-                      items:
-                        $ref: '#/definitions/models.PumpingStationHistory'
-                      type: array
-                    total:
-                      type: integer
-                  type: object
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Lấy lịch sử vận hành trạm bơm
-      tags:
-      - Trạm bơm
-  /stations/pumping/report:
-    post:
-      consumes:
-      - application/json
-      description: Ghi nhận trạng thái hoặc lịch sử vận hành cho một trạm bơm
-      parameters:
-      - description: Dữ liệu vận hành
-        in: body
-        name: history
-        required: true
-        schema:
-          $ref: '#/definitions/models.PumpingStationHistory'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.PumpingStationHistory'
-              type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Báo cáo trạng thái vận hành trạm bơm
-      tags:
-      - Trạm bơm
-  /stations/rain:
-    get:
-      description: Truy xuất danh sách các trạm đo mưa với bộ lọc
-      parameters:
-      - description: Tìm kiếm theo tên trạm
-        in: query
-        name: search
-        type: string
-      - description: Lọc theo trạng thái hoạt động (true/false)
-        in: query
-        name: active
-        type: string
-      - description: Lọc theo ID đơn vị
-        in: query
-        name: org_id
-        type: string
-      - description: Số trang
-        in: query
-        name: page
-        type: integer
-      - description: Số bản ghi mỗi trang
-        in: query
-        name: size
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  properties:
-                    data:
-                      items:
-                        $ref: '#/definitions/models.RainStation'
-                      type: array
-                    total:
-                      type: integer
-                  type: object
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Danh sách trạm đo mưa
-      tags:
-      - Trạm quan trắc - Mưa
-    post:
-      consumes:
-      - application/json
-      description: Tạo mới một trạm quan trắc lượng mưa
-      parameters:
-      - description: Dữ liệu trạm
-        in: body
-        name: station
-        required: true
-        schema:
-          $ref: '#/definitions/models.RainStation'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.RainStation'
-              type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Tạo mới trạm đo mưa
-      tags:
-      - Trạm quan trắc - Mưa
-  /stations/rain/{id}:
-    delete:
-      description: Loại bỏ một trạm đo mưa theo ID
-      parameters:
-      - description: ID trạm
-        in: path
-        name: id
-        required: true
-        type: string
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: boolean
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Xóa trạm đo mưa
-      tags:
-      - Trạm quan trắc - Mưa
-    get:
-      description: Truy xuất thông tin chi tiết của một trạm đo mưa cụ thể
-      parameters:
-      - description: ID trạm
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.RainStation'
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Lấy thông tin trạm đo mưa theo ID
-      tags:
-      - Trạm quan trắc - Mưa
-    put:
-      consumes:
-      - application/json
-      description: Cập nhật thông tin chi tiết của một trạm đo mưa hiện có
-      parameters:
-      - description: ID trạm
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Dữ liệu trạm cập nhật
-        in: body
-        name: station
-        required: true
-        schema:
-          $ref: '#/definitions/models.RainStation'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.RainStation'
-              type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Cập nhật trạm đo mưa
-      tags:
-      - Trạm quan trắc - Mưa
-  /stations/river:
-    get:
-      description: Truy xuất danh sách các trạm sông với bộ lọc
-      parameters:
-      - description: Tìm kiếm theo tên trạm
-        in: query
-        name: search
-        type: string
-      - description: Lọc theo trạng thái hoạt động (true/false)
-        in: query
-        name: active
-        type: string
-      - description: Lọc theo ID đơn vị
-        in: query
-        name: org_id
-        type: string
-      - description: Số trang
-        in: query
-        name: page
-        type: integer
-      - description: Số bản ghi mỗi trang
-        in: query
-        name: size
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  properties:
-                    data:
-                      items:
-                        $ref: '#/definitions/models.RiverStation'
-                      type: array
-                    total:
-                      type: integer
-                  type: object
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Danh sách trạm sông
-      tags:
-      - Trạm quan trắc - Sông
-    post:
-      consumes:
-      - application/json
-      description: Tạo mới một trạm quan trắc cho sông
-      parameters:
-      - description: Dữ liệu trạm
-        in: body
-        name: station
-        required: true
-        schema:
-          $ref: '#/definitions/models.RiverStation'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.RiverStation'
-              type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Tạo mới trạm sông
-      tags:
-      - Trạm quan trắc - Sông
-  /stations/river/{id}:
-    delete:
-      description: Loại bỏ một trạm sông theo ID
-      parameters:
-      - description: ID trạm
-        in: path
-        name: id
-        required: true
-        type: string
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: boolean
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Xóa trạm sông
-      tags:
-      - Trạm quan trắc - Sông
-    get:
-      description: Truy xuất thông tin chi tiết của một trạm sông cụ thể
-      parameters:
-      - description: ID trạm
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.RiverStation'
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Lấy thông tin trạm sông theo ID
-      tags:
-      - Trạm quan trắc - Sông
-    put:
-      consumes:
-      - application/json
-      description: Cập nhật thông tin chi tiết của một trạm sông hiện có
-      parameters:
-      - description: ID trạm
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Dữ liệu trạm cập nhật
-        in: body
-        name: station
-        required: true
-        schema:
-          $ref: '#/definitions/models.RiverStation'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/models.RiverStation'
-              type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Cập nhật trạm sông
-      tags:
-      - Trạm quan trắc - Sông
-  /water/lake/{id}/history:
-    get:
-      description: Truy xuất dữ liệu mực nước hồ lịch sử của một trạm cụ thể
-      parameters:
-      - description: ID trạm
-        in: path
-        name: id
-        required: true
-        type: integer
-      - default: 100
-        description: Số bản ghi tối đa
-        in: query
-        name: limit
-        type: integer
-      - description: Lọc theo ngày (YYYY-MM-DD)
-        in: query
-        name: date
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  items:
-                    type: object
-                  type: array
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Lấy lịch sử dữ liệu trạm hồ
-      tags:
-      - Thủy văn
-  /water/rain/{id}/history:
-    get:
-      description: Truy xuất dữ liệu mưa lịch sử của một trạm cụ thể
-      parameters:
-      - description: ID trạm
-        in: path
-        name: id
-        required: true
-        type: integer
-      - default: 100
-        description: Số bản ghi tối đa
-        in: query
-        name: limit
-        type: integer
-      - description: Lọc theo ngày (YYYY-MM-DD)
-        in: query
-        name: date
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  items:
-                    type: object
-                  type: array
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Lấy lịch sử dữ liệu trạm mưa
-      tags:
-      - Thủy văn
-  /water/rain/by-date:
-    get:
-      description: Truy xuất dữ liệu mưa của tất cả các trạm trong một ngày cụ thể
-      parameters:
-      - description: Ngày lọc (YYYY-MM-DD)
-        in: query
-        name: date
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  items:
-                    type: object
-                  type: array
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Lấy dữ liệu mưa tất cả trạm theo ngày
-      tags:
-      - Thủy văn
-  /water/river/{id}/history:
-    get:
-      description: Truy xuất dữ liệu mực nước sông lịch sử của một trạm cụ thể
-      parameters:
-      - description: ID trạm
-        in: path
-        name: id
-        required: true
-        type: integer
-      - default: 100
-        description: Số bản ghi tối đa
-        in: query
-        name: limit
-        type: integer
-      - description: Lọc theo ngày (YYYY-MM-DD)
-        in: query
-        name: date
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  items:
-                    type: object
-                  type: array
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Lấy lịch sử dữ liệu trạm sông
-      tags:
-      - Thủy văn
-  /weather/rain:
-    get:
-      description: Truy xuất dữ liệu lượng mưa hiện tại của tất cả các trạm quan trắc
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  type: object
-              type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Lấy tổng hợp lượng mưa hiện tại
-      tags:
-      - Thời tiết
-  /weather/rain/comparison:
-    get:
-      description: Truy xuất báo cáo so sánh dữ liệu lượng mưa giữa hai năm cụ thể
-      parameters:
-      - description: Năm thứ nhất
-        in: query
-        name: year1
-        required: true
-        type: integer
-      - description: Năm thứ hai
-        in: query
-        name: year2
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  type: object
-              type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Báo cáo so sánh lượng mưa giữa hai năm
-      tags:
-      - Thời tiết
-  /weather/rain/history:
-    get:
-      description: Truy xuất dữ liệu lượng mưa lịch sử của tất cả các trạm
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  type: object
-              type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Lấy dữ liệu lịch sử lượng mưa
-      tags:
-      - Thời tiết
-  /weather/water:
-    get:
-      description: Truy xuất dữ liệu mực nước hiện tại của tất cả các trạm quan trắc
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  type: object
-              type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Lấy tổng hợp mực nước hiện tại
-      tags:
-      - Thời tiết
 securityDefinitions:
   BearerAuth:
     in: header

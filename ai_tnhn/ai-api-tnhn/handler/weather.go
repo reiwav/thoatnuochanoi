@@ -26,7 +26,7 @@ func NewWeatherHandler(weatherSvc weather.Service) *WeatherHandler {
 // @Security BearerAuth
 // @Success 200 {object} web.Response{data=object}
 // @Failure 500 {object} web.ErrorResponse
-// @Router /weather/rain [get]
+// @Router /admin/weather/rain [get]
 func (h *WeatherHandler) GetRainSummary(c *gin.Context) {
 	data, err := h.weatherSvc.GetRawRainData(c.Request.Context())
 	if err != nil {
@@ -51,7 +51,7 @@ func (h *WeatherHandler) GetRainSummary(c *gin.Context) {
 // @Security BearerAuth
 // @Success 200 {object} web.Response{data=object}
 // @Failure 500 {object} web.ErrorResponse
-// @Router /weather/water [get]
+// @Router /admin/weather/water [get]
 func (h *WeatherHandler) GetWaterSummary(c *gin.Context) {
 	data, err := h.weatherSvc.GetRawWaterData(c.Request.Context())
 	if err != nil {
@@ -76,7 +76,7 @@ func (h *WeatherHandler) GetWaterSummary(c *gin.Context) {
 // @Security BearerAuth
 // @Success 200 {object} web.Response{data=object}
 // @Failure 500 {object} web.ErrorResponse
-// @Router /weather/rain/history [get]
+// @Router /admin/weather/rain/history [get]
 func (h *WeatherHandler) GetHistoricalRain(c *gin.Context) {
 	data, err := h.weatherSvc.GetHistoricalRainData(c.Request.Context())
 	if err != nil {
@@ -101,7 +101,7 @@ func (h *WeatherHandler) GetHistoricalRain(c *gin.Context) {
 // @Success 200 {object} web.Response{data=object}
 // @Failure 400 {object} web.ErrorResponse
 // @Failure 500 {object} web.ErrorResponse
-// @Router /weather/rain/comparison [get]
+// @Router /admin/weather/rain/comparison [get]
 func (h *WeatherHandler) GetComparisonReport(c *gin.Context) {
 	year1Str := c.Query("year1")
 	year2Str := c.Query("year2")

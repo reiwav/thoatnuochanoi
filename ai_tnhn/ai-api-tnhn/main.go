@@ -8,9 +8,9 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// @title API Hệ thống Giám sát Ngập lụt Hà Nội
+// @title API Hệ thống
 // @version 1.0
-// @description Máy chủ API cho Hệ thống Giám sát Ngập lụt Hà Nội.
+// @description Máy chủ API cho Hệ thống.
 // @termsOfService http://swagger.io/terms/
 
 // @contact.name API Support
@@ -20,7 +20,7 @@ import (
 // @license.name Apache 2.0
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 
-// @host localhost:8080
+// @host localhost:8089
 // @BasePath /api
 // @securityDefinitions.apikey BearerAuth
 // @in header

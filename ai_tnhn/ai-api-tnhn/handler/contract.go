@@ -35,7 +35,7 @@ func NewContractHandler(service contract.Service, authService auth.Service, cont
 // @Param contract body models.Contract true "Dữ liệu hợp đóng"
 // @Success 200 {object} web.Response{data=models.Contract}
 // @Failure 401 {object} web.ErrorResponse
-// @Router /contracts [post]
+// @Router /admin/contracts [post]
 func (h *ContractHandler) Create(c *gin.Context) {
 	var item models.Contract
 	if err := c.ShouldBindJSON(&item); err != nil {
@@ -61,7 +61,7 @@ func (h *ContractHandler) Create(c *gin.Context) {
 // @Param contract body models.Contract true "Dữ liệu hợp đồng cập nhật"
 // @Success 200 {object} web.Response{data=models.Contract}
 // @Failure 401 {object} web.ErrorResponse
-// @Router /contracts/{id} [put]
+// @Router /admin/contracts/{id} [put]
 func (h *ContractHandler) Update(c *gin.Context) {
 	id := c.Param("id")
 	var item models.Contract
@@ -83,7 +83,7 @@ func (h *ContractHandler) Update(c *gin.Context) {
 // @Param id path string true "ID hợp đồng"
 // @Success 200 {boolean} bool
 // @Failure 401 {object} web.ErrorResponse
-// @Router /contracts/{id} [delete]
+// @Router /admin/contracts/{id} [delete]
 func (h *ContractHandler) Delete(c *gin.Context) {
 	id := c.Param("id")
 	err := h.service.Delete(c.Request.Context(), id)
@@ -99,7 +99,7 @@ func (h *ContractHandler) Delete(c *gin.Context) {
 // @Security BearerAuth
 // @Param id path string true "ID hợp đồng"
 // @Success 200 {object} web.Response{data=models.Contract}
-// @Router /contracts/{id} [get]
+// @Router /admin/contracts/{id} [get]
 func (h *ContractHandler) GetByID(c *gin.Context) {
 	id := c.Param("id")
 	item, err := h.service.GetByID(c.Request.Context(), id)
@@ -119,7 +119,7 @@ func (h *ContractHandler) GetByID(c *gin.Context) {
 // @Param page query int false "Số trang"
 // @Param size query int false "Số bản ghi mỗi trang"
 // @Success 200 {object} web.Response{data=object{data=[]models.Contract,total=int}}
-// @Router /contracts [get]
+// @Router /admin/contracts [get]
 func (h *ContractHandler) List(c *gin.Context) {
 	req := filters.NewContractListRequest()
 	if err := c.ShouldBindQuery(req); err != nil {
@@ -151,7 +151,7 @@ func (h *ContractHandler) List(c *gin.Context) {
 // @Param id path string true "ID hợp đồng"
 // @Param file formData file true "Tệp tin tải lên"
 // @Success 200 {object} web.Response{data=object{file_id=string,name=string,link=string}}
-// @Router /contracts/{id}/upload [post]
+// @Router /admin/contracts/{id}/upload [post]
 func (h *ContractHandler) Upload(c *gin.Context) {
 	id := c.Param("id")
 	file, err := c.FormFile("file")
@@ -189,7 +189,7 @@ func (h *ContractHandler) Upload(c *gin.Context) {
 // @Security BearerAuth
 // @Param body body object{category_id=string,name=string} true "Thông tin thư mục"
 // @Success 200 {object} web.Response{data=object{drive_folder_id=string,drive_folder_link=string}}
-// @Router /contracts/prepare-folder [post]
+// @Router /admin/contracts/prepare-folder [post]
 func (h *ContractHandler) PrepareFolder(c *gin.Context) {
 	var body struct {
 		CategoryID string `json:"category_id"`
@@ -226,7 +226,7 @@ func (h *ContractHandler) PrepareFolder(c *gin.Context) {
 // @Param folder_id query string true "ID thư mục Drive"
 // @Param file formData file true "Tệp tin tải lên"
 // @Success 200 {object} web.Response{data=object{file_id=string,name=string,link=string}}
-// @Router /contracts/upload-to-folder [post]
+// @Router /admin/contracts/upload-to-folder [post]
 func (h *ContractHandler) UploadToFolder(c *gin.Context) {
 	folderID := c.Query("folder_id")
 	if folderID == "" {
@@ -267,7 +267,7 @@ func (h *ContractHandler) UploadToFolder(c *gin.Context) {
 // @Security BearerAuth
 // @Param file_id query string true "ID tệp tin Drive"
 // @Success 200 {boolean} bool
-// @Router /contracts/delete-file [delete]
+// @Router /admin/contracts/delete-file [delete]
 func (h *ContractHandler) DeleteFile(c *gin.Context) {
 	fileID := c.Query("file_id")
 	if fileID == "" {

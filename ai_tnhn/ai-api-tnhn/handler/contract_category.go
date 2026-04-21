@@ -35,7 +35,7 @@ func NewContractCategoryHandler(service contract_category.Service, authService a
 // @Param category body models.ContractCategory true "Dữ liệu danh mục"
 // @Success 200 {object} web.Response{data=models.ContractCategory}
 // @Failure 401 {object} web.ErrorResponse
-// @Router /contract-category [post]
+// @Router /admin/contract-category [post]
 func (h *ContractCategoryHandler) Create(c *gin.Context) {
 	var category models.ContractCategory
 	if err := c.ShouldBindJSON(&category); err != nil {
@@ -59,7 +59,7 @@ func (h *ContractCategoryHandler) Create(c *gin.Context) {
 // @Param category body models.ContractCategory true "Dữ liệu danh mục cập nhật"
 // @Success 200 {object} web.Response{data=models.ContractCategory}
 // @Failure 401 {object} web.ErrorResponse
-// @Router /contract-category/{id} [put]
+// @Router /admin/contract-category/{id} [put]
 func (h *ContractCategoryHandler) Update(c *gin.Context) {
 	id := c.Param("id")
 	var category models.ContractCategory
@@ -81,7 +81,7 @@ func (h *ContractCategoryHandler) Update(c *gin.Context) {
 // @Param id path string true "ID danh mục"
 // @Success 200 {boolean} bool
 // @Failure 401 {object} web.ErrorResponse
-// @Router /contract-category/{id} [delete]
+// @Router /admin/contract-category/{id} [delete]
 func (h *ContractCategoryHandler) Delete(c *gin.Context) {
 	id := c.Param("id")
 	err := h.service.Delete(c.Request.Context(), id)
@@ -97,7 +97,7 @@ func (h *ContractCategoryHandler) Delete(c *gin.Context) {
 // @Security BearerAuth
 // @Param id path string true "ID danh mục"
 // @Success 200 {object} web.Response{data=models.ContractCategory}
-// @Router /contract-category/{id} [get]
+// @Router /admin/contract-category/{id} [get]
 func (h *ContractCategoryHandler) GetByID(c *gin.Context) {
 	id := c.Param("id")
 	category, err := h.service.GetByID(c.Request.Context(), id)
@@ -114,7 +114,7 @@ func (h *ContractCategoryHandler) GetByID(c *gin.Context) {
 // @Param page query int false "Số trang"
 // @Param size query int false "Số bản ghi mỗi trang"
 // @Success 200 {object} web.Response{data=object{data=[]models.ContractCategory,total=int}}
-// @Router /contract-category [get]
+// @Router /admin/contract-category [get]
 func (h *ContractCategoryHandler) List(c *gin.Context) {
 	f := filter.NewPaginationFilter()
 	if err := c.ShouldBindQuery(f); err != nil {
@@ -137,7 +137,7 @@ func (h *ContractCategoryHandler) List(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Success 200 {object} web.Response{data=[]object}
-// @Router /contract-category/tree [get]
+// @Router /admin/contract-category/tree [get]
 func (h *ContractCategoryHandler) GetTree(c *gin.Context) {
 	categories, err := h.service.GetTree(c.Request.Context())
 	web.AssertNil(err)

@@ -41,6 +41,17 @@ func (h *EmergencyConstructionHandler) checkPermissions(c *gin.Context) (isSuper
 	return false, isAllowedAll, client
 }
 
+// Create godoc
+// @Summary Tạo mới một dự án công trình khẩn cấp
+// @Description Đăng ký một dự án công trình khẩn cấp mới vào hệ thống
+// @Tags Công trình khẩn cấp
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param construction body models.EmergencyConstruction true "Dữ liệu dự án"
+// @Success 200 {object} web.Response{data=models.EmergencyConstruction}
+// @Failure 401 {object} web.ErrorResponse
+// @Router /emergency-constructions [post]
 func (h *EmergencyConstructionHandler) Create(c *gin.Context) {
 	var item models.EmergencyConstruction
 	if err := c.ShouldBindJSON(&item); err != nil {
@@ -54,6 +65,18 @@ func (h *EmergencyConstructionHandler) Create(c *gin.Context) {
 	h.SendData(c, item)
 }
 
+// Update godoc
+// @Summary Cập nhật dự án công trình khẩn cấp
+// @Description Cập nhật thông tin chi tiết của một dự án công trình khẩn cấp hiện có
+// @Tags Công trình khẩn cấp
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID dự án"
+// @Param construction body models.EmergencyConstruction true "Dư liệu dự án cập nhật"
+// @Success 200 {object} web.Response{data=models.EmergencyConstruction}
+// @Failure 401 {object} web.ErrorResponse
+// @Router /emergency-constructions/{id} [put]
 func (h *EmergencyConstructionHandler) Update(c *gin.Context) {
 	id := c.Param("id")
 	var item models.EmergencyConstruction
@@ -68,6 +91,15 @@ func (h *EmergencyConstructionHandler) Update(c *gin.Context) {
 	h.SendData(c, item)
 }
 
+// Delete godoc
+// @Summary Xóa dự án công trình khẩn cấp
+// @Description Loại bỏ một dự án công trình khẩn cấp ra khỏi hệ thống theo ID
+// @Tags Công trình khẩn cấp
+// @Security BearerAuth
+// @Param id path string true "ID dự án"
+// @Success 200 {boolean} bool
+// @Failure 401 {object} web.ErrorResponse
+// @Router /emergency-constructions/{id} [delete]
 func (h *EmergencyConstructionHandler) Delete(c *gin.Context) {
 	id := c.Param("id")
 	err := h.service.Delete(c.Request.Context(), id)
@@ -75,6 +107,15 @@ func (h *EmergencyConstructionHandler) Delete(c *gin.Context) {
 	h.SendData(c, nil)
 }
 
+// GetByID godoc
+// @Summary Lấy thông tin công trình khẩn cấp theo ID
+// @Description Truy xuất thông tin chi tiết của một dự án công trình khẩn cấp cụ thể
+// @Tags Công trình khẩn cấp
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID dự án"
+// @Success 200 {object} web.Response{data=models.EmergencyConstruction}
+// @Router /emergency-constructions/{id} [get]
 func (h *EmergencyConstructionHandler) GetByID(c *gin.Context) {
 	id := c.Param("id")
 	item, err := h.service.GetByID(c.Request.Context(), id)
@@ -82,6 +123,18 @@ func (h *EmergencyConstructionHandler) GetByID(c *gin.Context) {
 	h.SendData(c, item)
 }
 
+// List godoc
+// @Summary Danh sách các dự án công trình khẩn cấp
+// @Description Truy xuất danh sách các dự án công trình khẩn cấp với các bộ lọc
+// @Tags Công trình khẩn cấp
+// @Produce json
+// @Security BearerAuth
+// @Param org_id query string false "Lọc theo đơn vị"
+// @Param search query string false "Tìm kiếm theo tên"
+// @Param page query int false "Số trang"
+// @Param size query int false "Số bản ghi mỗi trang"
+// @Success 200 {object} web.Response{data=object{data=[]models.EmergencyConstruction,total=int}}
+// @Router /emergency-constructions [get]
 func (h *EmergencyConstructionHandler) List(c *gin.Context) {
 	req := filters.NewEmergencyConstructionListRequest()
 	if err := c.ShouldBindQuery(req); err != nil {
@@ -139,6 +192,14 @@ func (h *EmergencyConstructionHandler) List(c *gin.Context) {
 	})
 }
 
+// ListHistory godoc
+// @Summary Danh sách lịch sử cập nhật công việc
+// @Description Truy xuất lịch sử toàn bộ các cập nhật tiến độ cho các dự án
+// @Tags Công trình khẩn cấp
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} web.Response{data=object{data=[]models.EmergencyConstructionProgress,total=int}}
+// @Router /emergency-constructions/history [get]
 func (h *EmergencyConstructionHandler) ListHistory(c *gin.Context) {
 	req := filters.NewEmergencyConstructionListRequest() // Use same for pagination
 	if err := c.ShouldBindQuery(req); err != nil {
@@ -181,6 +242,15 @@ func (h *EmergencyConstructionHandler) ListHistory(c *gin.Context) {
 	})
 }
 
+// GetHistory godoc
+// @Summary Lấy thông tin chi tiết một bản cập nhật
+// @Description Truy xuất thông tin chi tiết của một bản ghi cập nhật tiến độ duy nhất
+// @Tags Công trình khẩn cấp
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID bản ghi lịch sử"
+// @Success 200 {object} web.Response{data=models.EmergencyConstructionProgress}
+// @Router /emergency-constructions/history/{id} [get]
 func (h *EmergencyConstructionHandler) GetHistory(c *gin.Context) {
 	id := c.Param("id")
 	history, err := h.service.GetHistory(c.Request.Context(), id)
@@ -188,6 +258,15 @@ func (h *EmergencyConstructionHandler) GetHistory(c *gin.Context) {
 	h.SendData(c, history)
 }
 
+// GetProgressByID godoc
+// @Summary Lấy thông tin tiến độ dự án
+// @Description Truy xuất trạng thái tiến độ hiện tại của một dự án cụ thể
+// @Tags Công trình khẩn cấp
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID dự án"
+// @Success 200 {object} web.Response{data=models.EmergencyConstructionProgress}
+// @Router /emergency-constructions/{id}/progress [get]
 func (h *EmergencyConstructionHandler) GetProgressByID(c *gin.Context) {
 	client := h.GetTokenFromContext(c)
 	if client.Role == constant.ROLE_EMPLOYEE || client.IsEmployee {
@@ -201,6 +280,20 @@ func (h *EmergencyConstructionHandler) GetProgressByID(c *gin.Context) {
 	h.SendData(c, progress)
 }
 
+// ReportProgress godoc
+// @Summary Báo cáo tiến độ thi công công trình
+// @Description Gửi một báo cáo tiến độ mới cho dự án công trình khẩn cấp, có hỗ trợ hình ảnh
+// @Tags Công trình khẩn cấp
+// @Accept multipart/form-data
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param construction_id formData string true "ID dự án"
+// @Param work_done formData string true "Khối lượng công việc đã thực hiện"
+// @Param images formData file false "Hình ảnh tiến độ"
+// @Param progress_percentage formData int false "Phần trăm tiến độ (%)"
+// @Success 200 {object} web.Response{data=models.EmergencyConstructionProgress}
+// @Router /emergency-constructions/report [post]
 func (h *EmergencyConstructionHandler) ReportProgress(c *gin.Context) {
 	// Security: check if employee is assigned to this construction
 	client := h.GetTokenFromContext(c)
@@ -224,6 +317,18 @@ func (h *EmergencyConstructionHandler) ReportProgress(c *gin.Context) {
 	h.handleProgress(c, "")
 }
 
+// UpdateProgress godoc
+// @Summary Cập nhật bản báo cáo tiến độ
+// @Description Cập nhật một bản ghi báo cáo tiến độ đã tồn tại
+// @Tags Công trình khẩn cấp
+// @Accept multipart/form-data
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID báo cáo tiến độ"
+// @Param work_done formData string true "Nội dung công việc cập nhật"
+// @Success 200 {object} web.Response{data=models.EmergencyConstructionProgress}
+// @Router /emergency-constructions/progress/{id} [put]
 func (h *EmergencyConstructionHandler) UpdateProgress(c *gin.Context) {
 	client := h.GetTokenFromContext(c)
 	if client.Role == constant.ROLE_EMPLOYEE || client.IsEmployee {
@@ -312,6 +417,15 @@ func (h *EmergencyConstructionHandler) handleProgress(c *gin.Context, id string)
 	h.SendData(c, item)
 }
 
+// GetProgressHistory godoc
+// @Summary Lấy lịch sử dự án (bao gồm lưu vào chat AI)
+// @Description Truy xuất toàn bộ báo cáo tiến độ của dự án và lưu hành động vào lịch sử chat AI
+// @Tags Công trình khẩn cấp
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID dự án"
+// @Success 200 {object} web.Response{data=[]models.EmergencyConstructionProgress}
+// @Router /emergency-constructions/{id}/history [get]
 func (h *EmergencyConstructionHandler) GetProgressHistory(c *gin.Context) {
 	id := c.Param("id")
 	history, err := h.service.GetProgressHistory(c.Request.Context(), id)
@@ -360,6 +474,16 @@ func (h *EmergencyConstructionHandler) GetProgressHistory(c *gin.Context) {
 	h.SendData(c, history)
 }
 
+// ExportExcel godoc
+// @Summary Xuất báo cáo trạng thái dự án ra Excel
+// @Description Tạo và tải lên bản báo cáo Excel các công trình lên Google Drive
+// @Tags Công trình khẩn cấp
+// @Produce json
+// @Security BearerAuth
+// @Param date query string false "Ngày báo cáo (YYYY-MM-DD)"
+// @Param org_id query string false "Lọc theo đơn vị"
+// @Success 200 {object} web.Response{data=object{file_id=string,url=string}}
+// @Router /emergency-constructions/export [get]
 func (h *EmergencyConstructionHandler) ExportExcel(c *gin.Context) {
 	date := c.Query("date")
 	orgID := c.Query("org_id")

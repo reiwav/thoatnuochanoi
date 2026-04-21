@@ -49,6 +49,16 @@ func NewAuthHandler(
 }
 
 // 📌 1️⃣ Gửi yêu cầu nhập giấy
+// LoginHandler godoc
+// @Summary Đăng nhập vào hệ thống
+// @Description Xác thực người dùng bằng email và mật khẩu để lấy mã truy cập
+// @Tags Xác thực
+// @Accept json
+// @Produce json
+// @Param request body auth.LoginRequest true "Thông tin đăng nhập"
+// @Success 200 {object} web.Response{data=models.Token}
+// @Failure 401 {object} web.ErrorResponse
+// @Router /auth/login [post]
 func (h *AuthHandler) LoginHandler(c *gin.Context) {
 	var req auth.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -64,6 +74,14 @@ func (h *AuthHandler) LoginHandler(c *gin.Context) {
 	h.SendData(c, res)
 }
 
+// LogoutHandler godoc
+// @Summary Đăng xuất khỏi hệ thống
+// @Description Hủy bỏ phiên làm việc của người dùng hiện tại
+// @Tags Xác thực
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {boolean} bool
+// @Router /auth/logout [post]
 func (h *AuthHandler) LogoutHandler(c *gin.Context) {
 	token := h.contextWith.GetToken(c.Request)
 	err := h.authService.Logout(c.Request.Context(), token)
@@ -71,6 +89,15 @@ func (h *AuthHandler) LogoutHandler(c *gin.Context) {
 	h.SendData(c, nil)
 }
 
+// GetProfileHandler godoc
+// @Summary Lấy thông tin cá nhân
+// @Description Truy xuất thông tin chi tiết của người dùng đang đăng nhập
+// @Tags Xác thực
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} web.Response{data=models.User}
+// @Failure 401 {object} web.ErrorResponse
+// @Router /auth/profile [get]
 func (h *AuthHandler) GetProfileHandler(c *gin.Context) {
 	token := h.contextWith.GetToken(c.Request)
 	res, err := h.authService.GetProfile(c.Request.Context(), token)
@@ -81,6 +108,17 @@ func (h *AuthHandler) GetProfileHandler(c *gin.Context) {
 	h.SendData(c, res)
 }
 
+// UpdateProfileHandler godoc
+// @Summary Cập nhật thông tin cá nhân
+// @Description Cập nhật thông tin của người dùng đang đăng nhập
+// @Tags Xác thực
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body auth.UpdateProfileRequest true "Dữ liệu hồ sơ"
+// @Success 200 {boolean} bool
+// @Failure 401 {object} web.ErrorResponse
+// @Router /auth/profile [put]
 func (h *AuthHandler) UpdateProfileHandler(c *gin.Context) {
 	var req auth.UpdateProfileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -97,6 +135,17 @@ func (h *AuthHandler) UpdateProfileHandler(c *gin.Context) {
 	h.SendData(c, true)
 }
 
+// ChangePasswordHandler godoc
+// @Summary Đổi mật khẩu
+// @Description Thay đổi mật khẩu cho người dùng đang đăng nhập
+// @Tags Xác thực
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body auth.ChangePasswordRequest true "Dữ liệu mật khẩu"
+// @Success 200 {boolean} bool
+// @Failure 401 {object} web.ErrorResponse
+// @Router /auth/change-password [put]
 func (h *AuthHandler) ChangePasswordHandler(c *gin.Context) {
 	var req auth.ChangePasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

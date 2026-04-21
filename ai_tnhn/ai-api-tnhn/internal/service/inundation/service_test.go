@@ -84,7 +84,7 @@ func TestService_LocalPathDetection(t *testing.T) {
 func TestService_SaveLocalImages_DirectoryCreation(t *testing.T) {
 	// Ensure directory is created if missing
 	os.RemoveAll("uploads/inundation_tmp")
-	
+
 	s := &service{}
 	images := []ImageContent{
 		{
@@ -93,12 +93,12 @@ func TestService_SaveLocalImages_DirectoryCreation(t *testing.T) {
 			Reader:   io.NopCloser(bytes.NewReader([]byte("data"))),
 		},
 	}
-	
+
 	_, err := s.saveLocalImages("test_dir", images)
 	if err != nil {
 		t.Fatalf("Failed to save image: %v", err)
 	}
-	
+
 	if _, err := os.Stat("uploads/inundation_tmp"); os.IsNotExist(err) {
 		t.Error("Director uploads/inundation_tmp was not created")
 	}

@@ -49,7 +49,7 @@ type Service interface {
 	GetStatus(ctx context.Context) (*GoogleStatus, error)
 	GetRainSummary(ctx context.Context, orgID string) (*RainSummaryData, error)
 	GetWaterSummary(ctx context.Context, orgID string) (*WaterSummaryData, error)
-	GetInundationSummary(ctx context.Context, orgID string, assignedInuIDs []string) (*InundationSummaryData, error)
+	GetInundationSummary(ctx context.Context, orgID string, isAllowedAll bool, assignedInuIDs []string) (*InundationSummaryData, error)
 	GetPumpingStationSummary(ctx context.Context, orgID string, assignedIDs []string) (*PumpingStationSummaryData, error)
 	GetRecentEmails(ctx context.Context, limit int) ([]email.EmailInfo, error)
 	GetUnreadEmails(ctx context.Context, limit int) ([]email.EmailInfo, error)

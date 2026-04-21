@@ -42,6 +42,17 @@ func (h *StationHandler) checkPermissions(c *gin.Context) (isSuperAdmin bool, is
 }
 
 // RAIN STATIONS
+// CreateRain godoc
+// @Summary Tạo mới trạm đo mưa
+// @Description Tạo mới một trạm quan trắc lượng mưa
+// @Tags Trạm quan trắc - Mưa
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param station body models.RainStation true "Dữ liệu trạm"
+// @Success 200 {object} web.Response{data=models.RainStation}
+// @Failure 400 {object} web.ErrorResponse
+// @Router /stations/rain [post]
 func (h *StationHandler) CreateRain(c *gin.Context) {
 	var m models.RainStation
 	if err := c.ShouldBindJSON(&m); err != nil {
@@ -77,6 +88,18 @@ func (h *StationHandler) CreateRain(c *gin.Context) {
 	h.SendData(c, res)
 }
 
+// UpdateRain godoc
+// @Summary Cập nhật trạm đo mưa
+// @Description Cập nhật thông tin chi tiết của một trạm đo mưa hiện có
+// @Tags Trạm quan trắc - Mưa
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID trạm"
+// @Param station body models.RainStation true "Dữ liệu trạm cập nhật"
+// @Success 200 {object} web.Response{data=models.RainStation}
+// @Failure 401 {object} web.ErrorResponse
+// @Router /stations/rain/{id} [put]
 func (h *StationHandler) UpdateRain(c *gin.Context) {
 	id := c.Param("id")
 	var m models.RainStation
@@ -116,6 +139,15 @@ func (h *StationHandler) UpdateRain(c *gin.Context) {
 	h.SendData(c, m)
 }
 
+// DeleteRain godoc
+// @Summary Xóa trạm đo mưa
+// @Description Loại bỏ một trạm đo mưa theo ID
+// @Tags Trạm quan trắc - Mưa
+// @Security BearerAuth
+// @Param id path string true "ID trạm"
+// @Success 200 {boolean} bool
+// @Failure 401 {object} web.ErrorResponse
+// @Router /stations/rain/{id} [delete]
 func (h *StationHandler) DeleteRain(c *gin.Context) {
 	id := c.Param("id")
 	_, isAllowedAll, user := h.checkPermissions(c)
@@ -135,6 +167,15 @@ func (h *StationHandler) DeleteRain(c *gin.Context) {
 	h.SendData(c, nil)
 }
 
+// GetRainByID godoc
+// @Summary Lấy thông tin trạm đo mưa theo ID
+// @Description Truy xuất thông tin chi tiết của một trạm đo mưa cụ thể
+// @Tags Trạm quan trắc - Mưa
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID trạm"
+// @Success 200 {object} web.Response{data=models.RainStation}
+// @Router /stations/rain/{id} [get]
 func (h *StationHandler) GetRainByID(c *gin.Context) {
 	id := c.Param("id")
 	res, err := h.service.GetRainStation(c.Request.Context(), id)
@@ -142,6 +183,19 @@ func (h *StationHandler) GetRainByID(c *gin.Context) {
 	h.SendData(c, res)
 }
 
+// ListRain godoc
+// @Summary Danh sách trạm đo mưa
+// @Description Truy xuất danh sách các trạm đo mưa với bộ lọc
+// @Tags Trạm quan trắc - Mưa
+// @Produce json
+// @Security BearerAuth
+// @Param search query string false "Tìm kiếm theo tên trạm"
+// @Param active query string false "Lọc theo trạng thái hoạt động (true/false)"
+// @Param org_id query string false "Lọc theo ID đơn vị"
+// @Param page query int false "Số trang"
+// @Param size query int false "Số bản ghi mỗi trang"
+// @Success 200 {object} web.Response{data=object{data=[]models.RainStation,total=int}}
+// @Router /stations/rain [get]
 func (h *StationHandler) ListRain(c *gin.Context) {
 	req := filters.NewStationListRequest()
 	if err := c.ShouldBindQuery(req); err != nil {
@@ -166,6 +220,17 @@ func (h *StationHandler) ListRain(c *gin.Context) {
 }
 
 // LAKE STATIONS
+// CreateLake godoc
+// @Summary Tạo mới trạm hồ
+// @Description Tạo mới một trạm quan trắc cho hồ
+// @Tags Trạm quan trắc - Hồ
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param station body models.LakeStation true "Dữ liệu trạm"
+// @Success 200 {object} web.Response{data=models.LakeStation}
+// @Failure 400 {object} web.ErrorResponse
+// @Router /stations/lake [post]
 func (h *StationHandler) CreateLake(c *gin.Context) {
 	var m models.LakeStation
 	if err := c.ShouldBindJSON(&m); err != nil {
@@ -199,6 +264,18 @@ func (h *StationHandler) CreateLake(c *gin.Context) {
 	h.SendData(c, res)
 }
 
+// UpdateLake godoc
+// @Summary Cập nhật trạm hồ
+// @Description Cập nhật thông tin chi tiết của một trạm hồ hiện có
+// @Tags Trạm quan trắc - Hồ
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID trạm"
+// @Param station body models.LakeStation true "Dữ liệu trạm cập nhật"
+// @Success 200 {object} web.Response{data=models.LakeStation}
+// @Failure 401 {object} web.ErrorResponse
+// @Router /stations/lake/{id} [put]
 func (h *StationHandler) UpdateLake(c *gin.Context) {
 	id := c.Param("id")
 	var m models.LakeStation
@@ -238,6 +315,15 @@ func (h *StationHandler) UpdateLake(c *gin.Context) {
 	h.SendData(c, m)
 }
 
+// DeleteLake godoc
+// @Summary Xóa trạm hồ
+// @Description Loại bỏ một trạm hồ theo ID
+// @Tags Trạm quan trắc - Hồ
+// @Security BearerAuth
+// @Param id path string true "ID trạm"
+// @Success 200 {boolean} bool
+// @Failure 401 {object} web.ErrorResponse
+// @Router /stations/lake/{id} [delete]
 func (h *StationHandler) DeleteLake(c *gin.Context) {
 	id := c.Param("id")
 	_, isAllowedAll, user := h.checkPermissions(c)
@@ -257,6 +343,15 @@ func (h *StationHandler) DeleteLake(c *gin.Context) {
 	h.SendData(c, nil)
 }
 
+// GetLakeByID godoc
+// @Summary Lấy thông tin trạm hồ theo ID
+// @Description Truy xuất thông tin chi tiết của một trạm hồ cụ thể
+// @Tags Trạm quan trắc - Hồ
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID trạm"
+// @Success 200 {object} web.Response{data=models.LakeStation}
+// @Router /stations/lake/{id} [get]
 func (h *StationHandler) GetLakeByID(c *gin.Context) {
 	id := c.Param("id")
 	res, err := h.service.GetLakeStation(c.Request.Context(), id)
@@ -264,6 +359,19 @@ func (h *StationHandler) GetLakeByID(c *gin.Context) {
 	h.SendData(c, res)
 }
 
+// ListLake godoc
+// @Summary Danh sách trạm hồ
+// @Description Truy xuất danh sách các trạm hồ với bộ lọc
+// @Tags Trạm quan trắc - Hồ
+// @Produce json
+// @Security BearerAuth
+// @Param search query string false "Tìm kiếm theo tên trạm"
+// @Param active query string false "Lọc theo trạng thái hoạt động (true/false)"
+// @Param org_id query string false "Lọc theo ID đơn vị"
+// @Param page query int false "Số trang"
+// @Param size query int false "Số bản ghi mỗi trang"
+// @Success 200 {object} web.Response{data=object{data=[]models.LakeStation,total=int}}
+// @Router /stations/lake [get]
 func (h *StationHandler) ListLake(c *gin.Context) {
 	req := filters.NewStationListRequest()
 	if err := c.ShouldBindQuery(req); err != nil {
@@ -288,6 +396,17 @@ func (h *StationHandler) ListLake(c *gin.Context) {
 }
 
 // RIVER STATIONS
+// CreateRiver godoc
+// @Summary Tạo mới trạm sông
+// @Description Tạo mới một trạm quan trắc cho sông
+// @Tags Trạm quan trắc - Sông
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param station body models.RiverStation true "Dữ liệu trạm"
+// @Success 200 {object} web.Response{data=models.RiverStation}
+// @Failure 400 {object} web.ErrorResponse
+// @Router /stations/river [post]
 func (h *StationHandler) CreateRiver(c *gin.Context) {
 	var m models.RiverStation
 	if err := c.ShouldBindJSON(&m); err != nil {
@@ -321,6 +440,18 @@ func (h *StationHandler) CreateRiver(c *gin.Context) {
 	h.SendData(c, res)
 }
 
+// UpdateRiver godoc
+// @Summary Cập nhật trạm sông
+// @Description Cập nhật thông tin chi tiết của một trạm sông hiện có
+// @Tags Trạm quan trắc - Sông
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID trạm"
+// @Param station body models.RiverStation true "Dữ liệu trạm cập nhật"
+// @Success 200 {object} web.Response{data=models.RiverStation}
+// @Failure 401 {object} web.ErrorResponse
+// @Router /stations/river/{id} [put]
 func (h *StationHandler) UpdateRiver(c *gin.Context) {
 	id := c.Param("id")
 	var m models.RiverStation
@@ -360,6 +491,15 @@ func (h *StationHandler) UpdateRiver(c *gin.Context) {
 	h.SendData(c, m)
 }
 
+// DeleteRiver godoc
+// @Summary Xóa trạm sông
+// @Description Loại bỏ một trạm sông theo ID
+// @Tags Trạm quan trắc - Sông
+// @Security BearerAuth
+// @Param id path string true "ID trạm"
+// @Success 200 {boolean} bool
+// @Failure 401 {object} web.ErrorResponse
+// @Router /stations/river/{id} [delete]
 func (h *StationHandler) DeleteRiver(c *gin.Context) {
 	id := c.Param("id")
 	_, isAllowedAll, user := h.checkPermissions(c)
@@ -379,6 +519,15 @@ func (h *StationHandler) DeleteRiver(c *gin.Context) {
 	h.SendData(c, nil)
 }
 
+// GetRiverByID godoc
+// @Summary Lấy thông tin trạm sông theo ID
+// @Description Truy xuất thông tin chi tiết của một trạm sông cụ thể
+// @Tags Trạm quan trắc - Sông
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID trạm"
+// @Success 200 {object} web.Response{data=models.RiverStation}
+// @Router /stations/river/{id} [get]
 func (h *StationHandler) GetRiverByID(c *gin.Context) {
 	id := c.Param("id")
 	res, err := h.service.GetRiverStation(c.Request.Context(), id)
@@ -386,6 +535,19 @@ func (h *StationHandler) GetRiverByID(c *gin.Context) {
 	h.SendData(c, res)
 }
 
+// ListRiver godoc
+// @Summary Danh sách trạm sông
+// @Description Truy xuất danh sách các trạm sông với bộ lọc
+// @Tags Trạm quan trắc - Sông
+// @Produce json
+// @Security BearerAuth
+// @Param search query string false "Tìm kiếm theo tên trạm"
+// @Param active query string false "Lọc theo trạng thái hoạt động (true/false)"
+// @Param org_id query string false "Lọc theo ID đơn vị"
+// @Param page query int false "Số trang"
+// @Param size query int false "Số bản ghi mỗi trang"
+// @Success 200 {object} web.Response{data=object{data=[]models.RiverStation,total=int}}
+// @Router /stations/river [get]
 func (h *StationHandler) ListRiver(c *gin.Context) {
 	req := filters.NewStationListRequest()
 	if err := c.ShouldBindQuery(req); err != nil {

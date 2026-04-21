@@ -19,6 +19,17 @@ func NewWaterHandler(service water.Service) *WaterHandler {
 	}
 }
 
+// GetRainHistory godoc
+// @Summary Lấy lịch sử dữ liệu trạm mưa
+// @Description Truy xuất dữ liệu mưa lịch sử của một trạm cụ thể
+// @Tags Thủy văn
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "ID trạm"
+// @Param limit query int false "Số bản ghi tối đa" default(100)
+// @Param date query string false "Lọc theo ngày (YYYY-MM-DD)"
+// @Success 200 {object} web.Response{data=[]object}
+// @Router /water/rain/{id}/history [get]
 func (h *WaterHandler) GetRainHistory(c *gin.Context) {
 	stationID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 	limit, _ := strconv.ParseInt(c.DefaultQuery("limit", "100"), 10, 64)
@@ -29,6 +40,17 @@ func (h *WaterHandler) GetRainHistory(c *gin.Context) {
 	h.SendData(c, res)
 }
 
+// GetLakeHistory godoc
+// @Summary Lấy lịch sử dữ liệu trạm hồ
+// @Description Truy xuất dữ liệu mực nước hồ lịch sử của một trạm cụ thể
+// @Tags Thủy văn
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "ID trạm"
+// @Param limit query int false "Số bản ghi tối đa" default(100)
+// @Param date query string false "Lọc theo ngày (YYYY-MM-DD)"
+// @Success 200 {object} web.Response{data=[]object}
+// @Router /water/lake/{id}/history [get]
 func (h *WaterHandler) GetLakeHistory(c *gin.Context) {
 	stationID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 	limit, _ := strconv.ParseInt(c.DefaultQuery("limit", "100"), 10, 64)
@@ -39,6 +61,17 @@ func (h *WaterHandler) GetLakeHistory(c *gin.Context) {
 	h.SendData(c, res)
 }
 
+// GetRiverHistory godoc
+// @Summary Lấy lịch sử dữ liệu trạm sông
+// @Description Truy xuất dữ liệu mực nước sông lịch sử của một trạm cụ thể
+// @Tags Thủy văn
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "ID trạm"
+// @Param limit query int false "Số bản ghi tối đa" default(100)
+// @Param date query string false "Lọc theo ngày (YYYY-MM-DD)"
+// @Success 200 {object} web.Response{data=[]object}
+// @Router /water/river/{id}/history [get]
 func (h *WaterHandler) GetRiverHistory(c *gin.Context) {
 	stationID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 	limit, _ := strconv.ParseInt(c.DefaultQuery("limit", "100"), 10, 64)
@@ -49,6 +82,15 @@ func (h *WaterHandler) GetRiverHistory(c *gin.Context) {
 	h.SendData(c, res)
 }
 
+// GetRainDataByDate godoc
+// @Summary Lấy dữ liệu mưa tất cả trạm theo ngày
+// @Description Truy xuất dữ liệu mưa của tất cả các trạm trong một ngày cụ thể
+// @Tags Thủy văn
+// @Produce json
+// @Security BearerAuth
+// @Param date query string true "Ngày lọc (YYYY-MM-DD)"
+// @Success 200 {object} web.Response{data=[]object}
+// @Router /water/rain/by-date [get]
 func (h *WaterHandler) GetRainDataByDate(c *gin.Context) {
 	date := c.Query("date") // Expected format: YYYY-MM-DD
 	if date == "" {

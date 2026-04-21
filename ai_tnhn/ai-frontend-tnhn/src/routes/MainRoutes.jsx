@@ -20,6 +20,7 @@ const StationLakeList = Loadable(lazy(() => import('views/admin/station/lake')))
 const StationInundationList = Loadable(lazy(() => import('views/admin/station/inundation')));
 const StationHistory = Loadable(lazy(() => import('views/admin/station/shared/StationHistory')));
 const InundationStationHistory = Loadable(lazy(() => import('views/admin/station/inundation/History')));
+const InundationHistoryDetail = Loadable(lazy(() => import('views/employee/inundation/InundationHistoryDetail')));
 const AiSupportPage = Loadable(lazy(() => import('views/admin/ai-support')));
 const AiContractPage = Loadable(lazy(() => import('views/admin/ai-contract')));
 const EmergencyConstructionPage = Loadable(lazy(() => import('views/admin/emergency-construction')));
@@ -94,6 +95,7 @@ const MainRoutes = {
         { path: 'station/rain/summary', element: <StationRainSummary /> },
         { path: 'station/water/summary', element: <StationWaterSummary /> },
         { path: 'station/rain/compare', element: <StationRainCompare /> },
+        { path: 'station/inundation/history', element: <InundationHistoryDetail /> },
         { path: 'tram-bom', element: <EmployeePumpingStationDashboard /> }
       ]
     }

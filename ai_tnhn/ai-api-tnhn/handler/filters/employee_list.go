@@ -24,7 +24,6 @@ func NewEmployeeListRequest() *EmployeeListRequest {
 func (f *EmployeeListRequest) GetWhere() filter.Where {
 	// Show all roles by default unless explicitly filtered by a new field in the future
 
-
 	if f.OrgID != "" && f.OrgID != "all" {
 		f.AddWhere("org_id", "org_id", f.OrgID)
 	}

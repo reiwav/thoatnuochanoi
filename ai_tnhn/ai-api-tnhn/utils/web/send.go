@@ -6,6 +6,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type Response struct {
+	Status string      `json:"status" example:"success"`
+	Code   int         `json:"code" example:"200"`
+	Data   interface{} `json:"data"`
+}
+
+type ErrorResponse struct {
+	Status string      `json:"status" example:"error"`
+	Code   int         `json:"code" example:"400"`
+	Error  string      `json:"error" example:"error message"`
+}
+
 type JsonRender struct {
 }
 

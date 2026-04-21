@@ -42,6 +42,17 @@ func (h *PumpingStationHandler) checkPermissions(c *gin.Context) (isSuperAdmin b
 	return isSuperAdmin, isAllowedAll, user
 }
 
+// Create godoc
+// @Summary Tạo mới trạm bơm
+// @Description Tạo mới một trạm quan trắc cho hệ thống bơm cưỡng bức
+// @Tags Trạm bơm
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param station body models.PumpingStation true "Dữ liệu trạm bơm"
+// @Success 200 {object} web.Response{data=models.PumpingStation}
+// @Failure 401 {object} web.ErrorResponse
+// @Router /stations/pumping [post]
 func (h *PumpingStationHandler) Create(c *gin.Context) {
 	var req models.PumpingStation
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -61,6 +72,18 @@ func (h *PumpingStationHandler) Create(c *gin.Context) {
 	h.SendData(c, res)
 }
 
+// Update godoc
+// @Summary Cập nhật trạm bơm
+// @Description Cập nhật thông tin chi tiết của một trạm bơm hiện có
+// @Tags Trạm bơm
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID trạm bơm"
+// @Param station body models.PumpingStation true "Dữ liệu trạm bơm cập nhật"
+// @Success 200 {boolean} bool
+// @Failure 401 {object} web.ErrorResponse
+// @Router /stations/pumping/{id} [put]
 func (h *PumpingStationHandler) Update(c *gin.Context) {
 	id := c.Param("id")
 	var req models.PumpingStation
@@ -99,6 +122,15 @@ func (h *PumpingStationHandler) Update(c *gin.Context) {
 	h.SendData(c, true)
 }
 
+// Delete godoc
+// @Summary Xóa trạm bơm
+// @Description Loại bỏ một trạm bơm khỏi hệ thống theo ID
+// @Tags Trạm bơm
+// @Security BearerAuth
+// @Param id path string true "ID trạm bơm"
+// @Success 200 {boolean} bool
+// @Failure 401 {object} web.ErrorResponse
+// @Router /stations/pumping/{id} [delete]
 func (h *PumpingStationHandler) Delete(c *gin.Context) {
 	id := c.Param("id")
 	_, isAllowedAll, user := h.checkPermissions(c)
@@ -126,6 +158,16 @@ func (h *PumpingStationHandler) Delete(c *gin.Context) {
 	h.SendData(c, true)
 }
 
+// Get godoc
+// @Summary Lấy thông tin trạm bơm theo ID
+// @Description Truy xuất thông tin chi tiết của một trạm bơm cụ thể
+// @Tags Trạm bơm
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID trạm bơm"
+// @Success 200 {object} web.Response{data=models.PumpingStation}
+// @Failure 404 {object} web.ErrorResponse
+// @Router /stations/pumping/{id} [get]
 func (h *PumpingStationHandler) Get(c *gin.Context) {
 	id := c.Param("id")
 	res, err := h.service.GetByID(c.Request.Context(), id)
@@ -140,6 +182,17 @@ func (h *PumpingStationHandler) Get(c *gin.Context) {
 	h.SendData(c, res)
 }
 
+// List godoc
+// @Summary Danh sách trạm bơm
+// @Description Truy xuất danh sách các trạm bơm với bộ lọc
+// @Tags Trạm bơm
+// @Produce json
+// @Security BearerAuth
+// @Param org_id query string false "Lọc theo ID đơn vị"
+// @Param page query int false "Số trang"
+// @Param size query int false "Số bản ghi mỗi trang"
+// @Success 200 {object} web.Response{data=object{data=[]models.PumpingStation,total=int}}
+// @Router /stations/pumping [get]
 func (h *PumpingStationHandler) List(c *gin.Context) {
 	f := filter.NewBasicFilter()
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "0"))
@@ -196,6 +249,17 @@ func (h *PumpingStationHandler) List(c *gin.Context) {
 }
 
 // History
+// CreateHistory godoc
+// @Summary Báo cáo trạng thái vận hành trạm bơm
+// @Description Ghi nhận trạng thái hoặc lịch sử vận hành cho một trạm bơm
+// @Tags Trạm bơm
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param history body models.PumpingStationHistory true "Dữ liệu vận hành"
+// @Success 200 {object} web.Response{data=models.PumpingStationHistory}
+// @Failure 401 {object} web.ErrorResponse
+// @Router /stations/pumping/report [post]
 func (h *PumpingStationHandler) CreateHistory(c *gin.Context) {
 	token := h.contextWith.GetToken(c.Request)
 	user, err := h.authService.GetProfile(c.Request.Context(), token)
@@ -218,6 +282,15 @@ func (h *PumpingStationHandler) CreateHistory(c *gin.Context) {
 	h.SendData(c, res)
 }
 
+// ListHistory godoc
+// @Summary Lấy lịch sử vận hành trạm bơm
+// @Description Truy xuất danh sách các báo cáo lịch sử vận hành cho một trạm cụ thể
+// @Tags Trạm bơm
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID trạm bơm"
+// @Success 200 {object} web.Response{data=object{data=[]models.PumpingStationHistory,total=int}}
+// @Router /stations/pumping/{id}/history [get]
 func (h *PumpingStationHandler) ListHistory(c *gin.Context) {
 	id := c.Param("id")
 	f := filter.NewBasicFilter()

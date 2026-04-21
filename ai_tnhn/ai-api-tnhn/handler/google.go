@@ -69,6 +69,14 @@ func NewGoogleHandler(googleSvc googleapi.Service, geminiSvc gemini.Service, dri
 	return h
 }
 
+// GetWeatherForecast godoc
+// @Summary Lấy dự báo thời tiết
+// @Description Truy xuất dữ liệu dự báo thời tiết truyền thống
+// @Tags AI & Dự báo
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} web.Response{data=object}
+// @Router /google/weather-forecast [get]
 func (h *GoogleHandler) GetWeatherForecast(c *gin.Context) {
 	forecast, err := h.weatherSvc.GetForecast(c.Request.Context())
 	if err != nil {
@@ -83,6 +91,14 @@ func (h *GoogleHandler) GetWeatherForecast(c *gin.Context) {
 	})
 }
 
+// GetGeminiWeatherForecast godoc
+// @Summary Lấy dự báo thời tiết từ AI Gemini
+// @Description Truy xuất dữ liệu dự báo thời tiết được tăng cường bởi AI Gemini
+// @Tags AI & Dự báo
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} web.Response{data=object}
+// @Router /google/gemini-forecast [get]
 func (h *GoogleHandler) GetGeminiWeatherForecast(c *gin.Context) {
 	forecast, err := h.weatherSvc.GetGeminiForecast(c.Request.Context())
 	if err != nil {
@@ -140,6 +156,14 @@ func (h *GoogleHandler) getLatestOCRText(ctx context.Context) string {
 	return ""
 }
 
+// GetStatus godoc
+// @Summary Lấy trạng thái tích hợp Google API
+// @Description Kiểm tra trạng thái tích hợp các dịch vụ của Google
+// @Tags Tiện ích
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} web.Response{data=object}
+// @Router /google/status [get]
 func (h *GoogleHandler) GetStatus(c *gin.Context) {
 	status, err := h.googleSvc.GetStatus(c.Request.Context())
 	if err != nil {
@@ -153,6 +177,15 @@ func (h *GoogleHandler) GetStatus(c *gin.Context) {
 	})
 }
 
+// GetRainSummary godoc
+// @Summary Lấy tóm tắt lượng mưa cho AI
+// @Description Truy xuất dữ liệu tóm tắt lượng mưa có cấu trúc để AI xử lý hoặc hiển thị
+// @Tags AI & Giám sát
+// @Produce json
+// @Security BearerAuth
+// @Param is_chat query bool false "Có lưu hành động vào lịch sử chat không"
+// @Success 200 {object} web.Response{data=object}
+// @Router /google/rain-summary [get]
 func (h *GoogleHandler) GetRainSummary(c *gin.Context) {
 	token := h.contextWith.GetTokenFromContext(c)
 	orgID := token.OrgID
@@ -188,6 +221,14 @@ func (h *GoogleHandler) GetRainSummary(c *gin.Context) {
 	})
 }
 
+// GetRainSummaryText godoc
+// @Summary Lấy tóm tắt lượng mưa (dạng văn bản)
+// @Description Truy xuất bản tóm tắt văn bản đã được định dạng sẵn về tình hình mưa hiện tại
+// @Tags AI & Giám sát
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} web.Response{data=string}
+// @Router /google/rain-summary-text [get]
 func (h *GoogleHandler) GetRainSummaryText(c *gin.Context) {
 	token := h.contextWith.GetTokenFromContext(c)
 	orgID := token.OrgID
@@ -241,6 +282,14 @@ func (h *GoogleHandler) formatRainSummary(summary *googleapi.RainSummaryData) st
 	return displayText
 }
 
+// GetWaterSummary godoc
+// @Summary Lấy tóm tắt mực nước cho AI
+// @Description Truy xuất dữ liệu mực nước có cấu trúc để AI xử lý
+// @Tags AI & Giám sát
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} web.Response{data=object}
+// @Router /google/water-summary [get]
 func (h *GoogleHandler) GetWaterSummary(c *gin.Context) {
 	token := h.contextWith.GetTokenFromContext(c)
 	orgID := token.OrgID
@@ -289,13 +338,22 @@ func (h *GoogleHandler) GetWaterSummary(c *gin.Context) {
 	})
 }
 
+// GetInundationSummary godoc
+// @Summary Lấy tóm tắt ngập lụt cho AI
+// @Description Truy xuất các điểm nóng và trạng thái ngập lụt hiện tại cho AI
+// @Tags AI & Giám sát
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} web.Response{data=object}
+// @Router /google/inundation-summary [get]
 func (h *GoogleHandler) GetInundationSummary(c *gin.Context) {
 	token := h.contextWith.GetTokenFromContext(c)
 	orgID := token.OrgID
 	if token.IsCompany {
 		orgID = ""
 	}
-	summary, err := h.googleSvc.GetInundationSummary(c.Request.Context(), orgID, nil)
+	isAllowedAll := token.IsCompany || token.Role == "Super Admin" || token.Role == "Manager"
+	summary, err := h.googleSvc.GetInundationSummary(c.Request.Context(), orgID, isAllowedAll, nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -336,6 +394,16 @@ func (h *GoogleHandler) GetInundationSummary(c *gin.Context) {
 	})
 }
 
+// ChatContract godoc
+// @Summary Chat với Gemini về hợp đồng
+// @Description Chat AI hỗ trợ phân tích và truy xuất thông tin hợp đồng
+// @Tags AI Chat
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body object{prompt=string,history=[]object} true "Câu hỏi và lịch sử chat"
+// @Success 200 {object} web.Response{data=string}
+// @Router /google/chat-contract [post]
 func (h *GoogleHandler) ChatContract(c *gin.Context) {
 	if h.geminiSvc == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Gemini AI service is not initialized. Please check GEMINI_API_KEY."})
@@ -364,6 +432,16 @@ func (h *GoogleHandler) ChatContract(c *gin.Context) {
 	})
 }
 
+// Chat godoc
+// @Summary Chat với AI Gemini
+// @Description Trợ lý ảo đa năng hỗ trợ công việc vận hành bởi Gemini
+// @Tags AI Chat
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body object{prompt=string,history=[]object} true "Câu hỏi và lịch sử chat"
+// @Success 200 {object} web.Response{data=string}
+// @Router /google/chat [post]
 func (h *GoogleHandler) Chat(c *gin.Context) {
 	var body struct {
 		Prompt  string               `json:"prompt"`
@@ -388,6 +466,17 @@ func (h *GoogleHandler) Chat(c *gin.Context) {
 	})
 }
 
+// GetChatHistory godoc
+// @Summary Lấy lịch sử chat AI
+// @Description Truy xuất các bản ghi lịch sử chat của người dùng hiện tại
+// @Tags AI Chat
+// @Produce json
+// @Security BearerAuth
+// @Param chat_type query string false "Loại chat (support/contract)" default(support)
+// @Param limit query int false "Số lượng bản ghi" default(50)
+// @Param before query string false "Mốc thời gian ISO-8601 để phân trang"
+// @Success 200 {object} web.Response{data=[]models.AiChatLog}
+// @Router /google/chat-history [get]
 func (h *GoogleHandler) GetChatHistory(c *gin.Context) {
 	userID, _ := h.contextWith.GetUserID(c)
 	chatType := c.DefaultQuery("chat_type", "support")
@@ -430,6 +519,15 @@ func (h *GoogleHandler) GetChatHistory(c *gin.Context) {
 	})
 }
 
+// GetEmailDetail godoc
+// @Summary Lấy thông tin chi tiết email
+// @Description Truy xuất toàn bộ nội dung và tệp đính kèm của một tin nhắn Gmail cụ thể
+// @Tags Tiện ích
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "ID Email (uint32)"
+// @Success 200 {object} web.Response{data=object}
+// @Router /google/email/{id} [get]
 func (h *GoogleHandler) GetEmailDetail(c *gin.Context) {
 	idStr := c.Param("id")
 	var id uint32
@@ -469,6 +567,14 @@ func (h *GoogleHandler) GetEmailDetail(c *gin.Context) {
 	})
 }
 
+// GetRecentEmails godoc
+// @Summary Lấy các email gần đây
+// @Description Truy xuất danh sách 10 email gần đây nhất từ hòm thư thời tiết
+// @Tags Tiện ích
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} web.Response{data=[]object}
+// @Router /google/emails/recent [get]
 func (h *GoogleHandler) GetRecentEmails(c *gin.Context) {
 	emails, err := h.googleSvc.GetRecentEmails(c.Request.Context(), 10)
 	if err != nil {
@@ -509,6 +615,14 @@ func (h *GoogleHandler) GetRecentEmails(c *gin.Context) {
 	})
 }
 
+// GetUnreadEmails godoc
+// @Summary Lấy các email chưa đọc
+// @Description Truy xuất danh sách 10 email chưa đọc gần đây nhất
+// @Tags Tiện ích
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} web.Response{data=[]object}
+// @Router /google/emails/unread [get]
 func (h *GoogleHandler) GetUnreadEmails(c *gin.Context) {
 	emails, err := h.googleSvc.GetUnreadEmails(c.Request.Context(), 10)
 	if err != nil {
@@ -553,6 +667,14 @@ func (h *GoogleHandler) GenerateQuickReport(c *gin.Context) {
 	h.GenerateQuickReportV3(c)
 }
 
+// GenerateQuickReportV3 godoc
+// @Summary Tạo báo cáo nhanh tự động (V3)
+// @Description Tổng hợp dữ liệu mưa, mực nước, ngập lụt và trạm bơm vào một báo cáo PDF/Drive duy nhất
+// @Tags Tiện ích
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} web.Response{data=object}
+// @Router /google/generate-report [post]
 func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 	if h.driveSvc == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Google Drive service is not initialized."})
@@ -625,7 +747,7 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 	chiTietCacDiem := ""
 	soLuongUngNgap := 0
 	g.Go(func() error {
-		if inundationSummary, err := h.googleSvc.GetInundationSummary(gCtx, "", nil); err == nil && inundationSummary != nil {
+		if inundationSummary, err := h.googleSvc.GetInundationSummary(gCtx, "", true, nil); err == nil && inundationSummary != nil {
 			soLuongUngNgap = inundationSummary.ActivePoints
 			motaUngNgap = "có " + fmt.Sprintf("%d", inundationSummary.ActivePoints) + " điểm úng ngập"
 			if inundationSummary.ActivePoints > 0 {
@@ -793,8 +915,8 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 			xaDataRaw = append(xaDataRaw, []string{name, fmt.Sprintf("%.1f", val)})
 		}
 	} else {
-		// Nếu không có mưa, có thể để trống hoặc lấy theo mặc định (ở đây chọn lấy top theo lượng mưa như cũ nếu cần, 
-		// nhưng theo yêu cầu "đều fix cứng" và "nếu xã có mưa thì lấy 10 xã gần trung tâm", 
+		// Nếu không có mưa, có thể để trống hoặc lấy theo mặc định (ở đây chọn lấy top theo lượng mưa như cũ nếu cần,
+		// nhưng theo yêu cầu "đều fix cứng" và "nếu xã có mưa thì lấy 10 xã gần trung tâm",
 		// ta sẽ lấy 10 xã gần trung tâm luôn cho đồng nhất hoặc để trống nếu không có mưa)
 		sort.Slice(xas, func(i, j int) bool { return xas[i].val > xas[j].val })
 		for _, v := range limit(xas, 10) {
@@ -1004,7 +1126,7 @@ func (h *GoogleHandler) GenerateQuickReportText(c *gin.Context) {
 	// 2. Fetch Inundation Summary
 	inundationInfo := "Trên các tuyến đường an toàn, không xảy ra úng ngập"
 	g.Go(func() error {
-		if inundationSummary, err := h.googleSvc.GetInundationSummary(gCtx, "", nil); err == nil && inundationSummary != nil {
+		if inundationSummary, err := h.googleSvc.GetInundationSummary(gCtx, "", true, nil); err == nil && inundationSummary != nil {
 			if inundationSummary.ActivePoints > 0 {
 				var details []string
 				for _, pt := range inundationSummary.OngoingPoints {
@@ -1230,7 +1352,7 @@ func (h *GoogleHandler) GenerateAIDynamicReport(c *gin.Context) {
 	// === Goroutine 4: Inundation status ===
 	inundationSummary := ""
 	g.Go(func() error {
-		summary, err := h.googleSvc.GetInundationSummary(gCtx, "", nil)
+		summary, err := h.googleSvc.GetInundationSummary(gCtx, "", true, nil)
 		if err != nil || summary == nil {
 			inundationSummary = "Không có dữ liệu."
 			return nil

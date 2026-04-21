@@ -44,7 +44,11 @@ func (s *service) handleToolCall(ctx context.Context, call *genai.FunctionCall, 
 
 	// Group: Inundation
 	if name == "get_live_inundation_summary" {
-		return s.handleInundationTools(ctx, call, orgID, assignedInuIDs)
+		isAllowedAll := isCompany
+		if user != nil {
+			isAllowedAll = isAllowedAll || user.Role == "Super Admin" || user.Role == "Manager"
+		}
+		return s.handleInundationTools(ctx, call, orgID, isAllowedAll, assignedInuIDs)
 	}
 
 	// Group: Pumping

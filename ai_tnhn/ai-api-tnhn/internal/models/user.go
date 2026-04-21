@@ -7,15 +7,15 @@ import (
 
 type User struct {
 	model.BaseModel `bson:",inline"`
-	Name            string        `bson:"name" json:"name"`
-	OrgID           string        `bson:"org_id" json:"org_id"`
-	Email           string        `bson:"email" json:"email"`
-	Username        string        `bson:"username" json:"username"`
-	Password        hash.Password `bson:"password" json:"password"`
-	Role            string        `bson:"role" json:"role"`
-	IsEmployee      bool          `bson:"-" json:"is_employee"`
-	IsCompany       bool          `bson:"-" json:"is_company"`
-	Active          bool          `bson:"active" json:"active"`
+	Name            string        `bson:"name" json:"name" example:"Nguyễn Văn A"`
+	OrgID           string        `bson:"org_id" json:"org_id" example:"60f123456789"`
+	Email           string        `bson:"email" json:"email" example:"admin@hsdc.com.vn"`
+	Username        string        `bson:"username" json:"username" example:"admin"`
+	Password        hash.Password `bson:"password" json:"password" example:"********"`
+	Role            string        `bson:"role" json:"role" example:"admin"`
+	IsEmployee      bool          `bson:"-" json:"is_employee" example:"false"`
+	IsCompany       bool          `bson:"-" json:"is_company" example:"true"`
+	Active          bool          `bson:"active" json:"active" example:"true"`
 
 	// RBAC for Employee
 	AssignedInundationStationIDs     []string `bson:"assigned_inundation_station_ids" json:"assigned_inundation_station_ids"`

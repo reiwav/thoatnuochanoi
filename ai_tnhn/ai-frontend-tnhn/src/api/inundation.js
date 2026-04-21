@@ -19,6 +19,9 @@ const inundationApi = {
     getReport: (id) => {
         return axiosClient.get(`/inundation/report/${id}`);
     },
+    getPointHistory: (pointId) => {
+        return axiosClient.get(`/inundation/report/${pointId}`);
+    },
     updateReport: (id, formData) => {
         return axiosClient.put(`/inundation/report/${id}`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }

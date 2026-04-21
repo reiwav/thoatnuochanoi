@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"ai-api-tnhn/internal/dto"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/service/auth"
 	"ai-api-tnhn/internal/service/inundation"
@@ -39,112 +40,79 @@ func (h *InundationHandler) checkPermissions(c *gin.Context) (isAllowedAll bool,
 	return isAllowedAll, user
 }
 
+// CreateReport godoc
+// @Summary Tạo báo cáo ngập lụt mới
+// @Description Tạo một báo cáo ngập lụt mới với tùy chọn đính kèm hình ảnh
+// @Tags Ngập lụt
+// @Accept multipart/form-data
+// @Produce json
+// @Security BearerAuth
+// @Param report formData dto.CreateReportRequest true "Dữ liệu báo cáo"
+// @Param images formData file false "Hình ảnh hiện trường"
+// @Success 200 {object} models.InundationReport
+// @Failure 401 {object} web.ErrorResponse
+// @Failure 400 {object} web.ErrorResponse
+// @Router /inundation/report [post]
 func (h *InundationHandler) CreateReport(c *gin.Context) {
-	// 1. Get User Info from token
-	token := h.contextWith.GetToken(c.Request)
-	user, err := h.authService.GetProfile(c.Request.Context(), token)
-	if err != nil {
-		h.SendError(c, web.Unauthorized("Invalid user session"))
+	// 1. Auth & Identification
+	_, user := h.checkPermissions(c)
+	if user == nil {
+		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
 		return
 	}
 
-	// 2. Parse Multipart Form
-	form, err := c.MultipartForm()
-	if err != nil {
-		h.SendError(c, web.BadRequest("Failed to parse form: "+err.Error()))
+	// 2. Bind Request DTO
+	var req dto.CreateReportRequest
+	if err := c.ShouldBind(&req); err != nil {
+		h.SendError(c, web.BadRequest("Invalid request data: "+err.Error()))
 		return
 	}
 
-	streetName := c.PostForm("street_name")
-	depth := c.PostForm("depth")
-	length := c.PostForm("length")
-	width := c.PostForm("width")
-	pointID := c.PostForm("point_id")
-	description := c.PostForm("description")
-	trafficStatus := c.PostForm("traffic_status")
-	startTimeStr := c.PostForm("start_time")
-
-	startTime, _ := strconv.ParseInt(startTimeStr, 10, 64)
-	if startTime == 0 {
-		startTime = time.Now().Unix()
-	}
-
-	// 3. Prepare images
+	// 3. Parse Multipart Form for images
+	form, _ := c.MultipartForm()
 	var images []inundation.ImageContent
-	files := form.File["images"]
-	for _, fileHeader := range files {
-		file, err := fileHeader.Open()
-		if err != nil {
-			h.SendError(c, web.InternalServerError("Failed to open image: "+err.Error()))
-			return
+	if form != nil {
+		files := form.File["images"]
+		for _, fileHeader := range files {
+			file, err := fileHeader.Open()
+			if err != nil {
+				continue
+			}
+			defer file.Close()
+			images = append(images, inundation.ImageContent{
+				Name:     fileHeader.Filename,
+				MimeType: fileHeader.Header.Get("Content-Type"),
+				Reader:   file,
+			})
 		}
-		defer file.Close()
-
-		images = append(images, inundation.ImageContent{
-			Name:     fileHeader.Filename,
-			MimeType: fileHeader.Header.Get("Content-Type"),
-			Reader:   file,
-		})
 	}
 
-	// 4. Create Report
-	mechD := c.PostForm("mech_d")
-	mechR := c.PostForm("mech_r")
-	mechS := c.PostForm("mech_s")
-
-	surveyChecked := c.PostForm("survey_checked") == "true"
-	surveyNote := c.PostForm("survey_note")
-
-	// If mech data provided, prioritize it for main dimensions too
-	if depth == "" && mechD != "" {
-		depth = mechD
-	}
-	if length == "" && mechS != "" {
-		length = mechS
-	}
-	if width == "" && mechR != "" {
-		width = mechR
+	// 4. Map DTO to Model
+	if req.StartTime == 0 {
+		req.StartTime = time.Now().Unix()
 	}
 
 	report := &models.InundationReport{
-		OrgID:         user.OrgID,
-		UserID:        user.ID,
-		UserEmail:     user.Email,
-		PointID:       pointID,
-		StreetName:    streetName,
-		Depth:         depth,
-		Length:        length,
-		Width:         width,
-		StartTime:     startTime,
-		Description:   description,
-		TrafficStatus: trafficStatus,
-		MechChecked:   c.PostForm("mech_checked") == "true",
-		MechNote:      c.PostForm("mech_note"),
-		MechD:         mechD,
-		MechR:         mechR,
-		MechS:         mechS,
+		PointID:       req.PointID,
+		StreetName:    req.StreetName,
+		Depth:         req.Depth,
+		Length:        req.Length,
+		Width:         req.Width,
+		StartTime:     req.StartTime,
+		Description:   req.Description,
+		TrafficStatus: req.TrafficStatus,
+		MechChecked:   req.MechChecked,
+		MechNote:      req.MechNote,
+		MechD:         req.MechD,
+		MechR:         req.MechR,
+		MechS:         req.MechS,
 		MechUserID:    user.ID,
-		SurveyChecked: surveyChecked,
-		SurveyNote:    surveyNote,
+		SurveyChecked: req.SurveyChecked,
+		SurveyNote:    req.SurveyNote,
 		SurveyUserID:  user.ID,
 	}
 
-	// 4.1 Permission Check for Employee
-	if user.IsEmployee {
-		isAssigned := false
-		for _, pid := range user.AssignedInundationStationIDs {
-			if pid == pointID {
-				isAssigned = true
-				break
-			}
-		}
-		if !isAssigned {
-			h.SendError(c, web.Forbidden("Bạn không có quyền gửi báo cáo cho địa điểm này"))
-			return
-		}
-	}
-
-	err = h.service.CreateReport(c.Request.Context(), report, images)
+	err := h.service.CreateReport(c.Request.Context(), user, report, images)
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -153,136 +121,109 @@ func (h *InundationHandler) CreateReport(c *gin.Context) {
 	h.SendData(c, report)
 }
 
+// AddUpdateSituation godoc
+// @Summary Thêm cập nhật tình hình
+// @Description Thêm thông tin cập nhật cho một báo cáo ngập lụt hiện có
+// @Tags Ngập lụt
+// @Accept multipart/form-data
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID báo cáo"
+// @Param update formData dto.AddUpdateSitutionRequest true "Dữ liệu cập nhật"
+// @Param images formData file false "Hình ảnh cập nhật"
+// @Success 200 {object} models.InundationUpdate
+// @Failure 401 {object} web.ErrorResponse
+// @Router /inundation/{id}/update [post]
 func (h *InundationHandler) AddUpdateSituation(c *gin.Context) {
-	// 1. Get User Info from token
-	token := h.contextWith.GetToken(c.Request)
-	user, err := h.authService.GetProfile(c.Request.Context(), token)
-	if err != nil {
-		h.SendError(c, web.Unauthorized("Invalid user session"))
+	_, user := h.checkPermissions(c)
+	if user == nil {
+		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
 		return
 	}
 
-	reportID := c.Param("id")
-
-	// 2. Parse Form
-	form, err := c.MultipartForm()
-	if err != nil {
-		h.SendError(c, web.BadRequest("Failed to parse form"))
+	id := c.Param("id")
+	var req dto.AddUpdateSitutionRequest
+	if err := c.ShouldBind(&req); err != nil {
+		h.SendError(c, web.BadRequest("Invalid request data: "+err.Error()))
 		return
 	}
 
-	description := c.PostForm("description")
-	depth := c.PostForm("depth")
-	length := c.PostForm("length")
-	width := c.PostForm("width")
-	trafficStatus := c.PostForm("traffic_status")
-
-	// 2. Prepare images
+	form, _ := c.MultipartForm()
 	var images []inundation.ImageContent
-	files := form.File["images"]
-	for _, fileHeader := range files {
-		file, err := fileHeader.Open()
-		if err != nil {
-			h.SendError(c, web.InternalServerError("Failed to open image: "+err.Error()))
-			return
+	if form != nil {
+		files := form.File["images"]
+		for _, fileHeader := range files {
+			file, err := fileHeader.Open()
+			if err != nil {
+				continue
+			}
+			defer file.Close()
+			images = append(images, inundation.ImageContent{
+				Name:     fileHeader.Filename,
+				MimeType: fileHeader.Header.Get("Content-Type"),
+				Reader:   file,
+			})
 		}
-		defer file.Close()
-
-		images = append(images, inundation.ImageContent{
-			Name:     fileHeader.Filename,
-			MimeType: fileHeader.Header.Get("Content-Type"),
-			Reader:   file,
-		})
 	}
 
-	// 3. Add Update
 	update := &models.InundationUpdate{
-		Description:   description,
-		Depth:         depth,
-		Length:        length,
-		Width:         width,
-		TrafficStatus: trafficStatus,
-		Timestamp:     time.Now().Unix(),
+		ReportID:      id,
+		Description:   req.Description,
+		Depth:         req.Depth,
+		TrafficStatus: req.TrafficStatus,
+		Length:        req.Length,
+		Width:         req.Width,
 	}
 
-	// 3.1 Permission Check for Employee
-	if user.IsEmployee {
-		report, err := h.service.GetReport(c.Request.Context(), reportID)
-		if err == nil && report != nil {
-			isAssigned := false
-			for _, pid := range user.AssignedInundationStationIDs {
-				if pid == report.PointID {
-					isAssigned = true
-					break
-				}
-			}
-			if !isAssigned {
-				h.SendError(c, web.Forbidden("Bạn không có quyền cập nhật cho địa điểm này"))
-				return
-			}
-		}
-	}
-
-	err = h.service.AddUpdate(c.Request.Context(), reportID, update, user.ID, user.Email, images)
+	err := h.service.AddUpdate(c.Request.Context(), user, id, update, images, req.Resolve)
 	if err != nil {
 		h.SendError(c, err)
 		return
-	}
-
-	// 4. Resolve if flag set
-	resolve := c.PostForm("resolve") == "true"
-	if resolve {
-		_ = h.service.Resolve(c.Request.Context(), reportID, 0)
 	}
 
 	h.SendData(c, update)
 }
 
+// GetReport godoc
+// @Summary Lấy thông tin chi tiết báo cáo
+// @Description Truy xuất thông tin chi tiết của một báo cáo ngập lụt theo ID
+// @Tags Ngập lụt
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID báo cáo"
+// @Success 200 {object} models.InundationReport
+// @Failure 401 {object} web.ErrorResponse
+// @Failure 404 {object} web.ErrorResponse
+// @Router /inundation/report/{id} [get]
 func (h *InundationHandler) GetReport(c *gin.Context) {
+	_, user := h.checkPermissions(c)
+	if user == nil {
+		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
+		return
+	}
+
 	id := c.Param("id")
-	report, err := h.service.GetReport(c.Request.Context(), id)
+	report, err := h.service.GetReport(c.Request.Context(), user, id)
 	if err != nil {
 		h.SendError(c, err)
 		return
 	}
 
-	// RBAC: Check visibility
-	token := h.contextWith.GetToken(c.Request)
-	user, err := h.authService.GetProfile(c.Request.Context(), token)
-	if err == nil && user != nil {
-		if !user.IsCompany && report.OrgID != user.OrgID {
-			// Check if shared or assigned
-			isAuthorized := false
-			point, err := h.service.GetPointByID(c.Request.Context(), report.PointID)
-			if err == nil && point != nil {
-				// 1. Check if shared with user's org
-				for _, sid := range point.SharedOrgIDs {
-					if sid == user.OrgID {
-						isAuthorized = true
-						break
-					}
-				}
-				// 2. Check if assigned specifically to this employee
-				if !isAuthorized && user.IsEmployee {
-					for _, pid := range user.AssignedInundationStationIDs {
-						if pid == point.ID {
-							isAuthorized = true
-							break
-						}
-					}
-				}
-			}
-
-			if !isAuthorized {
-				h.SendError(c, web.Unauthorized("Access denied: You do not have permission to view this report"))
-				return
-			}
-		}
-	}
-
 	h.SendData(c, report)
 }
 
+// ResolveReport godoc
+// @Summary Kết thúc báo cáo ngập lụt
+// @Description Đánh dấu báo cáo ngập lụt đã được xử lý xong với thời gian kết thúc tùy chọn
+// @Tags Ngập lụt
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID báo cáo"
+// @Param request body object{end_time=int64} false "Dữ liệu kết thúc"
+// @Success 200 {boolean} bool
+// @Failure 401 {object} web.ErrorResponse
+// @Router /inundation/report/{id}/resolve [post]
 func (h *InundationHandler) ResolveReport(c *gin.Context) {
 	reportID := c.Param("id")
 	var req struct {
@@ -301,69 +242,35 @@ func (h *InundationHandler) ResolveReport(c *gin.Context) {
 	h.SendData(c, true)
 }
 
+// ListReports godoc
+// @Summary Danh sách báo cáo ngập lụt
+// @Description Truy xuất danh sách báo cáo với các bộ lọc
+// @Tags Ngập lụt
+// @Produce json
+// @Security BearerAuth
+// @Param status query string false "Trạng thái"
+// @Param traffic_status query string false "Tình trạng giao thông"
+// @Param query query string false "Từ khóa tìm kiếm"
+// @Param org_id query string false "ID đơn vị"
+// @Param page query int false "Số trang"
+// @Param size query int false "Số bản ghi mỗi trang"
+// @Success 200 {object} object{data=[]models.InundationReport,total=int}
+// @Router /inundation/reports [get]
 func (h *InundationHandler) ListReports(c *gin.Context) {
 	isAllowedAll, user := h.checkPermissions(c)
 	if user == nil {
-		h.SendError(c, web.Unauthorized("Invalid user session"))
+		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
 		return
 	}
 
-	orgID := user.OrgID
-	if isAllowedAll {
-		// Privileged users (Super Admin or Company level) can manage all
-		if qOrg := c.Query("org_id"); qOrg != "" {
-			orgID = qOrg
-		} else {
-			orgID = "" // Default to all if no filter provided
-		}
-	} else {
-		// Restricted users stick to their own OrgID
-		orgID = user.OrgID
-	}
-
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "0"))
-	size, _ := strconv.Atoi(c.DefaultQuery("size", "10"))
 	status := c.Query("status")
 	trafficStatus := c.Query("traffic_status")
 	query := c.Query("query")
+	orgIDFilter := c.Query("org_id")
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "0"))
+	size, _ := strconv.Atoi(c.DefaultQuery("size", "20"))
 
-	// Determine which points to show
-	var pointIDs []string
-
-	// Use target organization's configured InundationIDs if available
-	targetOrgID := ""
-	if qOrg := c.Query("org_id"); qOrg != "" && isAllowedAll {
-		targetOrgID = qOrg
-	} else if !isAllowedAll {
-		targetOrgID = user.OrgID
-	}
-
-	if user.IsEmployee && !isAllowedAll {
-		// Filter out empty strings if any
-		for _, pid := range user.AssignedInundationStationIDs {
-			if pid != "" {
-				pointIDs = append(pointIDs, pid)
-			}
-		}
-		if len(pointIDs) == 0 {
-			// If no points assigned to employee, return empty result
-			h.SendData(c, gin.H{
-				"data":  []interface{}{},
-				"total": 0,
-			})
-			return
-		}
-	} else if targetOrgID != "" {
-		// Manager or Admin: search for points owned by OR shared with targetOrgID
-		res, err := h.service.GetPointsStatus(c.Request.Context(), targetOrgID, nil) // passing nil pointIDs will fetch by org
-		if err == nil {
-			for _, p := range res {
-				pointIDs = append(pointIDs, p.ID)
-			}
-		}
-	}
-
-	reports, total, err := h.service.ListReportsWithFilter(c.Request.Context(), orgID, status, trafficStatus, query, pointIDs, page, size)
+	reports, total, err := h.service.ListReportsWithFilter(c.Request.Context(), user, isAllowedAll, orgIDFilter, status, trafficStatus, query, page, size)
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -375,47 +282,45 @@ func (h *InundationHandler) ListReports(c *gin.Context) {
 	})
 }
 
+// GetPointsStatus godoc
+// @Summary Lấy trạng thái tất cả các điểm ngập
+// @Description Truy xuất trạng thái hiện tại của tất cả các điểm, có thể lọc theo đơn vị
+// @Tags Ngập lụt
+// @Produce json
+// @Security BearerAuth
+// @Param org_id query string false "Lọc theo ID đơn vị"
+// @Success 200 {object} object
+// @Failure 401 {object} web.ErrorResponse
+// @Router /inundation/points-status [get]
 func (h *InundationHandler) GetPointsStatus(c *gin.Context) {
 	isAllowedAll, user := h.checkPermissions(c)
 	if user == nil {
-		h.SendError(c, web.Unauthorized("Invalid user session"))
+		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
 		return
 	}
 
-	var orgID string
-	var pointIDs []string
-
-	if user.IsEmployee && !isAllowedAll {
-		// Employee: chỉ lấy điểm ngập đã gắn trong tài khoản
-		for _, pid := range user.AssignedInundationStationIDs {
-			if pid != "" {
-				pointIDs = append(pointIDs, pid)
-			}
-		}
-		if len(pointIDs) == 0 {
-			h.SendData(c, []inundation.PointStatus{})
-			return
-		}
-		orgID = "" // không fetch theo org
-	} else if isAllowedAll {
-		// Super admin / Company: lấy tất cả hoặc theo org_id filter
-		if qOrg := c.Query("org_id"); qOrg != "" {
-			orgID = qOrg
-		}
-	} else {
-		// Manager (non-employee, non-superadmin): lấy theo org
-		orgID = user.OrgID
-	}
-
-	res, err := h.service.GetPointsStatus(c.Request.Context(), orgID, pointIDs)
+	orgIDFilter := c.Query("org_id")
+	result, err := h.service.GetPointsStatus(c.Request.Context(), user, isAllowedAll, orgIDFilter)
 	if err != nil {
 		h.SendError(c, err)
 		return
 	}
 
-	h.SendData(c, res)
+	h.SendData(c, result)
 }
 
+// CreatePoint godoc
+// @Summary Tạo mới điểm đo ngập
+// @Description Tạo mới một điểm theo dõi ngập lụt
+// @Tags Ngập lụt
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param point body models.InundationStation true "Dữ liệu điểm đo"
+// @Success 200 {object} models.InundationStation
+// @Failure 401 {object} web.ErrorResponse
+// @Failure 400 {object} web.ErrorResponse
+// @Router /inundation/points [post]
 func (h *InundationHandler) CreatePoint(c *gin.Context) {
 	var req models.InundationStation
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -447,11 +352,24 @@ func (h *InundationHandler) CreatePoint(c *gin.Context) {
 	h.SendData(c, req)
 }
 
+// UpdatePoint godoc
+// @Summary Cập nhật điểm đo ngập
+// @Description Cập nhật thông tin chi tiết của một điểm theo dõi ngập hiện có
+// @Tags Ngập lụt
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID điểm đo"
+// @Param point body models.InundationStation true "Dữ liệu điểm đo cập nhật"
+// @Success 200 {boolean} bool
+// @Failure 401 {object} web.ErrorResponse
+// @Failure 404 {object} web.ErrorResponse
+// @Router /inundation/points/{id} [put]
 func (h *InundationHandler) UpdatePoint(c *gin.Context) {
 	id := c.Param("id")
 	var req models.InundationStation
 	if err := c.ShouldBindJSON(&req); err != nil {
-		h.SendError(c, web.BadRequest("Invalid request: "+err.Error()))
+		h.SendError(c, web.BadRequest("Invalid request data: "+err.Error()))
 		return
 	}
 
@@ -474,19 +392,21 @@ func (h *InundationHandler) UpdatePoint(c *gin.Context) {
 		return
 	}
 
-	if req.ShareAll {
-		req.SharedOrgIDs = []string{}
+	point := models.InundationStation{
+		Name:         req.Name,
+		Address:      req.Address,
+		Lat:          req.Lat,
+		Lng:          req.Lng,
+		OrgID:        req.OrgID,
+		SharedOrgIDs: req.SharedOrgIDs,
+		ShareAll:     req.ShareAll,
 	}
 
-	if !isAllowedAll {
-		req.OrgID = currentPoint.OrgID
-	} else if req.OrgID == "" {
-		req.OrgID = currentPoint.OrgID
+	if point.OrgID == "" {
+		point.OrgID = currentPoint.OrgID
 	}
-	req.LastReportID = currentPoint.LastReportID
-	req.ReportID = currentPoint.ReportID
 
-	err = h.service.UpdatePoint(c.Request.Context(), id, req)
+	err = h.service.UpdatePoint(c.Request.Context(), id, point)
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -494,6 +414,16 @@ func (h *InundationHandler) UpdatePoint(c *gin.Context) {
 	h.SendData(c, true)
 }
 
+// DeletePoint godoc
+// @Summary Xóa điểm đo ngập
+// @Description Loại bỏ một điểm theo dõi ngập theo ID
+// @Tags Ngập lụt
+// @Security BearerAuth
+// @Param id path string true "ID điểm đo"
+// @Success 200 {boolean} bool
+// @Failure 401 {object} web.ErrorResponse
+// @Failure 404 {object} web.ErrorResponse
+// @Router /inundation/points/{id} [delete]
 func (h *InundationHandler) DeletePoint(c *gin.Context) {
 	id := c.Param("id")
 
@@ -522,186 +452,114 @@ func (h *InundationHandler) DeletePoint(c *gin.Context) {
 	}
 	h.SendData(c, true)
 }
+// ReviewUpdate godoc
+// @Summary Đánh giá cập nhật tình hình
+// @Description Thêm nhận xét đánh giá cho một bản cập nhật tình hình ngập
+// @Tags Ngập lụt
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID cập nhật"
+// @Param request body dto.ReviewRequest true "Dữ liệu đánh giá"
+// @Success 200 {object} object{status=string}
+// @Failure 401 {object} web.ErrorResponse
+// @Router /inundation/update/{id}/review [post]
 func (h *InundationHandler) ReviewUpdate(c *gin.Context) {
-	updateID := c.Param("id")
-	var req struct {
-		Comment string `json:"comment"`
-	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		h.SendError(c, web.BadRequest("Invalid request body"))
-		return
-	}
-
-	isAllowedAll, user := h.checkPermissions(c)
+	_, user := h.checkPermissions(c)
 	if user == nil {
-		h.SendError(c, web.Unauthorized("Invalid user session"))
+		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
 		return
 	}
 
-	// RBAC: Block Employee
-	if user.IsEmployee {
-		h.SendError(c, web.Forbidden("Nhân viên không có quyền nhận xét bản tin"))
-		return
-	}
-
-	// RBAC: Check permissions
-	update, err := h.service.GetUpdateByID(c.Request.Context(), updateID)
-	if err != nil {
-		h.SendError(c, err)
-		return
-	}
-
-	report, err := h.service.GetReport(c.Request.Context(), update.ReportID)
-	if err != nil {
-		h.SendError(c, err)
-		return
-	}
-
-	if !isAllowedAll {
-		// Ownership or Shared Point check
-		isAuthorized := report.OrgID == user.OrgID
-		if !isAuthorized && user.OrgID != "" {
-			// Check if the point itself is shared with user's org
-			point, err := h.service.GetPointByID(c.Request.Context(), report.PointID)
-			if err == nil && point != nil {
-				for _, sid := range point.SharedOrgIDs {
-					if sid == user.OrgID {
-						isAuthorized = true
-						break
-					}
-				}
-			}
-		}
-
-		if !isAuthorized {
-			h.SendError(c, web.Unauthorized("Bạn không có quyền nhận xét bản tin này"))
-			return
-		}
-	}
-
-	err = h.service.ReviewUpdate(c.Request.Context(), updateID, req.Comment, user.ID, user.Email, user.Name)
-	if err != nil {
-		h.SendError(c, err)
-		return
-	}
-	h.SendData(c, true)
-}
-
-func (h *InundationHandler) ReviewReport(c *gin.Context) {
-	reportID := c.Param("id")
-	var req struct {
-		Comment string `json:"comment"`
-	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		h.SendError(c, web.BadRequest("Invalid request body"))
-		return
-	}
-
-	isAllowedAll, user := h.checkPermissions(c)
-	if user == nil {
-		h.SendError(c, web.Unauthorized("Invalid user session"))
-		return
-	}
-
-	// RBAC: Block Employee
-	if user.IsEmployee {
-		h.SendError(c, web.Forbidden("Nhân viên không có quyền nhận xét bản tin"))
-		return
-	}
-
-	// Check permissions
-	report, err := h.service.GetReport(c.Request.Context(), reportID)
-	if err != nil {
-		h.SendError(c, err)
-		return
-	}
-
-	// Ownership or Shared Point Check: Only allow review if same org, shared point, or isAllowedAll
-	if !isAllowedAll {
-		isAuthorized := report.OrgID == user.OrgID
-		if !isAuthorized && user.OrgID != "" {
-			// Check if the point itself is shared with user's org
-			point, err := h.service.GetPointByID(c.Request.Context(), report.PointID)
-			if err == nil && point != nil {
-				for _, sid := range point.SharedOrgIDs {
-					if sid == user.OrgID {
-						isAuthorized = true
-						break
-					}
-				}
-			}
-		}
-
-		if !isAuthorized {
-			h.SendError(c, web.Unauthorized("Bạn không có quyền nhận xét bản tin này"))
-			return
-		}
-	}
-
-	err = h.service.ReviewReport(c.Request.Context(), reportID, req.Comment, user.ID, user.Email, user.Name)
-	if err != nil {
-		h.SendError(c, err)
-		return
-	}
-	h.SendData(c, true)
-}
-
-func (h *InundationHandler) UpdateReport(c *gin.Context) {
 	id := c.Param("id")
-
-	isAllowedAll, user := h.checkPermissions(c)
-	if user == nil {
-		h.SendError(c, web.Unauthorized("Invalid user session"))
+	var req dto.ReviewRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.SendError(c, web.BadRequest("Invalid request body"))
 		return
 	}
 
-	// Fetch existing report to check permissions
-	existing, err := h.service.GetReport(c.Request.Context(), id)
+	if req.Comment == "" {
+		h.SendError(c, web.BadRequest("Nhận xét không được để trống"))
+		return
+	}
+
+	err := h.service.ReviewUpdate(c.Request.Context(), user, id, req.Comment)
 	if err != nil {
 		h.SendError(c, err)
 		return
 	}
 
-	if user.IsEmployee {
-		// Employees can ONLY edit if NeedsCorrection is true AND it belongs to their org
-		if !existing.NeedsCorrection {
-			h.SendError(c, web.Forbidden("Chỉ được phép sửa thông tin khi có yêu cầu (nhận xét) từ người rà soát"))
-			return
-		}
-		if existing.OrgID != user.OrgID {
-			h.SendError(c, web.Unauthorized("Bạn không có quyền chỉnh sửa báo cáo của đơn vị khác"))
-			return
-		}
-	} else if !isAllowedAll {
-		// Non-employee manager check (Ownership or Shared)
-		isAuthorized := existing.OrgID == user.OrgID
-		if !isAuthorized && user.OrgID != "" {
-			point, err := h.service.GetPointByID(c.Request.Context(), existing.PointID)
-			if err == nil && point != nil {
-				for _, sid := range point.SharedOrgIDs {
-					if sid == user.OrgID {
-						isAuthorized = true
-						break
-					}
-				}
-			}
-		}
-		if !isAuthorized {
-			h.SendError(c, web.Unauthorized("Bạn không có quyền chỉnh sửa báo cáo này"))
-			return
-		}
+	h.SendData(c, gin.H{"status": "success"})
+}
+
+// ReviewReport godoc
+// @Summary Đánh giá báo cáo ngập lụt
+// @Description Thêm nhận xét đánh giá cho một báo cáo ngập lụt
+// @Tags Ngập lụt
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID báo cáo"
+// @Param request body dto.ReviewRequest true "Dữ liệu đánh giá"
+// @Success 200 {object} object{status=string}
+// @Failure 401 {object} web.ErrorResponse
+// @Router /inundation/report/{id}/review [post]
+func (h *InundationHandler) ReviewReport(c *gin.Context) {
+	_, user := h.checkPermissions(c)
+	if user == nil {
+		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
+		return
+	}
+
+	id := c.Param("id")
+	var req dto.ReviewRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.SendError(c, web.BadRequest("Invalid request body"))
+		return
+	}
+
+	if req.Comment == "" {
+		h.SendError(c, web.BadRequest("Nhận xét không được để trống"))
+		return
+	}
+
+	err := h.service.ReviewReport(c.Request.Context(), user, id, req.Comment)
+	if err != nil {
+		h.SendError(c, err)
+		return
+	}
+
+	h.SendData(c, gin.H{"status": "success"})
+}
+
+// UpdateReport godoc
+// @Summary Cập nhật báo cáo ngập lụt
+// @Description Cập nhật thông tin chi tiết của báo cáo hiện có với tùy chọn hình ảnh
+// @Tags Ngập lụt
+// @Accept multipart/form-data
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID báo cáo"
+// @Param report formData dto.UpdateReportRequest true "Dữ liệu báo cáo"
+// @Param images formData file false "Hình ảnh cập nhật"
+// @Success 200 {boolean} bool
+// @Failure 401 {object} web.ErrorResponse
+// @Router /inundation/report/{id} [put]
+func (h *InundationHandler) UpdateReport(c *gin.Context) {
+	_, user := h.checkPermissions(c)
+	if user == nil {
+		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
+		return
+	}
+
+	id := c.Param("id")
+	var req dto.UpdateReportRequest
+	if err := c.ShouldBind(&req); err != nil {
+		h.SendError(c, web.BadRequest("Invalid request data: "+err.Error()))
+		return
 	}
 
 	form, _ := c.MultipartForm()
-
-	updatedField := &models.InundationReport{
-		Description:   c.PostForm("description"),
-		Depth:         c.PostForm("depth"),
-		Length:        c.PostForm("length"),
-		Width:         c.PostForm("width"),
-		TrafficStatus: c.PostForm("traffic_status"),
-	}
-
 	var images []inundation.ImageContent
 	if form != nil {
 		files := form.File["images"]
@@ -718,151 +576,110 @@ func (h *InundationHandler) UpdateReport(c *gin.Context) {
 		}
 	}
 
-	err = h.service.UpdateReport(c.Request.Context(), id, updatedField, user.ID, user.Email, user.Name, images)
+	report := &models.InundationReport{
+		Description:   req.Description,
+		Depth:         req.Depth,
+		Length:        req.Length,
+		Width:         req.Width,
+		TrafficStatus: req.TrafficStatus,
+	}
+
+	err := h.service.UpdateReport(c.Request.Context(), user, id, report, images)
 	if err != nil {
 		h.SendError(c, err)
 		return
 	}
+
 	h.SendData(c, true)
 }
 
+// UpdateSituationUpdateContent godoc
+// @Summary Cập nhật nội dung cập nhật tình hình
+// @Description Cập nhật nội dung của một bản cập nhật tình hình hiện có
+// @Tags Ngập lụt
+// @Accept multipart/form-data
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID bản cập nhật"
+// @Param update formData dto.AddUpdateSitutionRequest true "Dữ liệu cập nhật"
+// @Param images formData file false "Hình ảnh cập nhật"
+// @Success 200 {boolean} bool
+// @Failure 401 {object} web.ErrorResponse
+// @Router /inundation/update/{id} [put]
 func (h *InundationHandler) UpdateSituationUpdateContent(c *gin.Context) {
-	updateID := c.Param("id")
-
-	isAllowedAll, user := h.checkPermissions(c)
+	_, user := h.checkPermissions(c)
 	if user == nil {
-		h.SendError(c, web.Unauthorized("Invalid user session"))
+		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
 		return
 	}
 
-	// Fetch existing update to check permissions
-	existing, err := h.service.GetUpdateByID(c.Request.Context(), updateID)
-	if err != nil {
-		h.SendError(c, err)
+	id := c.Param("id")
+	var req dto.AddUpdateSitutionRequest
+	if err := c.ShouldBind(&req); err != nil {
+		h.SendError(c, web.BadRequest("Invalid request data: "+err.Error()))
 		return
-	}
-
-	// Fetch parent report to get OrgID
-	report, err := h.service.GetReport(c.Request.Context(), existing.ReportID)
-	if err != nil {
-		h.SendError(c, err)
-		return
-	}
-
-	if user.IsEmployee {
-		// Employees can ONLY edit if NeedsCorrection is true AND it belongs to their org
-		if !existing.NeedsCorrection {
-			h.SendError(c, web.Forbidden("Chỉ được phép sửa thông tin khi có yêu cầu (nhận xét) từ người rà soát"))
-			return
-		}
-		if report.OrgID != user.OrgID {
-			h.SendError(c, web.Unauthorized("Bạn không có quyền chỉnh sửa bản tin của đơn vị khác"))
-			return
-		}
-	} else if !isAllowedAll {
-		// Non-employee manager check (Ownership or Shared)
-		isAuthorized := report.OrgID == user.OrgID
-		if !isAuthorized && user.OrgID != "" {
-			point, err := h.service.GetPointByID(c.Request.Context(), report.PointID)
-			if err == nil && point != nil {
-				for _, sid := range point.SharedOrgIDs {
-					if sid == user.OrgID {
-						isAuthorized = true
-						break
-					}
-				}
-			}
-		}
-		if !isAuthorized {
-			h.SendError(c, web.Unauthorized("Bạn không có quyền chỉnh sửa bản tin này"))
-			return
-		}
 	}
 
 	form, _ := c.MultipartForm()
+	var images []inundation.ImageContent
+	if form != nil {
+		files := form.File["images"]
+		for _, fileHeader := range files {
+			file, err := fileHeader.Open()
+			if err == nil {
+				images = append(images, inundation.ImageContent{
+					Name:     fileHeader.Filename,
+					MimeType: fileHeader.Header.Get("Content-Type"),
+					Reader:   file,
+				})
+				defer file.Close()
+			}
+		}
+	}
 
 	updatedUpdate := &models.InundationUpdate{
-		Description:   c.PostForm("description"),
-		Depth:         c.PostForm("depth"),
-		Length:        c.PostForm("length"),
-		Width:         c.PostForm("width"),
-		TrafficStatus: c.PostForm("traffic_status"),
+		Description:   req.Description,
+		Depth:         req.Depth,
+		Length:        req.Length,
+		Width:         req.Width,
+		TrafficStatus: req.TrafficStatus,
 	}
 
-	var images []inundation.ImageContent
-	if form != nil {
-		files := form.File["images"]
-		for _, fileHeader := range files {
-			file, err := fileHeader.Open()
-			if err == nil {
-				images = append(images, inundation.ImageContent{
-					Name:     fileHeader.Filename,
-					MimeType: fileHeader.Header.Get("Content-Type"),
-					Reader:   file,
-				})
-				defer file.Close()
-			}
-		}
-	}
-
-	err = h.service.UpdateUpdateContent(c.Request.Context(), updateID, updatedUpdate, user.ID, user.Email, user.Name, images)
+	err := h.service.UpdateUpdateContent(c.Request.Context(), user, id, updatedUpdate, images)
 	if err != nil {
 		h.SendError(c, err)
 		return
 	}
 	h.SendData(c, true)
 }
+// UpdateSurvey godoc
+// @Summary Cập nhật trạng thái khảo sát
+// @Description Cập nhật trạng thái đã kiểm tra và ghi chú khảo sát của báo cáo
+// @Tags Ngập lụt
+// @Accept multipart/form-data
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID báo cáo"
+// @Param request formData dto.CreateReportRequest true "Dữ liệu khảo sát"
+// @Param images formData file false "Hình ảnh khảo sát"
+// @Success 200 {boolean} bool
+// @Failure 401 {object} web.ErrorResponse
+// @Router /inundation/report/{id}/survey [put]
 func (h *InundationHandler) UpdateSurvey(c *gin.Context) {
-	id := c.Param("id")
-
-	isAllowedAll, user := h.checkPermissions(c)
+	_, user := h.checkPermissions(c)
 	if user == nil {
-		h.SendError(c, web.Unauthorized("Invalid user session"))
+		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
 		return
 	}
 
-	// Fetch existing report to check permissions
-	existing, err := h.service.GetReport(c.Request.Context(), id)
-	if err != nil {
-		h.SendError(c, err)
+	id := c.Param("id")
+	var req dto.CreateReportRequest
+	if err := c.ShouldBind(&req); err != nil {
+		h.SendError(c, web.BadRequest("Invalid request data: "+err.Error()))
 		return
-	}
-
-	if !isAllowedAll {
-		isAuthorized := existing.OrgID == user.OrgID
-		if !isAuthorized && user.OrgID != "" {
-			point, err := h.service.GetPointByID(c.Request.Context(), existing.PointID)
-			if err == nil && point != nil {
-				for _, sid := range point.SharedOrgIDs {
-					if sid == user.OrgID {
-						isAuthorized = true
-						break
-					}
-				}
-				// 2. Check if assigned specifically to this employee
-				if !isAuthorized && user.IsEmployee {
-					for _, pid := range user.AssignedInundationStationIDs {
-						if pid == existing.PointID {
-							isAuthorized = true
-							break
-						}
-					}
-				}
-			}
-		}
-		if !isAuthorized {
-			h.SendError(c, web.Unauthorized("Bạn không có quyền cập nhật thông tin khảo sát"))
-			return
-		}
 	}
 
 	form, _ := c.MultipartForm()
-	updatedField := &models.InundationReport{
-		SurveyChecked: c.PostForm("survey_checked") == "true",
-		SurveyNote:    c.PostForm("survey_note"),
-		SurveyUserID:  user.ID,
-	}
-
 	var images []inundation.ImageContent
 	if form != nil {
 		files := form.File["images"]
@@ -879,7 +696,12 @@ func (h *InundationHandler) UpdateSurvey(c *gin.Context) {
 		}
 	}
 
-	err = h.service.UpdateSurvey(c.Request.Context(), id, updatedField, user.Email, user.Name, images)
+	updatedField := &models.InundationReport{
+		SurveyChecked: req.SurveyChecked,
+		SurveyNote:    req.SurveyNote,
+	}
+
+	err := h.service.UpdateSurvey(c.Request.Context(), user, id, updatedField, images)
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -887,60 +709,34 @@ func (h *InundationHandler) UpdateSurvey(c *gin.Context) {
 	h.SendData(c, true)
 }
 
+// UpdateMech godoc
+// @Summary Cập nhật trạng thái cơ giới hóa
+// @Description Cập nhật trạng thái kiểm tra cơ giới, ghi chú và các giá trị D/R/S
+// @Tags Ngập lụt
+// @Accept multipart/form-data
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID báo cáo"
+// @Param request formData dto.CreateReportRequest true "Dữ liệu cơ giới"
+// @Param images formData file false "Hình ảnh cơ giới"
+// @Success 200 {boolean} bool
+// @Failure 401 {object} web.ErrorResponse
+// @Router /inundation/report/{id}/mech [put]
 func (h *InundationHandler) UpdateMech(c *gin.Context) {
-	id := c.Param("id")
-
-	isAllowedAll, user := h.checkPermissions(c)
+	_, user := h.checkPermissions(c)
 	if user == nil {
-		h.SendError(c, web.Unauthorized("Invalid user session"))
+		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
 		return
 	}
 
-	// Fetch existing report to check permissions
-	existing, err := h.service.GetReport(c.Request.Context(), id)
-	if err != nil {
-		h.SendError(c, err)
+	id := c.Param("id")
+	var req dto.CreateReportRequest
+	if err := c.ShouldBind(&req); err != nil {
+		h.SendError(c, web.BadRequest("Invalid request data: "+err.Error()))
 		return
-	}
-
-	if !isAllowedAll {
-		isAuthorized := existing.OrgID == user.OrgID
-		if !isAuthorized && user.OrgID != "" {
-			point, err := h.service.GetPointByID(c.Request.Context(), existing.PointID)
-			if err == nil && point != nil {
-				for _, sid := range point.SharedOrgIDs {
-					if sid == user.OrgID {
-						isAuthorized = true
-						break
-					}
-				}
-				// 2. Check if assigned specifically to this employee
-				if !isAuthorized && user.IsEmployee {
-					for _, pid := range user.AssignedInundationStationIDs {
-						if pid == existing.PointID {
-							isAuthorized = true
-							break
-						}
-					}
-				}
-			}
-		}
-		if !isAuthorized {
-			h.SendError(c, web.Unauthorized("Bạn không có quyền cập nhật thông tin cơ giới"))
-			return
-		}
 	}
 
 	form, _ := c.MultipartForm()
-	updatedField := &models.InundationReport{
-		MechChecked: c.PostForm("mech_checked") == "true",
-		MechNote:    c.PostForm("mech_note"),
-		MechD:       c.PostForm("mech_d"),
-		MechR:       c.PostForm("mech_r"),
-		MechS:       c.PostForm("mech_s"),
-		MechUserID:  user.ID,
-	}
-
 	var images []inundation.ImageContent
 	if form != nil {
 		files := form.File["images"]
@@ -957,7 +753,15 @@ func (h *InundationHandler) UpdateMech(c *gin.Context) {
 		}
 	}
 
-	err = h.service.UpdateMech(c.Request.Context(), id, updatedField, user.Email, user.Name, images)
+	updatedField := &models.InundationReport{
+		MechChecked: req.MechChecked,
+		MechNote:    req.MechNote,
+		MechD:       req.MechD,
+		MechR:       req.MechR,
+		MechS:       req.MechS,
+	}
+
+	err := h.service.UpdateMech(c.Request.Context(), user, id, updatedField, images)
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -965,6 +769,17 @@ func (h *InundationHandler) UpdateMech(c *gin.Context) {
 	h.SendData(c, true)
 }
 
+// GetYearlyHistory godoc
+// @Summary Lấy lịch sử ngập lụt theo năm
+// @Description Truy xuất lịch sử các báo cáo ngập lụt cho một năm cụ thể
+// @Tags Ngập lụt
+// @Produce json
+// @Security BearerAuth
+// @Param year query int false "Năm"
+// @Param org_id query string false "Lọc theo ID đơn vị"
+// @Success 200 {array} models.InundationReport
+// @Failure 401 {object} web.ErrorResponse
+// @Router /inundation/yearly-history [get]
 func (h *InundationHandler) GetYearlyHistory(c *gin.Context) {
 	yearStr := c.Query("year")
 	year, _ := strconv.Atoi(yearStr)
@@ -992,6 +807,17 @@ func (h *InundationHandler) GetYearlyHistory(c *gin.Context) {
 	h.SendData(c, reports)
 }
 
+// ExportYearlyHistory godoc
+// @Summary Xuất lịch sử ngập lụt theo năm ra Excel
+// @Description Xuất lịch sử báo cáo ngập lụt của một năm cụ thể ra tệp Excel
+// @Tags Ngập lụt
+// @Produce application/octet-stream
+// @Security BearerAuth
+// @Param year query int false "Năm"
+// @Param org_id query string false "Lọc theo ID đơn vị"
+// @Success 200 {file} file
+// @Failure 401 {object} web.ErrorResponse
+// @Router /inundation/yearly-history/export [get]
 func (h *InundationHandler) ExportYearlyHistory(c *gin.Context) {
 	yearStr := c.Query("year")
 	year, _ := strconv.Atoi(yearStr)

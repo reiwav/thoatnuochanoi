@@ -1,6 +1,7 @@
 package googleapi
 
 import (
+	"ai-api-tnhn/internal/models"
 	"context"
 	"sort"
 	"time"
@@ -29,11 +30,16 @@ type InundationSummaryData struct {
 	OngoingPoints []InundationStationStat `json:"ongoing_points"`
 }
 
-func (s *service) GetInundationSummary(ctx context.Context, orgID string, assignedInuIDs []string) (*InundationSummaryData, error) {
+func (s *service) GetInundationSummary(ctx context.Context, orgID string, isAllowedAll bool, assignedInuIDs []string) (*InundationSummaryData, error) {
 	if orgID == "all" {
 		orgID = ""
 	}
-	reports, _, err := s.inuSvc.ListReportsWithFilter(ctx, orgID, "active", "", "", assignedInuIDs, 0, 1000)
+	dummyUser := &models.User{
+		OrgID:                        orgID,
+		AssignedInundationStationIDs: assignedInuIDs,
+		IsEmployee:                   !isAllowedAll && len(assignedInuIDs) > 0,
+	}
+	reports, _, err := s.inuSvc.ListReportsWithFilter(ctx, dummyUser, isAllowedAll, orgID, "active", "", "", 0, 1000)
 	if err != nil {
 		return nil, err
 	}

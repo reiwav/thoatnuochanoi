@@ -15,6 +15,18 @@ func NewQueryHandler(querySvc query.Service) *QueryHandler {
 	return &QueryHandler{querySvc: querySvc}
 }
 
+// Query godoc
+// @Summary Truy vấn MongoDB linh hoạt
+// @Description Thực hiện truy vấn linh hoạt trên một collection được chỉ định với các bộ lọc tùy chọn
+// @Tags Tiện ích
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param query body object{collection=string,filter=object,limit=int} true "Tham số truy vấn"
+// @Success 200 {object} object{status=string,count=int,data=[]object}
+// @Failure 400 {object} web.ErrorResponse
+// @Failure 403 {object} web.ErrorResponse
+// @Router /query [post]
 func (h *QueryHandler) Query(c *gin.Context) {
 	var body struct {
 		Collection string                 `json:"collection" binding:"required"`

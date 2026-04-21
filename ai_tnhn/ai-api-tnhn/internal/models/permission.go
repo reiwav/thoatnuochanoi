@@ -6,15 +6,15 @@ import (
 
 type Permission struct {
 	model.BaseModel `bson:",inline"`
-	Code            string `bson:"code" json:"code"`
-	Title           string `bson:"title" json:"title"`
-	Group           string `bson:"group" json:"group"`
-	Type            string `bson:"type" json:"type"`
-	Description     string `bson:"description" json:"description"`
+	Code            string `bson:"code" json:"code" example:"PERMISSION_ADMIN"`
+	Title           string `bson:"title" json:"title" example:"Quyền quản trị"`
+	Group           string `bson:"group" json:"group" example:"Hệ thống"`
+	Type            string `bson:"type" json:"type" example:"view"`
+	Description     string `bson:"description" json:"description" example:"Cho phép xem tất cả dữ liệu"`
 }
 
 type RolePermission struct {
 	model.BaseModel `bson:",inline"`
-	Role            string   `bson:"role" json:"role"`
-	Permissions     []string `bson:"permissions" json:"permissions"`
+	Role            string   `bson:"role" json:"role" example:"admin"`
+	Permissions     []string `bson:"permissions" json:"permissions" example:"[\"PERMISSION_ADMIN\"]"`
 }

@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import {
     Box, Typography, Stack, Avatar, Paper, IconButton, Collapse, Button, Tooltip, alpha, Chip, Divider, Grid
 } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
 import {
     IconChevronDown, IconChevronUp, IconSend, IconEngine, IconChecklist,
@@ -15,11 +16,11 @@ import { getLatestData } from 'utils/inundationUtils';
 import { formatDuration } from 'utils/dataHelper';
 
 const MetricItem = ({ icon: Icon, label, value, color }) => (
-    <Box sx={{ 
-        flex: 1, 
-        display: 'flex', 
-        flexDirection: 'column', 
-        alignItems: 'center', 
+    <Box sx={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
         gap: 0.5,
         p: 1,
         borderRadius: 2,
@@ -41,6 +42,7 @@ const MetricItem = ({ icon: Icon, label, value, color }) => (
 
 const InundationPointCard = ({ point, openTask, handleOpenViewer }) => {
     const theme = useTheme();
+    const navigate = useNavigate();
     const [expanded, setExpanded] = useState(false);
 
     const latest = useMemo(() => {
@@ -62,18 +64,18 @@ const InundationPointCard = ({ point, openTask, handleOpenViewer }) => {
                 flexDirection: 'column',
                 border: '1px solid',
                 borderColor: isHighPriority ? alpha(theme.palette.error.main, 0.2) : 'divider',
-                boxShadow: isHighPriority 
+                boxShadow: isHighPriority
                     ? `0 10px 30px -10px ${alpha(theme.palette.error.main, 0.15)}`
                     : 'none',
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                background: isHighPriority 
+                background: isHighPriority
                     ? `linear-gradient(135deg, ${alpha(theme.palette.error.main, 0.01)} 0%, #ffffff 100%)`
                     : '#ffffff',
                 position: 'relative',
                 overflow: 'hidden',
                 '&:hover': {
                     transform: 'translateY(-4px)',
-                    boxShadow: isHighPriority 
+                    boxShadow: isHighPriority
                         ? `0 20px 40px -12px ${alpha(theme.palette.error.main, 0.2)}`
                         : theme.shadows[8],
                     borderColor: isHighPriority ? 'error.main' : 'primary.light'
@@ -81,9 +83,9 @@ const InundationPointCard = ({ point, openTask, handleOpenViewer }) => {
             }}
         >
             {/* Status Badge - Floating Style */}
-            <Box sx={{ 
-                position: 'absolute', 
-                top: 16, 
+            <Box sx={{
+                position: 'absolute',
+                top: 16,
                 right: 16,
                 display: 'flex',
                 alignItems: 'center',
@@ -96,10 +98,10 @@ const InundationPointCard = ({ point, openTask, handleOpenViewer }) => {
                         </Avatar>
                     </Tooltip>
                 )}
-                <Chip 
+                <Chip
                     label={isHighPriority ? 'ĐANG NGẬP' : 'BÌNH THƯỜNG'}
                     size="small"
-                    sx={{ 
+                    sx={{
                         height: 24,
                         fontSize: '0.65rem',
                         fontWeight: 900,
@@ -115,34 +117,54 @@ const InundationPointCard = ({ point, openTask, handleOpenViewer }) => {
             </Box>
 
             {/* Header: Avatar and Title */}
-            <Stack direction="row" spacing={2} alignItems="flex-start" sx={{ mb: 2.5 }}>
-                <Avatar sx={{
-                    bgcolor: isHighPriority ? 'error.main' : 'success.main',
-                    width: 48,
-                    height: 48,
-                    borderRadius: 3,
-                    boxShadow: `0 8px 16px ${alpha(isHighPriority ? theme.palette.error.main : theme.palette.success.main, 0.25)}`
-                }}>
-                    <IconMapPin size={24} color="#fff" />
-                </Avatar>
-                <Box sx={{ pr: 12 }}>
-                    <Typography 
-                        variant="h4" 
-                        sx={{ 
-                            fontWeight: 900, 
-                            color: isHighPriority ? 'error.dark' : 'text.primary',
-                            lineHeight: 1.2,
-                            mb: 0.5,
-                            fontSize: '1.1rem'
-                        }}
-                    >
-                        {point.name}
-                    </Typography>
-                    <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <IconMapPin size={12} /> {point.address || 'Hà Nội, Việt Nam'}
-                    </Typography>
+            <Tooltip title="Xem chi tiết lịch sử điểm ngập" placement="top-start">
+                <Box 
+                    onClick={() => navigate(`/company/station/inundation/history?id=${point.id}`)}
+                    sx={{ 
+                        display: 'flex', 
+                        gap: 2, 
+                        alignItems: 'flex-start', 
+                        mb: 2.5, 
+                        cursor: 'pointer',
+                        p: 1,
+                        ml: -1,
+                        borderRadius: 2,
+                        '&:hover': {
+                            bgcolor: alpha(isHighPriority ? theme.palette.error.main : theme.palette.primary.main, 0.05),
+                            '& h4': { color: isHighPriority ? 'error.main' : 'primary.main' }
+                        },
+                        transition: 'all 0.2s'
+                    }}
+                >
+                    <Avatar sx={{
+                        bgcolor: isHighPriority ? 'error.main' : 'success.main',
+                        width: 48,
+                        height: 48,
+                        borderRadius: 3,
+                        boxShadow: `0 8px 16px ${alpha(isHighPriority ? theme.palette.error.main : theme.palette.success.main, 0.25)}`
+                    }}>
+                        <IconMapPin size={24} color="#fff" />
+                    </Avatar>
+                    <Box sx={{ pr: 6 }}>
+                        <Typography 
+                            variant="h4" 
+                            sx={{ 
+                                fontWeight: 900, 
+                                color: isHighPriority ? 'error.dark' : 'text.primary',
+                                lineHeight: 1.2,
+                                mb: 0.5,
+                                fontSize: '1.1rem',
+                                transition: 'color 0.2s'
+                            }}
+                        >
+                            {point.name}
+                        </Typography>
+                        <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <IconMapPin size={12} /> {point.address || 'Hà Nội, Việt Nam'}
+                        </Typography>
+                    </Box>
                 </Box>
-            </Stack>
+            </Tooltip>
 
             {/* Sub-Header: Start Time for Active Reports */}
             {isHighPriority && point.active_report?.start_time && (
@@ -163,14 +185,14 @@ const InundationPointCard = ({ point, openTask, handleOpenViewer }) => {
                             <IconMapPin size={14} color="#fff" />
                         </Box>
                         <Typography variant="caption" sx={{ fontWeight: 800, flex: 1 }}>
-                            {(latest.depth != null || latest.length != null || latest.width != null) 
-                                ? `${latest.length || '?'} x ${latest.width || '?'} x ${latest.depth || 0}` 
+                            {(latest.depth != null || latest.length != null || latest.width != null)
+                                ? `${latest.length || '?'} x ${latest.width || '?'} x ${latest.depth || 0}`
                                 : 'Chưa có thông số kích thước'}
                         </Typography>
-                        <Chip 
-                            label={latest.traffic_status || 'Bình thường'} 
-                            size="small" 
-                            variant="outlined" 
+                        <Chip
+                            label={latest.traffic_status || 'Bình thường'}
+                            size="small"
+                            variant="outlined"
                             color={latest.traffic_status === 'Không đi lại được' ? 'error' : (latest.traffic_status === 'Đi lại khó khăn' ? 'warning' : 'success')}
                             sx={{ height: 20, fontSize: '0.65rem', fontWeight: 800 }}
                         />
@@ -253,7 +275,7 @@ const InundationPointCard = ({ point, openTask, handleOpenViewer }) => {
                                     TK Giám sát
                                 </Button>
                             </PermissionGuard>
-                            
+
                             <PermissionGuard permission="inundation:mechanic">
                                 <Button
                                     variant="contained"

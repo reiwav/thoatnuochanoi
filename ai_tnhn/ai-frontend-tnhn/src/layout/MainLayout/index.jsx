@@ -107,7 +107,7 @@ export default function MainLayout() {
 
   const basePath = isEmployee ? '/company' : '/admin';
   const isConstructionPath = pathname.includes('/emergency-construction');
-  const isInundationPath = pathname === '/' || pathname.startsWith('/admin/inundation') || pathname.startsWith('/company/inundation');
+  const isInundationPath = pathname === '/' || pathname.includes('/inundation');
   const isPumpingPath = pathname.includes('/tram-bom');
   const isAiSupportPath = pathname === '/admin/ai-support';
 

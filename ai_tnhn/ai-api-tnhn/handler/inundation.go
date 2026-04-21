@@ -70,23 +70,7 @@ func (h *InundationHandler) CreateReport(c *gin.Context) {
 	}
 
 	// 3. Parse Multipart Form for images
-	form, _ := c.MultipartForm()
-	var images []inundation.ImageContent
-	if form != nil {
-		files := form.File["images"]
-		for _, fileHeader := range files {
-			file, err := fileHeader.Open()
-			if err != nil {
-				continue
-			}
-			defer file.Close()
-			images = append(images, inundation.ImageContent{
-				Name:     fileHeader.Filename,
-				MimeType: fileHeader.Header.Get("Content-Type"),
-				Reader:   file,
-			})
-		}
-	}
+	images := h.getImages(c)
 
 	report, err := h.service.CreateReport(c.Request.Context(), user, req, images)
 	if err != nil {
@@ -124,23 +108,7 @@ func (h *InundationHandler) AddUpdateSituation(c *gin.Context) {
 		return
 	}
 
-	form, _ := c.MultipartForm()
-	var images []inundation.ImageContent
-	if form != nil {
-		files := form.File["images"]
-		for _, fileHeader := range files {
-			file, err := fileHeader.Open()
-			if err != nil {
-				continue
-			}
-			defer file.Close()
-			images = append(images, inundation.ImageContent{
-				Name:     fileHeader.Filename,
-				MimeType: fileHeader.Header.Get("Content-Type"),
-				Reader:   file,
-			})
-		}
-	}
+	images := h.getImages(c)
 
 	update := &models.InundationUpdate{
 		ReportID:      id,
@@ -535,22 +503,7 @@ func (h *InundationHandler) UpdateReport(c *gin.Context) {
 		return
 	}
 
-	form, _ := c.MultipartForm()
-	var images []inundation.ImageContent
-	if form != nil {
-		files := form.File["images"]
-		for _, fileHeader := range files {
-			file, err := fileHeader.Open()
-			if err == nil {
-				images = append(images, inundation.ImageContent{
-					Name:     fileHeader.Filename,
-					MimeType: fileHeader.Header.Get("Content-Type"),
-					Reader:   file,
-				})
-				defer file.Close()
-			}
-		}
-	}
+	images := h.getImages(c)
 
 	err := h.service.UpdateReport(c.Request.Context(), user, id, &req, images)
 	if err != nil {
@@ -582,28 +535,13 @@ func (h *InundationHandler) UpdateSituationUpdateContent(c *gin.Context) {
 	}
 
 	id := c.Param("id")
-	var req dto.AddUpdateSitutionRequest
+	var req models.InundationReportBase
 	if err := c.ShouldBind(&req); err != nil {
 		h.SendError(c, web.BadRequest("Invalid request data: "+err.Error()))
 		return
 	}
 
-	form, _ := c.MultipartForm()
-	var images []inundation.ImageContent
-	if form != nil {
-		files := form.File["images"]
-		for _, fileHeader := range files {
-			file, err := fileHeader.Open()
-			if err == nil {
-				images = append(images, inundation.ImageContent{
-					Name:     fileHeader.Filename,
-					MimeType: fileHeader.Header.Get("Content-Type"),
-					Reader:   file,
-				})
-				defer file.Close()
-			}
-		}
-	}
+	images := h.getImages(c)
 
 	updatedUpdate := &models.InundationUpdate{
 		Description:   req.Description,
@@ -647,23 +585,7 @@ func (h *InundationHandler) UpdateSurvey(c *gin.Context) {
 		h.SendError(c, web.BadRequest("Invalid request data: "+err.Error()))
 		return
 	}
-
-	form, _ := c.MultipartForm()
-	var images []inundation.ImageContent
-	if form != nil {
-		files := form.File["images"]
-		for _, fileHeader := range files {
-			file, err := fileHeader.Open()
-			if err == nil {
-				images = append(images, inundation.ImageContent{
-					Name:     fileHeader.Filename,
-					MimeType: fileHeader.Header.Get("Content-Type"),
-					Reader:   file,
-				})
-				defer file.Close()
-			}
-		}
-	}
+	images := h.getImages(c)
 
 	err := h.service.UpdateSurvey(c.Request.Context(), user, id, &req, images)
 	if err != nil {
@@ -699,23 +621,7 @@ func (h *InundationHandler) UpdateMech(c *gin.Context) {
 		h.SendError(c, web.BadRequest("Invalid request data: "+err.Error()))
 		return
 	}
-
-	form, _ := c.MultipartForm()
-	var images []inundation.ImageContent
-	if form != nil {
-		files := form.File["images"]
-		for _, fileHeader := range files {
-			file, err := fileHeader.Open()
-			if err == nil {
-				images = append(images, inundation.ImageContent{
-					Name:     fileHeader.Filename,
-					MimeType: fileHeader.Header.Get("Content-Type"),
-					Reader:   file,
-				})
-				defer file.Close()
-			}
-		}
-	}
+	images := h.getImages(c)
 	err := h.service.UpdateMech(c.Request.Context(), user, id, &req, images)
 	if err != nil {
 		h.SendError(c, err)
@@ -798,4 +704,24 @@ func (h *InundationHandler) ExportYearlyHistory(c *gin.Context) {
 	}
 
 	c.File(filePath)
+}
+
+func (h *InundationHandler) getImages(c *gin.Context) []inundation.ImageContent {
+	form, _ := c.MultipartForm()
+	var images []inundation.ImageContent
+	if form != nil {
+		files := form.File["images"]
+		for _, fileHeader := range files {
+			file, err := fileHeader.Open()
+			if err == nil {
+				images = append(images, inundation.ImageContent{
+					Name:     fileHeader.Filename,
+					MimeType: fileHeader.Header.Get("Content-Type"),
+					Reader:   file,
+				})
+				defer file.Close()
+			}
+		}
+	}
+	return images
 }

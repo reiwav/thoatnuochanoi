@@ -32,8 +32,9 @@ import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 
 export default function NavCollapse({ menu, level, parentId }) {
   const { hasPermission } = useAuthStore();
-  const permissionId = menu?.permission || menu?.id;
-  if (permissionId && !hasPermission(permissionId)) return null;
+  
+  // Robust check at the top
+  if (menu.permission && !hasPermission(menu.permission)) return null;
 
   const theme = useTheme();
   const downMD = useMediaQuery(theme.breakpoints.down('md'));
@@ -104,9 +105,7 @@ export default function NavCollapse({ menu, level, parentId }) {
 
   // menu collapse & item
   const filteredChildren = menu.children?.filter((item) => {
-    const itemPermissionId = item.permission || item.id;
-    if (itemPermissionId && !hasPermission(itemPermissionId)) return false;
-    return true;
+    return hasPermission(item.permission);
   });
 
   // If No children are visible, hide the whole collapse

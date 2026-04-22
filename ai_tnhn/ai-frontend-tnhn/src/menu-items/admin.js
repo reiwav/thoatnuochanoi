@@ -17,7 +17,7 @@ const companyPages = {
   children: [
     {
       id: 'company:inundation',
-      permission: ['inundation:survey', 'inundation:mechanic', 'inundation:review'],
+      permission: ['inundation:survey', 'inundation:mechanic', 'inundation:review', 'inundation:view'],
       title: 'Điểm trực ngập',
       type: 'item',
       url: '/company/inundation',
@@ -40,9 +40,11 @@ const adminPages = {
   id: 'admin',
   title: 'QUẢN TRỊ',
   type: 'group',
+  permission: 'ai:chat', // Base permission for the group
   children: [
     {
       id: 'ai:chat',
+      permission: 'ai:chat',
       title: 'Hệ thống báo cáo',
       type: 'item',
       url: '/admin/ai-support',
@@ -51,6 +53,7 @@ const adminPages = {
     },
     {
       id: 'rain',
+      permission: 'rain:view',
       title: 'Lượng mưa',
       type: 'collapse',
       icon: icons.IconCloudRain,
@@ -95,13 +98,14 @@ const adminPages = {
     },
     {
       id: 'inundation',
+      permission: 'inundation:view',
       title: 'Điểm ngập',
       type: 'collapse',
       icon: icons.IconTornado,
       children: [
         {
           id: 'inundation:dashboard',
-          permission: ['inundation:view', 'inundation:review'],
+          permission: ['inundation:view', 'inundation:review', 'inundation:survey', 'inundation:mechanic', 'inundation:report'],
           title: 'Cập nhật điểm ngập',
           type: 'item',
           url: '/admin/inundation',
@@ -130,6 +134,7 @@ const adminPages = {
     },
     {
       id: 'water',
+      permission: 'water:view',
       title: 'Mực nước',
       type: 'collapse',
       icon: icons.IconRipple,
@@ -145,6 +150,7 @@ const adminPages = {
         },
         {
           id: 'lake',
+          permission: 'water:view',
           title: 'Mực nước hồ',
           type: 'collapse',
           icon: icons.IconDroplets,
@@ -171,6 +177,7 @@ const adminPages = {
         },
         {
           id: 'river',
+          permission: 'water:view',
           title: 'Mực nước sông',
           type: 'collapse',
           icon: icons.IconDroplets,
@@ -197,6 +204,7 @@ const adminPages = {
     },
     {
       id: 'emergency',
+      permission: 'emergency:view',
       title: 'BC CT KC',
       type: 'collapse',
       icon: icons.IconAlertTriangle,
@@ -232,6 +240,7 @@ const adminPages = {
     },
     {
       id: 'cuapai:view',
+      permission: ['cuapai:view', 'cuapai:control'],
       title: 'Cửa phai',
       type: 'item',
       url: '/admin/cua-pai',
@@ -240,7 +249,7 @@ const adminPages = {
     },
     {
       id: 'admin:trambom',
-      permission: 'trambom:view',
+      permission: ['trambom:view', 'trambom:control', 'trambom:edit'],
       title: 'Trạm bơm',
       type: 'item',
       url: '/admin/tram-bom',
@@ -249,6 +258,7 @@ const adminPages = {
     },
     {
       id: 'sa-hinh-ngap:view',
+      permission: 'sa-hinh-ngap:view',
       title: 'Sa hình ngập',
       type: 'item',
       url: '/admin/sa-hinh-ngap',
@@ -257,12 +267,14 @@ const adminPages = {
     },
     {
       id: 'system',
+      permission: 'employee:view',
       title: 'Hệ thống',
       type: 'collapse',
       icon: icons.IconUsers,
       children: [
         {
           id: 'employee:view',
+          permission: 'employee:view',
           title: 'Tài khoản',
           type: 'item',
           url: '/admin/employee',
@@ -271,6 +283,7 @@ const adminPages = {
         },
         {
           id: 'organization:view',
+          permission: 'organization:view',
           title: 'Tạo đơn vị',
           type: 'item',
           url: '/admin/organization',
@@ -279,6 +292,7 @@ const adminPages = {
         },
         {
           id: 'role-matrix:view',
+          permission: 'role-matrix:view',
           title: 'Phân quyền',
           type: 'item',
           url: '/admin/role-matrix',
@@ -287,6 +301,7 @@ const adminPages = {
         },
         {
           id: 'role:view',
+          permission: 'role:view',
           title: 'Chức vụ',
           type: 'item',
           url: '/admin/role',
@@ -297,12 +312,14 @@ const adminPages = {
     },
     {
       id: 'contract',
+      permission: 'contract:view',
       title: 'Hợp đồng',
       type: 'collapse',
       icon: icons.IconClipboardList,
       children: [
         {
           id: 'contract-ai:chat',
+          permission: 'contract-ai:chat',
           title: 'AI Trợ lý',
           type: 'item',
           url: '/admin/ai-contract',
@@ -311,6 +328,7 @@ const adminPages = {
         },
         {
           id: 'contract:view',
+          permission: 'contract:view',
           title: 'Danh sách HĐ',
           type: 'item',
           url: '/admin/contract',
@@ -319,6 +337,7 @@ const adminPages = {
         },
         {
           id: 'contract-category:view',
+          permission: 'contract-category:view',
           title: 'Danh mục',
           type: 'item',
           url: '/admin/contract-category',

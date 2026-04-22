@@ -38,10 +38,8 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
   const isSelected = !!matchPath({ path: item?.link ? item.link : item.url, end: true }, pathname);
 
   const { hasPermission } = useAuthStore();
-  const permissionId = item?.permission || item?.id;
-  if (permissionId && !hasPermission(permissionId)) {
-    return null;
-  }
+  
+  if (item.permission && !hasPermission(item.permission)) return null;
 
   const [hoverStatus, setHover] = useState(false);
 
@@ -69,8 +67,13 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
     itemTarget = '_blank';
   }
 
-  const itemHandler = () => {
-    if (downMD) handlerDrawerOpen(false);
+  const itemHandler = (event) => {
+    if (downMD) {
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+      handlerDrawerOpen(false);
+    }
 
     if (isParents && setSelectedID) {
       setSelectedID();
@@ -101,7 +104,7 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
           })
         }}
         selected={isSelected}
-        onClick={() => itemHandler()}
+        onClick={(e) => itemHandler(e)}
       >
         <ButtonBase aria-label="theme-icon" sx={{ borderRadius: `${borderRadius}px` }} disableRipple={drawerOpen}>
           <ListItemIcon

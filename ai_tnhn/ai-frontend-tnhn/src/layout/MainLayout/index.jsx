@@ -159,7 +159,7 @@ export default function MainLayout() {
         if (!items) return null;
         for (const item of items) {
           if (item.type === 'item') {
-            if (!item.id || hasPermission(item.id)) {
+            if (hasPermission(item.permission || item.id)) {
               return item.url;
             }
           }
@@ -212,7 +212,7 @@ export default function MainLayout() {
         if (currentMenuItem) break;
       }
 
-      if (currentMenuItem && currentMenuItem.id && !hasPermission(currentMenuItem.id)) {
+      if (currentMenuItem && (currentMenuItem.permission || currentMenuItem.id) && !hasPermission(currentMenuItem.permission || currentMenuItem.id)) {
         const targetPath = getFirstAllowedPath();
         if (targetPath && targetPath !== pathname) {
           navigate(targetPath, { replace: true });

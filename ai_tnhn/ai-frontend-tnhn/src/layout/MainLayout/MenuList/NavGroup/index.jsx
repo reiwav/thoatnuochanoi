@@ -78,9 +78,8 @@ export default function NavGroup({ item, lastItem, remItems, lastItemId, setSele
   const { hasPermission } = useAuthStore();
 
   const items = currentItem.children?.map((menu) => {
-    // Permission based filtering
-    const permissionId = menu?.permission || menu?.id;
-    if (permissionId && !hasPermission(permissionId)) {
+    // Check permission using the common logic but skip the extra component wrapper
+    if (menu.permission && !hasPermission(menu.permission)) {
       return null;
     }
 
@@ -99,7 +98,7 @@ export default function NavGroup({ item, lastItem, remItems, lastItemId, setSele
   });
 
   // Hide group if no items are visible
-  if (items.every(item => item === null)) {
+  if (!items || items.every((item) => item === null)) {
     return null;
   }
 

@@ -1,20 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
     Box, Button, TextField, Typography,
     Stack, IconButton, CircularProgress,
     InputAdornment, FormControlLabel, Checkbox,
-    MenuItem
+    MenuItem, Chip
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import {
     IconCloudUpload, IconX, IconSend,
-    IconMapPin, IconRuler, IconClock, IconFileText, IconCar
+    IconMapPin, IconRuler, IconClock
 } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 
 import inundationApi from 'api/inundation';
+import settingApi from 'api/setting';
 import { processAndWatermark } from 'utils/imageProcessor';
 import useAuthStore from 'store/useAuthStore';
+import PermissionGuard from 'ui-component/PermissionGuard';
 
 const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onSuccess, isCorrectionMode = false }) => {
     const theme = useTheme();
@@ -34,6 +36,25 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
     const [resolveOnUpdate, setResolveOnUpdate] = useState(false);
     const [points, setPoints] = useState([]);
     const [fetchingPoints, setFetchingPoints] = useState(false);
+    const [floodLevelSettings, setFloodLevelSettings] = useState([]);
+
+    useEffect(() => {
+        const fetchLevels = async () => {
+            try {
+                const res = await settingApi.getFloodLevels();
+                setFloodLevelSettings(res || []);
+            } catch (err) {
+                console.error('Lỗi tải cấu hình mức độ ngập:', err);
+            }
+        };
+        fetchLevels();
+    }, []);
+
+    const currentLevel = useMemo(() => {
+        const d = parseFloat(values.depth);
+        if (isNaN(d)) return null;
+        return floodLevelSettings.find(l => d >= l.min_depth && d < l.max_depth);
+    }, [values.depth, floodLevelSettings]);
 
     useEffect(() => {
         if (!pointId && !selectedReport) {
@@ -112,7 +133,7 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
             fd.append('description', values.description);
             if (values.length) fd.append('length', values.length);
             if (values.width) fd.append('width', values.width);
-            if (values.depth) fd.append('depth', values.depth);
+            if (values.depth) fd.append('depth', parseFloat(values.depth) || 0);
             if (values.traffic_status) fd.append('traffic_status', values.traffic_status);
 
             if (resolveOnUpdate) fd.append('resolve', 'true');
@@ -150,7 +171,7 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
             fd.append('street_name', values.street_name);
             if (values.length) fd.append('length', values.length);
             if (values.width) fd.append('width', values.width);
-            if (values.depth) fd.append('depth', values.depth);
+            if (values.depth) fd.append('depth', parseFloat(values.depth) || 0);
             fd.append('description', values.description);
             if (values.traffic_status) fd.append('traffic_status', values.traffic_status);
             const pId = pointId || values.point_id;
@@ -172,38 +193,38 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
             '& .MuiInputBase-input': { fontSize: '1rem' },
             '& .MuiFormHelperText-root': { fontSize: '0.875rem' },
         }}>
-            {!pointId && !selectedReport && points.length > 0 ? (
-                <TextField
-                    select
-                    fullWidth label="Chọn điểm ngập" name="point_id"
-                    value={values.point_id || ''}
-                    onChange={(e) => {
-                        const p = points.find(p => p.id === e.target.value);
-                        setValues(prev => ({
-                            ...prev,
-                            point_id: e.target.value,
-                            street_name: p ? p.street_name : ''
-                        }));
-                    }}
-                    required
-                    InputProps={{
-                        startAdornment: <InputAdornment position="start"><IconMapPin size={17} color={theme.palette.text.secondary} /></InputAdornment>
-                    }}
-                >
-                    {points.map((p) => (
-                        <MenuItem key={p.id} value={p.id}>{p.street_name}</MenuItem>
-                    ))}
-                </TextField>
-            ) : (
-                <TextField
-                    fullWidth label="Tên tuyến đường / Vị trí" name="street_name"
-                    value={values.street_name} onChange={handleChange} required
-                    disabled={!!pointId || !!selectedReport}
-                    helperText={!!pointId || !!selectedReport ? '📍 Vị trí từ hệ thống' : ''}
-                    InputProps={{
-                        startAdornment: <InputAdornment position="start"><IconMapPin size={17} color={theme.palette.text.secondary} /></InputAdornment>
-                    }}
-                />
+            {!pointId && !selectedReport && (
+                points.length > 0 ? (
+                    <TextField
+                        select
+                        fullWidth label="Chọn điểm ngập" name="point_id"
+                        value={values.point_id || ''}
+                        onChange={(e) => {
+                            const p = points.find(p => p.id === e.target.value);
+                            setValues(prev => ({
+                                ...prev,
+                                point_id: e.target.value,
+                                street_name: p ? p.street_name : ''
+                            }));
+                        }}
+                        required
+                        InputProps={{
+                            startAdornment: <InputAdornment position="start"><IconMapPin size={17} color={theme.palette.text.secondary} /></InputAdornment>
+                        }}
+                    >
+                        {points.map((p) => (
+                            <MenuItem key={p.id} value={p.id}>{p.street_name}</MenuItem>
+                        ))}
+                    </TextField>
+                ) : (
+                    <TextField
+                        fullWidth label="Tên tuyến đường / Vị trí" name="street_name"
+                        value={values.street_name} onChange={handleChange} required
+                        InputProps={{
+                            startAdornment: <InputAdornment position="start"><IconMapPin size={17} color={theme.palette.text.secondary} /></InputAdornment>
+                        }}
+                    />
+                )
             )}
 
             {selectedReport && (
@@ -245,30 +266,29 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
                 />
                 <TextField
                     fullWidth label="Sâu" name="depth" value={values.depth} onChange={handleChange}
-                    type="text" placeholder="VD: 20"
-                    InputProps={{ startAdornment: <InputAdornment position="start"><IconRuler size={15} color={theme.palette.text.secondary} /></InputAdornment> }}
+                    type="number" placeholder="VD: 20"
+                    slotProps={{ htmlInput: { inputMode: 'decimal', step: 'any' } }}
+                    InputProps={{ 
+                        startAdornment: <InputAdornment position="start"><IconRuler size={15} color={theme.palette.text.secondary} /></InputAdornment>,
+                        endAdornment: currentLevel && (
+                            <InputAdornment position="end">
+                                <Chip 
+                                    label={currentLevel.name} 
+                                    size="small" 
+                                    sx={{ 
+                                        bgcolor: currentLevel.color, 
+                                        color: '#fff', 
+                                        fontWeight: 800,
+                                        fontSize: '0.75rem',
+                                        height: 24
+                                    }} 
+                                />
+                            </InputAdornment>
+                        )
+                    }}
+                    helperText={currentLevel ? `Mức độ xác định: ${currentLevel.name}` : 'Nhập độ sâu để tự động xác định mức độ'}
                 />
             </Stack>
-
-            <TextField
-                select
-                fullWidth label="Tình trạng giao thông" name="traffic_status"
-                value={values.traffic_status} onChange={handleChange}
-                InputProps={{
-                    startAdornment: <InputAdornment position="start"><IconCar size={17} color={theme.palette.text.secondary} /></InputAdornment>
-                }}
-            >
-                <MenuItem value="Đi lại bình thường">Đi lại bình thường</MenuItem>
-                <MenuItem value="Đi lại khó khăn">Đi lại khó khăn</MenuItem>
-                <MenuItem value="Không đi lại được">Không đi lại được</MenuItem>
-            </TextField>
-
-            <TextField
-                fullWidth label="Mô tả chi tiết" name="description" multiline rows={3}
-                value={values.description} onChange={handleChange}
-                placeholder="Nước dâng cao, xe máy không qua được..."
-                InputProps={{ startAdornment: <InputAdornment position="start" sx={{ alignSelf: 'flex-start', mt: 1.5 }}><IconFileText size={17} color={theme.palette.text.secondary} /></InputAdornment> }}
-            />
 
             <Box>
                 <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1, display: 'block' }}>Ảnh hiện trường</Typography>
@@ -293,22 +313,29 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
                 </Box>
             </Box>
 
-            <Button
-                fullWidth size="large" variant="contained"
-                color={isCorrectionMode ? 'error' : (resolveOnUpdate ? 'error' : 'secondary')}
-                onClick={handleSubmit}
-                disabled={loading || (isCorrectionMode ? false : (selectedReport ? !hasPermission('inundation:edit') : !hasPermission('inundation:create')))}
-                startIcon={loading ? <CircularProgress size={17} color="inherit" /> : <IconSend size={17} />}
-                sx={{ borderRadius: 100, py: 1.4, fontWeight: 700, mt: 1 }}
+            <PermissionGuard 
+                permission="inundation:report"
+                fallback={
+                    <Button fullWidth size="large" variant="contained" disabled sx={{ borderRadius: 100, py: 1.4, fontWeight: 700, mt: 1 }}>
+                        Không có quyền thực hiện
+                    </Button>
+                }
             >
-                {loading ? 'Đang xử lý...' : (
-                    isCorrectionMode
-                        ? 'Lưu thay đổi chỉnh sửa'
-                        : (!(selectedReport ? hasPermission('inundation:edit') : hasPermission('inundation:create'))
-                            ? 'Không có quyền thực hiện'
-                            : (resolveOnUpdate ? 'Xác nhận Kết thúc đợt ngập' : (selectedReport ? 'Cập nhật tình hình' : 'Gửi báo cáo')))
-                )}
-            </Button>
+                <Button
+                    fullWidth size="large" variant="contained"
+                    color={isCorrectionMode ? 'error' : (resolveOnUpdate ? 'error' : 'secondary')}
+                    onClick={handleSubmit}
+                    disabled={loading}
+                    startIcon={loading ? <CircularProgress size={17} color="inherit" /> : <IconSend size={17} />}
+                    sx={{ borderRadius: 100, py: 1.4, fontWeight: 700, mt: 1 }}
+                >
+                    {loading ? 'Đang xử lý...' : (
+                        isCorrectionMode
+                            ? 'Lưu thay đổi chỉnh sửa'
+                            : (resolveOnUpdate ? 'Xác nhận Kết thúc đợt ngập' : (selectedReport ? 'Cập nhật tình hình' : 'Gửi báo cáo'))
+                    )}
+                </Button>
+            </PermissionGuard>
         </Stack>
     );
 };

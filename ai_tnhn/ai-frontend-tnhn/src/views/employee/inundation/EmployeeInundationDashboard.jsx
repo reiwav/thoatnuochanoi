@@ -57,11 +57,11 @@ const EmployeeInundationDashboard = () => {
         fetchPermissions();
     }, []);
 
-    // Polling Logic (8s)
+    // Polling Logic (20s)
     useEffect(() => {
         const interval = setInterval(() => {
             if (activeTab <= 1) fetchPoints();
-        }, 8000);
+        }, 20000);
         return () => clearInterval(interval);
     }, [activeTab]);
 

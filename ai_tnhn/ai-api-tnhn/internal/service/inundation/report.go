@@ -60,6 +60,9 @@ func (s *service) CreateReport(ctx context.Context, user *models.User, input mod
 		report.Status = "active"
 	}
 
+	// Calculate Flood Level
+	report.FloodLevelName, report.FloodLevelColor = s.calculateFloodLevel(ctx, report.Depth)
+
 	// 5. Save report to DB
 	err = s.InundationReportRepo.Create(ctx, report)
 	if err != nil {
@@ -153,9 +156,8 @@ func (s *service) AddUpdate(ctx context.Context, user *models.User, reportID str
 	if update.Width == "" {
 		update.Width = report.Width
 	}
-	if update.Depth != report.Depth {
-		update.Depth = report.Depth
-	}
+	// Calculate level for update
+	update.FloodLevelName, update.FloodLevelColor = s.calculateFloodLevel(ctx, update.Depth)
 
 	// 5. Save update to dedicated collection
 	err = s.inundationUpdateRepo.Create(ctx, update)
@@ -168,6 +170,8 @@ func (s *service) AddUpdate(ctx context.Context, user *models.User, reportID str
 	report.Length = update.Length
 	report.Width = update.Width
 	report.Depth = update.Depth
+	report.FloodLevelName = update.FloodLevelName
+	report.FloodLevelColor = update.FloodLevelColor
 	report.Description = update.Description
 	report.Images = update.Images
 
@@ -378,6 +382,7 @@ func (s *service) UpdateReport(ctx context.Context, user *models.User, id string
 	}
 
 	existing.Depth = report.Depth
+	existing.FloodLevelName, existing.FloodLevelColor = s.calculateFloodLevel(ctx, existing.Depth)
 	existing.Length = report.Length
 	existing.Width = report.Width
 	existing.Description = report.Description
@@ -413,6 +418,8 @@ func (s *service) UpdateReport(ctx context.Context, user *models.User, id string
 		Timestamp:       time.Now().Unix(),
 		Description:     "Chỉnh sửa thông tin báo cáo (theo yêu cầu rà soát)",
 		Depth:           existing.Depth,
+		FloodLevelName:  existing.FloodLevelName,
+		FloodLevelColor: existing.FloodLevelColor,
 		Length:          existing.Length,
 		Width:           existing.Width,
 		TrafficStatus:   existing.TrafficStatus,
@@ -536,8 +543,9 @@ func (s *service) UpdateMech(ctx context.Context, user *models.User, id string, 
 	existing.MechUserID = user.ID
 
 	// OVERRIDE: Update main report dimensions with worker's data
-	if input.MechD != input.MechD {
+	if input.MechD > 0 {
 		existing.Depth = input.MechD
+		existing.FloodLevelName, existing.FloodLevelColor = s.calculateFloodLevel(ctx, existing.Depth)
 	}
 	if input.MechS != "" {
 		existing.Length = input.MechS
@@ -564,23 +572,25 @@ func (s *service) UpdateMech(ctx context.Context, user *models.User, id string, 
 
 	// Create update record for history
 	newUpdate := &models.InundationUpdate{
-		ReportID:      id,
-		UserID:        user.ID,
-		UserEmail:     user.Email,
-		UserName:      user.Name,
-		Timestamp:     time.Now().Unix(),
-		Description:   "Cập nhật dữ liệu từ xí nghiệp cơ giới",
-		Depth:         existing.Depth,
-		Length:        existing.Length,
-		Width:         existing.Width,
-		TrafficStatus: existing.TrafficStatus,
-		MechChecked:   existing.MechChecked,
-		MechNote:      existing.MechNote,
-		MechD:         existing.MechD,
-		MechR:         existing.MechR,
-		MechS:         existing.MechS,
-		MechUserID:    existing.MechUserID,
-		MechImages:    existing.MechImages,
+		ReportID:        id,
+		UserID:          user.ID,
+		UserEmail:       user.Email,
+		UserName:        user.Name,
+		Timestamp:       time.Now().Unix(),
+		Description:     "Cập nhật dữ liệu từ xí nghiệp cơ giới",
+		Depth:           existing.Depth,
+		FloodLevelName:  existing.FloodLevelName,
+		FloodLevelColor: existing.FloodLevelColor,
+		Length:          existing.Length,
+		Width:           existing.Width,
+		TrafficStatus:   existing.TrafficStatus,
+		MechChecked:     existing.MechChecked,
+		MechNote:        existing.MechNote,
+		MechD:           existing.MechD,
+		MechR:           existing.MechR,
+		MechS:           existing.MechS,
+		MechUserID:      existing.MechUserID,
+		MechImages:      existing.MechImages,
 	}
 	_ = s.inundationUpdateRepo.Create(ctx, newUpdate)
 

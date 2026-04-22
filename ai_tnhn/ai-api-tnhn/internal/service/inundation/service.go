@@ -95,6 +95,7 @@ type service struct {
 	folderCache           map[string]string
 	cacheMu               sync.RWMutex
 	syncWorker            *SyncWorker
+	settingSvc            repository.AppSetting
 }
 
 func NewService(
@@ -103,6 +104,7 @@ func NewService(
 	inundationStationRepo repository.InundationStation,
 	orgRepo repository.Organization,
 	driveSvc googledrive.Service,
+	settingRepo repository.AppSetting,
 ) Service {
 	svc := &service{
 		InundationReportRepo:  inundationRepo,
@@ -110,6 +112,7 @@ func NewService(
 		inundationStationRepo: inundationStationRepo,
 		orgRepo:               orgRepo,
 		driveSvc:              driveSvc,
+		settingSvc:            settingRepo,
 		folderCache:           make(map[string]string),
 	}
 
@@ -315,4 +318,18 @@ func (s *service) GetInundationSummary(ctx context.Context, orgID string, isAllo
 		ActivePoints:  len(ongoing),
 		OngoingPoints: ongoing,
 	}, nil
+}
+
+func (s *service) calculateFloodLevel(ctx context.Context, depth float64) (string, string) {
+	setting, err := s.settingSvc.GetByCode(ctx, "FloodLevel")
+	if err != nil || setting == nil {
+		return "", ""
+	}
+
+	for _, level := range setting.FloodLevels {
+		if depth >= level.MinDepth && depth < level.MaxDepth {
+			return level.Name, level.Color
+		}
+	}
+	return "", ""
 }

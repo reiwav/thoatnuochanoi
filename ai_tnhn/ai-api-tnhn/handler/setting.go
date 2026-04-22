@@ -44,11 +44,6 @@ func (h *SettingHandler) checkAdmin(c *gin.Context) (isAdmin bool, user *models.
 // @Success 200 {array} models.FloodLevel
 // @Router /admin/settings/flood-levels [get]
 func (h *SettingHandler) GetFloodLevels(c *gin.Context) {
-	isAdmin, _ := h.checkAdmin(c)
-	if !isAdmin {
-		h.SendError(c, web.Unauthorized("Bạn không có quyền truy cập"))
-		return
-	}
 
 	levels, err := h.service.GetFloodLevels(c.Request.Context())
 	if err != nil {

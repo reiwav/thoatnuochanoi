@@ -80,8 +80,8 @@ const EmployeeActionDialog = ({ open, onClose, mode, data, onFinished }) => {
                 }
             }}
         >
-            <DialogTitle sx={{ m: 0, p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: 'grey.50' }}>
-                <Typography variant="h4" sx={{ fontWeight: 800, color: 'primary.main' }}>
+            <DialogTitle component="div" sx={{ m: 0, p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: 'grey.50' }}>
+                <Typography component="div" variant="h4" sx={{ fontWeight: 800, color: 'primary.main' }}>
                     {getTitle()}
                 </Typography>
                 <IconButton onClick={onClose} size="small">

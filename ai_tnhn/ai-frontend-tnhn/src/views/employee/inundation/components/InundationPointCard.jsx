@@ -69,10 +69,19 @@ const InundationPointCard = ({ point, openTask, handleOpenViewer }) => {
                     : 'none',
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 background: isHighPriority
-                    ? `linear-gradient(135deg, ${alpha(theme.palette.error.main, 0.01)} 0%, #ffffff 100%)`
+                    ? `linear-gradient(135deg, ${alpha(latest?.flood_level_color || theme.palette.error.main, 0.01)} 0%, #ffffff 100%)`
                     : '#ffffff',
                 position: 'relative',
                 overflow: 'hidden',
+                '&::before': isHighPriority ? {
+                    content: '""',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: 6,
+                    height: '100%',
+                    bgcolor: latest?.flood_level_color || 'error.main'
+                } : {},
                 '&:hover': {
                     transform: 'translateY(-4px)',
                     boxShadow: isHighPriority
@@ -99,16 +108,16 @@ const InundationPointCard = ({ point, openTask, handleOpenViewer }) => {
                     </Tooltip>
                 )}
                 <Chip
-                    label={isHighPriority ? 'ĐANG NGẬP' : 'BÌNH THƯỜNG'}
+                    label={isHighPriority ? (latest?.flood_level_name || 'ĐANG NGẬP') : 'BÌNH THƯỜNG'}
                     size="small"
                     sx={{
                         height: 24,
                         fontSize: '0.65rem',
                         fontWeight: 900,
-                        bgcolor: isHighPriority ? alpha(theme.palette.error.main, 0.1) : alpha(theme.palette.success.main, 0.1),
-                        color: isHighPriority ? 'error.main' : 'success.main',
+                        bgcolor: isHighPriority ? alpha(latest?.flood_level_color || theme.palette.error.main, 0.1) : alpha(theme.palette.success.main, 0.1),
+                        color: isHighPriority ? (latest?.flood_level_color || 'error.main') : 'success.main',
                         border: '1px solid',
-                        borderColor: isHighPriority ? alpha(theme.palette.error.main, 0.2) : alpha(theme.palette.success.main, 0.2),
+                        borderColor: isHighPriority ? alpha(latest?.flood_level_color || theme.palette.error.main, 0.2) : alpha(theme.palette.success.main, 0.2),
                         borderRadius: 1.5,
                         textTransform: 'uppercase',
                         letterSpacing: '0.5px'
@@ -137,11 +146,11 @@ const InundationPointCard = ({ point, openTask, handleOpenViewer }) => {
                     }}
                 >
                     <Avatar sx={{
-                        bgcolor: isHighPriority ? 'error.main' : 'success.main',
+                        bgcolor: isHighPriority ? (latest?.flood_level_color || 'error.main') : 'success.main',
                         width: 48,
                         height: 48,
                         borderRadius: 3,
-                        boxShadow: `0 8px 16px ${alpha(isHighPriority ? theme.palette.error.main : theme.palette.success.main, 0.25)}`
+                        boxShadow: `0 8px 16px ${alpha(isHighPriority ? (latest?.flood_level_color || theme.palette.error.main) : theme.palette.success.main, 0.25)}`
                     }}>
                         <IconMapPin size={24} color="#fff" />
                     </Avatar>

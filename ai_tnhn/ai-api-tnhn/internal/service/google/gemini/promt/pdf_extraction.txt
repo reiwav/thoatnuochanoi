@@ -1,0 +1,1 @@
+Hãy trích xuất nội dung văn bản TRANG ĐẦU TIÊN (Trang 1) của file PDF này. Tuyệt đối không đọc các trang sau. Hãy trích xuất các thông tin về diễn biến thời tiết, lượng mưa, mực nước hồ và sông. Hãy trả về văn bản thuần túy, chính xác theo nội dung trong file.

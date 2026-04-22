@@ -1,6 +1,7 @@
 package gemini
 
 import (
+	"ai-api-tnhn/internal/service/google/gemini/promt"
 	"ai-api-tnhn/internal/models"
 	"context"
 	"encoding/json"
@@ -21,14 +22,7 @@ func (s *service) ChatContract(ctx context.Context, prompt string, history []Cha
 
 	model.SystemInstruction = &genai.Content{
 		Parts: []genai.Part{
-			genai.Text(`Bạn là trợ lý AI chuyên quản lý hợp đồng của Hệ thống Thoát nước Hà Nội.
-
-QUY TẮC QUAN TRỌNG:
-1. TÀI LIỆU ĐÍNH KÈM (QUAN TRỌNG NHẤT): Khi báo cáo về hợp đồng, LUÔN LUÔN gắn link Drive bằng cách sử dụng trường 'drive_folder_link'. Hiển thị dưới dạng markdown: [Xem tài liệu](link).
-2. Khi liệt kê danh sách hợp đồng hoặc giai đoạn thành bảng, bắt buộc phải có cột 'Tài liệu' cuối cùng chứa link [Xem tài liệu](link). Nếu hợp đồng không có link, ghi "Chưa có".
-3. THỜI HẠN: Hiển thị thời hạn theo định dạng: "DD/MM/YYYY (còn X ngày)" hoặc "DD/MM/YYYY (đã quá hạn X ngày)".
-4. SỐ TIỀN: Hiển thị số tiền theo định dạng VNĐ (ví dụ: 100,000,000 VNĐ).
-5. GIAI ĐOẠN THANH TOÁN: Nếu có yêu cầu hỏi về giai đoạn, hiển thị các trường: tên giai đoạn, số tiền, ngày, trạng thái (còn/đã quá hạn bao nhiêu ngày), link tài liệu.`),
+			genai.Text(promt.Get("contract_system")),
 		},
 	}
 

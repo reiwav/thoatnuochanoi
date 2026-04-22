@@ -11,6 +11,7 @@ import (
 	"ai-api-tnhn/internal/service/station"
 	"ai-api-tnhn/internal/service/stationdata"
 	"ai-api-tnhn/internal/service/water"
+	"ai-api-tnhn/internal/service/google/gemini/promt"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -160,7 +161,7 @@ func (s *service) Chat(ctx context.Context, prompt string, history []ChatMessage
 
 	client := s.getClient()
 	model := client.GenerativeModel("gemini-2.5-flash")
-	model.SystemInstruction = &genai.Content{Parts: []genai.Part{genai.Text(chatSysInstruction)}}
+	model.SystemInstruction = &genai.Content{Parts: []genai.Part{genai.Text(s.getChatSysInstruction())}}
 	model.Tools = []*genai.Tool{{FunctionDeclarations: tools}}
 
 	// Build history
@@ -305,7 +306,7 @@ func (s *service) ExtractTextFromPDF(ctx context.Context, pdfBytes []byte) (stri
 	model := client.GenerativeModel("gemini-2.5-flash") // Improved for extraction
 
 	// Refined prompt for Page 1 only
-	prompt := "Hãy trích xuất nội dung văn bản TRANG ĐẦU TIÊN (Trang 1) của file PDF này. Tuyệt đối không đọc các trang sau. Hãy trích xuất các thông tin về diễn biến thời tiết, lượng mưa, mực nước hồ và sông. Hãy trả về văn bản thuần túy, chính xác theo nội dung trong file."
+	prompt := promt.Get("pdf_extraction")
 
 	resp, err := model.GenerateContent(ctx,
 		genai.Blob{MIMEType: "application/pdf", Data: pdfBytes},

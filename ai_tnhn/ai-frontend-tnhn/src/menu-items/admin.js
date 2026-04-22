@@ -12,9 +12,36 @@ const icons = {
 
 const companyPages = {
   id: 'company-tasks',
-  title: 'CÔNG VIỆC HIỆN TRƯỜNG',
+  title: 'GIÁM SÁT HIỆN TRƯỜNG',
   type: 'group',
   children: [
+    {
+      id: 'rain:view-summary',
+      permission: 'rain:view',
+      title: 'Bảng mưa',
+      type: 'item',
+      url: '/admin/station/rain/summary',
+      icon: icons.IconTable,
+      breadcrumbs: false
+    },
+    {
+      id: 'water:summary',
+      permission: 'water:view',
+      title: 'Bảng sông hồ',
+      type: 'item',
+      url: '/admin/station/water/summary',
+      icon: icons.IconList,
+      breadcrumbs: false
+    },
+    {
+      id: 'inundation:dashboard',
+      permission: ['inundation:view', 'inundation:review', 'inundation:survey', 'inundation:mechanic', 'inundation:report'],
+      title: 'Cập nhật điểm ngập',
+      type: 'item',
+      url: '/admin/inundation',
+      icon: icons.IconTornado,
+      breadcrumbs: false
+    },
     {
       id: 'company:inundation',
       permission: ['inundation:survey', 'inundation:mechanic', 'inundation:review', 'inundation:view'],
@@ -59,15 +86,6 @@ const adminPages = {
       icon: icons.IconCloudRain,
       children: [
         {
-          id: 'rain:view-summary',
-          permission: 'rain:view',
-          title: 'Bảng mưa',
-          type: 'item',
-          url: '/admin/station/rain/summary',
-          icon: icons.IconTable,
-          breadcrumbs: false
-        },
-        {
           id: 'rain:view-list',
           permission: 'rain:view',
           title: 'Danh sách',
@@ -104,15 +122,6 @@ const adminPages = {
       icon: icons.IconTornado,
       children: [
         {
-          id: 'inundation:dashboard',
-          permission: ['inundation:view', 'inundation:review', 'inundation:survey', 'inundation:mechanic', 'inundation:report'],
-          title: 'Cập nhật điểm ngập',
-          type: 'item',
-          url: '/admin/inundation',
-          icon: icons.IconTornado,
-          breadcrumbs: false
-        },
-        {
           id: 'inundation:list',
           permission: 'inundation:view',
           title: 'Danh sách',
@@ -139,15 +148,6 @@ const adminPages = {
       type: 'collapse',
       icon: icons.IconRipple,
       children: [
-        {
-          id: 'water:summary',
-          permission: 'water:view',
-          title: 'Bảng sông hồ',
-          type: 'item',
-          url: '/admin/station/water/summary',
-          icon: icons.IconList,
-          breadcrumbs: false
-        },
         {
           id: 'lake',
           permission: 'water:view',

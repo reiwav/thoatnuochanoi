@@ -1,13 +1,13 @@
 package router
 
 import (
-	"ai-api-tnhn/handler"
+	"ai-api-tnhn/handler/google"
 	"ai-api-tnhn/router/middleware"
 
 	"github.com/gin-gonic/gin"
 )
 
-func (h HandlerFuncs) GoogleRoutes(api *gin.RouterGroup, mid middleware.Middleware, googleHandler *handler.GoogleHandler) {
+func (h HandlerFuncs) GoogleRoutes(api *gin.RouterGroup, mid middleware.Middleware, googleHandler google.Handler) {
 	google := api.Group("/google")
 	google.Use(mid.MidBasicType())
 	{

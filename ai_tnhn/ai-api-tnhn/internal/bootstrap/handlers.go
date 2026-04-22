@@ -3,6 +3,7 @@ package bootstrap
 import (
 	"ai-api-tnhn/config"
 	"ai-api-tnhn/handler"
+	"ai-api-tnhn/handler/google"
 	"ai-api-tnhn/internal/base/logger"
 	"ai-api-tnhn/router"
 	"ai-api-tnhn/router/middleware"
@@ -28,7 +29,7 @@ func InitRouter(cfg *config.Config, s *Services, r *Repositories, log logger.Log
 	permHandler := handler.NewPermissionHandler(s.Permission, contextWith)
 	roleHandler := handler.NewRoleHandler(s.Role, contextWith)
 	queryHandler := handler.NewQueryHandler(s.Query)
-	googleHandler := handler.NewGoogleHandler(s.GoogleApi, s.Gemini, s.Drive, s.Water, s.Email, contextWith, cfg.GoogleDriveConfig, log, s.Weather, r.AiChatLog)
+	googleHandler := google.NewHandler(s.GoogleApi, s.Gemini, s.Drive, s.Water, s.Email, contextWith, cfg.GoogleDriveConfig, log, s.Weather, r.AiChatLog)
 
 	mid := middleware.NewMiddleware(*cfg, r.Token, s.Permission, contextWith, log)
 	handlers := router.HandlerFuncs{

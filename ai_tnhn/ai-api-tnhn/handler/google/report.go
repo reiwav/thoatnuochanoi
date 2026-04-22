@@ -1,20 +1,9 @@
-package handler
+package google
 
 import (
-	"ai-api-tnhn/config"
-	"ai-api-tnhn/internal/base/logger"
-	"ai-api-tnhn/internal/repository"
-	"ai-api-tnhn/internal/service/email"
-	"ai-api-tnhn/internal/service/gemini"
-	"ai-api-tnhn/internal/service/googleapi"
-	"ai-api-tnhn/internal/service/googledrive"
-	"ai-api-tnhn/internal/service/water"
-
 	"ai-api-tnhn/internal/constants"
 	"ai-api-tnhn/internal/models"
-	"ai-api-tnhn/internal/service/weather"
-	"ai-api-tnhn/utils/web"
-	"context"
+	"ai-api-tnhn/internal/service/googleapi"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -23,647 +12,13 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/sync/errgroup"
 )
 
-type GoogleHandler struct {
-	googleSvc     googleapi.Service
-	geminiSvc     gemini.Service
-	driveSvc      googledrive.Service
-	waterSvc      water.Service
-	weatherSvc    weather.Service
-	emailSvc      email.Service
-	contextWith   web.ContextWith
-	aiChatLogRepo repository.AiChatLog
-	config        config.GoogleDriveConfig
-	log           logger.Logger
-	cachedOCRText string
-	cachedEmailID uint32
-	ocrMu         sync.RWMutex
-}
-
-func NewGoogleHandler(googleSvc googleapi.Service, geminiSvc gemini.Service, driveSvc googledrive.Service, waterSvc water.Service, emailSvc email.Service, contextWith web.ContextWith, conf config.GoogleDriveConfig, log logger.Logger, weatherSvc weather.Service, aiChatLogRepo repository.AiChatLog) *GoogleHandler {
-	h := &GoogleHandler{
-		googleSvc:     googleSvc,
-		geminiSvc:     geminiSvc,
-		driveSvc:      driveSvc,
-		waterSvc:      waterSvc,
-		emailSvc:      emailSvc,
-		contextWith:   contextWith,
-		aiChatLogRepo: aiChatLogRepo,
-		config:        conf,
-		log:           log,
-		weatherSvc:    weatherSvc,
-	}
-
-	// Chạy nền khi khởi động để nạp Cache
-	go func() {
-		h.log.GetLogger().Infof("Startup: Bat dau nap cache email OCR Text doc ngay...")
-		h.getLatestOCRText(context.Background())
-	}()
-
-	return h
-}
-
-// GetWeatherForecast godoc
-// @Summary Lấy dự báo thời tiết
-// @Description Truy xuất dữ liệu dự báo thời tiết truyền thống
-// @Tags AI & Dự báo
-// @Produce json
-// @Security BearerAuth
-// @Success 200 {object} web.Response{data=object}
-// @Router /admin/google/weather/forecast [get]
-func (h *GoogleHandler) GetWeatherForecast(c *gin.Context) {
-	forecast, err := h.weatherSvc.GetForecast(c.Request.Context())
-	if err != nil {
-		h.log.GetLogger().Errorf("Failed to get weather forecast: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Không thể lấy thông tin dự báo thời tiết lúc này"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"data":   forecast,
-	})
-}
-
-// GetGeminiWeatherForecast godoc
-// @Summary Lấy dự báo thời tiết từ AI Gemini
-// @Description Truy xuất dữ liệu dự báo thời tiết được tăng cường bởi AI Gemini
-// @Tags AI & Dự báo
-// @Produce json
-// @Security BearerAuth
-// @Success 200 {object} web.Response{data=object}
-// @Router /admin/google/weather/forecast/gemini [get]
-func (h *GoogleHandler) GetGeminiWeatherForecast(c *gin.Context) {
-	forecast, err := h.weatherSvc.GetGeminiForecast(c.Request.Context())
-	if err != nil {
-		h.log.GetLogger().Errorf("Failed to get gemini weather forecast: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Không thể lấy thông tin dự báo thời tiết lúc này"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"data":   forecast,
-	})
-}
-
-func (h *GoogleHandler) getLatestOCRText(ctx context.Context) string {
-	if h.emailSvc == nil || h.geminiSvc == nil {
-		return ""
-	}
-
-	id, err := h.emailSvc.GetLatestWeatherEmailID(ctx)
-	if err != nil {
-		h.log.GetLogger().Warnf("Failed to get latest weather email ID: %v", err)
-		return ""
-	}
-
-	h.ocrMu.RLock()
-	if id <= h.cachedEmailID && h.cachedOCRText != "" {
-		text := h.cachedOCRText
-		h.ocrMu.RUnlock()
-		h.log.GetLogger().Infof("DynamicReport: Using cached OCR text from email ID %d", id)
-		return text
-	}
-	h.ocrMu.RUnlock()
-
-	// Download and extract if new ID or cache empty
-	h.log.GetLogger().Infof("DynamicReport: Fetching new OCR text for email ID %d", id)
-	raw, _, err := h.emailSvc.GetEmailAttachmentRawByID(ctx, id)
-	if err != nil || len(raw) == 0 {
-		h.log.GetLogger().Warnf("Failed to fetch email raw attachment: %v", err)
-		return ""
-	}
-
-	ocrText, geminiErr := h.geminiSvc.ExtractTextFromPDF(ctx, raw)
-	if geminiErr == nil && ocrText != "" {
-		h.ocrMu.Lock()
-		h.cachedEmailID = id
-		h.cachedOCRText = ocrText
-		h.ocrMu.Unlock()
-		h.log.GetLogger().Infof("DynamicReport: OCR OK, %d chars, cached with Email ID %d", len(ocrText), id)
-		return ocrText
-	} else if geminiErr != nil {
-		h.log.GetLogger().Warnf("Gemini OCR failed: %v", geminiErr)
-	}
-
-	return ""
-}
-
-// GetStatus godoc
-// @Summary Lấy trạng thái tích hợp Google API
-// @Description Kiểm tra trạng thái tích hợp các dịch vụ của Google
-// @Tags Tiện ích
-// @Produce json
-// @Security BearerAuth
-// @Success 200 {object} web.Response{data=object}
-// @Router /admin/google/status [get]
-func (h *GoogleHandler) GetStatus(c *gin.Context) {
-	status, err := h.googleSvc.GetStatus(c.Request.Context())
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"data":   status,
-	})
-}
-
-// GetRainSummary godoc
-// @Summary Lấy tóm tắt lượng mưa cho AI
-// @Description Truy xuất dữ liệu tóm tắt lượng mưa có cấu trúc để AI xử lý hoặc hiển thị
-// @Tags AI & Giám sát
-// @Produce json
-// @Security BearerAuth
-// @Param is_chat query bool false "Có lưu hành động vào lịch sử chat không"
-// @Success 200 {object} web.Response{data=object}
-// @Router /admin/google/rain-summary [get]
-func (h *GoogleHandler) GetRainSummary(c *gin.Context) {
-	token := h.contextWith.GetTokenFromContext(c)
-	orgID := token.OrgID
-	if token.IsCompany {
-		orgID = ""
-	}
-	summary, err := h.googleSvc.GetRainSummary(c.Request.Context(), orgID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	isChat := c.Query("is_chat") == "true"
-	if isChat && h.aiChatLogRepo != nil && token.UserID != "" {
-		now := time.Now()
-		// Save User Query
-		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
-			UserID: token.UserID, Role: "user", Content: "Tình hình mưa đang như thế nào?", ChatType: "support", Timestamp: now.Add(-1 * time.Second),
-		})
-
-		// Format AI Response to match Frontend display
-		displayText := h.formatRainSummary(summary)
-
-		// Save AI Response
-		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
-			UserID: token.UserID, Role: "model", Content: displayText, ChatType: "support", Timestamp: now,
-		})
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"data":   summary,
-	})
-}
-
-// GetRainSummaryText godoc
-// @Summary Lấy tóm tắt lượng mưa (dạng văn bản)
-// @Description Truy xuất bản tóm tắt văn bản đã được định dạng sẵn về tình hình mưa hiện tại
-// @Tags AI & Giám sát
-// @Produce json
-// @Security BearerAuth
-// @Success 200 {object} web.Response{data=string}
-// @Router /admin/google/rain-summary-text [get]
-func (h *GoogleHandler) GetRainSummaryText(c *gin.Context) {
-	token := h.contextWith.GetTokenFromContext(c)
-	orgID := token.OrgID
-	if token.IsCompany {
-		orgID = ""
-	}
-	summary, err := h.googleSvc.GetRainSummary(c.Request.Context(), orgID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	displayText := h.formatRainSummary(summary)
-
-	// Persist to chat history automatically for this text-specific endpoint
-	if h.aiChatLogRepo != nil && token.UserID != "" {
-		now := time.Now()
-		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
-			UserID: token.UserID, Role: "user", Content: "Tình hình mưa đang như thế nào?", ChatType: "support", Timestamp: now.Add(-1 * time.Second),
-		})
-		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
-			UserID: token.UserID, Role: "model", Content: displayText, ChatType: "support", Timestamp: now,
-		})
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"data":   displayText,
-	})
-}
-
-func (h *GoogleHandler) formatRainSummary(summary *googleapi.RainSummaryData) string {
-	displayText := ""
-	if len(summary.Measurements) == 0 {
-		return "Hiện tại ghi nhận không có mưa tại tất cả các trạm."
-	}
-
-	statusLine := "- Hiện tại không còn mưa"
-	if summary.RainyStations > 0 {
-		statusLine = fmt.Sprintf("- Số trạm đang có mưa: %d", summary.RainyStations)
-	}
-	displayText = fmt.Sprintf("Tình hình mưa hiện tại:\n- Tổng số trạm: %d\n%s\n- Trạm mưa lớn nhất trong ngày: %s (%.1fmm)\n\nChi tiết danh sách các trạm có mưa trong ngày:\n",
-		summary.TotalStations, statusLine, summary.MaxRainStation.Name, summary.MaxRainStation.TotalRain)
-	for _, m := range summary.Measurements {
-		status := "✅ Đã tạnh"
-		if m.IsRaining {
-			status = "⛈️ Đang mưa"
-		}
-		displayText += fmt.Sprintf("- %s: %.1fmm (%s - %s) [%s]\n", m.Name, m.TotalRain, m.StartTime, m.EndTime, status)
-	}
-	return displayText
-}
-
-// GetWaterSummary godoc
-// @Summary Lấy tóm tắt mực nước cho AI
-// @Description Truy xuất dữ liệu mực nước có cấu trúc để AI xử lý
-// @Tags AI & Giám sát
-// @Produce json
-// @Security BearerAuth
-// @Success 200 {object} web.Response{data=object}
-// @Router /admin/google/water-summary [get]
-func (h *GoogleHandler) GetWaterSummary(c *gin.Context) {
-	token := h.contextWith.GetTokenFromContext(c)
-	orgID := token.OrgID
-	if token.IsCompany {
-		orgID = ""
-	}
-	summary, err := h.googleSvc.GetWaterSummary(c.Request.Context(), orgID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Persist to chat history
-	userID, _ := h.contextWith.GetUserID(c)
-	if h.aiChatLogRepo != nil && userID != "" {
-		now := time.Now()
-		// Save User Query
-		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
-			UserID: userID, Role: "user", Content: "Tình hình mực nước sông, hồ?", ChatType: "support", Timestamp: now.Add(-1 * time.Second),
-		})
-
-		// Format AI Response
-		displayText := "### Tình hình mực nước hiện tại\n\n"
-		if len(summary.LakeStations) > 0 {
-			displayText += "#### Hồ:\n"
-			for _, s := range summary.LakeStations {
-				displayText += fmt.Sprintf("- %s: %.2fm (%s)\n", s.Name, s.Level/100.0, s.ThoiGian)
-			}
-		}
-		if len(summary.RiverStations) > 0 {
-			displayText += "\n#### Sông:\n"
-			for _, s := range summary.RiverStations {
-				displayText += fmt.Sprintf("- %s: %.2fm (%s)\n", s.Name, s.Level/100.0, s.ThoiGian)
-			}
-		}
-
-		// Save AI Response
-		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
-			UserID: userID, Role: "model", Content: displayText, ChatType: "support", Timestamp: now,
-		})
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"data":   summary,
-	})
-}
-
-// GetInundationSummary godoc
-// @Summary Lấy tóm tắt ngập lụt cho AI
-// @Description Truy xuất các điểm nóng và trạng thái ngập lụt hiện tại cho AI
-// @Tags AI & Giám sát
-// @Produce json
-// @Security BearerAuth
-// @Success 200 {object} web.Response{data=object}
-// @Router /admin/google/inundation-summary [get]
-func (h *GoogleHandler) GetInundationSummary(c *gin.Context) {
-	token := h.contextWith.GetTokenFromContext(c)
-	orgID := token.OrgID
-	if token.IsCompany {
-		orgID = ""
-	}
-	isAllowedAll := token.IsCompany || token.Role == "Super Admin" || token.Role == "Manager"
-	summary, err := h.googleSvc.GetInundationSummary(c.Request.Context(), orgID, isAllowedAll, nil)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Persist to chat history
-	userID, _ := h.contextWith.GetUserID(c)
-	if h.aiChatLogRepo != nil && userID != "" {
-		now := time.Now()
-		// Save User Query
-		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
-			UserID: userID, Role: "user", Content: "Những điểm đang ngập?", ChatType: "support", Timestamp: now.Add(-1 * time.Second),
-		})
-
-		// Format AI Response
-		displayText := ""
-		if summary.ActivePoints == 0 {
-			displayText = "Hiện tại không có điểm ngập nào trên toàn thành phố."
-		} else {
-			displayText = fmt.Sprintf("Hiện có **%d** điểm đang ngập:\n\n", summary.ActivePoints)
-			for _, p := range summary.OngoingPoints {
-				displayText += fmt.Sprintf("- **%s**: %s (quản lý: %s)\n  *Bắt đầu:* %s\n", p.StreetName, p.Depth, p.OrgName, p.StartTime)
-				if p.Description != "" {
-					displayText += fmt.Sprintf("  *Mô tả:* %s\n", p.Description)
-				}
-			}
-		}
-
-		// Save AI Response
-		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
-			UserID: userID, Role: "model", Content: displayText, ChatType: "support", Timestamp: now,
-		})
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"data":   summary,
-	})
-}
-
-// ChatContract godoc
-// @Summary Chat với Gemini về hợp đồng
-// @Description Chat AI hỗ trợ phân tích và truy xuất thông tin hợp đồng
-// @Tags AI Chat
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Param request body object{prompt=string,history=[]object} true "Câu hỏi và lịch sử chat"
-// @Success 200 {object} web.Response{data=string}
-// @Router /admin/google/contract-chat [post]
-func (h *GoogleHandler) ChatContract(c *gin.Context) {
-	if h.geminiSvc == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Gemini AI service is not initialized. Please check GEMINI_API_KEY."})
-		return
-	}
-
-	var body struct {
-		Prompt  string               `json:"prompt"`
-		History []gemini.ChatMessage `json:"history"`
-	}
-	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "prompt is required"})
-		return
-	}
-
-	token := h.contextWith.GetTokenFromContext(c)
-	response, err := h.geminiSvc.ChatContract(c.Request.Context(), body.Prompt, body.History, token.UserID, token.IsCompany, "")
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"data":   response,
-	})
-}
-
-// Chat godoc
-// @Summary Chat với AI Gemini
-// @Description Trợ lý ảo đa năng hỗ trợ công việc vận hành bởi Gemini
-// @Tags AI Chat
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Param request body object{prompt=string,history=[]object} true "Câu hỏi và lịch sử chat"
-// @Success 200 {object} web.Response{data=string}
-// @Router /admin/google/chat [post]
-func (h *GoogleHandler) Chat(c *gin.Context) {
-	var body struct {
-		Prompt  string               `json:"prompt"`
-		History []gemini.ChatMessage `json:"history"`
-	}
-	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	token := h.contextWith.GetTokenFromContext(c)
-	fmt.Printf(" [Chat Handler] UserID: %s, Prompt length: %d\n", token.UserID, len(body.Prompt))
-	response, err := h.geminiSvc.Chat(c.Request.Context(), body.Prompt, body.History, token.UserID, token.IsCompany, "")
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"data":   response,
-	})
-}
-
-// GetChatHistory godoc
-// @Summary Lấy lịch sử chat AI
-// @Description Truy xuất các bản ghi lịch sử chat của người dùng hiện tại
-// @Tags AI Chat
-// @Produce json
-// @Security BearerAuth
-// @Param chat_type query string false "Loại chat (support/contract)" default(support)
-// @Param limit query int false "Số lượng bản ghi" default(50)
-// @Param before query string false "Mốc thời gian ISO-8601 để phân trang"
-// @Success 200 {object} web.Response{data=[]models.AiChatLog}
-// @Router /admin/google/chat/history [get]
-func (h *GoogleHandler) GetChatHistory(c *gin.Context) {
-	userID, _ := h.contextWith.GetUserID(c)
-	chatType := c.DefaultQuery("chat_type", "support")
-	limitStr := c.DefaultQuery("limit", "50")
-	beforeStr := c.Query("before")
-
-	var limit int
-	fmt.Sscanf(limitStr, "%d", &limit)
-
-	var before time.Time
-	if beforeStr != "" {
-		// Attempt to parse RFC3339
-		parsed, err := time.Parse(time.RFC3339, beforeStr)
-		if err == nil {
-			before = parsed
-		} else {
-			// Fallback to Unix timestamp if it's numeric
-			var unix int64
-			if _, err := fmt.Sscanf(beforeStr, "%d", &unix); err == nil {
-				before = time.Unix(unix, 0)
-			}
-		}
-	}
-
-	fmt.Printf(" [Chat History Handler] UserID: %s, ChatType: %s, Limit: %d, Before: %v\n", userID, chatType, limit, before)
-	logs, err := h.aiChatLogRepo.FindByUser(c.Request.Context(), userID, chatType, limit, before)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Reverse to send oldest first for the frontend to render sequentially
-	for i, j := 0, len(logs)-1; i < j; i, j = i+1, j-1 {
-		logs[i], logs[j] = logs[j], logs[i]
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"data":   logs,
-	})
-}
-
-// GetEmailDetail godoc
-// @Summary Lấy thông tin chi tiết email
-// @Description Truy xuất toàn bộ nội dung và tệp đính kèm của một tin nhắn Gmail cụ thể
-// @Tags Tiện ích
-// @Produce json
-// @Security BearerAuth
-// @Param id path int true "ID Email (uint32)"
-// @Success 200 {object} web.Response{data=object}
-// @Router /admin/google/email/{id} [get]
-func (h *GoogleHandler) GetEmailDetail(c *gin.Context) {
-	idStr := c.Param("id")
-	var id uint32
-	_, err := fmt.Sscanf(idStr, "%d", &id)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "ID email không hợp lệ"})
-		return
-	}
-
-	detail, err := h.googleSvc.ReadEmailByID(c.Request.Context(), id)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Persist to chat history as an AI response (since this is a detail view action)
-	userID, _ := h.contextWith.GetUserID(c)
-	if h.aiChatLogRepo != nil && userID != "" {
-		now := time.Now()
-		attachmentsText := ""
-		if len(detail.Attachments) > 0 {
-			attachmentsText = "\n\n**File đính kèm:**\n"
-			for _, a := range detail.Attachments {
-				attachmentsText += fmt.Sprintf("- [%s](%s)\n", a.Filename, a.URL)
-			}
-		}
-		content := fmt.Sprintf("### %s\n**Từ:** %s\n**Ngày:** %s\n\n%s%s", detail.Subject, detail.From, detail.Date, detail.Body, attachmentsText)
-
-		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
-			UserID: userID, Role: "model", Content: content, ChatType: "support", Timestamp: now,
-		})
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"data":   detail,
-	})
-}
-
-// GetRecentEmails godoc
-// @Summary Lấy các email gần đây
-// @Description Truy xuất danh sách 10 email gần đây nhất từ hòm thư thời tiết
-// @Tags Tiện ích
-// @Produce json
-// @Security BearerAuth
-// @Success 200 {object} web.Response{data=[]object}
-// @Router /admin/google/emails/recent [get]
-func (h *GoogleHandler) GetRecentEmails(c *gin.Context) {
-	emails, err := h.googleSvc.GetRecentEmails(c.Request.Context(), 10)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Persist to chat history
-	userID, _ := h.contextWith.GetUserID(c)
-	if h.aiChatLogRepo != nil && userID != "" {
-		now := time.Now()
-		// Save User Query
-		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
-			UserID: userID, Role: "user", Content: "Xem 10 email gần đây", ChatType: "support", Timestamp: now.Add(-1 * time.Second),
-		})
-
-		// Build table text similar to index.jsx
-		tableText := "### Danh sách 10 email gần đây\n\n"
-		if len(emails) == 0 {
-			tableText += "Không tìm thấy email nào."
-		} else {
-			tableText += "| Người gửi | Tiêu đề | Thời gian | Thao tác |\n"
-			tableText += "| :--- | :--- | :--- | :--- |\n"
-			for _, m := range emails {
-				tableText += fmt.Sprintf("| %s | %s | %s | [Xem chi tiết](#email-detail-%d) |\n", m.From, m.Subject, m.Date, m.ID)
-			}
-		}
-
-		// Save AI Response
-		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
-			UserID: userID, Role: "model", Content: tableText, ChatType: "support", Timestamp: now,
-		})
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"data":   emails,
-	})
-}
-
-// GetUnreadEmails godoc
-// @Summary Lấy các email chưa đọc
-// @Description Truy xuất danh sách 10 email chưa đọc gần đây nhất
-// @Tags Tiện ích
-// @Produce json
-// @Security BearerAuth
-// @Success 200 {object} web.Response{data=[]object}
-// @Router /admin/google/emails/unread [get]
-func (h *GoogleHandler) GetUnreadEmails(c *gin.Context) {
-	emails, err := h.googleSvc.GetUnreadEmails(c.Request.Context(), 10)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Persist to chat history
-	userID, _ := h.contextWith.GetUserID(c)
-	if h.aiChatLogRepo != nil && userID != "" {
-		now := time.Now()
-		// Save User Query
-		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
-			UserID: userID, Role: "user", Content: "Xem 10 email mới nhất", ChatType: "support", Timestamp: now.Add(-1 * time.Second),
-		})
-
-		// Build table text
-		tableText := "### Danh sách 10 email mới nhất\n\n"
-		if len(emails) == 0 {
-			tableText += "Không tìm thấy email nào."
-		} else {
-			tableText += "| Người gửi | Tiêu đề | Thời gian | Thao tác |\n"
-			tableText += "| :--- | :--- | :--- | :--- |\n"
-			for _, m := range emails {
-				tableText += fmt.Sprintf("| %s | %s | %s | [Xem chi tiết](#email-detail-%d) |\n", m.From, m.Subject, m.Date, m.ID)
-			}
-		}
-
-		// Save AI Response
-		_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
-			UserID: userID, Role: "model", Content: tableText, ChatType: "support", Timestamp: now,
-		})
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"data":   emails,
-	})
-}
-
-func (h *GoogleHandler) GenerateQuickReport(c *gin.Context) {
+func (h *handler) GenerateQuickReport(c *gin.Context) {
 	h.GenerateQuickReportV3(c)
 }
 
@@ -675,7 +30,7 @@ func (h *GoogleHandler) GenerateQuickReport(c *gin.Context) {
 // @Security BearerAuth
 // @Success 200 {object} web.Response{data=object}
 // @Router /admin/google/quick-report [post]
-func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
+func (h *handler) GenerateQuickReportV3(c *gin.Context) {
 	if h.driveSvc == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Google Drive service is not initialized."})
 		return
@@ -760,7 +115,6 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 						depthInfo = "ngập " + depthInfo
 					}
 					details = append(details, fmt.Sprintf("%s (%s)", pt.StreetName, depthInfo))
-					//details = append(details, pt.StreetName)
 				}
 				chiTietCacDiem = strings.Join(details, ", ")
 			}
@@ -790,29 +144,11 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 
 	_ = g.Wait()
 
-	waterStations := make(map[string]string)
-	for _, t := range waterResp.Content.Tram {
-		id, _ := t["Id"].(string)
-		name, _ := t["TenTram"].(string)
-		waterStations[id] = name
-	}
-	// Legacy bridge: rainStations map not needed if we use rainSum.Measurements directly
-	// but kept if other code depends on it.
-	rainStations := make(map[string]string)
-	if rainSum != nil {
-		for _, m := range rainSum.Measurements {
-			rainStations[m.Name] = m.Name
-		}
-	}
-
 	lakeDataRaw := [][]string{{"Hồ", "Mực nước"}}
 	riverDataRaw := [][]string{{"Sông", "Mực nước"}}
 	phuongDataRaw := [][]string{{"Phường", "Lượng mưa (mm)"}}
 	xaDataRaw := [][]string{{"Xã", "Lượng mưa (mm)"}}
 
-	// Định nghĩa danh sách các trạm cố định kèm ID (BẢNG TRẢ VỀ TỪ API NOIBO)
-	// Sông: 3 (Thanh Liệt), 170 (Hà Đông), 4 (HQV), 23 (Lò Đúc), 28 (Lừ)
-	// Hồ: 35 (Hoàn Kiếm), 33 (Tây A), 39 (Linh Đàm), 40 (Đống Đa), 42 (Định Công)
 	riverConfigs := []struct {
 		id   string
 		name string
@@ -853,7 +189,6 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 		return 0
 	}
 
-	// Tra cứu mực nước theo ID cho chắc chắn
 	waterDataByID := make(map[string]float64)
 	for _, d := range waterResp.Content.Data {
 		tid, _ := d["TramId"].(string)
@@ -861,7 +196,6 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 		waterDataByID[tid] = val
 	}
 
-	// Đổ dữ liệu vào bảng Sông và Hồ theo danh sách ID cố định
 	for _, cfg := range lakeConfigs {
 		val := waterDataByID[cfg.id]
 		lakeDataRaw = append(lakeDataRaw, []string{cfg.name, fmt.Sprintf("%.2fm", val/100.0)})
@@ -871,7 +205,6 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 		riverDataRaw = append(riverDataRaw, []string{cfg.name, fmt.Sprintf("%.2fm", val/100.0)})
 	}
 
-	// Xử lý dữ liệu lượng mưa
 	anyXaRain := false
 	if rainSum != nil {
 		for _, m := range rainSum.Measurements {
@@ -888,10 +221,8 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 		}
 	}
 
-	// Sắp xếp Phường theo lượng mưa cao nhất
 	sort.Slice(phuongs, func(i, j int) bool { return phuongs[i].val > phuongs[j].val })
 
-	// Điền dữ liệu Phường (Top 10)
 	limit := func(vals []itemVal, n int) []itemVal {
 		if len(vals) > n {
 			return vals[:n]
@@ -902,22 +233,16 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 		phuongDataRaw = append(phuongDataRaw, []string{v.name, fmt.Sprintf("%.1f", v.val)})
 	}
 
-	// Điền dữ liệu Xã: Nếu có mưa ở bất kỳ xã nào, lấy 10 xã gần trung tâm (fix cứng)
 	if anyXaRain {
-		// Tạo map tra cứu lượng mưa xã hiện tại
 		xaRainMap := make(map[string]float64)
 		for _, x := range xas {
 			xaRainMap[x.name] = x.val
 		}
-		// Hiển thị 10 xã trong danh sách ưu tiên
 		for _, name := range fixedXas {
 			val := xaRainMap[name]
 			xaDataRaw = append(xaDataRaw, []string{name, fmt.Sprintf("%.1f", val)})
 		}
 	} else {
-		// Nếu không có mưa, có thể để trống hoặc lấy theo mặc định (ở đây chọn lấy top theo lượng mưa như cũ nếu cần,
-		// nhưng theo yêu cầu "đều fix cứng" và "nếu xã có mưa thì lấy 10 xã gần trung tâm",
-		// ta sẽ lấy 10 xã gần trung tâm luôn cho đồng nhất hoặc để trống nếu không có mưa)
 		sort.Slice(xas, func(i, j int) bool { return xas[i].val > xas[j].val })
 		for _, v := range limit(xas, 10) {
 			xaDataRaw = append(xaDataRaw, []string{v.name, fmt.Sprintf("%.1f", v.val)})
@@ -956,18 +281,6 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 		timeMua = fmt.Sprintf("%s đến %s", minStart.Format("15h04'"), maxEnd.Format("15h04'"))
 	}
 
-	// Prepare detailed rain info for Gemini
-	rainInfoStr := ""
-	if rainSum != nil {
-		for _, m := range rainSum.Measurements {
-			status := "Đang mưa"
-			if !m.IsRaining {
-				status = fmt.Sprintf("Đã tạnh lúc %s", m.EndTime)
-			}
-			rainInfoStr += fmt.Sprintf("- %s: %.1fmm (%s)\n", m.Name, m.TotalRain, status)
-		}
-	}
-
 	soDiemMua := 0
 	hasRainfall := false
 	if rainSum != nil {
@@ -996,7 +309,6 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 		}
 	}
 
-	// Split tables into halves for 2-column layout
 	splitTable := func(data [][]string) ([][]string, [][]string) {
 		if len(data) <= 1 {
 			return data, [][]string{data[0]} // header only
@@ -1080,15 +392,7 @@ func (h *GoogleHandler) GenerateQuickReportV3(c *gin.Context) {
 	})
 }
 
-// GenerateQuickReportText godoc
-// @Summary Tạo báo cáo nhanh dạng văn bản
-// @Description Tổng hợp thông tin thời tiết và úng ngập thành văn bản tóm tắt qua AI
-// @Tags Tiện ích
-// @Produce json
-// @Security BearerAuth
-// @Success 200 {object} web.Response{data=string}
-// @Router /admin/google/quick-report-text [post]
-func (h *GoogleHandler) GenerateQuickReportText(c *gin.Context) {
+func (h *handler) GenerateQuickReportText(c *gin.Context) {
 	if h.geminiSvc == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Gemini AI service is not initialized."})
 		return
@@ -1219,15 +523,12 @@ func (h *GoogleHandler) GenerateQuickReportText(c *gin.Context) {
 	if totalRainyPoints == 0 {
 		report := fmt.Sprintf("Công ty Thoát nước Hà Nội báo cáo UBND Thành phố tình hình PCUN đô thị thời điểm: “%s ngày %s”: Hiện tại trên địa bàn Thành phố không có mưa; %s. Công ty sẽ tiếp tục theo dõi và báo cáo khi có diễn biến mới. Trân trọng./.", reportTime, reportDate, inundationInfo)
 
-		// Persist to chat history
 		userID, _ := h.contextWith.GetUserID(c)
 		if h.aiChatLogRepo != nil && userID != "" {
 			now := time.Now()
-			// Save User Query
 			_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
 				UserID: userID, Role: "user", Content: "Báo cáo nhanh (Văn bản)", ChatType: "support", Timestamp: now.Add(-1 * time.Second),
 			})
-			// Save AI Response
 			_ = h.aiChatLogRepo.Save(c.Request.Context(), &models.AiChatLog{
 				UserID: userID, Role: "model", Content: report, ChatType: "support", Timestamp: now,
 			})
@@ -1280,15 +581,7 @@ Công ty Thoát nước Hà Nội báo cáo UBND Thành phố tình hình PCUN �
 	c.JSON(http.StatusOK, gin.H{"status": "success", "data": aiResult})
 }
 
-// GenerateAIDynamicReport godoc
-// @Summary Tạo báo cáo tổng hợp hệ thống (AI Dynamic)
-// @Description Sử dụng AI để phân tích toàn diện dữ liệu mưa, nước, ngập lụt và trạm bơm
-// @Tags Tiện ích
-// @Produce json
-// @Security BearerAuth
-// @Success 200 {object} web.Response{data=string}
-// @Router /admin/google/dynamic-report [post]
-func (h *GoogleHandler) GenerateAIDynamicReport(c *gin.Context) {
+func (h *handler) GenerateAIDynamicReport(c *gin.Context) {
 	if h.geminiSvc == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Gemini AI service is not initialized."})
 		return
@@ -1299,14 +592,12 @@ func (h *GoogleHandler) GenerateAIDynamicReport(c *gin.Context) {
 
 	g, gCtx := errgroup.WithContext(ctx)
 
-	// === Goroutine 1: OCR email forecast ===
 	emailContent := ""
 	g.Go(func() error {
 		emailContent = h.getLatestOCRText(gCtx)
 		return nil
 	})
 
-	// === Goroutine 2: Rain data ===
 	var rainSum *googleapi.RainSummaryData
 	g.Go(func() error {
 		var err error
@@ -1317,7 +608,6 @@ func (h *GoogleHandler) GenerateAIDynamicReport(c *gin.Context) {
 		return nil
 	})
 
-	// === Goroutine 3: Water data (rivers + lakes) ===
 	waterSummary := ""
 	g.Go(func() error {
 		wData, err := h.weatherSvc.GetRawWaterData(gCtx)
@@ -1365,7 +655,6 @@ func (h *GoogleHandler) GenerateAIDynamicReport(c *gin.Context) {
 		return nil
 	})
 
-	// === Goroutine 4: Inundation status ===
 	inundationSummary := ""
 	g.Go(func() error {
 		summary, err := h.googleSvc.GetInundationSummary(gCtx, "", true, nil)
@@ -1393,7 +682,6 @@ func (h *GoogleHandler) GenerateAIDynamicReport(c *gin.Context) {
 		return nil
 	})
 
-	// === Goroutine 5: Pumping station status ===
 	pumpingSummaryStr := ""
 	g.Go(func() error {
 		summary, err := h.googleSvc.GetPumpingStationSummary(gCtx, "", nil)
@@ -1413,10 +701,8 @@ func (h *GoogleHandler) GenerateAIDynamicReport(c *gin.Context) {
 		return nil
 	})
 
-	// === Wait for all goroutines ===
 	_ = g.Wait()
 
-	// === 6. Build Rain Summary Deterministically ===
 	soDiemMua := 0
 	hasRainfall := false
 	if rainSum != nil {
@@ -1482,7 +768,6 @@ func (h *GoogleHandler) GenerateAIDynamicReport(c *gin.Context) {
 		rainSummary += strings.Join(lines, "\n")
 	}
 
-	// === 6. Build prompt with pre-fetched data ===
 	emailSection := ""
 	if emailContent != "" {
 		emailSection = fmt.Sprintf(`
@@ -1533,7 +818,7 @@ YÊU CẦU:
 	c.JSON(http.StatusOK, gin.H{"status": "success", "data": aiResult})
 }
 
-func (h *GoogleHandler) extractReportLink(resp string) string {
+func (h *handler) extractReportLink(resp string) string {
 	var data map[string]interface{}
 	if err := json.Unmarshal([]byte(resp), &data); err != nil {
 		return ""

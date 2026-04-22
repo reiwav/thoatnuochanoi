@@ -2,6 +2,7 @@ package router
 
 import (
 	"ai-api-tnhn/handler"
+	"ai-api-tnhn/handler/google"
 	"ai-api-tnhn/router/middleware"
 	"path/filepath"
 	"strings"
@@ -18,7 +19,7 @@ import (
 )
 
 // Create handlers
-func (h *HandlerFuncs) Create(mid middleware.Middleware, orgHandler *handler.OrganizationHandler, empHandler *handler.EmployeeHandler, stationHandler *handler.StationHandler, inuHandler *handler.InundationHandler, waterHandler *handler.WaterHandler, googleHandler *handler.GoogleHandler, queryHandler *handler.QueryHandler, emConstructionHandler *handler.EmergencyConstructionHandler, weatherHandler *handler.WeatherHandler, contractCategoryHandler *handler.ContractCategoryHandler, contractHandler *handler.ContractHandler, pumpingHandler *handler.PumpingStationHandler, permHandler *handler.PermissionHandler, roleHandler *handler.RoleHandler) *gin.Engine {
+func (h *HandlerFuncs) Create(mid middleware.Middleware, orgHandler *handler.OrganizationHandler, empHandler *handler.EmployeeHandler, stationHandler *handler.StationHandler, inuHandler *handler.InundationHandler, waterHandler *handler.WaterHandler, googleHandler google.Handler, queryHandler *handler.QueryHandler, emConstructionHandler *handler.EmergencyConstructionHandler, weatherHandler *handler.WeatherHandler, contractCategoryHandler *handler.ContractCategoryHandler, contractHandler *handler.ContractHandler, pumpingHandler *handler.PumpingStationHandler, permHandler *handler.PermissionHandler, roleHandler *handler.RoleHandler) *gin.Engine {
 	r := gin.Default()
 	// Swagger
 	r.GET("/swagger/*any", gs.WrapHandler(swaggerFiles.Handler))

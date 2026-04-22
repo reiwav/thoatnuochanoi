@@ -19,7 +19,7 @@ import (
 )
 
 // Create handlers
-func (h *HandlerFuncs) Create(mid middleware.Middleware, orgHandler *handler.OrganizationHandler, empHandler *handler.EmployeeHandler, stationHandler *handler.StationHandler, inuHandler *handler.InundationHandler, waterHandler *handler.WaterHandler, googleHandler google.Handler, queryHandler *handler.QueryHandler, emConstructionHandler *handler.EmergencyConstructionHandler, weatherHandler *handler.WeatherHandler, contractCategoryHandler *handler.ContractCategoryHandler, contractHandler *handler.ContractHandler, pumpingHandler *handler.PumpingStationHandler, permHandler *handler.PermissionHandler, roleHandler *handler.RoleHandler) *gin.Engine {
+func (h *HandlerFuncs) Create(mid middleware.Middleware, orgHandler *handler.OrganizationHandler, empHandler *handler.EmployeeHandler, stationHandler *handler.StationHandler, inuHandler *handler.InundationHandler, waterHandler *handler.WaterHandler, googleHandler google.Handler, queryHandler *handler.QueryHandler, emConstructionHandler *handler.EmergencyConstructionHandler, weatherHandler *handler.WeatherHandler, contractCategoryHandler *handler.ContractCategoryHandler, contractHandler *handler.ContractHandler, pumpingHandler *handler.PumpingStationHandler, permHandler *handler.PermissionHandler, roleHandler *handler.RoleHandler, settingHandler *handler.SettingHandler) *gin.Engine {
 	r := gin.Default()
 	// Swagger
 	r.GET("/swagger/*any", gs.WrapHandler(swaggerFiles.Handler))
@@ -78,6 +78,7 @@ func (h *HandlerFuncs) Create(mid middleware.Middleware, orgHandler *handler.Org
 	h.ContractRoutes(apiAdmin, mid, contractHandler)
 	h.PermissionRoutes(apiAdmin, mid, permHandler)
 	h.RoleRoutes(apiAdmin, mid, roleHandler)
+	h.SettingRoutes(apiAdmin, mid, settingHandler)
 	apiAdmin.GET("/weather/rain/compare", mid.MidBasicType(), weatherHandler.GetComparisonReport)
 
 	apiAdmin.POST("/database/query", mid.MidBasicType(), h.DatabaseQueryHandler)

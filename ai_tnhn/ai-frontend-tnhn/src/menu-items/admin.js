@@ -307,6 +307,15 @@ const adminPages = {
           url: '/admin/role',
           icon: icons.IconUsers,
           breadcrumbs: false
+        },
+        {
+          id: 'setting:flood-level',
+          permission: 'organization:view', // Using organization:view as a proxy for admin settings for now
+          title: 'Cấu hình điểm ngập',
+          type: 'item',
+          url: '/admin/setting/flood-levels',
+          icon: icons.IconClipboardCheck,
+          breadcrumbs: false
         }
       ]
     },

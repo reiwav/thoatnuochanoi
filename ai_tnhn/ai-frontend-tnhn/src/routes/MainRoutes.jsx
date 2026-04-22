@@ -35,6 +35,7 @@ const ContractPage = Loadable(lazy(() => import('views/admin/contract')));
 const RoleMatrixPage = Loadable(lazy(() => import('views/admin/role-matrix')));
 const RoleListPage = Loadable(lazy(() => import('views/admin/role/RoleList')));
 const PumpingStationPage = Loadable(lazy(() => import('views/admin/pumping-station')));
+const FloodLevelSetting = Loadable(lazy(() => import('views/admin/setting/FloodLevelSetting')));
 const UnderDevelopment = Loadable(lazy(() => import('views/pages/under-development')));
 
 // ==============================|| MAIN ROUTING ||============================== //
@@ -80,7 +81,8 @@ const MainRoutes = {
         { path: 'contract-category', element: <ContractCategoryPage /> },
         { path: 'contract', element: <ContractPage /> },
         { path: 'role-matrix', element: <RoleMatrixPage /> },
-        { path: 'role', element: <RoleListPage /> }
+        { path: 'role', element: <RoleListPage /> },
+        { path: 'setting/flood-levels', element: <FloodLevelSetting /> }
       ]
     },
     {

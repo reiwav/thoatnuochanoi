@@ -3118,6 +3118,74 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/settings/flood-levels": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Truy xuất danh sách các mức độ ngập lụt đã cấu hình",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Cấu hình"
+                ],
+                "summary": "Lấy danh sách mức độ ngập lụt",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.FloodLevel"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Cập nhật danh sách các mức độ ngập lụt đã cấu hình",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Cấu hình"
+                ],
+                "summary": "Cập nhật danh sách mức độ ngập lụt",
+                "parameters": [
+                    {
+                        "description": "Danh sách mức độ ngập",
+                        "name": "levels",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.FloodLevel"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/stations/lake": {
             "get": {
                 "security": [
@@ -6647,6 +6715,42 @@ const docTemplate = `{
                 "work_done": {
                     "type": "string",
                     "example": "Đã hoàn thành phần nền"
+                }
+            }
+        },
+        "models.FloodLevel": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "flood_level_1"
+                },
+                "color": {
+                    "type": "string",
+                    "example": "#00FF00"
+                },
+                "ctime": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Chưa ngập"
+                },
+                "max_depth": {
+                    "type": "number",
+                    "example": 0.1
+                },
+                "min_depth": {
+                    "type": "number",
+                    "example": 0
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Bình thường"
+                },
+                "user": {
+                    "type": "string",
+                    "example": "Admin"
                 }
             }
         },

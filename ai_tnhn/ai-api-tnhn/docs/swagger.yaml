@@ -283,6 +283,32 @@ definitions:
         example: Đã hoàn thành phần nền
         type: string
     type: object
+  models.FloodLevel:
+    properties:
+      code:
+        example: flood_level_1
+        type: string
+      color:
+        example: '#00FF00'
+        type: string
+      ctime:
+        type: string
+      description:
+        example: Chưa ngập
+        type: string
+      max_depth:
+        example: 0.1
+        type: number
+      min_depth:
+        example: 0
+        type: number
+      name:
+        example: Bình thường
+        type: string
+      user:
+        example: Admin
+        type: string
+    type: object
   models.InundationReport:
     properties:
       address:
@@ -2909,6 +2935,48 @@ paths:
       summary: Cập nhật vai trò
       tags:
       - Vai trò
+  /admin/settings/flood-levels:
+    get:
+      description: Truy xuất danh sách các mức độ ngập lụt đã cấu hình
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.FloodLevel'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Lấy danh sách mức độ ngập lụt
+      tags:
+      - Cấu hình
+    put:
+      consumes:
+      - application/json
+      description: Cập nhật danh sách các mức độ ngập lụt đã cấu hình
+      parameters:
+      - description: Danh sách mức độ ngập
+        in: body
+        name: levels
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/models.FloodLevel'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: boolean
+      security:
+      - BearerAuth: []
+      summary: Cập nhật danh sách mức độ ngập lụt
+      tags:
+      - Cấu hình
   /admin/stations/lake:
     get:
       description: Truy xuất danh sách các trạm hồ với bộ lọc

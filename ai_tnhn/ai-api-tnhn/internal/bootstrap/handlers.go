@@ -29,6 +29,7 @@ func InitRouter(cfg *config.Config, s *Services, r *Repositories, log logger.Log
 	permHandler := handler.NewPermissionHandler(s.Permission, contextWith)
 	roleHandler := handler.NewRoleHandler(s.Role, contextWith)
 	queryHandler := handler.NewQueryHandler(s.Query)
+	settingHandler := handler.NewSettingHandler(s.Setting, s.Auth, contextWith)
 	googleHandler := google.NewHandler(s.GoogleApi, s.Gemini, s.Drive, s.Water, s.Email, contextWith, cfg.GoogleDriveConfig, log, s.Weather, r.AiChatLog, s.Report)
 
 	mid := middleware.NewMiddleware(*cfg, r.Token, s.Permission, contextWith, log)
@@ -63,5 +64,5 @@ func InitRouter(cfg *config.Config, s *Services, r *Repositories, log logger.Log
 		GetWeatherForecastHandler:     googleHandler.GetWeatherForecast,
 	}
 
-	return handlers.Create(mid, orgHandler, empHandler, stationHandler, inuHandler, waterHandler, googleHandler, queryHandler, emConstructionHandler, weatherHandler, contractCategoryHandler, contractHandler, pumpingStationHandler, permHandler, roleHandler)
+	return handlers.Create(mid, orgHandler, empHandler, stationHandler, inuHandler, waterHandler, googleHandler, queryHandler, emConstructionHandler, weatherHandler, contractCategoryHandler, contractHandler, pumpingStationHandler, permHandler, roleHandler, settingHandler)
 }

@@ -23,6 +23,7 @@ import (
 	"ai-api-tnhn/internal/service/query"
 	"ai-api-tnhn/internal/service/report"
 	"ai-api-tnhn/internal/service/role"
+	"ai-api-tnhn/internal/service/setting"
 	"ai-api-tnhn/internal/service/station"
 	"ai-api-tnhn/internal/service/stationdata"
 	"ai-api-tnhn/internal/service/storage"
@@ -57,6 +58,7 @@ type Services struct {
 	Telegram         telegram.BotTele
 	Drive            googledrive.Service
 	Storage          storage.Service
+	Setting          setting.Service
 }
 
 func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log logger.Logger) *Services {
@@ -114,6 +116,7 @@ func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log log
 
 	s.Permission = permission.NewService(repos.Permission, repos.RolePermission)
 	s.Role = role.NewService(repos.Role)
+	s.Setting = setting.NewService(repos.AppSetting)
 
 	pumpWorker := pump.NewWorker(log, s.PumpingStation)
 	s.PumpingStation.SetWorker(pumpWorker)

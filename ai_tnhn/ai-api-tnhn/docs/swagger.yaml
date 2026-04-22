@@ -449,6 +449,8 @@ definitions:
         description: Managed by this Org
         example: org_hanoi
         type: string
+      org_name:
+        type: string
       report_id:
         example: rep_123
         type: string
@@ -4085,6 +4087,33 @@ paths:
       security:
       - BearerAuth: []
       summary: Tạo mới điểm đo ngập
+      tags:
+      - Ngập lụt
+  /inundation/points-list:
+    get:
+      description: Truy xuất danh sách tất cả các điểm ngập thuộc quản lý của đơn
+        vị
+      parameters:
+      - description: Lọc theo ID đơn vị (chỉ dùng cho Admin)
+        in: query
+        name: org_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.InundationStation'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Danh sách điểm ngập theo đơn vị
       tags:
       - Ngập lụt
   /inundation/points-status:

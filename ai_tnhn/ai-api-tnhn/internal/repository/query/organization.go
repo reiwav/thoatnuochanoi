@@ -56,3 +56,9 @@ func (r *orgRepo) UpdateDriveFolderID(ctx context.Context, id, folderID string) 
 	update := bson.M{"$set": bson.M{"drive_folder_id": folderID}}
 	return r.R_UnsafeUpdateByID(ctx, id, update)
 }
+
+func (r *orgRepo) GetAll(ctx context.Context) ([]*models.Organization, error) {
+	var orgs []*models.Organization
+	err := r.R_SelectMany(ctx, bson.M{}, &orgs)
+	return orgs, err
+}

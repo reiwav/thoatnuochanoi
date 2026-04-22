@@ -38,12 +38,8 @@ type Service interface {
 	GetPointByID(ctx context.Context, id string) (*models.InundationStation, error)
 	CreatePoint(ctx context.Context, point models.InundationStation) (string, error)
 	UpdatePoint(ctx context.Context, id string, point models.InundationStation) error
+	ListPointsByOrg(ctx context.Context, user *models.User, isAllowedAll bool, orgIDFilter string) ([]models.InundationStation, error)
 	DeletePoint(ctx context.Context, id string) error
-
-	// Org helpers for visibility
-	GetOrgByCode(ctx context.Context, code string) (*models.Organization, error)
-	GetOrgByID(ctx context.Context, id string) (*models.Organization, error)
-	ListOrganizations(ctx context.Context) ([]*models.Organization, error)
 
 	// Yearly history reporting
 	GetYearlyHistory(ctx context.Context, orgID string, year int) ([]*models.InundationReport, error)
@@ -280,7 +276,7 @@ func (s *service) GetInundationSummary(ctx context.Context, orgID string, isAllo
 	}
 
 	// Fetch all organizations once to map OrgID to OrgName efficiently
-	orgs, _ := s.ListOrganizations(ctx)
+	orgs, _ := s.orgRepo.GetAll(ctx)
 	orgMap := make(map[string]string)
 	for _, org := range orgs {
 		orgMap[org.ID] = org.Name

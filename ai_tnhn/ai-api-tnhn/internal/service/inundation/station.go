@@ -155,3 +155,28 @@ func (s *service) UpdatePoint(ctx context.Context, id string, point models.Inund
 func (s *service) DeletePoint(ctx context.Context, id string) error {
 	return s.inundationStationRepo.Delete(ctx, id)
 }
+
+func (s *service) ListPointsByOrg(ctx context.Context, user *models.User, isAllowedAll bool, orgIDFilter string) ([]models.InundationStation, error) {
+	orgID := user.OrgID
+	if isAllowedAll && orgIDFilter != "" {
+		orgID = orgIDFilter
+	}
+
+	points, err := s.inundationStationRepo.ListByOrg(ctx, orgID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Map OrgName
+	orgs, _ := s.orgRepo.GetAll(ctx)
+	orgMap := make(map[string]string)
+	for _, o := range orgs {
+		orgMap[o.ID] = o.Name
+	}
+
+	for i := range points {
+		points[i].OrgName = orgMap[points[i].OrgID]
+	}
+
+	return points, nil
+}

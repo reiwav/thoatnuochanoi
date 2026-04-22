@@ -10,6 +10,7 @@ import (
 type Organization interface {
 	mgo.BaseTable
 
+	GetAll(ctx context.Context) ([]*models.Organization, error)
 	Upsert(ctx context.Context, org *models.Organization) error
 	Delete(ctx context.Context, id string) error
 	GetByID(ctx context.Context, id string) (*models.Organization, error)

@@ -5014,6 +5014,48 @@ const docTemplate = `{
                 }
             }
         },
+        "/inundation/points-list": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Truy xuất danh sách tất cả các điểm ngập thuộc quản lý của đơn vị",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Ngập lụt"
+                ],
+                "summary": "Danh sách điểm ngập theo đơn vị",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Lọc theo ID đơn vị (chỉ dùng cho Admin)",
+                        "name": "org_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.InundationStation"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/web.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/inundation/points-status": {
             "get": {
                 "security": [
@@ -6837,6 +6879,9 @@ const docTemplate = `{
                     "description": "Managed by this Org",
                     "type": "string",
                     "example": "org_hanoi"
+                },
+                "org_name": {
+                    "type": "string"
                 },
                 "report_id": {
                     "type": "string",

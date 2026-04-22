@@ -85,4 +85,5 @@ type InundationStation struct {
 	Lng             string   `json:"lng" bson:"lng" example:"105.8542"`
 	Active          bool     `json:"active" bson:"active" example:"true"`
 	ShareAll        bool     `json:"share_all" bson:"share_all" example:"false"`
+	OrgName         string   `json:"org_name" bson:"-"`
 }

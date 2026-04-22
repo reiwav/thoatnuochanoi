@@ -40,6 +40,9 @@ const inundationApi = {
     getPointsStatus: (params) => {
         return axiosClient.get('/inundation/points-status', { params });
     },
+    getPointsList: (params) => {
+        return axiosClient.get('/inundation/points-list', { params });
+    },
     createPoint: (data) => {
         return axiosClient.post('/inundation/points', data);
     },

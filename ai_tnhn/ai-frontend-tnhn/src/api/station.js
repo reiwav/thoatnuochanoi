@@ -30,7 +30,7 @@ const stationApi = {
     },
     // Inundation Points
     inundation: {
-        getAll: (params) => axiosClient.get('/inundation/points-status', { params }),
+        getAll: (params) => axiosClient.get('/inundation/points-list', { params }),
         create: (data) => axiosClient.post('/inundation/points', data),
         update: (id, data) => axiosClient.put(`/inundation/points/${id}`, data),
         delete: (id) => axiosClient.delete(`/inundation/points/${id}`)

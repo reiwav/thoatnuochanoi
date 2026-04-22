@@ -72,7 +72,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
             setFetchingData(true);
             try {
                 const [pointsRes, consRes, pumpRes, rolesRes] = await Promise.all([
-                    inundationApi.getPointsStatus({ per_page: 1000, org_id: orgIdToUse }),
+                    inundationApi.getPointsList({ per_page: 1000, org_id: orgIdToUse }),
                     emergencyConstructionApi.getAll({ per_page: 1000, org_id: orgIdToUse }),
                     pumpingStationApi.list({ per_page: 1000, org_id: orgIdToUse }),
                     axiosClient.get('/admin/roles')

@@ -22,6 +22,7 @@ func (h HandlerFuncs) InundationRoutes(api *gin.RouterGroup, mid middleware.Midd
 		group.PUT("/update/:id", inuHandler.UpdateSituationUpdateContent)
 		group.GET("/reports", inuHandler.ListReports)
 		group.GET("/points-status", inuHandler.GetPointsStatus)
+		group.GET("/points-list", inuHandler.ListPointsByOrg)
 		group.POST("/points", inuHandler.CreatePoint)
 		group.PUT("/points/:id", inuHandler.UpdatePoint)
 		group.DELETE("/points/:id", inuHandler.DeletePoint)

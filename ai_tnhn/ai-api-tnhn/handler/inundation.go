@@ -252,6 +252,33 @@ func (h *InundationHandler) GetPointsStatus(c *gin.Context) {
 	h.SendData(c, result)
 }
 
+// ListPointsByOrg godoc
+// @Summary Danh sách điểm ngập theo đơn vị
+// @Description Truy xuất danh sách tất cả các điểm ngập thuộc quản lý của đơn vị
+// @Tags Ngập lụt
+// @Produce json
+// @Security BearerAuth
+// @Param org_id query string false "Lọc theo ID đơn vị (chỉ dùng cho Admin)"
+// @Success 200 {array} models.InundationStation
+// @Failure 401 {object} web.ErrorResponse
+// @Router /inundation/points-list [get]
+func (h *InundationHandler) ListPointsByOrg(c *gin.Context) {
+	isAllowedAll, user := h.checkPermissions(c)
+	if user == nil {
+		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
+		return
+	}
+
+	orgIDFilter := c.Query("org_id")
+	result, err := h.service.ListPointsByOrg(c.Request.Context(), user, isAllowedAll, orgIDFilter)
+	if err != nil {
+		h.SendError(c, err)
+		return
+	}
+
+	h.SendData(c, result)
+}
+
 // CreatePoint godoc
 // @Summary Tạo mới điểm đo ngập
 // @Description Tạo mới một điểm theo dõi ngập lụt

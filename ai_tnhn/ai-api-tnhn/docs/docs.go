@@ -2008,43 +2008,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/admin/google/dynamic-report": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Sử dụng AI để phân tích toàn diện dữ liệu mưa, nước, ngập lụt và trạm bơm",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Tiện ích"
-                ],
-                "summary": "Tạo báo cáo tổng hợp hệ thống (AI Dynamic)",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/web.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "string"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
-        },
         "/admin/google/email/{id}": {
             "get": {
                 "security": [
@@ -2236,43 +2199,6 @@ const docTemplate = `{
                                     "properties": {
                                         "data": {
                                             "type": "object"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/google/quick-report-text": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Tổng hợp thông tin thời tiết và úng ngập thành văn bản tóm tắt qua AI",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Tiện ích"
-                ],
-                "summary": "Tạo báo cáo nhanh dạng văn bản",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/web.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "string"
                                         }
                                     }
                                 }

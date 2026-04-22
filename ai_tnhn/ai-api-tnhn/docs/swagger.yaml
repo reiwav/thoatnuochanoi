@@ -2266,27 +2266,6 @@ paths:
       summary: Chat với Gemini về hợp đồng
       tags:
       - AI Chat
-  /admin/google/dynamic-report:
-    post:
-      description: Sử dụng AI để phân tích toàn diện dữ liệu mưa, nước, ngập lụt và
-        trạm bơm
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  type: string
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Tạo báo cáo tổng hợp hệ thống (AI Dynamic)
-      tags:
-      - Tiện ích
   /admin/google/email/{id}:
     get:
       description: Truy xuất toàn bộ nội dung và tệp đính kèm của một tin nhắn Gmail
@@ -2397,27 +2376,6 @@ paths:
       security:
       - BearerAuth: []
       summary: Tạo báo cáo nhanh tự động (V3)
-      tags:
-      - Tiện ích
-  /admin/google/quick-report-text:
-    post:
-      description: Tổng hợp thông tin thời tiết và úng ngập thành văn bản tóm tắt
-        qua AI
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/web.Response'
-            - properties:
-                data:
-                  type: string
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Tạo báo cáo nhanh dạng văn bản
       tags:
       - Tiện ích
   /admin/google/rain-summary:

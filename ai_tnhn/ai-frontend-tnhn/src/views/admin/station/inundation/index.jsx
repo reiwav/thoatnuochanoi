@@ -369,8 +369,9 @@ const StationInundationList = () => {
 
             <InundationDialog 
                 open={dialogOpen} 
-                handleClose={() => setDialogOpen(false)} 
-                item={editingPoint} 
+                onClose={() => setDialogOpen(false)} 
+                station={editingPoint} 
+                isEdit={!!editingPoint}
                 onSubmit={handleSubmit} 
                 organizations={organizations} 
             />

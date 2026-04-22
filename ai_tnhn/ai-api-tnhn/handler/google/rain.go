@@ -2,7 +2,7 @@ package google
 
 import (
 	"ai-api-tnhn/internal/models"
-	"ai-api-tnhn/internal/service/googleapi"
+	"ai-api-tnhn/internal/service/weather"
 	"ai-api-tnhn/utils/web"
 	"fmt"
 	"time"
@@ -25,7 +25,7 @@ func (h *handler) GetRainSummary(c *gin.Context) {
 	if token.IsCompany {
 		orgID = ""
 	}
-	summary, err := h.googleSvc.GetRainSummary(c.Request.Context(), orgID)
+	summary, err := h.googleSvc.GetRainSummary(c.Request.Context(), orgID, nil)
 	web.AssertNil(err)
 
 	isChat := c.Query("is_chat") == "true"
@@ -62,7 +62,7 @@ func (h *handler) GetRainSummaryText(c *gin.Context) {
 	if token.IsCompany {
 		orgID = ""
 	}
-	summary, err := h.googleSvc.GetRainSummary(c.Request.Context(), orgID)
+	summary, err := h.googleSvc.GetRainSummary(c.Request.Context(), orgID, nil)
 	web.AssertNil(err)
 
 	displayText := h.formatRainSummary(summary)
@@ -81,7 +81,7 @@ func (h *handler) GetRainSummaryText(c *gin.Context) {
 	h.SendData(c, displayText)
 }
 
-func (h *handler) formatRainSummary(summary *googleapi.RainSummaryData) string {
+func (h *handler) formatRainSummary(summary *weather.RainSummaryData) string {
 	displayText := ""
 	if len(summary.Measurements) == 0 {
 		return "Hiện tại ghi nhận không có mưa tại tất cả các trạm."

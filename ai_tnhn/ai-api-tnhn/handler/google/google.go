@@ -10,6 +10,7 @@ import (
 	"ai-api-tnhn/internal/service/googledrive"
 	"ai-api-tnhn/internal/service/water"
 	"ai-api-tnhn/internal/service/weather"
+	"ai-api-tnhn/internal/service/report"
 	"ai-api-tnhn/utils/web"
 	"context"
 	"sync"
@@ -47,6 +48,7 @@ type handler struct {
 	emailSvc      email.Service
 	contextWith   web.ContextWith
 	aiChatLogRepo repository.AiChatLog
+	reportSvc     report.Service
 	config        config.GoogleDriveConfig
 	log           logger.Logger
 	cachedOCRText string
@@ -54,7 +56,7 @@ type handler struct {
 	ocrMu         sync.RWMutex
 }
 
-func NewHandler(googleSvc googleapi.Service, geminiSvc gemini.Service, driveSvc googledrive.Service, waterSvc water.Service, emailSvc email.Service, contextWith web.ContextWith, conf config.GoogleDriveConfig, log logger.Logger, weatherSvc weather.Service, aiChatLogRepo repository.AiChatLog) Handler {
+func NewHandler(googleSvc googleapi.Service, geminiSvc gemini.Service, driveSvc googledrive.Service, waterSvc water.Service, emailSvc email.Service, contextWith web.ContextWith, conf config.GoogleDriveConfig, log logger.Logger, weatherSvc weather.Service, aiChatLogRepo repository.AiChatLog, reportSvc report.Service) Handler {
 	h := &handler{
 		googleSvc:     googleSvc,
 		geminiSvc:     geminiSvc,
@@ -66,6 +68,7 @@ func NewHandler(googleSvc googleapi.Service, geminiSvc gemini.Service, driveSvc 
 		config:        conf,
 		log:           log,
 		weatherSvc:    weatherSvc,
+		reportSvc:     reportSvc,
 	}
 
 	// Chạy nền khi khởi động để nạp Cache

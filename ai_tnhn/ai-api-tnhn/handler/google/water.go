@@ -23,7 +23,7 @@ func (h *handler) GetWaterSummary(c *gin.Context) {
 	if token.IsCompany {
 		orgID = ""
 	}
-	summary, err := h.googleSvc.GetWaterSummary(c.Request.Context(), orgID)
+	summary, err := h.googleSvc.GetWaterSummary(c.Request.Context(), orgID, nil)
 	web.AssertNil(err)
 
 	// Persist to chat history

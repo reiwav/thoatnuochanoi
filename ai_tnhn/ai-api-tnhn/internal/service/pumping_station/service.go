@@ -7,7 +7,10 @@ import (
 	"ai-api-tnhn/utils/web"
 	"context"
 	"errors"
+	"sort"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type Service interface {
@@ -23,6 +26,28 @@ type Service interface {
 	ListHistory(ctx context.Context, filter filter.Filter) ([]*models.PumpingStationHistory, int64, error)
 
 	SetWorker(w interface{})
+
+	// Summary for external consumers
+	GetPumpingStationSummary(ctx context.Context, orgID string, assignedIDs []string) (*PumpingStationSummaryData, error)
+}
+
+type PumpingStationStat struct {
+	Name             string `json:"name"`
+	Priority         int    `json:"priority"`
+	OrgName          string `json:"org_name"`
+	PumpCount        int    `json:"pump_count"`
+	OperatingCount   int    `json:"operating_count"`
+	ClosedCount      int    `json:"closed_count"`
+	MaintenanceCount int    `json:"maintenance_count"`
+	Note             string `json:"note"`
+	LastUpdate       string `json:"last_update"`
+}
+
+type PumpingStationSummaryData struct {
+	TotalStations       int                  `json:"total_stations"`
+	TotalPumps          int                  `json:"total_pumps"`
+	TotalOperatingPumps int                  `json:"total_operating_pumps"`
+	Stations            []PumpingStationStat `json:"stations"`
 }
 
 type Worker interface {
@@ -150,4 +175,86 @@ func (s *service) SetWorker(w interface{}) {
 	if worker, ok := w.(Worker); ok {
 		s.worker = worker
 	}
+}
+
+func (s *service) GetPumpingStationSummary(ctx context.Context, orgID string, assignedIDs []string) (*PumpingStationSummaryData, error) {
+	if orgID == "all" {
+		orgID = ""
+	}
+
+	f := filter.NewBasicFilter()
+
+	if orgID != "" {
+		f.AddWhere("org_wrapper", "$or", []bson.M{
+			{"org_id": orgID},
+			{"shared_org_ids": orgID},
+		})
+	}
+
+	if len(assignedIDs) > 0 {
+		f.AddWhere("id_in", "_id", bson.M{"$in": assignedIDs})
+	}
+
+	stations, _, err := s.List(ctx, f)
+	if err != nil {
+		return nil, err
+	}
+
+	// Fetch organizations for mapping
+	orgs, _, _ := s.orgRepo.List(ctx, filter.NewPaginationFilter()) // Get all orgs for mapping
+	orgMap := make(map[string]string)
+	for _, org := range orgs {
+		orgMap[org.ID] = org.Name
+	}
+
+	var totalPumps, totalOperating int
+	var stationStats []PumpingStationStat
+
+	for _, st := range stations {
+		lastUpdate := "-"
+		ops := 0
+		closed := st.PumpCount
+		maint := 0
+		note := "-"
+
+		if st.LastReport != nil {
+			ops = st.LastReport.OperatingCount
+			closed = st.LastReport.ClosedCount
+			maint = st.LastReport.MaintenanceCount
+			if st.LastReport.Note != "" {
+				note = st.LastReport.Note
+			}
+			lastUpdate = time.Unix(st.LastReport.Timestamp, 0).Format("15:04")
+		}
+
+		totalPumps += st.PumpCount
+		totalOperating += ops
+
+		stationStats = append(stationStats, PumpingStationStat{
+			Name:             st.Name,
+			Priority:         st.Priority,
+			OrgName:          orgMap[st.OrgID],
+			PumpCount:        st.PumpCount,
+			OperatingCount:   ops,
+			ClosedCount:      closed,
+			MaintenanceCount: maint,
+			Note:             note,
+			LastUpdate:       lastUpdate,
+		})
+	}
+
+	// Sort station stats by Priority (ascending), then by Name alphabetically
+	sort.Slice(stationStats, func(i, j int) bool {
+		if stationStats[i].Priority != stationStats[j].Priority {
+			return stationStats[i].Priority < stationStats[j].Priority
+		}
+		return stationStats[i].Name < stationStats[j].Name
+	})
+
+	return &PumpingStationSummaryData{
+		TotalStations:       len(stations),
+		TotalPumps:          totalPumps,
+		TotalOperatingPumps: totalOperating,
+		Stations:            stationStats,
+	}, nil
 }

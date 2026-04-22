@@ -6,6 +6,7 @@ import (
 	"ai-api-tnhn/internal/service/emergency_construction"
 	"ai-api-tnhn/internal/service/googleapi"
 	"ai-api-tnhn/internal/service/inundation"
+	pumpingstation "ai-api-tnhn/internal/service/pumping_station"
 	"ai-api-tnhn/internal/service/query"
 	"ai-api-tnhn/internal/service/station"
 	"ai-api-tnhn/internal/service/stationdata"
@@ -49,12 +50,13 @@ type service struct {
 	emcSvc                emergency_construction.Service
 	contractSvc           contract.Service
 	stationSvc            station.Service
+	pumpingSvc            pumpingstation.Service
 	aiUsageRepo           repository.AiUsage
 	aiChatLogRepo         repository.AiChatLog
 	userRepo              repository.User
 }
 
-func NewService(apiKey string, apiKeyContract string, waterSvc water.Service, googleApiSvc googleapi.Service, inuSvc inundation.Service, querySvc query.Service, stationDataSvc stationdata.Service, emcSvc emergency_construction.Service, contractSvc contract.Service, stationSvc station.Service, aiUsageRepo repository.AiUsage, aiChatLogRepo repository.AiChatLog, userRepo repository.User) (Service, error) {
+func NewService(apiKey string, apiKeyContract string, waterSvc water.Service, googleApiSvc googleapi.Service, inuSvc inundation.Service, querySvc query.Service, stationDataSvc stationdata.Service, emcSvc emergency_construction.Service, contractSvc contract.Service, stationSvc station.Service, pumpingSvc pumpingstation.Service, aiUsageRepo repository.AiUsage, aiChatLogRepo repository.AiChatLog, userRepo repository.User) (Service, error) {
 	if apiKey == "" {
 		return nil, fmt.Errorf("gemini api key is required")
 	}
@@ -106,6 +108,7 @@ func NewService(apiKey string, apiKeyContract string, waterSvc water.Service, go
 		emcSvc:          emcSvc,
 		contractSvc:     contractSvc,
 		stationSvc:      stationSvc,
+		pumpingSvc:      pumpingSvc,
 		aiUsageRepo:     aiUsageRepo,
 		aiChatLogRepo:   aiChatLogRepo,
 		userRepo:        userRepo,

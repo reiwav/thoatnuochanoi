@@ -2,7 +2,6 @@ package gemini
 
 import (
 	"ai-api-tnhn/internal/models"
-	"ai-api-tnhn/internal/service/googleapi"
 	"context"
 	"fmt"
 
@@ -12,40 +11,13 @@ import (
 func (s *service) handleWeatherTools(ctx context.Context, call *genai.FunctionCall, orgID string, assignedRainIDs, assignedLakeIDs, assignedRiverIDs []string) (interface{}, error) {
 	switch call.Name {
 	case "get_live_rain_summary":
-		summary, err := s.googleApiSvc.GetRainSummary(ctx, orgID)
-		if err != nil {
-			return nil, err
-		}
-		if orgID != "all" {
-			allowed, _ := s.stationSvc.ListRainStationsFiltered(ctx, orgID, assignedRainIDs)
-			allowedNames := make(map[string]bool)
-			for _, st := range allowed {
-				allowedNames[st.TenPhuong] = true
-			}
-
-			var filteredMeasurements []googleapi.RainStationStat
-			for _, m := range summary.Measurements {
-				if allowedNames[m.Name] {
-					filteredMeasurements = append(filteredMeasurements, m)
-				}
-			}
-			summary.Measurements = filteredMeasurements
-			summary.RainyStations = len(filteredMeasurements)
-			summary.TotalStations = len(allowed)
-			if summary.RainyStations > 0 {
-				summary.MaxRainStation = filteredMeasurements[0]
-			} else {
-				summary.MaxRainStation = googleapi.RainStationStat{}
-			}
-		}
-		return summary, nil
+		return s.googleApiSvc.GetRainSummary(ctx, orgID, assignedRainIDs)
 
 	case "get_live_water_summary":
-		summary, err := s.googleApiSvc.GetWaterSummary(ctx, orgID)
-		if err != nil {
-			return nil, err
-		}
-		return summary, nil
+		var allWaterIDs []string
+		allWaterIDs = append(allWaterIDs, assignedLakeIDs...)
+		allWaterIDs = append(allWaterIDs, assignedRiverIDs...)
+		return s.googleApiSvc.GetWaterSummary(ctx, orgID, allWaterIDs)
 
 	case "get_rain_data_by_date":
 		date, _ := call.Args["date"].(string)

@@ -10,11 +10,7 @@ import (
 func (s *service) handleInundationTools(ctx context.Context, call *genai.FunctionCall, orgID string, isAllowedAll bool, assignedInuIDs []string) (interface{}, error) {
 	switch call.Name {
 	case "get_live_inundation_summary":
-		summary, err := s.googleApiSvc.GetInundationSummary(ctx, orgID, isAllowedAll, assignedInuIDs)
-		if err != nil {
-			return nil, err
-		}
-		return summary, nil
+		return s.inuSvc.GetInundationSummary(ctx, orgID, isAllowedAll, assignedInuIDs)
 	default:
 		return nil, fmt.Errorf("unknown inundation tool: %s", call.Name)
 	}

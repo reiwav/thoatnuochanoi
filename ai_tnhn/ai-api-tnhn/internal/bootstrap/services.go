@@ -19,6 +19,7 @@ import (
 	"ai-api-tnhn/internal/service/pump"
 	pumpingstation "ai-api-tnhn/internal/service/pumping_station"
 	"ai-api-tnhn/internal/service/query"
+	"ai-api-tnhn/internal/service/report"
 	"ai-api-tnhn/internal/service/role"
 	"ai-api-tnhn/internal/service/station"
 	"ai-api-tnhn/internal/service/stationdata"
@@ -50,6 +51,7 @@ type Services struct {
 	Query            query.Service
 	StationData      stationdata.Service
 	Gemini           gemini.Service
+	Report           report.Service
 	Telegram         telegram.BotTele
 	Drive            googledrive.Service
 	Storage          storage.Service
@@ -90,14 +92,14 @@ func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log log
 	s.Auth = auth.NewService(repos.Token, repos.User, repos.Role)
 	s.Organization = organization.NewService(repos.Organization, repos.User, driveService)
 	s.Employee = employee.NewService(repos.User, repos.Organization, repos.Role, driveService)
-	s.Water = water.NewService(repos.Rain, repos.Lake, repos.River)
-	s.Email = email.NewService(cfg.EmailConfig)
 	s.Station = station.NewService(repos.RainStation, repos.LakeStation, repos.RiverStation, repos.Organization)
+	s.Weather = weather.NewService(repos.HistoricalRain, s.Station)
+	s.Water = water.NewService(repos.Rain, repos.Lake, repos.River, s.Station, s.Weather)
+	s.Email = email.NewService(cfg.EmailConfig)
 	s.Inundation = inundation.NewService(repos.InundationReport, repos.InundationUpdate, repos.InundationStation, repos.Organization, driveService)
-	s.Weather = weather.NewService(repos.HistoricalRain)
 
 	s.PumpingStation = pumpingstation.NewService(repos.PumpingStation, repos.User, repos.Organization)
-	s.GoogleApi, _ = googleapi.NewService(cfg.GoogleDriveConfig, cfg.OAuthConfig, repos.AiUsage, s.Inundation, s.Weather, s.Station, s.PumpingStation)
+	s.GoogleApi, _ = googleapi.NewService(cfg.GoogleDriveConfig, cfg.OAuthConfig, repos.AiUsage, s.Inundation, s.Weather, s.Station, s.PumpingStation, s.Water)
 	if s.GoogleApi != nil {
 		s.GoogleApi.SetEmailService(s.Email)
 	}
@@ -115,12 +117,13 @@ func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log log
 
 	s.Query = query.NewService(db.DB)
 	s.StationData = stationdata.NewService(s.Station, s.Water)
-	s.Gemini, _ = gemini.NewService(cfg.GeminiAPIKey, cfg.GeminiAPIKeyContract, s.Water, s.GoogleApi, s.Inundation, s.Query, s.StationData, s.EmConstruction, s.Contract, s.Station, repos.AiUsage, repos.AiChatLog, repos.User)
+	s.Gemini, _ = gemini.NewService(cfg.GeminiAPIKey, cfg.GeminiAPIKeyContract, s.Water, s.GoogleApi, s.Inundation, s.Query, s.StationData, s.EmConstruction, s.Contract, s.Station, s.PumpingStation, repos.AiUsage, repos.AiChatLog, repos.User)
+	s.Report = report.NewService(cfg, log, s.Weather, s.GoogleApi, s.Inundation, s.PumpingStation, s.Station, s.Water, driveService, s.Gemini, s.Email, repos.AiChatLog)
 
 	if s.Gemini != nil {
 		targetWeatherSvc := s.Gemini
 		if cfg.GeminiAPIKeyWeather != "" {
-			weatherGeminiSvc, err := gemini.NewService(cfg.GeminiAPIKeyWeather, cfg.GeminiAPIKeyWeather, s.Water, s.GoogleApi, s.Inundation, s.Query, s.StationData, s.EmConstruction, s.Contract, s.Station, repos.AiUsage, repos.AiChatLog, repos.User)
+			weatherGeminiSvc, err := gemini.NewService(cfg.GeminiAPIKeyWeather, cfg.GeminiAPIKeyWeather, s.Water, s.GoogleApi, s.Inundation, s.Query, s.StationData, s.EmConstruction, s.Contract, s.Station, s.PumpingStation, repos.AiUsage, repos.AiChatLog, repos.User)
 			if err == nil {
 				targetWeatherSvc = weatherGeminiSvc
 			}

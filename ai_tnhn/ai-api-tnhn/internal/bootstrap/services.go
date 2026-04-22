@@ -4,6 +4,8 @@ import (
 	"ai-api-tnhn/config"
 	"ai-api-tnhn/internal/base/logger"
 	"ai-api-tnhn/internal/base/mgo/db"
+	"ai-api-tnhn/internal/integration/forecast"
+	"ai-api-tnhn/internal/integration/thoatnuoc"
 	"ai-api-tnhn/internal/service/auth"
 	"ai-api-tnhn/internal/service/contract"
 	"ai-api-tnhn/internal/service/contract_category"
@@ -93,7 +95,9 @@ func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log log
 	s.Organization = organization.NewService(repos.Organization, repos.User, driveService)
 	s.Employee = employee.NewService(repos.User, repos.Organization, repos.Role, driveService)
 	s.Station = station.NewService(repos.RainStation, repos.LakeStation, repos.RiverStation, repos.Organization)
-	s.Weather = weather.NewService(repos.HistoricalRain, s.Station)
+	thoatnuocSvc := thoatnuoc.NewService()
+	forecastSvc := forecast.NewService()
+	s.Weather = weather.NewService(repos.HistoricalRain, s.Station, thoatnuocSvc, forecastSvc)
 	s.Water = water.NewService(repos.Rain, repos.Lake, repos.River, s.Station, s.Weather)
 	s.Email = email.NewService(cfg.EmailConfig)
 	s.Inundation = inundation.NewService(repos.InundationReport, repos.InundationUpdate, repos.InundationStation, repos.Organization, driveService)

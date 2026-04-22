@@ -2,14 +2,13 @@ package weather
 
 import (
 	"ai-api-tnhn/internal/base/mgo/filter"
+	"ai-api-tnhn/internal/integration/forecast"
+	"ai-api-tnhn/internal/integration/thoatnuoc"
 	"ai-api-tnhn/internal/repository"
 	"ai-api-tnhn/internal/service/station"
 	"ai-api-tnhn/internal/utils"
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"sort"
 	"time"
 
@@ -17,53 +16,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-type RainDataResponse struct {
-	Code    int `json:"Code"`
-	Content struct {
-		Tram []struct {
-			Id        interface{} `json:"Id"` // Can be float64 or string from external API
-			TenTram   string      `json:"TenTram"`
-			TenPhuong string      `json:"TenPhuong"`
-			DiaChi    string      `json:"DiaChi"`
-			Lat       string      `json:"Lat"`
-			Lng       string      `json:"Lng"`
-			ThuTu     int         `json:"ThuTu"`
-			ManHinh   int         `json:"ManHinh"`
-			PhuongId  int         `json:"PhuongId"`
-			Active    bool        `json:"Active"`
-		} `json:"tram"`
-		Data []struct {
-			Id          int         `json:"Id"`
-			TramId      interface{} `json:"TramId"` // Can be float64 or string
-			LuongMua_BD float64     `json:"LuongMua_BD"`
-			ThoiGian_BD string      `json:"ThoiGian_BD"`
-			LuongMua_HT float64     `json:"LuongMua_HT"`
-			ThoiGian_HT string      `json:"ThoiGian_HT"`
-			LuongMua_Tr float64     `json:"LuongMua_Tr"`
-			ThoiGian_Tr string      `json:"ThoiGian_Tr"`
-			AC          int         `json:"AC"`
-		} `json:"data"`
-	} `json:"Content"`
-}
-
-type WaterDataResponse struct {
-	Code    int `json:"Code"`
-	Content struct {
-		Tram []struct {
-			Id          string `json:"Id"`
-			TenTram     string `json:"TenTram"`
-			TenTramHTML string `json:"TenTramHTML"`
-			Loai        string `json:"Loai"` // "1" for River, "2" for Lake
-			ThuTu       int    `json:"ThuTu"`
-		} `json:"tram"`
-		Data []struct {
-			TramId       string  `json:"TramId"`
-			ThuongLuu_HT float64 `json:"ThuongLuu_HT"`
-			ThoiGian_HT  string  `json:"ThoiGian_HT"`
-			Loai         int     `json:"Loai"`
-		} `json:"data"`
-	} `json:"Content"`
-}
+type RainDataResponse = thoatnuoc.RainDataResponse
+type WaterDataResponse = thoatnuoc.WaterDataResponse
 
 type HistoricalRainData map[string]map[string]float64
 
@@ -111,6 +65,8 @@ type Service interface {
 type service struct {
 	histRepo     repository.HistoricalRain
 	stationSvc   station.Service
+	thoatnuocSvc thoatnuoc.Service
+	forecastSvc  forecast.Service
 	forecastFunc ForecastFunc
 	forecast     string
 	lastFetch    time.Time
@@ -119,65 +75,21 @@ type service struct {
 	lastGeminiFetch time.Time
 }
 
-func NewService(histRepo repository.HistoricalRain, stationSvc station.Service) Service {
+func NewService(histRepo repository.HistoricalRain, stationSvc station.Service, thoatnuocSvc thoatnuoc.Service, forecastSvc forecast.Service) Service {
 	return &service{
-		histRepo:   histRepo,
-		stationSvc: stationSvc,
+		histRepo:     histRepo,
+		stationSvc:   stationSvc,
+		thoatnuocSvc: thoatnuocSvc,
+		forecastSvc:  forecastSvc,
 	}
 }
 
 func (s *service) GetRawRainData(ctx context.Context) (*RainDataResponse, error) {
-	url := "https://noibo.thoatnuochanoi.vn/api/thuytri/getallrain?id=3a1a672f-c56f-4752-b86c-455e30427b87"
-	resp, err := http.Get(url)
-	if err != nil {
-		return nil, fmt.Errorf("failed to call rain API: %w", err)
-	}
-	defer resp.Body.Close()
-
-	bodyBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	var rainData RainDataResponse
-	if err := json.Unmarshal(bodyBytes, &rainData); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal rain data: %w", err)
-	}
-
-	// Convert UTC timestamps to Vietnam timezone (UTC+7)
-	for i := range rainData.Content.Data {
-		rainData.Content.Data[i].ThoiGian_BD = utils.ConvertUTCToVietnam(rainData.Content.Data[i].ThoiGian_BD)
-		rainData.Content.Data[i].ThoiGian_HT = utils.ConvertUTCToVietnam(rainData.Content.Data[i].ThoiGian_HT)
-		rainData.Content.Data[i].ThoiGian_Tr = utils.ConvertUTCToVietnam(rainData.Content.Data[i].ThoiGian_Tr)
-	}
-
-	return &rainData, nil
+	return s.thoatnuocSvc.GetRawRainData(ctx)
 }
 
 func (s *service) GetRawWaterData(ctx context.Context) (*WaterDataResponse, error) {
-	url := "https://noibo.thoatnuochanoi.vn/api/thuytri/getallmucnuoc?id=3a1a672f-c56f-4752-b86c-455e30427b87"
-	resp, err := http.Get(url)
-	if err != nil {
-		return nil, fmt.Errorf("failed to call water API: %w", err)
-	}
-	defer resp.Body.Close()
-
-	bodyBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	var waterData WaterDataResponse
-	if err := json.Unmarshal(bodyBytes, &waterData); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal water data: %w", err)
-	}
-
-	// Convert UTC timestamps to Vietnam timezone (UTC+7)
-	// for i := range waterData.Content.Data {
-	// 	waterData.Content.Data[i].ThoiGian_HT = convertUTCToVietnam(waterData.Content.Data[i].ThoiGian_HT)
-	// }
-
-	return &waterData, nil
+	return s.thoatnuocSvc.GetRawWaterData(ctx)
 }
 
 func (s *service) GetHistoricalRainData(ctx context.Context) (HistoricalRainData, error) {
@@ -258,34 +170,10 @@ func (s *service) GetForecast(ctx context.Context) (string, error) {
 		return s.forecast, nil
 	}
 
-	// Fetch real weather data from Open-Meteo (Hanoi: 21.0285, 105.8542)
-	meteoURL := "https://api.open-meteo.com/v1/forecast?latitude=21.0285&longitude=105.8542&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max&timezone=auto"
-	client := &http.Client{Timeout: 10 * time.Second}
-	respMeteo, err := client.Get(meteoURL)
-	var meteoData string
-	if err == nil {
-		defer respMeteo.Body.Close()
-		body, _ := io.ReadAll(respMeteo.Body)
-		meteoData = string(body)
-	}
-
-	if meteoData == "" {
+	// Fetch real weather data from Open-Meteo
+	data, err := s.forecastSvc.GetHanoiForecast(ctx)
+	if err != nil || len(data.Daily.Time) == 0 {
 		return "Dự báo thời tiết 3 ngày tới: Hiện không có dữ liệu thời tiết.", nil
-	}
-
-	var data struct {
-		Daily struct {
-			Time                        []string  `json:"time"`
-			Weathercode                 []int     `json:"weathercode"`
-			Temperature2mMax            []float64 `json:"temperature_2m_max"`
-			Temperature2mMin            []float64 `json:"temperature_2m_min"`
-			PrecipitationSum            []float64 `json:"precipitation_sum"`
-			PrecipitationProbabilityMax []int     `json:"precipitation_probability_max"`
-		} `json:"daily"`
-	}
-
-	if err := json.Unmarshal([]byte(meteoData), &data); err != nil {
-		return "Dự báo thời tiết 3 ngày tới: Lỗi phân tích dữ liệu thời tiết.", nil
 	}
 
 	getWeatherDesc := func(code int) string {
@@ -338,23 +226,9 @@ func (s *service) GetForecast(ctx context.Context) (string, error) {
 	return result, nil
 }
 
-func (s *service) generateManualForecast(meteoData string) string {
-	if meteoData == "" {
+func (s *service) generateManualForecast(data *forecast.ForecastResponse) string {
+	if data == nil || len(data.Daily.Time) == 0 {
 		return "Dự báo thời tiết 3 ngày tới: Hiện không có dữ liệu thời tiết."
-	}
-
-	var data struct {
-		Daily struct {
-			Time                        []string  `json:"time"`
-			Weathercode                 []int     `json:"weathercode"`
-			Temperature2mMax            []float64 `json:"temperature_2m_max"`
-			Temperature2mMin            []float64 `json:"temperature_2m_min"`
-			PrecipitationProbabilityMax []int     `json:"precipitation_probability_max"`
-		} `json:"daily"`
-	}
-
-	if err := json.Unmarshal([]byte(meteoData), &data); err != nil {
-		return "Dự báo thời tiết 3 ngày tới: Lỗi phân tích dữ liệu thời tiết."
 	}
 
 	getWeatherDesc := func(code int) string {
@@ -549,39 +423,19 @@ func (s *service) GetGeminiForecast(ctx context.Context) ([]ForecastDay, error) 
 		return s.geminiForecast, nil
 	}
 
-	// Fetch real weather data from Open-Meteo (Hanoi: 21.0285, 105.8542)
-	meteoURL := "https://api.open-meteo.com/v1/forecast?latitude=21.0285&longitude=105.8542&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max&timezone=auto"
-	client := &http.Client{Timeout: 10 * time.Second}
-	respMeteo, err := client.Get(meteoURL)
-	var meteoData string
-	if err == nil {
-		defer respMeteo.Body.Close()
-		body, _ := io.ReadAll(respMeteo.Body)
-		meteoData = string(body)
+	// Fetch real weather data from Open-Meteo
+	data, err := s.forecastSvc.GetHanoiForecast(ctx)
+	if err != nil {
+		return nil, nil
 	}
 
-	s.geminiForecast = s.generateManualForecastJSON(meteoData)
+	s.geminiForecast = s.generateManualForecastJSON(data)
 	s.lastGeminiFetch = time.Now()
 	return s.geminiForecast, nil
 }
 
-func (s *service) generateManualForecastJSON(meteoData string) []ForecastDay {
-	if meteoData == "" {
-		return nil
-	}
-
-	var data struct {
-		Daily struct {
-			Time                        []string  `json:"time"`
-			Weathercode                 []int     `json:"weathercode"`
-			Temperature2mMax            []float64 `json:"temperature_2m_max"`
-			Temperature2mMin            []float64 `json:"temperature_2m_min"`
-			PrecipitationSum            []float64 `json:"precipitation_sum"`
-			PrecipitationProbabilityMax []int     `json:"precipitation_probability_max"`
-		} `json:"daily"`
-	}
-
-	if err := json.Unmarshal([]byte(meteoData), &data); err != nil {
+func (s *service) generateManualForecastJSON(data *forecast.ForecastResponse) []ForecastDay {
+	if data == nil || len(data.Daily.Time) == 0 {
 		return nil
 	}
 

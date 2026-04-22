@@ -8,7 +8,7 @@ import (
 	"errors"
 	"fmt"
 
-	"ai-api-tnhn/internal/service/googledrive"
+	"ai-api-tnhn/internal/service/google/googledrive"
 )
 
 type Service interface {

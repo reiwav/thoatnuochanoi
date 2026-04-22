@@ -4,7 +4,7 @@ import (
 	"ai-api-tnhn/internal/base/mgo/filter"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/repository"
-	"ai-api-tnhn/internal/service/googledrive"
+	"ai-api-tnhn/internal/service/google/googledrive"
 	"context"
 	"fmt"
 	"io"
@@ -121,7 +121,7 @@ func (s *service) Update(ctx context.Context, id string, contract *models.Contra
 
 	// Ensure drive folder is valid (repair if it's a path)
 	_ = s.ensureDriveFolder(ctx, existing, existing.OrgID)
- 
+
 	return s.repo.Upsert(ctx, existing)
 }
 

@@ -1,7 +1,7 @@
 package google
 
 import (
-	"ai-api-tnhn/internal/service/gemini"
+	"ai-api-tnhn/internal/service/google/gemini"
 	"ai-api-tnhn/utils/web"
 	"fmt"
 	"time"

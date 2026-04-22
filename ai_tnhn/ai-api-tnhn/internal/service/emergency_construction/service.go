@@ -4,7 +4,7 @@ import (
 	"ai-api-tnhn/internal/base/mgo/filter"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/repository"
-	"ai-api-tnhn/internal/service/googledrive"
+	"ai-api-tnhn/internal/service/google/googledrive"
 	"bytes"
 	"context"
 	"errors"
@@ -400,7 +400,7 @@ func (s *service) ExportExcelToDrive(ctx context.Context, dateStr string, orgID 
 			return "", fmt.Errorf("invalid date format: %w", err)
 		}
 		startOfDay = t.Unix()
-		endOfDay = t.Add(24 * time.Hour).Unix() - 1
+		endOfDay = t.Add(24*time.Hour).Unix() - 1
 	}
 
 	// 2. Fetch Organizations
@@ -541,7 +541,7 @@ func (s *service) ExportExcelToDrive(ctx context.Context, dateStr string, orgID 
 					f.SetCellStyle(sheetName, fmt.Sprintf("H%d", rowIdx), lastImgCol, contentStyle)
 
 					fmt.Printf("DEBUG: Processing %d images for construction %s on row %d\n", len(p.Images), cons.Name, rowIdx)
-					
+
 					// Temporary directory for images
 					tempDir := filepath.Join("uploads", "temp", fmt.Sprintf("%d", time.Now().UnixNano()))
 					_ = os.MkdirAll(tempDir, 0755)
@@ -709,13 +709,13 @@ func (s *service) ExportProgressToExcel(ctx context.Context, progressID string) 
 			continue
 		}
 		cell := fmt.Sprintf("H%d", i+2) // Chèn vào cột H, dòng tăng dần
-		
+
 		_ = f.AddPicture(sheetName, cell, imgPath, &excelize.GraphicOptions{
 			ScaleX: 0.2,
 			ScaleY: 0.2,
 		})
 		f.SetRowHeight(sheetName, i+2, 150)
-		
+
 		// Add Link
 		if i < len(progress.Images) {
 			driveLink := fmt.Sprintf("https://drive.google.com/open?id=%s", progress.Images[i])
@@ -738,7 +738,7 @@ func (s *service) ExportProgressToExcel(ctx context.Context, progressID string) 
 
 	fileName := fmt.Sprintf("Detail_Progress_%s.xlsx", progressID)
 	fileID, err := s.driveSvc.UploadFile(ctx, folderID, fileName, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", &buf, false)
-	
+
 	return fileID, err
 }
 
@@ -748,7 +748,7 @@ func (s *service) GetUnfinishedProgressHistory(ctx context.Context) ([]*models.E
 	f := filter.NewPaginationFilter()
 	f.PerPage = 1000 // Get all logical amount
 	f.AddWhere("status", "status", bson.M{"$ne": "completed"})
-	
+
 	constructions, _, err := s.repo.List(ctx, f)
 	if err != nil {
 		return nil, err
@@ -769,7 +769,7 @@ func (s *service) GetUnfinishedProgressHistory(ctx context.Context) ([]*models.E
 	pf := filter.NewPaginationFilter()
 	pf.PerPage = 5000 // Large enough to get history
 	pf.AddWhere("construction_id", "construction_id", bson.M{"$in": ids})
-	
+
 	progressList, _, err := s.progressRepo.List(ctx, pf)
 	if err != nil {
 		return nil, err

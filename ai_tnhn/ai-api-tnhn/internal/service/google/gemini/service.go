@@ -4,7 +4,7 @@ import (
 	"ai-api-tnhn/internal/repository"
 	"ai-api-tnhn/internal/service/contract"
 	"ai-api-tnhn/internal/service/emergency_construction"
-	"ai-api-tnhn/internal/service/googleapi"
+	"ai-api-tnhn/internal/service/google/googleapi"
 	"ai-api-tnhn/internal/service/inundation"
 	pumpingstation "ai-api-tnhn/internal/service/pumping_station"
 	"ai-api-tnhn/internal/service/query"

@@ -2,7 +2,7 @@ package contract
 
 import (
 	"ai-api-tnhn/internal/base/mgo/filter"
-	"ai-api-tnhn/internal/service/googledrive"
+	"ai-api-tnhn/internal/service/google/googledrive"
 	"context"
 	"math"
 	"strings"
@@ -12,14 +12,14 @@ import (
 // --- Query result types ---
 
 type ContractQueryResult struct {
-	ID              string  `json:"id"`
-	Name            string  `json:"name"`
-	CategoryName    string  `json:"category_name"`
-	StartDate       string  `json:"start_date"`
-	EndDate         string  `json:"end_date"`
-	DaysRemaining   int     `json:"days_remaining"` // negative = overdue
-	DriveFolderLink string                `json:"drive_folder_link"`
-	TotalValue      float64               `json:"total_value"`
+	ID              string                 `json:"id"`
+	Name            string                 `json:"name"`
+	CategoryName    string                 `json:"category_name"`
+	StartDate       string                 `json:"start_date"`
+	EndDate         string                 `json:"end_date"`
+	DaysRemaining   int                    `json:"days_remaining"` // negative = overdue
+	DriveFolderLink string                 `json:"drive_folder_link"`
+	TotalValue      float64                `json:"total_value"`
 	Files           []googledrive.FileInfo `json:"files"`
 }
 

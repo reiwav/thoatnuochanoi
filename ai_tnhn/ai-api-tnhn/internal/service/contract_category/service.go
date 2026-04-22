@@ -4,7 +4,7 @@ import (
 	"ai-api-tnhn/internal/base/mgo/filter"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/repository"
-	"ai-api-tnhn/internal/service/googledrive"
+	"ai-api-tnhn/internal/service/google/googledrive"
 	"context"
 	"errors"
 	"fmt"

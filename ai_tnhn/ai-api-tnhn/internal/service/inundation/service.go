@@ -50,15 +50,15 @@ type Service interface {
 }
 
 type InundationUpdateStat struct {
-	Timestamp   string `json:"timestamp"`
-	Description string `json:"description"`
-	Depth       string `json:"depth"`
+	Timestamp   string  `json:"timestamp"`
+	Description string  `json:"description"`
+	Depth       float64 `json:"depth"`
 }
 
 type InundationStationStat struct {
 	StreetName    string                 `json:"street_name"`
 	OrgName       string                 `json:"org_name"`
-	Depth         string                 `json:"depth"`
+	Depth         float64                `json:"depth"`
 	Width         string                 `json:"width"`
 	Length        string                 `json:"length"`
 	StartTime     string                 `json:"start_time"`

@@ -153,7 +153,7 @@ func (s *service) AddUpdate(ctx context.Context, user *models.User, reportID str
 	if update.Width == "" {
 		update.Width = report.Width
 	}
-	if update.Depth == "" {
+	if update.Depth != report.Depth {
 		update.Depth = report.Depth
 	}
 
@@ -536,7 +536,7 @@ func (s *service) UpdateMech(ctx context.Context, user *models.User, id string, 
 	existing.MechUserID = user.ID
 
 	// OVERRIDE: Update main report dimensions with worker's data
-	if input.MechD != "" {
+	if input.MechD != input.MechD {
 		existing.Depth = input.MechD
 	}
 	if input.MechS != "" {

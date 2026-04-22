@@ -143,7 +143,7 @@ func (s *service) GenerateQuickReportV3(ctx context.Context, userID string) (*Qu
 			if inundationSummary.ActivePoints > 0 {
 				var details []string
 				for _, pt := range inundationSummary.OngoingPoints {
-					depthInfo := pt.Length + " x " + pt.Width + " x " + pt.Depth
+					depthInfo := pt.Length + " x " + pt.Width + " x " + fmt.Sprintf("%.2f", pt.Depth)
 					if depthInfo == "" {
 						depthInfo = "chưa rõ độ sâu"
 					} else {
@@ -705,7 +705,7 @@ func (s *service) GenerateAIDynamicReport(ctx context.Context, userID string) (s
 		}
 		var details []string
 		for _, pt := range summary.OngoingPoints {
-			depth := pt.Length + "x" + pt.Width + "x" + pt.Depth
+			depth := pt.Length + "x" + pt.Width + "x" + fmt.Sprintf("%.2f", pt.Depth)
 			if depth == "" {
 				depth = "chưa rõ"
 			}

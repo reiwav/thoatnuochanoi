@@ -51,8 +51,10 @@ export default function AuthLogin() {
 
     if (token) {
       // Store metadata via Zustand
-      let userRole = role || 'employee';
-      if (userRole === 'supper_admin' || userRole === 'super_admib' || userRole === 'super_admin ') {
+      let userRole = (role || 'employee').toLowerCase().trim().replace(/\s+/g, '_');
+      
+      // If roleLevel is 0, it is always a Super Admin
+      if (roleLevelVal === 0) {
         userRole = ROLES.ROLE_SUPER_ADMIN;
       }
 
@@ -96,14 +98,16 @@ export default function AuthLogin() {
       console.log('Login success data:', tokenData);
 
       // Vì đã qua interceptor, nếu code chạy đến đây nghĩa là status đã là 'success'
-      let role = tokenData.role || ROLES.ROLE_EMPLOYEE;
-      if (role === 'supper_admin' || role === 'super_admib' || role === 'super_admin ') {
+      const roleLevel = parseInt(tokenData.role_level || '-1', 10);
+      let role = (tokenData.role || ROLES.ROLE_EMPLOYEE).toLowerCase().trim().replace(/\s+/g, '_');
+      
+      // If roleLevel is 0, it is always a Super Admin
+      if (roleLevel === 0) {
         role = ROLES.ROLE_SUPER_ADMIN;
       }
 
       const isEmployee = !!tokenData.is_employee;
       const isCompany = !!tokenData.is_company;
-      const roleLevel = tokenData.role_level;
 
       // Store via Zustand
       storeLogin({ 

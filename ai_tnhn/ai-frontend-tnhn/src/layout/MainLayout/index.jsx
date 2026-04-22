@@ -69,7 +69,7 @@ export default function MainLayout() {
         setIsChecking(false);
         authApi.getProfile().then((user) => {
           if (user && user.id) {
-            storeLogin(user, currentToken, user.role, user.is_employee, user.is_company);
+            storeLogin(user, currentToken, user.role, user.is_employee, user.is_company, user.role_level);
           }
         }).catch((err) => {
           console.error('Background profile refresh failed:', err);
@@ -90,7 +90,7 @@ export default function MainLayout() {
         const user = await authApi.getProfile();
         // Since it's flattened, a successful call means user is the profile object
         if (user && user.id) {
-          storeLogin(user, currentToken, user.role, user.is_employee, user.is_company);
+          storeLogin(user, currentToken, user.role, user.is_employee, user.is_company, user.role_level);
           setIsChecking(false);
         } else {
           storeLogout();

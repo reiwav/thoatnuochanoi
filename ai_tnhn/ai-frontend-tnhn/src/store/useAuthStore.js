@@ -10,6 +10,8 @@ const useAuthStore = create(
       user: null,
       token: null,
       role: null,
+      roleLevel: -1,
+      isSuperAdmin: false,
       isEmployee: false,
       isCompany: false, // New state
       permissions: [],
@@ -17,7 +19,7 @@ const useAuthStore = create(
       permissionsLoading: false,
 
       // Actions
-      login: (userData, token, role, isEmployee = false, isCompany = false) => {
+      login: (userData, token, role, isEmployee = false, isCompany = false, roleLevel = -1) => {
         const { token: currentToken, user: currentUser } = get();
         
         // Prevent redundant state reset if token and user ID are identical
@@ -25,25 +27,44 @@ const useAuthStore = create(
           return;
         }
 
+        // Robust normalization
+        const level = parseInt(roleLevel !== undefined ? roleLevel : -1, 10);
+        let normalizedRole = (role || '').toLowerCase().trim().replace(/\s+/g, '_');
+        
+        // Final normalization to 'super_admin' based on level or common string variants
+        const isSuper = level === 0 || normalizedRole.includes('super_admin') || normalizedRole.includes('supper_admin');
+        if (isSuper) {
+          normalizedRole = 'super_admin';
+        }
+
         set({
           user: userData,
           token,
-          role: role,
+          role: normalizedRole,
+          roleLevel: level,
+          isSuperAdmin: isSuper,
           isEmployee: !!isEmployee,
-          isCompany: !!isCompany,
-          permissionsLoaded: false,
+          isCompany: !!isCompany || isSuper, // Super Admin implicitly has company-level access
+          permissionsLoaded: isSuper, // Super Admin skips permission fetch
           permissionsLoading: false
         });
         // Fetch permissions immediately after login if token exists
-        get().fetchPermissions();
+        if (!isSuper) {
+          get().fetchPermissions();
+        }
       },
       logout: () => {
-        set({ user: null, token: null, role: null, isEmployee: false, isCompany: false, permissions: [], permissionsLoaded: false, permissionsLoading: false });
+        set({ user: null, token: null, role: null, roleLevel: -1, isSuperAdmin: false, isEmployee: false, isCompany: false, permissions: [], permissionsLoaded: false, permissionsLoading: false });
         localStorage.removeItem('admin_token');
       },
       fetchPermissions: async () => {
-        const { token, permissionsLoading, permissionsLoaded } = get();
+        const { token, permissionsLoading, permissionsLoaded, isSuperAdmin } = get();
         if (!token || permissionsLoading || permissionsLoaded) return;
+
+        if (isSuperAdmin) {
+          set({ permissionsLoaded: true });
+          return;
+        }
 
         set({ permissionsLoading: true });
         try {
@@ -65,11 +86,11 @@ const useAuthStore = create(
       },
 
       hasPermission: (permissionId) => {
-        const { role: currentRole, permissions } = get();
+        const { role: currentRole, isSuperAdmin, permissions } = get();
         if (!currentRole) return false;
         
         // Super Admin always has permission
-        if (currentRole === 'super_admin') return true;
+        if (isSuperAdmin) return true;
 
         // If permissionId is an array, check if user has ANY of the permissions 
         // OR if their role matches one of the values in the array (legacy support)

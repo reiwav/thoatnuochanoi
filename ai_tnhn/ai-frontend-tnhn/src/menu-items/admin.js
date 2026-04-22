@@ -16,7 +16,8 @@ const companyPages = {
   type: 'group',
   children: [
     {
-      id: ['inundation:survey', 'inundation:mechanic', 'inundation:review'],
+      id: 'company:inundation',
+      permission: ['inundation:survey', 'inundation:mechanic', 'inundation:review'],
       title: 'Điểm trực ngập',
       type: 'item',
       url: '/company/inundation',
@@ -24,7 +25,8 @@ const companyPages = {
       breadcrumbs: false
     },
     {
-      id: 'trambom:view',
+      id: 'company:trambom',
+      permission: 'trambom:view',
       title: 'Trạm bơm',
       type: 'item',
       url: '/company/tram-bom',
@@ -48,12 +50,14 @@ const adminPages = {
       breadcrumbs: false
     },
     {
+      id: 'rain',
       title: 'Lượng mưa',
       type: 'collapse',
       icon: icons.IconCloudRain,
       children: [
         {
-          id: 'rain:view',
+          id: 'rain:view-summary',
+          permission: 'rain:view',
           title: 'Bảng mưa',
           type: 'item',
           url: '/admin/station/rain/summary',
@@ -61,7 +65,8 @@ const adminPages = {
           breadcrumbs: false
         },
         {
-          id: 'rain:view',
+          id: 'rain:view-list',
+          permission: 'rain:view',
           title: 'Danh sách',
           type: 'item',
           url: '/admin/station/rain/list',
@@ -69,7 +74,8 @@ const adminPages = {
           breadcrumbs: false
         },
         {
-          id: 'rain:view',
+          id: 'rain:view-compare',
+          permission: 'rain:view',
           title: 'So sánh mưa',
           type: 'item',
           url: '/admin/station/rain/compare',
@@ -77,7 +83,8 @@ const adminPages = {
           breadcrumbs: false
         },
         {
-          id: 'rain:view',
+          id: 'rain:view-history',
+          permission: 'rain:view',
           title: 'Lịch sử',
           type: 'item',
           url: '/admin/station/rain/history',
@@ -87,12 +94,14 @@ const adminPages = {
       ]
     },
     {
+      id: 'inundation',
       title: 'Điểm ngập',
       type: 'collapse',
       icon: icons.IconTornado,
       children: [
         {
-          id: ['inundation:view', 'inundation:review'],
+          id: 'inundation:dashboard',
+          permission: ['inundation:view', 'inundation:review'],
           title: 'Cập nhật điểm ngập',
           type: 'item',
           url: '/admin/inundation',
@@ -100,7 +109,8 @@ const adminPages = {
           breadcrumbs: false
         },
         {
-          id: 'inundation:view',
+          id: 'inundation:list',
+          permission: 'inundation:view',
           title: 'Danh sách',
           type: 'item',
           url: '/admin/station/inundation/list',
@@ -108,7 +118,8 @@ const adminPages = {
           breadcrumbs: false
         },
         {
-          id: 'inundation:view',
+          id: 'inundation:yearly',
+          permission: 'inundation:view',
           title: 'Số liệu theo năm',
           type: 'item',
           url: '/admin/station/inundation/yearly',
@@ -118,12 +129,14 @@ const adminPages = {
       ]
     },
     {
+      id: 'water',
       title: 'Mực nước',
       type: 'collapse',
       icon: icons.IconRipple,
       children: [
         {
-          id: 'water:view',
+          id: 'water:summary',
+          permission: 'water:view',
           title: 'Bảng sông hồ',
           type: 'item',
           url: '/admin/station/water/summary',
@@ -131,12 +144,14 @@ const adminPages = {
           breadcrumbs: false
         },
         {
+          id: 'lake',
           title: 'Mực nước hồ',
           type: 'collapse',
           icon: icons.IconDroplets,
           children: [
             {
-              id: 'water:view',
+              id: 'water:lake-list',
+              permission: 'water:view',
               title: 'Danh sách',
               type: 'item',
               url: '/admin/station/lake/list',
@@ -144,7 +159,8 @@ const adminPages = {
               breadcrumbs: false
             },
             {
-              id: 'water:view',
+              id: 'water:lake-history',
+              permission: 'water:view',
               title: 'Lịch sử',
               type: 'item',
               url: '/admin/station/lake/history',
@@ -154,11 +170,13 @@ const adminPages = {
           ]
         },
         {
+          id: 'river',
           title: 'Mực nước sông',
           type: 'collapse',
           icon: icons.IconDroplets,
           children: [{
-            id: 'water:view',
+            id: 'water:river-list',
+            permission: 'water:view',
             title: 'Danh sách',
             type: 'item',
             url: '/admin/station/river/list',
@@ -166,7 +184,8 @@ const adminPages = {
             breadcrumbs: false
           },
           {
-            id: 'water:view',
+            id: 'water:river-history',
+            permission: 'water:view',
             title: 'Lịch sử',
             type: 'item',
             url: '/admin/station/river/history',
@@ -177,12 +196,14 @@ const adminPages = {
       ]
     },
     {
+      id: 'emergency',
       title: 'BC CT KC',
       type: 'collapse',
       icon: icons.IconAlertTriangle,
       children: [
         {
-          id: 'emergency:view',
+          id: 'emergency:list',
+          permission: 'emergency:view',
           title: 'Danh sách',
           type: 'item',
           url: '/admin/emergency-construction',
@@ -190,7 +211,8 @@ const adminPages = {
           breadcrumbs: false
         },
         {
-          id: 'emergency:view',
+          id: 'emergency:dashboard',
+          permission: 'emergency:view',
           title: 'Báo cáo',
           type: 'item',
           url: '/admin/emergency-construction/dashboard',
@@ -198,7 +220,8 @@ const adminPages = {
           breadcrumbs: false
         },
         {
-          id: 'emergency:view',
+          id: 'emergency:history',
+          permission: 'emergency:view',
           title: 'Lịch sử báo cáo',
           type: 'item',
           url: '/admin/emergency-construction/report-history',
@@ -216,7 +239,8 @@ const adminPages = {
       breadcrumbs: false
     },
     {
-      id: 'trambom:view',
+      id: 'admin:trambom',
+      permission: 'trambom:view',
       title: 'Trạm bơm',
       type: 'item',
       url: '/admin/tram-bom',
@@ -232,6 +256,7 @@ const adminPages = {
       breadcrumbs: false
     },
     {
+      id: 'system',
       title: 'Hệ thống',
       type: 'collapse',
       icon: icons.IconUsers,
@@ -271,6 +296,7 @@ const adminPages = {
       ]
     },
     {
+      id: 'contract',
       title: 'Hợp đồng',
       type: 'collapse',
       icon: icons.IconClipboardList,

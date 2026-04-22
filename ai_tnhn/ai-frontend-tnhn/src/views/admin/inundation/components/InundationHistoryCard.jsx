@@ -4,7 +4,7 @@ import { IconChevronUp, IconChevronDown, IconInfoCircle } from '@tabler/icons-re
 import { getLatestData } from 'utils/inundationUtils';
 import { formatDateTime, formatDuration } from 'utils/dataHelper';
 import useInundationStore from 'store/useInundationStore';
-import { SurveyInfoSection, MechInfoSection, ReviewCommentSection } from './TechnicalSections';
+import { SurveyInfoSection, MechInfoSection, ReviewCommentSection } from '../../../employee/inundation/components/TechnicalSections';
 
 const InundationHistoryCard = ({ report, isMobile, navigate, basePath, handleOpenViewer }) => {
     const [open, setOpen] = useState(false);

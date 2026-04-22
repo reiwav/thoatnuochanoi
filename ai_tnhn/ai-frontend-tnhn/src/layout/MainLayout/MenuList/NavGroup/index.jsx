@@ -79,7 +79,8 @@ export default function NavGroup({ item, lastItem, remItems, lastItemId, setSele
 
   const items = currentItem.children?.map((menu) => {
     // Permission based filtering
-    if (menu?.id && !hasPermission(menu.id)) {
+    const permissionId = menu?.permission || menu?.id;
+    if (permissionId && !hasPermission(permissionId)) {
       return null;
     }
 

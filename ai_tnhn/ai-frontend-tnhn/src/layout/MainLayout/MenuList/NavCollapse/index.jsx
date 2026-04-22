@@ -32,7 +32,8 @@ import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 
 export default function NavCollapse({ menu, level, parentId }) {
   const { hasPermission } = useAuthStore();
-  if (menu?.id && !hasPermission(menu.id)) return null;
+  const permissionId = menu?.permission || menu?.id;
+  if (permissionId && !hasPermission(permissionId)) return null;
 
   const theme = useTheme();
   const downMD = useMediaQuery(theme.breakpoints.down('md'));
@@ -103,7 +104,8 @@ export default function NavCollapse({ menu, level, parentId }) {
 
   // menu collapse & item
   const filteredChildren = menu.children?.filter((item) => {
-    if (item.id && !hasPermission(item.id)) return false;
+    const itemPermissionId = item.permission || item.id;
+    if (itemPermissionId && !hasPermission(itemPermissionId)) return false;
     return true;
   });
 

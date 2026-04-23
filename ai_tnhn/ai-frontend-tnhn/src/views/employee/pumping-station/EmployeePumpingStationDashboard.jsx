@@ -97,14 +97,16 @@ const EmployeePumpingStationDashboard = () => {
                         placeholder="Tìm tên trạm, khu vực..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        InputProps={{
-                            startAdornment: <IconSearch size={20} style={{ marginRight: 12, opacity: 0.6 }} />,
-                            sx: {
-                                borderRadius: 4,
-                                bgcolor: 'background.paper',
-                                boxShadow: theme.shadows[1],
-                                '&:hover': { boxShadow: theme.shadows[3] },
-                                '& .MuiOutlinedInput-notchedOutline': { border: '1px solid', borderColor: 'divider' }
+                        slotProps={{
+                            input: {
+                                startAdornment: <IconSearch size={20} style={{ marginRight: 12, opacity: 0.6 }} />,
+                                sx: {
+                                    borderRadius: 4,
+                                    bgcolor: 'background.paper',
+                                    boxShadow: theme.shadows[1],
+                                    '&:hover': { boxShadow: theme.shadows[3] },
+                                    '& .MuiOutlinedInput-notchedOutline': { border: '1px solid', borderColor: 'divider' }
+                                }
                             }
                         }}
                     />

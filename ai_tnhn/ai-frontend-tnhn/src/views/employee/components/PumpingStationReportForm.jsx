@@ -56,10 +56,84 @@ const PumpingStationReport = ({ station, onSuccess, onClose }) => {
 
     const remainingCount = station.pump_count - totalPumped;
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData({ ...formData, [name]: Number(value) });
+    const handleAdjust = (name, delta) => {
+        const newValue = Math.max(0, (formData[name] || 0) + delta);
+        // Validation: total cannot exceed pump_count
+        const othersSum = totalPumped - (formData[name] || 0);
+        if (othersSum + newValue > station.pump_count) {
+            toast.error(`Tổng số máy bơm không thể vượt quá định mức ${station.pump_count} máy`);
+            return;
+        }
+        setFormData({ ...formData, [name]: newValue });
     };
+
+    const renderCounter = (label, name, color) => (
+        <Grid item xs={12}>
+            <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between',
+                p: 1.5,
+                borderRadius: 3,
+                bgcolor: alpha(color, 0.04),
+                border: '1px solid',
+                borderColor: alpha(color, 0.1)
+            }}>
+                <Box sx={{ flex: 1 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: color }}>{label}</Typography>
+                    <Typography variant="caption" color="textSecondary">Báo cáo cuối: <b>{station.last_report?.[name] || 0}</b></Typography>
+                </Box>
+                
+                <Stack direction="row" spacing={1.5} alignItems="center">
+                    <IconButton 
+                        size="large" 
+                        onClick={() => handleAdjust(name, -1)}
+                        disabled={formData[name] <= 0}
+                        sx={{ 
+                            bgcolor: 'background.paper', 
+                            border: '2px solid', 
+                            borderColor: 'divider',
+                            width: 50,
+                            height: 50,
+                            '&:hover': { bgcolor: 'grey.100' }
+                        }}
+                    >
+                        <Typography variant="h3" sx={{ fontWeight: 900 }}>-</Typography>
+                    </IconButton>
+                    
+                    <TextField
+                        size="small"
+                        value={formData[name]}
+                        onChange={(e) => {
+                            const val = parseInt(e.target.value) || 0;
+                            const othersSum = totalPumped - (formData[name] || 0);
+                            if (othersSum + val <= station.pump_count) {
+                                setFormData({ ...formData, [name]: Math.max(0, val) });
+                            }
+                        }}
+                        inputProps={{ style: { textAlign: 'center', fontWeight: 900, width: 50, fontSize: '1.5rem', padding: '0' } }}
+                        sx={{ '& .MuiOutlinedInput-notchedOutline': { border: 'none' } }}
+                    />
+
+                    <IconButton 
+                        size="large" 
+                        onClick={() => handleAdjust(name, 1)}
+                        disabled={totalPumped >= station.pump_count}
+                        sx={{ 
+                            bgcolor: 'background.paper', 
+                            border: '2px solid', 
+                            borderColor: 'divider',
+                            width: 50,
+                            height: 50,
+                            '&:hover': { bgcolor: 'grey.100' }
+                        }}
+                    >
+                        <Typography variant="h3" sx={{ fontWeight: 900 }}>+</Typography>
+                    </IconButton>
+                </Stack>
+            </Box>
+        </Grid>
+    );
 
     const handleSubmit = async () => {
         try {
@@ -72,142 +146,85 @@ const PumpingStationReport = ({ station, onSuccess, onClose }) => {
                 note: formData.note
             };
 
-            if (totalPumped > station.pump_count) {
-                toast.error(`Tổng số máy bơm (${totalPumped}) vượt quá định mức (${station.pump_count})`);
+            if (totalPumped !== station.pump_count) {
+                toast.error(`Tổng số máy bơm (${totalPumped}) phải bằng định mức (${station.pump_count})`);
                 return;
             }
 
             await pumpingStationApi.report(payload);
             toast.success('Gửi báo cáo thành công');
 
-            // Nếu có hàm callback thì gọi để Dashboard refresh lại dữ liệu station mới nhất
             if (onSuccess) {
                 onSuccess();
-            } else {
-                setFormData({ operating_count: 0, closed_count: 0, maintenance_count: 0, no_signal_count: 0, note: '' });
             }
         } catch (error) {
             toast.error(error.response?.data?.message || 'Báo cáo thất bại');
         }
     };
 
-    // Helper to generate options based on availability
-    const getOptions = (currentField) => {
-        const othersSum = totalPumped - Number(formData[currentField]);
-        const maxAvailable = station.pump_count - othersSum;
-        return Array.from({ length: maxAvailable + 1 }, (_, i) => i);
-    };
-
     return (
         <Box sx={{ width: '100%', mx: 'auto' }}>
-            {/* Input Section */}
             <Box sx={{ pb: 1 }}>
-                <Typography variant="h4" sx={{ fontWeight: 800, mb: 2, display: 'flex', alignItems: 'center', gap: 1.5, color: 'primary.main' }}>
-                    <IconClock size={24} />
-                    Cập nhật vận hành
-                </Typography>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+                    <Typography variant="h4" sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1.5, color: 'primary.main' }}>
+                        <IconClock size={24} />
+                        Cập nhật vận hành
+                    </Typography>
+                    <Box sx={{ bgcolor: 'primary.lighter', px: 1.5, py: 0.5, borderRadius: 2 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 900, color: 'primary.main' }}>
+                            Định mức: {station.pump_count} máy
+                        </Typography>
+                    </Box>
+                </Stack>
 
-                <Grid container spacing={2.5}>
-                    <Grid item xs={12}>
-                        <TextField
-                            select
-                            fullWidth
-                            size="small"
-                            label="Số lượng vận hành"
-                            name="operating_count"
-                            value={formData.operating_count}
-                            onChange={handleChange}
-                            InputProps={{
-                                sx: { borderRadius: 2 }
-                            }}
-                        >
-                            {getOptions('operating_count').map(num => (
-                                <MenuItem key={num} value={num}>{num} máy đang chạy</MenuItem>
-                            ))}
-                        </TextField>
-                    </Grid>
-                    <Grid item xs={12}>
-                        <TextField
-                            select
-                            fullWidth
-                            size="small"
-                            label="Số lượng không vận hành"
-                            name="closed_count"
-                            value={formData.closed_count}
-                            onChange={handleChange}
-                            InputProps={{
-                                sx: { borderRadius: 2 }
-                            }}
-                        >
-                            {getOptions('closed_count').map(num => (
-                                <MenuItem key={num} value={num}>{num} không vận hành</MenuItem>
-                            ))}
-                        </TextField>
-                    </Grid>
-                    <Grid item xs={12}>
-                        <TextField
-                            select
-                            fullWidth
-                            size="small"
-                            label="Số lượng bảo dưỡng"
-                            name="maintenance_count"
-                            value={formData.maintenance_count}
-                            onChange={handleChange}
-                            InputProps={{
-                                sx: { borderRadius: 2 }
-                            }}
-                        >
-                            {getOptions('maintenance_count').map(num => (
-                                <MenuItem key={num} value={num}>{num} máy bảo trì</MenuItem>
-                            ))}
-                        </TextField>
-                    </Grid>
-                    <Grid item xs={12}>
-                        <TextField
-                            select
-                            fullWidth
-                            size="small"
-                            label="Số lượng ko tín hiệu"
-                            name="no_signal_count"
-                            value={formData.no_signal_count}
-                            onChange={handleChange}
-                            InputProps={{
-                                sx: { borderRadius: 2 }
-                            }}
-                        >
-                            {getOptions('no_signal_count').map(num => (
-                                <MenuItem key={num} value={num}>{num} máy ko tín hiệu</MenuItem>
-                            ))}
-                        </TextField>
-                    </Grid>
+                <Grid container spacing={1.5}>
+                    {renderCounter('Số bơm vận hành', 'operating_count', theme.palette.error.main)}
+                    {renderCounter('Số bơm không vận hành', 'closed_count', theme.palette.success.main)}
+                    {renderCounter('Số bơm bảo dưỡng', 'maintenance_count', '#FBC02D')}
+                    {renderCounter('Số bơm mất tín hiệu', 'no_signal_count', theme.palette.text.secondary)}
+                    
                     <Grid item xs={12}>
                         <TextField
                             fullWidth
                             placeholder="Nhập ghi chú vận hành, sự cố kỹ thuật nếu có..."
                             name="note"
                             multiline
-                            rows={3}
+                            rows={2}
                             value={formData.note}
                             onChange={(e) => setFormData({ ...formData, note: e.target.value })}
-                            InputProps={{
-                                sx: {
-                                    borderRadius: 2,
-                                    bgcolor: alpha(theme.palette.primary.main, 0.02),
-                                    '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.04) }
+                            sx={{ mt: 1 }}
+                            slotProps={{
+                                input: {
+                                    sx: {
+                                        borderRadius: 3,
+                                        bgcolor: alpha(theme.palette.primary.main, 0.02),
+                                        '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.04) }
+                                    }
                                 }
                             }}
                         />
                     </Grid>
                 </Grid>
 
-                {remainingCount > 0 && (
-                    <Box sx={{ mt: 2, p: 1, px: 1.5, display: 'flex', alignItems: 'center', gap: 1, color: 'warning.dark', bgcolor: 'warning.light', borderRadius: 2, opacity: 0.8 }}>
-                        <IconAlertTriangle size={16} />
-                        <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                            Còn {remainingCount} máy bơm chưa được cập nhật trạng thái
+                <Box sx={{ 
+                    mt: 2, p: 1.5, 
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    bgcolor: remainingCount === 0 ? alpha(theme.palette.success.main, 0.1) : alpha(theme.palette.warning.main, 0.1),
+                    color: remainingCount === 0 ? 'success.dark' : 'warning.dark',
+                    borderRadius: 3,
+                    border: '1px solid',
+                    borderColor: 'divider'
+                }}>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                        <IconAlertTriangle size={18} />
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                            {remainingCount === 0 ? 'Đã gán đủ trạng thái' : `Còn ${remainingCount} máy chưa gán`}
                         </Typography>
-                    </Box>
-                )}
+                    </Stack>
+                    <Typography variant="h4" sx={{ fontWeight: 900 }}>
+                        {totalPumped} / {station.pump_count}
+                    </Typography>
+                </Box>
                 <Stack direction="column" spacing={1.5} sx={{ mt: 3 }}>
                     <Button
                         variant="contained"

@@ -34,6 +34,15 @@ const companyPages = {
       breadcrumbs: false
     },
     {
+      id: 'pumping:summary',
+      permission: 'trambom:view',
+      title: 'Bảng trạm bơm',
+      type: 'item',
+      url: '/admin/station/pumping/summary',
+      icon: icons.IconEngine,
+      breadcrumbs: false
+    },
+    {
       id: 'inundation:dashboard',
       permission: ['inundation:view', 'inundation:review', 'inundation:survey', 'inundation:mechanic', 'inundation:report'],
       title: 'Cập nhật điểm ngập',

@@ -86,7 +86,7 @@ const InundationPointCard = ({ point, openTask, handleOpenViewer, onRefresh }) =
                         : theme.shadows[8],
                     borderColor: isHighPriority ? 'error.main' : 'primary.light'
                 },
-                animation: latest?.needs_correction ? 'aggressiveBlink 1.5s infinite alternate' : 'none',
+                animation: (isHighPriority && latest?.needs_correction) ? 'aggressiveBlink 1.5s infinite alternate' : 'none',
                 '@keyframes aggressiveBlink': {
                     '0%': { 
                         borderColor: theme.palette.warning.main,

@@ -139,21 +139,27 @@ func (s *service) ReviewUpdate(ctx context.Context, user *models.User, updateID,
 func (s *service) GetUpdateByID(ctx context.Context, updateID string) (*models.InundationUpdate, error) {
 	return s.inundationUpdateRepo.GetByID(ctx, updateID)
 }
-func (s *service) UpdateUpdateContent(ctx context.Context, user *models.User, updateID string, updatedData *models.InundationUpdate, images []ImageContent) error {
-	update, err := s.inundationUpdateRepo.GetByID(ctx, updateID)
+func (s *service) UpdateUpdateContent(ctx context.Context, user *models.User, updatedData *models.InundationUpdate, images []ImageContent) error {
+	// 1. Get the parent report
+	report, err := s.InundationReportRepo.GetByID(ctx, updatedData.ReportID)
 	if err != nil {
 		return err
 	}
 
-	// Permission Checks
-	report, err := s.InundationReportRepo.GetByID(ctx, update.ReportID)
+	// 2. The update to edit is the one pointed by LastReportID
+	updateID := report.LastReportID
+	if updateID == "" {
+		return web.NotFound("Không tìm thấy bản cập nhật tình hình mới nhất để chỉnh sửa")
+	}
+
+	update, err := s.inundationUpdateRepo.GetByID(ctx, updateID)
 	if err != nil {
 		return err
 	}
 
 	isAllowedAll := user.Role == "super_admin" || user.IsCompany
 	if user.IsEmployee {
-		if !update.NeedsCorrection {
+		if !report.NeedsCorrection {
 			return web.Forbidden("Chỉ được phép sửa thông tin khi có yêu cầu (nhận xét) từ người rà soát")
 		}
 		if report.OrgID != user.OrgID {
@@ -177,7 +183,7 @@ func (s *service) UpdateUpdateContent(ctx context.Context, user *models.User, up
 		}
 	}
 
-	// 1. Update the existing record
+	// 3. Update the existing record fields
 	update.Description = updatedData.Description
 	update.Depth = updatedData.Depth
 	update.Length = updatedData.Length
@@ -185,6 +191,9 @@ func (s *service) UpdateUpdateContent(ctx context.Context, user *models.User, up
 	update.TrafficStatus = updatedData.TrafficStatus
 	update.NeedsCorrection = false
 	update.IsReviewUpdated = true
+
+	// Recalculate level for update
+	update.FloodLevelName, update.FloodLevelColor = s.calculateFloodLevel(ctx, update.Depth)
 
 	if len(images) > 0 {
 		savedPaths, err := s.saveLocalImages(fmt.Sprintf("%s_fix_%d", updateID, time.Now().Unix()), images)
@@ -197,39 +206,26 @@ func (s *service) UpdateUpdateContent(ctx context.Context, user *models.User, up
 		}
 	}
 
-	// 2. Save the updated record
+	// 4. Save the updated record
 	err = s.inundationUpdateRepo.Update(ctx, update)
 	if err != nil {
 		return err
 	}
 
-	// 3. Sync to main report
-	allUpdates, err := s.inundationUpdateRepo.ListByReportID(ctx, update.ReportID)
-	if err == nil && len(allUpdates) > 0 {
-		latest := allUpdates[len(allUpdates)-1]
-		if latest.ID == update.ID {
-			mainReport, rErr := s.InundationReportRepo.GetByID(ctx, update.ReportID)
-			if rErr == nil {
-				mainReport.Depth = update.Depth
-				mainReport.Length = update.Length
-				mainReport.Width = update.Width
-				mainReport.TrafficStatus = update.TrafficStatus
-				mainReport.Description = update.Description
-				mainReport.Images = update.Images
-				mainReport.NeedsCorrection = false
-				mainReport.NeedsCorrectionUpdateID = ""
-				mainReport.IsReviewUpdated = true
-				_ = s.InundationReportRepo.Update(ctx, mainReport)
-			}
-		} else {
-			mainReport, rErr := s.InundationReportRepo.GetByID(ctx, update.ReportID)
-			if rErr == nil && mainReport.NeedsCorrectionUpdateID == update.ID {
-				mainReport.NeedsCorrection = false
-				mainReport.NeedsCorrectionUpdateID = ""
-				_ = s.InundationReportRepo.Update(ctx, mainReport)
-			}
-		}
-	}
+	// 5. Sync to main report
+	report.Depth = update.Depth
+	report.Length = update.Length
+	report.Width = update.Width
+	report.TrafficStatus = update.TrafficStatus
+	report.Description = update.Description
+	report.Images = update.Images
+	report.FloodLevelName = update.FloodLevelName
+	report.FloodLevelColor = update.FloodLevelColor
+	report.NeedsCorrection = false
+	report.NeedsCorrectionUpdateID = ""
+	report.IsReviewUpdated = true
+	
+	_ = s.InundationReportRepo.Update(ctx, report)
 
 	return nil
 }

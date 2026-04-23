@@ -60,10 +60,6 @@ func (s *service) CreateReport(ctx context.Context, user *models.User, input mod
 	report.FloodLevelName, report.FloodLevelColor = s.calculateFloodLevel(ctx, report.Depth)
 	// 5. Save report to DB
 	report.TrafficStatus = report.FloodLevelName
-	err = s.InundationReportRepo.Create(ctx, report)
-	if err != nil {
-		return nil, err
-	}
 
 	// ALWAYS Create an initial update record for history/timeline consistency
 	initialUpdate := &models.InundationUpdate{
@@ -81,7 +77,15 @@ func (s *service) CreateReport(ctx context.Context, user *models.User, input mod
 	if initialUpdate.Description == "" {
 		initialUpdate.Description = "Bắt đầu đợt ngập"
 	}
-	_ = s.inundationUpdateRepo.Create(ctx, initialUpdate)
+	err = s.inundationUpdateRepo.Create(ctx, initialUpdate)
+	if err != nil {
+		return nil, err
+	}
+	report.LastReportID = initialUpdate.ID
+	err = s.InundationReportRepo.Create(ctx, report)
+	if err != nil {
+		return nil, err
+	}
 
 	// Update station's report_id if it's an active report
 	if report.Status == "active" && report.PointID != "" {
@@ -117,7 +121,7 @@ func (s *service) AddUpdate(ctx context.Context, user *models.User, reportID str
 	if err != nil {
 		return err
 	}
-
+	fmt.Println("==========", report.PointID)
 	// 2. Permission Check for Employee
 	err = s.validAssigned(ctx, user, report.PointID)
 	if err != nil {

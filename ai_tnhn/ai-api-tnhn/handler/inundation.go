@@ -597,7 +597,7 @@ func (h *InundationHandler) UpdateSituationUpdateContent(c *gin.Context) {
 	}
 
 	id := c.Param("id")
-	var req models.InundationReportBase
+	var req dto.AddUpdateSitutionRequest
 	if err := c.ShouldBind(&req); err != nil {
 		h.SendError(c, web.BadRequest("Invalid request data: "+err.Error()))
 		return
@@ -611,9 +611,10 @@ func (h *InundationHandler) UpdateSituationUpdateContent(c *gin.Context) {
 		Length:        req.Length,
 		Width:         req.Width,
 		TrafficStatus: req.TrafficStatus,
+		ReportID:      id,
 	}
 
-	err := h.service.UpdateUpdateContent(c.Request.Context(), user, id, updatedUpdate, images)
+	err := h.service.UpdateUpdateContent(c.Request.Context(), user, updatedUpdate, images)
 	if err != nil {
 		h.SendError(c, err)
 		return

@@ -6,6 +6,7 @@ import (
 
 type InundationUpdate struct {
 	model.BaseModel `bson:",inline"`
+	PointID         string        `bson:"point_id" json:"point_id" example:"60f123456789"`
 	ReportID        string        `bson:"report_id" json:"report_id" example:"60f123456789"`
 	UserID          string        `bson:"user_id" json:"user_id" example:"60a123456789"`
 	UserEmail       string        `bson:"user_email" json:"user_email" example:"emp@hsdc.com.vn"`

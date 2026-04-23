@@ -32,7 +32,7 @@ type Service interface {
 	ReviewReport(ctx context.Context, user *models.User, reportID, comment string) error
 	ReviewUpdate(ctx context.Context, user *models.User, updateID, comment string) error
 	GetUpdateByID(ctx context.Context, updateID string) (*models.InundationUpdate, error)
-	UpdateUpdateContent(ctx context.Context, user *models.User, updateID string, update *models.InundationUpdate, images []ImageContent) error
+	UpdateUpdateContent(ctx context.Context, user *models.User, update *models.InundationUpdate, images []ImageContent) error
 
 	// Points management
 	GetPointsStatus(ctx context.Context, user *models.User, isAllowedAll bool, orgIDFilter string) ([]PointStatus, error)

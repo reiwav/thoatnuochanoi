@@ -186,6 +186,41 @@ func (h *InundationHandler) ResolveReport(c *gin.Context) {
 	h.SendData(c, true)
 }
 
+// QuickFinish godoc
+// @Summary Kết thúc nhanh điểm ngập
+// @Description Đánh dấu điểm ngập đã hết ngập nhanh chóng
+// @Tags Ngập lụt
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param point_id body string true "ID điểm ngập"
+// @Success 200 {boolean} bool
+// @Failure 401 {object} web.ErrorResponse
+// @Router /inundation/quick-finish [post]
+func (h *InundationHandler) QuickFinish(c *gin.Context) {
+	_, user := h.checkPermissions(c)
+	if user == nil {
+		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
+		return
+	}
+
+	var req struct {
+		PointID string `json:"point_id"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.SendError(c, web.BadRequest("Invalid request data"))
+		return
+	}
+
+	err := h.service.QuickFinish(c.Request.Context(), user, req.PointID)
+	if err != nil {
+		h.SendError(c, err)
+		return
+	}
+
+	h.SendData(c, true)
+}
+
 // ListReports godoc
 // @Summary Danh sách báo cáo ngập lụt
 // @Description Truy xuất danh sách báo cáo với các bộ lọc

@@ -82,6 +82,9 @@ const inundationApi = {
         let url = `/inundation/yearly-history/export?year=${year}`;
         if (org_id) url += `&org_id=${org_id}`;
         return axiosClient.get(url, { responseType: 'blob' });
+    },
+    quickFinish: (pointId) => {
+        return axiosClient.post('/inundation/quick-finish', { point_id: pointId });
     }
 };
 

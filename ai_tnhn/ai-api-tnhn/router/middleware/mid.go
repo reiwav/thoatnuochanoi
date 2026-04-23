@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"ai-api-tnhn/config"
-	"ai-api-tnhn/constant"
 	"ai-api-tnhn/internal/base/logger"
 	"ai-api-tnhn/internal/repository"
 	"ai-api-tnhn/internal/service/permission"
@@ -46,8 +45,6 @@ type mid struct {
 
 func (m mid) MidBasicType(roles ...string) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		fmt.Println("roles: ", roles)
-		fmt.Println("ctx.Request: ", ctx.Request.URL.Path)
 		var tokenID = m.GetToken(ctx.Request)
 		var tok, err = m.tokenRepo.GetByID(ctx, tokenID)
 		if err != nil || tok == nil {
@@ -57,15 +54,6 @@ func (m mid) MidBasicType(roles ...string) gin.HandlerFunc {
 			return
 		}
 
-		// Normalize typo from database
-		if tok.Role == "supper_admib" || tok.Role == "supper_admin" || tok.Role == "super_admin " {
-			tok.Role = constant.ROLE_SUPER_ADMIN
-		}
-		if tok.Role == "giam_doc_xi_nghiep" {
-			tok.Role = constant.ROLE_GIAM_DOC_XN
-		}
-		fmt.Println("tok.Role: ", tok.Role)
-		fmt.Println("tokenID: ", tokenID)
 		if len(roles) > 0 {
 			if !contains(roles, tok.Role) && !tok.IsCompany {
 				err = web.Unauthorized("access token not found " + tok.Role)

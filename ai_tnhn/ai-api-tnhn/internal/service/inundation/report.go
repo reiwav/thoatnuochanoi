@@ -52,18 +52,14 @@ func (s *service) CreateReport(ctx context.Context, user *models.User, input mod
 		}
 	}
 
-	if report.Status == "resolved" || report.Status == "normal" {
-		report.TrafficStatus = ""
-	}
-
 	if report.Status == "" {
 		report.Status = "active"
 	}
 
 	// Calculate Flood Level
 	report.FloodLevelName, report.FloodLevelColor = s.calculateFloodLevel(ctx, report.Depth)
-
 	// 5. Save report to DB
+	report.TrafficStatus = report.FloodLevelName
 	err = s.InundationReportRepo.Create(ctx, report)
 	if err != nil {
 		return nil, err
@@ -79,7 +75,7 @@ func (s *service) CreateReport(ctx context.Context, user *models.User, input mod
 		Depth:         report.Depth,
 		Length:        report.Length,
 		Width:         report.Width,
-		TrafficStatus: report.TrafficStatus,
+		TrafficStatus: report.FloodLevelName,
 		Images:        report.Images,
 	}
 	if initialUpdate.Description == "" {
@@ -147,9 +143,7 @@ func (s *service) AddUpdate(ctx context.Context, user *models.User, reportID str
 	}
 
 	// 4. Inherit status from main report if not provided in update
-	if update.TrafficStatus == "" {
-		update.TrafficStatus = report.TrafficStatus
-	}
+
 	if update.Length == "" {
 		update.Length = report.Length
 	}
@@ -166,7 +160,7 @@ func (s *service) AddUpdate(ctx context.Context, user *models.User, reportID str
 	}
 
 	// 6. Also update the main report's current status/dimensions
-	report.TrafficStatus = update.TrafficStatus
+	report.TrafficStatus = update.FloodLevelName
 	report.Length = update.Length
 	report.Width = update.Width
 	report.Depth = update.Depth
@@ -174,10 +168,6 @@ func (s *service) AddUpdate(ctx context.Context, user *models.User, reportID str
 	report.FloodLevelColor = update.FloodLevelColor
 	report.Description = update.Description
 	report.Images = update.Images
-
-	if report.Status == "resolved" || report.Status == "normal" {
-		report.TrafficStatus = ""
-	}
 
 	err = s.InundationReportRepo.Update(ctx, report)
 	if err != nil {
@@ -273,9 +263,6 @@ func (s *service) ListReportsWithFilter(ctx context.Context, user *models.User, 
 		}
 
 		for _, r := range reports {
-			if r.Status == "resolved" || r.Status == "normal" {
-				r.TrafficStatus = ""
-			}
 			if u, ok := updatesMap[r.ID]; ok {
 				r.Updates = u
 			}
@@ -386,7 +373,7 @@ func (s *service) UpdateReport(ctx context.Context, user *models.User, id string
 	existing.Length = report.Length
 	existing.Width = report.Width
 	existing.Description = report.Description
-	existing.TrafficStatus = report.TrafficStatus
+	existing.TrafficStatus = existing.FloodLevelName
 	existing.NeedsCorrection = false
 	existing.NeedsCorrectionUpdateID = ""
 
@@ -595,4 +582,40 @@ func (s *service) UpdateMech(ctx context.Context, user *models.User, id string, 
 	_ = s.inundationUpdateRepo.Create(ctx, newUpdate)
 
 	return nil
+}
+
+func (s *service) QuickFinish(ctx context.Context, user *models.User, pointID string) error {
+	// 1. Find the active report for this point
+	f := filter.NewPaginationFilter()
+	f.AddWhere("point_id", "point_id", pointID)
+	f.AddWhere("status", "status", "active")
+	reports, _, err := s.InundationReportRepo.List(ctx, f)
+	if err != nil || len(reports) == 0 {
+		return web.NotFound("Không tìm thấy vụ ngập đang hoạt động tại trạm này")
+	}
+
+	report := reports[0]
+
+	// 2. Permission check
+	err = s.validAssigned(ctx, user, pointID)
+	if err != nil {
+		return err
+	}
+
+	// 3. Create a final update record
+	endTime := time.Now().Unix()
+	finalUpdate := &models.InundationUpdate{
+		ReportID:      report.ID,
+		UserID:        user.ID,
+		UserEmail:     user.Email,
+		UserName:      user.Name,
+		Timestamp:     endTime,
+		Description:   "Kết thúc nhanh đợt ngập",
+		Depth:         0,
+		TrafficStatus: "Bình thường",
+	}
+	_ = s.inundationUpdateRepo.Create(ctx, finalUpdate)
+
+	// 4. Resolve the report
+	return s.Resolve(ctx, report.ID, endTime)
 }

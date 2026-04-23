@@ -165,6 +165,7 @@ const EmployeeInundationDashboard = () => {
                             point={point}
                             openTask={openTask}
                             handleOpenViewer={handleOpenViewer}
+                            onRefresh={fetchPoints}
                         />
                     </Grid>
                 ))}

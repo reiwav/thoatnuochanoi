@@ -4,6 +4,7 @@ import (
 	"ai-api-tnhn/internal/base/mgo/filter"
 	"ai-api-tnhn/internal/models"
 	"context"
+	"fmt"
 	"sort"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -94,14 +95,14 @@ func (s *service) GetPointsStatus(ctx context.Context, user *models.User, isAllo
 	}
 
 	// 2. Get active reports
-	var activeReports []*models.InundationReport
+	var activeReports []models.InundationReport
 	err = s.InundationReportRepo.R_SelectMany(ctx, bson.M{"status": "active", "point_id": bson.M{"$in": pIDs}}, &activeReports)
 	if len(activeReports) == 0 {
-		activeReports = make([]*models.InundationReport, 0)
+		activeReports = make([]models.InundationReport, 0)
 	}
-
+	fmt.Println("====== activeReports", activeReports, pIDs)
 	// 3. Map reports to points
-	reportsByPoint := make(map[string]*models.InundationReport)
+	reportsByPoint := make(map[string]models.InundationReport)
 	for _, r := range activeReports {
 		if r.PointID != "" {
 			reportsByPoint[r.PointID] = r
@@ -115,22 +116,17 @@ func (s *service) GetPointsStatus(ctx context.Context, user *models.User, isAllo
 		if p.LastReportID != "" {
 			lastReport, _ = s.InundationReportRepo.GetByID(ctx, p.LastReportID)
 		}
-
-		active := reportsByPoint[p.ID]
-		if active != nil {
-			p.ReportID = active.ID
-		} else {
-			p.ReportID = ""
-		}
-
 		result[i] = PointStatus{
 			InundationStation: p,
 			Status:            "normal",
 			LastReport:        lastReport,
 		}
-		if active != nil {
+		if active, ok := reportsByPoint[p.ID]; ok {
+			p.ReportID = active.ID
 			result[i].Status = "flooded"
-			result[i].ActiveReport = active
+			result[i].ActiveReport = &active
+		} else {
+			p.ReportID = ""
 		}
 		result[i].OrgName = orgMap[p.OrgID]
 	}

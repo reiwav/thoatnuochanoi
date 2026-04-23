@@ -347,7 +347,7 @@ const ConstructionProgressHistory = () => {
             )}
 
             {/* Image Viewer */}
-            <Dialog open={viewer.open} onClose={handleCloseViewer} maxWidth="lg" PaperProps={{ sx: { bgcolor: 'black', borderRadius: 4, overflow: 'hidden', position: 'relative' } }}>
+            <Dialog open={viewer.open} onClose={handleCloseViewer} maxWidth="lg" slotProps={{ paper: { sx: { bgcolor: 'black', borderRadius: 4, overflow: 'hidden', position: 'relative' } } }}>
                 <IconButton onClick={handleCloseViewer} sx={{ position: 'absolute', top: 16, right: 16, zIndex: 10, color: 'white', bgcolor: 'rgba(0,0,0,0.5)', '&:hover': { bgcolor: 'rgba(0,0,0,0.8)' } }}>
                     <IconX size={20} />
                 </IconButton>

@@ -79,8 +79,10 @@ const FloodLevelDialog = ({ open, onClose, onSubmit, level, isEdit }) => {
             onClose={onClose} 
             maxWidth="sm" 
             fullWidth
-            PaperProps={{
-                sx: { borderRadius: '16px', p: 1 }
+            slotProps={{
+                paper: {
+                    sx: { borderRadius: '16px', p: 1 }
+                }
             }}
         >
             <DialogTitle sx={{ pb: 0 }}>

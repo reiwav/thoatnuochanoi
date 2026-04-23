@@ -120,6 +120,18 @@ const useInundationStore = create((set, get) => ({
             toast.error('Lỗi khi kết thúc ngập');
             return false;
         }
+    },
+    
+    quickFinishPoint: async (pointId) => {
+        try {
+            await inundationApi.quickFinish(pointId);
+            toast.success('Đã kết thúc nhanh đợt ngập');
+            get().fetchPoints();
+            return true;
+        } catch (err) {
+            toast.error('Lỗi khi kết thúc nhanh');
+            return false;
+        }
     }
 }));
 

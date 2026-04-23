@@ -73,10 +73,12 @@ const EmployeeActionDialog = ({ open, onClose, mode, data, onFinished }) => {
             fullScreen={fullScreen}
             maxWidth="sm"
             fullWidth
-            PaperProps={{
-                sx: {
-                    borderRadius: fullScreen ? 0 : 3,
-                    backgroundImage: 'none'
+            slotProps={{
+                paper: {
+                    sx: {
+                        borderRadius: fullScreen ? 0 : 3,
+                        backgroundImage: 'none'
+                    }
                 }
             }}
         >

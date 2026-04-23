@@ -523,8 +523,10 @@ const AiSupport = () => {
                 open={showStats}
                 onClose={() => setShowStats(false)}
                 onOpen={() => setShowStats(true)}
-                PaperProps={{
-                    sx: { width: { xs: '85%', sm: 400 }, p: 0, borderTopLeftRadius: '24px', borderBottomLeftRadius: '24px' }
+                slotProps={{
+                    paper: {
+                        sx: { width: { xs: '85%', sm: 400 }, p: 0, borderTopLeftRadius: '24px', borderBottomLeftRadius: '24px' }
+                    }
                 }}
             >
                 <StatsContent
@@ -539,7 +541,7 @@ const AiSupport = () => {
             </SwipeableDrawer>
 
             {/* Report Dialog */}
-            <Dialog open={openReportDialog} onClose={() => !exporting && setOpenReportDialog(false)} PaperProps={{ sx: { borderRadius: '16px', minWidth: 320 } }}>
+            <Dialog open={openReportDialog} onClose={() => !exporting && setOpenReportDialog(false)} slotProps={{ paper: { sx: { borderRadius: '16px', minWidth: 320 } } }}>
                 <DialogTitle sx={{ fontWeight: 800 }}>Xuất báo cáo công trình</DialogTitle>
                 <DialogContent>
                     <TextField

@@ -126,14 +126,16 @@ const ChatHeader = ({
                     onClose={handleMenuClose}
                     transformOrigin={{ horizontal: 'right', vertical: 'top' }}
                     anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-                    PaperProps={{
-                        sx: {
-                            borderRadius: '16px',
-                            minWidth: 220,
-                            mt: 1,
-                            boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                            border: '1px solid',
-                            borderColor: 'divider'
+                    slotProps={{
+                        paper: {
+                            sx: {
+                                borderRadius: '16px',
+                                minWidth: 220,
+                                mt: 1,
+                                boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                                border: '1px solid',
+                                borderColor: 'divider'
+                            }
                         }
                     }}
                 >
@@ -143,19 +145,37 @@ const ChatHeader = ({
                             <PermissionGuard permission="ai:report">
                                 <MenuItem onClick={() => { handleQuickReportText(); handleMenuClose(); }}>
                                     <ListItemIcon><IconRefresh size={20} color="#2e7d32" /></ListItemIcon>
-                                    <ListItemText primary="Tin nhắn báo cáo" primaryTypographyProps={{ fontWeight: 600, color: '#2e7d32' }} />
+                                    <ListItemText 
+                                        primary={
+                                            <Typography variant="body2" fontWeight={600} color="#2e7d32">
+                                                Tin nhắn báo cáo
+                                            </Typography>
+                                        } 
+                                    />
                                 </MenuItem>
                             </PermissionGuard>
                             <PermissionGuard permission="ai:synthesis">
                                 <MenuItem onClick={() => { handleAIDynamicReport(); handleMenuClose(); }}>
                                     <ListItemIcon><IconRobot size={20} color="#7b1fa2" /></ListItemIcon>
-                                    <ListItemText primary="Báo cáo tổng hợp" primaryTypographyProps={{ fontWeight: 600, color: '#7b1fa2' }} />
+                                    <ListItemText 
+                                        primary={
+                                            <Typography variant="body2" fontWeight={600} color="#7b1fa2">
+                                                Báo cáo tổng hợp
+                                            </Typography>
+                                        } 
+                                    />
                                 </MenuItem>
                             </PermissionGuard>
                             <PermissionGuard permission="ai:post-rain">
                                 <MenuItem onClick={() => { handleQuickReport(); handleMenuClose(); }}>
                                     <ListItemIcon><IconBolt size={20} color="#0084FF" /></ListItemIcon>
-                                    <ListItemText primary="Báo cáo nhanh (Word)" primaryTypographyProps={{ fontWeight: 600, color: '#0084FF' }} />
+                                    <ListItemText 
+                                        primary={
+                                            <Typography variant="body2" fontWeight={600} color="#0084FF">
+                                                Báo cáo nhanh (Word)
+                                            </Typography>
+                                        } 
+                                    />
                                 </MenuItem>
                             </PermissionGuard>
                         </Box>
@@ -165,7 +185,13 @@ const ChatHeader = ({
                     <PermissionGuard permission="ai:report-emergency">
                         <MenuItem onClick={() => { openReportDialog(); handleMenuClose(); }}>
                             <ListItemIcon><IconFileDescription size={20} color="#ef6c00" /></ListItemIcon>
-                            <ListItemText primary="Xuất BC công trình" primaryTypographyProps={{ fontWeight: 600, color: '#ef6c00' }} />
+                            <ListItemText 
+                                primary={
+                                    <Typography variant="body2" fontWeight={600} color="#ef6c00">
+                                        Xuất BC công trình
+                                    </Typography>
+                                } 
+                            />
                         </MenuItem>
                     </PermissionGuard>
 
@@ -176,7 +202,13 @@ const ChatHeader = ({
                         <ListItemIcon>
                             <IconChartBar size={20} color="#0084FF" />
                         </ListItemIcon>
-                        <ListItemText primary={showStats ? "Ẩn thống kê hệ thống" : "Hiện thống kê hệ thống"} primaryTypographyProps={{ fontWeight: 600 }} />
+                        <ListItemText 
+                            primary={
+                                <Typography variant="body2" fontWeight={600}>
+                                    {showStats ? "Ẩn thống kê hệ thống" : "Hiện thống kê hệ thống"}
+                                </Typography>
+                            } 
+                        />
                     </MenuItem>
                 </Menu>
 

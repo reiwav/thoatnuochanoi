@@ -39,7 +39,7 @@ const AdminInundationDashboard = () => {
         points, historyReports, organizations,
         loading, loadingHistory,
         fetchInitialData, fetchPoints, fetchHistory,
-        filters, setFilters, resolveReport
+        filters, setFilters, resolveReport, quickFinishPoint
     } = useInundationStore();
 
     // Local UI states
@@ -96,7 +96,7 @@ const AdminInundationDashboard = () => {
     const handleAction = (mode, point) => {
         if (mode === 'quick_finish') {
             if (window.confirm(`Bạn có chắc chắn muốn kết thúc ngập tại điểm "${point.name}"?`)) {
-                resolveReport(point.report_id);
+                quickFinishPoint(point.id);
             }
             return;
         }

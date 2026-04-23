@@ -9,7 +9,7 @@ const ImageViewer = ({ viewer, onClose, onPrev, onNext }) => {
             open={viewer.open}
             onClose={onClose}
             maxWidth="lg"
-            PaperProps={{ sx: { bgcolor: 'black', borderRadius: 4, overflow: 'hidden', position: 'relative' } }}
+            slotProps={{ paper: { sx: { bgcolor: 'black', borderRadius: 4, overflow: 'hidden', position: 'relative' } } }}
         >
             <IconButton
                 onClick={onClose}

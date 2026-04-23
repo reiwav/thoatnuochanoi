@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { IconButton, Menu, MenuItem, ListItemIcon, ListItemText, Divider, useTheme } from '@mui/material';
+import { IconButton, Menu, MenuItem, ListItemIcon, ListItemText, Divider, useTheme, alpha, Typography } from '@mui/material';
 import { 
     IconDotsVertical, 
     IconMessageDots, 
@@ -8,6 +8,8 @@ import {
     IconTruck, 
     IconCircleCheck 
 } from '@tabler/icons-react';
+
+import PermissionGuard from 'ui-component/PermissionGuard';
 
 const AdminInundationActionMenu = ({ 
     point, 
@@ -42,6 +44,10 @@ const AdminInundationActionMenu = ({
                 size="small"
                 onClick={handleClick}
                 color={hasActiveReport ? "error" : "default"}
+                sx={{ 
+                    bgcolor: hasActiveReport ? alpha(theme.palette.error.main, 0.05) : 'transparent',
+                    '&:hover': { bgcolor: hasActiveReport ? alpha(theme.palette.error.main, 0.1) : 'grey.100' }
+                }}
             >
                 <IconDotsVertical size={20} />
             </IconButton>
@@ -51,52 +57,90 @@ const AdminInundationActionMenu = ({
                 onClose={handleClose}
                 transformOrigin={{ horizontal: 'right', vertical: 'top' }}
                 anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                slotProps={{
+                    paper: {
+                        sx: {
+                            borderRadius: 3,
+                            mt: 0.5,
+                            minWidth: 180,
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                        }
+                    }
+                }}
             >
-                <MenuItem onClick={handleMenuClick('comment')} disabled={!hasActiveReport}>
-                    <ListItemIcon><IconMessageDots size={18} color={theme.palette.text.primary} /></ListItemIcon>
-                    <ListItemText 
-                        primary="Nhận xét rà soát" 
-                        primaryTypographyProps={{ variant: 'subtitle2', fontWeight: 600, color: 'text.primary' }} 
-                    />
-                </MenuItem>
+                <PermissionGuard permission="inundation:review">
+                    <MenuItem onClick={handleMenuClick('comment')} disabled={!hasActiveReport}>
+                        <ListItemIcon><IconMessageDots size={18} color={theme.palette.error.main} /></ListItemIcon>
+                        <ListItemText 
+                            primary={
+                                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'error.main' }}>
+                                    Nhận xét rà soát
+                                </Typography>
+                            } 
+                        />
+                    </MenuItem>
+                </PermissionGuard>
                 
-                <MenuItem onClick={handleMenuClick('report')} disabled={!hasActiveReport}>
-                    <ListItemIcon><IconReportMedical size={18} color={theme.palette.text.primary} /></ListItemIcon>
-                    <ListItemText 
-                        primary="Cập nhật diễn biến" 
-                        primaryTypographyProps={{ variant: 'subtitle2', fontWeight: 600, color: 'text.primary' }} 
-                    />
-                </MenuItem>
+                <PermissionGuard permission="inundation:report">
+                    <MenuItem onClick={handleMenuClick('report')} disabled={!hasActiveReport}>
+                        <ListItemIcon><IconReportMedical size={18} color={theme.palette.secondary.main} /></ListItemIcon>
+                        <ListItemText 
+                            primary={
+                                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'secondary.main' }}>
+                                    Cập nhật diễn biến
+                                </Typography>
+                            } 
+                        />
+                    </MenuItem>
+                </PermissionGuard>
 
-                <MenuItem onClick={handleMenuClick('survey')} disabled={!hasActiveReport}>
-                    <ListItemIcon><IconRulerMeasure size={18} color={theme.palette.text.primary} /></ListItemIcon>
-                    <ListItemText 
-                        primary="Khảo sát thiết kế" 
-                        primaryTypographyProps={{ variant: 'subtitle2', fontWeight: 600, color: 'text.primary' }} 
-                    />
-                </MenuItem>
+                <PermissionGuard permission="inundation:survey">
+                    <MenuItem onClick={handleMenuClick('survey')} disabled={!hasActiveReport}>
+                        <ListItemIcon><IconRulerMeasure size={18} color={theme.palette.primary.main} /></ListItemIcon>
+                        <ListItemText 
+                            primary={
+                                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'primary.main' }}>
+                                    Khảo sát thiết kế
+                                </Typography>
+                            } 
+                        />
+                    </MenuItem>
+                </PermissionGuard>
 
-                <MenuItem onClick={handleMenuClick('mech')} disabled={!hasActiveReport}>
-                    <ListItemIcon><IconTruck size={18} color={theme.palette.text.primary} /></ListItemIcon>
-                    <ListItemText 
-                        primary="Cơ giới" 
-                        primaryTypographyProps={{ variant: 'subtitle2', fontWeight: 600, color: 'text.primary' }} 
-                    />
-                </MenuItem>
+                <PermissionGuard permission="inundation:mechanic">
+                    <MenuItem onClick={handleMenuClick('mech')} disabled={!hasActiveReport}>
+                        <ListItemIcon><IconTruck size={18} color={theme.palette.info.main} /></ListItemIcon>
+                        <ListItemText 
+                            primary={
+                                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'info.main' }}>
+                                    Cơ giới
+                                </Typography>
+                            } 
+                        />
+                    </MenuItem>
+                </PermissionGuard>
 
                 <Divider />
 
-                <MenuItem 
-                    onClick={handleMenuClick('quick_finish')} 
-                    disabled={!hasActiveReport}
-                    sx={{ color: 'error.main' }}
-                >
-                    <ListItemIcon><IconCircleCheck size={18} color="inherit" /></ListItemIcon>
-                    <ListItemText 
-                        primary="Kết thúc nhanh" 
-                        primaryTypographyProps={{ variant: 'subtitle2', fontWeight: 800, color: 'inherit' }} 
-                    />
-                </MenuItem>
+                <PermissionGuard permission="inundation:review">
+                    <MenuItem 
+                        onClick={handleMenuClick('quick_finish')} 
+                        disabled={!hasActiveReport}
+                        sx={{ 
+                            color: 'success.main',
+                            '&:hover': { bgcolor: 'success.lighter' }
+                        }}
+                    >
+                        <ListItemIcon><IconCircleCheck size={18} color={theme.palette.success.main} /></ListItemIcon>
+                        <ListItemText 
+                            primary={
+                                <Typography variant="subtitle2" sx={{ fontWeight: 900, color: 'success.main' }}>
+                                    Kết thúc nhanh
+                                </Typography>
+                            } 
+                        />
+                    </MenuItem>
+                </PermissionGuard>
             </Menu>
         </>
     );

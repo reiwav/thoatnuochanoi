@@ -84,8 +84,10 @@ const ContractCategoryDialog = ({ open, onClose, onSubmit, category, isEdit }) =
             onClose={onClose}
             maxWidth="xs"
             fullWidth
-            PaperProps={{
-                sx: { borderRadius: '16px' }
+            slotProps={{
+                paper: {
+                    sx: { borderRadius: '16px' }
+                }
             }}
         >
             <DialogTitle sx={{ p: 3, pb: 2 }}>

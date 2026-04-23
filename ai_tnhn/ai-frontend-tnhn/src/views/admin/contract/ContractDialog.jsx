@@ -152,7 +152,7 @@ const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit }) => {
                 onClose={onClose} 
                 maxWidth="sm" 
                 fullWidth
-                PaperProps={{ sx: { borderRadius: '16px' } }}
+                slotProps={{ paper: { sx: { borderRadius: '16px' } } }}
             >
                 <DialogTitle sx={{ p: 3, pb: 2 }}>
                     <Typography variant="h3" component="div" sx={{ fontWeight: 700 }}>

@@ -137,6 +137,10 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
             if (values.traffic_status) fd.append('traffic_status', values.traffic_status);
 
             if (resolveOnUpdate) fd.append('resolve', 'true');
+            if (currentLevel) {
+                fd.append('flood_level_name', currentLevel.name);
+                fd.append('flood_level_color', currentLevel.color);
+            }
             images.forEach(img => fd.append('images', img));
 
             if (isCorrectionMode) {
@@ -177,6 +181,10 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
             const pId = pointId || values.point_id;
             if (pId) fd.append('point_id', pId);
             fd.append('start_time', Math.floor(Date.now() / 1000));
+            if (currentLevel) {
+                fd.append('flood_level_name', currentLevel.name);
+                fd.append('flood_level_color', currentLevel.color);
+            }
             images.forEach(img => fd.append('images', img));
             await inundationApi.createReport(fd);
             toast.success('Gửi báo cáo thành công');
@@ -236,12 +244,12 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
                                 const checked = e.target.checked;
                                 setResolveOnUpdate(checked);
                                 if (checked) {
-                                    setValues(prev => ({ 
-                                        ...prev, 
+                                    setValues(prev => ({
+                                        ...prev,
                                         length: '0',
                                         width: '0',
                                         depth: '0',
-                                        traffic_status: 'Đi lại bình thường' 
+                                        traffic_status: 'Đi lại bình thường'
                                     }));
                                 }
                             }}
@@ -268,20 +276,20 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
                     fullWidth label="Sâu" name="depth" value={values.depth} onChange={handleChange}
                     type="number" placeholder="VD: 20"
                     slotProps={{ htmlInput: { inputMode: 'decimal', step: 'any' } }}
-                    InputProps={{ 
+                    InputProps={{
                         startAdornment: <InputAdornment position="start"><IconRuler size={15} color={theme.palette.text.secondary} /></InputAdornment>,
                         endAdornment: currentLevel && (
                             <InputAdornment position="end">
-                                <Chip 
-                                    label={currentLevel.name} 
-                                    size="small" 
-                                    sx={{ 
-                                        bgcolor: currentLevel.color, 
-                                        color: '#fff', 
+                                <Chip
+                                    label={currentLevel.name}
+                                    size="small"
+                                    sx={{
+                                        bgcolor: currentLevel.color,
+                                        color: '#fff',
                                         fontWeight: 800,
                                         fontSize: '0.75rem',
                                         height: 24
-                                    }} 
+                                    }}
                                 />
                             </InputAdornment>
                         )
@@ -313,7 +321,7 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
                 </Box>
             </Box>
 
-            <PermissionGuard 
+            <PermissionGuard
                 permission="inundation:report"
                 fallback={
                     <Button fullWidth size="large" variant="contained" disabled sx={{ borderRadius: 100, py: 1.4, fontWeight: 700, mt: 1 }}>

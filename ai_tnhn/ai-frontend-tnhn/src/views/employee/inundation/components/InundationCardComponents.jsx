@@ -2,6 +2,7 @@ import React from 'react';
 import {
     Box, Typography, Stack, Avatar, Button, Tooltip, alpha, Chip, Divider, Collapse, CircularProgress
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import {
     IconChevronDown, IconChevronUp, IconSend, IconEngine, IconChecklist,
     IconMapPin, IconAlertTriangle, IconClock, IconClipboardCheck
@@ -108,6 +109,8 @@ export const CardHeader = ({ point, latest, isHighPriority, navigate, openTask, 
                                     whiteSpace: 'nowrap',
                                     bgcolor: '#00c853',
                                     boxShadow: '0 4px 12px rgba(0, 200, 83, 0.3)',
+                                    pointerEvents: 'auto',
+                                    zIndex: 10,
                                     transition: 'all 0.2s',
                                     '&:hover': { 
                                         bgcolor: '#00a441', 
@@ -186,75 +189,91 @@ export const CardMetrics = ({ isHighPriority, latest, theme }) => (
     </>
 );
 
-export const CardActions = ({ expanded, setExpanded, isHighPriority, point, openTask }) => (
-    <>
-        <Divider sx={{ mt: 'auto', mb: 2, borderStyle: 'dashed' }} />
-        <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="center">
-            <Button
-                size="small"
-                color="inherit"
-                startIcon={expanded ? <IconChevronUp size={18} /> : <IconChevronDown size={18} />}
-                onClick={() => setExpanded(!expanded)}
-                sx={{
-                    fontWeight: 800, borderRadius: 2.5, textTransform: 'none',
-                    color: 'text.secondary', px: 1.5, '&:hover': { bgcolor: 'grey.100' }
-                }}
-            >
-                {expanded ? 'Thu gọn' : 'Chi tiết'}
-            </Button>
+export const CardActions = ({ expanded, setExpanded, isHighPriority, point, latest, openTask }) => {
+    const theme = useTheme();
+    const isCorrection = latest?.needs_correction;
+    
+    return (
+        <>
+            <Divider sx={{ mt: 'auto', mb: 2, borderStyle: 'dashed' }} />
+            <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="center">
+                <Button
+                    size="small"
+                    color="inherit"
+                    startIcon={expanded ? <IconChevronUp size={18} /> : <IconChevronDown size={18} />}
+                    onClick={() => setExpanded(!expanded)}
+                    sx={{
+                        fontWeight: 800, borderRadius: 2.5, textTransform: 'none',
+                        color: 'text.secondary', px: 1.5, '&:hover': { bgcolor: 'grey.100' }
+                    }}
+                >
+                    {expanded ? 'Thu gọn' : 'Chi tiết'}
+                </Button>
 
-            <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ gap: 1 }}>
-                <PermissionGuard permission="inundation:report">
-                    <Button
-                        variant="contained" size="small" color="secondary"
-                        startIcon={<IconSend size={16} />}
-                        onClick={() => openTask('REPORT', point)}
-                        sx={{ borderRadius: 2.5, fontWeight: 800, px: 1.5 }}
-                    >
-                        Báo cáo
-                    </Button>
-                </PermissionGuard>
+                <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ gap: 1 }}>
+                    <PermissionGuard permission="inundation:report">
+                        <Button
+                            variant="contained" 
+                            size="small" 
+                            color={isCorrection ? 'warning' : 'secondary'}
+                            startIcon={isCorrection ? <IconAlertTriangle size={16} /> : <IconSend size={16} />}
+                            onClick={() => openTask('REPORT', point)}
+                            sx={{ 
+                                borderRadius: 2.5, 
+                                fontWeight: 900, 
+                                px: 1.5,
+                                animation: isCorrection ? 'aggressiveBlinkButton 1s infinite alternate' : 'none',
+                                '@keyframes aggressiveBlinkButton': {
+                                    '0%': { transform: 'scale(1)', boxShadow: `0 0 0px ${theme.palette.warning.main}` },
+                                    '100%': { transform: 'scale(1.05)', boxShadow: `0 0 15px ${theme.palette.warning.main}` }
+                                }
+                            }}
+                        >
+                            {isCorrection ? 'Chỉnh sửa lại điểm ngập' : 'Báo cáo'}
+                        </Button>
+                    </PermissionGuard>
 
-                {isHighPriority && (
-                    <>
-                        <PermissionGuard permission="inundation:survey">
-                            <Button
-                                variant="contained" size="small" color="primary"
-                                startIcon={<IconClipboardCheck size={16} />}
-                                onClick={() => openTask('SURVEY', point)}
-                                sx={{ borderRadius: 2.5, fontWeight: 800, px: 1.5 }}
-                            >
-                                TK Giám sát
-                            </Button>
-                        </PermissionGuard>
+                    {isHighPriority && (
+                        <>
+                            <PermissionGuard permission="inundation:survey">
+                                <Button
+                                    variant="contained" size="small" color="primary"
+                                    startIcon={<IconClipboardCheck size={16} />}
+                                    onClick={() => openTask('SURVEY', point)}
+                                    sx={{ borderRadius: 2.5, fontWeight: 800, px: 1.5 }}
+                                >
+                                    TK Giám sát
+                                </Button>
+                            </PermissionGuard>
 
-                        <PermissionGuard permission="inundation:mechanic">
-                            <Button
-                                variant="contained" size="small" color="info"
-                                startIcon={<IconEngine size={16} />}
-                                onClick={() => openTask('MECH', point)}
-                                sx={{ borderRadius: 2.5, fontWeight: 800, px: 1.5 }}
-                            >
-                                CG xử lý
-                            </Button>
-                        </PermissionGuard>
+                            <PermissionGuard permission="inundation:mechanic">
+                                <Button
+                                    variant="contained" size="small" color="info"
+                                    startIcon={<IconEngine size={16} />}
+                                    onClick={() => openTask('MECH', point)}
+                                    sx={{ borderRadius: 2.5, fontWeight: 800, px: 1.5 }}
+                                >
+                                    CG xử lý
+                                </Button>
+                            </PermissionGuard>
 
-                        <PermissionGuard permission="inundation:review">
-                            <Button
-                                variant="contained" size="small" color="error"
-                                startIcon={<IconChecklist size={16} />}
-                                onClick={() => openTask('REVIEW', point)}
-                                sx={{ borderRadius: 2.5, fontWeight: 800, px: 1.5 }}
-                            >
-                                Nhận xét
-                            </Button>
-                        </PermissionGuard>
-                    </>
-                )}
+                            <PermissionGuard permission="inundation:review">
+                                <Button
+                                    variant="contained" size="small" color="error"
+                                    startIcon={<IconChecklist size={16} />}
+                                    onClick={() => openTask('REVIEW', point)}
+                                    sx={{ borderRadius: 2.5, fontWeight: 800, px: 1.5 }}
+                                >
+                                    Nhận xét
+                                </Button>
+                            </PermissionGuard>
+                        </>
+                    )}
+                </Stack>
             </Stack>
-        </Stack>
-    </>
-);
+        </>
+    );
+};
 
 export const CardExpandedContent = ({ expanded, latest, isHighPriority, handleOpenViewer }) => (
     <Collapse in={expanded} timeout="auto" unmountOnExit>

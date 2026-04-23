@@ -47,7 +47,8 @@ export const getLatestData = (report) => {
             mech_r: mechUpdate ? (mechUpdate.mech_r || mechUpdate.mechR) : (data.mech_r || data.mechR),
             mech_s: mechUpdate ? (mechUpdate.mech_s || mechUpdate.mechS) : (data.mech_s || data.mechS),
             mech_images: (mechUpdate?.mech_images && mechUpdate.mech_images.length > 0) ? mechUpdate.mech_images : (data.mech_images || []),
-            mech_ts: mechUpdate?.timestamp
+            mech_ts: mechUpdate?.timestamp,
+            needs_correction: parseBool(newest.needs_correction || newest.needsCorrection || data.needs_correction || data.needsCorrection)
         };
     }
 
@@ -62,6 +63,7 @@ export const getLatestData = (report) => {
         survey_ts: startTime,
         mech_ts: startTime,
         survey_checked: parseBoolBase(data.survey_checked || data.surveyChecked),
-        mech_checked: parseBoolBase(data.mech_checked || data.mechChecked)
+        mech_checked: parseBoolBase(data.mech_checked || data.mechChecked),
+        needs_correction: parseBoolBase(data.needs_correction || data.needsCorrection)
     };
 };

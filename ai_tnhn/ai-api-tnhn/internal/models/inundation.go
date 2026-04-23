@@ -16,8 +16,8 @@ type InundationUpdate struct {
 	Length          string        `bson:"length" json:"length" example:"10"`
 	Width           string        `bson:"width" json:"width" example:"5"`
 	TrafficStatus   string        `bson:"traffic_status" json:"traffic_status" example:"Chậm"`
-	FloodLevelName  string        `bson:"flood_level_name" json:"flood_level_name" example:"Ngập nhẹ"`
-	FloodLevelColor string        `bson:"flood_level_color" json:"flood_level_color" example:"#FFD600"`
+	FloodLevelName  string        `bson:"flood_level_name" json:"flood_level_name" form:"flood_level_name" example:"Ngập nhẹ"`
+	FloodLevelColor string        `bson:"flood_level_color" json:"flood_level_color" form:"flood_level_color" example:"#FFD600"`
 	Images          []string      `bson:"images,omitempty" json:"images,omitempty" example:"[\"img3.jpg\"]"` // Google Drive File IDs
 	ReviewComment   string        `bson:"review_comment,omitempty" json:"review_comment,omitempty" example:"Số liệu khớp"`
 	ReviewerId      string        `bson:"reviewer_id,omitempty" json:"reviewer_id,omitempty" example:"60a111111111"`
@@ -73,8 +73,8 @@ type InundationReportBase struct {
 	Width           string   `form:"width" json:"width" example:"50m"`
 	Description     string   `form:"description" json:"description" example:"Ngập nhẹ"`
 	TrafficStatus   string   `form:"traffic_status" json:"traffic_status" example:"DI_CHUYEN_CHAM"`
-	FloodLevelName  string   `bson:"flood_level_name" json:"flood_level_name" example:"Ngập nhẹ"`
-	FloodLevelColor string   `bson:"flood_level_color" json:"flood_level_color" example:"#FFD600"`
+	FloodLevelName  string   `bson:"flood_level_name" json:"flood_level_name" form:"flood_level_name" example:"Ngập nhẹ"`
+	FloodLevelColor string   `bson:"flood_level_color" json:"flood_level_color" form:"flood_level_color" example:"#FFD600"`
 	StartTime       int64    `form:"start_time" json:"start_time" example:"1620000000"`
 	UserID          string   `bson:"user_id" json:"user_id" example:"60a123456789"`
 	UserEmail       string   `bson:"user_email" json:"user_email" example:"emp@hsdc.com.vn"`

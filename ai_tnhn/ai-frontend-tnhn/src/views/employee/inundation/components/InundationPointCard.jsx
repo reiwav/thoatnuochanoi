@@ -14,12 +14,14 @@ import {
     CardActions, 
     CardExpandedContent 
 } from './InundationCardComponents';
+import ConfirmDialog from 'ui-component/ConfirmDialog';
 
 const InundationPointCard = ({ point, openTask, handleOpenViewer, onRefresh }) => {
     const theme = useTheme();
     const navigate = useNavigate();
     const [expanded, setExpanded] = useState(false);
     const [finishing, setFinishing] = useState(false);
+    const [confirmOpen, setConfirmOpen] = useState(false);
 
     const latest = useMemo(() => {
         if (!point.report_id && !point.last_report) return null;
@@ -28,14 +30,16 @@ const InundationPointCard = ({ point, openTask, handleOpenViewer, onRefresh }) =
 
     const isHighPriority = !!point.report_id;
 
-    const handleQuickFinish = async () => {
-        const confirm = window.confirm(`Bạn muốn kết thúc ngập tại "${point.name}"? Vui lòng xác nhận!`);
-        if (!confirm) return;
+    const handleQuickFinish = () => {
+        setConfirmOpen(true);
+    };
 
+    const executeQuickFinish = async () => {
+        setConfirmOpen(false);
         setFinishing(true);
         try {
             await inundationApi.quickFinish(point.id);
-            toast.success('Đã kết thúc đợt ngập thành công');
+            toast.success(`Đã kết thúc đợt ngập "${point.name}" thành công`);
             if (onRefresh) onRefresh();
         } catch (error) {
             console.error('Quick finish error:', error);
@@ -81,6 +85,19 @@ const InundationPointCard = ({ point, openTask, handleOpenViewer, onRefresh }) =
                         ? `0 20px 40px -12px ${alpha(theme.palette.error.main, 0.2)}`
                         : theme.shadows[8],
                     borderColor: isHighPriority ? 'error.main' : 'primary.light'
+                },
+                animation: latest?.needs_correction ? 'aggressiveBlink 1.5s infinite alternate' : 'none',
+                '@keyframes aggressiveBlink': {
+                    '0%': { 
+                        borderColor: theme.palette.warning.main,
+                        boxShadow: `0 0 20px ${alpha(theme.palette.warning.main, 0.5)}`,
+                        backgroundColor: alpha(theme.palette.warning.main, 0.05)
+                    },
+                    '100%': { 
+                        borderColor: 'transparent',
+                        boxShadow: 'none',
+                        backgroundColor: '#ffffff'
+                    }
                 }
             }}
         >
@@ -121,6 +138,7 @@ const InundationPointCard = ({ point, openTask, handleOpenViewer, onRefresh }) =
                 setExpanded={setExpanded} 
                 isHighPriority={isHighPriority} 
                 point={point} 
+                latest={latest}
                 openTask={openTask} 
             />
 
@@ -138,6 +156,17 @@ const InundationPointCard = ({ point, openTask, handleOpenViewer, onRefresh }) =
                     100% { transform: scale(1); opacity: 1; } 
                 }
             `}</style>
+
+            <ConfirmDialog
+                open={confirmOpen}
+                title="Xác nhận kết thúc"
+                description={`Bạn có chắc chắn muốn kết thúc đợt ngập tại "${point.name}"?`}
+                onConfirm={executeQuickFinish}
+                onClose={() => setConfirmOpen(false)}
+                color="success"
+                confirmText="Kết thúc ngay"
+                cancelText="Quay lại"
+            />
         </Paper>
     );
 };

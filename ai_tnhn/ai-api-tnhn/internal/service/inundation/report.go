@@ -323,12 +323,13 @@ func (s *service) Resolve(ctx context.Context, reportID string, endTime int64) e
 
 	// NEW: Clear station's report_id when report is resolved
 	report, err := s.InundationReportRepo.GetByID(ctx, reportID)
-	if err == nil && report != nil && report.PointID != "" {
-		point, err := s.inundationStationRepo.GetByID(ctx, report.PointID)
-		if err == nil && point != nil && point.ReportID == reportID {
-			point.ReportID = ""
-			_ = s.inundationStationRepo.Update(ctx, *point)
-		}
+	if err != nil {
+		return err
+	}
+	point, _ := s.inundationStationRepo.GetByID(ctx, report.PointID)
+	if point != nil {
+		point.ReportID = ""
+		_ = s.inundationStationRepo.Update(ctx, *point)
 	}
 
 	return s.InundationReportRepo.Resolve(ctx, reportID, endTime)
@@ -586,15 +587,10 @@ func (s *service) UpdateMech(ctx context.Context, user *models.User, id string, 
 
 func (s *service) QuickFinish(ctx context.Context, user *models.User, pointID string) error {
 	// 1. Find the active report for this point
-	f := filter.NewPaginationFilter()
-	f.AddWhere("point_id", "point_id", pointID)
-	f.AddWhere("status", "status", "active")
-	reports, _, err := s.InundationReportRepo.List(ctx, f)
-	if err != nil || len(reports) == 0 {
-		return web.NotFound("Không tìm thấy vụ ngập đang hoạt động tại trạm này")
+	inundation, err := s.GetPointByID(ctx, pointID)
+	if err != nil {
+		return err
 	}
-
-	report := reports[0]
 
 	// 2. Permission check
 	err = s.validAssigned(ctx, user, pointID)
@@ -605,7 +601,7 @@ func (s *service) QuickFinish(ctx context.Context, user *models.User, pointID st
 	// 3. Create a final update record
 	endTime := time.Now().Unix()
 	finalUpdate := &models.InundationUpdate{
-		ReportID:      report.ID,
+		ReportID:      inundation.ReportID,
 		UserID:        user.ID,
 		UserEmail:     user.Email,
 		UserName:      user.Name,
@@ -617,5 +613,5 @@ func (s *service) QuickFinish(ctx context.Context, user *models.User, pointID st
 	_ = s.inundationUpdateRepo.Create(ctx, finalUpdate)
 
 	// 4. Resolve the report
-	return s.Resolve(ctx, report.ID, endTime)
+	return s.Resolve(ctx, inundation.ReportID, endTime)
 }

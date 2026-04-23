@@ -10,9 +10,9 @@ import (
 
 func (s *service) ReviewReport(ctx context.Context, user *models.User, reportID, comment string) error {
 	// RBAC: Block Employee
-	if user.IsEmployee {
-		return web.Forbidden("Nhân viên không có quyền nhận xét bản tin")
-	}
+	// if user.IsEmployee {
+	// 	return web.Forbidden("Nhân viên không có quyền nhận xét bản tin")
+	// }
 
 	report, err := s.InundationReportRepo.GetByID(ctx, reportID)
 	if err != nil {
@@ -72,9 +72,9 @@ func (s *service) ReviewReport(ctx context.Context, user *models.User, reportID,
 }
 func (s *service) ReviewUpdate(ctx context.Context, user *models.User, updateID, comment string) error {
 	// RBAC: Block Employee
-	if user.IsEmployee {
-		return web.Forbidden("Nhân viên không có quyền nhận xét bản tin")
-	}
+	// if user.IsEmployee {
+	// 	return web.Forbidden("Nhân viên không có quyền nhận xét bản tin")
+	// }
 
 	update, err := s.inundationUpdateRepo.GetByID(ctx, updateID)
 	if err != nil {

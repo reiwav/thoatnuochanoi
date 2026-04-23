@@ -17,7 +17,8 @@ type service struct {
 }
 
 func NewService(repo repository.AppSetting) Service {
-	return &service{
+	s := &service{
 		repo: repo,
 	}
+	return s
 }

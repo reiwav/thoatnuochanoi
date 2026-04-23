@@ -17,7 +17,18 @@ import { getTotalItems } from 'utils/apiHelper';
 import InundationHistoryCard from './components/InundationHistoryCard';
 import ImageViewer from './components/ImageViewer';
 import { Grid, Button, IconButton, Tooltip, Divider } from '@mui/material';
-import { IconChevronRight, IconEye } from '@tabler/icons-react';
+import { IconChevronRight, IconEye, IconDotsVertical, IconMessageDots, IconRulerMeasure, IconTruck, IconCircleCheck, IconPhoto } from '@tabler/icons-react';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import 'dayjs/locale/vi';
+
+dayjs.extend(relativeTime);
+dayjs.locale('vi');
+
+// Components
+import AdminInundationActionMenu from './components/AdminInundationActionMenu';
+import AdminInundationCard from './components/AdminInundationCard';
+import EmployeeActionDialog from '../../employee/components/EmployeeActionDialog';
 
 const AdminInundationDashboard = () => {
     const theme = useTheme();
@@ -28,7 +39,7 @@ const AdminInundationDashboard = () => {
         points, historyReports, organizations,
         loading, loadingHistory,
         fetchInitialData, fetchPoints, fetchHistory,
-        filters, setFilters
+        filters, setFilters, resolveReport
     } = useInundationStore();
 
     // Local UI states
@@ -37,6 +48,8 @@ const AdminInundationDashboard = () => {
     const [historyPage, setHistoryPage] = useState(0);
     const [historyRowsPerPage, setHistoryRowsPerPage] = useState(10);
     const [totalHistory, setTotalHistory] = useState(0);
+
+    const [taskDialog, setTaskDialog] = useState({ open: false, mode: '', data: null });
 
     // Initial Fetch
     useEffect(() => {
@@ -79,6 +92,29 @@ const AdminInundationDashboard = () => {
     }, [points, filters]);
 
     const handleOpenViewer = (imgs, idx = 0) => setViewer({ open: true, images: imgs, index: idx });
+
+    const handleAction = (mode, point) => {
+        if (mode === 'quick_finish') {
+            if (window.confirm(`Bạn có chắc chắn muốn kết thúc ngập tại điểm "${point.name}"?`)) {
+                resolveReport(point.report_id);
+            }
+            return;
+        }
+        
+        // Map menu modes to Dialog modes
+        const modeMap = {
+            'comment': 'REVIEW',
+            'report': 'REPORT',
+            'survey': 'SURVEY',
+            'mech': 'MECH'
+        };
+        
+        setTaskDialog({
+            open: true,
+            mode: modeMap[mode],
+            data: point
+        });
+    };
 
     return (
         <MainCard
@@ -150,65 +186,35 @@ const AdminInundationDashboard = () => {
             </Paper>
 
             {activeTab === 0 ? (
-                <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
-                    <Table sx={{ minWidth: 800 }}>
-                        <TableHead sx={{ bgcolor: 'grey.50' }}>
-                            <TableRow>
-                                <TableCell sx={{ width: 40 }} />
-                                <TableCell sx={{ fontWeight: 700 }}>Tên điểm / Địa chỉ</TableCell>
-                                <TableCell sx={{ fontWeight: 700 }}>Đơn vị quản lý</TableCell>
-                                <TableCell align="center" sx={{ fontWeight: 700 }}>Trạng thái</TableCell>
-                                <TableCell align="center" sx={{ fontWeight: 700 }}>Giao thông</TableCell>
-                                <TableCell align="center" sx={{ fontWeight: 700, width: 120 }}>Thao tác</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {loading ? (
-                                [1, 2, 3, 4, 5].map(i => (
-                                    <TableRow key={i}><TableCell colSpan={6}><Skeleton height={40} /></TableCell></TableRow>
-                                ))
-                            ) : filteredPoints.length === 0 ? (
-                                <TableRow><TableCell colSpan={6} align="center" sx={{ py: 4 }}>Không tìm thấy điểm ngập nào</TableCell></TableRow>
-                            ) : (
-                                filteredPoints.map(point => (
-                                    <TableRow key={point.id} hover onClick={() => navigate(`${basePath}/inundation/${point.id}`)} sx={{ cursor: 'pointer' }}>
-                                        <TableCell align="center">
-                                            {point.report_id ? <IconAlertTriangle size={20} color={theme.palette.error.main} /> : <Box sx={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid', borderColor: 'success.light' }} />}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{point.name}</Typography>
-                                            <Typography variant="caption" color="textSecondary">{point.address}</Typography>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Typography variant="body2">{point.org_name || 'HMC'}</Typography>
-                                        </TableCell>
-                                        <TableCell align="center">
-                                            <Chip 
-                                                label={point.report_id ? 'Đang ngập' : 'Bình thường'} 
-                                                color={point.report_id ? 'error' : 'success'} 
-                                                size="small" 
-                                                variant="light"
-                                                sx={{ fontWeight: 700 }}
-                                            />
-                                        </TableCell>
-                                        <TableCell align="center">
-                                            <Typography variant="body2" sx={{ color: point.traffic_status === 'heavy' ? 'error.main' : 'text.primary' }}>
-                                                {point.traffic_status === 'heavy' ? 'Ùn tắc' : point.traffic_status === 'slow' ? 'Chậm' : 'Bình thường'}
-                                            </Typography>
-                                        </TableCell>
-                                        <TableCell align="center">
-                                            <Tooltip title="Xem chi tiết">
-                                                <IconButton size="small" color="primary">
-                                                    <IconChevronRight size={18} />
-                                                </IconButton>
-                                            </Tooltip>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
+                <Box>
+                    {loading ? (
+                        <Grid container spacing={3}>
+                            {[1, 2, 3, 4, 5, 6].map(i => (
+                                <Grid item xs={12} sm={6} md={4} lg={3} key={i}>
+                                    <Skeleton variant="rectangular" height={220} sx={{ borderRadius: 4 }} />
+                                </Grid>
+                            ))}
+                        </Grid>
+                    ) : filteredPoints.length === 0 ? (
+                        <Paper sx={{ py: 6, textAlign: 'center', borderRadius: 4, border: '1px dashed', borderColor: 'divider' }}>
+                            <Typography color="textSecondary">Không tìm thấy điểm ngập nào</Typography>
+                        </Paper>
+                    ) : (
+                        <Grid container spacing={3}>
+                            {filteredPoints.map(point => (
+                                <Grid item xs={12} sm={6} md={4} lg={3} key={point.id}>
+                                    <AdminInundationCard 
+                                        point={point} 
+                                        onAction={handleAction} 
+                                        onOpenViewer={handleOpenViewer}
+                                        navigate={navigate}
+                                        basePath={basePath}
+                                    />
+                                </Grid>
+                            ))}
+                        </Grid>
+                    )}
+                </Box>
             ) : (
                 <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
                     <Table sx={{ minWidth: 800 }}>
@@ -245,6 +251,17 @@ const AdminInundationDashboard = () => {
             )}
 
             <ImageViewer viewer={viewer} onClose={() => setViewer({ ...viewer, open: false })} onPrev={() => setViewer(v => ({ ...v, index: (v.index - 1 + v.images.length) % v.images.length }))} onNext={() => setViewer(v => ({ ...v, index: (v.index + 1) % v.images.length }))} />
+            
+            <EmployeeActionDialog
+                open={taskDialog.open}
+                mode={taskDialog.mode}
+                data={taskDialog.data}
+                onClose={() => setTaskDialog({ ...taskDialog, open: false })}
+                onFinished={() => {
+                    setTaskDialog({ ...taskDialog, open: false });
+                    fetchPoints();
+                }}
+            />
         </MainCard>
     );
 };

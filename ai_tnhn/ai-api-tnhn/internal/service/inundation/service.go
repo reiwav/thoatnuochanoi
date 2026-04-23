@@ -321,16 +321,16 @@ func (s *service) GetInundationSummary(ctx context.Context, orgID string, isAllo
 	}, nil
 }
 
-func (s *service) calculateFloodLevel(ctx context.Context, depth float64) (string, string) {
+func (s *service) calculateFloodLevel(ctx context.Context, depth float64) *models.FloodLevel {
 	setting, err := s.settingSvc.GetByCode(ctx, "FloodLevel")
 	if err != nil || setting == nil {
-		return "", ""
+		return nil
 	}
 
 	for _, level := range setting.FloodLevels {
 		if depth >= level.MinDepth && depth < level.MaxDepth {
-			return level.Name, level.Color
+			return &level
 		}
 	}
-	return "", ""
+	return nil
 }

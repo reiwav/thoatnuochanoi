@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import {
     Dialog, DialogTitle, DialogContent, DialogActions,
     Button, TextField, Grid, Typography, Box, useTheme,
-    InputAdornment
+    InputAdornment, FormControlLabel, Switch
 } from '@mui/material';
 import { IconClipboardCheck } from '@tabler/icons-react';
 
@@ -14,7 +14,8 @@ const FloodLevelDialog = ({ open, onClose, onSubmit, level, isEdit }) => {
         min_depth: 0,
         max_depth: 0,
         color: '#000000',
-        description: ''
+        description: '',
+        is_flooding: false
     });
     const [errors, setErrors] = useState({});
 
@@ -26,7 +27,8 @@ const FloodLevelDialog = ({ open, onClose, onSubmit, level, isEdit }) => {
                 min_depth: level.min_depth || 0,
                 max_depth: level.max_depth || 0,
                 color: level.color || '#000000',
-                description: level.description || ''
+                description: level.description || '',
+                is_flooding: level.is_flooding || false
             });
         } else {
             setValues({
@@ -35,15 +37,16 @@ const FloodLevelDialog = ({ open, onClose, onSubmit, level, isEdit }) => {
                 min_depth: 0,
                 max_depth: 0,
                 color: '#2196f3',
-                description: ''
+                description: '',
+                is_flooding: false
             });
         }
         setErrors({});
     }, [level, open]);
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
-        let finalValue = value;
+        const { name, value, checked, type } = e.target;
+        let finalValue = type === 'checkbox' ? checked : value;
         if (name === 'min_depth' || name === 'max_depth') {
             finalValue = parseFloat(value) || 0;
         }
@@ -153,7 +156,7 @@ const FloodLevelDialog = ({ open, onClose, onSubmit, level, isEdit }) => {
                             sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
                         />
                     </Grid>
-                    <Grid item xs={12}>
+                    <Grid item xs={12} sm={6}>
                         <TextField
                             fullWidth
                             label="Màu sắc hiển thị"
@@ -166,6 +169,23 @@ const FloodLevelDialog = ({ open, onClose, onSubmit, level, isEdit }) => {
                                 '& .MuiOutlinedInput-root': { borderRadius: '12px' },
                                 '& input': { height: 40, p: 0.5, cursor: 'pointer' } 
                             }}
+                        />
+                    </Grid>
+                    <Grid item xs={12} sm={6} sx={{ display: 'flex', alignItems: 'center' }}>
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    checked={values.is_flooding}
+                                    onChange={handleChange}
+                                    name="is_flooding"
+                                    color="error"
+                                />
+                            }
+                            label={
+                                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                                    Coi là trạng thái ngập
+                                </Typography>
+                            }
                         />
                     </Grid>
                     <Grid item xs={12}>

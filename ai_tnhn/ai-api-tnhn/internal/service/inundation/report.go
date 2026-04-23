@@ -57,7 +57,16 @@ func (s *service) CreateReport(ctx context.Context, user *models.User, input mod
 	}
 
 	// Calculate Flood Level
-	report.FloodLevelName, report.FloodLevelColor = s.calculateFloodLevel(ctx, report.Depth)
+	level := s.calculateFloodLevel(ctx, report.Depth)
+	if level != nil {
+		report.FloodLevelName = level.Name
+		report.FloodLevelColor = level.Color
+		report.IsFlooding = level.IsFlooding
+		if !level.IsFlooding {
+			report.Status = "resolved"
+			report.EndTime = report.StartTime
+		}
+	}
 	// 5. Save report to DB
 	report.TrafficStatus = report.FloodLevelName
 
@@ -73,9 +82,14 @@ func (s *service) CreateReport(ctx context.Context, user *models.User, input mod
 		Width:         report.Width,
 		TrafficStatus: report.FloodLevelName,
 		Images:        report.Images,
+		IsFlooding:    report.IsFlooding,
 	}
 	if initialUpdate.Description == "" {
-		initialUpdate.Description = "Bắt đầu đợt ngập"
+		if report.IsFlooding {
+			initialUpdate.Description = "Bắt đầu đợt ngập"
+		} else {
+			initialUpdate.Description = "Kiểm tra hiện trường (Chuẩn bị/Bình thường)"
+		}
 	}
 	err = s.inundationUpdateRepo.Create(ctx, initialUpdate)
 	if err != nil {
@@ -87,13 +101,15 @@ func (s *service) CreateReport(ctx context.Context, user *models.User, input mod
 		return nil, err
 	}
 
-	// Update station's report_id if it's an active report
-	if report.Status == "active" && report.PointID != "" {
-		if point != nil {
+	// Update station status
+	if point != nil {
+		if report.IsFlooding {
 			point.ReportID = report.ID
-			point.LastReportID = report.ID
-			_ = s.inundationStationRepo.Update(ctx, *point)
+		} else {
+			point.ReportID = ""
 		}
+		point.LastReportID = report.ID
+		_ = s.inundationStationRepo.Update(ctx, *point)
 	}
 
 	return report, nil
@@ -155,12 +171,22 @@ func (s *service) AddUpdate(ctx context.Context, user *models.User, reportID str
 		update.Width = report.Width
 	}
 	// Calculate level for update
-	update.FloodLevelName, update.FloodLevelColor = s.calculateFloodLevel(ctx, update.Depth)
+	level := s.calculateFloodLevel(ctx, update.Depth)
+	if level != nil {
+		update.FloodLevelName = level.Name
+		update.FloodLevelColor = level.Color
+		update.IsFlooding = level.IsFlooding
+	}
 
 	// 5. Save update to dedicated collection
 	err = s.inundationUpdateRepo.Create(ctx, update)
 	if err != nil {
 		return err
+	}
+
+	// Force resolve if depth indicates it's no longer flooded by configuration
+	if level != nil && !level.IsFlooding {
+		resolve = true
 	}
 
 	// 6. Also update the main report's current status/dimensions
@@ -374,13 +400,21 @@ func (s *service) UpdateReport(ctx context.Context, user *models.User, id string
 	}
 
 	existing.Depth = report.Depth
-	existing.FloodLevelName, existing.FloodLevelColor = s.calculateFloodLevel(ctx, existing.Depth)
+	level := s.calculateFloodLevel(ctx, existing.Depth)
+	if level != nil {
+		existing.FloodLevelName = level.Name
+		existing.FloodLevelColor = level.Color
+		existing.IsFlooding = level.IsFlooding
+	}
 	existing.Length = report.Length
 	existing.Width = report.Width
 	existing.Description = report.Description
 	existing.TrafficStatus = existing.FloodLevelName
 	existing.NeedsCorrection = false
 	existing.NeedsCorrectionUpdateID = ""
+	
+	// If updated to a non-flooding level, we should clear point status and resolve later
+	shouldResolve := level != nil && !level.IsFlooding
 
 	if len(images) > 0 {
 		savedPaths, err := s.saveLocalImages(id, images)
@@ -417,8 +451,13 @@ func (s *service) UpdateReport(ctx context.Context, user *models.User, id string
 		TrafficStatus:   existing.TrafficStatus,
 		Images:          existing.Images,
 		IsReviewUpdated: true,
+		IsFlooding:      existing.IsFlooding,
 	}
 	_ = s.inundationUpdateRepo.Create(ctx, newUpdate)
+
+	if shouldResolve {
+		_ = s.Resolve(ctx, id, 0)
+	}
 
 	return nil
 }
@@ -535,10 +574,16 @@ func (s *service) UpdateMech(ctx context.Context, user *models.User, id string, 
 	existing.MechUserID = user.ID
 
 	// OVERRIDE: Update main report dimensions with worker's data
-	if input.MechD > 0 {
-		existing.Depth = input.MechD
-		existing.FloodLevelName, existing.FloodLevelColor = s.calculateFloodLevel(ctx, existing.Depth)
+	// If MechD is provided (can be 0), we use it to calculate the level
+	existing.Depth = input.MechD
+	level := s.calculateFloodLevel(ctx, existing.Depth)
+	if level != nil {
+		existing.FloodLevelName = level.Name
+		existing.FloodLevelColor = level.Color
+		existing.IsFlooding = level.IsFlooding
 	}
+	
+	shouldResolve := level != nil && !level.IsFlooding
 	if input.MechS != "" {
 		existing.Length = input.MechS
 	}
@@ -583,8 +628,13 @@ func (s *service) UpdateMech(ctx context.Context, user *models.User, id string, 
 		MechS:           existing.MechS,
 		MechUserID:      existing.MechUserID,
 		MechImages:      existing.MechImages,
+		IsFlooding:      existing.IsFlooding,
 	}
 	_ = s.inundationUpdateRepo.Create(ctx, newUpdate)
+
+	if shouldResolve {
+		_ = s.Resolve(ctx, id, 0)
+	}
 
 	return nil
 }

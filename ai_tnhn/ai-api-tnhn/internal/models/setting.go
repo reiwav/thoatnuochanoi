@@ -20,4 +20,5 @@ type FloodLevel struct {
 	Description string    `json:"description" bson:"description" example:"Chưa ngập"`
 	User        string    `json:"user" bson:"user" example:"Admin"`
 	Ctime       time.Time `json:"ctime" bson:"ctime"`
+	IsFlooding  bool      `json:"is_flooding" bson:"is_flooding"` // Trạng thái ngập
 }

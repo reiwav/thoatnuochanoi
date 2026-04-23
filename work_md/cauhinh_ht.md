@@ -24,4 +24,7 @@ type FloodLevel struct {
 	Description string    `json:"description" bson:"description"` // Mô tả
 	User        string    `json:"user" bson:"user"` // Người tạo
     Ctime       time.Time `json:"ctime" bson:"ctime"` // Thời gian tạo
+	IsFlooding  bool      `json:"is_flooding" bson:"is_flooding"` // Trạng thái
 }
+
+Thêm IsFlooding để có thể bật tắt từng mức độ, khi tắt thì sẽ không hiển thị trên bản đồ

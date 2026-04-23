@@ -118,6 +118,7 @@ const FloodLevelSetting = () => {
                             <TableCell sx={{ fontWeight: 800 }}>Tên mức độ</TableCell>
                             <TableCell sx={{ fontWeight: 800 }}>Ngưỡng (m)</TableCell>
                             <TableCell sx={{ fontWeight: 800 }}>Màu sắc</TableCell>
+                            <TableCell sx={{ fontWeight: 800 }}>Coi là ngập</TableCell>
                             <TableCell sx={{ fontWeight: 800 }}>Người cập nhật</TableCell>
                             <TableCell sx={{ fontWeight: 800 }}>Ngày tạo</TableCell>
                             <TableCell align="right" sx={{ fontWeight: 800, pr: 3 }}>Thao tác</TableCell>
@@ -145,6 +146,15 @@ const FloodLevelSetting = () => {
                                             <Box sx={{ width: 24, height: 24, bgcolor: row.color, borderRadius: '4px', border: '1px solid #ddd' }} />
                                             <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{row.color}</Typography>
                                         </Box>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Chip 
+                                            label={row.is_flooding ? 'Đang ngập' : 'Bình thường'} 
+                                            color={row.is_flooding ? 'error' : 'success'} 
+                                            size="small" 
+                                            variant="light"
+                                            sx={{ fontWeight: 700 }}
+                                        />
                                     </TableCell>
                                     <TableCell>{row.user || '-'}</TableCell>
                                     <TableCell>

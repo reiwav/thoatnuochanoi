@@ -73,7 +73,17 @@ const InundationHistoryCard = ({ report, isMobile, navigate, basePath, handleOpe
                 <TableCell><Typography variant="body2">{formatDateTime(report.start_time)}</Typography></TableCell>
                 <TableCell><Typography variant="body2">{report.status === 'active' ? 'Đang ngập' : formatDateTime(report.end_time)}</Typography></TableCell>
                 <TableCell>
-                    <Chip label={report.status === 'active' ? 'Đang ngập' : 'Đã kết thúc'} color={report.status === 'active' ? 'error' : 'success'} size="small" sx={{ fontWeight: 700 }} />
+                    <Chip 
+                        label={report.status === 'active' ? (latest?.flood_level_name || 'Đang ngập') : 'Đã kết thúc'} 
+                        sx={{ 
+                            fontWeight: 700,
+                            bgcolor: report.status === 'active' ? (latest?.flood_level_color ? `${latest.flood_level_color}20` : 'error.lighter') : 'success.lighter',
+                            color: report.status === 'active' ? (latest?.flood_level_color || 'error.main') : 'success.main',
+                            border: '1px solid',
+                            borderColor: report.status === 'active' ? (latest?.flood_level_color ? `${latest.flood_level_color}40` : 'error.light') : 'success.light'
+                        }} 
+                        size="small" 
+                    />
                 </TableCell>
                 <TableCell align="right">
                     <Button size="small" onClick={() => navigate(`${basePath}/inundation/form?id=${report.id}&tab=1&readonly=true`)}>Chi tiết</Button>

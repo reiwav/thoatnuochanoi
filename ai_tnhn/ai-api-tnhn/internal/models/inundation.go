@@ -26,6 +26,7 @@ type InundationUpdate struct {
 	ReviewerName    string        `bson:"reviewer_name,omitempty" json:"reviewer_name,omitempty" example:"Admin"`
 	NeedsCorrection bool          `bson:"needs_correction" json:"needs_correction" example:"false"`
 	IsReviewUpdated bool          `bson:"is_review_updated" json:"is_review_updated" example:"true"`
+	IsFlooding      bool          `bson:"is_flooding" json:"is_flooding"` // Trạng thái ngập tại thời điểm cập nhật
 	OldData         []interface{} `bson:"old_data,omitempty" json:"old_data,omitempty"`
 	// Technical sync fields
 	SurveyChecked bool     `bson:"survey_checked" json:"survey_checked"`
@@ -80,7 +81,7 @@ type InundationReportBase struct {
 	UserID          string   `bson:"user_id" json:"user_id" example:"60a123456789"`
 	UserEmail       string   `bson:"user_email" json:"user_email" example:"emp@hsdc.com.vn"`
 	Images          []string `bson:"images" json:"images" example:"[\"img1.jpg\", \"img2.jpg\"]"` // Initial images
-
+	IsFlooding      bool     `bson:"is_flooding" json:"is_flooding"`
 }
 
 type ReportReviewBase struct {

@@ -116,16 +116,32 @@ func (s *service) GetPointsStatus(ctx context.Context, user *models.User, isAllo
 	// 4. Build merged result
 	result := make([]PointStatus, len(ownedPoints))
 	for i, p := range ownedPoints {
-		var lastReport *models.InundationReport
-		if p.LastReportID != "" {
-			lastReport, _ = s.InundationReportRepo.GetByID(ctx, p.LastReportID)
-		}
 		result[i] = PointStatus{
 			InundationStation: p,
 			Status:            "normal",
-			LastReport:        lastReport,
 		}
+		
+		// Recalculate color for LastReport to ensure it matches current config
+		if p.LastReportID != "" {
+			lastReport, _ := s.InundationReportRepo.GetByID(ctx, p.LastReportID)
+			if lastReport != nil {
+				level := s.calculateFloodLevel(ctx, lastReport.Depth)
+				if level != nil {
+					lastReport.FloodLevelName = level.Name
+					lastReport.FloodLevelColor = level.Color
+				}
+				result[i].LastReport = lastReport
+			}
+		}
+
 		if active, ok := reportsByPoint[p.ID]; ok {
+			// Recalculate color for ActiveReport
+			level := s.calculateFloodLevel(ctx, active.Depth)
+			if level != nil {
+				active.FloodLevelName = level.Name
+				active.FloodLevelColor = level.Color
+			}
+			
 			p.ReportID = active.ID
 			result[i].Status = "flooded"
 			result[i].ActiveReport = &active

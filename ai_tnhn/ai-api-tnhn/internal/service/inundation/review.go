@@ -184,7 +184,13 @@ func (s *service) UpdateUpdateContent(ctx context.Context, user *models.User, up
 	}
 
 	// Recalculate level for update
-	update.FloodLevelName, update.FloodLevelColor = s.calculateFloodLevel(ctx, update.Depth)
+	level := s.calculateFloodLevel(ctx, updatedData.Depth)
+	if level != nil {
+		update.FloodLevelName = level.Name
+		update.FloodLevelColor = level.Color
+	}
+
+	shouldResolve := level != nil && !level.IsFlooding
 
 	// 3. Update the existing record fields
 	update.Description = updatedData.Description
@@ -226,6 +232,10 @@ func (s *service) UpdateUpdateContent(ctx context.Context, user *models.User, up
 	report.IsReviewUpdated = true
 
 	_ = s.InundationReportRepo.Update(ctx, report)
+	
+	if shouldResolve {
+		_ = s.Resolve(ctx, report.ID, 0)
+	}
 
 	return nil
 }

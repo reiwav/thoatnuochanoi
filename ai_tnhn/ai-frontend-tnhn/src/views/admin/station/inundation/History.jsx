@@ -9,7 +9,7 @@ import { useTheme } from '@mui/material/styles';
 // project imports
 import MainCard from 'ui-component/cards/MainCard';
 import stationApi from 'api/station';
-import InundationHistoryView from '../../../../shared/inundation/InundationHistoryView';
+import InundationHistoryView from '../../../shared/inundation/InundationHistoryView';
 
 const InundationStationHistory = () => {
     const theme = useTheme();

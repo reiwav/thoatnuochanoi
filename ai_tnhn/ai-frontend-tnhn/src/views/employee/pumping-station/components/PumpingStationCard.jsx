@@ -4,8 +4,8 @@ import {
     IconButton, Menu, MenuItem, ListItemIcon, ListItemText
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { 
-    IconEngine, IconEdit, IconClock, IconDotsVertical, 
+import {
+    IconEngine, IconEdit, IconClock, IconDotsVertical,
     IconHistory
 } from '@tabler/icons-react';
 
@@ -46,6 +46,7 @@ const PumpingStationCard = ({ station, onUpdate, onViewHistory }) => {
             elevation={2}
             sx={{
                 p: 3,
+                width: '300px',
                 borderRadius: 4,
                 border: '1px solid',
                 borderColor: 'divider',
@@ -81,7 +82,7 @@ const PumpingStationCard = ({ station, onUpdate, onViewHistory }) => {
                         </Stack>
                     </Box>
                 </Stack>
-                
+
                 <Box>
                     <IconButton
                         id="station-action-button"
@@ -90,8 +91,8 @@ const PumpingStationCard = ({ station, onUpdate, onViewHistory }) => {
                         aria-expanded={openMenu ? 'true' : undefined}
                         onClick={handleOpenMenu}
                         size="small"
-                        sx={{ 
-                            borderRadius: 2, 
+                        sx={{
+                            borderRadius: 2,
                             bgcolor: 'grey.50',
                             '&:hover': { bgcolor: 'grey.100' }
                         }}

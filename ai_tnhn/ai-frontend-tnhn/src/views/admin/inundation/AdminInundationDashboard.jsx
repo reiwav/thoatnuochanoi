@@ -44,11 +44,6 @@ const AdminInundationDashboard = () => {
 
     // Local UI states
     const [viewer, setViewer] = useState({ open: false, images: [], index: 0 });
-    const [activeTab, setActiveTab] = useState(0); // 0 = Điểm trực, 1 = Lịch sử
-    const [historyPage, setHistoryPage] = useState(0);
-    const [historyRowsPerPage, setHistoryRowsPerPage] = useState(10);
-    const [totalHistory, setTotalHistory] = useState(0);
-
     const [taskDialog, setTaskDialog] = useState({ open: false, mode: '', data: null });
     const [confirmFinish, setConfirmFinish] = useState({ open: false, point: null });
 
@@ -60,19 +55,10 @@ const AdminInundationDashboard = () => {
     // Polling (10s)
     useEffect(() => {
         const interval = setInterval(() => {
-            if (activeTab === 0) fetchPoints();
+            fetchPoints();
         }, 10000);
         return () => clearInterval(interval);
-    }, [activeTab]);
-
-    // History Fetch
-    useEffect(() => {
-        if (activeTab === 1) {
-            fetchHistory(historyPage, historyRowsPerPage).then(res => {
-                if (res) setTotalHistory(getTotalItems(res));
-            });
-        }
-    }, [activeTab, historyPage, historyRowsPerPage, filters.orgFilter, filters.statusFilter, filters.searchQuery]);
+    }, []);
 
     const filteredPoints = useMemo(() => {
         let result = points;
@@ -130,20 +116,6 @@ const AdminInundationDashboard = () => {
                         <IconLayoutDashboard size={24} color={theme.palette.primary.main} />
                         <Typography variant="h3">Quản lý Điểm ngập</Typography>
                     </Stack>
-                    <Stack direction="row" spacing={1}>
-                        <Chip
-                            label="Điểm đang trực"
-                            variant={activeTab === 0 ? 'filled' : 'outlined'}
-                            color="primary" onClick={() => setActiveTab(0)}
-                            sx={{ fontWeight: 700 }}
-                        />
-                        <Chip
-                            label="Lịch sử toàn thành phố"
-                            variant={activeTab === 1 ? 'filled' : 'outlined'}
-                            color="primary" onClick={() => setActiveTab(1)}
-                            sx={{ fontWeight: 700 }}
-                        />
-                    </Stack>
                 </Box>
             }
         >
@@ -182,7 +154,7 @@ const AdminInundationDashboard = () => {
                     <Grid item xs={12} md={2}>
                         <Button
                             fullWidth variant="outlined" startIcon={<IconRefresh size={18} />}
-                            onClick={() => { fetchPoints(); if (activeTab === 1) fetchHistory(historyPage, historyRowsPerPage); }}
+                            onClick={() => fetchPoints()}
                             sx={{ borderRadius: 2, height: 40 }}
                         >
                             Làm mới
@@ -191,70 +163,35 @@ const AdminInundationDashboard = () => {
                 </Grid>
             </Paper>
 
-            {activeTab === 0 ? (
-                <Box>
-                    {loading ? (
-                        <Grid container spacing={3}>
-                            {[1, 2, 3, 4, 5, 6].map(i => (
-                                <Grid item xs={12} sm={6} md={4} lg={3} key={i}>
-                                    <Skeleton variant="rectangular" height={220} sx={{ borderRadius: 4 }} />
-                                </Grid>
-                            ))}
-                        </Grid>
-                    ) : filteredPoints.length === 0 ? (
-                        <Paper sx={{ py: 6, textAlign: 'center', borderRadius: 4, border: '1px dashed', borderColor: 'divider' }}>
-                            <Typography color="textSecondary">Không tìm thấy điểm ngập nào</Typography>
-                        </Paper>
-                    ) : (
-                        <Grid container spacing={3}>
-                            {filteredPoints.map(point => (
-                                <Grid item xs={12} sm={6} md={4} lg={3} key={point.id}>
-                                    <AdminInundationCard 
-                                        point={point} 
-                                        onAction={handleAction} 
-                                        onOpenViewer={handleOpenViewer}
-                                        navigate={navigate}
-                                        basePath={basePath}
-                                    />
-                                </Grid>
-                            ))}
-                        </Grid>
-                    )}
-                </Box>
-            ) : (
-                <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
-                    <Table sx={{ minWidth: 800 }}>
-                        <TableHead sx={{ bgcolor: 'grey.50' }}>
-                            <TableRow>
-                                <TableCell sx={{ width: 40 }} />
-                                <TableCell sx={{ fontWeight: 700 }}>Tuyến đường</TableCell>
-                                <TableCell sx={{ fontWeight: 700 }}>Đơn vị</TableCell>
-                                <TableCell sx={{ fontWeight: 700 }}>Bắt đầu</TableCell>
-                                <TableCell sx={{ fontWeight: 700 }}>Kết thúc / Cập nhật</TableCell>
-                                <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>
-                                <TableCell align="right" sx={{ fontWeight: 700 }}>Thao tác</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {loadingHistory ? (
-                                [1, 2, 3].map(i => <TableRow key={i}><TableCell colSpan={7} align="center"><CircularProgress size={24} /></TableCell></TableRow>)
-                            ) : historyReports.length === 0 ? (
-                                <TableRow><TableCell colSpan={7} align="center" sx={{ py: 4 }}>Không có dữ liệu lịch sử</TableCell></TableRow>
-                            ) : (
-                                historyReports.map(report => (
-                                    <InundationHistoryCard key={report.id} report={report} navigate={navigate} basePath={basePath} handleOpenViewer={handleOpenViewer} />
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                    <TablePagination
-                        component="div" count={totalHistory} rowsPerPage={historyRowsPerPage} page={historyPage}
-                        onPageChange={(e, p) => setHistoryPage(p)}
-                        onRowsPerPageChange={(e) => { setHistoryRowsPerPage(parseInt(e.target.value, 10)); setHistoryPage(0); }}
-                        labelRowsPerPage="Dòng mỗi trang:"
-                    />
-                </TableContainer>
-            )}
+            <Box>
+                {loading ? (
+                    <Grid container spacing={3}>
+                        {[1, 2, 3, 4, 5, 6].map(i => (
+                            <Grid item xs={12} sm={6} md={4} lg={3} key={i}>
+                                <Skeleton variant="rectangular" height={220} sx={{ borderRadius: 4 }} />
+                            </Grid>
+                        ))}
+                    </Grid>
+                ) : filteredPoints.length === 0 ? (
+                    <Paper sx={{ py: 6, textAlign: 'center', borderRadius: 4, border: '1px dashed', borderColor: 'divider' }}>
+                        <Typography color="textSecondary">Không tìm thấy điểm ngập nào</Typography>
+                    </Paper>
+                ) : (
+                    <Grid container spacing={3}>
+                        {filteredPoints.map(point => (
+                            <Grid item xs={12} sm={6} md={4} lg={3} key={point.id}>
+                                <AdminInundationCard 
+                                    point={point} 
+                                    onAction={handleAction} 
+                                    onOpenViewer={handleOpenViewer}
+                                    navigate={navigate}
+                                    basePath={basePath}
+                                />
+                            </Grid>
+                        ))}
+                    </Grid>
+                )}
+            </Box>
 
             <ImageViewer viewer={viewer} onClose={() => setViewer({ ...viewer, open: false })} onPrev={() => setViewer(v => ({ ...v, index: (v.index - 1 + v.images.length) % v.images.length }))} onNext={() => setViewer(v => ({ ...v, index: (v.index + 1) % v.images.length }))} />
             

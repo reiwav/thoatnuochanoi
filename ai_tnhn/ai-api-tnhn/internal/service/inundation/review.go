@@ -183,17 +183,17 @@ func (s *service) UpdateUpdateContent(ctx context.Context, user *models.User, up
 		}
 	}
 
+	// Recalculate level for update
+	update.FloodLevelName, update.FloodLevelColor = s.calculateFloodLevel(ctx, update.Depth)
+
 	// 3. Update the existing record fields
 	update.Description = updatedData.Description
 	update.Depth = updatedData.Depth
 	update.Length = updatedData.Length
 	update.Width = updatedData.Width
-	update.TrafficStatus = updatedData.TrafficStatus
+	update.TrafficStatus = updatedData.FloodLevelName
 	update.NeedsCorrection = false
 	update.IsReviewUpdated = true
-
-	// Recalculate level for update
-	update.FloodLevelName, update.FloodLevelColor = s.calculateFloodLevel(ctx, update.Depth)
 
 	if len(images) > 0 {
 		savedPaths, err := s.saveLocalImages(fmt.Sprintf("%s_fix_%d", updateID, time.Now().Unix()), images)
@@ -216,7 +216,7 @@ func (s *service) UpdateUpdateContent(ctx context.Context, user *models.User, up
 	report.Depth = update.Depth
 	report.Length = update.Length
 	report.Width = update.Width
-	report.TrafficStatus = update.TrafficStatus
+	report.TrafficStatus = update.FloodLevelName
 	report.Description = update.Description
 	report.Images = update.Images
 	report.FloodLevelName = update.FloodLevelName
@@ -224,7 +224,7 @@ func (s *service) UpdateUpdateContent(ctx context.Context, user *models.User, up
 	report.NeedsCorrection = false
 	report.NeedsCorrectionUpdateID = ""
 	report.IsReviewUpdated = true
-	
+
 	_ = s.InundationReportRepo.Update(ctx, report)
 
 	return nil

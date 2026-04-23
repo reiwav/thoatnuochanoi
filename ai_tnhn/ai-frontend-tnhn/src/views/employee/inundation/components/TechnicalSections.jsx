@@ -1,35 +1,47 @@
 import React from 'react';
-import { Box, Typography, Stack, Chip } from '@mui/material';
+import { Box, Typography, Stack, Chip, alpha } from '@mui/material';
 import { IconCheck, IconMessage2, IconAlertTriangle } from '@tabler/icons-react';
 import { getInundationImageUrl } from 'utils/imageHelper';
 import { formatDateTime } from 'utils/dataHelper';
 
 export const ReportInfoSection = ({ latest, handleOpenViewer }) => {
     if (!latest) return null;
+    const color = latest.flood_level_color || '#5e35b1'; // Fallback to secondary if color not available
 
     return (
-        <Box sx={{ p: 1.5, bgcolor: 'secondary.lighter', borderRadius: 2, border: '1px solid', borderColor: 'secondary.main', mb: 1 }}>
-            <Typography variant="caption" sx={{ fontWeight: 900, color: 'secondary.dark', textTransform: 'uppercase', mb: 1, display: 'block' }}>
+        <Box sx={{ p: 1.2, bgcolor: alpha(color, 0.04), borderRadius: 1.5, border: '1px solid', borderColor: alpha(color, 0.1), mb: 1 }}>
+            <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', mb: 1, display: 'block', fontSize: '0.7rem' }}>
                 📍 Báo cáo hiện trường:
             </Typography>
             
-            <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
+            <Stack direction="row" spacing={1} sx={{ mb: 1.5 }} alignItems="center">
+                <Box sx={{ 
+                    px: 1, py: 0.2, 
+                    bgcolor: 'background.paper', 
+                    border: '1px solid', 
+                    borderColor: 'divider',
+                    borderRadius: 1,
+                    display: 'flex',
+                    alignItems: 'center'
+                }}>
+                    <Typography sx={{ fontWeight: 800, fontSize: '0.9rem', color: 'text.primary' }}>
+                        {latest.length || '?'} <span style={{ color: '#aaa', fontSize: '0.7rem', margin: '0 2px' }}>x</span> 
+                        {latest.width || '?'} <span style={{ color: '#aaa', fontSize: '0.7rem', margin: '0 2px' }}>x</span> 
+                        <span style={{ color: color }}>{latest.depth || 0}</span>
+                    </Typography>
+                </Box>
                 <Chip 
-                    label={`${latest.length || '?'} x ${latest.width || '?'} x ${latest.depth || 0}`} 
+                    label={latest.traffic_status || 'Bình thường'} 
                     size="small" 
-                    variant="outlined" 
-                    color="secondary" 
-                    sx={{ fontWeight: 800, borderRadius: 1 }} 
-                />
-                <Chip 
-                    label={latest.traffic_status || 'Đi lại bình thường'} 
-                    size="small" 
-                    variant="outlined" 
-                    color={
-                        latest.traffic_status === 'Không đi lại được' ? 'error' : 
-                        (latest.traffic_status === 'Đi lại khó khăn' ? 'warning' : 'success')
-                    }
-                    sx={{ fontWeight: 800, borderRadius: 1 }} 
+                    variant="contained" 
+                    sx={{ 
+                        fontWeight: 800, 
+                        borderRadius: 1, 
+                        bgcolor: color,
+                        height: 24,
+                        fontSize: '0.7rem',
+                        px: 0.5
+                    }} 
                 />
             </Stack>
 
@@ -132,9 +144,20 @@ export const ReviewCommentSection = ({ latest }) => {
 
     return (
         <Box sx={{ p: 1, bgcolor: 'error.lighter', borderRadius: 1.5, borderLeft: '3px solid', borderColor: 'error.main' }}>
-            <Typography variant="caption" sx={{ fontWeight: 800, color: 'error.main', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <IconAlertTriangle size={14} /> Nhận xét:
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                <Typography variant="caption" sx={{ fontWeight: 800, color: 'error.main', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <IconAlertTriangle size={14} /> Nhận xét:
+                </Typography>
+                {latest.is_review_updated && (
+                    <Chip 
+                        label="ĐÃ CHỈNH SỬA" 
+                        size="small" 
+                        color="success" 
+                        icon={<IconCheck size={12} />}
+                        sx={{ height: 18, fontSize: '0.6rem', fontWeight: 900, borderRadius: 1 }} 
+                    />
+                )}
+            </Box>
             <Typography variant="caption" sx={{ fontWeight: 600, color: 'error.dark', display: 'block' }}>{latest.review_comment}</Typography>
             {latest.reviewer_name && (
                 <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'text.disabled', fontStyle: 'italic' }}>

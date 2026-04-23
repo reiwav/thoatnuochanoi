@@ -191,7 +191,7 @@ export const CardMetrics = ({ isHighPriority, latest, theme }) => (
 
 export const CardActions = ({ expanded, setExpanded, isHighPriority, point, latest, openTask }) => {
     const theme = useTheme();
-    const isCorrection = isHighPriority && latest?.needs_correction;
+    const isCorrection = isHighPriority && latest?.needs_correction && !latest?.is_review_updated;
     
     return (
         <>

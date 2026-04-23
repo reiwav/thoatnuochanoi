@@ -23,9 +23,14 @@ const InundationPointCard = ({ point, openTask, handleOpenViewer, onRefresh }) =
     const [finishing, setFinishing] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
 
-    const latest = useMemo(() => {
-        if (!point.report_id && !point.last_report) return null;
-        return getLatestData(point.active_report || point.last_report || point);
+    const activeData = useMemo(() => {
+        if (!point.report_id || !point.active_report) return null;
+        return getLatestData(point.active_report);
+    }, [point.report_id, point.active_report]);
+
+    const latestData = useMemo(() => {
+        if (point.active_report) return getLatestData(point.active_report);
+        return getLatestData(point);
     }, [point]);
 
     const isHighPriority = !!point.report_id;
@@ -66,7 +71,7 @@ const InundationPointCard = ({ point, openTask, handleOpenViewer, onRefresh }) =
                     : 'none',
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 background: isHighPriority
-                    ? `linear-gradient(135deg, ${alpha(latest?.flood_level_color || theme.palette.error.main, 0.01)} 0%, #ffffff 100%)`
+                    ? `linear-gradient(135deg, ${alpha(latestData?.flood_level_color || theme.palette.error.main, 0.01)} 0%, #ffffff 100%)`
                     : '#ffffff',
                 position: 'relative',
                 overflow: 'hidden',
@@ -77,7 +82,7 @@ const InundationPointCard = ({ point, openTask, handleOpenViewer, onRefresh }) =
                     left: 0,
                     width: 6,
                     height: '100%',
-                    bgcolor: latest?.flood_level_color || 'error.main'
+                    bgcolor: latestData?.flood_level_color || 'error.main'
                 } : {},
                 '&:hover': {
                     transform: 'translateY(-4px)',
@@ -86,7 +91,7 @@ const InundationPointCard = ({ point, openTask, handleOpenViewer, onRefresh }) =
                         : theme.shadows[8],
                     borderColor: isHighPriority ? 'error.main' : 'primary.light'
                 },
-                animation: (isHighPriority && latest?.needs_correction) ? 'aggressiveBlink 1.5s infinite alternate' : 'none',
+                animation: (activeData?.needs_correction && !activeData?.is_review_updated) ? 'aggressiveBlink 1.5s infinite alternate' : 'none',
                 '@keyframes aggressiveBlink': {
                     '0%': { 
                         borderColor: theme.palette.warning.main,
@@ -103,7 +108,7 @@ const InundationPointCard = ({ point, openTask, handleOpenViewer, onRefresh }) =
         >
             <CardHeader 
                 point={point} 
-                latest={latest} 
+                latest={activeData} 
                 isHighPriority={isHighPriority} 
                 navigate={navigate} 
                 openTask={openTask} 
@@ -129,7 +134,7 @@ const InundationPointCard = ({ point, openTask, handleOpenViewer, onRefresh }) =
 
             <CardMetrics 
                 isHighPriority={isHighPriority} 
-                latest={latest} 
+                latest={latestData} 
                 theme={theme} 
             />
 
@@ -138,13 +143,13 @@ const InundationPointCard = ({ point, openTask, handleOpenViewer, onRefresh }) =
                 setExpanded={setExpanded} 
                 isHighPriority={isHighPriority} 
                 point={point} 
-                latest={latest}
+                latest={activeData}
                 openTask={openTask} 
             />
 
             <CardExpandedContent 
                 expanded={expanded} 
-                latest={latest} 
+                latest={activeData} 
                 isHighPriority={isHighPriority} 
                 handleOpenViewer={handleOpenViewer} 
             />

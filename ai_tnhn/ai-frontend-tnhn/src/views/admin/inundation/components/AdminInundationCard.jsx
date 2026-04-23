@@ -6,12 +6,13 @@ import {
 import {
     IconAlertTriangle, IconPhoto, IconClock, IconUser,
     IconMapPin, IconBuildingCommunity, IconRuler2,
-    IconChevronDown, IconChevronUp, IconSend, IconClipboardCheck, IconEngine, IconChecklist
+    IconChevronDown, IconChevronUp, IconSend, IconClipboardCheck, IconEngine, IconChecklist, IconCircleCheck
 } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import AdminInundationActionMenu from './AdminInundationActionMenu';
 import { SurveyInfoSection, MechInfoSection, ReviewCommentSection, ReportInfoSection } from '../../../employee/inundation/components/TechnicalSections';
 import PermissionGuard from 'ui-component/PermissionGuard';
+import { getInundationImageUrl } from 'utils/imageHelper';
 
 const AdminInundationCard = ({ point, onAction, onOpenViewer, navigate, basePath }) => {
     const theme = useTheme();
@@ -76,13 +77,6 @@ const AdminInundationCard = ({ point, onAction, onOpenViewer, navigate, basePath
                     </Box>
 
                     <Stack direction="row" spacing={0} alignItems="center" sx={{ flexShrink: 0 }}>
-                        {report?.images?.length > 0 && (
-                            <IconButton size="small" onClick={() => onOpenViewer(report.images)} color="primary" sx={{ p: 0.5 }}>
-                                <Badge badgeContent={report.images.length} color="error" sx={{ '& .MuiBadge-badge': { fontSize: 10, height: 16, minWidth: 16, fontWeight: 800 } }}>
-                                    <IconPhoto size={18} />
-                                </Badge>
-                            </IconButton>
-                        )}
                         <AdminInundationActionMenu point={point} onAction={onAction} />
                     </Stack>
                 </Box>
@@ -94,62 +88,71 @@ const AdminInundationCard = ({ point, onAction, onOpenViewer, navigate, basePath
                     </Typography>
                 </Stack>
 
-                <Divider sx={{ mb: 2, borderStyle: 'dashed', opacity: 0.5 }} />
-
-                {/* Metrics Area: Dimensions, Depth, and Status */}
                 {isFlooded ? (
                     <Stack spacing={1.5}>
-                        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1 }}>
-                            <Stack
-                                spacing={0.5} alignItems="center"
-                                sx={{ p: 1, borderRadius: 2, bgcolor: 'grey.50', border: '1px solid', borderColor: 'grey.100', textAlign: 'center' }}
-                            >
-                                <Typography variant="overline" sx={{ fontWeight: 800, color: 'text.secondary', lineHeight: 1 }}>KT (m)</Typography>
-                                <Typography variant="body2" sx={{ fontWeight: 900 }}>
-                                    {report?.length || '?'}x{report?.width || '?'}
-                                </Typography>
-                            </Stack>
-
-                            <Stack
-                                spacing={0.5} alignItems="center"
-                                sx={{
-                                    p: 1, borderRadius: 2,
-                                    bgcolor: displayColor ? `${displayColor}10` : 'primary.lighter',
-                                    border: '1px solid',
-                                    borderColor: displayColor ? `${displayColor}20` : 'primary.200',
-                                    textAlign: 'center'
-                                }}
-                            >
-                                <Typography variant="overline" sx={{ fontWeight: 800, color: displayColor, lineHeight: 1 }}>Sâu (cm)</Typography>
-                                <Typography variant="h5" sx={{ fontWeight: 900, color: displayColor }}>
-                                    {report?.depth || 0}
-                                </Typography>
-                            </Stack>
-
-                            <Stack
-                                spacing={0.5} alignItems="center"
-                                sx={{
-                                    p: 1, borderRadius: 2,
-                                    bgcolor: displayColor ? `${displayColor}15` : 'grey.100',
-                                    border: '1px solid',
-                                    borderColor: displayColor ? `${displayColor}30` : 'transparent',
-                                    textAlign: 'center',
-                                    justifyContent: 'center'
-                                }}
-                            >
-                                <IconAlertTriangle size={14} color={displayColor} />
-                                <Typography variant="caption" sx={{ fontWeight: 900, color: displayColor, fontSize: '0.625rem', lineHeight: 1 }}>
-                                    {report?.flood_level_name || 'Đang ngập'}
-                                </Typography>
-                            </Stack>
+                        {/* Compact Metrics: Dài x Rộng x Sâu */}
+                        <Box sx={{ 
+                            p: 1.5, 
+                            borderRadius: 3, 
+                            border: '1px solid', 
+                            borderColor: `${displayColor}30`, 
+                            bgcolor: `${displayColor}08`,
+                            position: 'relative',
+                            overflow: 'hidden'
+                        }}>
+                            <Grid container spacing={1} alignItems="center">
+                                <Grid item xs={2.5}>
+                                    <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.6rem', textTransform: 'uppercase' }}>Dài</Typography>
+                                    <Typography variant="h5" sx={{ fontWeight: 800 }}>{report?.length || '0'}<span style={{ fontSize: '0.6rem', color: '#999', marginLeft: 1 }}>m</span></Typography>
+                                </Grid>
+                                <Grid item xs={2.5}>
+                                    <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.6rem', textTransform: 'uppercase' }}>Rộng</Typography>
+                                    <Typography variant="h5" sx={{ fontWeight: 800 }}>{report?.width || '0'}<span style={{ fontSize: '0.6rem', color: '#999', marginLeft: 1 }}>m</span></Typography>
+                                </Grid>
+                                <Grid item xs={3} sx={{ borderLeft: '1px solid', borderColor: `${displayColor}20`, pl: 1 }}>
+                                    <Typography variant="caption" sx={{ display: 'block', color: displayColor, fontWeight: 800, fontSize: '0.6rem', textTransform: 'uppercase' }}>Sâu</Typography>
+                                    <Typography variant="h3" sx={{ fontWeight: 900, color: displayColor, lineHeight: 1 }}>{report?.depth || '0'}<span style={{ fontSize: '0.6rem', opacity: 0.7, marginLeft: 2 }}>cm</span></Typography>
+                                </Grid>
+                                <Grid item xs={4} sx={{ textAlign: 'right' }}>
+                                    <Chip 
+                                        label={report?.flood_level_name || 'Đang ngập'} 
+                                        size="small"
+                                        sx={{ 
+                                            height: 20, fontSize: '0.6rem', fontWeight: 900, 
+                                            bgcolor: displayColor, color: '#fff',
+                                            '& .MuiChip-label': { px: 0.8 }
+                                        }} 
+                                    />
+                                </Grid>
+                            </Grid>
                         </Box>
 
+                        {/* Image List (Thumbnails) */}
+                        {report?.images?.length > 0 && (
+                            <Box>
+                                <Stack direction="row" spacing={0.5} sx={{ overflowX: 'auto', pt: 0.5, pb: 0.5, '&::-webkit-scrollbar': { height: 4, bgcolor: 'transparent' }, '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(0,0,0,0.1)', borderRadius: 10 } }}>
+                                    {report.images.map((img, i) => (
+                                        <Box 
+                                            key={i} 
+                                            onClick={() => onOpenViewer(report.images, i)}
+                                            sx={{ 
+                                                width: 48, height: 48, borderRadius: 1.5, overflow: 'hidden', flexShrink: 0, cursor: 'pointer',
+                                                border: '1.5px solid', borderColor: 'divider', transition: 'all 0.2s',
+                                                '&:hover': { transform: 'scale(1.05)', borderColor: displayColor }
+                                            }}
+                                        >
+                                            <img src={getInundationImageUrl(img)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        </Box>
+                                    ))}
+                                </Stack>
+                            </Box>
+                        )}
                         <Box sx={{ p: 1, bgcolor: 'grey.50', borderRadius: 3, border: '1px solid', borderColor: 'grey.100' }}>
                             <Stack direction="row" justifyContent="space-between" spacing={1}>
                                 <Stack direction="row" spacing={1} alignItems="center">
                                     <IconClock size={14} color={theme.palette.text.secondary} />
                                     <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                                        {report?.updated_at ? dayjs(report.updated_at).fromNow() : 'Vừa xong'}
+                                        {report?.updated_at && dayjs(report.updated_at).year() > 2000 ? dayjs(report.updated_at).fromNow() : 'Vừa xong'}
                                     </Typography>
                                 </Stack>
                                 <Stack direction="row" spacing={0.5} alignItems="center">
@@ -203,6 +206,17 @@ const AdminInundationCard = ({ point, onAction, onOpenViewer, navigate, basePath
                             </PermissionGuard>
                             {isFlooded && (
                                 <>
+                                    <PermissionGuard permission="inundation:review">
+                                        <Tooltip title="Kết thúc nhanh">
+                                            <IconButton 
+                                                size="small" color="success"
+                                                onClick={() => onAction('quick_finish', point)}
+                                                sx={{ bgcolor: 'success.lighter', '&:hover': { bgcolor: 'success.light' } }}
+                                            >
+                                                <IconCircleCheck size={18} />
+                                            </IconButton>
+                                        </Tooltip>
+                                    </PermissionGuard>
                                     <PermissionGuard permission="inundation:survey">
                                         <Tooltip title="Nhận xét từ Giám sát">
                                             <IconButton size="small" color="primary" onClick={() => onAction('survey', point)} sx={{ bgcolor: 'primary.lighter' }}>

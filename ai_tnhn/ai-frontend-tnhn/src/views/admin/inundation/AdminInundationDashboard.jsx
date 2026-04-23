@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import {
     Box, Typography, Stack, Chip, Paper, TextField, MenuItem,
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-    Skeleton, CircularProgress, TablePagination
+    Skeleton, CircularProgress, TablePagination,
+    Dialog, DialogTitle, DialogContent, DialogActions, Button, IconButton, Tooltip, Divider, Grid
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { IconSearch, IconAlertTriangle, IconRefresh, IconLayoutDashboard } from '@tabler/icons-react';
@@ -16,7 +17,6 @@ import { getTotalItems } from 'utils/apiHelper';
 // Shared Components
 import InundationHistoryCard from './components/InundationHistoryCard';
 import ImageViewer from './components/ImageViewer';
-import { Grid, Button, IconButton, Tooltip, Divider } from '@mui/material';
 import { IconChevronRight, IconEye, IconDotsVertical, IconMessageDots, IconRulerMeasure, IconTruck, IconCircleCheck, IconPhoto } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -50,6 +50,7 @@ const AdminInundationDashboard = () => {
     const [totalHistory, setTotalHistory] = useState(0);
 
     const [taskDialog, setTaskDialog] = useState({ open: false, mode: '', data: null });
+    const [confirmFinish, setConfirmFinish] = useState({ open: false, point: null });
 
     // Initial Fetch
     useEffect(() => {
@@ -95,9 +96,7 @@ const AdminInundationDashboard = () => {
 
     const handleAction = (mode, point) => {
         if (mode === 'quick_finish') {
-            if (window.confirm(`Bạn có chắc chắn muốn kết thúc ngập tại điểm "${point.name}"?`)) {
-                quickFinishPoint(point.id);
-            }
+            setConfirmFinish({ open: true, point });
             return;
         }
         
@@ -114,6 +113,13 @@ const AdminInundationDashboard = () => {
             mode: modeMap[mode],
             data: point
         });
+    };
+
+    const handleConfirmQuickFinish = async () => {
+        if (confirmFinish.point) {
+            await quickFinishPoint(confirmFinish.point.id);
+            setConfirmFinish({ open: false, point: null });
+        }
     };
 
     return (
@@ -262,6 +268,48 @@ const AdminInundationDashboard = () => {
                     fetchPoints();
                 }}
             />
+
+            {/* Confirm Quick Finish Dialog */}
+            <Dialog 
+                open={confirmFinish.open} 
+                onClose={() => setConfirmFinish({ open: false, point: null })}
+                slotProps={{ paper: { sx: { borderRadius: 4, p: 1, minWidth: 320 } } }}
+            >
+                <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pb: 1 }}>
+                    <Box sx={{ p: 1, borderRadius: 2, bgcolor: 'error.lighter', color: 'error.main', display: 'flex' }}>
+                        <IconAlertTriangle size={24} />
+                    </Box>
+                    <Typography variant="h4" sx={{ fontWeight: 800 }}>Xác nhận kết thúc ngập</Typography>
+                </DialogTitle>
+                <DialogContent>
+                    <Typography variant="body1" sx={{ py: 1 }}>
+                        Bạn có chắc chắn muốn kết thúc nhanh tình trạng ngập tại điểm:
+                    </Typography>
+                    <Typography variant="h5" sx={{ fontWeight: 900, color: 'primary.main', mb: 1 }}>
+                        {confirmFinish.point?.name}
+                    </Typography>
+                    <Typography variant="caption" color="textSecondary">
+                        * Thao tác này sẽ đưa độ sâu về 0, cập nhật trạng thái trạm về Bình thường và đóng đợt ngập ngay lập tức.
+                    </Typography>
+                </DialogContent>
+                <DialogActions sx={{ p: 2, pt: 1 }}>
+                    <Button 
+                        onClick={() => setConfirmFinish({ open: false, point: null })} 
+                        color="inherit"
+                        sx={{ fontWeight: 600 }}
+                    >
+                        Hủy bỏ
+                    </Button>
+                    <Button 
+                        onClick={handleConfirmQuickFinish} 
+                        variant="contained" 
+                        color="error"
+                        sx={{ borderRadius: 2, px: 3, fontWeight: 700 }}
+                    >
+                        Xác nhận kết thúc
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </MainCard>
     );
 };

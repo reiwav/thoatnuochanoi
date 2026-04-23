@@ -62,6 +62,12 @@ export const ReportInfoSection = ({ latest, handleOpenViewer }) => {
                     ))}
                 </Box>
             )}
+
+            {latest?.review_comment && (
+                <Box sx={{ mt: 1.5, pt: 1.5, borderTop: '1px dashed', borderColor: 'divider' }}>
+                    <ReviewCommentSection latest={latest} />
+                </Box>
+            )}
         </Box>
     );
 };

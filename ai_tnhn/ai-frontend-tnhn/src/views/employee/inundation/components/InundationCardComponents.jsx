@@ -279,11 +279,10 @@ export const CardExpandedContent = ({ expanded, latest, isHighPriority, handleOp
     <Collapse in={expanded} timeout="auto" unmountOnExit>
         <Box sx={{ mt: 2.5, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
             {latest ? (
-                <Stack spacing={2}>
+                <Stack spacing={1.5}>
                     {isHighPriority && <ReportInfoSection latest={latest} handleOpenViewer={handleOpenViewer} />}
                     <SurveyInfoSection latest={latest} handleOpenViewer={handleOpenViewer} />
                     <MechInfoSection latest={latest} handleOpenViewer={handleOpenViewer} />
-                    <ReviewCommentSection latest={latest} />
                 </Stack>
             ) : (
                 <Typography variant="body2" color="textSecondary" align="center" sx={{ py: 3, fontStyle: 'italic' }}>

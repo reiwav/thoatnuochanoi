@@ -8,6 +8,7 @@ const useInundationStore = create((set, get) => ({
     points: [],
     organizations: [],
     historyReports: [],
+    totalHistory: 0,
     
     loading: false,
     loadingHistory: false,
@@ -18,7 +19,10 @@ const useInundationStore = create((set, get) => ({
         activeTab: 0,
         searchQuery: '',
         orgFilter: 'all',
-        statusFilter: 'all'
+        statusFilter: 'all',
+        fromTime: null,
+        toTime: null,
+        isFlooding: ''
     },
 
     setFilters: (newFilters) => set((state) => ({
@@ -56,10 +60,19 @@ const useInundationStore = create((set, get) => ({
 
     fetchHistory: async (page = 0, limit = 10) => {
         set({ loadingHistory: true });
+        const { filters } = get();
         try {
-            const res = await inundationApi.listReports(page, limit);
+            const apiFilters = {
+                org_id: filters.orgFilter === 'all' ? '' : filters.orgFilter,
+                status: filters.statusFilter === 'all' ? '' : filters.statusFilter,
+                from_time: filters.fromTime,
+                to_time: filters.toTime,
+                is_flooding: filters.isFlooding
+            };
+            const res = await inundationApi.listReports(page, limit, apiFilters);
             set({
                 historyReports: getDataArray(res),
+                totalHistory: res?.total || 0,
                 loadingHistory: false
             });
             return res; // Trả về để lấy tổng số trang ở UI

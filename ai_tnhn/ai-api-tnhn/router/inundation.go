@@ -13,6 +13,7 @@ func (h HandlerFuncs) InundationRoutes(api *gin.RouterGroup, mid middleware.Midd
 	{
 		group.POST("/report", inuHandler.CreateReport)
 		group.GET("/report/:id", inuHandler.GetReport)
+		group.GET("/report/:id/updates", inuHandler.ListReportUpdates)
 		group.PUT("/report/:id", inuHandler.UpdateReport)
 		group.PUT("/report/:id/survey", inuHandler.UpdateSurvey)
 		group.PUT("/report/:id/mech", inuHandler.UpdateMech)

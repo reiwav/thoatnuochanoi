@@ -14,6 +14,9 @@ const inundationApi = {
         if (filters.traffic_status) url += `&traffic_status=${encodeURIComponent(filters.traffic_status)}`;
         if (filters.query) url += `&query=${encodeURIComponent(filters.query)}`;
         if (filters.org_id) url += `&org_id=${filters.org_id}`;
+        if (filters.is_flooding !== undefined && filters.is_flooding !== '') url += `&is_flooding=${filters.is_flooding}`;
+        if (filters.from_time) url += `&from_time=${filters.from_time}`;
+        if (filters.to_time) url += `&to_time=${filters.to_time}`;
         return axiosClient.get(url);
     },
     getReport: (id) => {

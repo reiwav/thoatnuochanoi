@@ -2,6 +2,7 @@ package filters
 
 import (
 	"ai-api-tnhn/internal/base/mgo/filter"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -11,6 +12,9 @@ type InundationReportListRequest struct {
 	Status        string `form:"status"`
 	TrafficStatus string `form:"traffic_status"`
 	Query         string `form:"query"`
+	FromTime      int64  `form:"from_time"`
+	ToTime        int64  `form:"to_time"`
+	IsFlooding    *bool  `form:"is_flooding"`
 }
 
 func (f *InundationReportListRequest) GetWhere() filter.Where {
@@ -22,6 +26,15 @@ func (f *InundationReportListRequest) GetWhere() filter.Where {
 	}
 	if f.Query != "" {
 		f.AddWhere("street_name", "street_name", primitive.M{"$regex": f.Query, "$options": "i"})
+	}
+	if f.FromTime > 0 {
+		f.AddWhere("time_gt", "start_time", primitive.M{"$gte": f.FromTime})
+	}
+	if f.ToTime > 0 {
+		f.AddWhere("time_lt", "start_time", primitive.M{"$lte": f.ToTime})
+	}
+	if f.IsFlooding != nil {
+		f.AddWhere("is_flooding", "is_flooding", f.IsFlooding)
 	}
 	return f.BasicFilter.GetWhere()
 }

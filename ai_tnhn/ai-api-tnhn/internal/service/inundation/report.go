@@ -346,6 +346,19 @@ func (s *service) GetReport(ctx context.Context, user *models.User, reportID str
 
 	return report, nil
 }
+
+func (s *service) ListReportUpdates(ctx context.Context, reportID string) ([]models.InundationUpdate, error) {
+	updates, err := s.inundationUpdateRepo.ListByReportID(ctx, reportID)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]models.InundationUpdate, len(updates))
+	for i, u := range updates {
+		result[i] = *u
+	}
+	return result, nil
+}
 func (s *service) Resolve(ctx context.Context, reportID string, endTime int64) error {
 	if endTime == 0 {
 		endTime = time.Now().Unix()

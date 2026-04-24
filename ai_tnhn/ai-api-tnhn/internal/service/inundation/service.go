@@ -22,6 +22,7 @@ type Service interface {
 	ListReports(ctx context.Context, orgID string) ([]*models.InundationReport, int64, error)
 	ListReportsWithFilter(ctx context.Context, user *models.User, isAllowedAll bool, orgIDFilter string, f filter.Filter) ([]*models.InundationReport, int64, error)
 	GetReport(ctx context.Context, user *models.User, reportID string) (*models.InundationReport, error)
+	ListReportUpdates(ctx context.Context, reportID string) ([]models.InundationUpdate, error)
 	Resolve(ctx context.Context, reportID string, endTime int64) error
 	QuickFinish(ctx context.Context, user *models.User, pointID string) error
 	UpdateReport(ctx context.Context, user *models.User, id string, report *models.InundationReportBase, images []ImageContent) error

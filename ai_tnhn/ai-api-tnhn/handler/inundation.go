@@ -156,6 +156,28 @@ func (h *InundationHandler) GetReport(c *gin.Context) {
 	h.SendData(c, report)
 }
 
+// ListReportUpdates godoc
+// @Summary Lấy danh sách cập nhật tình hình của một báo cáo
+// @Description Truy xuất toàn bộ lịch sử cập nhật (diễn biến) của một báo cáo ngập lụt cụ thể
+// @Tags Ngập lụt
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID báo cáo"
+// @Success 200 {array} models.InundationUpdate
+// @Failure 401 {object} web.ErrorResponse
+// @Failure 404 {object} web.ErrorResponse
+// @Router /inundation/report/{id}/updates [get]
+func (h *InundationHandler) ListReportUpdates(c *gin.Context) {
+	id := c.Param("id")
+	updates, err := h.service.ListReportUpdates(c.Request.Context(), id)
+	if err != nil {
+		h.SendError(c, err)
+		return
+	}
+
+	h.SendData(c, updates)
+}
+
 // ResolveReport godoc
 // @Summary Kết thúc báo cáo ngập lụt
 // @Description Đánh dấu báo cáo ngập lụt đã được xử lý xong với thời gian kết thúc tùy chọn

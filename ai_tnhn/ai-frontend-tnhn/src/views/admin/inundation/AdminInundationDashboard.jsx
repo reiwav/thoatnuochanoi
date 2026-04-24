@@ -39,7 +39,6 @@ import { SurveyInfoSection, MechInfoSection, ReviewCommentSection, ReportInfoSec
 // Extracted Components
 import InundationStatusChip from './components/InundationStatusChip';
 import ActionButtons from './components/ActionButtons';
-import InundationMobileCard from './components/InundationMobileCard';
 import InundationDesktopStatCard from './components/InundationDesktopStatCard';
 
 // --- MAIN DASHBOARD COMPONENT ---
@@ -253,27 +252,8 @@ const AdminInundationDashboard = () => {
                         <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}><CircularProgress /></Box>
                     ) : (
                         <>
-                            {/* Mobile List View (Kept as is) */}
-                            <Box sx={{ display: { xs: 'block', sm: 'none' } }}>
-                                {filteredPoints.length === 0 ? (
-                                    <Typography align="center" sx={{ py: 3, color: 'text.secondary' }}>Không tìm thấy điểm ngập</Typography>
-                                ) : (
-                                    filteredPoints.map((point) => (
-                                        <InundationMobileCard
-                                            key={point.id}
-                                            point={point}
-                                            onAction={handleAction}
-                                            onOpenViewer={handleOpenViewer}
-                                            onOpenDetail={handleOpenDetail}
-                                            navigate={navigate}
-                                            basePath={basePath}
-                                        />
-                                    ))
-                                )}
-                            </Box>
-
-                            {/* Desktop Stat Card Grid View (4 per row) */}
-                            <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                            {/* Inundation Stat Cards View - Responsive Grid */}
+                            <Box>
                                 {filteredPoints.length === 0 ? (
                                     <Paper sx={{ py: 6, textAlign: 'center', borderRadius: 4, border: '1px dashed', borderColor: 'divider', bgcolor: 'grey.50' }}>
                                         <Typography color="textSecondary">Không tìm thấy điểm ngập</Typography>

@@ -121,9 +121,9 @@ const InundationDetailDialog = ({ open, onClose, point }) => {
                         </Stack>
                         <Grid container spacing={3}>
                             {[
-                                { label: 'Chiều dài', value: displayReport.length, unit: 'm', color: theme.palette.primary.main },
-                                { label: 'Chiều rộng', value: displayReport.width, unit: 'm', color: theme.palette.info.main },
-                                { label: 'Độ sâu ngập', value: displayReport.depth, unit: 'cm', color: theme.palette.error.main, bold: true }
+                                { label: 'Chiều dài', value: displayReport.length, unit: '', color: theme.palette.primary.main },
+                                { label: 'Chiều rộng', value: displayReport.width, unit: '', color: theme.palette.info.main },
+                                { label: 'Độ sâu ngập', value: displayReport.depth, unit: '', color: theme.palette.error.main, bold: true }
                             ].map((stat, i) => (
                                 <Grid item xs={4} key={i}>
                                     <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 3, textAlign: 'center', borderColor: alpha(stat.color, 0.2), bgcolor: 'white' }}>

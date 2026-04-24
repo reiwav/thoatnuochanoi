@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Typography, Card, CardContent, alpha, Stack, Divider, Collapse, Tooltip, IconButton } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { IconSend, IconCircleCheck, IconEye, IconChecklist } from '@tabler/icons-react';
+import { IconCircleCheck, IconChevronDown, IconChevronUp, IconMessageDots } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import { getInundationImageUrl } from 'utils/imageHelper';
 import PermissionGuard from 'ui-component/PermissionGuard';
@@ -14,7 +14,7 @@ const InundationDesktopStatCard = ({ point, onAction, onOpenViewer, onOpenDetail
     const isFlooded = !!point.report_id;
     const report = point.active_report;
     const lastReport = point.last_report;
-    const displayColor = isFlooded ? (report?.flood_level_color || theme.palette.error.main) : (lastReport?.flood_level_color || theme.palette.success.main);
+    const displayColor = isFlooded ? (report?.flood_level_color || theme.palette.error.main) : theme.palette.success.main;
 
     return (
         <Card sx={{
@@ -56,25 +56,29 @@ const InundationDesktopStatCard = ({ point, onAction, onOpenViewer, onOpenDetail
                     </Typography>
                 </Box>
 
+                <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 800, display: 'block', mb: 0.25, fontSize: '0.68rem', textTransform: 'uppercase' }}>
+                    {point.org_name || 'Đơn vị quản lý'}
+                </Typography>
+
                 <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.75, fontStyle: 'italic', minHeight: '2.4em', lineHeight: 1.1, fontSize: '0.68rem' }}>
                     {point.address}
                 </Typography>
 
                 {/* Status Indicator & Time Label */}
                 <Box sx={{ mb: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, px: 1, py: 0.1, borderRadius: 1.5, bgcolor: isFlooded ? alpha(theme.palette.error.main, 0.1) : alpha(theme.palette.success.main, 0.1) }}>
+                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, px: 1, py: 0.1, borderRadius: 1.5, bgcolor: alpha(displayColor, 0.1) }}>
                         <Box sx={{
                             width: 6, height: 6, borderRadius: '50%',
-                            bgcolor: isFlooded ? 'error.main' : 'success.main',
-                            boxShadow: isFlooded ? `0 0 6px ${theme.palette.error.main}` : 'none',
+                            bgcolor: displayColor,
+                            boxShadow: isFlooded ? `0 0 6px ${displayColor}` : 'none',
                             animation: isFlooded ? 'stat-pulse 2s infinite' : 'none'
                         }} />
-                        <Typography variant="caption" sx={{ fontWeight: 800, color: isFlooded ? 'error.dark' : 'success.dark', textTransform: 'uppercase', fontSize: '0.65rem' }}>
+                        <Typography variant="caption" sx={{ fontWeight: 800, color: displayColor, textTransform: 'uppercase', fontSize: '0.65rem' }}>
                             {isFlooded ? (report?.flood_level_name || 'Đang ngập') : 'Bình thường'}
                         </Typography>
                     </Box>
                     <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, fontSize: '0.65rem' }}>
-                        {isFlooded ? dayjs(report.updated_at).fromNow() : (lastReport?.end_time ? dayjs(lastReport.end_time * 1000).format('DD/MM HH:mm') : '-')}
+                        {isFlooded ? dayjs((report?.updated_at || report?.start_time) * 1000).fromNow() : (lastReport?.end_time ? dayjs(lastReport.end_time * 1000).format('DD/MM HH:mm') : '-')}
                     </Typography>
                 </Box>
 
@@ -83,18 +87,18 @@ const InundationDesktopStatCard = ({ point, onAction, onOpenViewer, onOpenDetail
                     <Typography variant="caption" sx={{ fontWeight: 700, color: 'grey.600' }}>
                         {isFlooded ? `${report.length} x ${report.width}` : '-'} x
                     </Typography>
-                    <Typography 
-                        variant="h1" 
-                        sx={{ 
-                            fontWeight: 900, 
-                            color: isFlooded ? displayColor : 'text.disabled', 
-                            fontSize: '1.8rem', 
-                            lineHeight: 1 
+                    <Typography
+                        variant="h1"
+                        sx={{
+                            fontWeight: 900,
+                            color: isFlooded ? displayColor : 'text.disabled',
+                            fontSize: '1.8rem',
+                            lineHeight: 1
                         }}
                     >
                         {isFlooded ? report.depth : '...'}
                     </Typography>
-                    <Typography variant="caption" sx={{ fontWeight: 800, color: isFlooded ? displayColor : 'text.disabled' }}>cm</Typography>
+                    <Typography variant="caption" sx={{ fontWeight: 800, color: isFlooded ? displayColor : 'text.disabled' }}></Typography>
                 </Box>
 
                 {/* Image Previews */}
@@ -102,10 +106,10 @@ const InundationDesktopStatCard = ({ point, onAction, onOpenViewer, onOpenDetail
                     <Box sx={{ mb: 1.5 }}>
                         <Stack direction="row" spacing={0.5} justifyContent="center" sx={{ overflow: 'hidden' }}>
                             {report.images.slice(0, 4).map((img, i) => (
-                                <Box 
-                                    key={i} 
-                                    onClick={() => onOpenViewer(report.images, i)} 
-                                    sx={{ 
+                                <Box
+                                    key={i}
+                                    onClick={() => onOpenViewer(report.images, i)}
+                                    sx={{
                                         width: 32, height: 32, borderRadius: 1, overflow: 'hidden', cursor: 'pointer',
                                         border: '1px solid', borderColor: 'divider',
                                         '&:hover': { opacity: 0.8 }
@@ -119,36 +123,45 @@ const InundationDesktopStatCard = ({ point, onAction, onOpenViewer, onOpenDetail
                 )}
 
                 {/* Footer Quick Actions */}
-                <Stack direction="row" spacing={0.25} justifyContent="center" sx={{ pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
-                    <PermissionGuard permission="inundation:report">
-                        <Tooltip title="Gửi báo cáo">
-                            <IconButton size="small" color="secondary" onClick={() => onAction('report', point)} sx={{ width: 30, height: 30, bgcolor: alpha(theme.palette.secondary.main, 0.08) }}>
-                                <IconSend size={15} />
-                            </IconButton>
-                        </Tooltip>
-                    </PermissionGuard>
-                    <PermissionGuard permission="inundation:review">
-                        <Tooltip title="Kết thúc nhanh">
-                            <IconButton 
-                                size="small" color="success" disabled={!isFlooded}
-                                onClick={() => onAction('quick_finish', point)}
-                                sx={{ width: 30, height: 30, bgcolor: alpha(theme.palette.success.main, 0.08) }}
-                            >
-                                <IconCircleCheck size={15} />
-                            </IconButton>
-                        </Tooltip>
-                    </PermissionGuard>
+                <Stack direction="row" spacing={0.5} alignItems="center" sx={{ pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
                     <Tooltip title="Chi tiết">
-                        <IconButton 
-                            size="small" color={expanded ? "primary" : "inherit"} 
-                            onClick={() => setExpanded(!expanded)} 
-                            sx={{ width: 30, height: 30, bgcolor: expanded ? alpha(theme.palette.primary.main, 0.12) : 'grey.100' }}
+                        <IconButton
+                            size="small" color={expanded ? "primary" : "inherit"}
+                            onClick={() => setExpanded(!expanded)}
+                            sx={{ width: 30, height: 30, bgcolor: expanded ? alpha(theme.palette.primary.main, 0.1) : 'grey.100' }}
                         >
-                            <IconChecklist size={16} />
+                            {expanded ? <IconChevronUp size={18} /> : <IconChevronDown size={18} />}
                         </IconButton>
                     </Tooltip>
-                    <AdminInundationActionMenu 
-                        point={point} 
+
+                    <Box sx={{ flex: 1 }} />
+
+                    <PermissionGuard permission="inundation:review">
+                        <Tooltip title="Nhận xét">
+                            <IconButton
+                                size="small" color="error"
+                                onClick={() => onAction('comment', point)}
+                                sx={{ width: 30, height: 30, bgcolor: alpha(theme.palette.error.main, 0.05) }}
+                            >
+                                <IconMessageDots size={18} />
+                            </IconButton>
+                        </Tooltip>
+                    </PermissionGuard>
+
+                    <PermissionGuard permission="inundation:review">
+                        <Tooltip title="Kết thúc nhanh">
+                            <IconButton
+                                size="small" color="success" disabled={!isFlooded}
+                                onClick={() => onAction('quick_finish', point)}
+                                sx={{ width: 30, height: 30, bgcolor: alpha(theme.palette.success.main, 0.05) }}
+                            >
+                                <IconCircleCheck size={18} />
+                            </IconButton>
+                        </Tooltip>
+                    </PermissionGuard>
+
+                    <AdminInundationActionMenu
+                        point={point}
                         onAction={onAction}
                         sx={{ width: 30, height: 30 }}
                         onViewHistory={(p) => navigate(`${basePath}/station/inundation/history?id=${p.id}`)}
@@ -175,9 +188,9 @@ const InundationDesktopStatCard = ({ point, onAction, onOpenViewer, onOpenDetail
             <style>
                 {`
                 @keyframes stat-pulse {
-                    0% { box-shadow: 0 0 0 0 ${alpha(theme.palette.error.main, 0.7)}; }
-                    70% { box-shadow: 0 0 0 6px ${alpha(theme.palette.error.main, 0)}; }
-                    100% { box-shadow: 0 0 0 0 ${alpha(theme.palette.error.main, 0)}; }
+                    0% { box-shadow: 0 0 0 0 ${alpha(displayColor, 0.7)}; }
+                    70% { box-shadow: 0 0 0 6px ${alpha(displayColor, 0)}; }
+                    100% { box-shadow: 0 0 0 0 ${alpha(displayColor, 0)}; }
                 }
                 `}
             </style>

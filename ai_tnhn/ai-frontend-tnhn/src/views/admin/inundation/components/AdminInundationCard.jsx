@@ -79,8 +79,8 @@ const AdminInundationCard = ({ point, onAction, onOpenViewer, onOpenDetail, navi
                     </Box>
 
                     <Stack direction="row" spacing={0} alignItems="center" sx={{ flexShrink: 0 }}>
-                        <AdminInundationActionMenu 
-                            point={point} 
+                        <AdminInundationActionMenu
+                            point={point}
                             onAction={onAction}
                             onViewHistory={(p) => navigate(`${basePath}/station/inundation/history?id=${p.id}`)}
                         />
@@ -117,7 +117,7 @@ const AdminInundationCard = ({ point, onAction, onOpenViewer, onOpenDetail, navi
                                 </Grid>
                                 <Grid item xs={3} sx={{ borderLeft: '1px solid', borderColor: `${displayColor}20`, pl: 1 }}>
                                     <Typography variant="caption" sx={{ display: 'block', color: displayColor, fontWeight: 800, fontSize: '0.6rem', textTransform: 'uppercase' }}>Sâu</Typography>
-                                    <Typography variant="h3" sx={{ fontWeight: 900, color: displayColor, lineHeight: 1 }}>{report?.depth || '0'}<span style={{ fontSize: '0.6rem', opacity: 0.7, marginLeft: 2 }}>cm</span></Typography>
+                                    <Typography variant="h3" sx={{ fontWeight: 900, color: displayColor, lineHeight: 1 }}>{report?.depth || '0'}<span style={{ fontSize: '0.6rem', opacity: 0.7, marginLeft: 2 }}></span></Typography>
                                 </Grid>
                                 <Grid item xs={4} sx={{ textAlign: 'right' }}>
                                     <Chip

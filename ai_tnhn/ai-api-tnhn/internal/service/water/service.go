@@ -106,7 +106,7 @@ func (s *service) getPermittedWaterStations(ctx context.Context, orgID string, a
 	}
 
 	f := filter.NewBasicFilter()
-	if orgID != "" && orgID != "all" {
+	if orgID != "" {
 		f.AddWhere("org_id_or_shared", "$or", []bson.M{
 			{"org_id": orgID},
 			{"shared_org_ids": orgID},
@@ -156,7 +156,7 @@ func (s *service) GetWaterSummary(ctx context.Context, orgID string, assignedIDs
 		Loai string
 	})
 	for _, t := range waterData.Content.Tram {
-		if orgID != "" && orgID != "all" && !permitted[t.Id] {
+		if orgID != "" && !permitted[t.Id] {
 			continue // Skip stations not permitted
 		}
 		stationMap[t.Id] = struct {

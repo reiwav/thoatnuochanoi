@@ -49,20 +49,18 @@ func (p rainStationRepository) ListFiltered(ctx context.Context, orgID string, i
 	var items []*models.RainStation
 	f := bson.M{}
 
-	if orgID != "all" {
-		var conds []bson.M
-		if orgID != "" {
-			conds = append(conds, bson.M{"org_id": orgID})
-		}
-		if len(ids) > 0 {
-			conds = append(conds, bson.M{"_id": bson.M{"$in": ids}})
-		}
+	var conds []bson.M
+	if orgID != "" {
+		conds = append(conds, bson.M{"org_id": orgID})
+	}
+	if len(ids) > 0 {
+		conds = append(conds, bson.M{"_id": bson.M{"$in": ids}})
+	}
 
-		if len(conds) > 0 {
-			f["$or"] = conds
-		} else {
-			return items, nil
-		}
+	if len(conds) > 0 {
+		f["$or"] = conds
+	} else {
+		return items, nil
 	}
 
 	err := p.R_SelectMany(ctx, f, &items)
@@ -106,20 +104,18 @@ func (p lakeStationRepository) ListFiltered(ctx context.Context, orgID string, i
 	var items []*models.LakeStation
 	f := bson.M{}
 
-	if orgID != "all" {
-		var conds []bson.M
-		if orgID != "" {
-			conds = append(conds, bson.M{"org_id": orgID})
-		}
-		if len(ids) > 0 {
-			conds = append(conds, bson.M{"_id": bson.M{"$in": ids}})
-		}
+	var conds []bson.M
+	if orgID != "" {
+		conds = append(conds, bson.M{"org_id": orgID})
+	}
+	if len(ids) > 0 {
+		conds = append(conds, bson.M{"_id": bson.M{"$in": ids}})
+	}
 
-		if len(conds) > 0 {
-			f["$or"] = conds
-		} else {
-			return items, nil
-		}
+	if len(conds) > 0 {
+		f["$or"] = conds
+	} else {
+		return items, nil
 	}
 
 	err := p.R_SelectMany(ctx, f, &items)
@@ -163,20 +159,18 @@ func (p riverStationRepository) ListFiltered(ctx context.Context, orgID string, 
 	var items []*models.RiverStation
 	f := bson.M{}
 
-	if orgID != "all" {
-		var conds []bson.M
-		if orgID != "" {
-			conds = append(conds, bson.M{"org_id": orgID})
-		}
-		if len(ids) > 0 {
-			conds = append(conds, bson.M{"_id": bson.M{"$in": ids}})
-		}
+	var conds []bson.M
+	if orgID != "" {
+		conds = append(conds, bson.M{"org_id": orgID})
+	}
+	if len(ids) > 0 {
+		conds = append(conds, bson.M{"_id": bson.M{"$in": ids}})
+	}
 
-		if len(conds) > 0 {
-			f["$or"] = conds
-		} else {
-			return items, nil
-		}
+	if len(conds) > 0 {
+		f["$or"] = conds
+	} else {
+		return items, nil
 	}
 
 	err := p.R_SelectMany(ctx, f, &items)

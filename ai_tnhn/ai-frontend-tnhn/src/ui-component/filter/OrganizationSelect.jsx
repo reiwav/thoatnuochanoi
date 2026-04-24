@@ -22,7 +22,7 @@ const OrganizationSelect = ({
     // Role động: Dựa vào flag isCompany từ backend trả về trong token
     // Super Admin mặc định là Company Level
     const isCompanyLevel = useMemo(() => {
-        const result = isCompany || role === 'super_admin';
+        const result = isCompany || role === 'super_admin' || role === 'admin';
         return result;
     }, [isCompany, role]);
 
@@ -47,15 +47,6 @@ const OrganizationSelect = ({
         fetchOrgs();
     }, [user?.id, fetchSelectionList]);
 
-    const isLocked = !isCompanyLevel && !!user?.org_id;
-    const currentValue = isLocked ? user.org_id : value;
-
-    useEffect(() => {
-        // Force the value to user's org_id if locked
-        if (isLocked && user?.org_id && value !== user.org_id) {
-            onChange({ target: { value: user.org_id } });
-        }
-    }, [isLocked, user?.org_id, value, onChange]);
 
     return (
         <TextField
@@ -63,9 +54,9 @@ const OrganizationSelect = ({
             fullWidth={fullWidth}
             size={size}
             label={label}
-            value={currentValue}
+            value={value}
             onChange={onChange}
-            disabled={isLocked || loading || customDisabled}
+            disabled={loading || customDisabled}
             sx={{ minWidth: 200, ...sx }}
             slotProps={{
                 input: {
@@ -75,7 +66,7 @@ const OrganizationSelect = ({
                 }
             }}
         >
-            {showAll && isCompanyLevel && <MenuItem value="">Tất cả đơn vị</MenuItem>}
+            {showAll && <MenuItem value="">Tất cả đơn vị</MenuItem>}
             {organizations.map((org) => (
                 <MenuItem key={org.id} value={org.id}>
                     {org.name}

@@ -22,6 +22,7 @@ import EmployeeActionDialog from '../components/EmployeeActionDialog';
 import InundationPointCard from './components/InundationPointCard';
 import InundationHistoryCard from './components/InundationHistoryCard';
 import ImageViewer from './components/ImageViewer';
+import InundationDetailDialog from '../../shared/inundation/InundationDetailDialog';
 
 const EmployeeInundationDashboard = () => {
     const theme = useTheme();
@@ -46,6 +47,7 @@ const EmployeeInundationDashboard = () => {
 
     // Dialog state
     const [taskDialog, setTaskDialog] = useState({ open: false, mode: '', data: null });
+    const [detailDialog, setDetailDialog] = useState({ open: false, point: null });
 
     // Read activeTab from URL
     const params = new URLSearchParams(search);
@@ -109,6 +111,7 @@ const EmployeeInundationDashboard = () => {
     };
 
     const handleOpenViewer = (imgs, idx = 0) => setViewer({ open: true, images: imgs, index: idx });
+    const handleOpenDetail = (point) => setDetailDialog({ open: true, point });
 
     const openTask = (mode, point) => {
         setTaskDialog({ open: true, mode, data: point });
@@ -165,6 +168,7 @@ const EmployeeInundationDashboard = () => {
                             point={point}
                             openTask={openTask}
                             handleOpenViewer={handleOpenViewer}
+                            onOpenDetail={handleOpenDetail}
                             onRefresh={fetchPoints}
                         />
                     </Grid>
@@ -227,6 +231,12 @@ const EmployeeInundationDashboard = () => {
             />
 
             <ImageViewer viewer={viewer} onClose={() => setViewer({ ...viewer, open: false })} onPrev={() => setViewer(v => ({ ...v, index: (v.index - 1 + v.images.length) % v.images.length }))} onNext={() => setViewer(v => ({ ...v, index: (v.index + 1) % v.images.length }))} />
+            
+            <InundationDetailDialog 
+                open={detailDialog.open}
+                onClose={() => setDetailDialog({ open: false, point: null })}
+                point={detailDialog.point}
+            />
         </Box>
     );
 };

@@ -16,7 +16,7 @@ import {
 } from './InundationCardComponents';
 import ConfirmDialog from 'ui-component/ConfirmDialog';
 
-const InundationPointCard = ({ point, openTask, handleOpenViewer, onRefresh }) => {
+const InundationPointCard = ({ point, openTask, handleOpenViewer, onOpenDetail, onRefresh }) => {
     const theme = useTheme();
     const navigate = useNavigate();
     const [expanded, setExpanded] = useState(false);
@@ -113,6 +113,7 @@ const InundationPointCard = ({ point, openTask, handleOpenViewer, onRefresh }) =
                 navigate={navigate} 
                 openTask={openTask} 
                 onQuickFinish={handleQuickFinish}
+                onOpenDetail={onOpenDetail}
                 finishing={finishing}
                 theme={theme} 
             />

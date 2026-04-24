@@ -127,9 +127,9 @@ func (h *ContractHandler) List(c *gin.Context) {
 		return
 	}
 
-	// Force OrgID from context
 	orgID, err := h.contextWith.GetOrgID(c)
-	if err == nil && orgID != "" && orgID != "all" {
+	web.AssertNil(err)
+	if orgID != "" {
 		req.OrgID = orgID
 	}
 

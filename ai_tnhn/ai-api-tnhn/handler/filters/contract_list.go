@@ -25,8 +25,7 @@ func (f *ContractListRequest) GetWhere() filter.Where {
 		where = make(filter.Where)
 	}
 
-	// Filter by OrgID: allow matching the specific OrgID OR empty for legacy data
-	if f.OrgID != "" && f.OrgID != "all" {
+	if f.OrgID != "" {
 		where["$or"] = []primitive.M{
 			{"org_id": f.OrgID},
 			{"org_id": ""},

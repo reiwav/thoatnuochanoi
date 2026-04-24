@@ -29,6 +29,7 @@ dayjs.locale('vi');
 import AdminInundationActionMenu from './components/AdminInundationActionMenu';
 import AdminInundationCard from './components/AdminInundationCard';
 import EmployeeActionDialog from '../../employee/components/EmployeeActionDialog';
+import InundationDetailDialog from '../../shared/inundation/InundationDetailDialog';
 
 const AdminInundationDashboard = () => {
     const theme = useTheme();
@@ -46,6 +47,7 @@ const AdminInundationDashboard = () => {
     const [viewer, setViewer] = useState({ open: false, images: [], index: 0 });
     const [taskDialog, setTaskDialog] = useState({ open: false, mode: '', data: null });
     const [confirmFinish, setConfirmFinish] = useState({ open: false, point: null });
+    const [detailDialog, setDetailDialog] = useState({ open: false, point: null });
 
     // Initial Fetch
     useEffect(() => {
@@ -79,6 +81,7 @@ const AdminInundationDashboard = () => {
     }, [points, filters]);
 
     const handleOpenViewer = (imgs, idx = 0) => setViewer({ open: true, images: imgs, index: idx });
+    const handleOpenDetail = (point) => setDetailDialog({ open: true, point });
 
     const handleAction = (mode, point) => {
         if (mode === 'quick_finish') {
@@ -110,6 +113,8 @@ const AdminInundationDashboard = () => {
 
     return (
         <MainCard
+            contentSX={{ p: { xs: 0.5, sm: 2.5 } }}
+            sx={{ mx: { xs: -1.5, sm: 0 }, borderRadius: { xs: 0, sm: 4 } }}
             title={
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <Stack direction="row" spacing={1} alignItems="center">
@@ -120,7 +125,7 @@ const AdminInundationDashboard = () => {
             }
         >
             {/* Filter Bar */}
-            <Paper sx={{ p: 2, mb: 3, bgcolor: 'grey.50', borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+            <Paper sx={{ p: { xs: 1.2, sm: 2 }, mb: 3, bgcolor: 'grey.50', borderRadius: { xs: 2, sm: 3 }, border: '1px solid', borderColor: 'divider' }}>
                 <Grid container spacing={2} alignItems="center">
                     <Grid item xs={12} md={4}>
                         <TextField
@@ -165,9 +170,9 @@ const AdminInundationDashboard = () => {
 
             <Box>
                 {loading ? (
-                    <Grid container spacing={3}>
+                    <Grid container spacing={1}>
                         {[1, 2, 3, 4, 5, 6].map(i => (
-                            <Grid item xs={12} sm={6} md={4} lg={3} key={i}>
+                            <Grid item xs={12} sm={6} md={4} lg={3} key={i} sx={{ display: 'flex' }}>
                                 <Skeleton variant="rectangular" height={220} sx={{ borderRadius: 4 }} />
                             </Grid>
                         ))}
@@ -177,13 +182,14 @@ const AdminInundationDashboard = () => {
                         <Typography color="textSecondary">Không tìm thấy điểm ngập nào</Typography>
                     </Paper>
                 ) : (
-                    <Grid container spacing={3}>
+                    <Grid container spacing={1}>
                         {filteredPoints.map(point => (
-                            <Grid item xs={12} sm={6} md={4} lg={3} key={point.id}>
+                            <Grid item xs={12} sm={6} md={4} lg={3} key={point.id} sx={{ display: 'flex' }}>
                                 <AdminInundationCard 
                                     point={point} 
                                     onAction={handleAction} 
                                     onOpenViewer={handleOpenViewer}
+                                    onOpenDetail={handleOpenDetail}
                                     navigate={navigate}
                                     basePath={basePath}
                                 />
@@ -195,6 +201,12 @@ const AdminInundationDashboard = () => {
 
             <ImageViewer viewer={viewer} onClose={() => setViewer({ ...viewer, open: false })} onPrev={() => setViewer(v => ({ ...v, index: (v.index - 1 + v.images.length) % v.images.length }))} onNext={() => setViewer(v => ({ ...v, index: (v.index + 1) % v.images.length }))} />
             
+            <InundationDetailDialog 
+                open={detailDialog.open}
+                onClose={() => setDetailDialog({ open: false, point: null })}
+                point={detailDialog.point}
+            />
+
             <EmployeeActionDialog
                 open={taskDialog.open}
                 mode={taskDialog.mode}

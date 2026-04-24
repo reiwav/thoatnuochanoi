@@ -36,11 +36,11 @@ export const MetricItem = ({ icon: Icon, label, value, color }) => (
     </Box>
 );
 
-export const CardHeader = ({ point, latest, isHighPriority, navigate, openTask, onQuickFinish, finishing, theme }) => (
+export const CardHeader = ({ point, latest, isHighPriority, navigate, openTask, onQuickFinish, onOpenDetail, finishing, theme }) => (
     <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start', mb: 2.5, position: 'relative' }}>
         <Tooltip title="Xem chi tiết lịch sử điểm ngập" placement="top-start">
             <Avatar 
-                onClick={() => navigate(`/company/station/inundation/history?id=${point.id}`)}
+                onClick={() => onOpenDetail(point)}
                 sx={{
                     bgcolor: isHighPriority ? (latest?.flood_level_color || theme.palette.error.main) : theme.palette.success.main,
                     width: 48,
@@ -59,14 +59,14 @@ export const CardHeader = ({ point, latest, isHighPriority, navigate, openTask, 
         <Box sx={{ flex: 1, minWidth: 0 }}>
             <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
                 <Box 
-                    onClick={() => navigate(`/company/station/inundation/history?id=${point.id}`)}
+                    onClick={() => onOpenDetail(point)}
                     sx={{ cursor: 'pointer', '&:hover h4': { color: isHighPriority ? 'error.main' : 'primary.main' } }}
                 >
                     <Typography 
                         variant="h4" 
                         sx={{ 
                             fontWeight: 900, 
-                            color: isHighPriority ? 'error.dark' : 'text.primary',
+                            color: 'primary.main',
                             lineHeight: 1.2,
                             mb: 0.5,
                             fontSize: '1.1rem',

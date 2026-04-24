@@ -14,7 +14,7 @@ import { SurveyInfoSection, MechInfoSection, ReviewCommentSection, ReportInfoSec
 import PermissionGuard from 'ui-component/PermissionGuard';
 import { getInundationImageUrl } from 'utils/imageHelper';
 
-const AdminInundationCard = ({ point, onAction, onOpenViewer, navigate, basePath }) => {
+const AdminInundationCard = ({ point, onAction, onOpenViewer, onOpenDetail, navigate, basePath }) => {
     const theme = useTheme();
     const [expanded, setExpanded] = useState(false);
     const isFlooded = !!point.report_id;
@@ -29,8 +29,10 @@ const AdminInundationCard = ({ point, onAction, onOpenViewer, navigate, basePath
     return (
         <Card
             sx={{
-                width: '300px',
-                minHeight: '220px',
+                width: { xs: '400px', sm: '300px' },
+                // minWidth: { xs: '300px', sm: '300px' },
+                height: '100%',
+                margin: 'auto',
                 display: 'flex',
                 flexDirection: 'column',
                 borderRadius: 4,
@@ -62,10 +64,10 @@ const AdminInundationCard = ({ point, onAction, onOpenViewer, navigate, basePath
                     <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1 }}>
                         <Typography
                             variant="h4"
-                            onClick={() => navigate(`${basePath}/inundation/${point.id}`)}
+                            onClick={() => onOpenDetail(point)}
                             sx={{
                                 fontWeight: 900,
-                                color: isCorrection ? 'warning.dark' : (displayColor || 'primary.main'),
+                                color: 'primary.main',
                                 lineHeight: 1.2,
                                 cursor: 'pointer',
                                 wordBreak: 'break-word',
@@ -77,7 +79,11 @@ const AdminInundationCard = ({ point, onAction, onOpenViewer, navigate, basePath
                     </Box>
 
                     <Stack direction="row" spacing={0} alignItems="center" sx={{ flexShrink: 0 }}>
-                        <AdminInundationActionMenu point={point} onAction={onAction} />
+                        <AdminInundationActionMenu 
+                            point={point} 
+                            onAction={onAction}
+                            onViewHistory={(p) => navigate(`${basePath}/station/inundation/history?id=${p.id}`)}
+                        />
                     </Stack>
                 </Box>
 
@@ -91,11 +97,11 @@ const AdminInundationCard = ({ point, onAction, onOpenViewer, navigate, basePath
                 {isFlooded ? (
                     <Stack spacing={1.5}>
                         {/* Compact Metrics: Dài x Rộng x Sâu */}
-                        <Box sx={{ 
-                            p: 1.5, 
-                            borderRadius: 3, 
-                            border: '1px solid', 
-                            borderColor: `${displayColor}30`, 
+                        <Box sx={{
+                            p: 1.5,
+                            borderRadius: 3,
+                            border: '1px solid',
+                            borderColor: `${displayColor}30`,
                             bgcolor: `${displayColor}08`,
                             position: 'relative',
                             overflow: 'hidden'
@@ -114,14 +120,14 @@ const AdminInundationCard = ({ point, onAction, onOpenViewer, navigate, basePath
                                     <Typography variant="h3" sx={{ fontWeight: 900, color: displayColor, lineHeight: 1 }}>{report?.depth || '0'}<span style={{ fontSize: '0.6rem', opacity: 0.7, marginLeft: 2 }}>cm</span></Typography>
                                 </Grid>
                                 <Grid item xs={4} sx={{ textAlign: 'right' }}>
-                                    <Chip 
-                                        label={report?.flood_level_name || 'Đang ngập'} 
+                                    <Chip
+                                        label={report?.flood_level_name || 'Đang ngập'}
                                         size="small"
-                                        sx={{ 
-                                            height: 20, fontSize: '0.6rem', fontWeight: 900, 
+                                        sx={{
+                                            height: 20, fontSize: '0.6rem', fontWeight: 900,
                                             bgcolor: displayColor, color: '#fff',
                                             '& .MuiChip-label': { px: 0.8 }
-                                        }} 
+                                        }}
                                     />
                                 </Grid>
                             </Grid>
@@ -132,10 +138,10 @@ const AdminInundationCard = ({ point, onAction, onOpenViewer, navigate, basePath
                             <Box>
                                 <Stack direction="row" spacing={0.5} sx={{ overflowX: 'auto', pt: 0.5, pb: 0.5, '&::-webkit-scrollbar': { height: 4, bgcolor: 'transparent' }, '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(0,0,0,0.1)', borderRadius: 10 } }}>
                                     {report.images.map((img, i) => (
-                                        <Box 
-                                            key={i} 
+                                        <Box
+                                            key={i}
                                             onClick={() => onOpenViewer(report.images, i)}
-                                            sx={{ 
+                                            sx={{
                                                 width: 48, height: 48, borderRadius: 1.5, overflow: 'hidden', flexShrink: 0, cursor: 'pointer',
                                                 border: '1.5px solid', borderColor: 'divider', transition: 'all 0.2s',
                                                 '&:hover': { transform: 'scale(1.05)', borderColor: displayColor }
@@ -204,42 +210,39 @@ const AdminInundationCard = ({ point, onAction, onOpenViewer, navigate, basePath
                                     </IconButton>
                                 </Tooltip>
                             </PermissionGuard>
-                            {isFlooded && (
-                                <>
-                                    <PermissionGuard permission="inundation:review">
-                                        <Tooltip title="Kết thúc nhanh">
-                                            <IconButton 
-                                                size="small" color="success"
-                                                onClick={() => onAction('quick_finish', point)}
-                                                sx={{ bgcolor: 'success.lighter', '&:hover': { bgcolor: 'success.light' } }}
-                                            >
-                                                <IconCircleCheck size={18} />
-                                            </IconButton>
-                                        </Tooltip>
-                                    </PermissionGuard>
-                                    <PermissionGuard permission="inundation:survey">
-                                        <Tooltip title="Nhận xét từ Giám sát">
-                                            <IconButton size="small" color="primary" onClick={() => onAction('survey', point)} sx={{ bgcolor: 'primary.lighter' }}>
-                                                <IconClipboardCheck size={18} />
-                                            </IconButton>
-                                        </Tooltip>
-                                    </PermissionGuard>
-                                    <PermissionGuard permission="inundation:mechanic">
-                                        <Tooltip title="Thông tin xử lý Cơ giới">
-                                            <IconButton size="small" color="info" onClick={() => onAction('mech', point)} sx={{ bgcolor: 'info.lighter' }}>
-                                                <IconEngine size={18} />
-                                            </IconButton>
-                                        </Tooltip>
-                                    </PermissionGuard>
-                                    <PermissionGuard permission="inundation:review">
-                                        <Tooltip title="Ý kiến rà soát của Admin">
-                                            <IconButton size="small" color="error" onClick={() => onAction('comment', point)} sx={{ bgcolor: 'error.lighter' }}>
-                                                <IconChecklist size={18} />
-                                            </IconButton>
-                                        </Tooltip>
-                                    </PermissionGuard>
-                                </>
-                            )}
+                            <PermissionGuard permission="inundation:review">
+                                <Tooltip title="Kết thúc nhanh">
+                                    <IconButton
+                                        size="small" color="success"
+                                        disabled={!isFlooded}
+                                        onClick={() => onAction('quick_finish', point)}
+                                        sx={{ bgcolor: 'success.lighter', '&:hover': { bgcolor: 'success.light' } }}
+                                    >
+                                        <IconCircleCheck size={18} />
+                                    </IconButton>
+                                </Tooltip>
+                            </PermissionGuard>
+                            <PermissionGuard permission="inundation:survey">
+                                <Tooltip title="Nhận xét từ Giám sát">
+                                    <IconButton size="small" color="primary" onClick={() => onAction('survey', point)} sx={{ bgcolor: 'primary.lighter' }}>
+                                        <IconClipboardCheck size={18} />
+                                    </IconButton>
+                                </Tooltip>
+                            </PermissionGuard>
+                            <PermissionGuard permission="inundation:mechanic">
+                                <Tooltip title="Thông tin xử lý Cơ giới">
+                                    <IconButton size="small" color="info" onClick={() => onAction('mech', point)} sx={{ bgcolor: 'info.lighter' }}>
+                                        <IconEngine size={18} />
+                                    </IconButton>
+                                </Tooltip>
+                            </PermissionGuard>
+                            <PermissionGuard permission="inundation:review">
+                                <Tooltip title="Ý kiến rà soát của Admin">
+                                    <IconButton size="small" color="error" onClick={() => onAction('comment', point)} sx={{ bgcolor: 'error.lighter' }}>
+                                        <IconChecklist size={18} />
+                                    </IconButton>
+                                </Tooltip>
+                            </PermissionGuard>
                         </Stack>
                     </Stack>
                 </Box>

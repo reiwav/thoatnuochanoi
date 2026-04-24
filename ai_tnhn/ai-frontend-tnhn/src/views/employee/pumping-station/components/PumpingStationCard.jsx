@@ -73,7 +73,7 @@ const PumpingStationCard = ({ station, onUpdate, onViewHistory }) => {
                         <IconEngine size={26} color={theme.palette.primary.main} />
                     </Avatar>
                     <Box>
-                        <Typography variant="h4" sx={{ fontWeight: 900 }}>{station.name}</Typography>
+                        <Typography variant="h4" sx={{ fontWeight: 900, color: 'primary.main' }}>{station.name}</Typography>
                         <Stack direction="row" spacing={1} alignItems="center">
                             <IconClock size={14} color={theme.palette.text.secondary} />
                             <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600 }}>

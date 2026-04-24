@@ -87,7 +87,7 @@ func (s *service) getPermittedRainStations(ctx context.Context, orgID string, as
 	}
 
 	f := filter.NewBasicFilter()
-	if orgID != "" && orgID != "all" {
+	if orgID != "" {
 		f.AddWhere("org_id_or_shared", "$or", []bson.M{
 			{"org_id": orgID},
 			{"shared_org_ids": orgID},
@@ -131,7 +131,7 @@ func (s *service) GetRainSummary(ctx context.Context, orgID string, assignedIDs 
 			fmt.Sscanf(v, "%d", &id)
 		}
 
-		if orgID != "" && orgID != "all" && !permitted[id] {
+		if orgID != "" && !permitted[id] {
 			continue // Skip stations not permitted
 		}
 
@@ -151,7 +151,7 @@ func (s *service) GetRainSummary(ctx context.Context, orgID string, assignedIDs 
 				fmt.Sscanf(v, "%d", &id)
 			}
 
-			if orgID != "" && orgID != "all" && !permitted[id] {
+			if orgID != "" && !permitted[id] {
 				continue
 			}
 

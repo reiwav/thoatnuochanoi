@@ -25,7 +25,7 @@ func (s *service) handleWeatherTools(ctx context.Context, call *genai.FunctionCa
 		if err != nil {
 			return nil, err
 		}
-		if orgID != "all" {
+		if orgID != "" {
 			allowed, _ := s.stationSvc.ListRainStationsFiltered(ctx, orgID, assignedRainIDs)
 			allowedIDs := make(map[int]bool)
 			for _, st := range allowed {
@@ -43,7 +43,7 @@ func (s *service) handleWeatherTools(ctx context.Context, call *genai.FunctionCa
 		return data, nil
 
 	case "get_system_overview":
-		if orgID == "all" {
+		if orgID == "" {
 			return s.stationDataSvc.GetSystemOverview(ctx)
 		}
 		// Calculate custom overview for perm-restricted user
@@ -90,7 +90,7 @@ func (s *service) handleWeatherTools(ctx context.Context, call *genai.FunctionCa
 	case "get_rain_analytics":
 		stationID, _ := call.Args["station_id"].(float64)
 		// Verification check: does user have access to this stationID?
-		if orgID != "all" {
+		if orgID != "" {
 			allowed, _ := s.stationSvc.ListRainStationsFiltered(ctx, orgID, assignedRainIDs)
 			found := false
 			for _, st := range allowed {

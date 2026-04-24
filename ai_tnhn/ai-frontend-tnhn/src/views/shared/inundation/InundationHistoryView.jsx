@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import dayjs from 'dayjs';
 import { useSearchParams } from 'react-router-dom';
 import {
     Box, Typography, Stack, Chip, Paper, CircularProgress, 
@@ -38,8 +39,9 @@ const InundationHistoryView = ({ pointId: propPointId, hideHeader = false }) => 
         try {
             // Specialized point history API returning list of reports
             const reports = await inundationApi.getPointHistory(pointId);
-            const dataArr = Array.isArray(reports) ? reports : (reports?.items || []);
+            let dataArr = Array.isArray(reports) ? reports : (reports?.items || []);
             
+
             const filtered = dataArr
                 .filter(r => r.point_id === pointId)
                 .sort((a, b) => b.start_time - a.start_time);

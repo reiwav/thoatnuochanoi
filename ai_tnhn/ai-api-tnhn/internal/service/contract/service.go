@@ -50,7 +50,7 @@ func (s *service) ensureDriveFolder(ctx context.Context, contract *models.Contra
 
 	// Step 1: Org Folder
 	parentDriveID := ""
-	if orgID != "" && orgID != "all" && s.orgRepo != nil {
+	if orgID != "" && s.orgRepo != nil {
 		org, err := s.orgRepo.GetByID(ctx, orgID)
 		if err == nil && org != nil && org.Name != "" {
 			parentDriveID, err = s.driveSvc.FindOrCreateFolder(ctx, "", org.Name)

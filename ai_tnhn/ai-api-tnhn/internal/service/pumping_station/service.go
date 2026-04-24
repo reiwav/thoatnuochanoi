@@ -178,10 +178,6 @@ func (s *service) SetWorker(w interface{}) {
 }
 
 func (s *service) GetPumpingStationSummary(ctx context.Context, orgID string, assignedIDs []string) (*PumpingStationSummaryData, error) {
-	if orgID == "all" {
-		orgID = ""
-	}
-
 	f := filter.NewBasicFilter()
 
 	if orgID != "" {

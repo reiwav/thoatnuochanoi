@@ -64,7 +64,7 @@ func (m mid) MidBasicType(roles ...string) gin.HandlerFunc {
 		}
 
 		if tok.IsCompany {
-			tok.OrgID = "all"
+			tok.OrgID = ""
 		} else if tok.OrgID == "" {
 			err = web.Unauthorized("org-id not found")
 			m.SendErrorForce(ctx, err, http.StatusUnauthorized)

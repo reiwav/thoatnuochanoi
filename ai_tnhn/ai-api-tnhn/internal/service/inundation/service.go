@@ -261,9 +261,6 @@ func (s *service) saveLocalImages(prefix string, images []ImageContent) ([]strin
 }
 
 func (s *service) GetInundationSummary(ctx context.Context, orgID string, isAllowedAll bool, assignedInuIDs []string) (*InundationSummaryData, error) {
-	if orgID == "all" {
-		orgID = ""
-	}
 	dummyUser := &models.User{
 		OrgID:                        orgID,
 		AssignedInundationStationIDs: assignedInuIDs,

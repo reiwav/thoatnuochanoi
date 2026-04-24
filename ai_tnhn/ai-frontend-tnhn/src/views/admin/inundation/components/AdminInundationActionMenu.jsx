@@ -6,14 +6,17 @@ import {
     IconReportMedical, 
     IconRulerMeasure, 
     IconTruck, 
-    IconCircleCheck 
+    IconCircleCheck,
+    IconHistory,
+    IconPlus
 } from '@tabler/icons-react';
 
 import PermissionGuard from 'ui-component/PermissionGuard';
 
 const AdminInundationActionMenu = ({ 
     point, 
-    onAction 
+    onAction,
+    onViewHistory
 }) => {
     const theme = useTheme();
     const [anchorEl, setAnchorEl] = useState(null);
@@ -69,7 +72,7 @@ const AdminInundationActionMenu = ({
                 }}
             >
                 <PermissionGuard permission="inundation:review">
-                    <MenuItem onClick={handleMenuClick('comment')} disabled={!hasActiveReport}>
+                    <MenuItem onClick={handleMenuClick('comment')}>
                         <ListItemIcon><IconMessageDots size={18} color={theme.palette.error.main} /></ListItemIcon>
                         <ListItemText 
                             primary={
@@ -82,7 +85,7 @@ const AdminInundationActionMenu = ({
                 </PermissionGuard>
                 
                 <PermissionGuard permission="inundation:report">
-                    <MenuItem onClick={handleMenuClick('report')} disabled={!hasActiveReport}>
+                    <MenuItem onClick={handleMenuClick('report')}>
                         <ListItemIcon><IconReportMedical size={18} color={theme.palette.secondary.main} /></ListItemIcon>
                         <ListItemText 
                             primary={
@@ -95,7 +98,7 @@ const AdminInundationActionMenu = ({
                 </PermissionGuard>
 
                 <PermissionGuard permission="inundation:survey">
-                    <MenuItem onClick={handleMenuClick('survey')} disabled={!hasActiveReport}>
+                    <MenuItem onClick={handleMenuClick('survey')}>
                         <ListItemIcon><IconRulerMeasure size={18} color={theme.palette.primary.main} /></ListItemIcon>
                         <ListItemText 
                             primary={
@@ -108,7 +111,7 @@ const AdminInundationActionMenu = ({
                 </PermissionGuard>
 
                 <PermissionGuard permission="inundation:mechanic">
-                    <MenuItem onClick={handleMenuClick('mech')} disabled={!hasActiveReport}>
+                    <MenuItem onClick={handleMenuClick('mech')}>
                         <ListItemIcon><IconTruck size={18} color={theme.palette.info.main} /></ListItemIcon>
                         <ListItemText 
                             primary={
@@ -141,6 +144,17 @@ const AdminInundationActionMenu = ({
                         />
                     </MenuItem>
                 </PermissionGuard>
+
+                <MenuItem onClick={() => { handleClose(); onViewHistory(point); }}>
+                    <ListItemIcon><IconHistory size={18} color={theme.palette.grey[600]} /></ListItemIcon>
+                    <ListItemText 
+                        primary={
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                                Lịch sử điểm ngập
+                            </Typography>
+                        } 
+                    />
+                </MenuItem>
             </Menu>
         </>
     );

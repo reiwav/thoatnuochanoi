@@ -29,14 +29,17 @@ type EmailInfo struct {
 }
 
 type Attachment struct {
+	ID       uint32 `json:"id"`
 	Filename string `json:"filename"`
 	URL      string `json:"url"`
 }
 
 type EmailDetail struct {
+	ID          uint32       `json:"id"`
 	Subject     string       `json:"subject"`
 	From        string       `json:"from"`
 	Date        string       `json:"date"`
+	Timestamp   int64        `json:"timestamp"`
 	Body        string       `json:"body"`
 	Attachments []Attachment `json:"attachments"`
 }
@@ -53,6 +56,7 @@ type Service interface {
 	GetLatestEmailAttachmentRaw(ctx context.Context) ([]byte, string, error)
 	GetLatestWeatherEmailID(ctx context.Context) (uint32, error)
 	GetEmailAttachmentRawByID(ctx context.Context, id uint32) ([]byte, string, error)
+	DownloadAttachment(ctx context.Context, emailID uint32, attachmentID uint32) ([]byte, error)
 }
 
 type service struct {
@@ -573,9 +577,11 @@ func (s *service) ReadEmailByTitle(ctx context.Context, title string) (*EmailDet
 	}
 
 	detail := &EmailDetail{
-		Subject: bestEnvelope.Subject,
-		From:    bestEnvelope.From[0].PersonalName,
-		Date:    bestEnvelope.Date.Format("15:04 02/01/2006"),
+		ID:        bestID,
+		Subject:   bestEnvelope.Subject,
+		From:      bestEnvelope.From[0].PersonalName,
+		Date:      bestEnvelope.Date.Format("15:04 02/01/2006"),
+		Timestamp: bestEnvelope.Date.Unix(),
 	}
 
 	for {
@@ -604,6 +610,7 @@ func (s *service) ReadEmailByTitle(ctx context.Context, title string) (*EmailDet
 				io.Copy(f, p.Body)
 				f.Close()
 				detail.Attachments = append(detail.Attachments, Attachment{
+					ID:       uint32(len(detail.Attachments) + 1),
 					Filename: filename,
 					URL:      "/public/attachments/" + safeName,
 				})
@@ -667,9 +674,11 @@ func (s *service) ReadEmailByID(ctx context.Context, id uint32) (*EmailDetail, e
 	}
 
 	detail := &EmailDetail{
-		Subject: msg.Envelope.Subject,
-		From:    msg.Envelope.From[0].PersonalName,
-		Date:    msg.Envelope.Date.Format("15:04 02/01/2006"),
+		ID:        id,
+		Subject:   msg.Envelope.Subject,
+		From:      msg.Envelope.From[0].PersonalName,
+		Date:      msg.Envelope.Date.Format("15:04 02/01/2006"),
+		Timestamp: msg.Envelope.Date.Unix(),
 	}
 
 	for {
@@ -697,6 +706,7 @@ func (s *service) ReadEmailByID(ctx context.Context, id uint32) (*EmailDetail, e
 				io.Copy(f, p.Body)
 				f.Close()
 				detail.Attachments = append(detail.Attachments, Attachment{
+					ID:       uint32(len(detail.Attachments) + 1),
 					Filename: filename,
 					URL:      "/public/attachments/" + safeName,
 				})
@@ -1067,4 +1077,60 @@ func stripHTML(html string) string {
 		}
 	}
 	return buf.String()
+}
+
+func (s *service) DownloadAttachment(ctx context.Context, emailID uint32, attachmentID uint32) ([]byte, error) {
+	c, err := s.connectIMAP()
+	if err != nil {
+		return nil, err
+	}
+	defer c.Logout()
+
+	_, err = c.Select("INBOX", true)
+	if err != nil {
+		return nil, err
+	}
+
+	seqset := new(imap.SeqSet)
+	seqset.AddNum(emailID)
+
+	var section imap.BodySectionName
+	items := []imap.FetchItem{section.FetchItem()}
+	messages := make(chan *imap.Message, 1)
+	done := make(chan error, 1)
+	go func() {
+		done <- c.Fetch(seqset, items, messages)
+	}()
+
+	msg := <-messages
+	if msg == nil {
+		return nil, fmt.Errorf("message %d not found", emailID)
+	}
+
+	r := msg.GetBody(&section)
+	mr, err := mail.CreateReader(r)
+	if err != nil {
+		return nil, err
+	}
+
+	currentID := uint32(0)
+	for {
+		p, err := mr.NextPart()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		switch p.Header.(type) {
+		case *mail.AttachmentHeader:
+			currentID++
+			if currentID == attachmentID {
+				return io.ReadAll(p.Body)
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("attachment %d not found in email %d", attachmentID, emailID)
 }

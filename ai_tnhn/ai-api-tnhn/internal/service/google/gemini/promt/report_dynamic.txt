@@ -1,0 +1,20 @@
+**BÁO CÁO TỔNG HỢP TÌNH HÌNH THOÁT NƯỚC THÀNH PHỐ**
+Thời điểm: %s ngày %s
+
+1. TÌNH HÌNH MƯA:
+%s
+
+2. TÌNH HÌNH MỰC NƯỚC:
+%s
+
+3. TÌNH HÌNH ÚNG NGẬP:
+%s
+
+4. TÌNH HÌNH VẬN HÀNH TRẠM BƠM:
+%s
+
+---
+YÊU CẦU:
+- Dựa trên dữ liệu thực tế ở trên, hãy tóm tắt tình hình thoát nước thành phố.
+- Phân tích và dự báo ngắn gọn (nếu có thông tin thời tiết).
+- Kết cấu báo cáo chuyên nghiệp, súc tích.

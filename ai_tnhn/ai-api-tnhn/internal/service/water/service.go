@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -37,6 +38,7 @@ type WaterSummaryData struct {
 	TotalStations int                `json:"total_stations"`
 	LakeStations  []WaterStationStat `json:"lake_stations"`
 	RiverStations []WaterStationStat `json:"river_stations"`
+	SummaryText   string             `json:"summary_text,omitempty"`
 }
 
 type service struct {
@@ -197,9 +199,26 @@ func (s *service) GetWaterSummary(ctx context.Context, orgID string, assignedIDs
 		return rivers[i].Name < rivers[j].Name
 	})
 
+	var summaryParts []string
+	if len(lakes) > 0 {
+		var lakeLines []string
+		for _, l := range lakes {
+			lakeLines = append(lakeLines, fmt.Sprintf("- %s: %.2fm", l.Name, l.Level/100.0))
+		}
+		summaryParts = append(summaryParts, "Hồ:\n"+strings.Join(lakeLines, "\n"))
+	}
+	if len(rivers) > 0 {
+		var riverLines []string
+		for _, r := range rivers {
+			riverLines = append(riverLines, fmt.Sprintf("- %s: %.2fm", r.Name, r.Level/100.0))
+		}
+		summaryParts = append(summaryParts, "Sông:\n"+strings.Join(riverLines, "\n"))
+	}
+
 	return &WaterSummaryData{
 		TotalStations: len(waterData.Content.Tram),
 		LakeStations:  lakes,
 		RiverStations: rivers,
+		SummaryText:   strings.Join(summaryParts, "\n\n"),
 	}, nil
 }

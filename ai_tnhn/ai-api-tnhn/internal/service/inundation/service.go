@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -63,6 +64,7 @@ type InundationStationStat struct {
 	Depth         float64                `json:"depth"`
 	Width         string                 `json:"width"`
 	Length        string                 `json:"length"`
+	FormattedDepth string                `json:"formatted_depth"` // e.g. "100 x 50 x 0.20m"
 	StartTime     string                 `json:"start_time"`
 	Description   string                 `json:"description"`
 	CurrentStatus string                 `json:"current_status"`
@@ -71,6 +73,8 @@ type InundationStationStat struct {
 
 type InundationSummaryData struct {
 	ActivePoints  int                     `json:"active_points"`
+	SummaryText   string                  `json:"summary_text"` // e.g. "có 3 điểm úng ngập"
+	FullSummary   string                  `json:"full_summary"` // List of points with details
 	OngoingPoints []InundationStationStat `json:"ongoing_points"`
 }
 
@@ -284,7 +288,16 @@ func (s *service) GetInundationSummary(ctx context.Context, orgID string, isAllo
 	}
 
 	var ongoing []InundationStationStat
+	var detailStrings []string
+
 	for _, r := range reports {
+		depthInfo := fmt.Sprintf("%v x %v x %.2f", r.Length, r.Width, r.Depth)
+		if r.Length == "" && r.Width == "" && r.Depth == 0 {
+			depthInfo = "chưa rõ độ sâu"
+		} else {
+			depthInfo = "ngập " + depthInfo
+		}
+
 		var updates []InundationUpdateStat
 		for _, u := range r.Updates {
 			updates = append(updates, InundationUpdateStat{
@@ -294,17 +307,20 @@ func (s *service) GetInundationSummary(ctx context.Context, orgID string, isAllo
 			})
 		}
 
-		ongoing = append(ongoing, InundationStationStat{
-			StreetName:    r.StreetName,
-			OrgName:       orgMap[r.OrgID],
-			Depth:         r.Depth,
-			Width:         r.Width,
-			Length:        r.Length,
-			StartTime:     time.Unix(r.CTime, 0).Format("15:04 02/01/2006"),
-			Description:   r.Description,
-			CurrentStatus: "Đang ngập lụt",
-			Updates:       updates,
-		})
+		stat := InundationStationStat{
+			StreetName:     r.StreetName,
+			OrgName:        orgMap[r.OrgID],
+			Depth:          r.Depth,
+			Width:          r.Width,
+			Length:         r.Length,
+			FormattedDepth: depthInfo,
+			StartTime:      time.Unix(r.CTime, 0).Format("15:04 02/01/2006"),
+			Description:    r.Description,
+			CurrentStatus:  "Đang ngập lụt",
+			Updates:        updates,
+		}
+		ongoing = append(ongoing, stat)
+		detailStrings = append(detailStrings, fmt.Sprintf("%s (%s)", stat.StreetName, depthInfo))
 	}
 
 	// Sort ongoing points by StreetName alphabetically
@@ -312,8 +328,15 @@ func (s *service) GetInundationSummary(ctx context.Context, orgID string, isAllo
 		return ongoing[i].StreetName < ongoing[j].StreetName
 	})
 
+	summaryText := "không xuất hiện điểm úng ngập"
+	if len(ongoing) > 0 {
+		summaryText = fmt.Sprintf("có %d điểm úng ngập", len(ongoing))
+	}
+
 	return &InundationSummaryData{
 		ActivePoints:  len(ongoing),
+		SummaryText:   summaryText,
+		FullSummary:   strings.Join(detailStrings, ", "),
 		OngoingPoints: ongoing,
 	}, nil
 }

@@ -7,7 +7,9 @@ import (
 	"ai-api-tnhn/utils/web"
 	"context"
 	"errors"
+	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -48,6 +50,7 @@ type PumpingStationSummaryData struct {
 	TotalPumps          int                  `json:"total_pumps"`
 	TotalOperatingPumps int                  `json:"total_operating_pumps"`
 	Stations            []PumpingStationStat `json:"stations"`
+	SummaryText         string               `json:"summary_text"` // Combined summary of operating stations
 }
 
 type Worker interface {
@@ -247,10 +250,24 @@ func (s *service) GetPumpingStationSummary(ctx context.Context, orgID string, as
 		return stationStats[i].Name < stationStats[j].Name
 	})
 
+	var stInfos []string
+	for _, st := range stationStats {
+		if st.OperatingCount == 0 {
+			continue
+		}
+		stInfos = append(stInfos, fmt.Sprintf("%s: %d/%d đang vận hành, cập nhật lúc: %s.", st.Name, st.OperatingCount, st.PumpCount, st.LastUpdate))
+	}
+
+	summaryText := "Hiện tại không ghi nhận trạm bơm nào đang vận hành."
+	if len(stInfos) > 0 {
+		summaryText = strings.Join(stInfos, "\n")
+	}
+
 	return &PumpingStationSummaryData{
 		TotalStations:       len(stations),
 		TotalPumps:          totalPumps,
 		TotalOperatingPumps: totalOperating,
 		Stations:            stationStats,
+		SummaryText:         summaryText,
 	}, nil
 }

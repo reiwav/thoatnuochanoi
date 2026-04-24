@@ -125,7 +125,11 @@ func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log log
 	s.Query = query.NewService(db.DB)
 	s.StationData = stationdata.NewService(s.Station, s.Water)
 	s.Gemini, _ = gemini.NewService(cfg.GeminiAPIKey, cfg.GeminiAPIKeyContract, s.Water, s.GoogleApi, s.Inundation, s.Query, s.StationData, s.EmConstruction, s.Contract, s.Station, s.PumpingStation, repos.AiUsage, repos.AiChatLog, repos.User)
-	s.Report = report.NewService(cfg, log, s.Weather, s.GoogleApi, s.Inundation, s.PumpingStation, s.Station, s.Water, driveService, s.Gemini, s.Email, repos.AiChatLog)
+	if s.GoogleApi != nil && s.Gemini != nil {
+		s.GoogleApi.SetGeminiService(s.Gemini)
+	}
+
+	s.Report = report.NewService(cfg, log, s.GoogleApi, driveService, repos.AiChatLog)
 
 	if s.Gemini != nil {
 		targetWeatherSvc := s.Gemini

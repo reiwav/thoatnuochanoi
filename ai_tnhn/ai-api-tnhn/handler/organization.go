@@ -176,31 +176,13 @@ func (h *OrganizationHandler) List(c *gin.Context) {
 // @Success 200 {object} web.Response{data=object{primary=[]models.Organization,shared=[]models.Organization}}
 // @Router /admin/organizations/selection [get]
 func (h *OrganizationHandler) GetSelectionList(c *gin.Context) {
-	req := filters.NewOrganizationListRequest()
-	req.PerPage = 1000 // Ensure we get all for list
-
-	allOrgs, _, err := h.service.List(c.Request.Context(), req)
-	web.AssertNil(err)
-
-	// Determine primary list based on user role
-	var primaryOrgs []*models.Organization
 	token := h.contextWith.GetToken(c.Request)
 	user, err := h.authService.GetProfile(c.Request.Context(), token)
-
-	if err == nil && user != nil && user.IsCompany {
-		primaryOrgs = allOrgs
-	} else if user != nil {
-		// Only current user's org allowed for primary selection
-		for _, org := range allOrgs {
-			if org.ID == user.OrgID {
-				primaryOrgs = append(primaryOrgs, org)
-				break
-			}
-		}
-	}
+	primaryOrgs, sharedOrgs, err := h.service.GetPrimaryAndShared(c.Request.Context(), user.ID)
+	web.AssertNil(err)
 
 	h.SendData(c, gin.H{
 		"primary": primaryOrgs,
-		"shared":  allOrgs,
+		"shared":  sharedOrgs,
 	})
 }

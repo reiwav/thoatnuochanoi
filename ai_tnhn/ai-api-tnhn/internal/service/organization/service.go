@@ -9,6 +9,8 @@ import (
 	"fmt"
 
 	"ai-api-tnhn/internal/service/google/googledrive"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type Service interface {
@@ -18,6 +20,7 @@ type Service interface {
 	GetByID(ctx context.Context, id string) (*models.Organization, error)
 	List(ctx context.Context, filter filter.Filter) ([]*models.Organization, int64, error)
 	FindAll(ctx context.Context, page, limit int) ([]*models.Organization, int64, error)
+	GetPrimaryAndShared(ctx context.Context, userID string) (primaryOrgs []*models.Organization, sharedOrgs []*models.Organization, err error)
 }
 
 type service struct {
@@ -110,4 +113,31 @@ func (s *service) FindAll(ctx context.Context, page, limit int) ([]*models.Organ
 	f.Page = int64(page)
 	f.PerPage = int64(limit)
 	return s.orgRepo.List(ctx, f)
+}
+
+func (s *service) GetPrimaryAndShared(ctx context.Context, userID string) (primaryOrgs []*models.Organization, sharedOrgs []*models.Organization, err error) {
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return nil, nil, err
+	}
+	var allOrgs []*models.Organization
+	err = s.orgRepo.R_SelectMany(ctx, bson.M{}, &allOrgs)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if user.IsCompany {
+		primaryOrgs = allOrgs
+		sharedOrgs = []*models.Organization{}
+	} else {
+		for _, org := range allOrgs {
+			if org.ID == user.OrgID {
+				primaryOrgs = append(primaryOrgs, org)
+			} else {
+				sharedOrgs = append(sharedOrgs, org)
+			}
+		}
+	}
+
+	return primaryOrgs, sharedOrgs, nil
 }

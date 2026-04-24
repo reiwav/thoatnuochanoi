@@ -86,7 +86,7 @@ const FloodLevelSetting = () => {
             title={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <IconClipboardCheck size={24} color={theme.palette.primary.main} />
-                    <Typography variant="h3" sx={{ fontWeight: 800 }}>Cấu hình ngưỡng ngập lụt</Typography>
+                    <Typography variant="h3" sx={{ fontWeight: 800 }}>Cấu hình ngưỡng ngập</Typography>
                 </Box>
             }
             secondary={

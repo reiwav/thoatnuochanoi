@@ -13,35 +13,35 @@ export const ReportInfoSection = ({ latest, handleOpenViewer }) => {
             <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', mb: 1, display: 'block', fontSize: '0.7rem' }}>
                 📍 Báo cáo hiện trường:
             </Typography>
-            
+
             <Stack direction="row" spacing={1} sx={{ mb: 1.5 }} alignItems="center">
-                <Box sx={{ 
-                    px: 1, py: 0.2, 
-                    bgcolor: 'background.paper', 
-                    border: '1px solid', 
+                <Box sx={{
+                    px: 1, py: 0.2,
+                    bgcolor: 'background.paper',
+                    border: '1px solid',
                     borderColor: 'divider',
                     borderRadius: 1,
                     display: 'flex',
                     alignItems: 'center'
                 }}>
                     <Typography sx={{ fontWeight: 800, fontSize: '0.9rem', color: 'text.primary' }}>
-                        {latest.length || '?'} <span style={{ color: '#aaa', fontSize: '0.7rem', margin: '0 2px' }}>x</span> 
-                        {latest.width || '?'} <span style={{ color: '#aaa', fontSize: '0.7rem', margin: '0 2px' }}>x</span> 
+                        {latest.length || '?'} <span style={{ color: '#aaa', fontSize: '0.7rem', margin: '0 2px' }}>x</span>
+                        {latest.width || '?'} <span style={{ color: '#aaa', fontSize: '0.7rem', margin: '0 2px' }}>x</span>
                         <span style={{ color: color }}>{latest.depth || 0}</span>
                     </Typography>
                 </Box>
-                <Chip 
-                    label={latest.traffic_status || 'Bình thường'} 
-                    size="small" 
-                    variant="contained" 
-                    sx={{ 
-                        fontWeight: 800, 
-                        borderRadius: 1, 
+                <Chip
+                    label={latest.traffic_status || 'Bình thường'}
+                    size="small"
+                    variant="contained"
+                    sx={{
+                        fontWeight: 800,
+                        borderRadius: 1,
                         bgcolor: color,
                         height: 24,
                         fontSize: '0.7rem',
                         px: 0.5
-                    }} 
+                    }}
                 />
             </Stack>
 
@@ -79,7 +79,7 @@ export const SurveyInfoSection = ({ latest, handleOpenViewer }) => {
         <Box sx={{ p: 1.5, bgcolor: 'primary.lighter', borderRadius: 2, border: '1px solid', borderColor: 'primary.main', mb: 1 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                 <Typography variant="caption" sx={{ fontWeight: 900, color: 'primary.main', textTransform: 'uppercase' }}>
-                    ⚡️ TK Giám sát:
+                    ⚡️ Xí nghiệp KSTK:
                 </Typography>
                 {latest.survey_checked && (
                     <Chip
@@ -155,12 +155,12 @@ export const ReviewCommentSection = ({ latest }) => {
                     <IconAlertTriangle size={14} /> Nhận xét:
                 </Typography>
                 {latest.is_review_updated && (
-                    <Chip 
-                        label="ĐÃ CHỈNH SỬA" 
-                        size="small" 
-                        color="success" 
+                    <Chip
+                        label="ĐÃ CHỈNH SỬA"
+                        size="small"
+                        color="success"
                         icon={<IconCheck size={12} />}
-                        sx={{ height: 18, fontSize: '0.6rem', fontWeight: 900, borderRadius: 1 }} 
+                        sx={{ height: 18, fontSize: '0.6rem', fontWeight: 900, borderRadius: 1 }}
                     />
                 )}
             </Box>

@@ -59,11 +59,11 @@ func (c *ClientCache) GetUserID(ctx *gin.Context) (string, error) {
 }
 
 func (c *ClientCache) GetOrgID(ctx *gin.Context) (string, error) {
-	uID := c.GetTokenFromContext(ctx).OrgID
-	if uID == "" {
-		return uID, BadRequest("org-id not found")
+	cache := c.GetTokenFromContext(ctx)
+	if cache.OrgID == "" && !cache.IsCompany {
+		return cache.OrgID, BadRequest("org-id not found")
 	}
-	return uID, nil
+	return cache.OrgID, nil
 }
 
 func (c *ClientCache) GetRole(ctx *gin.Context) (string, error) {

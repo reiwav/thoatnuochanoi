@@ -88,26 +88,22 @@ func (t service) Login(ctx context.Context, input LoginRequest) (*models.Token, 
 		return nil, web.BadRequest("invalid email or password ")
 	}
 
-	// Normalize role
-	role := u.Role
-	if role == "giam_doc_xi_nghiep" {
-		role = constant.ROLE_GIAM_DOC_XN
-	}
-
 	// 3. Get Role Data
 	isEmployee := false
 	isCompany := false
-	if roleData, err := t.roleRepo.GetByCode(ctx, role); err == nil && roleData != nil {
-		isEmployee = roleData.IsEmployee
-		isCompany = roleData.IsCompany
+	roleData, err := t.roleRepo.GetByCode(ctx, u.Role)
+	if err != nil {
+		return nil, web.BadRequest("Role not found")
 	}
+	isEmployee = roleData.IsEmployee
+	isCompany = roleData.IsCompany
 
 	// 4. Tạo token
 	tk := &models.Token{
 		UserID:     u.ID,
 		Name:       u.Name,
 		OrgID:      u.OrgID,
-		Role:       role,
+		Role:       u.Role,
 		IsEmployee: isEmployee,
 		IsCompany:  isCompany,
 	}

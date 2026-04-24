@@ -138,8 +138,10 @@ const OrganizationDialog = ({ open, onClose, onSubmit, organization, isEdit }) =
                                 select fullWidth label="Lệnh số" value={formData.order}
                                 onChange={(e) => handleChange('order', e.target.value)}
                                 size="small"
-                                InputProps={{
-                                    startAdornment: <InputAdornment position="start"><IconClipboardCheck size={18} style={{ color: '#64748b' }} /></InputAdornment>,
+                                slotProps={{
+                                    input: {
+                                        startAdornment: <InputAdornment position="start"><IconClipboardCheck size={18} style={{ color: '#64748b' }} /></InputAdornment>,
+                                    }
                                 }}
                                 sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#f8fafc' } }}
                             >

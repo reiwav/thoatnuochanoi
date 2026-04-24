@@ -29,7 +29,7 @@ const AdminInundationCard = ({ point, onAction, onOpenViewer, onOpenDetail, navi
     return (
         <Card
             sx={{
-                width: { xs: '400px', sm: '300px' },
+                width: { xs: '100%', sm: '300px' },
                 // minWidth: { xs: '300px', sm: '300px' },
                 height: '100%',
                 margin: 'auto',

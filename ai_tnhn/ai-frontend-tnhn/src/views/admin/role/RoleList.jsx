@@ -102,9 +102,11 @@ const RoleList = () => {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         size="small"
-                        InputProps={{
-                            startAdornment: <IconSearch size={18} style={{ marginRight: 8, color: '#919eab' }} />,
-                            sx: { borderRadius: '12px' }
+                        slotProps={{
+                            input: {
+                                startAdornment: <IconSearch size={18} style={{ marginRight: 8, color: '#919eab' }} />,
+                                sx: { borderRadius: '12px' }
+                            }
                         }}
                     />
                 </Grid>

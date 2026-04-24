@@ -233,15 +233,17 @@ const ContractList = () => {
                         value={filterInput}
                         onChange={(e) => setFilterInput(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        InputProps={{
-                            endAdornment: (
-                                <InputAdornment position="end">
-                                    <IconButton size="small" color="primary" onClick={handleSearch} edge="end">
-                                        <IconSearch size={18} />
-                                    </IconButton>
-                                </InputAdornment>
-                            ),
-                            sx: { borderRadius: '12px', bgcolor: 'grey.50', pr: 1 }
+                        slotProps={{
+                            input: {
+                                endAdornment: (
+                                    <InputAdornment position="end">
+                                        <IconButton size="small" color="primary" onClick={handleSearch} edge="end">
+                                            <IconSearch size={18} />
+                                        </IconButton>
+                                    </InputAdornment>
+                                ),
+                                sx: { borderRadius: '12px', bgcolor: 'grey.50', pr: 1 }
+                            }
                         }}
                         sx={{ width: isMobile ? '180px' : '280px' }}
                     />

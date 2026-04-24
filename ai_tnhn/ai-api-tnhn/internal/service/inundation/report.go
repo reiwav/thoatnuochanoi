@@ -259,8 +259,27 @@ func (s *service) ListReportsWithFilter(ctx context.Context, user *models.User, 
 		}
 	}
 
+	// Filter by allowed pointIDs or OrgID
 	if len(pointIDs) > 0 {
-		f.AddWhere("point_ids", "point_id", bson.M{"$in": pointIDs})
+		existingWhere := f.GetWhere()
+		if requestedPointID, ok := existingWhere["point_id"].(string); ok && requestedPointID != "" {
+			// User requested a specific point, check if they are allowed to see it
+			isAllowed := false
+			for _, pid := range pointIDs {
+				if pid == requestedPointID {
+					isAllowed = true
+					break
+				}
+			}
+			if !isAllowed {
+				// Not allowed to see this requested point, return nothing
+				f.AddWhere("point_id", "point_id", "restricted_access_placeholder")
+			}
+			// if allowed, the requestedPointID is already in the filter via GetWhere()
+		} else {
+			// No specific point requested, filter by all allowed points
+			f.AddWhere("point_ids", "point_id", bson.M{"$in": pointIDs})
+		}
 	} else if orgID != "" {
 		f.AddWhere("org_id_or_shared", "$or", []bson.M{
 			{"org_id": orgID},

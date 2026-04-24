@@ -229,7 +229,7 @@ const ConstructionList = () => {
                         placeholder="Tìm tên công trình..."
                         value={filterInputs.name}
                         onChange={(e) => setFilterInputs({ ...filterInputs, name: e.target.value })}
-                        InputProps={{ sx: { borderRadius: 3 } }}
+                        slotProps={{ input: { sx: { borderRadius: 3 } } }}
                         sx={{ flex: 1.5 }}
                     />
                     <OrganizationSelect
@@ -244,7 +244,7 @@ const ConstructionList = () => {
                         label="Trạng thái"
                         value={filterInputs.status}
                         onChange={(e) => setFilterInputs({ ...filterInputs, status: e.target.value })}
-                        InputProps={{ sx: { borderRadius: 3 } }}
+                        slotProps={{ input: { sx: { borderRadius: 3 } } }}
                         sx={{ width: { xs: '100%', sm: 200 } }}
                     >
                         <MenuItem value="">Tất cả</MenuItem>

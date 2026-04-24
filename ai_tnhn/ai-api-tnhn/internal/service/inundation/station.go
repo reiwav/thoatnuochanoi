@@ -4,7 +4,6 @@ import (
 	"ai-api-tnhn/internal/base/mgo/filter"
 	"ai-api-tnhn/internal/models"
 	"context"
-	"fmt"
 	"sort"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -104,7 +103,7 @@ func (s *service) GetPointsStatus(ctx context.Context, user *models.User, isAllo
 	if len(activeReports) == 0 {
 		activeReports = make([]models.InundationReport, 0)
 	}
-	fmt.Println("====== activeReports", activeReports, pIDs)
+
 	// 3. Map reports to points
 	reportsByPoint := make(map[string]models.InundationReport)
 	for _, r := range activeReports {
@@ -120,7 +119,7 @@ func (s *service) GetPointsStatus(ctx context.Context, user *models.User, isAllo
 			InundationStation: p,
 			Status:            "normal",
 		}
-		
+
 		// Recalculate color for LastReport to ensure it matches current config
 		if p.LastReportID != "" {
 			lastReport, _ := s.InundationReportRepo.GetByID(ctx, p.LastReportID)
@@ -135,13 +134,7 @@ func (s *service) GetPointsStatus(ctx context.Context, user *models.User, isAllo
 		}
 
 		if active, ok := reportsByPoint[p.ID]; ok {
-			// Recalculate color for ActiveReport
-			level := s.calculateFloodLevel(ctx, active.Depth)
-			if level != nil {
-				active.FloodLevelName = level.Name
-				active.FloodLevelColor = level.Color
-			}
-			
+
 			p.ReportID = active.ID
 			result[i].Status = "flooded"
 			result[i].ActiveReport = &active

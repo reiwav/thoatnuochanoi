@@ -236,14 +236,16 @@ const ConstructionProgressHistory = () => {
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             onKeyDown={handleSearch}
-                            InputProps={{
-                                startAdornment: <IconSearch size={18} style={{ marginRight: 8, color: theme.palette.text.disabled }} />,
-                                endAdornment: searchQuery && (
-                                    <IconButton size="small" onClick={() => { setSearchQuery(''); setPage(0); }}>
-                                        <IconX size={16} />
-                                    </IconButton>
-                                ),
-                                sx: { borderRadius: 2 }
+                            slotProps={{
+                                input: {
+                                    startAdornment: <IconSearch size={18} style={{ marginRight: 8, color: theme.palette.text.disabled }} />,
+                                    endAdornment: searchQuery && (
+                                        <IconButton size="small" onClick={() => { setSearchQuery(''); setPage(0); }}>
+                                            <IconX size={16} />
+                                        </IconButton>
+                                    ),
+                                    sx: { borderRadius: 2 }
+                                }
                             }}
                             sx={{ mt: 0.5 }}
                         />

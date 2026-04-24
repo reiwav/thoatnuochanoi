@@ -455,9 +455,11 @@ const ConstructionReporting = () => {
                             <TextField
                                 fullWidth size="small" placeholder="Tìm kiếm công trình..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
                                 sx={{ mb: 2, bgcolor: 'background.paper', borderRadius: 2, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                                InputProps={{
-                                    startAdornment: <IconSearch size={16} sx={{ color: 'text.disabled', mr: 1, fontSize: '1.1rem' }} />,
-                                    endAdornment: searchQuery ? <IconButton size="small" onClick={() => setSearchQuery('')}><IconX size={16} /></IconButton> : null
+                                slotProps={{
+                                    input: {
+                                        startAdornment: <IconSearch size={16} sx={{ color: 'text.disabled', mr: 1, fontSize: '1.1rem' }} />,
+                                        endAdornment: searchQuery ? <IconButton size="small" onClick={() => setSearchQuery('')}><IconX size={16} /></IconButton> : null
+                                    }
                                 }}
                             />
                         </Box>
@@ -474,9 +476,11 @@ const ConstructionReporting = () => {
                                 <TextField
                                     fullWidth size="small" placeholder="Tìm kiếm công trình..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
                                     sx={{ bgcolor: 'background.paper', borderRadius: 2, '& .MuiOutlinedInput-root': { borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.03)' } }}
-                                    InputProps={{
-                                        startAdornment: <IconSearch size={16} sx={{ color: 'text.disabled', mr: 1, fontSize: '1.1rem' }} />,
-                                        endAdornment: searchQuery ? <IconButton size="small" onClick={() => setSearchQuery('')}><IconX size={16} /></IconButton> : null
+                                    slotProps={{
+                                        input: {
+                                            startAdornment: <IconSearch size={16} sx={{ color: 'text.disabled', mr: 1, fontSize: '1.1rem' }} />,
+                                            endAdornment: searchQuery ? <IconButton size="small" onClick={() => setSearchQuery('')}><IconX size={16} /></IconButton> : null
+                                        }
                                     }}
                                 />
                             </Box>

@@ -295,6 +295,20 @@ func (h *PumpingStationHandler) ListHistory(c *gin.Context) {
 	id := c.Param("id")
 	f := filter.NewBasicFilter()
 	f.AddWhere("station_id", "station_id", id)
+
+	fromTimeStr := c.Query("from_time")
+	if fromTimeStr != "" {
+		if fromTime, err := strconv.ParseInt(fromTimeStr, 10, 64); err == nil && fromTime > 0 {
+			f.AddWhere("from_time", "timestamp", bson.M{"$gte": fromTime})
+		}
+	}
+	toTimeStr := c.Query("to_time")
+	if toTimeStr != "" {
+		if toTime, err := strconv.ParseInt(toTimeStr, 10, 64); err == nil && toTime > 0 {
+			f.AddWhere("to_time", "timestamp", bson.M{"$lte": toTime})
+		}
+	}
+
 	f.SetOrderBy("-timestamp")
 
 	res, total, err := h.service.ListHistory(c.Request.Context(), f)

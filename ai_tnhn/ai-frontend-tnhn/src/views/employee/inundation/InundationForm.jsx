@@ -24,8 +24,6 @@ const InundationForm = () => {
     // Get auth state from Zustand
     const { isEmployee, role: userRole, user } = useAuthStore();
 
-    const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const basePath = isEmployee ? '/company' : '/admin';
 
     const [tab, setTab] = useState(0); // 0 = Báo mới/Cập nhật, 1 = Chi tiết, 'mech' = Cơ giới
@@ -206,29 +204,43 @@ const InundationForm = () => {
         );
     };
 
-    if (isMobile) {
-        return (
-            <Box sx={{ px: 2, pt: 2, pb: 4 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                    <IconButton size="small" onClick={() => navigate(-1)}>
-                        <IconArrowLeft size={20} />
-                    </IconButton>
-                    <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                        {tab === 0 ? (selectedReport ? 'Cập nhật tình hình' : 'Báo cáo ngập') : 'Chi tiết & Lịch sử'}
-                    </Typography>
-                </Box>
+    return (
+        <Box sx={{ 
+            px: { xs: 2, md: 0 }, 
+            pt: { xs: 2, md: 0 }, 
+            pb: { xs: 4, md: 0 } 
+        }}>
+            {/* Mobile Header: Visible only on xs/sm */}
+            <Box sx={{ 
+                display: { xs: 'flex', md: 'none' }, 
+                alignItems: 'center', 
+                gap: 1, 
+                mb: 2 
+            }}>
+                <IconButton size="small" onClick={() => navigate(-1)}>
+                    <IconArrowLeft size={20} />
+                </IconButton>
+                <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                    {tab === 0 ? (selectedReport ? 'Cập nhật tình hình' : 'Báo cáo ngập') : 'Chi tiết & Lịch sử'}
+                </Typography>
+            </Box>
+
+            {/* Main Content: On Desktop it's wrapped in MainCard, on Mobile it's just the content */}
+            <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+                <MainCard
+                    title={selectedReport ? "Cập nhật tình hình ngập" : "Báo cáo ngập lụt"}
+                    secondary={<Button variant="outlined" size="small" startIcon={<IconArrowLeft size={16} />} onClick={() => navigate(-1)}>Quay lại</Button>}
+                >
+                    <Box sx={{ maxWidth: 640, mx: 'auto' }}>
+                        {renderContent()}
+                    </Box>
+                </MainCard>
+            </Box>
+
+            <Box sx={{ display: { xs: 'block', md: 'none' } }}>
                 {renderContent()}
             </Box>
-        );
-    }
-
-    return (
-        <MainCard
-            title={selectedReport ? "Cập nhật tình hình ngập" : "Báo cáo ngập lụt"}
-            secondary={<Button variant="outlined" size="small" startIcon={<IconArrowLeft size={16} />} onClick={() => navigate(-1)}>Quay lại</Button>}
-        >
-            <Box sx={{ maxWidth: 640, mx: 'auto' }}>{renderContent()}</Box>
-        </MainCard>
+        </Box>
     );
 };
 

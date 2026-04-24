@@ -1,21 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
-import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Checkbox from '@mui/material/Checkbox';
-import Stack from '@mui/material/Stack';
-import MenuItem from '@mui/material/MenuItem';
-import Grid from '@mui/material/Grid';
+import { 
+    Dialog, DialogActions, DialogContent, DialogTitle, Button, TextField, 
+    FormControlLabel, Checkbox, Stack, MenuItem, Grid, useMediaQuery 
+} from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import MultiSelectCheckboxes from 'ui-component/MultiSelectCheckboxes';
 import pumpingStationApi from 'api/pumpingStation';
 import { toast } from 'react-hot-toast';
 import useAuthStore from 'store/useAuthStore';
 
 const PumpingStationDialog = ({ open, handleClose, item, refresh, organizations = { primary: [], shared: [] } }) => {
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const { isCompany, user } = useAuthStore();
     const [formData, setFormData] = useState({
         name: '',
@@ -90,10 +86,17 @@ const PumpingStationDialog = ({ open, handleClose, item, refresh, organizations 
     };
 
     return (
-        <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-            <DialogTitle sx={{ fontWeight: 800 }}>{item ? 'Chỉnh sửa trạm bơm' : 'Thêm trạm bơm mới'}</DialogTitle>
-            <DialogContent dividers>
-                <Stack spacing={3} sx={{ mt: 1 }}>
+        <Dialog 
+            open={open} 
+            onClose={handleClose} 
+            fullWidth 
+            maxWidth="sm"
+            fullScreen={isMobile}
+            slotProps={{ paper: { sx: { borderRadius: isMobile ? 0 : 3 } } }}
+        >
+            <DialogTitle sx={{ fontWeight: 800, p: { xs: 2, sm: 3 }, bgcolor: 'grey.50' }}>{item ? 'Chỉnh sửa trạm bơm' : 'Thêm trạm bơm mới'}</DialogTitle>
+            <DialogContent dividers sx={{ p: { xs: 2.5, sm: 3 } }}>
+                <Stack spacing={2.5} sx={{ mt: 0.5 }}>
                     <TextField
                         fullWidth label="Tên trạm bơm" required
                         value={formData.name}

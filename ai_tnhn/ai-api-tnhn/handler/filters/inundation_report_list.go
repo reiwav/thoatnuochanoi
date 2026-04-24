@@ -9,6 +9,7 @@ import (
 type InundationReportListRequest struct {
 	filter.PaginationFilter
 	OrgID         string `form:"org_id"`
+	PointID       string `form:"point_id"`
 	Status        string `form:"status"`
 	TrafficStatus string `form:"traffic_status"`
 	Query         string `form:"query"`
@@ -20,6 +21,9 @@ type InundationReportListRequest struct {
 func (f *InundationReportListRequest) GetWhere() filter.Where {
 	if f.Status != "" {
 		f.AddWhere("status", "status", f.Status)
+	}
+	if f.PointID != "" {
+		f.AddWhere("point_id", "point_id", f.PointID)
 	}
 	if f.TrafficStatus != "" {
 		f.AddWhere("traffic_status", "traffic_status", f.TrafficStatus)

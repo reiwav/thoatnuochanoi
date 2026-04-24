@@ -171,11 +171,13 @@ const PumpingStationReport = ({ station, onSuccess }) => {
                             name="operating_count"
                             value={formData.operating_count}
                             onChange={handleChange}
-                            InputProps={{
-                                sx: {
-                                    borderRadius: 2,
-                                    fontSize: '1rem',
-                                    height: '40px'
+                            slotProps={{
+                                input: {
+                                    sx: {
+                                        borderRadius: 2,
+                                        fontSize: '1rem',
+                                        height: '40px'
+                                    }
                                 }
                             }}
                         >
@@ -192,11 +194,13 @@ const PumpingStationReport = ({ station, onSuccess }) => {
                             name="closed_count"
                             value={formData.closed_count}
                             onChange={handleChange}
-                            InputProps={{
-                                sx: {
-                                    borderRadius: 2,
-                                    fontSize: '1rem',
-                                    height: '40px'
+                            slotProps={{
+                                input: {
+                                    sx: {
+                                        borderRadius: 2,
+                                        fontSize: '1rem',
+                                        height: '40px'
+                                    }
                                 }
                             }}
                         >
@@ -213,11 +217,13 @@ const PumpingStationReport = ({ station, onSuccess }) => {
                             name="maintenance_count"
                             value={formData.maintenance_count}
                             onChange={handleChange}
-                            InputProps={{
-                                sx: {
-                                    borderRadius: 2,
-                                    fontSize: '1rem',
-                                    height: '40px'
+                            slotProps={{
+                                input: {
+                                    sx: {
+                                        borderRadius: 2,
+                                        fontSize: '1rem',
+                                        height: '40px'
+                                    }
                                 }
                             }}
                         >
@@ -234,11 +240,13 @@ const PumpingStationReport = ({ station, onSuccess }) => {
                             name="no_signal_count"
                             value={formData.no_signal_count}
                             onChange={handleChange}
-                            InputProps={{
-                                sx: {
-                                    borderRadius: 2,
-                                    fontSize: '1rem',
-                                    height: '40px'
+                            slotProps={{
+                                input: {
+                                    sx: {
+                                        borderRadius: 2,
+                                        fontSize: '1rem',
+                                        height: '40px'
+                                    }
                                 }
                             }}
                         >
@@ -257,12 +265,14 @@ const PumpingStationReport = ({ station, onSuccess }) => {
                             rows={4}
                             value={formData.note}
                             onChange={(e) => setFormData({ ...formData, note: e.target.value })}
-                            InputProps={{
-                                sx: {
-                                    borderRadius: 2,
-                                    fontSize: '1rem',
-                                    bgcolor: alpha(theme.palette.primary.main, 0.02),
-                                    '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.04) }
+                            slotProps={{
+                                input: {
+                                    sx: {
+                                        borderRadius: 2,
+                                        fontSize: '1rem',
+                                        bgcolor: alpha(theme.palette.primary.main, 0.02),
+                                        '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.04) }
+                                    }
                                 }
                             }}
                         />

@@ -302,8 +302,8 @@ const ConstructionForm = () => {
                     onChange={(e) => setSelectedConstructionId(e.target.value)}
                     required
                     sx={{ mb: 1 }}
-                    InputProps={{
-                        sx: { borderRadius: 3, fontWeight: 700 }
+                    slotProps={{
+                        input: { sx: { borderRadius: 3, fontWeight: 700 } }
                     }}
                 >
                     {constructions.map((c) => (
@@ -315,9 +315,11 @@ const ConstructionForm = () => {
                 select fullWidth label="Lệnh số" value={order}
                 onChange={(e) => setOrder(e.target.value)}
                 required
-                InputProps={{
-                    startAdornment: <InputAdornment position="start"><IconClipboardCheck size={18} color={theme.palette.text.secondary} /></InputAdornment>,
-                    sx: { borderRadius: 3 }
+                slotProps={{
+                    input: {
+                        startAdornment: <InputAdornment position="start"><IconClipboardCheck size={18} color={theme.palette.text.secondary} /></InputAdornment>,
+                        sx: { borderRadius: 3 }
+                    }
                 }}
             >
                 {[...Array(100)].map((_, i) => (
@@ -328,9 +330,11 @@ const ConstructionForm = () => {
             <TextField
                 fullWidth label="Vị trí" placeholder="Nhập vị trí..."
                 value={location} onChange={(e) => setLocation(e.target.value)} required
-                InputProps={{
-                    startAdornment: <InputAdornment position="start"><IconMapPin size={18} color={theme.palette.text.secondary} /></InputAdornment>,
-                    sx: { borderRadius: 3 }
+                slotProps={{
+                    input: {
+                        startAdornment: <InputAdornment position="start"><IconMapPin size={18} color={theme.palette.text.secondary} /></InputAdornment>,
+                        sx: { borderRadius: 3 }
+                    }
                 }}
             />
 
@@ -338,9 +342,11 @@ const ConstructionForm = () => {
                 fullWidth multiline rows={3} label="Mô tả chung công việc trong ngày"
                 placeholder="Mô tả chi tiết công việc..."
                 value={workDone} onChange={(e) => setWorkDone(e.target.value)} required
-                InputProps={{
-                    startAdornment: <InputAdornment position="start" sx={{ alignSelf: 'flex-start', mt: 1.5 }}><IconFileText size={18} color={theme.palette.text.secondary} /></InputAdornment>,
-                    sx: { borderRadius: 3, '& .MuiInputBase-input': { lineHeight: 1.5 } }
+                slotProps={{
+                    input: {
+                        startAdornment: <InputAdornment position="start" sx={{ alignSelf: 'flex-start', mt: 1.5 }}><IconFileText size={18} color={theme.palette.text.secondary} /></InputAdornment>,
+                        sx: { borderRadius: 3, '& .MuiInputBase-input': { lineHeight: 1.5 } }
+                    }
                 }}
             />
 
@@ -350,9 +356,11 @@ const ConstructionForm = () => {
                 fullWidth multiline rows={2} label="Kết luận"
                 placeholder="Nhập kết luận..."
                 value={conclusion} onChange={(e) => setConclusion(e.target.value)} required
-                InputProps={{
-                    startAdornment: <InputAdornment position="start" sx={{ alignSelf: 'flex-start', mt: 1.5 }}><IconBulb size={18} color={theme.palette.text.secondary} /></InputAdornment>,
-                    sx: { borderRadius: 3 }
+                slotProps={{
+                    input: {
+                        startAdornment: <InputAdornment position="start" sx={{ alignSelf: 'flex-start', mt: 1.5 }}><IconBulb size={18} color={theme.palette.text.secondary} /></InputAdornment>,
+                        sx: { borderRadius: 3 }
+                    }
                 }}
             />
 
@@ -360,9 +368,11 @@ const ConstructionForm = () => {
                 fullWidth multiline rows={2} label="Ảnh hưởng"
                 placeholder="Nhập ảnh hưởng..."
                 value={influence} onChange={(e) => setInfluence(e.target.value)}
-                InputProps={{
-                    startAdornment: <InputAdornment position="start" sx={{ alignSelf: 'flex-start', mt: 1.5 }}><IconCar size={18} color={theme.palette.text.secondary} /></InputAdornment>,
-                    sx: { borderRadius: 3 }
+                slotProps={{
+                    input: {
+                        startAdornment: <InputAdornment position="start" sx={{ alignSelf: 'flex-start', mt: 1.5 }}><IconCar size={18} color={theme.palette.text.secondary} /></InputAdornment>,
+                        sx: { borderRadius: 3 }
+                    }
                 }}
             />
 
@@ -370,9 +380,11 @@ const ConstructionForm = () => {
                 fullWidth multiline rows={2} label="Bất cập, đề xuất"
                 placeholder="Nhập đề xuất..."
                 value={proposal} onChange={(e) => setProposal(e.target.value)}
-                InputProps={{
-                    startAdornment: <InputAdornment position="start" sx={{ alignSelf: 'flex-start', mt: 1.5 }}><IconMessageExclamation size={18} color={theme.palette.text.secondary} /></InputAdornment>,
-                    sx: { borderRadius: 3 }
+                slotProps={{
+                    input: {
+                        startAdornment: <InputAdornment position="start" sx={{ alignSelf: 'flex-start', mt: 1.5 }}><IconMessageExclamation size={18} color={theme.palette.text.secondary} /></InputAdornment>,
+                        sx: { borderRadius: 3 }
+                    }
                 }}
             />
 
@@ -380,9 +392,11 @@ const ConstructionForm = () => {
                 fullWidth multiline rows={2} label="Vướng mắc, khó khăn (nếu có)"
                 placeholder="Nhập vướng mắc..."
                 value={issues} onChange={(e) => setIssues(e.target.value)}
-                InputProps={{
-                    startAdornment: <InputAdornment position="start" sx={{ alignSelf: 'flex-start', mt: 1.5 }}><IconAlertTriangle size={18} color={theme.palette.text.secondary} /></InputAdornment>,
-                    sx: { borderRadius: 3 }
+                slotProps={{
+                    input: {
+                        startAdornment: <InputAdornment position="start" sx={{ alignSelf: 'flex-start', mt: 1.5 }}><IconAlertTriangle size={18} color={theme.palette.text.secondary} /></InputAdornment>,
+                        sx: { borderRadius: 3 }
+                    }
                 }}
             />
 

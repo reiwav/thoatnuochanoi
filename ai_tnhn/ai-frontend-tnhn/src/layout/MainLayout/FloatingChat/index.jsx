@@ -170,13 +170,15 @@ const FloatingChat = () => {
                         onKeyPress={(e) => e.key === 'Enter' && handleSend()}
                         disabled={loading}
                         autoComplete="off"
-                        InputProps={{
-                            endAdornment: (
-                                <IconButton color="primary" onClick={handleSend} disabled={!input.trim() || loading}>
-                                    <IconSend size={20} />
-                                </IconButton>
-                            ),
-                            sx: { borderRadius: 3, bgcolor: '#f8fafc' }
+                        slotProps={{
+                            input: {
+                                endAdornment: (
+                                    <IconButton color="primary" onClick={handleSend} disabled={!input.trim() || loading}>
+                                        <IconSend size={20} />
+                                    </IconButton>
+                                ),
+                                sx: { borderRadius: 3, bgcolor: '#f8fafc' }
+                            }
                         }}
                     />
                 </Box>

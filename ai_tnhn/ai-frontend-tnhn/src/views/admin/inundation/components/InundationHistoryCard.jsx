@@ -6,7 +6,7 @@ import { formatDateTime, formatDuration } from 'utils/dataHelper';
 import useInundationStore from 'store/useInundationStore';
 import { SurveyInfoSection, MechInfoSection, ReviewCommentSection } from '../../../employee/inundation/components/TechnicalSections';
 
-const InundationHistoryCard = ({ report, isMobile, navigate, basePath, handleOpenViewer }) => {
+const InundationHistoryCard = ({ report, navigate, basePath, handleOpenViewer }) => {
     const [open, setOpen] = useState(false);
     const organizations = useInundationStore(state => state.organizations);
     const latest = useMemo(() => getLatestData(report), [report]);
@@ -42,27 +42,27 @@ const InundationHistoryCard = ({ report, isMobile, navigate, basePath, handleOpe
         </Stack>
     );
 
-    if (isMobile) {
-        return (
-            <Paper elevation={0} sx={{ p: 2, mb: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 3, bgcolor: 'background.paper' }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1 }}>
-                    <Box sx={{ flex: 1 }}>
-                        <Typography variant="h5" sx={{ fontWeight: 900, color: 'primary.dark', mb: 1 }}>{report.street_name}</Typography>
-                        <Stack direction="row" spacing={1}>
-                            <Chip label={report.status === 'active' ? 'Đang ngập' : 'Đã kết thúc'} color={report.status === 'active' ? 'error' : 'success'} size="small" sx={{ fontWeight: 800 }} />
-                            {report.needs_correction && <Chip label="CẦN SỬA" size="small" color="error" sx={{ fontWeight: 800 }} />}
-                        </Stack>
-                    </Box>
-                    <IconButton size="small" onClick={() => setOpen(!open)}>{open ? <IconChevronUp size={22} /> : <IconChevronDown size={22} />}</IconButton>
-                </Box>
-                <Collapse in={open} timeout="auto" unmountOnExit>{renderDetails()}</Collapse>
-            </Paper>
-        );
-    }
-
     return (
-        <React.Fragment>
-            <TableRow hover>
+        <>
+            {/* Mobile View: Visible on xs/sm */}
+            <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+                <Paper elevation={0} sx={{ p: 2, mb: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 3, bgcolor: 'background.paper' }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1 }}>
+                        <Box sx={{ flex: 1 }}>
+                            <Typography variant="h5" sx={{ fontWeight: 900, color: 'primary.dark', mb: 1 }}>{report.street_name}</Typography>
+                            <Stack direction="row" spacing={1}>
+                                <Chip label={report.status === 'active' ? 'Đang ngập' : 'Đã kết thúc'} color={report.status === 'active' ? 'error' : 'success'} size="small" sx={{ fontWeight: 800 }} />
+                                {report.needs_correction && <Chip label="CẦN SỬA" size="small" color="error" sx={{ fontWeight: 800 }} />}
+                            </Stack>
+                        </Box>
+                        <IconButton size="small" onClick={() => setOpen(!open)}>{open ? <IconChevronUp size={22} /> : <IconChevronDown size={22} />}</IconButton>
+                    </Box>
+                    <Collapse in={open} timeout="auto" unmountOnExit>{renderDetails()}</Collapse>
+                </Paper>
+            </Box>
+
+            {/* Desktop View: Visible on md and up */}
+            <TableRow hover sx={{ display: { xs: 'none', md: 'table-row' } }}>
                 <TableCell sx={{ width: 40, p: 2 }}>
                     <IconButton size="small" onClick={() => setOpen(!open)}>{open ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />}</IconButton>
                 </TableCell>
@@ -89,7 +89,7 @@ const InundationHistoryCard = ({ report, isMobile, navigate, basePath, handleOpe
                     <Button size="small" onClick={() => navigate(`${basePath}/inundation/form?id=${report.id}&tab=1&readonly=true`)}>Chi tiết</Button>
                 </TableCell>
             </TableRow>
-            <TableRow>
+            <TableRow sx={{ display: { xs: 'none', md: open ? 'table-row' : 'none' } }}>
                 <TableCell sx={{ p: 0 }} colSpan={7}>
                     <Collapse in={open} timeout="auto" unmountOnExit>
                         <Box sx={{ m: 2, p: 2, bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
@@ -101,7 +101,7 @@ const InundationHistoryCard = ({ report, isMobile, navigate, basePath, handleOpe
                     </Collapse>
                 </TableCell>
             </TableRow>
-        </React.Fragment>
+        </>
     );
 };
 

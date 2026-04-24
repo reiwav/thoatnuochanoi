@@ -77,20 +77,22 @@ const ConstructionHistory = () => {
                     placeholder="Tìm kiếm theo ghi chú, tên công trình..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    InputProps={{
-                        startAdornment: (
-                            <InputAdornment position="start">
-                                <IconSearch size={20} sx={{ color: 'text.disabled', mr: 1, ml: 0.5 }} />
-                            </InputAdornment>
-                        ),
-                        endAdornment: searchQuery && (
-                            <InputAdornment position="end">
-                                <IconButton size="small" onClick={() => setSearchQuery('')}>
-                                    <IconX size={16} />
-                                </IconButton>
-                            </InputAdornment>
-                        ),
-                        sx: { borderRadius: 3, fontWeight: 600 }
+                    slotProps={{
+                        input: {
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <IconSearch size={20} sx={{ color: 'text.disabled', mr: 1, ml: 0.5 }} />
+                                </InputAdornment>
+                            ),
+                            endAdornment: searchQuery && (
+                                <InputAdornment position="end">
+                                    <IconButton size="small" onClick={() => setSearchQuery('')}>
+                                        <IconX size={16} />
+                                    </IconButton>
+                                </InputAdornment>
+                            ),
+                            sx: { borderRadius: 3, fontWeight: 600 }
+                        }
                     }}
                     sx={{ maxWidth: isMobile ? '100%' : 400, bgcolor: 'background.paper' }}
                 />

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
     Dialog, DialogTitle, DialogContent, Box, Typography, Stack, Grid,
     IconButton, alpha, Paper, Chip, List, ListItemButton, Divider,
-    CircularProgress, useMediaQuery
+    CircularProgress
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import {
@@ -13,6 +13,7 @@ import dayjs from 'dayjs';
 
 import inundationApi from 'api/inundation';
 import { formatDateTime } from 'utils/dataHelper';
+import { getDataArray } from 'utils/apiHelper';
 import { getLatestData } from 'utils/inundationUtils';
 import { getTrafficStatusColor } from 'utils/trafficStatusHelper';
 
@@ -22,8 +23,7 @@ import ImageViewer from '../../employee/inundation/components/ImageViewer';
 
 const InundationDetailDialog = ({ open, onClose, point }) => {
     const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-    
+
     const [loading, setLoading] = useState(false);
     const [history, setHistory] = useState([]);
     const [selectedId, setSelectedId] = useState(null);
@@ -33,18 +33,17 @@ const InundationDetailDialog = ({ open, onClose, point }) => {
         if (!point?.id || !open) return;
         setLoading(true);
         try {
-            const reports = await inundationApi.getPointHistory(point.id);
-            const dataArr = Array.isArray(reports) ? reports : (reports?.items || []);
-            
-            // Filter 1 week (7 days)
-            const oneWeekAgo = dayjs().subtract(7, 'day').unix();
-            const filtered = dataArr
-                .filter(r => r.start_time >= oneWeekAgo)
-                .sort((a, b) => b.start_time - a.start_time);
-            
-            setHistory(filtered);
-            if (filtered.length > 0) {
-                setSelectedId(filtered[0].id);
+            const now = dayjs().unix();
+            const threeDaysAgo = dayjs().subtract(3, 'day').unix();
+
+            const res = await inundationApi.getPointHistory(point.id, threeDaysAgo, now);
+            const dataArr = getDataArray(res);
+
+            const sorted = [...dataArr].sort((a, b) => b.start_time - a.start_time);
+
+            setHistory(sorted);
+            if (sorted.length > 0) {
+                setSelectedId(sorted[0].id);
             }
         } catch (err) {
             console.error('Failed to load history:', err);
@@ -62,17 +61,26 @@ const InundationDetailDialog = ({ open, onClose, point }) => {
     };
 
     const selectedReport = history.find(h => h.id === selectedId);
-    // Last report summary (from point data itself)
-    const lastReport = point?.last_report || {};
+    // Prioritize active_report over last_report for summary display
+    const displayReport = point?.active_report || point?.last_report || {};
 
     return (
-        <Dialog 
-            open={open} 
-            onClose={onClose} 
-            fullWidth 
+        <Dialog
+            open={open}
+            onClose={onClose}
+            fullWidth
             maxWidth="lg"
             scroll="paper"
-            slotProps={{ paper: { sx: { borderRadius: 4, height: isMobile ? '100%' : '85vh', maxHeight: '900px' } } }}
+            slotProps={{
+                paper: {
+                    sx: {
+                        borderRadius: { xs: 0, sm: 4 },
+                        height: { xs: '100%', md: '85vh' },
+                        maxHeight: '900px',
+                        m: { xs: 0, sm: 2 }
+                    }
+                }
+            }}
         >
             <DialogTitle sx={{ p: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -81,7 +89,7 @@ const InundationDetailDialog = ({ open, onClose, point }) => {
                             {point?.name}
                         </Typography>
                         <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 600 }}>
-                            Chi tiết và lịch sử bản tin
+                            Chi tiết điểm ngập
                         </Typography>
                     </Box>
                     <IconButton onClick={onClose} sx={{ color: 'grey.500' }}>
@@ -94,17 +102,31 @@ const InundationDetailDialog = ({ open, onClose, point }) => {
                 <Stack sx={{ height: '100%' }}>
                     {/* Top Summary Section */}
                     <Box sx={{ p: 2.5, bgcolor: 'primary.lighter', borderBottom: '1px solid', borderColor: alpha(theme.palette.primary.main, 0.1) }}>
-                        <Typography variant="caption" sx={{ display: 'block', mb: 1, fontWeight: 800, textTransform: 'uppercase', color: 'primary.dark' }}>
-                            Thông số vận hành hiện tại / gần nhất
-                        </Typography>
+                        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 1.5 }}>
+                            <Box sx={{ minWidth: 0 }}>
+                                <Typography variant="caption" sx={{ display: 'block', mb: 0.5, fontWeight: 800, textTransform: 'uppercase', color: 'primary.dark' }}>
+                                    Thông số vận hành dự kiến
+                                </Typography>
+                                <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', mb: 0.25 }}>
+                                    {point?.name}
+                                </Typography>
+                                <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                    <IconClock size={12} />
+                                    {displayReport.start_time ? dayjs.unix(displayReport.start_time).format('HH:mm DD/MM/YYYY') : 'Chưa có thông tin báo cáo gần đây'}
+                                </Typography>
+                            </Box>
+                            {point?.status === 'flooded' && (
+                                <Chip label="ĐANG NGẬP" color="error" size="small" sx={{ fontWeight: 900, borderRadius: 1.5 }} />
+                            )}
+                        </Stack>
                         <Grid container spacing={3}>
                             {[
-                                { label: 'Chiều dài', value: lastReport.length, unit: 'm', color: theme.palette.primary.main },
-                                { label: 'Chiều rộng', value: lastReport.width, unit: 'm', color: theme.palette.info.main },
-                                { label: 'Độ sâu ngập', value: lastReport.depth, unit: 'cm', color: theme.palette.error.main, bold: true }
+                                { label: 'Chiều dài', value: displayReport.length, unit: 'm', color: theme.palette.primary.main },
+                                { label: 'Chiều rộng', value: displayReport.width, unit: 'm', color: theme.palette.info.main },
+                                { label: 'Độ sâu ngập', value: displayReport.depth, unit: 'cm', color: theme.palette.error.main, bold: true }
                             ].map((stat, i) => (
                                 <Grid item xs={4} key={i}>
-                                    <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 3, textAlign: 'center', borderColor: alpha(stat.color, 0.2) }}>
+                                    <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 3, textAlign: 'center', borderColor: alpha(stat.color, 0.2), bgcolor: 'white' }}>
                                         <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', display: 'block' }}>{stat.label}</Typography>
                                         <Typography variant={stat.bold ? "h2" : "h3"} sx={{ fontWeight: 900, color: stat.color }}>
                                             {stat.value || 0}
@@ -117,27 +139,27 @@ const InundationDetailDialog = ({ open, onClose, point }) => {
                     </Box>
 
                     {/* Master-Detail History Section */}
-                    <Grid container sx={{ flex: 1, overflow: 'hidden', flexDirection: isMobile ? 'column' : 'row' }}>
-                        {/* Sidebar: Report List (Last 7 Days) */}
-                        <Grid item xs={12} md={4} sx={{ 
-                            borderRight: isMobile ? 'none' : '1px solid', 
-                            borderBottom: isMobile ? '1px solid' : 'none',
-                            borderColor: 'divider', 
-                            height: isMobile ? '250px' : '100%',
-                            overflowY: 'auto', 
-                            bgcolor: 'grey.50' 
+                    <Grid container sx={{ flex: 1, overflow: 'hidden', flexDirection: { xs: 'column', md: 'row' } }}>
+                        {/* Sidebar: Report List (Last 3 Days, Flooded) */}
+                        <Grid item xs={12} md={4} sx={{
+                            borderRight: { xs: 'none', md: '1px solid' },
+                            borderBottom: { xs: '1px solid', md: 'none' },
+                            borderColor: 'divider',
+                            height: { xs: '250px', md: '100%' },
+                            overflowY: 'auto',
+                            bgcolor: 'grey.50'
                         }}>
                             <Box sx={{ p: 2 }}>
                                 <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
                                     <IconLayoutList size={20} />
-                                    Các bản tin (7 ngày gần nhất)
+                                    Bản tin có ngập (3 ngày gần nhất)
                                 </Typography>
-                                
+
                                 {loading && history.length === 0 ? (
                                     <Box sx={{ textAlign: 'center', py: 4 }}><CircularProgress size={24} /></Box>
                                 ) : history.length === 0 ? (
                                     <Box sx={{ textAlign: 'center', py: 4, bgcolor: 'white', borderRadius: 3, border: '1px dashed', borderColor: 'divider' }}>
-                                        <Typography variant="caption" color="textSecondary">Không có bản tin nào trong tuần qua</Typography>
+                                        <Typography variant="caption" color="textSecondary">Không có bản tin nào trong 3 ngày qua</Typography>
                                     </Box>
                                 ) : (
                                     <List disablePadding>
@@ -169,8 +191,8 @@ const InundationDetailDialog = ({ open, onClose, point }) => {
                                                         {isActive && <IconArrowRight size={18} color={theme.palette.primary.main} />}
                                                     </Box>
                                                     <Stack direction="row" spacing={1} flexWrap="wrap">
-                                                        <Chip 
-                                                            size="small" variant="outlined" label={`Sâu ${hLatest.depth || 0}cm`} 
+                                                        <Chip
+                                                            size="small" variant="outlined" label={`Sâu ${hLatest.depth || 0}cm`}
                                                             sx={{ height: 20, fontSize: '0.65rem', fontWeight: 700 }}
                                                         />
                                                         <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600 }}>
@@ -186,14 +208,14 @@ const InundationDetailDialog = ({ open, onClose, point }) => {
                         </Grid>
 
                         {/* Content Area: Selected Report Timeline */}
-                        <Grid item xs={12} md={8} sx={{ 
+                        <Grid item xs={12} md={8} sx={{
                             flex: 1,
-                            height: isMobile ? '0' : '100%',
-                            overflowY: 'auto', 
-                            bgcolor: 'white' 
+                            height: { xs: 'auto', md: '100%' },
+                            overflowY: 'auto',
+                            bgcolor: 'white'
                         }}>
                             {selectedReport ? (
-                                <Box sx={{ p: isMobile ? 2 : 4 }}>
+                                <Box sx={{ p: { xs: 2, md: 4 } }}>
                                     <Typography variant="h4" sx={{ mb: 3, fontWeight: 900, display: 'flex', alignItems: 'center', gap: 1.5, color: 'primary.dark' }}>
                                         <IconCalendarEvent size={24} />
                                         Tiến trình bản tin: {dayjs.unix(selectedReport.start_time).format('HH:mm DD/MM/YYYY')}
@@ -238,10 +260,10 @@ const InundationDetailDialog = ({ open, onClose, point }) => {
                                                         </Stack>
                                                     </Box>
                                                     {item.depth != null && (
-                                                        <Chip 
-                                                            label={`${item.depth} cm`} 
-                                                            size="small" color="error" 
-                                                            sx={{ fontWeight: 900, borderRadius: 1.5 }} 
+                                                        <Chip
+                                                            label={`${item.depth} cm`}
+                                                            size="small" color="error"
+                                                            sx={{ fontWeight: 900, borderRadius: 1.5 }}
                                                         />
                                                     )}
                                                 </Stack>
@@ -258,12 +280,12 @@ const InundationDetailDialog = ({ open, onClose, point }) => {
                                                 {item.images?.length > 0 && (
                                                     <Box sx={{ display: 'flex', gap: 1, mt: 2, overflowX: 'auto', pb: 1 }}>
                                                         {item.images.map((img, i) => (
-                                                            <Box 
-                                                                key={i} 
-                                                                component="img" 
-                                                                src={img} 
+                                                            <Box
+                                                                key={i}
+                                                                component="img"
+                                                                src={img}
                                                                 onClick={() => handleOpenViewer(item.images, i)}
-                                                                sx={{ width: 70, height: 70, borderRadius: 2, objectFit: 'cover', cursor: 'zoom-in', border: '1px solid', borderColor: 'divider' }} 
+                                                                sx={{ width: 70, height: 70, borderRadius: 2, objectFit: 'cover', cursor: 'zoom-in', border: '1px solid', borderColor: 'divider' }}
                                                             />
                                                         ))}
                                                     </Box>
@@ -282,11 +304,11 @@ const InundationDetailDialog = ({ open, onClose, point }) => {
                 </Stack>
             </DialogContent>
 
-            <ImageViewer 
-                viewer={viewer} 
-                onClose={() => setViewer({ ...viewer, open: false })} 
-                onPrev={() => setViewer(v => ({ ...v, index: (v.index - 1 + v.images.length) % v.images.length }))} 
-                onNext={() => setViewer(v => ({ ...v, index: (v.index + 1) % v.images.length }))} 
+            <ImageViewer
+                viewer={viewer}
+                onClose={() => setViewer({ ...viewer, open: false })}
+                onPrev={() => setViewer(v => ({ ...v, index: (v.index - 1 + v.images.length) % v.images.length }))}
+                onNext={() => setViewer(v => ({ ...v, index: (v.index + 1) % v.images.length }))}
             />
         </Dialog>
     );

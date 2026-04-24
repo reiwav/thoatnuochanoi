@@ -484,22 +484,24 @@ const AiSupport = () => {
                     onKeyPress={(e) => e.key === 'Enter' && handleSend()}
                     disabled={loading}
                     autoComplete="off"
-                    InputProps={{
-                        endAdornment: (
-                            <IconButton
-                                color="primary"
-                                onClick={() => handleSend()}
-                                disabled={!input.trim() || loading}
-                                sx={{ color: '#0084FF' }}
-                            >
-                                <IconSend size={24} />
-                            </IconButton>
-                        ),
-                        sx: {
-                            borderRadius: '22px',
-                            bgcolor: '#f0f2f5',
-                            px: 2,
-                            '& fieldset': { border: 'none' } // Remove border for Messenger look
+                    slotProps={{
+                        input: {
+                            endAdornment: (
+                                <IconButton
+                                    color="primary"
+                                    onClick={() => handleSend()}
+                                    disabled={!input.trim() || loading}
+                                    sx={{ color: '#0084FF' }}
+                                >
+                                    <IconSend size={24} />
+                                </IconButton>
+                            ),
+                            sx: {
+                                borderRadius: '22px',
+                                bgcolor: '#f0f2f5',
+                                px: 2,
+                                '& fieldset': { border: 'none' } // Remove border for Messenger look
+                            }
                         }
                     }}
                 />

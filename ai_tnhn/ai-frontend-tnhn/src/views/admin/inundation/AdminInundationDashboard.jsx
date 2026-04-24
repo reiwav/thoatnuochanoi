@@ -3,24 +3,23 @@ import { useNavigate } from 'react-router-dom';
 import {
     Box, Typography, Stack, Chip, Paper, TextField, MenuItem,
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-    Skeleton, CircularProgress, TablePagination, Pagination,
+    Skeleton, CircularProgress, Pagination,
     Dialog, DialogTitle, DialogContent, DialogActions, Button, IconButton, Tooltip, Divider, Grid,
-    Tabs, Tab
+    Tabs, Tab, Collapse, alpha, useMediaQuery
 } from '@mui/material';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { useTheme } from '@mui/material/styles';
-import { IconSearch, IconAlertTriangle, IconRefresh, IconLayoutDashboard, IconHistory } from '@tabler/icons-react';
+import { 
+    IconSearch, IconAlertTriangle, IconRefresh, IconLayoutDashboard, IconHistory,
+    IconChevronDown, IconChevronUp, IconMapPin, IconClock, IconUser, IconRulerMeasure,
+    IconEye, IconSend, IconCircleCheck, IconClipboardCheck, IconEngine, IconChecklist
+} from '@tabler/icons-react';
 
 import MainCard from 'ui-component/cards/MainCard';
+import AnimateButton from 'ui-component/extended/AnimateButton';
 import useInundationStore from 'store/useInundationStore';
 import OrganizationSelect from 'ui-component/filter/OrganizationSelect';
-import { getTotalItems } from 'utils/apiHelper';
-
-// Shared Components
-import InundationHistoryCard from './components/InundationHistoryCard';
-import ImageViewer from './components/ImageViewer';
-import { IconChevronRight, IconEye, IconDotsVertical, IconMessageDots, IconRulerMeasure, IconTruck, IconCircleCheck, IconPhoto } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/vi';
@@ -30,13 +29,264 @@ dayjs.locale('vi');
 
 // Components
 import AdminInundationActionMenu from './components/AdminInundationActionMenu';
-import AdminInundationCard from './components/AdminInundationCard';
 import EmployeeActionDialog from '../../employee/components/EmployeeActionDialog';
 import InundationDetailDialog from '../../shared/inundation/InundationDetailDialog';
+import ImageViewer from './components/ImageViewer';
+import PermissionGuard from 'ui-component/PermissionGuard';
+import { getInundationImageUrl } from 'utils/imageHelper';
+import { SurveyInfoSection, MechInfoSection, ReviewCommentSection, ReportInfoSection } from '../../employee/inundation/components/TechnicalSections';
+
+// --- SUB-COMPONENTS FOR TABLE TEMPLATE ---
+
+const InundationStatusChip = ({ isFlooding, floodLevelName, color }) => (
+    <Chip 
+        label={isFlooding ? (floodLevelName || 'Đang ngập') : 'Bình thường'} 
+        size="small" 
+        color={isFlooding ? 'error' : 'success'} 
+        variant={isFlooding ? 'filled' : 'outlined'}
+        sx={{ fontWeight: 800, height: 24 }}
+    />
+);
+
+const ActionButtons = ({ point, onAction, navigate, basePath }) => (
+    <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+        <PermissionGuard permission="inundation:report">
+            <Tooltip title="Gửi báo cáo">
+                <IconButton size="small" color="secondary" onClick={() => onAction('report', point)} sx={{ bgcolor: 'secondary.lighter' }}>
+                    <IconSend size={18} />
+                </IconButton>
+            </Tooltip>
+        </PermissionGuard>
+        <PermissionGuard permission="inundation:review">
+            <Tooltip title="Kết thúc nhanh">
+                <IconButton 
+                    size="small" color="success" 
+                    disabled={!point.report_id}
+                    onClick={() => onAction('quick_finish', point)} 
+                    sx={{ bgcolor: 'success.lighter' }}
+                >
+                    <IconCircleCheck size={18} />
+                </IconButton>
+            </Tooltip>
+        </PermissionGuard>
+        <AdminInundationActionMenu 
+            point={point} 
+            onAction={onAction}
+            onViewHistory={(p) => navigate(`${basePath}/station/inundation/history?id=${p.id}`)}
+        />
+    </Stack>
+);
+
+const InundationMobileCard = ({ point, onAction, onOpenViewer, onOpenDetail, navigate, basePath }) => {
+    const theme = useTheme();
+    const [expanded, setExpanded] = useState(false);
+    const isFlooded = !!point.report_id;
+    const report = point.active_report;
+    const lastReport = point.last_report;
+    const displayColor = isFlooded ? (report?.flood_level_color || theme.palette.error.main) : (lastReport?.flood_level_color || theme.palette.success.main);
+
+    return (
+        <Paper sx={{ p: 2, mb: 1.5, borderRadius: 3, border: '1px solid', borderColor: 'divider', position: 'relative' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
+                <Box>
+                    <Typography 
+                        variant="h5" 
+                        onClick={() => onOpenDetail(point)}
+                        sx={{ fontWeight: 800, color: 'primary.dark', cursor: 'pointer' }}
+                    >
+                        {point.name}
+                    </Typography>
+                    <Typography variant="caption" color="textSecondary">{point.address}</Typography>
+                </Box>
+                <InundationStatusChip isFlooding={isFlooded} floodLevelName={report?.flood_level_name} />
+            </Box>
+
+            <Grid container spacing={2} sx={{ mb: 1.5 }}>
+                <Grid item xs={6}>
+                    <Typography variant="caption" color="text.secondary" display="block">KÍCH THƯỚC</Typography>
+                    {isFlooded ? (
+                        <Typography variant="body2" sx={{ fontWeight: 800, color: 'error.main' }}>
+                            {report?.length}m x {report?.width}m x {report?.depth}cm
+                        </Typography>
+                    ) : (
+                        <Typography variant="body2" color="text.disabled">-</Typography>
+                    )}
+                </Grid>
+                <Grid item xs={6}>
+                    <Typography variant="caption" color="text.secondary" display="block">CẬP NHẬT</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {isFlooded ? dayjs(report?.updated_at).fromNow() : (lastReport?.end_time ? dayjs(lastReport.end_time * 1000).format('DD/MM HH:mm') : '-')}
+                    </Typography>
+                </Grid>
+            </Grid>
+
+            <Divider sx={{ mb: 1.5, borderStyle: 'dashed' }} />
+
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Button 
+                    size="small" 
+                    variant="text" 
+                    onClick={() => setExpanded(!expanded)}
+                    endIcon={expanded ? <IconChevronUp size={16} /> : <IconChevronDown size={16} />}
+                    sx={{ fontWeight: 700, p: 0 }}
+                >
+                    {expanded ? 'Thu gọn' : 'Chi tiết'}
+                </Button>
+                <ActionButtons point={point} onAction={onAction} navigate={navigate} basePath={basePath} />
+            </Box>
+
+            <Collapse in={expanded} timeout="auto" unmountOnExit>
+                <Box sx={{ mt: 2, p: 1.5, bgcolor: 'grey.50', borderRadius: 2 }}>
+                    {(isFlooded ? report : lastReport) ? (
+                        <Stack spacing={1.5}>
+                            {report?.images?.length > 0 && (
+                                <Stack direction="row" spacing={0.5} sx={{ overflowX: 'auto', py: 0.5 }}>
+                                    {report.images.map((img, i) => (
+                                        <Box key={i} onClick={() => onOpenViewer(report.images, i)} sx={{ width: 40, height: 40, borderRadius: 1, overflow: 'hidden', cursor: 'pointer' }}>
+                                            <img src={getInundationImageUrl(img)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        </Box>
+                                    ))}
+                                </Stack>
+                            )}
+                            <ReportInfoSection latest={isFlooded ? report : lastReport} handleOpenViewer={onOpenViewer} />
+                        </Stack>
+                    ) : (
+                        <Typography variant="caption" color="text.disabled">Không có dữ liệu chi tiết</Typography>
+                    )}
+                </Box>
+            </Collapse>
+        </Paper>
+    );
+};
+
+const InundationDesktopRow = ({ point, index, onAction, onOpenViewer, onOpenDetail, navigate, basePath }) => {
+    const theme = useTheme();
+    const [expanded, setExpanded] = useState(false);
+    const isFlooded = !!point.report_id;
+    const report = point.active_report;
+    const lastReport = point.last_report;
+    const latestData = isFlooded ? report : lastReport;
+
+    return (
+        <>
+            <TableRow hover>
+                <TableCell sx={{ width: 40 }}>
+                    <IconButton size="small" onClick={() => setExpanded(!expanded)}>
+                        {expanded ? <IconChevronUp size={18} /> : <IconChevronDown size={18} />}
+                    </IconButton>
+                </TableCell>
+                <TableCell>{index + 1}</TableCell>
+                <TableCell sx={{ minWidth: 200 }}>
+                    <Typography 
+                        variant="body2" 
+                        onClick={() => onOpenDetail(point)}
+                        sx={{ fontWeight: 800, color: 'primary.dark', cursor: 'pointer' }}
+                    >
+                        {point.name}
+                    </Typography>
+                    <Typography variant="caption" color="textSecondary">{point.address}</Typography>
+                </TableCell>
+                <TableCell>
+                    <Typography variant="body2">{point.org_name || point.org_id || '-'}</Typography>
+                </TableCell>
+                <TableCell>
+                    <InundationStatusChip isFlooding={isFlooded} floodLevelName={report?.flood_level_name} />
+                </TableCell>
+                <TableCell>
+                    {isFlooded ? (
+                        <Typography variant="body2" color="error" sx={{ fontWeight: 900 }}>
+                            {report?.depth}cm
+                        </Typography>
+                    ) : (
+                        <Typography variant="body2" color="text.disabled">-</Typography>
+                    )}
+                </TableCell>
+                <TableCell>
+                    <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                        {isFlooded ? dayjs(report?.updated_at).fromNow() : (lastReport?.end_time ? dayjs(lastReport.end_time * 1000).format('DD/MM HH:mm') : '-')}
+                    </Typography>
+                </TableCell>
+                <TableCell align="right">
+                    <ActionButtons point={point} onAction={onAction} navigate={navigate} basePath={basePath} />
+                </TableCell>
+            </TableRow>
+            <TableRow>
+                <TableCell colSpan={8} sx={{ py: 0, borderBottom: expanded ? '1px solid' : 'none', borderColor: 'divider' }}>
+                    <Collapse in={expanded} timeout="auto" unmountOnExit>
+                        <Box sx={{ my: 2, mx: 2, p: 2, bgcolor: 'grey.50', borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+                            {latestData ? (
+                                <Grid container spacing={3}>
+                                    <Grid item xs={12} md={4}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: 'primary.main' }}>Thông tin cơ bản</Typography>
+                                        <Stack spacing={1}>
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                <Typography variant="caption">Người báo cáo:</Typography>
+                                                <Typography variant="caption" sx={{ fontWeight: 700 }}>{latestData.user_name || 'N/A'}</Typography>
+                                            </Box>
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                <Typography variant="caption">Thời gian bắt đầu:</Typography>
+                                                <Typography variant="caption" sx={{ fontWeight: 700 }}>{dayjs(latestData.start_time * 1000).format('HH:mm DD/MM/YYYY')}</Typography>
+                                            </Box>
+                                            {latestData.end_time > 0 && (
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                    <Typography variant="caption">Thời gian kết thúc:</Typography>
+                                                    <Typography variant="caption" sx={{ fontWeight: 700 }}>{dayjs(latestData.end_time * 1000).format('HH:mm DD/MM/YYYY')}</Typography>
+                                                </Box>
+                                            )}
+                                        </Stack>
+                                    </Grid>
+                                    <Grid item xs={12} md={4}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: 'primary.main' }}>Kích thước & Hình ảnh</Typography>
+                                        <Stack direction="row" spacing={2} sx={{ mb: 1.5 }}>
+                                            <Box sx={{ textAlign: 'center' }}>
+                                                <Typography variant="caption" display="block">DÀI</Typography>
+                                                <Typography variant="h5" sx={{ fontWeight: 800 }}>{latestData.length}m</Typography>
+                                            </Box>
+                                            <Box sx={{ textAlign: 'center' }}>
+                                                <Typography variant="caption" display="block">RỘNG</Typography>
+                                                <Typography variant="h5" sx={{ fontWeight: 800 }}>{latestData.width}m</Typography>
+                                            </Box>
+                                            <Box sx={{ textAlign: 'center' }}>
+                                                <Typography variant="caption" display="block">SÂU</Typography>
+                                                <Typography variant="h5" sx={{ fontWeight: 900, color: 'error.main' }}>{latestData.depth}cm</Typography>
+                                            </Box>
+                                        </Stack>
+                                        {latestData.images?.length > 0 && (
+                                            <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', py: 0.5 }}>
+                                                {latestData.images.map((img, i) => (
+                                                    <Box key={i} onClick={() => onOpenViewer(latestData.images, i)} sx={{ width: 48, height: 48, borderRadius: 1.5, overflow: 'hidden', cursor: 'pointer', border: '2px solid', borderColor: 'divider' }}>
+                                                        <img src={getInundationImageUrl(img)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                    </Box>
+                                                ))}
+                                            </Stack>
+                                        )}
+                                    </Grid>
+                                    <Grid item xs={12} md={4}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: 'primary.main' }}>Nhận xét kỹ thuật</Typography>
+                                        <Box sx={{ p: 1.5, bgcolor: 'background.paper', borderRadius: 2, borderLeft: '4px solid', borderColor: 'primary.light' }}>
+                                            <Typography variant="body2" sx={{ fontStyle: latestData.note ? 'normal' : 'italic', color: latestData.note ? 'text.primary' : 'text.disabled' }}>
+                                                {latestData.note || 'Chưa có ghi chú chi tiết'}
+                                            </Typography>
+                                        </Box>
+                                    </Grid>
+                                </Grid>
+                            ) : (
+                                <Typography variant="body2" color="text.disabled" align="center">Chưa có dữ liệu báo cáo</Typography>
+                            )}
+                        </Box>
+                    </Collapse>
+                </TableCell>
+            </TableRow>
+        </>
+    );
+};
+
+// --- MAIN DASHBOARD COMPONENT ---
 
 const AdminInundationDashboard = () => {
     const theme = useTheme();
     const navigate = useNavigate();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const basePath = '/admin';
 
     const {
@@ -101,7 +351,6 @@ const AdminInundationDashboard = () => {
             return;
         }
         
-        // Map menu modes to Dialog modes
         const modeMap = {
             'comment': 'REVIEW',
             'report': 'REPORT',
@@ -125,39 +374,45 @@ const AdminInundationDashboard = () => {
 
     const handleTabChange = (event, newValue) => {
         setFilters({ activeTab: newValue });
-        if (newValue === 1) setPage(1);
+        if (newValue === 1) setPage(Page => 1);
     };
 
     return (
         <MainCard
-            contentSX={{ p: { xs: 0.5, sm: 2.5 } }}
+            contentSX={{ p: { xs: 1.5, sm: 2.5 } }}
             sx={{ mx: { xs: -1.5, sm: 0 }, borderRadius: { xs: 0, sm: 4 } }}
             title={
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                        <IconLayoutDashboard size={24} color={theme.palette.primary.main} />
-                        <Typography variant="h3">Quản lý Điểm ngập</Typography>
-                    </Stack>
-                </Box>
+                <Stack direction="row" alignItems="center" spacing={1}>
+                    <IconLayoutDashboard size={isMobile ? 20 : 24} color={theme.palette.primary.main} />
+                    <Typography variant={isMobile ? "h4" : "h3"} sx={{ fontWeight: 800 }}>
+                        {isMobile ? 'ĐIỂM NGẬP' : 'QUẢN LÝ ĐIỂM NGẬP'}
+                    </Typography>
+                </Stack>
             }
         >
             <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
-                <Tabs value={filters.activeTab} onChange={handleTabChange} color="secondary">
+                <Tabs value={filters.activeTab} onChange={handleTabChange} color="secondary" variant="scrollable" scrollButtons="auto">
                     <Tab icon={<IconLayoutDashboard size={18} />} iconPosition="start" label="Theo dõi trực tiếp" />
                     <Tab icon={<IconHistory size={18} />} iconPosition="start" label="Lịch sử báo cáo" />
                 </Tabs>
             </Box>
 
             {/* Filter Bar */}
-            <Paper sx={{ p: { xs: 1.2, sm: 2 }, mb: 3, bgcolor: 'grey.50', borderRadius: { xs: 2, sm: 3 }, border: '1px solid', borderColor: 'divider' }}>
+            <Box sx={{ mb: 3 }}>
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                     <Grid container spacing={2} alignItems="center">
                         <Grid item xs={12} md={filters.activeTab === 0 ? 4 : 3}>
                             <TextField
-                                fullWidth size="small" placeholder="Tìm tên đường, địa chỉ..."
+                                fullWidth size="small" 
+                                placeholder="Tìm tên đường, địa chỉ..."
                                 value={filters.searchQuery}
                                 onChange={(e) => setFilters({ searchQuery: e.target.value })}
-                                InputProps={{ startAdornment: <IconSearch size={18} style={{ marginRight: 8, opacity: 0.5 }} />, sx: { borderRadius: 2, bgcolor: 'white' } }}
+                                slotProps={{
+                                    input: {
+                                        startAdornment: <IconSearch size={18} style={{ marginRight: 8, opacity: 0.5 }} />,
+                                        sx: { borderRadius: 3 }
+                                    }
+                                }}
                             />
                         </Grid>
                         <Grid item xs={12} md={filters.activeTab === 0 ? 3 : 2}>
@@ -165,7 +420,7 @@ const AdminInundationDashboard = () => {
                                 value={filters.orgFilter === 'all' ? '' : filters.orgFilter}
                                 onChange={(e) => setFilters({ orgFilter: e.target.value || 'all' })}
                                 label="Đơn vị quản lý"
-                                sx={{ bgcolor: 'white' }}
+                                sx={{ borderRadius: 3 }}
                             />
                         </Grid>
 
@@ -176,7 +431,7 @@ const AdminInundationDashboard = () => {
                                         label="Từ ngày"
                                         value={filters.fromTime ? dayjs.unix(filters.fromTime) : null}
                                         onChange={(val) => setFilters({ fromTime: val ? val.startOf('day').unix() : null })}
-                                        slotProps={{ textField: { size: 'small', fullWidth: true, sx: { bgcolor: 'white' } } }}
+                                        slotProps={{ textField: { size: 'small', fullWidth: true, sx: { '& .MuiOutlinedInput-root': { borderRadius: 3 } } } }}
                                     />
                                 </Grid>
                                 <Grid item xs={12} md={2}>
@@ -184,7 +439,7 @@ const AdminInundationDashboard = () => {
                                         label="Đến ngày"
                                         value={filters.toTime ? dayjs.unix(filters.toTime) : null}
                                         onChange={(val) => setFilters({ toTime: val ? val.endOf('day').unix() : null })}
-                                        slotProps={{ textField: { size: 'small', fullWidth: true, sx: { bgcolor: 'white' } } }}
+                                        slotProps={{ textField: { size: 'small', fullWidth: true, sx: { '& .MuiOutlinedInput-root': { borderRadius: 3 } } } }}
                                     />
                                 </Grid>
                             </>
@@ -195,8 +450,7 @@ const AdminInundationDashboard = () => {
                                 select fullWidth size="small" label={filters.activeTab === 0 ? "Trạng thái" : "Trạng thái ngập"}
                                 value={filters.activeTab === 0 ? filters.statusFilter : filters.isFlooding}
                                 onChange={(e) => filters.activeTab === 0 ? setFilters({ statusFilter: e.target.value }) : setFilters({ isFlooding: e.target.value })}
-                                sx={{ bgcolor: 'white' }}
-                                InputProps={{ sx: { borderRadius: 2 } }}
+                                slotProps={{ input: { sx: { borderRadius: 3 } } }}
                             >
                                 {filters.activeTab === 0 ? (
                                     [
@@ -214,49 +468,83 @@ const AdminInundationDashboard = () => {
                             </TextField>
                         </Grid>
                         <Grid item xs={12} md={filters.activeTab === 0 ? 2 : 1}>
-                            <Tooltip title="Làm mới dữ liệu">
-                                <Button
-                                    fullWidth variant="outlined" 
-                                    onClick={() => filters.activeTab === 0 ? fetchPoints() : fetchHistory(page - 1, rowsPerPage)}
-                                    sx={{ borderRadius: 2, height: 40, minWidth: 40 }}
-                                >
-                                    <IconRefresh size={18} />
-                                </Button>
-                            </Tooltip>
+                            <Stack direction="row" spacing={1}>
+                                <Tooltip title="Làm mới dữ liệu">
+                                    <IconButton
+                                        color="primary"
+                                        onClick={() => filters.activeTab === 0 ? fetchPoints() : fetchHistory(page - 1, rowsPerPage)}
+                                        sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2 }}
+                                    >
+                                        <IconRefresh size={20} />
+                                    </IconButton>
+                                </Tooltip>
+                            </Stack>
                         </Grid>
                     </Grid>
                 </LocalizationProvider>
-            </Paper>
+            </Box>
 
             <Box>
                 {filters.activeTab === 0 ? (
                     loading ? (
-                        <Grid container spacing={1}>
-                            {[1, 2, 3, 4, 5, 6].map(i => (
-                                <Grid item xs={12} sm={6} md={4} lg={3} key={i} sx={{ display: 'flex' }}>
-                                    <Skeleton variant="rectangular" height={220} sx={{ borderRadius: 4 }} />
-                                </Grid>
-                            ))}
-                        </Grid>
-                    ) : filteredPoints.length === 0 ? (
-                        <Paper sx={{ py: 6, textAlign: 'center', borderRadius: 4, border: '1px dashed', borderColor: 'divider' }}>
-                            <Typography color="textSecondary">Không tìm thấy điểm ngập nào</Typography>
-                        </Paper>
+                        <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}><CircularProgress /></Box>
                     ) : (
-                        <Grid container spacing={1}>
-                            {filteredPoints.map(point => (
-                                <Grid item xs={12} sm={6} md={4} lg={3} key={point.id} sx={{ display: 'flex' }}>
-                                    <AdminInundationCard 
-                                        point={point} 
-                                        onAction={handleAction} 
-                                        onOpenViewer={handleOpenViewer}
-                                        onOpenDetail={handleOpenDetail}
-                                        navigate={navigate}
-                                        basePath={basePath}
-                                    />
-                                </Grid>
-                            ))}
-                        </Grid>
+                        <>
+                            {/* Mobile List View */}
+                            <Box sx={{ display: { xs: 'block', sm: 'none' } }}>
+                                {filteredPoints.length === 0 ? (
+                                    <Typography align="center" sx={{ py: 3, color: 'text.secondary' }}>Không tìm thấy điểm ngập</Typography>
+                                ) : (
+                                    filteredPoints.map((point) => (
+                                        <InundationMobileCard 
+                                            key={point.id} 
+                                            point={point} 
+                                            onAction={handleAction} 
+                                            onOpenViewer={handleOpenViewer}
+                                            onOpenDetail={handleOpenDetail}
+                                            navigate={navigate}
+                                            basePath={basePath}
+                                        />
+                                    ))
+                                )}
+                            </Box>
+
+                            {/* Desktop Table View */}
+                            <TableContainer component={Paper} elevation={0} sx={{ display: { xs: 'none', sm: 'block' }, border: '1px solid', borderColor: 'divider', borderRadius: 3, overflow: 'hidden' }}>
+                                <Table>
+                                    <TableHead sx={{ bgcolor: 'grey.50' }}>
+                                        <TableRow>
+                                            <TableCell sx={{ width: 40 }} />
+                                            <TableCell sx={{ fontWeight: 800 }}>STT</TableCell>
+                                            <TableCell sx={{ fontWeight: 800 }}>Tên điểm ngập</TableCell>
+                                            <TableCell sx={{ fontWeight: 800 }}>Đơn vị quản lý</TableCell>
+                                            <TableCell sx={{ fontWeight: 800 }}>Trạng thái</TableCell>
+                                            <TableCell sx={{ fontWeight: 800 }}>Độ sâu</TableCell>
+                                            <TableCell sx={{ fontWeight: 800 }}>Cập nhật</TableCell>
+                                            <TableCell align="right" sx={{ fontWeight: 800 }}>Thao tác</TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {filteredPoints.length === 0 ? (
+                                            <TableRow><TableCell colSpan={8} align="center" sx={{ py: 3 }}>Không tìm thấy điểm ngập</TableCell></TableRow>
+                                        ) : (
+                                            filteredPoints.map((point, index) => (
+                                                <InundationDesktopRow 
+                                                    key={point.id}
+                                                    point={point}
+                                                    index={index}
+                                                    onAction={handleAction}
+                                                    onOpenViewer={handleOpenViewer}
+                                                    onOpenDetail={handleOpenDetail}
+                                                    navigate={navigate}
+                                                    basePath={basePath}
+                                                />
+                                            ))
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                        </>
                     )
                 ) : (
                     /* History Tab */
@@ -266,21 +554,21 @@ const AdminInundationDashboard = () => {
                                 <CircularProgress size={40} />
                             </Box>
                         ) : historyReports.length === 0 ? (
-                            <Paper sx={{ py: 6, textAlign: 'center', borderRadius: 4, border: '1px dashed', borderColor: 'divider' }}>
+                            <Paper sx={{ py: 6, textAlign: 'center', borderRadius: 4, border: '1px dashed', borderColor: 'divider', bgcolor: 'grey.50' }}>
                                 <Typography color="textSecondary">Không tìm thấy báo cáo nào trong khoảng thời gian này</Typography>
                             </Paper>
                         ) : (
                             <>
-                                <TableContainer component={Paper} sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider', boxShadow: 'none' }}>
+                                <TableContainer component={Paper} elevation={0} sx={{ display: { xs: 'none', md: 'block' }, borderRadius: 3, border: '1px solid', borderColor: 'divider', overflow: 'hidden' }}>
                                     <Table>
                                         <TableHead sx={{ bgcolor: 'grey.50' }}>
                                             <TableRow>
-                                                <TableCell sx={{ fontWeight: 700 }}>Ngày giờ</TableCell>
-                                                <TableCell sx={{ fontWeight: 700 }}>Địa điểm</TableCell>
-                                                <TableCell sx={{ fontWeight: 700 }}>Đơn vị</TableCell>
-                                                <TableCell sx={{ fontWeight: 700 }}>Kích thước (DxRxS)</TableCell>
-                                                <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>
-                                                <TableCell sx={{ fontWeight: 700 }} align="center">Thao tác</TableCell>
+                                                <TableCell sx={{ fontWeight: 800 }}>Ngày giờ</TableCell>
+                                                <TableCell sx={{ fontWeight: 800 }}>Địa điểm</TableCell>
+                                                <TableCell sx={{ fontWeight: 800 }}>Đơn vị</TableCell>
+                                                <TableCell sx={{ fontWeight: 800 }}>Kích thước (DxRxS)</TableCell>
+                                                <TableCell sx={{ fontWeight: 800 }}>Trạng thái</TableCell>
+                                                <TableCell sx={{ fontWeight: 800 }} align="center">Thao tác</TableCell>
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
@@ -325,6 +613,46 @@ const AdminInundationDashboard = () => {
                                         </TableBody>
                                     </Table>
                                 </TableContainer>
+
+                                {/* Card List for Mobile */}
+                                <Stack spacing={2} sx={{ display: { xs: 'flex', md: 'none' } }}>
+                                    {historyReports.map((report) => (
+                                        <Paper key={report.id} sx={{ p: 2, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'primary.main' }}>
+                                                    {dayjs(report.start_time * 1000).format('DD/MM HH:mm')}
+                                                </Typography>
+                                                <Chip 
+                                                    label={report.is_flooding ? 'Đang ngập' : 'Bình thường'} 
+                                                    color={report.is_flooding ? 'error' : 'success'} 
+                                                    size="small"
+                                                    variant="light"
+                                                    sx={{ fontWeight: 800, height: 20 }}
+                                                />
+                                            </Box>
+                                            <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>{report.street_name}</Typography>
+                                            <Typography variant="caption" color="textSecondary" sx={{ display: 'block', mb: 1.5 }}>{report.address}</Typography>
+                                            <Divider sx={{ mb: 1.5, borderStyle: 'dashed' }} />
+                                            <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                                <Stack spacing={0.5}>
+                                                    <Typography variant="caption" color="textSecondary">Kích thước (DxRxS)</Typography>
+                                                    <Typography variant="body2" sx={{ fontWeight: 800, color: 'error.main' }}>
+                                                        {report.length}m x {report.width}m x {report.depth}cm
+                                                    </Typography>
+                                                </Stack>
+                                                <Button 
+                                                    variant="outlined" 
+                                                    size="small" 
+                                                    startIcon={<IconEye size={16} />}
+                                                    onClick={() => window.open(`/admin/inundation/form?id=${report.id}&tab=1&readonly=true`, '_blank')}
+                                                    sx={{ borderRadius: 2 }}
+                                                >
+                                                    Xem
+                                                </Button>
+                                            </Stack>
+                                        </Paper>
+                                    ))}
+                                </Stack>
                                 <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
                                     <Pagination 
                                         count={Math.ceil(totalHistory / rowsPerPage) || 1} 
@@ -362,7 +690,7 @@ const AdminInundationDashboard = () => {
             <Dialog 
                 open={confirmFinish.open} 
                 onClose={() => setConfirmFinish({ open: false, point: null })}
-                slotProps={{ paper: { sx: { borderRadius: 4, p: 1, minWidth: 320 } } }}
+                slotProps={{ paper: { sx: { borderRadius: 4, p: 1, minWidth: 280 } } }}
             >
                 <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pb: 1 }}>
                     <Box sx={{ p: 1, borderRadius: 2, bgcolor: 'error.lighter', color: 'error.main', display: 'flex' }}>

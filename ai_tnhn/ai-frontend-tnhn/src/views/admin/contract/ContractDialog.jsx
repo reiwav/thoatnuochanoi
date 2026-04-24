@@ -244,9 +244,11 @@ const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit }) => {
                                                     placeholder="0"
                                                     value={stage.amount}
                                                     onChange={(e) => handleStageChange(index, 'amount', e.target.value)}
-                                                    InputProps={{
-                                                        startAdornment: <InputAdornment position="start"><IconCash size={16} /></InputAdornment>,
-                                                        endAdornment: <InputAdornment position="end">VNĐ</InputAdornment>
+                                                    slotProps={{
+                                                        input: {
+                                                            startAdornment: <InputAdornment position="start"><IconCash size={16} /></InputAdornment>,
+                                                            endAdornment: <InputAdornment position="end">VNĐ</InputAdornment>
+                                                        }
                                                     }}
                                                     sx={{ bgcolor: 'white' }}
                                                 />

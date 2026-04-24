@@ -70,20 +70,22 @@ const SelectionDialog = ({ open, onClose, onConfirm, title, items = [], initialS
                         placeholder="Tìm kiếm..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        InputProps={{
-                            startAdornment: (
-                                <InputAdornment position="start">
-                                    <IconSearch size={18} />
-                                </InputAdornment>
-                            ),
-                            endAdornment: searchTerm && (
-                                <InputAdornment position="end">
-                                    <IconButton size="small" onClick={() => setSearchTerm('')}>
-                                        <IconX size={16} />
-                                    </IconButton>
-                                </InputAdornment>
-                            ),
-                            sx: { borderRadius: 3, fontWeight: 600 }
+                        slotProps={{
+                            input: {
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <IconSearch size={18} />
+                                    </InputAdornment>
+                                ),
+                                endAdornment: searchTerm && (
+                                    <InputAdornment position="end">
+                                        <IconButton size="small" onClick={() => setSearchTerm('')}>
+                                            <IconX size={16} />
+                                        </IconButton>
+                                    </InputAdornment>
+                                ),
+                                sx: { borderRadius: 3, fontWeight: 600 }
+                            }
                         }}
                     />
                     <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mt: 1.5 }}>

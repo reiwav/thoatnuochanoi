@@ -286,13 +286,15 @@ const AiContract = () => {
                         onChange={(e) => setInput(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && handleSend()}
                         disabled={loading}
-                        InputProps={{
-                            endAdornment: (
-                                <IconButton color="primary" onClick={() => handleSend()} disabled={!input.trim() || loading}>
-                                    <IconSend size={24} />
-                                </IconButton>
-                            ),
-                            sx: { borderRadius: '16px', bgcolor: '#f8fafc', p: '4px 8px' }
+                        slotProps={{
+                            input: {
+                                endAdornment: (
+                                    <IconButton color="primary" onClick={() => handleSend()} disabled={!input.trim() || loading}>
+                                        <IconSend size={24} />
+                                    </IconButton>
+                                ),
+                                sx: { borderRadius: '16px', bgcolor: '#f8fafc', p: '4px 8px' }
+                            }
                         }}
                     />
                 </Box>

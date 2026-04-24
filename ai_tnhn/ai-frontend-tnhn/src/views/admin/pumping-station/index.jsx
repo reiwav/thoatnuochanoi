@@ -424,10 +424,14 @@ const PumpingStationPage = () => {
     return (
         <PermissionGuard permission="trambom:view" fallback={<NoAccessView />}>
             <MainCard
+                contentSX={{ p: { xs: 1.5, sm: 2.5 } }}
+                sx={{ mx: { xs: -1.5, sm: 0 }, borderRadius: { xs: 0, sm: 4 } }}
                 title={
                     <Stack direction="row" alignItems="center" spacing={1}>
-                        <IconEngine size={24} color={theme.palette.primary.main} />
-                        <Typography variant="h3" sx={{ fontWeight: 800 }}>QUẢN LÝ TRẠM BƠM</Typography>
+                        <IconEngine size={isMobile ? 20 : 24} color={theme.palette.primary.main} />
+                        <Typography variant={isMobile ? "h4" : "h3"} sx={{ fontWeight: 800 }}>
+                            {isMobile ? 'TRẠM BƠM' : 'QUẢN LÝ TRẠM BƠM'}
+                        </Typography>
                     </Stack>
                 }
                 secondary={
@@ -436,25 +440,30 @@ const PumpingStationPage = () => {
                             <Button 
                                 variant="contained" 
                                 color="secondary"
-                                startIcon={<IconPlus size={20} />} 
+                                startIcon={<IconPlus size={isMobile ? 18 : 20} />} 
                                 onClick={handleAdd} 
                                 sx={{ 
                                     borderRadius: '12px', 
                                     fontWeight: 800, 
-                                    fontSize: '0.95rem', 
-                                    px: 2.5, 
-                                    py: 1,
+                                    fontSize: isMobile ? '0.8rem' : '0.95rem', 
+                                    px: { xs: 1.2, sm: 2.5 }, 
+                                    py: isMobile ? 0.8 : 1,
                                     boxShadow: '0 4px 12px rgba(103, 58, 183, 0.2)'
                                 }}
                             >
-                                {isMobile ? 'Thêm' : 'Thêm trạm bơm'}
+                                <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Thêm trạm bơm</Box>
+                                <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>Thêm</Box>
                             </Button>
                         </AnimateButton>
                     </PermissionGuard>
                 }
             >
                 <Box sx={{ mb: 3 }}>
-                    <Stack direction={isMobile ? "column" : "row"} spacing={1.5} alignItems="center">
+                    <Stack 
+                        direction={{ xs: 'column', sm: 'row' }} 
+                        spacing={2} 
+                        alignItems={{ xs: 'stretch', sm: 'center' }}
+                    >
                         <TextField
                             label="Tìm theo tên trạm bơm"
                             value={searchFilter}

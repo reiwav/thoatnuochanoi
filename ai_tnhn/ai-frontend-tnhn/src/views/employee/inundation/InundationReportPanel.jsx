@@ -216,8 +216,10 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
                             }));
                         }}
                         required
-                        InputProps={{
-                            startAdornment: <InputAdornment position="start"><IconMapPin size={17} color={theme.palette.text.secondary} /></InputAdornment>
+                        slotProps={{
+                            input: {
+                                startAdornment: <InputAdornment position="start"><IconMapPin size={17} color={theme.palette.text.secondary} /></InputAdornment>
+                            }
                         }}
                     >
                         {points.map((p) => (
@@ -228,8 +230,10 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
                     <TextField
                         fullWidth label="Tên tuyến đường / Vị trí" name="street_name"
                         value={values.street_name} onChange={handleChange} required
-                        InputProps={{
-                            startAdornment: <InputAdornment position="start"><IconMapPin size={17} color={theme.palette.text.secondary} /></InputAdornment>
+                        slotProps={{
+                            input: {
+                                startAdornment: <InputAdornment position="start"><IconMapPin size={17} color={theme.palette.text.secondary} /></InputAdornment>
+                            }
                         }}
                     />
                 )
@@ -265,34 +269,36 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
                 <TextField
                     fullWidth label="Dài" name="length" value={values.length} onChange={handleChange}
                     type="text" placeholder="VD: 50"
-                    InputProps={{ startAdornment: <InputAdornment position="start"><IconRuler size={15} color={theme.palette.text.secondary} /></InputAdornment> }}
+                    slotProps={{ input: { startAdornment: <InputAdornment position="start"><IconRuler size={15} color={theme.palette.text.secondary} /></InputAdornment> } }}
                 />
                 <TextField
                     fullWidth label="Rộng" name="width" value={values.width} onChange={handleChange}
                     type="text" placeholder="VD: 3"
-                    InputProps={{ startAdornment: <InputAdornment position="start"><IconRuler size={15} color={theme.palette.text.secondary} /></InputAdornment> }}
+                    slotProps={{ input: { startAdornment: <InputAdornment position="start"><IconRuler size={15} color={theme.palette.text.secondary} /></InputAdornment> } }}
                 />
                 <TextField
                     fullWidth label="Sâu" name="depth" value={values.depth} onChange={handleChange}
                     type="number" placeholder="VD: 20"
-                    slotProps={{ htmlInput: { inputMode: 'decimal', step: 'any' } }}
-                    InputProps={{
-                        startAdornment: <InputAdornment position="start"><IconRuler size={15} color={theme.palette.text.secondary} /></InputAdornment>,
-                        endAdornment: currentLevel && (
-                            <InputAdornment position="end">
-                                <Chip
-                                    label={currentLevel.name}
-                                    size="small"
-                                    sx={{
-                                        bgcolor: currentLevel.color,
-                                        color: '#fff',
-                                        fontWeight: 800,
-                                        fontSize: '0.75rem',
-                                        height: 24
-                                    }}
-                                />
-                            </InputAdornment>
-                        )
+                    slotProps={{
+                        htmlInput: { inputMode: 'decimal', step: 'any' },
+                        input: {
+                            startAdornment: <InputAdornment position="start"><IconRuler size={15} color={theme.palette.text.secondary} /></InputAdornment>,
+                            endAdornment: currentLevel && (
+                                <InputAdornment position="end">
+                                    <Chip
+                                        label={currentLevel.name}
+                                        size="small"
+                                        sx={{
+                                            bgcolor: currentLevel.color,
+                                            color: '#fff',
+                                            fontWeight: 800,
+                                            fontSize: '0.75rem',
+                                            height: 24
+                                        }}
+                                    />
+                                </InputAdornment>
+                            )
+                        }
                     }}
                     helperText={currentLevel ? `Mức độ xác định: ${currentLevel.name}` : 'Nhập độ sâu để tự động xác định mức độ'}
                 />

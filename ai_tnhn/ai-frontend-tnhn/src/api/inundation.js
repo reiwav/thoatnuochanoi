@@ -11,6 +11,7 @@ const inundationApi = {
     listReports: (page = 0, size = 10, filters = {}) => {
         let url = `/inundation/reports?page=${page}&size=${size}`;
         if (filters.status) url += `&status=${filters.status}`;
+        if (filters.point_id) url += `&point_id=${filters.point_id}`;
         if (filters.traffic_status) url += `&traffic_status=${encodeURIComponent(filters.traffic_status)}`;
         if (filters.query) url += `&query=${encodeURIComponent(filters.query)}`;
         if (filters.org_id) url += `&org_id=${filters.org_id}`;
@@ -22,8 +23,11 @@ const inundationApi = {
     getReport: (id) => {
         return axiosClient.get(`/inundation/report/${id}`);
     },
-    getPointHistory: (pointId) => {
-        return axiosClient.get(`/inundation/report/${pointId}`);
+    getPointHistory: (pointId, fromTime, toTime) => {
+        let url = `/inundation/reports?point_id=${pointId}&size=100&is_flooding=true`;
+        if (fromTime) url += `&from_time=${fromTime}`;
+        if (toTime) url += `&to_time=${toTime}`;
+        return axiosClient.get(url);
     },
     updateReport: (id, formData) => {
         return axiosClient.put(`/inundation/report/${id}`, formData, {

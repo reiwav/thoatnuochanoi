@@ -135,8 +135,10 @@ const FloodLevelDialog = ({ open, onClose, onSubmit, level, isEdit }) => {
                             value={values.min_depth}
                             onChange={handleChange}
                             variant="outlined"
-                            InputProps={{
-                                endAdornment: <InputAdornment position="end">m</InputAdornment>,
+                            slotProps={{
+                                input: {
+                                    endAdornment: <InputAdornment position="end">m</InputAdornment>,
+                                }
                             }}
                             sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
                         />
@@ -152,8 +154,10 @@ const FloodLevelDialog = ({ open, onClose, onSubmit, level, isEdit }) => {
                             error={!!errors.max_depth}
                             helperText={errors.max_depth}
                             variant="outlined"
-                            InputProps={{
-                                endAdornment: <InputAdornment position="end">m</InputAdornment>,
+                            slotProps={{
+                                input: {
+                                    endAdornment: <InputAdornment position="end">m</InputAdornment>,
+                                }
                             }}
                             sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
                         />

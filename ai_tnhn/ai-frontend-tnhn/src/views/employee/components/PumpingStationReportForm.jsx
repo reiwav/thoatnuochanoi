@@ -111,7 +111,9 @@ const PumpingStationReport = ({ station, onSuccess, onClose }) => {
                                 setFormData({ ...formData, [name]: Math.max(0, val) });
                             }
                         }}
-                        inputProps={{ style: { textAlign: 'center', fontWeight: 900, width: 50, fontSize: '1.5rem', padding: '0' } }}
+                        slotProps={{
+                            htmlInput: { style: { textAlign: 'center', fontWeight: 900, width: 50, fontSize: '1.5rem', padding: '0' } }
+                        }}
                         sx={{ '& .MuiOutlinedInput-notchedOutline': { border: 'none' } }}
                     />
 

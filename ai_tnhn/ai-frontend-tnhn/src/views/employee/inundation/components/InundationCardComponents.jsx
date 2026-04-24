@@ -39,21 +39,23 @@ export const MetricItem = ({ icon: Icon, label, value, color }) => (
 export const CardHeader = ({ point, latest, isHighPriority, navigate, openTask, onQuickFinish, onOpenDetail, finishing, theme }) => (
     <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start', mb: 2.5, position: 'relative' }}>
         <Tooltip title="Xem chi tiết lịch sử điểm ngập" placement="top-start">
-            <Avatar 
-                onClick={() => onOpenDetail(point)}
-                sx={{
-                    bgcolor: isHighPriority ? (latest?.flood_level_color || theme.palette.error.main) : theme.palette.success.main,
-                    width: 48,
-                    height: 48,
-                    borderRadius: 3,
-                    cursor: 'pointer',
-                    boxShadow: `0 8px 16px ${alpha(isHighPriority ? (latest?.flood_level_color || theme.palette.error.main) : theme.palette.success.main, 0.25)}`,
-                    transition: 'transform 0.2s',
-                    '&:hover': { transform: 'scale(1.05)' }
-                }}
-            >
-                <IconMapPin size={24} color="#fff" />
-            </Avatar>
+            <span>
+                <Avatar 
+                    onClick={() => onOpenDetail(point)}
+                    sx={{
+                        bgcolor: isHighPriority ? (latest?.flood_level_color || theme.palette.error.main) : theme.palette.success.main,
+                        width: 48,
+                        height: 48,
+                        borderRadius: 3,
+                        cursor: 'pointer',
+                        boxShadow: `0 8px 16px ${alpha(isHighPriority ? (latest?.flood_level_color || theme.palette.error.main) : theme.palette.success.main, 0.25)}`,
+                        transition: 'transform 0.2s',
+                        '&:hover': { transform: 'scale(1.05)' }
+                    }}
+                >
+                    <IconMapPin size={24} color="#fff" />
+                </Avatar>
+            </span>
         </Tooltip>
 
         <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -83,45 +85,49 @@ export const CardHeader = ({ point, latest, isHighPriority, navigate, openTask, 
                 <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
                     {latest?.needs_correction && (
                         <Tooltip title="Nội dung báo cáo cần sửa lại">
-                            <Avatar sx={{ bgcolor: 'warning.main', width: 24, height: 24, animation: 'pulse 2s infinite' }}>
-                                <IconAlertTriangle size={15} color="white" />
-                            </Avatar>
+                            <span>
+                                <Avatar sx={{ bgcolor: 'warning.main', width: 24, height: 24, animation: 'pulse 2s infinite' }}>
+                                    <IconAlertTriangle size={15} color="white" />
+                                </Avatar>
+                            </span>
                         </Tooltip>
                     )}
                     {isHighPriority && (
                         <PermissionGuard permission="inundation:review">
-                            <Button
-                                variant="contained"
-                                color="success"
-                                size="small"
-                                disabled={finishing}
-                                startIcon={finishing ? <CircularProgress size={14} color="inherit" /> : <IconChecklist size={14} />}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (onQuickFinish) onQuickFinish();
-                                }}
-                                sx={{
-                                    height: 32,
-                                    borderRadius: 2,
-                                    fontWeight: 900,
-                                    fontSize: '0.675rem',
-                                    px: 1.5,
-                                    whiteSpace: 'nowrap',
-                                    bgcolor: '#00c853',
-                                    boxShadow: '0 4px 12px rgba(0, 200, 83, 0.3)',
-                                    pointerEvents: 'auto',
-                                    zIndex: 10,
-                                    transition: 'all 0.2s',
-                                    '&:hover': { 
-                                        bgcolor: '#00a441', 
-                                        boxShadow: '0 6px 16px rgba(0, 200, 83, 0.4)',
-                                        transform: 'translateY(-1px)'
-                                    },
-                                    '&:active': { transform: 'translateY(0)' }
-                                }}
-                            >
-                                {finishing ? 'ĐANG XỬ LÝ...' : 'HẾT NGẬP'}
-                            </Button>
+                            <span>
+                                <Button
+                                    variant="contained"
+                                    color="success"
+                                    size="small"
+                                    disabled={finishing}
+                                    startIcon={finishing ? <CircularProgress size={14} color="inherit" /> : <IconChecklist size={14} />}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (onQuickFinish) onQuickFinish();
+                                    }}
+                                    sx={{
+                                        height: 32,
+                                        borderRadius: 2,
+                                        fontWeight: 900,
+                                        fontSize: '0.675rem',
+                                        px: 1.5,
+                                        whiteSpace: 'nowrap',
+                                        bgcolor: '#00c853',
+                                        boxShadow: '0 4px 12px rgba(0, 200, 83, 0.3)',
+                                        pointerEvents: 'auto',
+                                        zIndex: 10,
+                                        transition: 'all 0.2s',
+                                        '&:hover': { 
+                                            bgcolor: '#00a441', 
+                                            boxShadow: '0 6px 16px rgba(0, 200, 83, 0.4)',
+                                            transform: 'translateY(-1px)'
+                                        },
+                                        '&:active': { transform: 'translateY(0)' }
+                                    }}
+                                >
+                                    {finishing ? 'ĐANG XỬ LÝ...' : 'HẾT NGẬP'}
+                                </Button>
+                            </span>
                         </PermissionGuard>
                     )}
                 </Stack>

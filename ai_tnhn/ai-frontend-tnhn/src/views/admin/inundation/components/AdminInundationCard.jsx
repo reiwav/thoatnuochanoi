@@ -107,19 +107,19 @@ const AdminInundationCard = ({ point, onAction, onOpenViewer, onOpenDetail, navi
                             overflow: 'hidden'
                         }}>
                             <Grid container spacing={1} alignItems="center">
-                                <Grid item xs={2.5}>
+                                <Grid size={{ xs: 2.5 }}>
                                     <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.6rem', textTransform: 'uppercase' }}>Dài</Typography>
                                     <Typography variant="h5" sx={{ fontWeight: 800 }}>{report?.length || '0'}<span style={{ fontSize: '0.6rem', color: '#999', marginLeft: 1 }}>m</span></Typography>
                                 </Grid>
-                                <Grid item xs={2.5}>
+                                <Grid size={{ xs: 2.5 }}>
                                     <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', fontWeight: 700, fontSize: '0.6rem', textTransform: 'uppercase' }}>Rộng</Typography>
                                     <Typography variant="h5" sx={{ fontWeight: 800 }}>{report?.width || '0'}<span style={{ fontSize: '0.6rem', color: '#999', marginLeft: 1 }}>m</span></Typography>
                                 </Grid>
-                                <Grid item xs={3} sx={{ borderLeft: '1px solid', borderColor: `${displayColor}20`, pl: 1 }}>
+                                <Grid size={{ xs: 3 }} sx={{ borderLeft: '1px solid', borderColor: `${displayColor}20`, pl: 1 }}>
                                     <Typography variant="caption" sx={{ display: 'block', color: displayColor, fontWeight: 800, fontSize: '0.6rem', textTransform: 'uppercase' }}>Sâu</Typography>
                                     <Typography variant="h3" sx={{ fontWeight: 900, color: displayColor, lineHeight: 1 }}>{report?.depth || '0'}<span style={{ fontSize: '0.6rem', opacity: 0.7, marginLeft: 2 }}></span></Typography>
                                 </Grid>
-                                <Grid item xs={4} sx={{ textAlign: 'right' }}>
+                                <Grid size={{ xs: 4 }} sx={{ textAlign: 'right' }}>
                                     <Chip
                                         label={report?.flood_level_name || 'Đang ngập'}
                                         size="small"
@@ -198,49 +198,59 @@ const AdminInundationCard = ({ point, onAction, onOpenViewer, onOpenDetail, navi
                         <Stack direction="row" spacing={0.5}>
                             <PermissionGuard permission="inundation:report">
                                 <Tooltip title="Gửi báo cáo hiện trường">
-                                    <IconButton
-                                        size="small" color={isCorrection ? 'warning' : 'secondary'}
-                                        onClick={() => onAction('report', point)}
-                                        sx={{
-                                            bgcolor: isCorrection ? 'warning.lighter' : 'secondary.lighter',
-                                            '&:hover': { bgcolor: isCorrection ? 'warning.light' : 'secondary.light' }
-                                        }}
-                                    >
-                                        <IconSend size={18} />
-                                    </IconButton>
+                                    <span>
+                                        <IconButton
+                                            size="small" color={isCorrection ? 'warning' : 'secondary'}
+                                            onClick={() => onAction('report', point)}
+                                            sx={{
+                                                bgcolor: isCorrection ? 'warning.lighter' : 'secondary.lighter',
+                                                '&:hover': { bgcolor: isCorrection ? 'warning.light' : 'secondary.light' }
+                                            }}
+                                        >
+                                            <IconSend size={18} />
+                                        </IconButton>
+                                    </span>
                                 </Tooltip>
                             </PermissionGuard>
                             <PermissionGuard permission="inundation:review">
                                 <Tooltip title="Kết thúc nhanh">
-                                    <IconButton
-                                        size="small" color="success"
-                                        disabled={!isFlooded}
-                                        onClick={() => onAction('quick_finish', point)}
-                                        sx={{ bgcolor: 'success.lighter', '&:hover': { bgcolor: 'success.light' } }}
-                                    >
-                                        <IconCircleCheck size={18} />
-                                    </IconButton>
+                                    <span>
+                                        <IconButton
+                                            size="small" color="success"
+                                            disabled={!isFlooded}
+                                            onClick={() => onAction('quick_finish', point)}
+                                            sx={{ bgcolor: 'success.lighter', '&:hover': { bgcolor: 'success.light' } }}
+                                        >
+                                            <IconCircleCheck size={18} />
+                                        </IconButton>
+                                    </span>
                                 </Tooltip>
                             </PermissionGuard>
                             <PermissionGuard permission="inundation:survey">
                                 <Tooltip title="Nhận xét từ Giám sát">
-                                    <IconButton size="small" color="primary" onClick={() => onAction('survey', point)} sx={{ bgcolor: 'primary.lighter' }}>
-                                        <IconClipboardCheck size={18} />
-                                    </IconButton>
+                                    <span>
+                                        <IconButton size="small" color="primary" onClick={() => onAction('survey', point)} sx={{ bgcolor: 'primary.lighter' }}>
+                                            <IconClipboardCheck size={18} />
+                                        </IconButton>
+                                    </span>
                                 </Tooltip>
                             </PermissionGuard>
                             <PermissionGuard permission="inundation:mechanic">
                                 <Tooltip title="Thông tin xử lý Cơ giới">
-                                    <IconButton size="small" color="info" onClick={() => onAction('mech', point)} sx={{ bgcolor: 'info.lighter' }}>
-                                        <IconEngine size={18} />
-                                    </IconButton>
+                                    <span>
+                                        <IconButton size="small" color="info" onClick={() => onAction('mech', point)} sx={{ bgcolor: 'info.lighter' }}>
+                                            <IconEngine size={18} />
+                                        </IconButton>
+                                    </span>
                                 </Tooltip>
                             </PermissionGuard>
                             <PermissionGuard permission="inundation:review">
                                 <Tooltip title="Ý kiến rà soát của Admin">
-                                    <IconButton size="small" color="error" onClick={() => onAction('comment', point)} sx={{ bgcolor: 'error.lighter' }}>
-                                        <IconChecklist size={18} />
-                                    </IconButton>
+                                    <span>
+                                        <IconButton size="small" color="error" onClick={() => onAction('comment', point)} sx={{ bgcolor: 'error.lighter' }}>
+                                            <IconChecklist size={18} />
+                                        </IconButton>
+                                    </span>
                                 </Tooltip>
                             </PermissionGuard>
                         </Stack>

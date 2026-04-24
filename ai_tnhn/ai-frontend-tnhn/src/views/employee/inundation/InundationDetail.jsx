@@ -15,12 +15,13 @@ import inundationApi from 'api/inundation';
 import InundationReportPanel from './InundationReportPanel';
 import useAuthStore from 'store/useAuthStore';
 import { getTrafficStatusColor } from 'utils/trafficStatusHelper';
+import { getInundationImageUrl } from 'utils/imageHelper';
 
 // Shared Components
 import { SurveyInfoSection, MechInfoSection, ReviewCommentSection } from './components/TechnicalSections';
 import ImageViewer from './components/ImageViewer';
 
-const InundationDetail = ({ selectedReport, loadingReport, user }) => {
+const InundationDetail = ({ selectedReport, loadingReport, user, hideHeader = false }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -106,31 +107,33 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
 
     return (
         <Box>
-            <Paper sx={{ mb: 3, p: 2, bgcolor: 'secondary.lighter', borderRadius: 3, border: '1px solid', borderColor: 'secondary.light' }}>
-                <Stack spacing={1.5}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Typography variant="h3" color="secondary.dark" sx={{ fontWeight: 900 }}>{selectedReport.street_name}</Typography>
-                        <Chip
-                            label={selectedReport.status === 'active' ? 'Đang diễn biến' : 'Đã kết thúc'}
-                            color={selectedReport.status === 'active' ? 'error' : 'success'}
-                            size="small" sx={{ fontWeight: 800 }}
-                        />
-                    </Box>
-                    <Stack direction="row" spacing={2} alignItems="center">
-                        <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <IconClock size={16} /> {new Date(selectedReport.start_time * 1000).toLocaleString('vi-VN')}
-                        </Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <IconRuler size={16} /> {latest.length || 0} x {latest.width || 0} x {latest.depth || 0}
-                        </Typography>
-                        {trafficColor && (
-                            <Chip label={latest.traffic_status || latest.trafficStatus} size="small" color={trafficColor} sx={{ fontWeight: 700 }} />
-                        )}
+            {!hideHeader && (
+                <Paper sx={{ mb: 3, p: 2, bgcolor: 'secondary.lighter', borderRadius: 3, border: '1px solid', borderColor: 'secondary.light' }}>
+                    <Stack spacing={1.5}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Typography variant="h3" color="secondary.dark" sx={{ fontWeight: 900 }}>{selectedReport.street_name}</Typography>
+                            <Chip
+                                label={selectedReport.status === 'active' ? 'Đang diễn biến' : 'Đã kết thúc'}
+                                color={selectedReport.status === 'active' ? 'error' : 'success'}
+                                size="small" sx={{ fontWeight: 800 }}
+                            />
+                        </Box>
+                        <Stack direction="row" spacing={2} alignItems="center">
+                            <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <IconClock size={16} /> {new Date(selectedReport.start_time * 1000).toLocaleString('vi-VN')}
+                            </Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <IconRuler size={16} /> {latest.length || 0} x {latest.width || 0} x {latest.depth || 0}
+                            </Typography>
+                            {trafficColor && (
+                                <Chip label={latest.traffic_status || latest.trafficStatus} size="small" color={trafficColor} sx={{ fontWeight: 700 }} />
+                            )}
+                        </Stack>
                     </Stack>
-                </Stack>
-            </Paper>
+                </Paper>
+            )}
 
-            <Typography variant="h4" sx={{ mb: 2, fontWeight: 800, px: 1 }}>Lịch sử cập nhật</Typography>
+            {!hideHeader && <Typography variant="h4" sx={{ mb: 2, fontWeight: 800, px: 1 }}>Lịch sử cập nhật</Typography>}
 
             <Box sx={{ px: 1 }}>
                 {timelineData.map((item, idx) => (
@@ -165,7 +168,11 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
                             {item.images?.length > 0 && (
                                 <Box sx={{ display: 'flex', gap: 1, mt: 1.5, overflowX: 'auto', pb: 1 }}>
                                     {item.images.map((img, i) => (
-                                        <Box key={i} component="img" src={img} onClick={() => handleOpenViewer(item.images, i)} sx={{ width: 80, height: 80, borderRadius: 2, objectFit: 'cover', cursor: 'zoom-in' }} />
+                                        <Box 
+                                            key={i} component="img" src={getInundationImageUrl(img)} 
+                                            onClick={() => handleOpenViewer(item.images, i)} 
+                                            sx={{ width: 80, height: 80, borderRadius: 2, objectFit: 'cover', cursor: 'zoom-in', border: '1px solid', borderColor: 'divider' }} 
+                                        />
                                     ))}
                                 </Box>
                             )}

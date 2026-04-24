@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Typography, Card, CardContent, alpha, Stack, Divider, Collapse, Tooltip, IconButton } from '@mui/material';
+import { Box, Typography, Card, CardContent, alpha, Stack, Divider, Collapse, Tooltip, IconButton, Grid } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { IconCircleCheck, IconChevronDown, IconChevronUp, IconMessageDots } from '@tabler/icons-react';
 import dayjs from 'dayjs';
@@ -82,23 +82,39 @@ const InundationDesktopStatCard = ({ point, onAction, onOpenViewer, onOpenDetail
                     </Typography>
                 </Box>
 
-                {/* Metrics Row: D x R x S (prominent) */}
-                <Box sx={{ mb: 1.5, display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 0.5 }}>
-                    <Typography variant="caption" sx={{ fontWeight: 700, color: 'grey.600' }}>
-                        {isFlooded ? `${report.length} x ${report.width}` : '-'} x
-                    </Typography>
-                    <Typography
-                        variant="h1"
-                        sx={{
-                            fontWeight: 900,
-                            color: isFlooded ? displayColor : 'text.disabled',
-                            fontSize: '1.8rem',
-                            lineHeight: 1
-                        }}
-                    >
-                        {isFlooded ? report.depth : '...'}
-                    </Typography>
-                    <Typography variant="caption" sx={{ fontWeight: 800, color: isFlooded ? displayColor : 'text.disabled' }}></Typography>
+                {/* Enhanced Metrics Display */}
+                <Box sx={{ 
+                    mb: 2, p: 1, 
+                    borderRadius: 3, 
+                    bgcolor: isFlooded ? alpha(displayColor, 0.05) : 'grey.50',
+                    border: '1px solid',
+                    borderColor: isFlooded ? alpha(displayColor, 0.1) : 'divider'
+                }}>
+                    <Grid container spacing={0.5} sx={{ alignItems: 'center' }}>
+                        <Grid size={{ xs: 3.5 }}>
+                            <Typography variant="caption" sx={{ display: 'block', color: 'text.disabled', fontWeight: 800, fontSize: { xs: '0.5rem', sm: '0.55rem' }, textTransform: 'uppercase' }}>Dài</Typography>
+                            <Typography variant="h5" sx={{ fontWeight: 800, fontSize: { xs: '0.75rem', sm: '0.85rem' } }}>{isFlooded ? report.length : '...'}<span style={{ fontSize: '0.6rem', color: '#aaa', marginLeft: 2 }}>{isFlooded ? 'm' : ''}</span></Typography>
+                        </Grid>
+                        <Grid size={{ xs: 3.5 }}>
+                            <Typography variant="caption" sx={{ display: 'block', color: 'text.disabled', fontWeight: 800, fontSize: { xs: '0.5rem', sm: '0.55rem' }, textTransform: 'uppercase' }}>Rộng</Typography>
+                            <Typography variant="h5" sx={{ fontWeight: 800, fontSize: { xs: '0.75rem', sm: '0.85rem' } }}>{isFlooded ? report.width : '...'}<span style={{ fontSize: '0.6rem', color: '#aaa', marginLeft: 2 }}>{isFlooded ? 'm' : ''}</span></Typography>
+                        </Grid>
+                        <Grid size={{ xs: 5 }} sx={{ borderLeft: '1px solid', borderColor: 'divider', pl: 1 }}>
+                            <Typography variant="caption" sx={{ display: 'block', color: isFlooded ? displayColor : 'text.disabled', fontWeight: 900, fontSize: { xs: '0.5rem', sm: '0.55rem' }, textTransform: 'uppercase' }}>Chiều sâu</Typography>
+                            <Typography 
+                                variant="h2" 
+                                sx={{ 
+                                    fontWeight: 900, 
+                                    color: isFlooded ? displayColor : 'text.disabled',
+                                    fontSize: { xs: '1.2rem', sm: '1.4rem' },
+                                    lineHeight: 1
+                                }}
+                            >
+                                {isFlooded ? report.depth : '...'}
+                                {isFlooded && <span style={{ fontSize: '0.7rem', fontWeight: 700, marginLeft: 2, opacity: 0.6 }}>cm</span>}
+                            </Typography>
+                        </Grid>
+                    </Grid>
                 </Box>
 
                 {/* Image Previews */}
@@ -125,26 +141,30 @@ const InundationDesktopStatCard = ({ point, onAction, onOpenViewer, onOpenDetail
                 {/* Footer Quick Actions */}
                 <Stack direction="row" spacing={0.5} alignItems="center" sx={{ pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
                     <Tooltip title="Chi tiết">
-                        <IconButton
-                            size="small" color={expanded ? "primary" : "inherit"}
-                            onClick={() => setExpanded(!expanded)}
-                            sx={{ width: 30, height: 30, bgcolor: expanded ? alpha(theme.palette.primary.main, 0.1) : 'grey.100' }}
-                        >
-                            {expanded ? <IconChevronUp size={18} /> : <IconChevronDown size={18} />}
-                        </IconButton>
+                        <span>
+                            <IconButton
+                                size="small" color={expanded ? "primary" : "inherit"}
+                                onClick={() => setExpanded(!expanded)}
+                                sx={{ width: 30, height: 30, bgcolor: expanded ? alpha(theme.palette.primary.main, 0.1) : 'grey.100' }}
+                            >
+                                {expanded ? <IconChevronUp size={18} /> : <IconChevronDown size={18} />}
+                            </IconButton>
+                        </span>
                     </Tooltip>
 
                     <Box sx={{ flex: 1 }} />
 
                     <PermissionGuard permission="inundation:review">
                         <Tooltip title="Nhận xét">
-                            <IconButton
-                                size="small" color="error"
-                                onClick={() => onAction('comment', point)}
-                                sx={{ width: 30, height: 30, bgcolor: alpha(theme.palette.error.main, 0.05) }}
-                            >
-                                <IconMessageDots size={18} />
-                            </IconButton>
+                            <span>
+                                <IconButton
+                                    size="small" color="error"
+                                    onClick={() => onAction('comment', point)}
+                                    sx={{ width: 30, height: 30, bgcolor: alpha(theme.palette.error.main, 0.05) }}
+                                >
+                                    <IconMessageDots size={18} />
+                                </IconButton>
+                            </span>
                         </Tooltip>
                     </PermissionGuard>
 

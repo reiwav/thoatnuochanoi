@@ -314,7 +314,7 @@ const InundationYearlyHistory = () => {
                                                 <Stack direction="row" spacing={1} alignItems="center">
                                                     <IconClock size={16} color="#666" />
                                                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                                        {dayjs.unix(event.start_time).format('DD/MM/YYYY HH:mm:ss')}
+                                                        {dayjs.unix(event.created_at || event.start_time).format('DD/MM/YYYY HH:mm:ss')}
                                                     </Typography>
                                                 </Stack>
                                             </TableCell>
@@ -357,7 +357,7 @@ const InundationYearlyHistory = () => {
                                     </Box>
                                     <Stack spacing={1}>
                                         <Typography variant="caption" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            <IconClock size={14} /> {dayjs.unix(event.start_time).format('DD/MM/YYYY HH:mm:ss')}
+                                            <IconClock size={14} /> {dayjs.unix(event.created_at || event.start_time).format('DD/MM/YYYY HH:mm:ss')}
                                         </Typography>
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                             <Typography variant="body2" sx={{ fontWeight: 700 }}>{formatDuration(event.durationSeconds)}</Typography>

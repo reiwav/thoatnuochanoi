@@ -98,7 +98,7 @@ func (s *service) ExportYearlyHistory(ctx context.Context, orgID string, year in
 		f.SetCellValue(sheetName, "C"+strconv.Itoa(row), r.OrgCode)
 		f.SetCellValue(sheetName, "D"+strconv.Itoa(row), r.Address)
 
-		startTime := time.Unix(r.StartTime, 0).Format("02/01/2006 15:04:05")
+		startTime := time.Unix(r.CTime, 0).Format("02/01/2006 15:04:05")
 		f.SetCellValue(sheetName, "E"+strconv.Itoa(row), startTime)
 
 		dimensions := fmt.Sprintf("%sx%sx%f", r.Length, r.Width, r.Depth)
@@ -108,7 +108,7 @@ func (s *service) ExportYearlyHistory(ctx context.Context, orgID string, year in
 		if endTime <= 0 {
 			endTime = now
 		}
-		durationSeconds := endTime - r.StartTime
+		durationSeconds := endTime - r.CTime
 		f.SetCellValue(sheetName, "G"+strconv.Itoa(row), formatDuration(durationSeconds))
 
 		id := r.PointID

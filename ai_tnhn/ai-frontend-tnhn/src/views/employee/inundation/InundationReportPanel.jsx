@@ -28,8 +28,7 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
         width: '',
         depth: '',
         description: '',
-        traffic_status: 'Đi lại bình thường',
-        start_time: new Date().toISOString().slice(0, 16)
+        traffic_status: 'Đi lại bình thường'
     });
     const [images, setImages] = useState([]);
     const [previews, setPreviews] = useState([]);
@@ -82,8 +81,7 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
                 width: selectedReport.width || '',
                 depth: selectedReport.depth || '',
                 description: selectedReport.description || '',
-                traffic_status: selectedReport.traffic_status || selectedReport.trafficStatus || 'Đi lại bình thường',
-                start_time: selectedReport.start_time ? new Date(selectedReport.start_time * 1000).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16)
+                traffic_status: selectedReport.traffic_status || selectedReport.trafficStatus || 'Đi lại bình thường'
             });
         }
     }, [selectedReport]);
@@ -180,7 +178,6 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
             if (values.traffic_status) fd.append('traffic_status', values.traffic_status);
             const pId = pointId || values.point_id;
             if (pId) fd.append('point_id', pId);
-            fd.append('start_time', Math.floor(Date.now() / 1000));
             if (currentLevel) {
                 fd.append('flood_level_name', currentLevel.name);
                 fd.append('flood_level_color', currentLevel.color);
@@ -188,7 +185,7 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
             images.forEach(img => fd.append('images', img));
             await inundationApi.createReport(fd);
             toast.success('Gửi báo cáo thành công');
-            setValues({ ...values, length: '', width: '', depth: '', description: '', traffic_status: 'Đi lại bình thường', start_time: new Date().toISOString().slice(0, 16) });
+            setValues({ ...values, length: '', width: '', depth: '', description: '', traffic_status: 'Đi lại bình thường' });
             setImages([]); setPreviews([]);
             if (onSuccess) onSuccess();
         } catch (err) { toast.error(err.response?.data?.error || 'Đã có lỗi xảy ra'); }

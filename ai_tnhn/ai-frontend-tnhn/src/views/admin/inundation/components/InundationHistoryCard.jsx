@@ -27,8 +27,8 @@ const InundationHistoryCard = ({ report, navigate, basePath, handleOpenViewer })
                     <Box sx={{ p: 1.5, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'grey.200' }}>
                         <Typography variant="caption" sx={{ fontWeight: 800, display: 'block', mb: 1 }}>ℹ️ TỔNG QUAN</Typography>
                         <ReviewCommentSection latest={latest} />
-                        <Typography variant="body2" sx={{ mt: 1 }}>Chiều sâu: <b>{latest?.depth || 0}</b></Typography>
-                        <Typography variant="body2">Thời gian: <b>{formatDuration(report.start_time, report.end_time)}</b></Typography>
+                        <Typography variant="body2" sx={{ mt: 1 }}>Sâu: <b>{latest?.depth || 0}</b></Typography>
+                        <Typography variant="body2">Thời gian: <b>{formatDuration(report.created_at || report.start_time, report.end_time)}</b></Typography>
                     </Box>
                 </Grid>
             </Grid>
@@ -70,7 +70,7 @@ const InundationHistoryCard = ({ report, navigate, basePath, handleOpenViewer })
                     <Typography variant="body2" sx={{ fontWeight: 800, cursor: 'pointer', color: 'primary.dark' }} onClick={() => setOpen(!open)}>{report.street_name}</Typography>
                 </TableCell>
                 <TableCell><Typography variant="body2" color="primary">{orgName}</Typography></TableCell>
-                <TableCell><Typography variant="body2">{formatDateTime(report.start_time)}</Typography></TableCell>
+                <TableCell><Typography variant="body2">{formatDateTime(report.created_at || report.start_time)}</Typography></TableCell>
                 <TableCell><Typography variant="body2">{report.status === 'active' ? 'Đang ngập' : formatDateTime(report.end_time)}</Typography></TableCell>
                 <TableCell>
                     <Chip

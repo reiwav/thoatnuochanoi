@@ -76,10 +76,9 @@ type InundationSummaryData struct {
 
 type PointStatus struct {
 	models.InundationStation
-	Status       string                   `json:"status"`
-	OrgName      string                   `json:"org_name"`
-	ActiveReport *models.InundationReport `json:"active_report,omitempty"`
-	LastReport   *models.InundationReport `json:"last_report,omitempty"`
+	Status     string                   `json:"status"`
+	OrgName    string                   `json:"org_name"`
+	LastReport *models.InundationReport `json:"last_report,omitempty"`
 }
 
 type ImageContent struct {
@@ -301,7 +300,7 @@ func (s *service) GetInundationSummary(ctx context.Context, orgID string, isAllo
 			Depth:         r.Depth,
 			Width:         r.Width,
 			Length:        r.Length,
-			StartTime:     time.Unix(r.StartTime, 0).Format("15:04 02/01/2006"),
+			StartTime:     time.Unix(r.CTime, 0).Format("15:04 02/01/2006"),
 			Description:   r.Description,
 			CurrentStatus: "Đang ngập lụt",
 			Updates:       updates,

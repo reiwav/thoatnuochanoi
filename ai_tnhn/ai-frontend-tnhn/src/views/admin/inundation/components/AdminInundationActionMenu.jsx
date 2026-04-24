@@ -65,18 +65,28 @@ const AdminInundationActionMenu = ({
                         sx: {
                             borderRadius: 3,
                             mt: 0.5,
-                            minWidth: 180,
-                            boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                            minWidth: 220,
+                            boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+                            '& .MuiMenuItem-root': {
+                                py: 1.5,
+                                px: 2,
+                                borderRadius: 1.5,
+                                mx: 1,
+                                mb: 0.5,
+                                '&:hover': {
+                                    bgcolor: alpha(theme.palette.primary.main, 0.08)
+                                }
+                            }
                         }
                     }
                 }}
             >
                 <PermissionGuard permission="inundation:review">
                     <MenuItem onClick={handleMenuClick('comment')}>
-                        <ListItemIcon><IconMessageDots size={18} color={theme.palette.error.main} /></ListItemIcon>
+                        <ListItemIcon><IconMessageDots size={22} color={theme.palette.error.main} /></ListItemIcon>
                         <ListItemText 
                             primary={
-                                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'error.main' }}>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'error.main' }}>
                                     Nhận xét rà soát
                                 </Typography>
                             } 
@@ -86,10 +96,10 @@ const AdminInundationActionMenu = ({
                 
                 <PermissionGuard permission="inundation:report">
                     <MenuItem onClick={handleMenuClick('report')}>
-                        <ListItemIcon><IconReportMedical size={18} color={theme.palette.secondary.main} /></ListItemIcon>
+                        <ListItemIcon><IconReportMedical size={22} color={theme.palette.secondary.main} /></ListItemIcon>
                         <ListItemText 
                             primary={
-                                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'secondary.main' }}>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'secondary.main' }}>
                                     Cập nhật diễn biến
                                 </Typography>
                             } 
@@ -99,10 +109,10 @@ const AdminInundationActionMenu = ({
 
                 <PermissionGuard permission="inundation:survey">
                     <MenuItem onClick={handleMenuClick('survey')}>
-                        <ListItemIcon><IconRulerMeasure size={18} color={theme.palette.primary.main} /></ListItemIcon>
+                        <ListItemIcon><IconRulerMeasure size={22} color={theme.palette.primary.main} /></ListItemIcon>
                         <ListItemText 
                             primary={
-                                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'primary.main' }}>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'primary.main' }}>
                                     Khảo sát thiết kế
                                 </Typography>
                             } 
@@ -112,10 +122,10 @@ const AdminInundationActionMenu = ({
 
                 <PermissionGuard permission="inundation:mechanic">
                     <MenuItem onClick={handleMenuClick('mech')}>
-                        <ListItemIcon><IconTruck size={18} color={theme.palette.info.main} /></ListItemIcon>
+                        <ListItemIcon><IconTruck size={22} color={theme.palette.info.main} /></ListItemIcon>
                         <ListItemText 
                             primary={
-                                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'info.main' }}>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'info.main' }}>
                                     Cơ giới
                                 </Typography>
                             } 
@@ -131,13 +141,13 @@ const AdminInundationActionMenu = ({
                         disabled={!hasActiveReport}
                         sx={{ 
                             color: 'success.main',
-                            '&:hover': { bgcolor: 'success.lighter' }
+                            '&:hover': { bgcolor: alpha(theme.palette.success.main, 0.1) + ' !important' }
                         }}
                     >
-                        <ListItemIcon><IconCircleCheck size={18} color={theme.palette.success.main} /></ListItemIcon>
+                        <ListItemIcon><IconCircleCheck size={22} color={theme.palette.success.main} /></ListItemIcon>
                         <ListItemText 
                             primary={
-                                <Typography variant="subtitle2" sx={{ fontWeight: 900, color: 'success.main' }}>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 900, color: 'success.main' }}>
                                     Kết thúc nhanh
                                 </Typography>
                             } 
@@ -146,10 +156,10 @@ const AdminInundationActionMenu = ({
                 </PermissionGuard>
 
                 <MenuItem onClick={() => { handleClose(); onViewHistory(point); }}>
-                    <ListItemIcon><IconHistory size={18} color={theme.palette.grey[600]} /></ListItemIcon>
+                    <ListItemIcon><IconHistory size={22} color={theme.palette.grey[600]} /></ListItemIcon>
                     <ListItemText 
                         primary={
-                            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary' }}>
                                 Lịch sử điểm ngập
                             </Typography>
                         } 

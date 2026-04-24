@@ -61,7 +61,7 @@ const FloodLevelDialog = ({ open, onClose, onSubmit, level, isEdit }) => {
         if (!values.code) newErrors.code = 'Vui lòng nhập mã mức độ';
         if (!values.name) newErrors.name = 'Vui lòng nhập tên mức độ';
         if (values.max_depth < values.min_depth) {
-            newErrors.max_depth = 'Chiều sâu tối đa không được nhỏ hơn tối thiểu';
+            newErrors.max_depth = 'Sâu tối đa không được nhỏ hơn tối thiểu';
         }
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -74,10 +74,10 @@ const FloodLevelDialog = ({ open, onClose, onSubmit, level, isEdit }) => {
     };
 
     return (
-        <Dialog 
-            open={open} 
-            onClose={onClose} 
-            maxWidth="sm" 
+        <Dialog
+            open={open}
+            onClose={onClose}
+            maxWidth="sm"
             fullWidth
             slotProps={{
                 paper: {
@@ -129,7 +129,7 @@ const FloodLevelDialog = ({ open, onClose, onSubmit, level, isEdit }) => {
                     <Grid item xs={12} sm={6}>
                         <TextField
                             fullWidth
-                            label="Chiều sâu tối thiểu"
+                            label="Sâu tối thiểu"
                             name="min_depth"
                             type="number"
                             value={values.min_depth}
@@ -146,7 +146,7 @@ const FloodLevelDialog = ({ open, onClose, onSubmit, level, isEdit }) => {
                     <Grid item xs={12} sm={6}>
                         <TextField
                             fullWidth
-                            label="Chiều sâu tối đa"
+                            label="Sâu tối đa"
                             name="max_depth"
                             type="number"
                             value={values.max_depth}
@@ -171,9 +171,9 @@ const FloodLevelDialog = ({ open, onClose, onSubmit, level, isEdit }) => {
                             value={values.color}
                             onChange={handleChange}
                             variant="outlined"
-                            sx={{ 
+                            sx={{
                                 '& .MuiOutlinedInput-root': { borderRadius: '12px' },
-                                '& input': { height: 40, p: 0.5, cursor: 'pointer' } 
+                                '& input': { height: 40, p: 0.5, cursor: 'pointer' }
                             }}
                         />
                     </Grid>
@@ -210,16 +210,16 @@ const FloodLevelDialog = ({ open, onClose, onSubmit, level, isEdit }) => {
                 </Grid>
             </DialogContent>
             <DialogActions sx={{ p: 3, pt: 0 }}>
-                <Button 
-                    onClick={onClose} 
-                    variant="text" 
+                <Button
+                    onClick={onClose}
+                    variant="text"
                     sx={{ borderRadius: '10px', color: 'text.secondary' }}
                 >
                     Hủy bỏ
                 </Button>
-                <Button 
-                    onClick={handleFormSubmit} 
-                    variant="contained" 
+                <Button
+                    onClick={handleFormSubmit}
+                    variant="contained"
                     color="primary"
                     sx={{ borderRadius: '10px', px: 4, fontWeight: 700 }}
                 >

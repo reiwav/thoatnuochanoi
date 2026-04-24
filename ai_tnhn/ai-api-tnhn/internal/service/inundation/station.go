@@ -77,13 +77,8 @@ func (s *service) GetPointsStatus(ctx context.Context, user *models.User, isAllo
 	}
 	pIDs := make([]string, 0)
 	//points := make([]models.InundationStation, 0, len(allPointsMap))
-	reportActiveID := make([]string, 0)
 	for _, p := range allPointsMap {
-		//points = append(points, p)
 		pIDs = append(pIDs, p.ID)
-		if p.ReportID != "" {
-			reportActiveID = append(reportActiveID, p.ReportID)
-		}
 	}
 
 	if len(ownedPoints) == 0 {
@@ -95,21 +90,6 @@ func (s *service) GetPointsStatus(ctx context.Context, user *models.User, isAllo
 	orgMap := make(map[string]string)
 	for _, o := range orgs {
 		orgMap[o.ID] = o.Name
-	}
-
-	// 2. Get active reports
-	var activeReports []models.InundationReport
-	err = s.InundationReportRepo.R_SelectMany(ctx, bson.M{"_id": bson.M{"$in": reportActiveID}, "status": "active"}, &activeReports)
-	if len(activeReports) == 0 {
-		activeReports = make([]models.InundationReport, 0)
-	}
-
-	// 3. Map reports to points
-	reportsByPoint := make(map[string]models.InundationReport)
-	for _, r := range activeReports {
-		if r.PointID != "" {
-			reportsByPoint[r.PointID] = r
-		}
 	}
 
 	// 4. Build merged result
@@ -133,13 +113,10 @@ func (s *service) GetPointsStatus(ctx context.Context, user *models.User, isAllo
 			}
 		}
 
-		if active, ok := reportsByPoint[p.ID]; ok {
-
-			p.ReportID = active.ID
+		if p.ReportID != "" {
 			result[i].Status = "flooded"
-			result[i].ActiveReport = &active
 		} else {
-			p.ReportID = ""
+			result[i].Status = "normal"
 		}
 		result[i].OrgName = orgMap[p.OrgID]
 	}

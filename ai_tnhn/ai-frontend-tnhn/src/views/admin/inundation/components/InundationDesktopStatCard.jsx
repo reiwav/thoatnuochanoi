@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Box, Typography, Card, CardContent, alpha, Stack, Divider, Collapse, Tooltip, IconButton, Grid } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { IconCircleCheck, IconChevronDown, IconChevronUp, IconMessageDots } from '@tabler/icons-react';
+import { IconCircleCheck, IconChevronDown, IconChevronUp, IconMessageDots, IconClock, IconUser, IconEngine, IconClipboardCheck } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import { getInundationImageUrl } from 'utils/imageHelper';
+import { formatDuration } from 'utils/dataHelper';
 import PermissionGuard from 'ui-component/PermissionGuard';
 import { SurveyInfoSection, MechInfoSection, ReviewCommentSection, ReportInfoSection } from '../../../employee/inundation/components/TechnicalSections';
 import AdminInundationActionMenu from './AdminInundationActionMenu';
@@ -12,9 +13,8 @@ const InundationDesktopStatCard = ({ point, onAction, onOpenViewer, onOpenDetail
     const theme = useTheme();
     const [expanded, setExpanded] = useState(false);
     const isFlooded = !!point.report_id;
-    const report = point.active_report;
-    const lastReport = point.last_report;
-    const displayColor = isFlooded ? (report?.flood_level_color || theme.palette.error.main) : theme.palette.success.main;
+    const lastReport = point.last_report; // Báo cáo mới nhất (luôn có)
+    const displayColor = isFlooded ? (lastReport?.flood_level_color || theme.palette.error.main) : theme.palette.success.main;
 
     return (
         <Card sx={{
@@ -49,18 +49,18 @@ const InundationDesktopStatCard = ({ point, onAction, onOpenViewer, onOpenDetail
                             WebkitLineClamp: 2,
                             WebkitBoxOrient: 'vertical',
                             overflow: 'hidden',
-                            fontSize: '0.9rem'
+                            fontSize: '1.05rem'
                         }}
                     >
                         {point.name}
                     </Typography>
                 </Box>
 
-                <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 800, display: 'block', mb: 0.25, fontSize: '0.68rem', textTransform: 'uppercase' }}>
+                <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 900, display: 'block', mb: 0.25, fontSize: '0.78rem', textTransform: 'uppercase' }}>
                     {point.org_name || 'Đơn vị quản lý'}
                 </Typography>
 
-                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.75, fontStyle: 'italic', minHeight: '2.4em', lineHeight: 1.1, fontSize: '0.68rem' }}>
+                <Typography variant="caption" sx={{ color: 'text.primary', display: 'block', mb: 0.75, fontWeight: 600, minHeight: '2.4em', lineHeight: 1.1, fontSize: '0.68rem' }}>
                     {point.address}
                 </Typography>
 
@@ -74,57 +74,115 @@ const InundationDesktopStatCard = ({ point, onAction, onOpenViewer, onOpenDetail
                             animation: isFlooded ? 'stat-pulse 2s infinite' : 'none'
                         }} />
                         <Typography variant="caption" sx={{ fontWeight: 800, color: displayColor, textTransform: 'uppercase', fontSize: '0.65rem' }}>
-                            {isFlooded ? (report?.flood_level_name || 'Đang ngập') : 'Bình thường'}
+                            {isFlooded ? (lastReport?.flood_level_name || 'Đang ngập') : 'Bình thường'}
                         </Typography>
                     </Box>
-                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, fontSize: '0.65rem' }}>
-                        {isFlooded ? dayjs((report?.updated_at || report?.start_time) * 1000).fromNow() : (lastReport?.end_time ? dayjs(lastReport.end_time * 1000).format('DD/MM HH:mm') : '-')}
+                    <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 700, fontSize: '0.65rem' }}>
+                        {isFlooded ? formatDuration(lastReport?.created_at) : ''}
                     </Typography>
                 </Box>
 
                 {/* Enhanced Metrics Display */}
-                <Box sx={{ 
-                    mb: 2, p: 1, 
-                    borderRadius: 3, 
+                <Box sx={{
+                    mb: 2, p: 1,
+                    borderRadius: 3,
                     bgcolor: isFlooded ? alpha(displayColor, 0.05) : 'grey.50',
                     border: '1px solid',
                     borderColor: isFlooded ? alpha(displayColor, 0.1) : 'divider'
                 }}>
                     <Grid container spacing={0.5} sx={{ alignItems: 'center' }}>
                         <Grid size={{ xs: 3.5 }}>
-                            <Typography variant="caption" sx={{ display: 'block', color: 'text.disabled', fontWeight: 800, fontSize: { xs: '0.5rem', sm: '0.55rem' }, textTransform: 'uppercase' }}>Dài</Typography>
-                            <Typography variant="h5" sx={{ fontWeight: 800, fontSize: { xs: '0.75rem', sm: '0.85rem' } }}>{isFlooded ? report.length : '...'}<span style={{ fontSize: '0.6rem', color: '#aaa', marginLeft: 2 }}>{isFlooded ? 'm' : ''}</span></Typography>
+                            <Typography variant="caption" sx={{ display: 'block', color: 'text.primary', fontWeight: 900, fontSize: { xs: '0.7rem', sm: '0.65rem' }, textTransform: 'uppercase' }}>Dài</Typography>
+                            <Typography variant="h5" sx={{ fontWeight: 900, fontSize: { xs: '1rem', sm: '1rem' }, color: 'text.primary' }}>{lastReport?.length || '...'}<span style={{ fontSize: '0.75rem', color: '#666', marginLeft: 2 }}>{lastReport?.length ? 'm' : ''}</span></Typography>
                         </Grid>
                         <Grid size={{ xs: 3.5 }}>
-                            <Typography variant="caption" sx={{ display: 'block', color: 'text.disabled', fontWeight: 800, fontSize: { xs: '0.5rem', sm: '0.55rem' }, textTransform: 'uppercase' }}>Rộng</Typography>
-                            <Typography variant="h5" sx={{ fontWeight: 800, fontSize: { xs: '0.75rem', sm: '0.85rem' } }}>{isFlooded ? report.width : '...'}<span style={{ fontSize: '0.6rem', color: '#aaa', marginLeft: 2 }}>{isFlooded ? 'm' : ''}</span></Typography>
+                            <Typography variant="caption" sx={{ display: 'block', color: 'text.primary', fontWeight: 900, fontSize: { xs: '0.7rem', sm: '0.65rem' }, textTransform: 'uppercase' }}>Rộng</Typography>
+                            <Typography variant="h5" sx={{ fontWeight: 900, fontSize: { xs: '1rem', sm: '1rem' }, color: 'text.primary' }}>{lastReport?.width || '...'}<span style={{ fontSize: '0.75rem', color: '#666', marginLeft: 2 }}>{lastReport?.width ? 'm' : ''}</span></Typography>
                         </Grid>
                         <Grid size={{ xs: 5 }} sx={{ borderLeft: '1px solid', borderColor: 'divider', pl: 1 }}>
-                            <Typography variant="caption" sx={{ display: 'block', color: isFlooded ? displayColor : 'text.disabled', fontWeight: 900, fontSize: { xs: '0.5rem', sm: '0.55rem' }, textTransform: 'uppercase' }}>Chiều sâu</Typography>
-                            <Typography 
-                                variant="h2" 
-                                sx={{ 
-                                    fontWeight: 900, 
-                                    color: isFlooded ? displayColor : 'text.disabled',
-                                    fontSize: { xs: '1.2rem', sm: '1.4rem' },
+                            <Typography variant="caption" sx={{ display: 'block', color: 'text.primary', fontWeight: 900, fontSize: { xs: '0.7rem', sm: '0.65rem' }, textTransform: 'uppercase' }}>Sâu</Typography>
+                            <Typography
+                                variant="h2"
+                                sx={{
+                                    fontWeight: 900,
+                                    color: isFlooded ? displayColor : 'text.primary',
+                                    fontSize: { xs: '22px', sm: '1.6rem' },
                                     lineHeight: 1
                                 }}
                             >
-                                {isFlooded ? report.depth : '...'}
-                                {isFlooded && <span style={{ fontSize: '0.7rem', fontWeight: 700, marginLeft: 2, opacity: 0.6 }}>cm</span>}
+                                {lastReport?.depth || (lastReport?.depth === 0 ? '0' : '...')}
+                                {lastReport?.depth != null && <span style={{ fontSize: '0.7rem', fontWeight: 700, marginLeft: 2, opacity: 0.6 }}>cm</span>}
                             </Typography>
                         </Grid>
                     </Grid>
+                    {isFlooded && (
+                        <Stack spacing={0.75} sx={{ mt: 1, pt: 1, borderTop: '1px solid', borderColor: 'divider' }}>
+                            {/* BÁO CÁO HIỆN TRƯỜNG */}
+                            {/* BÁO CÁO HIỆN TRƯỜNG */}
+                            <Stack direction="row" justifyContent="space-between">
+                                <Stack direction="row" spacing={0.5} alignItems="center">
+                                    <IconClock size={13} color="#D32F2F" />
+                                    <Typography variant="caption" sx={{ fontWeight: 900, color: '#D32F2F' }}>
+                                        BC: {lastReport?.created_at ? dayjs(lastReport.created_at * 1000).format('HH:mm') : '...'}
+                                    </Typography>
+                                </Stack>
+                                <Stack direction="row" spacing={0.5} alignItems="center">
+                                    <IconUser size={13} color="#D32F2F" />
+                                    <Typography variant="caption" sx={{ fontWeight: 900, color: '#D32F2F' }} noWrap>
+                                        {lastReport?.user_name || 'N/A'}
+                                    </Typography>
+                                </Stack>
+                            </Stack>
+
+                            {/* CƠ GIỚI XỬ LÝ */}
+                            {/* CƠ GIỚI XỬ LÝ */}
+                            {(lastReport?.mech_checked || lastReport?.mech_images?.length > 0) && (
+                                <Stack direction="row" justifyContent="space-between">
+                                    <Stack direction="row" spacing={0.5} alignItems="center">
+                                        <IconEngine size={13} color="#7B1FA2" />
+                                        <Typography variant="caption" sx={{ fontWeight: 900, color: '#7B1FA2' }}>
+                                            CG: {lastReport?.mech_updated_at ? dayjs(lastReport.mech_updated_at * 1000).format('HH:mm') : (lastReport?.mech_checked ? 'Đã trực' : '...')}
+                                        </Typography>
+                                    </Stack>
+                                    <Stack direction="row" spacing={0.5} alignItems="center">
+                                        <IconUser size={13} color="#7B1FA2" />
+                                        <Typography variant="caption" sx={{ fontWeight: 900, color: '#7B1FA2' }} noWrap>
+                                            {lastReport?.mech_user_name || 'Sẵn sàng'}
+                                        </Typography>
+                                    </Stack>
+                                </Stack>
+                            )}
+
+                            {/* KsTK GIÁM SÁT */}
+                            {/* KsTK GIÁM SÁT */}
+                            {(lastReport?.survey_checked || lastReport?.survey_images?.length > 0) && (
+                                <Stack direction="row" justifyContent="space-between">
+                                    <Stack direction="row" spacing={0.5} alignItems="center">
+                                        <IconClipboardCheck size={13} color="#1976D2" />
+                                        <Typography variant="caption" sx={{ fontWeight: 900, color: '#1976D2' }}>
+                                            KS: {lastReport?.survey_updated_at ? dayjs(lastReport.survey_updated_at * 1000).format('HH:mm') : (lastReport?.survey_checked ? 'Đã KS' : '...')}
+                                        </Typography>
+                                    </Stack>
+                                    <Stack direction="row" spacing={0.5} alignItems="center">
+                                        <IconUser size={13} color="#1976D2" />
+                                        <Typography variant="caption" sx={{ fontWeight: 900, color: '#1976D2' }} noWrap>
+                                            {lastReport?.survey_user_name || 'Đã kiểm tra'}
+                                        </Typography>
+                                    </Stack>
+                                </Stack>
+                            )}
+                        </Stack>
+                    )}
                 </Box>
 
                 {/* Image Previews */}
-                {report?.images?.length > 0 && (
+                {lastReport?.images?.length > 0 && (
                     <Box sx={{ mb: 1.5 }}>
                         <Stack direction="row" spacing={0.5} justifyContent="center" sx={{ overflow: 'hidden' }}>
-                            {report.images.slice(0, 4).map((img, i) => (
+                            {lastReport?.images?.slice(0, 4).map((img, i) => (
                                 <Box
                                     key={i}
-                                    onClick={() => onOpenViewer(report.images, i)}
+                                    onClick={() => onOpenViewer(lastReport?.images, i)}
                                     sx={{
                                         width: 32, height: 32, borderRadius: 1, overflow: 'hidden', cursor: 'pointer',
                                         border: '1px solid', borderColor: 'divider',
@@ -170,13 +228,15 @@ const InundationDesktopStatCard = ({ point, onAction, onOpenViewer, onOpenDetail
 
                     <PermissionGuard permission="inundation:review">
                         <Tooltip title="Kết thúc nhanh">
-                            <IconButton
-                                size="small" color="success" disabled={!isFlooded}
-                                onClick={() => onAction('quick_finish', point)}
-                                sx={{ width: 30, height: 30, bgcolor: alpha(theme.palette.success.main, 0.05) }}
-                            >
-                                <IconCircleCheck size={18} />
-                            </IconButton>
+                            <span>
+                                <IconButton
+                                    size="small" color="success" disabled={!isFlooded}
+                                    onClick={() => onAction('quick_finish', point)}
+                                    sx={{ width: 30, height: 30, bgcolor: alpha(theme.palette.success.main, 0.05) }}
+                                >
+                                    <IconCircleCheck size={18} />
+                                </IconButton>
+                            </span>
                         </Tooltip>
                     </PermissionGuard>
 
@@ -192,12 +252,12 @@ const InundationDesktopStatCard = ({ point, onAction, onOpenViewer, onOpenDetail
             <Collapse in={expanded} timeout="auto" unmountOnExit>
                 <Divider sx={{ borderStyle: 'dashed' }} />
                 <Box sx={{ p: 1.5, bgcolor: 'grey.50', textAlign: 'left' }}>
-                    {(isFlooded ? report : lastReport) ? (
+                    {lastReport ? (
                         <Stack spacing={1.5}>
-                            <ReportInfoSection latest={isFlooded ? report : lastReport} handleOpenViewer={onOpenViewer} />
-                            <ReviewCommentSection report={isFlooded ? report : lastReport} />
-                            <MechInfoSection latest={isFlooded ? report : lastReport} />
-                            <SurveyInfoSection latest={isFlooded ? report : lastReport} />
+                            <ReportInfoSection latest={lastReport} handleOpenViewer={onOpenViewer} />
+                            <ReviewCommentSection report={lastReport} />
+                            <MechInfoSection latest={lastReport} />
+                            <SurveyInfoSection latest={lastReport} />
                         </Stack>
                     ) : (
                         <Typography variant="caption" color="text.disabled" sx={{ display: 'block', textAlign: 'center' }}>Không có dữ liệu chi tiết</Typography>

@@ -51,12 +51,12 @@ export const ReportInfoSection = ({ latest, handleOpenViewer }) => {
                 </Typography>
             )}
 
-            {latest?.images?.length > 0 && (
+            {latest?.images?.filter(img => !!img).length > 0 && (
                 <Box sx={{ display: 'flex', gap: 0.8, mt: 1, flexWrap: 'wrap' }}>
-                    {latest.images.map((img, i) => (
+                    {latest.images.filter(img => !!img).map((img, i) => (
                         <Box
                             key={i} component="img" src={getInundationImageUrl(img)}
-                            onClick={(e) => { e.stopPropagation(); handleOpenViewer(latest.images, i); }}
+                            onClick={(e) => { e.stopPropagation(); handleOpenViewer(latest.images.filter(i => !!i), i); }}
                             sx={{ width: 60, height: 60, borderRadius: 1.5, objectFit: 'cover', cursor: 'pointer', border: '1px solid', borderColor: 'secondary.light', '&:hover': { borderColor: 'secondary.main', transform: 'scale(1.05)' }, transition: 'all 0.2s' }}
                         />
                     ))}
@@ -91,12 +91,12 @@ export const SurveyInfoSection = ({ latest, handleOpenViewer }) => {
                 )}
             </Box>
             {latest.survey_note && <Typography variant="body2" sx={{ fontWeight: 600 }}>{latest.survey_note}</Typography>}
-            {latest?.survey_images?.length > 0 && (
+            {latest?.survey_images?.filter(img => !!img).length > 0 && (
                 <Box sx={{ display: 'flex', gap: 0.8, mt: 1, flexWrap: 'wrap' }}>
-                    {latest.survey_images.map((img, i) => (
+                    {latest.survey_images.filter(img => !!img).map((img, i) => (
                         <Box
                             key={i} component="img" src={getInundationImageUrl(img)}
-                            onClick={(e) => { e.stopPropagation(); handleOpenViewer(latest.survey_images, i); }}
+                            onClick={(e) => { e.stopPropagation(); handleOpenViewer(latest.survey_images.filter(i => !!i), i); }}
                             sx={{ width: 44, height: 44, borderRadius: 1.5, objectFit: 'cover', cursor: 'pointer', border: '1px solid', borderColor: 'primary.main' }}
                         />
                     ))}
@@ -125,17 +125,17 @@ export const MechInfoSection = ({ latest, handleOpenViewer }) => {
                 )}
             </Box>
             <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
-                <Chip label={`D: ${latest.mech_d || '-'}`} size="small" variant="outlined" color="secondary" sx={{ fontWeight: 800 }} />
+                <Chip label={`D: ${latest.mech_d != null ? latest.mech_d : '-'}`} size="small" variant="outlined" color="secondary" sx={{ fontWeight: 800 }} />
                 <Chip label={`R: ${latest.mech_r || '-'}`} size="small" variant="outlined" color="secondary" sx={{ fontWeight: 800 }} />
                 <Chip label={`S: ${latest.mech_s || '-'}`} size="small" variant="outlined" color="secondary" sx={{ fontWeight: 800 }} />
             </Stack>
             {latest.mech_note && <Typography variant="body2" sx={{ fontWeight: 600 }}>{latest.mech_note}</Typography>}
-            {latest?.mech_images?.length > 0 && (
+            {latest?.mech_images?.filter(img => !!img).length > 0 && (
                 <Box sx={{ display: 'flex', gap: 0.8, mt: 1, flexWrap: 'wrap' }}>
-                    {latest.mech_images.map((img, i) => (
+                    {latest.mech_images.filter(img => !!img).map((img, i) => (
                         <Box
                             key={i} component="img" src={getInundationImageUrl(img)}
-                            onClick={(e) => { e.stopPropagation(); handleOpenViewer(latest.mech_images, i); }}
+                            onClick={(e) => { e.stopPropagation(); handleOpenViewer(latest.mech_images.filter(i => !!i), i); }}
                             sx={{ width: 44, height: 44, borderRadius: 1.5, objectFit: 'cover', cursor: 'pointer', border: '1px solid', borderColor: 'secondary.main' }}
                         />
                     ))}

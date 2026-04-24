@@ -55,7 +55,7 @@ export const getLatestData = (report) => {
         };
     }
 
-    const startTime = data.start_time || data.startTime || 0;
+    const startTime = data.created_at || data.start_time || data.startTime || 0;
     const parseBoolBase = (val) => val === true || val === 'true' || val === 1 || val === '1';
     return {
         ...data,

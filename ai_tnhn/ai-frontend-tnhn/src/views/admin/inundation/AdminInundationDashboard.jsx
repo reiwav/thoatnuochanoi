@@ -86,6 +86,9 @@ const AdminInundationDashboard = () => {
         return () => clearInterval(interval);
     }, []);
 
+    const floodedCount = useMemo(() => points.filter(p => !!p.report_id).length, [points]);
+    const normalCount = useMemo(() => points.length - floodedCount, [points, floodedCount]);
+
     const filteredPoints = useMemo(() => {
         let result = points;
         if (filters.statusFilter === 'active') result = result.filter(p => !!p.report_id);
@@ -150,6 +153,41 @@ const AdminInundationDashboard = () => {
                     </Typography>
                 </Stack>
             }
+            secondary={
+                <Stack direction="row" spacing={1} alignItems="center">
+                    {!isMobile && (
+                        <>
+                            <Chip
+                                label={`${floodedCount} Đang ngập`}
+                                color="error"
+                                variant="filled"
+                                size="small"
+                                sx={{ fontWeight: 800, borderRadius: 2 }}
+                            />
+                            <Chip
+                                label={`${normalCount} Bình thường`}
+                                color="success"
+                                variant="filled"
+                                size="small"
+                                sx={{ fontWeight: 800, borderRadius: 2, bgcolor: alpha(theme.palette.success.main, 1), color: '#fff' }}
+                            />
+                        </>
+                    )}
+                    <Tooltip title="Làm mới dữ liệu">
+                        <IconButton
+                            color="primary"
+                            onClick={() => fetchPoints()}
+                            sx={{
+                                bgcolor: alpha(theme.palette.primary.main, 0.1),
+                                borderRadius: 2,
+                                '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.2) }
+                            }}
+                        >
+                            <IconRefresh size={20} />
+                        </IconButton>
+                    </Tooltip>
+                </Stack>
+            }
         >
 
 
@@ -188,25 +226,11 @@ const AdminInundationDashboard = () => {
                                 slotProps={{ input: { sx: { borderRadius: 3 } } }}
                             >
                                 <MenuItem key="all" value="all">Tất cả trạng thái</MenuItem>
-                                <MenuItem key="active" value="active">Đang có nước (Ngập)</MenuItem>
-                                <MenuItem key="normal" value="normal">Bình thường (Đã rút)</MenuItem>
+                                <MenuItem key="active" value="active">Đang ngập</MenuItem>
+                                <MenuItem key="normal" value="normal">Bình thường</MenuItem>
                             </TextField>
                         </Grid>
-                        <Grid size={{ xs: 12, md: 2 }}>
-                            <Stack direction="row" spacing={1}>
-                                <Tooltip title="Làm mới dữ liệu">
-                                    <span>
-                                        <IconButton
-                                            color="primary"
-                                            onClick={() => fetchPoints()}
-                                            sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2 }}
-                                        >
-                                            <IconRefresh size={20} />
-                                        </IconButton>
-                                    </span>
-                                </Tooltip>
-                            </Stack>
-                        </Grid>
+
                     </Grid>
                 </LocalizationProvider>
             </Box>

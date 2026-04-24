@@ -66,7 +66,7 @@ const InundationSurveyPanel = ({ report, pointId, onSuccess }) => {
                 formData.append('status', 'active');
                 // Also add required fields for new report
                 formData.append('street_name', new URLSearchParams(window.location.search).get('name') || '');
-                formData.append('start_time', Math.floor(Date.now() / 1000));
+                
 
                 await inundationApi.createReport(formData);
                 toast.success('Đã tạo báo cáo và gửi dữ liệu khảo sát');

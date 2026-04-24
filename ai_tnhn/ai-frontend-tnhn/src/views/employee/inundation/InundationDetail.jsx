@@ -49,7 +49,7 @@ const InundationDetail = ({ selectedReport, loadingReport, user, hideHeader = fa
             return [{
                 ...selectedReport,
                 id: selectedReport.id,
-                type: 'start', title: 'Bắt đầu đợt ngập', ts: selectedReport.start_time,
+                type: 'start', title: 'Bắt đầu đợt ngập', ts: selectedReport.created_at || selectedReport.start_time,
                 images: selectedReport.images || []
             }];
         }
@@ -120,7 +120,7 @@ const InundationDetail = ({ selectedReport, loadingReport, user, hideHeader = fa
                         </Box>
                         <Stack direction="row" spacing={2} alignItems="center">
                             <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                <IconClock size={16} /> {new Date(selectedReport.start_time * 1000).toLocaleString('vi-VN')}
+                                <IconClock size={16} /> {new Date((selectedReport.created_at || selectedReport.start_time) * 1000).toLocaleString('vi-VN')}
                             </Typography>
                             <Typography variant="body2" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                 <IconRuler size={16} /> {latest.length || 0} x {latest.width || 0} x {latest.depth || 0}

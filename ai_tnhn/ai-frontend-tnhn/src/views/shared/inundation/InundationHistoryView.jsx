@@ -44,7 +44,7 @@ const InundationHistoryView = ({ pointId: propPointId, hideHeader = false }) => 
 
             const filtered = dataArr
                 .filter(r => r.point_id === pointId)
-                .sort((a, b) => b.start_time - a.start_time);
+                .sort((a, b) => (b.created_at || b.start_time) - (a.created_at || a.start_time));
             setHistory(filtered);
         } catch (err) {
             console.error('Failed to load history:', err);
@@ -121,7 +121,7 @@ const InundationHistoryView = ({ pointId: propPointId, hideHeader = false }) => 
                     const updates = report.updates || [];
                     
                     const eventTimeline = [
-                        { ...report, isStart: true, ts: report.start_time, title: 'Báo cáo khởi tạo' },
+                        { ...report, isStart: true, ts: report.created_at || report.start_time, title: 'Báo cáo khởi tạo' },
                         ...updates.map(u => ({ ...u, isUpdate: true, ts: u.timestamp, title: u.description || 'Cập nhật diễn biến' }))
                     ].sort((a, b) => b.ts - a.ts);
 
@@ -130,7 +130,7 @@ const InundationHistoryView = ({ pointId: propPointId, hideHeader = false }) => 
                             <Box sx={{ mb: 2.5, px: isMobile ? 0.5 : 0 }}>
                                 <Typography variant="h4" sx={{ mb: 1.5, fontWeight: 900, color: 'primary.dark', display: 'flex', alignItems: 'center', gap: 1 }}>
                                     <IconCalendarEvent size={20} />
-                                    {formatDateTime(report.start_time)}
+                                    {formatDateTime(report.created_at || report.start_time)}
                                 </Typography>
                                 
                                 <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ gap: 1 }}>

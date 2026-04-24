@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
     Dialog, DialogTitle, DialogContent, Box, Typography,
-    IconButton, Grid, Stack, Chip
+    IconButton, Grid, Stack, Chip, useMediaQuery
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { IconX, IconClock, IconRuler } from '@tabler/icons-react';
@@ -14,8 +14,9 @@ import useAuthStore from 'store/useAuthStore';
 
 const InundationDetailDialog = ({ open, onClose, point }) => {
     const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const { user } = useAuthStore();
-
+    
     const [loading, setLoading] = useState(false);
     const [selectedReport, setSelectedReport] = useState(null);
 
@@ -29,7 +30,7 @@ const InundationDetailDialog = ({ open, onClose, point }) => {
                 const resHistory = await inundationApi.getPointHistory(point.id, dayjs().subtract(3, 'day').unix(), dayjs().unix());
                 const history = getDataArray(resHistory);
                 if (history.length > 0) {
-                    const sorted = [...history].sort((a, b) => b.start_time - a.start_time);
+                    const sorted = [...history].sort((a, b) => (b.created_at || b.start_time) - (a.created_at || a.start_time));
                     reportId = sorted[0].id;
                 }
             }
@@ -57,14 +58,15 @@ const InundationDetailDialog = ({ open, onClose, point }) => {
             onClose={onClose}
             fullWidth
             maxWidth="md"
+            fullScreen={isMobile}
             scroll="paper"
             slotProps={{
                 paper: {
                     sx: {
-                        borderRadius: { xs: 0, sm: 4 },
-                        minHeight: { xs: '100%', md: '80vh' },
-                        maxHeight: '900px',
-                        m: { xs: 0, sm: 2 }
+                        borderRadius: isMobile ? 0 : 4,
+                        minHeight: isMobile ? '100%' : { md: '80vh' },
+                        maxHeight: isMobile ? '100%' : '900px',
+                        m: isMobile ? 0 : 2
                     }
                 }
             }}
@@ -89,7 +91,7 @@ const InundationDetailDialog = ({ open, onClose, point }) => {
                             <Stack direction="row" spacing={{ xs: 2, sm: 3 }} alignItems="center" sx={{ flexWrap: 'wrap', gap: 1 }}>
                                 <Typography sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontWeight: 700, color: 'text.secondary', whiteSpace: 'nowrap', fontSize: { xs: '0.85rem', sm: '0.75rem' } }}>
                                     <IconClock size={16} />
-                                    {dayjs.unix(selectedReport.start_time).format('DD/MM/YYYY HH:mm')}
+                                    {dayjs.unix(selectedReport.created_at || selectedReport.start_time).format('DD/MM/YYYY HH:mm')}
                                 </Typography>
                                 <Typography sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontWeight: 800, color: 'primary.main', whiteSpace: 'nowrap', fontSize: { xs: '0.85rem', sm: '0.75rem' } }}>
                                     <IconRuler size={16} />

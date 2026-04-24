@@ -111,12 +111,14 @@ func (h *InundationHandler) AddUpdateSituation(c *gin.Context) {
 	images := h.getImages(c)
 
 	update := &models.InundationUpdate{
-		ReportID:      id,
-		Description:   req.Description,
-		Depth:         req.Depth,
-		TrafficStatus: req.TrafficStatus,
-		Length:        req.Length,
-		Width:         req.Width,
+		ReportID: id,
+		InundationReportBase: models.InundationReportBase{
+			Description:   req.Description,
+			Depth:         req.Depth,
+			TrafficStatus: req.TrafficStatus,
+			Length:        req.Length,
+			Width:         req.Width,
+		},
 	}
 
 	err := h.service.AddUpdate(c.Request.Context(), user, id, update, images, req.Resolve)
@@ -628,12 +630,14 @@ func (h *InundationHandler) UpdateSituationUpdateContent(c *gin.Context) {
 	images := h.getImages(c)
 
 	updatedUpdate := &models.InundationUpdate{
-		Description:   req.Description,
-		Depth:         req.Depth,
-		Length:        req.Length,
-		Width:         req.Width,
-		TrafficStatus: req.TrafficStatus,
-		ReportID:      id,
+		ReportID: id,
+		InundationReportBase: models.InundationReportBase{
+			Description:   req.Description,
+			Depth:         req.Depth,
+			Length:        req.Length,
+			Width:         req.Width,
+			TrafficStatus: req.TrafficStatus,
+		},
 	}
 
 	err := h.service.UpdateUpdateContent(c.Request.Context(), user, updatedUpdate, images)

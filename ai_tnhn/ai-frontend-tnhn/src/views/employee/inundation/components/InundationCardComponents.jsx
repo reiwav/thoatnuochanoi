@@ -151,10 +151,16 @@ export const CardMetrics = ({ isHighPriority, latest, theme }) => (
                     <Box sx={{ bgcolor: 'secondary.main', p: 0.5, borderRadius: 1, display: 'flex' }}>
                         <IconMapPin size={14} color="#fff" />
                     </Box>
-                    <Typography variant="caption" sx={{ fontWeight: 800, flex: 1 }}>
-                        {(latest.depth != null || latest.length != null || latest.width != null)
-                            ? `${latest.length || '?'} x ${latest.width || '?'} x ${latest.depth || 0}`
-                            : 'Chưa có thông số kích thước'}
+                    <Typography variant="caption" sx={{ fontWeight: 800, flex: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        {(latest.length != null || latest.width != null) ? `${latest.length || '?'} x ${latest.width || '?'}` : '---'} 
+                        <span style={{ color: '#666', fontWeight: 400 }}>x</span>
+                        <Box component="span" sx={{ 
+                            fontSize: { xs: '22px', sm: '1.2rem' }, 
+                            color: theme.palette.error.main, 
+                            fontWeight: 900 
+                        }}>
+                            {latest.depth || 0}
+                        </Box>
                     </Typography>
                     <Chip
                         label={latest.traffic_status || 'Đang ngập'}

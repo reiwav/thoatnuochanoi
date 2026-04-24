@@ -30,6 +30,7 @@ func (s *service) CreateReport(ctx context.Context, user *models.User, input mod
 		report.OrgID = user.OrgID
 	}
 	report.UserID = user.ID
+	report.UserName = user.Name
 	report.UserEmail = user.Email
 
 	point, err := s.inundationStationRepo.GetByID(ctx, report.PointID)
@@ -64,25 +65,31 @@ func (s *service) CreateReport(ctx context.Context, user *models.User, input mod
 		report.IsFlooding = level.IsFlooding
 		if !level.IsFlooding {
 			report.Status = "resolved"
-			report.EndTime = report.StartTime
+			report.EndTime = time.Now().Unix()
 		}
 	}
 	// 5. Save report to DB
 	report.TrafficStatus = report.FloodLevelName
 
+	// Setup timestamps before creating
+	report.BeforeCreate("REP")
+
 	// ALWAYS Create an initial update record for history/timeline consistency
 	initialUpdate := &models.InundationUpdate{
-		ReportID:      report.ID,
-		UserID:        report.UserID,
-		UserEmail:     report.UserEmail,
-		Timestamp:     report.StartTime,
-		Description:   report.Description,
-		Depth:         report.Depth,
-		Length:        report.Length,
-		Width:         report.Width,
-		TrafficStatus: report.FloodLevelName,
-		Images:        report.Images,
-		IsFlooding:    report.IsFlooding,
+		ReportID:  report.ID,
+		Timestamp: report.CTime,
+		InundationReportBase: models.InundationReportBase{
+			UserID:        report.UserID,
+			UserName:      report.UserName,
+			UserEmail:     report.UserEmail,
+			Description:   report.Description,
+			Depth:         report.Depth,
+			Length:        report.Length,
+			Width:         report.Width,
+			TrafficStatus: report.FloodLevelName,
+			Images:        report.Images,
+			IsFlooding:    report.IsFlooding,
+		},
 	}
 	if initialUpdate.Description == "" {
 		if report.IsFlooding {
@@ -469,21 +476,25 @@ func (s *service) UpdateReport(ctx context.Context, user *models.User, id string
 
 	// Create a new update for history (Timeline)
 	newUpdate := &models.InundationUpdate{
-		ReportID:        id,
-		UserID:          user.ID,
-		UserEmail:       user.Email,
-		UserName:        user.Name,
-		Timestamp:       time.Now().Unix(),
-		Description:     "Chỉnh sửa thông tin báo cáo (theo yêu cầu rà soát)",
-		Depth:           existing.Depth,
-		FloodLevelName:  existing.FloodLevelName,
-		FloodLevelColor: existing.FloodLevelColor,
-		Length:          existing.Length,
-		Width:           existing.Width,
-		TrafficStatus:   existing.TrafficStatus,
-		Images:          existing.Images,
-		IsReviewUpdated: true,
-		IsFlooding:      existing.IsFlooding,
+		ReportID:  id,
+		Timestamp: time.Now().Unix(),
+		InundationReportBase: models.InundationReportBase{
+			UserID:          user.ID,
+			UserEmail:       user.Email,
+			UserName:        user.Name,
+			Description:     "Chỉnh sửa thông tin báo cáo (theo yêu cầu rà soát)",
+			Depth:           existing.Depth,
+			FloodLevelName:  existing.FloodLevelName,
+			FloodLevelColor: existing.FloodLevelColor,
+			Length:          existing.Length,
+			Width:           existing.Width,
+			TrafficStatus:   existing.TrafficStatus,
+			Images:          existing.Images,
+			IsFlooding:      existing.IsFlooding,
+		},
+		ReportReviewBase: models.ReportReviewBase{
+			IsReviewUpdated: true,
+		},
 	}
 	_ = s.inundationUpdateRepo.Create(ctx, newUpdate)
 
@@ -530,6 +541,8 @@ func (s *service) UpdateSurvey(ctx context.Context, user *models.User, id string
 	existing.SurveyChecked = input.SurveyChecked
 	existing.SurveyNote = input.SurveyNote
 	existing.SurveyUserID = user.ID
+	existing.SurveyUserName = user.Name
+	existing.SurveyUpdatedAt = time.Now().Unix()
 
 	if len(images) > 0 {
 		savedPaths, err := s.saveLocalImages(fmt.Sprintf("%s_survey_%d", id, time.Now().Unix()), images)
@@ -549,16 +562,22 @@ func (s *service) UpdateSurvey(ctx context.Context, user *models.User, id string
 
 	// Create update record for history
 	newUpdate := &models.InundationUpdate{
-		ReportID:      id,
-		UserID:        user.ID,
-		UserEmail:     user.Email,
-		UserName:      user.Name,
-		Timestamp:     time.Now().Unix(),
-		Description:   "Cập nhật thông tin khảo sát thiết kế",
-		SurveyChecked: existing.SurveyChecked,
-		SurveyNote:    existing.SurveyNote,
-		SurveyImages:  existing.SurveyImages,
-		SurveyUserID:  user.ID,
+		ReportID:  id,
+		Timestamp: time.Now().Unix(),
+		InundationReportBase: models.InundationReportBase{
+			UserID:      user.ID,
+			UserEmail:   user.Email,
+			UserName:    user.Name,
+			Description: "Cập nhật thông tin khảo sát thiết kế",
+		},
+		ReportSurveyBase: models.ReportSurveyBase{
+			SurveyChecked:   existing.SurveyChecked,
+			SurveyNote:      existing.SurveyNote,
+			SurveyImages:    existing.SurveyImages,
+			SurveyUserID:    existing.SurveyUserID,
+			SurveyUserName:  existing.SurveyUserName,
+			SurveyUpdatedAt: existing.SurveyUpdatedAt,
+		},
 	}
 	_ = s.inundationUpdateRepo.Create(ctx, newUpdate)
 
@@ -604,6 +623,8 @@ func (s *service) UpdateMech(ctx context.Context, user *models.User, id string, 
 	existing.MechR = input.MechR
 	existing.MechS = input.MechS
 	existing.MechUserID = user.ID
+	existing.MechUserName = user.Name
+	existing.MechUpdatedAt = time.Now().Unix()
 
 	// OVERRIDE: Update main report dimensions with worker's data
 	// If MechD is provided (can be 0), we use it to calculate the level
@@ -641,26 +662,32 @@ func (s *service) UpdateMech(ctx context.Context, user *models.User, id string, 
 
 	// Create update record for history
 	newUpdate := &models.InundationUpdate{
-		ReportID:        id,
-		UserID:          user.ID,
-		UserEmail:       user.Email,
-		UserName:        user.Name,
-		Timestamp:       time.Now().Unix(),
-		Description:     "Cập nhật dữ liệu từ xí nghiệp cơ giới",
-		Depth:           existing.Depth,
-		FloodLevelName:  existing.FloodLevelName,
-		FloodLevelColor: existing.FloodLevelColor,
-		Length:          existing.Length,
-		Width:           existing.Width,
-		TrafficStatus:   existing.TrafficStatus,
-		MechChecked:     existing.MechChecked,
-		MechNote:        existing.MechNote,
-		MechD:           existing.MechD,
-		MechR:           existing.MechR,
-		MechS:           existing.MechS,
-		MechUserID:      existing.MechUserID,
-		MechImages:      existing.MechImages,
-		IsFlooding:      existing.IsFlooding,
+		ReportID:  id,
+		Timestamp: time.Now().Unix(),
+		InundationReportBase: models.InundationReportBase{
+			UserID:          user.ID,
+			UserEmail:       user.Email,
+			UserName:        user.Name,
+			Description:     "Cập nhật dữ liệu từ xí nghiệp cơ giới",
+			Depth:           existing.Depth,
+			FloodLevelName:  existing.FloodLevelName,
+			FloodLevelColor: existing.FloodLevelColor,
+			Length:          existing.Length,
+			Width:           existing.Width,
+			TrafficStatus:   existing.TrafficStatus,
+			IsFlooding:      existing.IsFlooding,
+		},
+		ReportMechBase: models.ReportMechBase{
+			MechChecked:   existing.MechChecked,
+			MechNote:      existing.MechNote,
+			MechD:         existing.MechD,
+			MechR:         existing.MechR,
+			MechS:         existing.MechS,
+			MechUserID:    existing.MechUserID,
+			MechUserName:  existing.MechUserName,
+			MechUpdatedAt: existing.MechUpdatedAt,
+			MechImages:    existing.MechImages,
+		},
 	}
 	_ = s.inundationUpdateRepo.Create(ctx, newUpdate)
 
@@ -687,14 +714,16 @@ func (s *service) QuickFinish(ctx context.Context, user *models.User, pointID st
 	// 3. Create a final update record
 	endTime := time.Now().Unix()
 	finalUpdate := &models.InundationUpdate{
-		ReportID:      inundation.ReportID,
-		UserID:        user.ID,
-		UserEmail:     user.Email,
-		UserName:      user.Name,
-		Timestamp:     endTime,
-		Description:   "Kết thúc nhanh đợt ngập",
-		Depth:         0,
-		TrafficStatus: "Bình thường",
+		ReportID:  inundation.ReportID,
+		Timestamp: endTime,
+		InundationReportBase: models.InundationReportBase{
+			UserID:        user.ID,
+			UserEmail:     user.Email,
+			UserName:      user.Name,
+			Description:   "Kết thúc nhanh đợt ngập",
+			Depth:         0,
+			TrafficStatus: "Bình thường",
+		},
 	}
 	_ = s.inundationUpdateRepo.Create(ctx, finalUpdate)
 

@@ -23,15 +23,11 @@ const InundationPointCard = ({ point, openTask, handleOpenViewer, onOpenDetail, 
     const [finishing, setFinishing] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
 
-    const activeData = useMemo(() => {
-        if (!point.report_id || !point.active_report) return null;
-        return getLatestData(point.active_report);
-    }, [point.report_id, point.active_report]);
-
     const latestData = useMemo(() => {
-        if (point.active_report) return getLatestData(point.active_report);
-        return getLatestData(point);
-    }, [point]);
+        return getLatestData(point.last_report || point);
+    }, [point.last_report, point]);
+
+    const activeData = isHighPriority ? latestData : null;
 
     const isHighPriority = !!point.report_id;
 
@@ -119,15 +115,15 @@ const InundationPointCard = ({ point, openTask, handleOpenViewer, onOpenDetail, 
             />
 
             {/* Sub-Header: Start Time for Active Reports */}
-            {isHighPriority && point.active_report?.start_time && (
+            {isHighPriority && (point.last_report?.created_at || point.last_report?.start_time) && (
                 <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2, px: 1, py: 0.5, bgcolor: alpha(theme.palette.error.main, 0.05), borderRadius: 1.5 }}>
                     <IconClock size={14} color={theme.palette.error.main} />
                     <Stack direction="row" spacing={0.5} alignItems="baseline">
                         <span style={{ fontSize: '0.75rem', fontWeight: 800, color: theme.palette.error.main }}>
-                            Bắt đầu từ: {new Date(point.active_report.start_time).toLocaleTimeString()}
+                            Bắt đầu từ: {new Date((point.last_report.created_at || point.last_report.start_time) * 1000).toLocaleTimeString()}
                         </span>
                         <span style={{ fontSize: '0.7rem', fontWeight: 700, color: alpha(theme.palette.error.main, 0.7) }}>
-                            ({formatDuration(point.active_report.start_time)})
+                            ({formatDuration(point.last_report.created_at || point.last_report.start_time)})
                         </span>
                     </Stack>
                 </Stack>

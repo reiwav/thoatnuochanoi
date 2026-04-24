@@ -121,7 +121,7 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
                             <IconClock size={16} /> {new Date(selectedReport.start_time * 1000).toLocaleString('vi-VN')}
                         </Typography>
                         <Typography variant="body2" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <IconRuler size={16} /> {latest.length || 0}m x {latest.width || 0}m x {latest.depth || 0}m
+                            <IconRuler size={16} /> {latest.length || 0} x {latest.width || 0} x {latest.depth || 0}
                         </Typography>
                         {trafficColor && (
                             <Chip label={latest.traffic_status || latest.trafficStatus} size="small" color={trafficColor} sx={{ fontWeight: 700 }} />
@@ -137,7 +137,7 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
                     <Box key={idx} sx={{ display: 'flex', gap: 2, position: 'relative', p: 1.5, mb: 1, borderRadius: 3, bgcolor: item.needs_correction ? 'error.lighter' : 'transparent', border: item.needs_correction ? '1px dashed' : 'none', borderColor: 'error.light' }}>
                         {idx < timelineData.length - 1 && <Box sx={{ position: 'absolute', left: 21, top: 40, width: 2, height: 'calc(100% - 20px)', bgcolor: 'grey.200' }} />}
                         <Box sx={{ width: 14, height: 14, borderRadius: '50%', mt: 1, zIndex: 1, bgcolor: item.type === 'start' ? 'primary.main' : 'success.main', border: '3px solid white', boxShadow: '0 0 0 1px #ddd' }} />
-                        
+
                         <Box sx={{ flex: 1, pb: 2 }}>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
                                 <Typography variant="h6" sx={{ fontWeight: 800 }}>{item.title}</Typography>
@@ -148,8 +148,8 @@ const InundationDetail = ({ selectedReport, loadingReport, user }) => {
                             <Typography variant="body2" sx={{ mb: 1.5 }}>{item.desc || item.description}</Typography>
 
                             <ReviewCommentSection latest={item} />
-                            <SurveyInfoSection latest={{...item, survey_images: item.survey_images || []}} handleOpenViewer={handleOpenViewer} />
-                            <MechInfoSection latest={{...item, mech_images: item.mech_images || []}} handleOpenViewer={handleOpenViewer} />
+                            <SurveyInfoSection latest={{ ...item, survey_images: item.survey_images || [] }} handleOpenViewer={handleOpenViewer} />
+                            <MechInfoSection latest={{ ...item, mech_images: item.mech_images || [] }} handleOpenViewer={handleOpenViewer} />
 
                             <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
                                 {canReview && !item.needs_correction && (

@@ -1,0 +1,188 @@
+import React, { useState } from 'react';
+import { Box, Typography, Card, CardContent, alpha, Stack, Divider, Collapse, Tooltip, IconButton } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import { IconSend, IconCircleCheck, IconEye, IconChecklist } from '@tabler/icons-react';
+import dayjs from 'dayjs';
+import { getInundationImageUrl } from 'utils/imageHelper';
+import PermissionGuard from 'ui-component/PermissionGuard';
+import { SurveyInfoSection, MechInfoSection, ReviewCommentSection, ReportInfoSection } from '../../../employee/inundation/components/TechnicalSections';
+import AdminInundationActionMenu from './AdminInundationActionMenu';
+
+const InundationDesktopStatCard = ({ point, onAction, onOpenViewer, onOpenDetail, navigate, basePath }) => {
+    const theme = useTheme();
+    const [expanded, setExpanded] = useState(false);
+    const isFlooded = !!point.report_id;
+    const report = point.active_report;
+    const lastReport = point.last_report;
+    const displayColor = isFlooded ? (report?.flood_level_color || theme.palette.error.main) : (lastReport?.flood_level_color || theme.palette.success.main);
+
+    return (
+        <Card sx={{
+            height: 'fit-content',
+            width: 280,
+            borderRadius: 4,
+            boxShadow: isFlooded ? `0 8px 24px ${displayColor}15` : '0 4px 12px rgba(0,0,0,0.05)',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            border: '1.5px solid',
+            borderColor: isFlooded ? alpha(displayColor, 0.3) : 'divider',
+            overflow: 'hidden',
+            mx: 'auto',
+            '&:hover': {
+                transform: 'translateY(-2px)',
+                boxShadow: isFlooded ? `0 12px 32px ${displayColor}25` : '0 8px 24px rgba(0,0,0,0.1)',
+            }
+        }}>
+            <CardContent sx={{ p: 1.5, pb: '12px !important', textAlign: 'center' }}>
+                {/* Title */}
+                <Box sx={{ mb: 0.5 }}>
+                    <Typography
+                        variant="h5"
+                        onClick={() => onOpenDetail(point)}
+                        sx={{
+                            color: isFlooded ? 'error.main' : 'primary.main',
+                            fontWeight: 900,
+                            textTransform: 'uppercase',
+                            lineHeight: 1.1,
+                            cursor: 'pointer',
+                            minHeight: '2.2em',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                            fontSize: '0.9rem'
+                        }}
+                    >
+                        {point.name}
+                    </Typography>
+                </Box>
+
+                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.75, fontStyle: 'italic', minHeight: '2.4em', lineHeight: 1.1, fontSize: '0.68rem' }}>
+                    {point.address}
+                </Typography>
+
+                {/* Status Indicator & Time Label */}
+                <Box sx={{ mb: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, px: 1, py: 0.1, borderRadius: 1.5, bgcolor: isFlooded ? alpha(theme.palette.error.main, 0.1) : alpha(theme.palette.success.main, 0.1) }}>
+                        <Box sx={{
+                            width: 6, height: 6, borderRadius: '50%',
+                            bgcolor: isFlooded ? 'error.main' : 'success.main',
+                            boxShadow: isFlooded ? `0 0 6px ${theme.palette.error.main}` : 'none',
+                            animation: isFlooded ? 'stat-pulse 2s infinite' : 'none'
+                        }} />
+                        <Typography variant="caption" sx={{ fontWeight: 800, color: isFlooded ? 'error.dark' : 'success.dark', textTransform: 'uppercase', fontSize: '0.65rem' }}>
+                            {isFlooded ? (report?.flood_level_name || 'Đang ngập') : 'Bình thường'}
+                        </Typography>
+                    </Box>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, fontSize: '0.65rem' }}>
+                        {isFlooded ? dayjs(report.updated_at).fromNow() : (lastReport?.end_time ? dayjs(lastReport.end_time * 1000).format('DD/MM HH:mm') : '-')}
+                    </Typography>
+                </Box>
+
+                {/* Metrics Row: D x R x S (prominent) */}
+                <Box sx={{ mb: 1.5, display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 0.5 }}>
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: 'grey.600' }}>
+                        {isFlooded ? `${report.length} x ${report.width}` : '-'} x
+                    </Typography>
+                    <Typography 
+                        variant="h1" 
+                        sx={{ 
+                            fontWeight: 900, 
+                            color: isFlooded ? displayColor : 'text.disabled', 
+                            fontSize: '1.8rem', 
+                            lineHeight: 1 
+                        }}
+                    >
+                        {isFlooded ? report.depth : '...'}
+                    </Typography>
+                    <Typography variant="caption" sx={{ fontWeight: 800, color: isFlooded ? displayColor : 'text.disabled' }}>cm</Typography>
+                </Box>
+
+                {/* Image Previews */}
+                {report?.images?.length > 0 && (
+                    <Box sx={{ mb: 1.5 }}>
+                        <Stack direction="row" spacing={0.5} justifyContent="center" sx={{ overflow: 'hidden' }}>
+                            {report.images.slice(0, 4).map((img, i) => (
+                                <Box 
+                                    key={i} 
+                                    onClick={() => onOpenViewer(report.images, i)} 
+                                    sx={{ 
+                                        width: 32, height: 32, borderRadius: 1, overflow: 'hidden', cursor: 'pointer',
+                                        border: '1px solid', borderColor: 'divider',
+                                        '&:hover': { opacity: 0.8 }
+                                    }}
+                                >
+                                    <img src={getInundationImageUrl(img)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                </Box>
+                            ))}
+                        </Stack>
+                    </Box>
+                )}
+
+                {/* Footer Quick Actions */}
+                <Stack direction="row" spacing={0.25} justifyContent="center" sx={{ pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
+                    <PermissionGuard permission="inundation:report">
+                        <Tooltip title="Gửi báo cáo">
+                            <IconButton size="small" color="secondary" onClick={() => onAction('report', point)} sx={{ width: 30, height: 30, bgcolor: alpha(theme.palette.secondary.main, 0.08) }}>
+                                <IconSend size={15} />
+                            </IconButton>
+                        </Tooltip>
+                    </PermissionGuard>
+                    <PermissionGuard permission="inundation:review">
+                        <Tooltip title="Kết thúc nhanh">
+                            <IconButton 
+                                size="small" color="success" disabled={!isFlooded}
+                                onClick={() => onAction('quick_finish', point)}
+                                sx={{ width: 30, height: 30, bgcolor: alpha(theme.palette.success.main, 0.08) }}
+                            >
+                                <IconCircleCheck size={15} />
+                            </IconButton>
+                        </Tooltip>
+                    </PermissionGuard>
+                    <Tooltip title="Chi tiết">
+                        <IconButton 
+                            size="small" color={expanded ? "primary" : "inherit"} 
+                            onClick={() => setExpanded(!expanded)} 
+                            sx={{ width: 30, height: 30, bgcolor: expanded ? alpha(theme.palette.primary.main, 0.12) : 'grey.100' }}
+                        >
+                            <IconChecklist size={16} />
+                        </IconButton>
+                    </Tooltip>
+                    <AdminInundationActionMenu 
+                        point={point} 
+                        onAction={onAction}
+                        sx={{ width: 30, height: 30 }}
+                        onViewHistory={(p) => navigate(`${basePath}/station/inundation/history?id=${p.id}`)}
+                    />
+                </Stack>
+            </CardContent>
+
+            <Collapse in={expanded} timeout="auto" unmountOnExit>
+                <Divider sx={{ borderStyle: 'dashed' }} />
+                <Box sx={{ p: 1.5, bgcolor: 'grey.50', textAlign: 'left' }}>
+                    {(isFlooded ? report : lastReport) ? (
+                        <Stack spacing={1.5}>
+                            <ReportInfoSection latest={isFlooded ? report : lastReport} handleOpenViewer={onOpenViewer} />
+                            <ReviewCommentSection report={isFlooded ? report : lastReport} />
+                            <MechInfoSection latest={isFlooded ? report : lastReport} />
+                            <SurveyInfoSection latest={isFlooded ? report : lastReport} />
+                        </Stack>
+                    ) : (
+                        <Typography variant="caption" color="text.disabled" sx={{ display: 'block', textAlign: 'center' }}>Không có dữ liệu chi tiết</Typography>
+                    )}
+                </Box>
+            </Collapse>
+
+            <style>
+                {`
+                @keyframes stat-pulse {
+                    0% { box-shadow: 0 0 0 0 ${alpha(theme.palette.error.main, 0.7)}; }
+                    70% { box-shadow: 0 0 0 6px ${alpha(theme.palette.error.main, 0)}; }
+                    100% { box-shadow: 0 0 0 0 ${alpha(theme.palette.error.main, 0)}; }
+                }
+                `}
+            </style>
+        </Card>
+    );
+};
+
+export default InundationDesktopStatCard;

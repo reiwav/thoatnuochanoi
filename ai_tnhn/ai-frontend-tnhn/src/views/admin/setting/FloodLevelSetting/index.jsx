@@ -97,10 +97,10 @@ const FloodLevelSetting = () => {
                         </Button>
                     </AnimateButton>
                     <AnimateButton>
-                        <Button 
-                            variant="contained" 
-                            color="secondary" 
-                            startIcon={saving ? <CircularProgress size={18} color="inherit" /> : <IconDeviceFloppy size={18} />} 
+                        <Button
+                            variant="contained"
+                            color="secondary"
+                            startIcon={saving ? <CircularProgress size={18} color="inherit" /> : <IconDeviceFloppy size={18} />}
                             onClick={handleSaveToServer}
                             disabled={saving}
                         >
@@ -138,7 +138,7 @@ const FloodLevelSetting = () => {
                                     <TableCell sx={{ fontWeight: 700 }}>{row.name}</TableCell>
                                     <TableCell>
                                         <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                            {row.min_depth}m - {row.max_depth}m
+                                            {row.min_depth} - {row.max_depth}
                                         </Typography>
                                     </TableCell>
                                     <TableCell>
@@ -148,10 +148,10 @@ const FloodLevelSetting = () => {
                                         </Box>
                                     </TableCell>
                                     <TableCell>
-                                        <Chip 
-                                            label={row.is_flooding ? 'Đang ngập' : 'Bình thường'} 
-                                            color={row.is_flooding ? 'error' : 'success'} 
-                                            size="small" 
+                                        <Chip
+                                            label={row.is_flooding ? 'Đang ngập' : 'Bình thường'}
+                                            color={row.is_flooding ? 'error' : 'success'}
+                                            size="small"
                                             variant="light"
                                             sx={{ fontWeight: 700 }}
                                         />

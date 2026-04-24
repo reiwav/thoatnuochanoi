@@ -21,7 +21,7 @@ const InundationYearlyHistory = () => {
     const [history, setHistory] = useState([]);
     const [selectedPoint, setSelectedPoint] = useState(null);
     const [detailOpen, setDetailOpen] = useState(false);
-    
+
     const [orgs, setOrgs] = useState([]);
     const [selectedOrgId, setSelectedOrgId] = useState('');
     const { role, isCompany } = useAuthStore();
@@ -100,11 +100,11 @@ const InundationYearlyHistory = () => {
                 };
             }
             groups[id].count += 1;
-            
+
             // If not resolved, use current time - start_time
             const endTime = item.end_time > 0 ? item.end_time : now;
             const durationSeconds = Math.max(0, endTime - item.start_time);
-            
+
             groups[id].total_duration += durationSeconds;
             groups[id].events.push({
                 ...item,
@@ -254,8 +254,8 @@ const InundationYearlyHistory = () => {
             </Stack>
 
             {/* Details Dialog */}
-            <Dialog 
-                open={detailOpen} 
+            <Dialog
+                open={detailOpen}
                 onClose={() => setDetailOpen(false)}
                 maxWidth="md"
                 fullWidth
@@ -291,7 +291,7 @@ const InundationYearlyHistory = () => {
                                 </Grid>
                             </Grid>
                         </Box>
-                        
+
                         <Divider />
 
                         {/* Desktop Table View */}
@@ -330,9 +330,9 @@ const InundationYearlyHistory = () => {
                                                 {formatDuration(event.durationSeconds)}
                                             </TableCell>
                                             <TableCell align="center">
-                                                <Button 
-                                                    size="small" 
-                                                    variant="outlined" 
+                                                <Button
+                                                    size="small"
+                                                    variant="outlined"
                                                     onClick={() => window.open(`/admin/inundation/form?id=${event.id}&tab=1&readonly=true`, '_blank')}
                                                     sx={{ borderRadius: '6px', fontSize: '0.75rem', py: 0 }}
                                                 >
@@ -352,7 +352,7 @@ const InundationYearlyHistory = () => {
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                                         <Typography variant="subtitle2" sx={{ fontWeight: 800 }}># {selectedPoint.events.length - idx}</Typography>
                                         <Typography variant="body2" sx={{ fontWeight: 600, color: 'error.main' }}>
-                                            {event.length}x{event.width}x{event.depth}cm
+                                            {event.length}x{event.width}x{event.depth}
                                         </Typography>
                                     </Box>
                                     <Stack spacing={1}>
@@ -361,7 +361,7 @@ const InundationYearlyHistory = () => {
                                         </Typography>
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                             <Typography variant="body2" sx={{ fontWeight: 700 }}>{formatDuration(event.durationSeconds)}</Typography>
-                                            <Button 
+                                            <Button
                                                 variant="outlined" size="small"
                                                 onClick={() => window.open(`/admin/inundation/form?id=${event.id}&tab=1&readonly=true`, '_blank')}
                                             >

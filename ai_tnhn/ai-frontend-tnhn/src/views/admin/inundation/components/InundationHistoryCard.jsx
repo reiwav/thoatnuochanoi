@@ -27,7 +27,7 @@ const InundationHistoryCard = ({ report, navigate, basePath, handleOpenViewer })
                     <Box sx={{ p: 1.5, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'grey.200' }}>
                         <Typography variant="caption" sx={{ fontWeight: 800, display: 'block', mb: 1 }}>ℹ️ TỔNG QUAN</Typography>
                         <ReviewCommentSection latest={latest} />
-                        <Typography variant="body2" sx={{ mt: 1 }}>Chiều sâu: <b>{latest?.depth || 0}mm</b></Typography>
+                        <Typography variant="body2" sx={{ mt: 1 }}>Chiều sâu: <b>{latest?.depth || 0}</b></Typography>
                         <Typography variant="body2">Thời gian: <b>{formatDuration(report.start_time, report.end_time)}</b></Typography>
                     </Box>
                 </Grid>
@@ -73,16 +73,16 @@ const InundationHistoryCard = ({ report, navigate, basePath, handleOpenViewer })
                 <TableCell><Typography variant="body2">{formatDateTime(report.start_time)}</Typography></TableCell>
                 <TableCell><Typography variant="body2">{report.status === 'active' ? 'Đang ngập' : formatDateTime(report.end_time)}</Typography></TableCell>
                 <TableCell>
-                    <Chip 
-                        label={report.status === 'active' ? (latest?.flood_level_name || 'Đang ngập') : 'Đã kết thúc'} 
-                        sx={{ 
+                    <Chip
+                        label={report.status === 'active' ? (latest?.flood_level_name || 'Đang ngập') : 'Đã kết thúc'}
+                        sx={{
                             fontWeight: 700,
                             bgcolor: report.status === 'active' ? (latest?.flood_level_color ? `${latest.flood_level_color}20` : 'error.lighter') : 'success.lighter',
                             color: report.status === 'active' ? (latest?.flood_level_color || 'error.main') : 'success.main',
                             border: '1px solid',
                             borderColor: report.status === 'active' ? (latest?.flood_level_color ? `${latest.flood_level_color}40` : 'error.light') : 'success.light'
-                        }} 
-                        size="small" 
+                        }}
+                        size="small"
                     />
                 </TableCell>
                 <TableCell align="right">

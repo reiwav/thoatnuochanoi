@@ -29,9 +29,9 @@ const InundationHistoryCard = ({ report, isMobile, navigate, basePath, handleOpe
                     <Box sx={{ p: 1.5, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'grey.200' }}>
                         <Typography variant="caption" sx={{ fontWeight: 800, display: 'block', mb: 1 }}>ℹ️ TỔNG QUAN</Typography>
                         <ReviewCommentSection latest={latest} />
-                        <Typography variant="body2" sx={{ mt: 1 }}>Chiều sâu: <b>{latest?.depth || 0}mm</b></Typography>
+                        <Typography variant="body2" sx={{ mt: 1 }}>Chiều sâu: <b>{latest?.depth || 0}</b></Typography>
                         {(latest?.length || latest?.width) && (
-                            <Typography variant="body2">Kích thước: <b>{latest.length || '?'}m x {latest.width || '?'}m</b></Typography>
+                            <Typography variant="body2">Kích thước: <b>{latest.length || '?'} x {latest.width || '?'}</b></Typography>
                         )}
                         <Typography variant="body2">Thời gian: <b>{formatDuration(report.start_time, report.end_time)}</b></Typography>
                     </Box>
@@ -49,14 +49,14 @@ const InundationHistoryCard = ({ report, isMobile, navigate, basePath, handleOpe
 
     if (isMobile) {
         return (
-            <Paper 
-                elevation={0} 
-                sx={{ 
-                    p: 2.5, 
-                    mb: 2, 
-                    border: '1px solid', 
-                    borderColor: 'divider', 
-                    borderRadius: 4, 
+            <Paper
+                elevation={0}
+                sx={{
+                    p: 2.5,
+                    mb: 2,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 4,
                     bgcolor: 'background.paper',
                     transition: 'all 0.3s ease',
                     '&:hover': {
@@ -71,12 +71,12 @@ const InundationHistoryCard = ({ report, isMobile, navigate, basePath, handleOpe
                         <Typography variant="caption" color="textSecondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1.5 }}>
                             <IconMapPin size={12} /> {report.address || 'Hà Nội'}
                         </Typography>
-                        
+
                         <Stack direction="row" spacing={1} alignItems="center">
-                            <Chip 
-                                label={report.status === 'active' ? 'Đang ngập' : 'Đã kết thúc'} 
+                            <Chip
+                                label={report.status === 'active' ? 'Đang ngập' : 'Đã kết thúc'}
                                 size="small"
-                                sx={{ 
+                                sx={{
                                     height: 22,
                                     fontSize: '0.65rem',
                                     fontWeight: 900,
@@ -84,27 +84,27 @@ const InundationHistoryCard = ({ report, isMobile, navigate, basePath, handleOpe
                                     color: report.status === 'active' ? 'error.main' : 'success.main',
                                     borderRadius: 1.5,
                                     textTransform: 'uppercase'
-                                }} 
+                                }}
                             />
                             {report.needs_correction && (
-                                <Chip 
-                                    label="CẦN SỬA" 
-                                    size="small" 
-                                    color="error" 
-                                    sx={{ height: 22, fontSize: '0.65rem', fontWeight: 900, borderRadius: 1.5 }} 
+                                <Chip
+                                    label="CẦN SỬA"
+                                    size="small"
+                                    color="error"
+                                    sx={{ height: 22, fontSize: '0.65rem', fontWeight: 900, borderRadius: 1.5 }}
                                 />
                             )}
                         </Stack>
                     </Box>
-                    <IconButton 
-                        size="small" 
+                    <IconButton
+                        size="small"
                         onClick={() => setOpen(!open)}
                         sx={{ bgcolor: 'grey.50' }}
                     >
                         {open ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />}
                     </IconButton>
                 </Box>
-                
+
                 <Stack direction="row" spacing={2} sx={{ mb: open ? 0 : 0 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                         <IconClock size={14} color={theme.palette.text.secondary} />

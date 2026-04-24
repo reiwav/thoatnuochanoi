@@ -192,7 +192,7 @@ const InundationDetailDialog = ({ open, onClose, point }) => {
                                                     </Box>
                                                     <Stack direction="row" spacing={1} flexWrap="wrap">
                                                         <Chip
-                                                            size="small" variant="outlined" label={`Sâu ${hLatest.depth || 0}cm`}
+                                                            size="small" variant="outlined" label={`Sâu ${hLatest.depth || 0}`}
                                                             sx={{ height: 20, fontSize: '0.65rem', fontWeight: 700 }}
                                                         />
                                                         <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600 }}>
@@ -261,7 +261,7 @@ const InundationDetailDialog = ({ open, onClose, point }) => {
                                                     </Box>
                                                     {item.depth != null && (
                                                         <Chip
-                                                            label={`${item.depth} cm`}
+                                                            label={`${item.depth}`}
                                                             size="small" color="error"
                                                             sx={{ fontWeight: 900, borderRadius: 1.5 }}
                                                         />

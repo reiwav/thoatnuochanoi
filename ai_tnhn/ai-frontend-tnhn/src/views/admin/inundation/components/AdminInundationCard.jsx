@@ -227,7 +227,7 @@ const AdminInundationCard = ({ point, onAction, onOpenViewer, onOpenDetail, navi
                                 </Tooltip>
                             </PermissionGuard>
                             <PermissionGuard permission="inundation:survey">
-                                <Tooltip title="Nhận xét từ Giám sát">
+                                <Tooltip title="XN KSTK">
                                     <span>
                                         <IconButton size="small" color="primary" onClick={() => onAction('survey', point)} sx={{ bgcolor: 'primary.lighter' }}>
                                             <IconClipboardCheck size={18} />
@@ -236,7 +236,7 @@ const AdminInundationCard = ({ point, onAction, onOpenViewer, onOpenDetail, navi
                                 </Tooltip>
                             </PermissionGuard>
                             <PermissionGuard permission="inundation:mechanic">
-                                <Tooltip title="Thông tin xử lý Cơ giới">
+                                <Tooltip title="Xí Nghiệp cơ giới">
                                     <span>
                                         <IconButton size="small" color="info" onClick={() => onAction('mech', point)} sx={{ bgcolor: 'info.lighter' }}>
                                             <IconEngine size={18} />
@@ -245,7 +245,7 @@ const AdminInundationCard = ({ point, onAction, onOpenViewer, onOpenDetail, navi
                                 </Tooltip>
                             </PermissionGuard>
                             <PermissionGuard permission="inundation:review">
-                                <Tooltip title="Ý kiến rà soát của Admin">
+                                <Tooltip title="Nhận xét của phòng KT-CL">
                                     <span>
                                         <IconButton size="small" color="error" onClick={() => onAction('comment', point)} sx={{ bgcolor: 'error.lighter' }}>
                                             <IconChecklist size={18} />

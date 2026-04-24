@@ -40,7 +40,7 @@ export const CardHeader = ({ point, latest, isHighPriority, navigate, openTask, 
     <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start', mb: 2.5, position: 'relative' }}>
         <Tooltip title="Xem chi tiết lịch sử điểm ngập" placement="top-start">
             <span>
-                <Avatar 
+                <Avatar
                     onClick={() => onOpenDetail(point)}
                     sx={{
                         bgcolor: isHighPriority ? (latest?.flood_level_color || theme.palette.error.main) : theme.palette.success.main,
@@ -60,14 +60,14 @@ export const CardHeader = ({ point, latest, isHighPriority, navigate, openTask, 
 
         <Box sx={{ flex: 1, minWidth: 0 }}>
             <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
-                <Box 
+                <Box
                     onClick={() => onOpenDetail(point)}
                     sx={{ cursor: 'pointer', '&:hover h4': { color: isHighPriority ? 'error.main' : 'primary.main' } }}
                 >
-                    <Typography 
-                        variant="h4" 
-                        sx={{ 
-                            fontWeight: 900, 
+                    <Typography
+                        variant="h4"
+                        sx={{
+                            fontWeight: 900,
                             color: 'primary.main',
                             lineHeight: 1.2,
                             mb: 0.5,
@@ -117,8 +117,8 @@ export const CardHeader = ({ point, latest, isHighPriority, navigate, openTask, 
                                         pointerEvents: 'auto',
                                         zIndex: 10,
                                         transition: 'all 0.2s',
-                                        '&:hover': { 
-                                            bgcolor: '#00a441', 
+                                        '&:hover': {
+                                            bgcolor: '#00a441',
                                             boxShadow: '0 6px 16px rgba(0, 200, 83, 0.4)',
                                             transform: 'translateY(-1px)'
                                         },
@@ -140,24 +140,24 @@ export const CardMetrics = ({ isHighPriority, latest, theme }) => (
     <>
         {isHighPriority && (
             <Stack spacing={1.5} sx={{ mb: 2.5 }}>
-                <Stack 
-                    direction="row" spacing={1} alignItems="center" 
-                    sx={{ 
-                        bgcolor: alpha(theme.palette.secondary.main, 0.03), 
-                        p: 1, borderRadius: 2, border: '1px solid', 
-                        borderColor: alpha(theme.palette.secondary.main, 0.1) 
+                <Stack
+                    direction="row" spacing={1} alignItems="center"
+                    sx={{
+                        bgcolor: alpha(theme.palette.secondary.main, 0.03),
+                        p: 1, borderRadius: 2, border: '1px solid',
+                        borderColor: alpha(theme.palette.secondary.main, 0.1)
                     }}
                 >
                     <Box sx={{ bgcolor: 'secondary.main', p: 0.5, borderRadius: 1, display: 'flex' }}>
                         <IconMapPin size={14} color="#fff" />
                     </Box>
                     <Typography variant="caption" sx={{ fontWeight: 800, flex: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                        {(latest.length != null || latest.width != null) ? `${latest.length || '?'} x ${latest.width || '?'}` : '---'} 
+                        {(latest.length != null || latest.width != null) ? `${latest.length || '?'} x ${latest.width || '?'}` : '---'}
                         <span style={{ color: '#666', fontWeight: 400 }}>x</span>
-                        <Box component="span" sx={{ 
-                            fontSize: { xs: '22px', sm: '1.2rem' }, 
-                            color: theme.palette.error.main, 
-                            fontWeight: 900 
+                        <Box component="span" sx={{
+                            fontSize: { xs: '22px', sm: '1.2rem' },
+                            color: theme.palette.error.main,
+                            fontWeight: 900
                         }}>
                             {latest.depth || 0}
                         </Box>
@@ -166,7 +166,7 @@ export const CardMetrics = ({ isHighPriority, latest, theme }) => (
                         label={latest.traffic_status || 'Đang ngập'}
                         size="small"
                         variant="filled"
-                        sx={{ 
+                        sx={{
                             height: 20, fontSize: '0.65rem', fontWeight: 900,
                             bgcolor: isHighPriority ? (latest?.flood_level_color || theme.palette.error.main) : theme.palette.success.main,
                             color: '#fff', textTransform: 'uppercase'
@@ -204,7 +204,7 @@ export const CardMetrics = ({ isHighPriority, latest, theme }) => (
 export const CardActions = ({ expanded, setExpanded, isHighPriority, point, latest, openTask }) => {
     const theme = useTheme();
     const isCorrection = isHighPriority && latest?.needs_correction && !latest?.is_review_updated;
-    
+
     return (
         <>
             <Divider sx={{ mt: 'auto', mb: 2, borderStyle: 'dashed' }} />
@@ -225,14 +225,14 @@ export const CardActions = ({ expanded, setExpanded, isHighPriority, point, late
                 <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ gap: 1 }}>
                     <PermissionGuard permission="inundation:report">
                         <Button
-                            variant="contained" 
-                            size="small" 
+                            variant="contained"
+                            size="small"
                             color={isCorrection ? 'warning' : 'secondary'}
                             startIcon={isCorrection ? <IconAlertTriangle size={16} /> : <IconSend size={16} />}
                             onClick={() => openTask('REPORT', point)}
-                            sx={{ 
-                                borderRadius: 2.5, 
-                                fontWeight: 900, 
+                            sx={{
+                                borderRadius: 2.5,
+                                fontWeight: 900,
                                 px: 1.5,
                                 animation: isCorrection ? 'aggressiveBlinkButton 1s infinite alternate' : 'none',
                                 '@keyframes aggressiveBlinkButton': {
@@ -265,7 +265,7 @@ export const CardActions = ({ expanded, setExpanded, isHighPriority, point, late
                                     onClick={() => openTask('MECH', point)}
                                     sx={{ borderRadius: 2.5, fontWeight: 800, px: 1.5 }}
                                 >
-                                    CG xử lý
+                                    Xí nghiệp Cơ giới
                                 </Button>
                             </PermissionGuard>
 

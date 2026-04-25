@@ -59,6 +59,6 @@ func (r *orgRepo) UpdateDriveFolderID(ctx context.Context, id, folderID string) 
 
 func (r *orgRepo) GetAll(ctx context.Context) ([]*models.Organization, error) {
 	var orgs []*models.Organization
-	err := r.R_SelectMany(ctx, bson.M{}, &orgs)
+	err := r.R_SelectManyWithSort(ctx, bson.M{}, bson.M{"Name": 1}, &orgs)
 	return orgs, err
 }

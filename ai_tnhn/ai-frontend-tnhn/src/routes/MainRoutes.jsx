@@ -37,6 +37,8 @@ const RoleMatrixPage = Loadable(lazy(() => import('views/admin/role-matrix')));
 const RoleListPage = Loadable(lazy(() => import('views/admin/role/RoleList')));
 const PumpingStationPage = Loadable(lazy(() => import('views/admin/pumping-station')));
 const FloodLevelSetting = Loadable(lazy(() => import('views/admin/setting/FloodLevelSetting')));
+const WastewaterTreatmentPage = Loadable(lazy(() => import('views/admin/wastewater-treatment')));
+const EmployeeWastewaterPage = Loadable(lazy(() => import('views/employee/wastewater')));
 const UnderDevelopment = Loadable(lazy(() => import('views/pages/under-development')));
 
 // ==============================|| MAIN ROUTING ||============================== //
@@ -75,9 +77,10 @@ const MainRoutes = {
         { path: 'station/inundation/list', element: <StationInundationList /> },
         { path: 'station/inundation/history', element: <InundationStationHistory /> },
         { path: 'station/inundation/yearly', element: <InundationYearlyHistory /> },
-        { path: 'cua-pai', element: <UnderDevelopment /> },
+        { path: 'cua-phai', element: <UnderDevelopment /> },
         { path: 'tram-bom', element: <PumpingStationPage /> },
         { path: 'sa-hinh-ngap', element: <UnderDevelopment /> },
+        { path: 'wastewater-treatment', element: <WastewaterTreatmentPage /> },
         { path: 'ai-support', element: <AiSupportPage /> },
         { path: 'ai-contract', element: <AiContractPage /> },
         { path: 'contract-category', element: <ContractCategoryPage /> },
@@ -100,7 +103,8 @@ const MainRoutes = {
         { path: 'station/water/summary', element: <StationWaterSummary /> },
         { path: 'station/rain/compare', element: <StationRainCompare /> },
         { path: 'station/inundation/history', element: <InundationHistoryDetail /> },
-        { path: 'tram-bom', element: <EmployeePumpingStationDashboard /> }
+        { path: 'tram-bom', element: <EmployeePumpingStationDashboard /> },
+        { path: 'wastewater-treatment', element: <EmployeeWastewaterPage /> }
       ]
     }
   ]

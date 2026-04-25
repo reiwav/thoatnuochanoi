@@ -12,7 +12,7 @@ const pumpingStationApi = {
     report: (data) => axiosClient.post('/admin/stations/pumping/report', data),
 
     // History (for admins)
-    getHistory: (id) => axiosClient.get(`/admin/stations/pumping/${id}/history`),
+    getHistory: (id, params) => axiosClient.get(`/admin/stations/pumping/${id}/history`, { params }),
 };
 
 export default pumpingStationApi;

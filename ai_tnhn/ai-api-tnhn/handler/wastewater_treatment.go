@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"ai-api-tnhn/constant"
 	"ai-api-tnhn/internal/base/mgo/filter"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/service/station/wastewater_treatment"
@@ -144,10 +143,13 @@ func (h *WastewaterTreatmentHandler) List(c *gin.Context) {
 		if qOrgID != "" {
 			f.AddWhere("org_id", "org_id", qOrgID)
 		}
-	} else if user.Role == constant.ROLE_EMPLOYEE || user.IsEmployee {
-		// Needs to handle assigned wastewater station if added to User model, 
-		// but for now we follow pumping station logic
-		h.SendData(c, gin.H{"data": []interface{}{}, "total": 0})
+	} else if user.AssignedWastewaterStationID != "" {
+		station, err := h.service.GetByID(c.Request.Context(), user.AssignedWastewaterStationID)
+		if err != nil || station == nil {
+			h.SendData(c, gin.H{"data": []interface{}{}, "total": 0})
+			return
+		}
+		h.SendData(c, gin.H{"data": []*models.WastewaterStation{station}, "total": 1})
 		return
 	} else {
 		f.AddWhere("visibility", "$or", []bson.M{

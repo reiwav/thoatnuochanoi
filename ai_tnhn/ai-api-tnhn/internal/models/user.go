@@ -24,4 +24,5 @@ type User struct {
 	AssignedRiverStationIDs          []string `bson:"assigned_river_station_ids" json:"assigned_river_station_ids"`
 	AssignedEmergencyConstructionIDs []string `bson:"assigned_emergency_construction_ids" json:"assigned_emergency_construction_ids"`
 	AssignedPumpingStationID         string   `bson:"assigned_pumping_station_id" json:"assigned_pumping_station_id"`
+	AssignedWastewaterStationID      string   `bson:"assigned_wastewater_station_id" json:"assigned_wastewater_station_id"`
 }

@@ -117,7 +117,7 @@ func (p lakeStationRepository) ListFiltered(ctx context.Context, orgID string, i
 		return items, nil
 	}
 
-	err := p.R_SelectMany(ctx, f, &items)
+	err := p.R_SelectManyWithSort(ctx, f, bson.M{"name": 1}, &items)
 	return items, err
 }
 
@@ -172,6 +172,6 @@ func (p riverStationRepository) ListFiltered(ctx context.Context, orgID string, 
 		return items, nil
 	}
 
-	err := p.R_SelectMany(ctx, f, &items)
+	err := p.R_SelectManyWithSort(ctx, f, bson.M{"name": 1}, &items)
 	return items, err
 }

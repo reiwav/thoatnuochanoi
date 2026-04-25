@@ -36,7 +36,7 @@ const companyPages = {
     {
       id: 'pumping:summary',
       permission: 'trambom:view',
-      title: 'Bảng trạm bơm',
+      title: 'Bảng Trạm bơm & XLNT',
       type: 'item',
       url: '/admin/station/pumping/summary',
       icon: icons.IconEngine,
@@ -62,13 +62,30 @@ const companyPages = {
       breadcrumbs: false
     },
     {
-      id: 'company:trambom',
-      permission: 'trambom:view',
-      title: 'Trạm bơm',
-      type: 'item',
-      url: '/company/tram-bom',
+      id: 'company:pumping-wastewater',
+      title: 'Trạm bơm & XLNT',
+      type: 'collapse',
       icon: icons.IconEngine,
-      breadcrumbs: false
+      children: [
+        {
+          id: 'company:trambom',
+          permission: ['trambom:view', 'trambom:edit', 'trambom:control'],
+          title: 'Trạm bơm',
+          type: 'item',
+          url: '/company/tram-bom',
+          icon: icons.IconEngine,
+          breadcrumbs: false
+        },
+        {
+          id: 'company:wastewater',
+          permission: ['trambom:view', 'trambom:edit', 'trambom:control'],
+          title: 'Trạm XLNT',
+          type: 'item',
+          url: '/company/wastewater-treatment',
+          icon: icons.IconDroplets,
+          breadcrumbs: false
+        }
+      ]
     }
   ]
 };
@@ -258,9 +275,9 @@ const adminPages = {
       breadcrumbs: false
     },
     {
-      id: 'admin:trambom',
+      id: 'admin:pumping-wastewater',
       permission: ['trambom:view', 'trambom:control', 'trambom:edit'],
-      title: 'Trạm bơm',
+      title: 'Quản lý Trạm bơm & XLNT',
       type: 'item',
       url: '/admin/tram-bom',
       icon: icons.IconEngine,

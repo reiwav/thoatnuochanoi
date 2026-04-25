@@ -54,6 +54,7 @@ func (p userRepository) Update(ctx context.Context, id string, input *models.Use
 		"assigned_inundation_station_ids":     input.AssignedInundationStationIDs,
 		"assigned_emergency_construction_ids": input.AssignedEmergencyConstructionIDs,
 		"assigned_pumping_station_id":         input.AssignedPumpingStationID,
+		"assigned_wastewater_station_id":      input.AssignedWastewaterStationID,
 	}
 
 	// Only update password if it's not empty

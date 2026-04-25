@@ -22,6 +22,8 @@ type ContextWith interface {
 	ContextWithClient(ctx *gin.Context, u *ClientCache)
 	GetTokenFromContext(ctx *gin.Context) *ClientCache
 	GetXQrCodeHeader(r *http.Request) (string, error)
+	SetUser(ctx *gin.Context, user interface{})
+	GetUser(ctx *gin.Context) (interface{}, error)
 }
 
 func NewContextWith() ContextWith {
@@ -43,6 +45,7 @@ const xCacheClient = "x-cache-client"
 const xUserID = "x-user-id"
 const xDeviceID = "x-device-id"
 const xQrcodeID = "x-qrcode-id"
+const xUser = "x-user"
 
 func (c *ClientCache) GetUserID(ctx *gin.Context) (string, error) {
 	uID := ctx.GetString(xUserID)
@@ -108,7 +111,17 @@ func (c *ClientCache) GetTokenFromContext(ctx *gin.Context) *ClientCache {
 	} else {
 		panic(BadRequest("Client Cache not found"))
 	}
+}
 
+func (c *ClientCache) SetUser(ctx *gin.Context, user interface{}) {
+	ctx.Set(xUser, user)
+}
+
+func (c *ClientCache) GetUser(ctx *gin.Context) (interface{}, error) {
+	if u, ok := ctx.Get(xUser); ok {
+		return u, nil
+	}
+	return nil, BadRequest("user profile not found in context")
 }
 
 const bearerHeader = "Bearer "

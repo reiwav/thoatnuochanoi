@@ -21,6 +21,8 @@ type Middleware interface {
 
 func NewMiddleware(conf config.Config,
 	tokenRepo repository.Token,
+	userRepo repository.User,
+	roleRepo repository.Role,
 	permService permission.Service,
 	contextWith web.ContextWith,
 	l logger.Logger,
@@ -29,6 +31,8 @@ func NewMiddleware(conf config.Config,
 		conf:        conf,
 		ContextWith: contextWith,
 		tokenRepo:   tokenRepo,
+		userRepo:    userRepo,
+		roleRepo:    roleRepo,
 		permService: permService,
 		l:           l,
 	}
@@ -40,6 +44,8 @@ type mid struct {
 	web.JsonRender
 	l           logger.Logger
 	tokenRepo   repository.Token
+	userRepo    repository.User
+	roleRepo    repository.Role
 	permService permission.Service
 }
 
@@ -81,6 +87,20 @@ func (m mid) MidBasicType(roles ...string) gin.HandlerFunc {
 			IsCompany:  tok.IsCompany,
 		})
 		m.SetUserID(ctx, tok.UserID)
+
+		// Fetch full user profile and push to context
+		user, err := m.userRepo.GetByID(ctx, tok.UserID)
+		if err != nil || user == nil {
+			m.l.GetLogger().Errorf("Middleware: user not found: %v", err)
+		} else {
+			// Populate transient role fields if needed
+			if roleData, err := m.roleRepo.GetByCode(ctx, user.Role); err == nil && roleData != nil {
+				user.IsEmployee = roleData.IsEmployee
+				user.IsCompany = roleData.IsCompany
+			}
+			m.SetUser(ctx, user)
+		}
+
 		ctx.Next()
 	}
 }

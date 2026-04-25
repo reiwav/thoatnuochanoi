@@ -33,6 +33,7 @@ type Repositories struct {
 	RiverStation                  repository.RiverStation
 	HistoricalRain                repository.HistoricalRain
 	AppSetting                    repository.AppSetting
+	WastewaterStation             repository.WastewaterStation
 }
 
 func InitRepositories(db *db.Mongo, log logger.Logger) *Repositories {
@@ -62,5 +63,6 @@ func InitRepositories(db *db.Mongo, log logger.Logger) *Repositories {
 		RiverStation:                  query.NewRiverStationRepo(db.DB, "river_stations", "rvst", log),
 		HistoricalRain:                query.NewHistoricalRainRepo(db.DB, "historical_rain_records", "hrr", log),
 		AppSetting:                    query.NewAppSettingRepository(db.DB, "settings", "st", log),
+		WastewaterStation:             query.NewWastewaterStationRepo(db.DB, log),
 	}
 }

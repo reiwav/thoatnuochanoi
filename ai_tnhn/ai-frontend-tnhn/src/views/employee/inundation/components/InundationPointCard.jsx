@@ -27,9 +27,9 @@ const InundationPointCard = ({ point, openTask, handleOpenViewer, onOpenDetail, 
         return getLatestData(point.last_report || point);
     }, [point.last_report, point]);
 
-    const activeData = isHighPriority ? latestData : null;
-
     const isHighPriority = !!point.report_id;
+
+    const activeData = isHighPriority ? latestData : null;
 
     const handleQuickFinish = () => {
         setConfirmOpen(true);

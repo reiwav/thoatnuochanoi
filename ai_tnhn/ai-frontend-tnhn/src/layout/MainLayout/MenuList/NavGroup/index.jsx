@@ -75,11 +75,14 @@ export default function NavGroup({ item, lastItem, remItems, lastItemId, setSele
   }, [pathname, currentItem]);
 
   // menu list collapse & items
-  const { hasPermission } = useAuthStore();
+  const { hasPermission, role } = useAuthStore();
 
   const items = currentItem.children?.map((menu) => {
     // Check permission using the common logic but skip the extra component wrapper
     if (menu.permission && !hasPermission(menu.permission)) {
+      return null;
+    }
+    if (menu.exactRole && role !== menu.exactRole) {
       return null;
     }
 

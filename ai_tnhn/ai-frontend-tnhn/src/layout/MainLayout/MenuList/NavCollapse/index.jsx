@@ -31,10 +31,11 @@ import { IconChevronDown, IconChevronRight, IconChevronUp } from '@tabler/icons-
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 
 export default function NavCollapse({ menu, level, parentId }) {
-  const { hasPermission } = useAuthStore();
+  const { hasPermission, role } = useAuthStore();
   
   // Robust check at the top
   if (menu.permission && !hasPermission(menu.permission)) return null;
+  if (menu.exactRole && role !== menu.exactRole) return null;
 
   const theme = useTheme();
   const downMD = useMediaQuery(theme.breakpoints.down('md'));
@@ -105,6 +106,7 @@ export default function NavCollapse({ menu, level, parentId }) {
 
   // menu collapse & item
   const filteredChildren = menu.children?.filter((item) => {
+    if (item.exactRole && role !== item.exactRole) return false;
     return hasPermission(item.permission);
   });
 

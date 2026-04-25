@@ -53,7 +53,8 @@ const companyPages = {
     },
     {
       id: 'company:inundation',
-      permission: ['inundation:survey', 'inundation:mechanic', 'inundation:review', 'inundation:view'],
+      permission: ['employee'],
+      exactRole: 'employee',
       title: 'Điểm trực ngập',
       type: 'item',
       url: '/company/inundation',

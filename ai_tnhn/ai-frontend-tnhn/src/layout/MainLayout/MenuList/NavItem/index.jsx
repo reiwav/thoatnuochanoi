@@ -37,9 +37,10 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
   const drawerOpen = menuMaster.isDashboardDrawerOpened;
   const isSelected = !!matchPath({ path: item?.link ? item.link : item.url, end: true }, pathname);
 
-  const { hasPermission } = useAuthStore();
+  const { hasPermission, role } = useAuthStore();
   
   if (item.permission && !hasPermission(item.permission)) return null;
+  if (item.exactRole && role !== item.exactRole) return null;
 
   const [hoverStatus, setHover] = useState(false);
 

@@ -1,6 +1,7 @@
 package googleapi
 
 import (
+	"ai-api-tnhn/internal/constant"
 	"ai-api-tnhn/internal/service/google/gemini/promt"
 	"context"
 	"fmt"
@@ -23,17 +24,17 @@ func (s *service) GenerateAIReport(ctx context.Context, reportType string, userI
 
 	var prompt string
 	switch reportType {
-	case "active_rain":
+	case constant.ReportTypeActiveRain:
 		prompt = s.buildActiveRainPrompt(status, hh, dd, mm, yyyy)
-	case "viber":
+	case constant.ReportTypeViber:
 		prompt = s.buildViberPrompt(status, hh, dd, mm, yyyy)
-	case "dynamic":
+	case constant.ReportTypeDynamic:
 		prompt = s.buildDynamicPrompt(status, hh, dd, mm, yyyy)
 	default:
 		return "", fmt.Errorf("unsupported report type: %s", reportType)
 	}
 
-	return s.geminiSvc.Chat(ctx, prompt, nil, userID, true, "GenerateAIReport:"+reportType)
+	return s.geminiSvc.Chat(ctx, prompt, nil, userID, true, constant.LogPrefixGenerateReport+reportType)
 }
 
 func (s *service) buildActiveRainPrompt(status *CityStatus, hh, dd, mm, yyyy string) string {

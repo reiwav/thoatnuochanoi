@@ -8,6 +8,7 @@ import (
 	"ai-api-tnhn/internal/service/google/googleapi"
 	"ai-api-tnhn/internal/service/google/googledrive"
 	"ai-api-tnhn/internal/service/weather"
+	"ai-api-tnhn/internal/constant"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -52,11 +53,11 @@ func NewService(cfg *config.Config, log logger.Logger, googleSvc googleapi.Servi
 // ----------------------------------------------------------------------------
 
 func (s *service) GenerateQuickReportText(ctx context.Context, userID string) (string, error) {
-	return s.googleSvc.GenerateAIReport(ctx, "viber", userID)
+	return s.googleSvc.GenerateAIReport(ctx, constant.ReportTypeViber, userID)
 }
 
 func (s *service) GenerateAIDynamicReport(ctx context.Context, userID string) (string, error) {
-	return s.googleSvc.GenerateAIReport(ctx, "dynamic", userID)
+	return s.googleSvc.GenerateAIReport(ctx, constant.ReportTypeDynamic, userID)
 }
 
 // ----------------------------------------------------------------------------
@@ -95,7 +96,7 @@ func (s *service) GenerateQuickReportV3(ctx context.Context, userID string) (*Qu
 	for _, v := range xas { xaDataRaw = append(xaDataRaw, []string{v.name, fmt.Sprintf("%.1f", v.val)}) }
 
 	timeMua := s.formatRainTime(city.Weather)
-	noidung, _ := s.googleSvc.GenerateAIReport(ctx, "active_rain", userID)
+	noidung, _ := s.googleSvc.GenerateAIReport(ctx, constant.ReportTypeActiveRain, userID)
 	if noidung == "" { noidung = "Báo cáo tình hình mưa" }
 
 	motaUngNgap, chiTietCacDiem, soLuongUngNgap := "không xuất hiện điểm úng ngập", "", 0

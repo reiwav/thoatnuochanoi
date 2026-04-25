@@ -31,6 +31,14 @@ const (
 	ToolContractStagesSoon = "get_contract_stages_due_soon"
 	ToolContractStagesPassed = "get_contract_stages_passed"
 	ToolSearchContracts    = "search_contracts"
+
+	// Report Types
+	ReportTypeActiveRain = "active_rain"
+	ReportTypeViber      = "viber"
+	ReportTypeDynamic    = "dynamic"
+
+	// Log Prefixes
+	LogPrefixGenerateReport = "GenerateAIReport:"
 )
 
 var ToolDescriptions = map[string]string{

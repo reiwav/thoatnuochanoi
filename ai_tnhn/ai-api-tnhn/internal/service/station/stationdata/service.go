@@ -3,7 +3,7 @@ package stationdata
 import (
 	"ai-api-tnhn/internal/base/mgo/filter"
 	"ai-api-tnhn/internal/service/station"
-	"ai-api-tnhn/internal/service/water"
+	"ai-api-tnhn/internal/service/station/water"
 	"context"
 	"fmt"
 )

@@ -5,7 +5,7 @@ import (
 	"ai-api-tnhn/internal/base/mgo/filter"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/service/auth"
-	pumpingstation "ai-api-tnhn/internal/service/pumping_station"
+	pumpingstation "ai-api-tnhn/internal/service/station/pumping_station"
 	"ai-api-tnhn/utils/web"
 	"strconv"
 

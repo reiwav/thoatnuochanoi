@@ -4,7 +4,7 @@ import (
 	"ai-api-tnhn/internal/base/mgo/filter"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/service/auth"
-	"ai-api-tnhn/internal/service/contract_category"
+	"ai-api-tnhn/internal/service/contract/contract_category"
 	"ai-api-tnhn/utils/web"
 
 	"github.com/gin-gonic/gin"

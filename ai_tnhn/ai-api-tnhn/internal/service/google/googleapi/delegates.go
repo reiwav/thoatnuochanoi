@@ -1,9 +1,9 @@
 package googleapi
 
 import (
-	"ai-api-tnhn/internal/service/inundation"
-	pumpingstation "ai-api-tnhn/internal/service/pumping_station"
-	"ai-api-tnhn/internal/service/water"
+	"ai-api-tnhn/internal/service/station/inundation"
+	pumpingstation "ai-api-tnhn/internal/service/station/pumping_station"
+	"ai-api-tnhn/internal/service/station/water"
 	"ai-api-tnhn/internal/service/weather"
 	"context"
 )

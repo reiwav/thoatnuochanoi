@@ -5,7 +5,7 @@ import (
 	"ai-api-tnhn/internal/dto"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/service/auth"
-	"ai-api-tnhn/internal/service/inundation"
+	"ai-api-tnhn/internal/service/station/inundation"
 	"ai-api-tnhn/utils/web"
 	"strconv"
 	"time"

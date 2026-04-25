@@ -1,7 +1,7 @@
 package googleapi
 
 import (
-	"ai-api-tnhn/internal/service/email"
+	"ai-api-tnhn/internal/service/google/email"
 	"context"
 	"fmt"
 )

@@ -3,7 +3,7 @@ package pump
 import (
 	"ai-api-tnhn/internal/base/logger"
 	"ai-api-tnhn/internal/models"
-	pumpingstation "ai-api-tnhn/internal/service/pumping_station"
+	pumpingstation "ai-api-tnhn/internal/service/station/pumping_station"
 	"bufio"
 	"context"
 	"encoding/json"

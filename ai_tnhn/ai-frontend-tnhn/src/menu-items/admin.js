@@ -36,7 +36,7 @@ const companyPages = {
     {
       id: 'pumping:summary',
       permission: 'trambom:view',
-      title: 'Bảng trạm bơm',
+      title: 'Bảng Trạm bơm & XLNT',
       type: 'item',
       url: '/admin/station/pumping/summary',
       icon: icons.IconEngine,
@@ -274,30 +274,13 @@ const adminPages = {
       breadcrumbs: false
     },
     {
-      id: 'pumping-wastewater',
-      title: 'Trạm bơm & XLNT',
-      type: 'collapse',
+      id: 'admin:pumping-wastewater',
+      permission: ['trambom:view', 'trambom:control', 'trambom:edit'],
+      title: 'Quản lý Trạm bơm & XLNT',
+      type: 'item',
+      url: '/admin/tram-bom',
       icon: icons.IconEngine,
-      children: [
-        {
-          id: 'admin:trambom',
-          permission: ['trambom:view', 'trambom:control', 'trambom:edit'],
-          title: 'Trạm bơm',
-          type: 'item',
-          url: '/admin/tram-bom',
-          icon: icons.IconEngine,
-          breadcrumbs: false
-        },
-        {
-          id: 'admin:wastewater',
-          permission: ['trambom:view', 'trambom:control', 'trambom:edit'], // Reusing trambom permissions for now or assuming wastewater
-          title: 'Trạm XLNT',
-          type: 'item',
-          url: '/admin/wastewater-treatment',
-          icon: icons.IconDroplets,
-          breadcrumbs: false
-        }
-      ]
+      breadcrumbs: false
     },
     {
       id: 'sa-hinh-ngap:view',

@@ -25,11 +25,10 @@ func NewWastewaterTreatmentHandler(service wastewater_treatment.Service, context
 }
 
 func (h *WastewaterTreatmentHandler) checkPermissions(c *gin.Context) (isSuperAdmin bool, isAllowedAll bool, user *models.User) {
-	u, err := h.contextWith.GetUser(c)
-	if err != nil || u == nil {
+	user, err := h.contextWith.GetUser(c)
+	if err != nil || user == nil {
 		return false, false, nil
 	}
-	user = u.(*models.User)
 
 	isSuperAdmin = user.Role == "super_admin"
 	isAllowedAll = isSuperAdmin || user.IsCompany
@@ -182,12 +181,11 @@ func (h *WastewaterTreatmentHandler) List(c *gin.Context) {
 // @Router /admin/stations/wastewater/{id}/report [post]
 func (h *WastewaterTreatmentHandler) SubmitReport(c *gin.Context) {
 	id := c.Param("id")
-	u, err := h.contextWith.GetUser(c)
-	if err != nil || u == nil {
+	user, err := h.contextWith.GetUser(c)
+	if err != nil || user == nil {
 		h.SendError(c, web.Unauthorized("vui lòng đăng nhập lại"))
 		return
 	}
-	user := u.(*models.User)
 
 	var req wastewater_treatment.SubmitReportRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

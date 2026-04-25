@@ -2,7 +2,6 @@ package handler
 
 import (
 	"ai-api-tnhn/internal/models"
-	"ai-api-tnhn/internal/service/auth"
 	"ai-api-tnhn/internal/service/setting"
 	"ai-api-tnhn/utils/web"
 
@@ -12,21 +11,18 @@ import (
 type SettingHandler struct {
 	web.JsonRender
 	service     setting.Service
-	authService auth.Service
 	contextWith web.ContextWith
 }
 
-func NewSettingHandler(service setting.Service, authService auth.Service, contextWith web.ContextWith) *SettingHandler {
+func NewSettingHandler(service setting.Service, contextWith web.ContextWith) *SettingHandler {
 	return &SettingHandler{
 		service:     service,
-		authService: authService,
 		contextWith: contextWith,
 	}
 }
 
 func (h *SettingHandler) checkAdmin(c *gin.Context) (isAdmin bool, user *models.User) {
-	token := h.contextWith.GetToken(c.Request)
-	user, err := h.authService.GetProfile(c.Request.Context(), token)
+	user, err := h.contextWith.GetUser(c)
 	if err != nil || user == nil {
 		return false, nil
 	}

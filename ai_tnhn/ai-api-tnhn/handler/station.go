@@ -3,7 +3,6 @@ package handler
 import (
 	"ai-api-tnhn/handler/filters"
 	"ai-api-tnhn/internal/models"
-	"ai-api-tnhn/internal/service/auth"
 	"ai-api-tnhn/internal/service/station"
 	"ai-api-tnhn/utils/web"
 
@@ -15,21 +14,18 @@ import (
 type StationHandler struct {
 	web.JsonRender
 	service     station.Service
-	authService auth.Service
 	contextWith web.ContextWith
 }
 
-func NewStationHandler(service station.Service, authService auth.Service, contextWith web.ContextWith) *StationHandler {
+func NewStationHandler(service station.Service, contextWith web.ContextWith) *StationHandler {
 	return &StationHandler{
 		service:     service,
-		authService: authService,
 		contextWith: contextWith,
 	}
 }
 
 func (h *StationHandler) checkPermissions(c *gin.Context) (isSuperAdmin bool, isAllowedAll bool, user *models.User) {
-	token := h.contextWith.GetToken(c.Request)
-	user, err := h.authService.GetProfile(c.Request.Context(), token)
+	user, err := h.contextWith.GetUser(c)
 	if err != nil || user == nil {
 		return false, false, nil
 	}

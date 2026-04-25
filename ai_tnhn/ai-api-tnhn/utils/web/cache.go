@@ -1,6 +1,7 @@
 package web
 
 import (
+	"ai-api-tnhn/internal/models"
 	"net/http"
 	"net/url"
 	"strings"
@@ -22,8 +23,8 @@ type ContextWith interface {
 	ContextWithClient(ctx *gin.Context, u *ClientCache)
 	GetTokenFromContext(ctx *gin.Context) *ClientCache
 	GetXQrCodeHeader(r *http.Request) (string, error)
-	SetUser(ctx *gin.Context, user interface{})
-	GetUser(ctx *gin.Context) (interface{}, error)
+	SetUser(ctx *gin.Context, user *models.User)
+	GetUser(ctx *gin.Context) (*models.User, error)
 }
 
 func NewContextWith() ContextWith {
@@ -113,13 +114,13 @@ func (c *ClientCache) GetTokenFromContext(ctx *gin.Context) *ClientCache {
 	}
 }
 
-func (c *ClientCache) SetUser(ctx *gin.Context, user interface{}) {
+func (c *ClientCache) SetUser(ctx *gin.Context, user *models.User) {
 	ctx.Set(xUser, user)
 }
 
-func (c *ClientCache) GetUser(ctx *gin.Context) (interface{}, error) {
+func (c *ClientCache) GetUser(ctx *gin.Context) (*models.User, error) {
 	if u, ok := ctx.Get(xUser); ok {
-		return u, nil
+		return u.(*models.User), nil
 	}
 	return nil, BadRequest("user profile not found in context")
 }

@@ -15,7 +15,7 @@ type Service interface {
 	GetByID(ctx context.Context, id string) (*models.Organization, error)
 	List(ctx context.Context, filter filter.Filter) ([]*models.Organization, int64, error)
 	FindAll(ctx context.Context, page, limit int) ([]*models.Organization, int64, error)
-	GetPrimaryAndShared(ctx context.Context, userID string) (primaryOrgs []*models.Organization, sharedOrgs []*models.Organization, err error)
+	GetPrimaryAndShared(ctx context.Context, user *models.User) (primaryOrgs []*models.Organization, sharedOrgs []*models.Organization, err error)
 }
 
 type service struct {

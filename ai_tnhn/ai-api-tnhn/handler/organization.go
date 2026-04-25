@@ -166,7 +166,7 @@ func (h *OrganizationHandler) GetSelectionList(c *gin.Context) {
 		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
 		return
 	}
-	primaryOrgs, sharedOrgs, err := h.service.GetPrimaryAndShared(c.Request.Context(), user.ID)
+	primaryOrgs, sharedOrgs, err := h.service.GetPrimaryAndShared(c.Request.Context(), user)
 	web.AssertNil(err)
 
 	h.SendData(c, gin.H{

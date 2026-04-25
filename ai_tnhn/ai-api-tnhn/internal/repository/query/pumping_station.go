@@ -85,6 +85,9 @@ func (r pumpingStationRepository) R_SelectByID(ctx context.Context, id string, v
 func (r pumpingStationRepository) R_SelectMany(ctx context.Context, f bson.M, v interface{}) error {
 	return r.stationTable.R_SelectMany(ctx, f, v)
 }
+func (r pumpingStationRepository) R_SelectManyWithSort(ctx context.Context, f bson.M, sort bson.M, v interface{}) error {
+	return r.stationTable.R_SelectManyWithSort(ctx, f, sort, v)
+}
 func (r pumpingStationRepository) R_SelectDistinct(ctx context.Context, field string, f bson.M) ([]interface{}, error) {
 	return r.stationTable.R_SelectDistinct(ctx, field, f)
 }

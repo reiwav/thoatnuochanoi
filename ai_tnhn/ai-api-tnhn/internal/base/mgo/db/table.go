@@ -282,6 +282,21 @@ func (t *Table) R_SelectMany(ctx context.Context, filter bson.M, v interface{}) 
 	return err
 }
 
+func (t *Table) R_SelectManyWithSort(ctx context.Context, filter bson.M, sort bson.M, v interface{}) error {
+	filter["deleted_at"] = 0
+	var opts = options.Find().SetSort(sort)
+	var cur, err = t.Find(ctx, filter, opts)
+	if err != nil {
+		if cur != nil {
+			cur.Close(ctx)
+		}
+		return err
+	}
+	err = cur.All(ctx, v)
+	return err
+}
+
+
 func (t *Table) R_SelectDistinct(ctx context.Context, field string, filter bson.M) ([]interface{}, error) {
 
 	filter["deleted_at"] = 0

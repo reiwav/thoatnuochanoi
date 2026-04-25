@@ -9,7 +9,6 @@ require (
 	github.com/gin-contrib/cors v1.7.6
 	github.com/gin-contrib/static v1.1.5
 	github.com/gin-gonic/gin v1.12.0
-	github.com/go-resty/resty/v2 v2.17.2
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/generative-ai-go v0.20.1

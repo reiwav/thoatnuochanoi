@@ -33,6 +33,7 @@ type BaseTable interface {
 	R_SelectManyWithFields(ctx context.Context, filter bson.M, v interface{}, fields bson.M) error
 	R_SelectByID(ctx context.Context, id string, v interface{}) error
 	R_SelectMany(ctx context.Context, filter bson.M, v interface{}) error
+	R_SelectManyWithSort(ctx context.Context, filter bson.M, sort bson.M, v interface{}) error
 	R_SelectDistinct(ctx context.Context, field string, filter bson.M) ([]interface{}, error)
 	R_UpdateAll(ctx context.Context, filter bson.M, update interface{}) error
 	R_SelectAndSort(ctx context.Context, filter bson.M, sortFields interface{}, skip, limit int64, res interface{}) error

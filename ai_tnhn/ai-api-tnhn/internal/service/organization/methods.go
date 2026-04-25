@@ -81,11 +81,7 @@ func (s *service) FindAll(ctx context.Context, page, limit int) ([]*models.Organ
 	return s.orgRepo.List(ctx, f)
 }
 
-func (s *service) GetPrimaryAndShared(ctx context.Context, userID string) (primaryOrgs []*models.Organization, sharedOrgs []*models.Organization, err error) {
-	user, err := s.userRepo.GetByID(ctx, userID)
-	if err != nil {
-		return nil, nil, err
-	}
+func (s *service) GetPrimaryAndShared(ctx context.Context, user *models.User) (primaryOrgs []*models.Organization, sharedOrgs []*models.Organization, err error) {
 	var allOrgs []*models.Organization
 	err = s.orgRepo.R_SelectMany(ctx, bson.M{}, &allOrgs)
 	if err != nil {

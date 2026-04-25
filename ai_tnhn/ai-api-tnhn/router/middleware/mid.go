@@ -90,16 +90,18 @@ func (m mid) MidBasicType(roles ...string) gin.HandlerFunc {
 
 		// Fetch full user profile and push to context
 		user, err := m.userRepo.GetByID(ctx, tok.UserID)
-		if err != nil || user == nil {
-			m.l.GetLogger().Errorf("Middleware: user not found: %v", err)
-		} else {
-			// Populate transient role fields if needed
-			if roleData, err := m.roleRepo.GetByCode(ctx, user.Role); err == nil && roleData != nil {
-				user.IsEmployee = roleData.IsEmployee
-				user.IsCompany = roleData.IsCompany
-			}
-			m.SetUser(ctx, user)
+		if err != nil {
+			err = web.Unauthorized("user not found")
+			m.SendErrorForce(ctx, err, http.StatusUnauthorized)
+			ctx.Abort()
+			return
 		}
+		// Populate transient role fields if needed
+		if roleData, _ := m.roleRepo.GetByCode(ctx, user.Role); roleData != nil {
+			user.IsEmployee = roleData.IsEmployee
+			user.IsCompany = roleData.IsCompany
+		}
+		m.SetUser(ctx, user)
 
 		ctx.Next()
 	}

@@ -13,50 +13,14 @@ type Service interface {
 	SeedPermissions(ctx context.Context, perms []models.Permission) error
 }
 
-func NewService(permRepo repository.Permission, rolePermRepo repository.RolePermission) Service {
-	return &service{
-		permRepo:     permRepo,
-		rolePermRepo: rolePermRepo,
-	}
-}
-
 type service struct {
 	permRepo     repository.Permission
 	rolePermRepo repository.RolePermission
 }
 
-func (s *service) GetMatrix(ctx context.Context) ([]*models.RolePermission, []*models.Permission, error) {
-	roles, err := s.rolePermRepo.GetMatrix(ctx)
-	if err != nil {
-		return nil, nil, err
+func NewService(permRepo repository.Permission, rolePermRepo repository.RolePermission) Service {
+	return &service{
+		permRepo:     permRepo,
+		rolePermRepo: rolePermRepo,
 	}
-	perms, err := s.permRepo.GetAll(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	return roles, perms, nil
-}
-
-func (s *service) UpdateMatrix(ctx context.Context, role string, permissions []string) error {
-	return s.rolePermRepo.Update(ctx, role, permissions)
-}
-
-func (s *service) GetPermissionsByRole(ctx context.Context, role string) ([]string, error) {
-	rp, err := s.rolePermRepo.GetByRole(ctx, role)
-	if err != nil {
-		return nil, err
-	}
-	if rp == nil {
-		return []string{}, nil
-	}
-	return rp.Permissions, nil
-}
-
-func (s *service) SeedPermissions(ctx context.Context, perms []models.Permission) error {
-	for _, p := range perms {
-		if err := s.permRepo.Upsert(ctx, &p); err != nil {
-			return err
-		}
-	}
-	return nil
 }

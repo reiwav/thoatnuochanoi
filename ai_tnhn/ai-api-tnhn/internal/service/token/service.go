@@ -15,13 +15,7 @@ type service struct {
 }
 
 func NewService(tokenRepo repository.Token) Service {
-
 	return &service{
 		tokenRepo: tokenRepo,
 	}
-}
-
-func (t service) GetByID(ctx context.Context, tokenID string) (*models.Token, error) {
-	var tk *models.Token
-	return tk, t.tokenRepo.R_SelectByID(ctx, tokenID, &tk)
 }

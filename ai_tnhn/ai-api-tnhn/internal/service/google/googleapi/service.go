@@ -4,9 +4,9 @@ import (
 	"ai-api-tnhn/config"
 	"ai-api-tnhn/internal/repository"
 	"ai-api-tnhn/internal/service/google/email"
+	"ai-api-tnhn/internal/service/station"
 	"ai-api-tnhn/internal/service/station/inundation"
 	pumpingstation "ai-api-tnhn/internal/service/station/pumping_station"
-	"ai-api-tnhn/internal/service/station"
 	"ai-api-tnhn/internal/service/station/water"
 	"ai-api-tnhn/internal/service/weather"
 	"context"
@@ -18,45 +18,6 @@ import (
 	"google.golang.org/api/gmail/v1"
 	"google.golang.org/api/option"
 )
-
-type DriveQuota struct {
-	Limit        int64  `json:"limit"`
-	LimitStr     string `json:"limit_str"`
-	Usage        int64  `json:"usage"`
-	UsageStr     string `json:"usage_str"`
-	UsageInDrive int64  `json:"usage_in_drive"`
-}
-
-type AiUsageStats struct {
-	TotalTokens     int64   `json:"total_tokens"`
-	TotalTokensStr  string  `json:"total_tokens_str"`
-	TotalCostUSD    float64 `json:"total_cost_usd"`
-	TotalCostUSDStr string  `json:"total_cost_usd_str"`
-	RequestCount    int64   `json:"request_count"`
-	RequestCountStr string  `json:"request_count_str"`
-}
-
-type GoogleStatus struct {
-	UnreadEmails     int64             `json:"unread_emails"`
-	UnreadEmailsStr  string            `json:"unread_emails_str"`
-	UnreadEmailsList []email.EmailInfo `json:"unread_emails_list,omitempty"`
-	DriveQuota       DriveQuota        `json:"drive_quota"`
-	AiUsage          AiUsageStats      `json:"ai_usage"`
-}
-
-type CityStatus struct {
-	Weather    *weather.RainSummaryData
-	Water      *water.WaterSummaryData
-	Inundation *inundation.InundationSummaryData
-	Pumping    *pumpingstation.PumpingStationSummaryData
-	RawWater   *weather.WaterDataResponse
-	OCRText    string
-}
-
-type ChatMessage struct {
-	Role    string `json:"role"` // "user" or "model"
-	Content string `json:"content"`
-}
 
 type Service interface {
 	GetStatus(ctx context.Context) (*GoogleStatus, error)
@@ -111,26 +72,35 @@ func NewService(conf config.GoogleDriveConfig, oauthConf config.OAuthConfig, aiU
 		token := &oauth2.Token{RefreshToken: conf.GoogleRefreshToken}
 		client := oauthConfig.Client(ctx, token)
 		driveSvc, err = drive.NewService(ctx, option.WithHTTPClient(client))
-		if err != nil { return nil, fmt.Errorf("failed to create drive service: %w", err) }
+		if err != nil {
+			return nil, fmt.Errorf("failed to create drive service: %w", err)
+		}
 		gmailSvc, err = gmail.NewService(ctx, option.WithHTTPClient(client))
-		if err != nil { return nil, fmt.Errorf("failed to create gmail service: %w", err) }
+		if err != nil {
+			return nil, fmt.Errorf("failed to create gmail service: %w", err)
+		}
 	} else {
-		if conf.Credentials == "" { return nil, fmt.Errorf("google credentials not found") }
+		if conf.Credentials == "" {
+			return nil, fmt.Errorf("google credentials not found")
+		}
 		driveSvc, err = drive.NewService(ctx, option.WithCredentialsJSON([]byte(conf.Credentials)))
-		if err != nil { return nil, fmt.Errorf("failed to create drive service: %w", err) }
+		if err != nil {
+			return nil, fmt.Errorf("failed to create drive service: %w", err)
+		}
 		gmailSvc, err = gmail.NewService(ctx, option.WithCredentialsJSON([]byte(conf.Credentials)))
-		if err != nil { return nil, fmt.Errorf("failed to create gmail service: %w", err) }
+		if err != nil {
+			return nil, fmt.Errorf("failed to create gmail service: %w", err)
+		}
 	}
 
 	return &service{
-		driveSvc: driveSvc, gmailSvc: gmailSvc, aiUsageRepo: aiUsageRepo, inuSvc: inuSvc,
-		weatherSvc: weatherSvc, pumpingSvc: pumpingSvc, waterSvc: waterSvc, stationSvc: stationSvc,
+		driveSvc:    driveSvc,
+		gmailSvc:    gmailSvc,
+		aiUsageRepo: aiUsageRepo,
+		inuSvc:      inuSvc,
+		weatherSvc:  weatherSvc,
+		pumpingSvc:  pumpingSvc,
+		waterSvc:    waterSvc,
+		stationSvc:  stationSvc,
 	}, nil
 }
-
-func (s *service) SetGeminiService(svc interface {
-	ExtractTextFromPDF(ctx context.Context, pdfBytes []byte) (string, error)
-	Chat(ctx context.Context, prompt string, history []ChatMessage, userID string, isCompany bool, logPrompt string) (string, error)
-}) { s.geminiSvc = svc }
-
-func (s *service) SetEmailService(svc email.Service) { s.emailSvc = svc }

@@ -43,38 +43,38 @@ type InundationReport struct {
 }
 
 type InundationReportBase struct {
-	PointID         string   `bson:"point_id" form:"point_id" json:"point_id" example:"point_123"`
-	StreetName      string   `bson:"street_name" form:"street_name" json:"street_name" example:"Phố Huế"`
+	PointID         string   `bson:"pointid" form:"point_id" json:"point_id" example:"point_123"`
+	StreetName      string   `bson:"streetname" form:"street_name" json:"street_name" example:"Phố Huế"`
 	Depth           float64  `bson:"depth" form:"depth" json:"depth" example:"20"`
 	Length          string   `bson:"length" form:"length" json:"length" example:"100m"`
 	Width           string   `bson:"width" form:"width" json:"width" example:"50m"`
 	Description     string   `bson:"description" form:"description" json:"description" example:"Ngập nhẹ"`
-	TrafficStatus   string   `bson:"traffic_status" form:"traffic_status" json:"traffic_status" example:"DI_CHUYEN_CHAM"`
+	TrafficStatus   string   `bson:"trafficstatus" form:"traffic_status" json:"traffic_status" example:"DI_CHUYEN_CHAM"`
 	FloodLevelName  string   `bson:"flood_level_name" form:"flood_level_name" json:"flood_level_name" example:"Ngập nhẹ"`
 	FloodLevelColor string   `bson:"flood_level_color" form:"flood_level_color" json:"flood_level_color" example:"#FFD600"`
 	UserID          string   `bson:"user_id" json:"user_id" example:"60a123456789"`
 	UserName        string   `bson:"user_name" json:"user_name" example:"Nguyễn Văn B"`
 	UserEmail       string   `bson:"user_email" json:"user_email" example:"emp@hsdc.com.vn"`
 	Images          []string `bson:"images" json:"images" example:"[\"img1.jpg\", \"img2.jpg\"]"` // Initial images
-	IsFlooding      bool     `bson:"is_flooding" json:"is_flooding"`
+	IsFlooding      bool     `bson:"isflooding" json:"is_flooding"`
 }
 
 type ReportReviewBase struct {
-	ReviewComment           string `bson:"review_comment,omitempty" form:"review_comment" json:"review_comment" example:"Đã xử lý"`
-	ReviewerId              string `bson:"reviewer_id,omitempty" form:"reviewer_id" json:"reviewer_id" example:"user_123"`
-	ReviewerName            string `bson:"reviewer_name,omitempty" form:"reviewer_name" json:"reviewer_name" example:"Admin"`
-	ReviewerEmail           string `bson:"reviewer_email,omitempty" form:"reviewer_email" json:"reviewer_email" example:"[EMAIL_ADDRESS]"`
-	NeedsCorrection         bool   `bson:"needs_correction" form:"needs_correction" json:"needs_correction" example:"true"`
-	IsReviewUpdated         bool   `bson:"is_review_updated" form:"is_review_updated" json:"is_review_updated" example:"true"`
-	NeedsCorrectionUpdateID string `bson:"needs_correction_update_id" form:"needs_correction_update_id" json:"needs_correction_update_id" example:"update_123"`
+	ReviewComment           string `bson:"reviewcomment,omitempty" form:"review_comment" json:"review_comment" example:"Đã xử lý"`
+	ReviewerId              string `bson:"reviewerid,omitempty" form:"reviewer_id" json:"reviewer_id" example:"user_123"`
+	ReviewerName            string `bson:"reviewername,omitempty" form:"reviewer_name" json:"reviewer_name" example:"Admin"`
+	ReviewerEmail           string `bson:"revieweremail,omitempty" form:"reviewer_email" json:"reviewer_email" example:"[EMAIL_ADDRESS]"`
+	NeedsCorrection         bool   `bson:"needscorrection" form:"needs_correction" json:"needs_correction" example:"true"`
+	IsReviewUpdated         bool   `bson:"isreviewupdated" form:"is_review_updated" json:"is_review_updated" example:"true"`
+	NeedsCorrectionUpdateID string `bson:"needscorrectionupdateid" form:"needs_correction_update_id" json:"needs_correction_update_id" example:"update_123"`
 }
 
 type ReportMechBase struct {
-	MechD         float64  `bson:"mech_d" form:"mech_d" json:"mech_d" example:"20"`
-	MechR         string   `bson:"mech_r" form:"mech_r" json:"mech_r" example:"R1"`
-	MechS         string   `bson:"mech_s" form:"mech_s" json:"mech_s" example:"S1"`
-	MechChecked   bool     `bson:"mech_checked" form:"mech_checked" json:"mech_checked" example:"true"`
-	MechNote      string   `bson:"mech_note" form:"mech_note" json:"mech_note" example:"Máy xúc đã đến"`
+	MechD         float64  `bson:"mechd" form:"mech_d" json:"mech_d" example:"20"`
+	MechR         string   `bson:"mechr" form:"mech_r" json:"mech_r" example:"R1"`
+	MechS         string   `bson:"mechs" form:"mech_s" json:"mech_s" example:"S1"`
+	MechChecked   bool     `bson:"mechchecked" form:"mech_checked" json:"mech_checked" example:"true"`
+	MechNote      string   `bson:"mechnote" form:"mech_note" json:"mech_note" example:"Máy xúc đã đến"`
 	MechUserID    string   `bson:"mech_user_id" json:"mech_user_id"`
 	MechUserName  string   `bson:"mech_user_name" json:"mech_user_name"`
 	MechUpdatedAt int64    `bson:"mech_updated_at" json:"mech_updated_at"`
@@ -82,8 +82,8 @@ type ReportMechBase struct {
 }
 
 type ReportSurveyBase struct {
-	SurveyChecked   bool     `bson:"survey_checked" form:"survey_checked" json:"survey_checked" example:"true"`
-	SurveyNote      string   `bson:"survey_note" form:"survey_note" json:"survey_note" example:"Đã khảo sát"`
+	SurveyChecked   bool     `bson:"surveychecked" form:"survey_checked" json:"survey_checked" example:"true"`
+	SurveyNote      string   `bson:"surveynote" form:"survey_note" json:"survey_note" example:"Đã khảo sát"`
 	SurveyUserID    string   `bson:"survey_user_id" json:"survey_user_id"`
 	SurveyUserName  string   `bson:"survey_user_name" json:"survey_user_name"`
 	SurveyUpdatedAt int64    `bson:"survey_updated_at" json:"survey_updated_at"`

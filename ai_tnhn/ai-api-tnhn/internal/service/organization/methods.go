@@ -83,7 +83,7 @@ func (s *service) FindAll(ctx context.Context, page, limit int) ([]*models.Organ
 
 func (s *service) GetPrimaryAndShared(ctx context.Context, user *models.User) (primaryOrgs []*models.Organization, sharedOrgs []*models.Organization, err error) {
 	var allOrgs []*models.Organization
-	err = s.orgRepo.R_SelectMany(ctx, bson.M{}, &allOrgs)
+	err = s.orgRepo.R_SelectManyWithSort(ctx, bson.M{}, bson.M{"Name": 1}, &allOrgs)
 	if err != nil {
 		return nil, nil, err
 	}

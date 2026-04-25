@@ -22,4 +22,5 @@ type Filter interface {
 	GetKeys() Keys
 	GetGroups() string
 	AddWhere(key string, query string, values interface{}) *BasicFilter
+	AddSort(field string, order int) *BasicFilter
 }

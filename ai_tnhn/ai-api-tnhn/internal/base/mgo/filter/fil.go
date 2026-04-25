@@ -39,6 +39,18 @@ func (f *BasicFilter) SetOrderBy(orderBy ...string) *BasicFilter {
 	return f
 }
 
+func (f *BasicFilter) AddSort(field string, order int) *BasicFilter {
+	if f.order == nil {
+		f.order = NewBasicOrder()
+	}
+	val := field
+	if order == -1 {
+		val = "-" + field
+	}
+	f.order.OrderBy = append(f.order.OrderBy, val)
+	return f
+}
+
 // implement repository.Filter interface
 func (f *BasicFilter) GetLimit() int64 {
 	return IgnoreLimit

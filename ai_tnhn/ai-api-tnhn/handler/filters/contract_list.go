@@ -24,7 +24,6 @@ func (f *ContractListRequest) GetWhere() filter.Where {
 	if where == nil {
 		where = make(filter.Where)
 	}
-
 	if f.OrgID != "" {
 		where["$or"] = []primitive.M{
 			{"org_id": f.OrgID},

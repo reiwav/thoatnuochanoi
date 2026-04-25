@@ -62,8 +62,7 @@ func (p rainStationRepository) ListFiltered(ctx context.Context, orgID string, i
 	} else {
 		return items, nil
 	}
-
-	err := p.R_SelectMany(ctx, f, &items)
+	err := p.R_SelectManyWithSort(ctx, f, bson.M{"name": 1}, &items)
 	return items, err
 }
 

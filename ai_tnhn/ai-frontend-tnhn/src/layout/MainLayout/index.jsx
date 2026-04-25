@@ -17,6 +17,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import HistoryIcon from '@mui/icons-material/History';
 import EngineeringIcon from '@mui/icons-material/Engineering';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import WaterDropIcon from '@mui/icons-material/WaterDrop';
 
 import Footer from './Footer';
 import Header from './Header';
@@ -109,6 +110,7 @@ export default function MainLayout() {
   const isConstructionPath = pathname.includes('/emergency-construction');
   const isInundationPath = pathname === '/' || pathname.includes('/inundation');
   const isPumpingPath = pathname.includes('/tram-bom');
+  const isWastewaterPath = pathname.includes('/wastewater-treatment');
   const isAiSupportPath = pathname === '/admin/ai-support';
 
   const availableTabs = useMemo(() => {
@@ -234,7 +236,7 @@ export default function MainLayout() {
     }
   }, [isChecking, permissionsLoaded, userInfo, pathname, navigate, isEmployee, availableTabs, basePath, hasPermission]);
 
-  const showMobileAppLayout = isEmployee && (isInundationPath || isConstructionPath || isPumpingPath);
+  const showMobileAppLayout = isEmployee && (isInundationPath || isConstructionPath || isPumpingPath || isWastewaterPath);
 
   // Global Bottom Navigation items for Employee
   const employeeNavItems = useMemo(() => {
@@ -267,6 +269,14 @@ export default function MainLayout() {
         path: `${basePath}/emergency-construction/dashboard`,
         active: isConstructionPath,
         show: !isEmployee || (userInfo?.assigned_emergency_construction_ids?.filter(id => id && id.trim() !== "").length > 0)
+      },
+      {
+        id: 'wastewater',
+        label: 'Trạm XLNT',
+        icon: <WaterDropIcon sx={{ fontSize: '1.6rem' }} />,
+        path: `${basePath}/wastewater-treatment`,
+        active: isWastewaterPath,
+        show: !isEmployee || (userInfo?.assigned_wastewater_station_id && userInfo.assigned_wastewater_station_id.trim() !== "")
       },
       {
         id: 'profile',

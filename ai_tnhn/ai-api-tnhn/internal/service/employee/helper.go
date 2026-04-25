@@ -5,7 +5,7 @@ import (
 	"context"
 )
 
-func (s *service) validateAssignments(ctx context.Context, userID string, orgID string, pointIDs, rainIDs, lakeIDs, riverIDs, constructionIDs []string, stationID string) error {
+func (s *service) validateAssignments(ctx context.Context, userID string, orgID string, pointIDs, rainIDs, lakeIDs, riverIDs, constructionIDs []string, stationID string, wastewaterID string) error {
 	// Restrictions removed to allow multiple and overlapping assignments as requested.
 	return nil
 }

@@ -34,7 +34,7 @@ func (r *inundationStationRepo) ListByOrg(ctx context.Context, orgID string) ([]
 	if orgID != "" {
 		filter["org_id"] = orgID
 	}
-	err := r.R_SelectMany(ctx, filter, &points)
+	err := r.R_SelectManyWithSort(ctx, filter, bson.M{"name": 1}, &points)
 	return points, err
 }
 

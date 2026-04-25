@@ -53,7 +53,7 @@ const companyPages = {
     },
     {
       id: 'company:inundation',
-      permission: ['inundation:survey', 'inundation:mechanic', 'inundation:review', 'inundation:view'],
+      permission: ['inundation:survey', 'inundation:mechanic', 'inundation:review', 'inundation:view', 'inundation:report'],
       title: 'Điểm trực ngập',
       type: 'item',
       url: '/company/inundation',
@@ -61,13 +61,30 @@ const companyPages = {
       breadcrumbs: false
     },
     {
-      id: 'company:trambom',
-      permission: 'trambom:view',
-      title: 'Trạm bơm',
-      type: 'item',
-      url: '/company/tram-bom',
+      id: 'company:pumping-wastewater',
+      title: 'Trạm bơm & XLNT',
+      type: 'collapse',
       icon: icons.IconEngine,
-      breadcrumbs: false
+      children: [
+        {
+          id: 'company:trambom',
+          permission: ['trambom:view', 'trambom:edit', 'trambom:control'],
+          title: 'Trạm bơm',
+          type: 'item',
+          url: '/company/tram-bom',
+          icon: icons.IconEngine,
+          breadcrumbs: false
+        },
+        {
+          id: 'company:wastewater',
+          permission: ['trambom:view', 'trambom:edit', 'trambom:control'],
+          title: 'Trạm XLNT',
+          type: 'item',
+          url: '/company/wastewater-treatment',
+          icon: icons.IconDroplets,
+          breadcrumbs: false
+        }
+      ]
     }
   ]
 };
@@ -257,13 +274,30 @@ const adminPages = {
       breadcrumbs: false
     },
     {
-      id: 'admin:trambom',
-      permission: ['trambom:view', 'trambom:control', 'trambom:edit'],
-      title: 'Trạm bơm',
-      type: 'item',
-      url: '/admin/tram-bom',
+      id: 'pumping-wastewater',
+      title: 'Trạm bơm & XLNT',
+      type: 'collapse',
       icon: icons.IconEngine,
-      breadcrumbs: false
+      children: [
+        {
+          id: 'admin:trambom',
+          permission: ['trambom:view', 'trambom:control', 'trambom:edit'],
+          title: 'Trạm bơm',
+          type: 'item',
+          url: '/admin/tram-bom',
+          icon: icons.IconEngine,
+          breadcrumbs: false
+        },
+        {
+          id: 'admin:wastewater',
+          permission: ['trambom:view', 'trambom:control', 'trambom:edit'], // Reusing trambom permissions for now or assuming wastewater
+          title: 'Trạm XLNT',
+          type: 'item',
+          url: '/admin/wastewater-treatment',
+          icon: icons.IconDroplets,
+          breadcrumbs: false
+        }
+      ]
     },
     {
       id: 'sa-hinh-ngap:view',

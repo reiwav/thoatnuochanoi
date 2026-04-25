@@ -147,7 +147,7 @@ func (r wastewaterStationRepository) ListFiltered(ctx context.Context, orgID str
 		},
 	}
 	var items []*models.WastewaterStation
-	err := r.stationTable.R_SelectMany(ctx, query, &items)
+	err := r.stationTable.R_SelectManyWithSort(ctx, query, bson.M{"name": 1}, &items)
 	return items, err
 }
 

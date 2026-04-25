@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
     CircularProgress, Typography, FormControl, InputLabel, Select, MenuItem, Stack, Box, Button,
-    Dialog, DialogTitle, DialogContent, IconButton, Grid, Divider, useMediaQuery
+    Dialog, DialogTitle, DialogContent, IconButton, Grid, Divider, useMediaQuery, Chip
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { IconFileExport, IconEye, IconX, IconClock, IconRulerMeasure } from '@tabler/icons-react';
@@ -13,6 +13,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import inundationApi from 'api/inundation';
 import organizationApi from 'api/organization';
 import useAuthStore from 'store/useAuthStore';
+import OrganizationSelect from 'ui-component/filter/OrganizationSelect';
 
 const InundationYearlyHistory = () => {
     const { user } = useAuthStore();
@@ -22,7 +23,6 @@ const InundationYearlyHistory = () => {
     const [selectedPoint, setSelectedPoint] = useState(null);
     const [detailOpen, setDetailOpen] = useState(false);
 
-    const [orgs, setOrgs] = useState([]);
     const [selectedOrgId, setSelectedOrgId] = useState('');
     const { role, isCompany } = useAuthStore();
     const canFilterAllOrgs = role === 'super_admin' || isCompany;
@@ -32,23 +32,11 @@ const InundationYearlyHistory = () => {
         years.push(y);
     }
 
-    useEffect(() => {
-        if (canFilterAllOrgs) {
-            organizationApi.getSelectionList().then(res => {
-                if (res.data?.status === 'success') {
-                    setOrgs(res.data.data?.shared || []);
-                }
-            });
-        }
-    }, [canFilterAllOrgs]);
-
     const loadHistory = useCallback(async () => {
         setLoading(true);
         try {
             const res = await inundationApi.getYearlyHistory(year, selectedOrgId);
-            if (res.data?.status === 'success') {
-                setHistory(res.data.data || []);
-            }
+            setHistory(Array.isArray(res) ? res : (res?.data?.data || res || []));
         } catch (err) {
             console.error('Failed to load yearly history:', err);
         } finally {
@@ -101,9 +89,9 @@ const InundationYearlyHistory = () => {
             }
             groups[id].count += 1;
 
-            // If not resolved, use current time - start_time
+            // If not resolved, use current time - created_at
             const endTime = item.end_time > 0 ? item.end_time : now;
-            const durationSeconds = Math.max(0, endTime - item.start_time);
+            const durationSeconds = Math.max(0, endTime - item.created_at);
 
             groups[id].total_duration += durationSeconds;
             groups[id].events.push({
@@ -112,9 +100,9 @@ const InundationYearlyHistory = () => {
             });
         });
 
-        // Sort events within each group by start_time descending
+        // Sort events within each group by created_at descending
         Object.values(groups).forEach(group => {
-            group.events.sort((a, b) => b.start_time - a.start_time);
+            group.events.sort((a, b) => b.created_at - a.created_at);
         });
 
         return Object.values(groups);
@@ -143,19 +131,12 @@ const InundationYearlyHistory = () => {
                     </FormControl>
 
                     {canFilterAllOrgs && (
-                        <FormControl size="small" sx={{ minWidth: 200 }}>
-                            <InputLabel>Chọn xí nghiệp</InputLabel>
-                            <Select
-                                value={selectedOrgId}
-                                label="Chọn xí nghiệp"
-                                onChange={(e) => setSelectedOrgId(e.target.value)}
-                            >
-                                <MenuItem value="">Tất cả</MenuItem>
-                                {orgs.map((o) => (
-                                    <MenuItem key={o.id} value={o.id}>{o.name}</MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
+                        <OrganizationSelect
+                            value={selectedOrgId}
+                            onChange={(e) => setSelectedOrgId(e.target.value)}
+                            label="Chọn xí nghiệp"
+                            sx={{ maxWidth: 300 }}
+                        />
                     )}
 
                     <Button
@@ -175,7 +156,7 @@ const InundationYearlyHistory = () => {
                         <TableHead sx={{ bgcolor: '#f8f9fa' }}>
                             <TableRow>
                                 <TableCell align="center" sx={{ fontWeight: 800, width: '60px', borderRight: '1px solid #ddd' }}>STT</TableCell>
-                                <TableCell sx={{ fontWeight: 800, borderRight: '1px solid #ddd' }}>Điểm ngập lụt / Địa bàn</TableCell>
+                                <TableCell sx={{ fontWeight: 800, borderRight: '1px solid #ddd' }}>Điểm ngập / Địa bàn</TableCell>
                                 <TableCell align="center" sx={{ fontWeight: 800, width: '100px', borderRight: '1px solid #ddd' }}>Đơn vị</TableCell>
                                 <TableCell sx={{ fontWeight: 800, borderRight: '1px solid #ddd' }}>Địa điểm / Quận</TableCell>
                                 <TableCell align="center" sx={{ fontWeight: 800, width: '120px', borderRight: '1px solid #ddd' }}>Số lần ngập</TableCell>
@@ -314,7 +295,7 @@ const InundationYearlyHistory = () => {
                                                 <Stack direction="row" spacing={1} alignItems="center">
                                                     <IconClock size={16} color="#666" />
                                                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                                        {dayjs.unix(event.created_at || event.start_time).format('DD/MM/YYYY HH:mm:ss')}
+                                                        {dayjs.unix(event.created_at).format('DD/MM/YYYY HH:mm:ss')}
                                                     </Typography>
                                                 </Stack>
                                             </TableCell>
@@ -357,7 +338,7 @@ const InundationYearlyHistory = () => {
                                     </Box>
                                     <Stack spacing={1}>
                                         <Typography variant="caption" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            <IconClock size={14} /> {dayjs.unix(event.created_at || event.start_time).format('DD/MM/YYYY HH:mm:ss')}
+                                            <IconClock size={14} /> {dayjs.unix(event.created_at).format('DD/MM/YYYY HH:mm:ss')}
                                         </Typography>
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                             <Typography variant="body2" sx={{ fontWeight: 700 }}>{formatDuration(event.durationSeconds)}</Typography>

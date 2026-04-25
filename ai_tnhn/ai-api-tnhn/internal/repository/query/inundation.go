@@ -65,7 +65,7 @@ func (r *inundationRepo) ListByYear(ctx context.Context, orgID string, year int)
 	endOfYear := time.Date(year, 12, 31, 23, 59, 59, 0, time.UTC).Unix()
 
 	filter := bson.M{
-		"start_time": bson.M{
+		"created_at": bson.M{
 			"$gte": startOfYear,
 			"$lte": endOfYear,
 		},
@@ -77,6 +77,6 @@ func (r *inundationRepo) ListByYear(ctx context.Context, orgID string, year int)
 	}
 
 	var reports []*models.InundationReport
-	err := r.R_SelectAndSort(ctx, filter, bson.D{{Key: "start_time", Value: 1}}, 0, 0, &reports)
+	err := r.R_SelectAndSort(ctx, filter, bson.D{{Key: "created_at", Value: 1}}, 0, 0, &reports)
 	return reports, err
 }

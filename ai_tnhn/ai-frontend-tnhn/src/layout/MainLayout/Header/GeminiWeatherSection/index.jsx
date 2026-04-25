@@ -97,9 +97,9 @@ const GeminiWeatherSection = () => {
   if (!forecast || forecast.length === 0) return null;
 
   return (
-    <Box sx={{ 
-      display: 'flex', 
-      gap: 1.5, 
+    <Box sx={{
+      display: 'flex',
+      gap: 1.5,
       overflowX: 'auto',
       maxWidth: '100vw',
       py: 1,
@@ -109,48 +109,48 @@ const GeminiWeatherSection = () => {
       scrollbarWidth: 'none'
     }}>
       {forecast.slice(0, 3).map((day, index) => (
-        <ForecastCard key={index} sx={{ 
+        <ForecastCard key={index} sx={{
           minWidth: { xs: '190px', sm: '210px', md: '230px' },
           flexShrink: 0
         }}>
-            {/* Icon Section */}
-            <Box sx={{ display: 'flex', alignItems: 'center', mr: 1, flexShrink: 0 }}>
-              {getWeatherIcon(day.description)}
-            </Box>
+          {/* Icon Section */}
+          <Box sx={{ display: 'flex', alignItems: 'center', mr: 1, flexShrink: 0 }}>
+            {getWeatherIcon(day.description)}
+          </Box>
 
-            {/* Date Section */}
-            <Box sx={{ textAlign: 'center', flexShrink: 0, minWidth: '45px' }}>
-              <Typography sx={{ fontSize: '0.75rem', color: '#2196F3', fontWeight: 700, lineHeight: 1, textTransform: 'uppercase' }}>
-                Ngày
-              </Typography>
-              <Typography sx={{ fontSize: '0.95rem', color: '#2d3436', fontWeight: 800, whiteSpace: 'nowrap' }}>
-                {day.date}
-              </Typography>
-            </Box>
+          {/* Date Section */}
+          <Box sx={{ textAlign: 'center', flexShrink: 0, minWidth: '45px' }}>
+            <Typography sx={{ fontSize: '0.75rem', color: '#2196F3', fontWeight: 700, lineHeight: 1, textTransform: 'uppercase' }}>
+              Ngày
+            </Typography>
+            <Typography sx={{ fontSize: '0.95rem', color: '#2d3436', fontWeight: 800, whiteSpace: 'nowrap' }}>
+              {day.date}
+            </Typography>
+          </Box>
 
-            <VerticalDivider />
+          <VerticalDivider />
 
-            {/* Info Section */}
-            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-              <Typography noWrap sx={{ fontSize: '0.85rem', color: '#636e72', fontWeight: 700, lineHeight: 1.2 }}>
-                {day.description}
-              </Typography>
-              <Typography sx={{ fontSize: '1rem', color: '#2196F3', fontWeight: 800, whiteSpace: 'nowrap' }}>
-                {day.temperature_min}-{day.temperature_max}°C
-              </Typography>
-            </Box>
+          {/* Info Section */}
+          <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+            <Typography noWrap sx={{ fontSize: '0.85rem', color: '#636e72', fontWeight: 700, lineHeight: 1.2 }}>
+              {day.description}
+            </Typography>
+            <Typography sx={{ fontSize: '1rem', color: '#2196F3', fontWeight: 800, whiteSpace: 'nowrap' }}>
+              {day.temperature_min}-{day.temperature_max}°C
+            </Typography>
+          </Box>
 
-            {/* Rain Section */}
-            <Box sx={{ ml: 1, flexShrink: 0, textAlign: 'right' }}>
-              <Typography sx={{ fontSize: '0.85rem', color: '#636e72', fontWeight: 600, lineHeight: 1.1 }}>
-                Mưa: <Box component="span" sx={{ color: '#2196F3', fontWeight: 800 }}>{day.rain_probability}%</Box>
-                {day.rain_fall > 0 && (
-                  <Box component="span" sx={{ display: 'block', fontSize: '0.75rem', color: '#2196F3', fontWeight: 700 }}>
-                    ({day.rain_fall}mm)
-                  </Box>
-                )}
-              </Typography>
-            </Box>
+          {/* Rain Section */}
+          <Box sx={{ ml: 1, flexShrink: 0, textAlign: 'right' }}>
+            <Typography sx={{ fontSize: '0.85rem', color: '#636e72', fontWeight: 600, lineHeight: 1.1 }}>
+              Mưa: <Box component="span" sx={{ color: '#2196F3', fontWeight: 800 }}>{day.rain_probability}%</Box>
+              {day.rain_fall > 0 && (
+                <Box component="span" sx={{ display: 'block', fontSize: '0.85rem', color: '#2196F3', fontWeight: 700 }}>
+                  {day.rain_fall}mm
+                </Box>
+              )}
+            </Typography>
+          </Box>
         </ForecastCard>
       ))}
     </Box>

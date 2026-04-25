@@ -33,15 +33,7 @@ func (s *service) GenerateAIReport(ctx context.Context, reportType string, userI
 		return "", fmt.Errorf("unsupported report type: %s", reportType)
 	}
 
-	type fullGemini interface {
-		Chat(ctx context.Context, prompt string, history interface{}, userID string, isCompany bool, logPrompt string) (string, error)
-	}
-
-	if gSvc, ok := s.geminiSvc.(fullGemini); ok {
-		return gSvc.Chat(ctx, prompt, nil, userID, true, "GenerateAIReport:"+reportType)
-	}
-
-	return "", fmt.Errorf("gemini service does not support Chat method")
+	return s.geminiSvc.Chat(ctx, prompt, nil, userID, true, "GenerateAIReport:"+reportType)
 }
 
 func (s *service) buildActiveRainPrompt(status *CityStatus, hh, dd, mm, yyyy string) string {

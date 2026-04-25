@@ -1,7 +1,7 @@
 package google
 
 import (
-	"ai-api-tnhn/internal/service/google/gemini"
+	"ai-api-tnhn/internal/service/google/googleapi"
 	"ai-api-tnhn/utils/web"
 	"fmt"
 	"time"
@@ -27,7 +27,7 @@ func (h *handler) ChatContract(c *gin.Context) {
 
 	var body struct {
 		Prompt  string               `json:"prompt"`
-		History []gemini.ChatMessage `json:"history"`
+		History []googleapi.ChatMessage `json:"history"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		web.AssertNil(web.BadRequest("prompt is required"))
@@ -53,7 +53,7 @@ func (h *handler) ChatContract(c *gin.Context) {
 func (h *handler) Chat(c *gin.Context) {
 	var body struct {
 		Prompt  string               `json:"prompt"`
-		History []gemini.ChatMessage `json:"history"`
+		History []googleapi.ChatMessage `json:"history"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		web.AssertNil(web.BadRequest(err.Error()))

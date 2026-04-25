@@ -53,6 +53,11 @@ type CityStatus struct {
 	OCRText    string
 }
 
+type ChatMessage struct {
+	Role    string `json:"role"` // "user" or "model"
+	Content string `json:"content"`
+}
+
 type Service interface {
 	GetStatus(ctx context.Context) (*GoogleStatus, error)
 	GetRainSummary(ctx context.Context, orgID string, assignedIDs []string) (*weather.RainSummaryData, error)
@@ -66,6 +71,7 @@ type Service interface {
 	SetEmailService(svc email.Service)
 	SetGeminiService(svc interface {
 		ExtractTextFromPDF(ctx context.Context, pdfBytes []byte) (string, error)
+		Chat(ctx context.Context, prompt string, history []ChatMessage, userID string, isCompany bool, logPrompt string) (string, error)
 	})
 
 	GetCityStatus(ctx context.Context) (*CityStatus, error)
@@ -84,6 +90,7 @@ type service struct {
 	waterSvc    water.Service
 	geminiSvc   interface {
 		ExtractTextFromPDF(ctx context.Context, pdfBytes []byte) (string, error)
+		Chat(ctx context.Context, prompt string, history []ChatMessage, userID string, isCompany bool, logPrompt string) (string, error)
 	}
 	cache sync.Map
 }
@@ -123,6 +130,7 @@ func NewService(conf config.GoogleDriveConfig, oauthConf config.OAuthConfig, aiU
 
 func (s *service) SetGeminiService(svc interface {
 	ExtractTextFromPDF(ctx context.Context, pdfBytes []byte) (string, error)
+	Chat(ctx context.Context, prompt string, history []ChatMessage, userID string, isCompany bool, logPrompt string) (string, error)
 }) { s.geminiSvc = svc }
 
 func (s *service) SetEmailService(svc email.Service) { s.emailSvc = svc }

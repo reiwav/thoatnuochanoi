@@ -44,16 +44,14 @@ const MainContentStyled = styled('main', {
     }
   }),
   [theme.breakpoints.down('sm')]: {
-    marginLeft: 20,
-    padding: 16,
+    marginLeft: 0,
+    marginRight: 0,
+    padding: '12px 8px',
     marginTop: 88,
+    borderRadius: 0,
     ...(!open && {
-      width: `calc(100% - ${drawerWidth}px)`
+      width: '100%'
     })
-  },
-  [theme.breakpoints.down('sm')]: {
-    marginLeft: 10,
-    marginRight: 10
   }
 }));
 

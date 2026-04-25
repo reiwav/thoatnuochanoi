@@ -276,10 +276,10 @@ const StationPumpingSummary = () => {
     };
 
     return (
-        <Box sx={{ px: { xs: 1.5, md: 3 }, pt: 3, pb: 10 }}>
+        <Box sx={{ px: { xs: 1, md: 3 }, pt: { xs: 1.5, md: 3 }, pb: 10 }}>
             {/* Header */}
             {!drillDownStation && (
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                     <Stack direction="row" spacing={1.2} alignItems="center">
                         <Avatar sx={{ bgcolor: alpha(theme.palette.primary.main, 1), width: 36, height: 36, boxShadow: theme.shadows[2] }}>
                             {activeTab === 0 ? <IconEngine size={20} color="white" /> : <IconDroplets size={20} color="white" />}
@@ -302,7 +302,7 @@ const StationPumpingSummary = () => {
                     onChange={(e, v) => setActiveTab(v)}
                     variant="fullWidth"
                     sx={{
-                        mb: 1.5,
+                        mb: 1,
                         bgcolor: 'background.paper',
                         borderRadius: 3,
                         p: 0.5,
@@ -323,9 +323,9 @@ const StationPumpingSummary = () => {
 
             {!drillDownStation ? (
                 <>
-                    <Box sx={{ mb: 3 }}>
-                        <Grid container spacing={2}>
-                            <Grid item xs={12} md={8}>
+                    <Box sx={{ mb: { xs: 1.5, md: 3 } }}>
+                        <Grid container spacing={{ xs: 1, md: 2 }}>
+                            <Grid size={{ xs: 12, md: 8 }}>
                                 <TextField
                                     fullWidth
                                     placeholder="Tìm kiếm trạm hoặc địa chỉ..."
@@ -339,7 +339,7 @@ const StationPumpingSummary = () => {
                                     }}
                                 />
                             </Grid>
-                            <Grid item xs={12} md={4}>
+                            <Grid size={{ xs: 12, md: 4 }}>
                                 <OrganizationSelect
                                     value={selectedOrg === 'all' ? '' : selectedOrg}
                                     onChange={(e) => setSelectedOrg(e.target.value || 'all')}
@@ -356,7 +356,7 @@ const StationPumpingSummary = () => {
                     {isLoading && activeList.length === 0 ? (
                         <Grid container spacing={2}>
                             {[1, 2, 3, 4, 5, 6].map(i => (
-                                <Grid item xs={6} sm={4} md={3} key={i}>
+                                <Grid size={{ xs: 12, sm: 4, md: 3 }} key={i}>
                                     <Skeleton variant="rectangular" height={160} sx={{ borderRadius: 3 }} />
                                 </Grid>
                             ))}
@@ -368,7 +368,7 @@ const StationPumpingSummary = () => {
                     ) : (
                         <Grid container spacing={2} alignItems="stretch">
                             {filteredStations.map(station => (
-                                <Grid item xs={6} sm={4} md={3} key={station.id}>
+                                <Grid size={{ xs: 12, sm: 4, md: 3 }} key={station.id}>
                                     {activeTab === 0 ? (
                                         <PumpingStationCard 
                                             station={station} 

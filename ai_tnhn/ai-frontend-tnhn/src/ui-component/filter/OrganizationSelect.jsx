@@ -57,7 +57,7 @@ const OrganizationSelect = ({
             value={value}
             onChange={onChange}
             disabled={loading || customDisabled}
-            sx={{ minWidth: 200, ...sx }}
+            sx={{ width: '100%', minWidth: { sm: 220 }, ...sx }}
             slotProps={{
                 input: {
                     sx: { borderRadius: 3, ...customInputProps?.sx },

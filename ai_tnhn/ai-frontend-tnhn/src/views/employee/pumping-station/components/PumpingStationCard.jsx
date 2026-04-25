@@ -137,29 +137,39 @@ const PumpingStationCard = ({ station, onUpdate, onViewHistory }) => {
                 </Box>
             )}
 
-            <Box sx={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(2, 1fr)', 
-                gap: 1, 
+            <Box sx={{
+                display: 'flex',
+                gap: 0.5,
                 mt: 1,
                 flexGrow: 1
             }}>
                 {stats.map((s, idx) => (
                     <Box key={idx} sx={{
+                        flex: 1,
                         textAlign: 'center',
                         py: 1,
-                        px: 0.5,
-                        borderRadius: 3,
+                        px: 0.25,
+                        borderRadius: 2.5,
                         bgcolor: s.bg,
                         border: '1px solid',
                         borderColor: alpha(s.color, 0.15),
                         display: 'flex',
                         flexDirection: 'column',
                         justifyContent: 'center',
-                        minHeight: 65
+                        minHeight: 65,
+                        minWidth: 0
                     }}>
                         <Typography variant="h3" sx={{ fontWeight: 900, color: s.color }}>{s.value}</Typography>
-                        <Typography variant="caption" sx={{ fontWeight: 800, color: s.color, display: 'block', fontSize: '0.65rem', textTransform: 'uppercase', mt: 0.2 }}>
+                        <Typography variant="caption" sx={{
+                            fontWeight: 800,
+                            color: s.color,
+                            display: 'block',
+                            fontSize: '0.6rem',
+                            lineHeight: 1.1,
+                            letterSpacing: -0.2,
+                            textTransform: 'uppercase',
+                            mt: 0.2
+                        }}>
                             {s.label}
                         </Typography>
                     </Box>

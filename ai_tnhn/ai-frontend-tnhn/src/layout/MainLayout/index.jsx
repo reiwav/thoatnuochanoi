@@ -385,7 +385,7 @@ export default function MainLayout() {
         </Box>
       ) : (
         <MainContentStyled {...{ borderRadius, open: drawerOpen }}>
-          <Box sx={{ p: { xs: 2, sm: 3 }, minHeight: 'calc(100vh - 128px)', display: 'flex', flexDirection: 'column' }}>
+          <Box sx={{ width: '100%', p: { xs: 2, sm: 3 }, minHeight: 'calc(100vh - 128px)', display: 'flex', flexDirection: 'column' }}>
             <Breadcrumbs />
             <Outlet context={{ userInfo }} />
             <Footer />

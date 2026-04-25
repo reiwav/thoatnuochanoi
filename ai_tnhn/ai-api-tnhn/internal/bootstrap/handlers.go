@@ -16,23 +16,24 @@ func InitRouter(cfg *config.Config, s *Services, r *Repositories, log logger.Log
 	contextWith := web.NewContextWith()
 
 	authHandler := handler.NewAuthHandler(s.Auth, s.Token, contextWith, cfg.OAuthConfig)
-	orgHandler := handler.NewOrganizationHandler(s.Organization, s.Auth, r.Role, contextWith)
+	orgHandler := handler.NewOrganizationHandler(s.Organization, r.Role, contextWith)
 	empHandler := handler.NewEmployeeHandler(s.Employee, contextWith)
-	stationHandler := handler.NewStationHandler(s.Station, s.Auth, contextWith)
-	inuHandler := handler.NewInundationHandler(s.Inundation, s.Auth, contextWith)
+	stationHandler := handler.NewStationHandler(s.Station, contextWith)
+	inuHandler := handler.NewInundationHandler(s.Inundation, contextWith)
 	waterHandler := handler.NewWaterHandler(s.Water)
 	emConstructionHandler := handler.NewEmergencyConstructionHandler(s.EmConstruction, r.AiChatLog)
 	weatherHandler := handler.NewWeatherHandler(s.Weather)
-	contractCategoryHandler := handler.NewContractCategoryHandler(s.ContractCategory, s.Auth, contextWith)
-	contractHandler := handler.NewContractHandler(s.Contract, s.Auth, contextWith)
-	pumpingStationHandler := handler.NewPumpingStationHandler(s.PumpingStation, s.Auth, contextWith)
+	contractCategoryHandler := handler.NewContractCategoryHandler(s.ContractCategory, contextWith)
+	contractHandler := handler.NewContractHandler(s.Contract, contextWith)
+	pumpingStationHandler := handler.NewPumpingStationHandler(s.PumpingStation, contextWith)
 	permHandler := handler.NewPermissionHandler(s.Permission, contextWith)
 	roleHandler := handler.NewRoleHandler(s.Role, contextWith)
 	queryHandler := handler.NewQueryHandler(s.Query)
-	settingHandler := handler.NewSettingHandler(s.Setting, s.Auth, contextWith)
+	settingHandler := handler.NewSettingHandler(s.Setting, contextWith)
+	wastewaterHandler := handler.NewWastewaterTreatmentHandler(s.Wastewater, contextWith)
 	googleHandler := google.NewHandler(s.GoogleApi, s.Gemini, s.Drive, s.Water, s.Email, contextWith, cfg.GoogleDriveConfig, log, s.Weather, r.AiChatLog, s.Report)
 
-	mid := middleware.NewMiddleware(*cfg, r.Token, s.Permission, contextWith, log)
+	mid := middleware.NewMiddleware(*cfg, r.Token, r.User, r.Role, s.Permission, contextWith, log)
 	handlers := router.HandlerFuncs{
 		Logger:                         log,
 		LoginHandler:                   authHandler.LoginHandler,
@@ -64,5 +65,5 @@ func InitRouter(cfg *config.Config, s *Services, r *Repositories, log logger.Log
 		GetWeatherForecastHandler:     googleHandler.GetWeatherForecast,
 	}
 
-	return handlers.Create(mid, orgHandler, empHandler, stationHandler, inuHandler, waterHandler, googleHandler, queryHandler, emConstructionHandler, weatherHandler, contractCategoryHandler, contractHandler, pumpingStationHandler, permHandler, roleHandler, settingHandler)
+	return handlers.Create(mid, orgHandler, empHandler, stationHandler, inuHandler, waterHandler, googleHandler, queryHandler, emConstructionHandler, weatherHandler, contractCategoryHandler, contractHandler, pumpingStationHandler, wastewaterHandler, permHandler, roleHandler, settingHandler)
 }

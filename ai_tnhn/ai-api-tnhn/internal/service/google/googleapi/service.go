@@ -3,48 +3,21 @@ package googleapi
 import (
 	"ai-api-tnhn/config"
 	"ai-api-tnhn/internal/repository"
-	"ai-api-tnhn/utils/number"
+	"ai-api-tnhn/internal/service/google/email"
+	"ai-api-tnhn/internal/service/station"
+	"ai-api-tnhn/internal/service/station/inundation"
+	pumpingstation "ai-api-tnhn/internal/service/station/pumping_station"
+	"ai-api-tnhn/internal/service/station/water"
+	"ai-api-tnhn/internal/service/weather"
 	"context"
 	"fmt"
+	"sync"
 
-	"ai-api-tnhn/internal/service/email"
-	"ai-api-tnhn/internal/service/inundation"
-	pumpingstation "ai-api-tnhn/internal/service/pumping_station"
-	"ai-api-tnhn/internal/service/station"
-	"ai-api-tnhn/internal/service/water"
-	"ai-api-tnhn/internal/service/weather"
-
-	"go.mongodb.org/mongo-driver/bson"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/gmail/v1"
 	"google.golang.org/api/option"
 )
-
-type DriveQuota struct {
-	Limit        int64  `json:"limit"`
-	LimitStr     string `json:"limit_str"`
-	Usage        int64  `json:"usage"`
-	UsageStr     string `json:"usage_str"`
-	UsageInDrive int64  `json:"usage_in_drive"`
-}
-
-type AiUsageStats struct {
-	TotalTokens     int64   `json:"total_tokens"`
-	TotalTokensStr  string  `json:"total_tokens_str"`
-	TotalCostUSD    float64 `json:"total_cost_usd"`
-	TotalCostUSDStr string  `json:"total_cost_usd_str"`
-	RequestCount    int64   `json:"request_count"`
-	RequestCountStr string  `json:"request_count_str"`
-}
-
-type GoogleStatus struct {
-	UnreadEmails     int64             `json:"unread_emails"`
-	UnreadEmailsStr  string            `json:"unread_emails_str"`
-	UnreadEmailsList []email.EmailInfo `json:"unread_emails_list,omitempty"`
-	DriveQuota       DriveQuota        `json:"drive_quota"`
-	AiUsage          AiUsageStats      `json:"ai_usage"`
-}
 
 type Service interface {
 	GetStatus(ctx context.Context) (*GoogleStatus, error)
@@ -57,6 +30,13 @@ type Service interface {
 	ReadEmailByTitle(ctx context.Context, title string) (*email.EmailDetail, error)
 	ReadEmailByID(ctx context.Context, id uint32) (*email.EmailDetail, error)
 	SetEmailService(svc email.Service)
+	SetGeminiService(svc interface {
+		ExtractTextFromPDF(ctx context.Context, pdfBytes []byte) (string, error)
+		Chat(ctx context.Context, prompt string, history []ChatMessage, userID string, isCompany bool, logPrompt string) (string, error)
+	})
+
+	GetCityStatus(ctx context.Context) (*CityStatus, error)
+	GenerateAIReport(ctx context.Context, reportType string, userID string) (string, error)
 }
 
 type service struct {
@@ -69,6 +49,11 @@ type service struct {
 	stationSvc  station.Service
 	pumpingSvc  pumpingstation.Service
 	waterSvc    water.Service
+	geminiSvc   interface {
+		ExtractTextFromPDF(ctx context.Context, pdfBytes []byte) (string, error)
+		Chat(ctx context.Context, prompt string, history []ChatMessage, userID string, isCompany bool, logPrompt string) (string, error)
+	}
+	cache sync.Map
 }
 
 func NewService(conf config.GoogleDriveConfig, oauthConf config.OAuthConfig, aiUsageRepo repository.AiUsage, inuSvc inundation.Service, weatherSvc weather.Service, stationSvc station.Service, pumpingSvc pumpingstation.Service, waterSvc water.Service) (Service, error) {
@@ -81,19 +66,10 @@ func NewService(conf config.GoogleDriveConfig, oauthConf config.OAuthConfig, aiU
 		oauthConfig := &oauth2.Config{
 			ClientID:     oauthConf.ClientID,
 			ClientSecret: oauthConf.ClientSecret,
-			Endpoint: oauth2.Endpoint{
-				TokenURL: "https://oauth2.googleapis.com/token",
-			},
-			Scopes: []string{
-				drive.DriveReadonlyScope,
-				gmail.GmailReadonlyScope,
-			},
+			Endpoint: oauth2.Endpoint{TokenURL: "https://oauth2.googleapis.com/token"},
+			Scopes:   []string{drive.DriveReadonlyScope, gmail.GmailReadonlyScope},
 		}
-
-		token := &oauth2.Token{
-			RefreshToken: conf.GoogleRefreshToken,
-		}
-
+		token := &oauth2.Token{RefreshToken: conf.GoogleRefreshToken}
 		client := oauthConfig.Client(ctx, token)
 		driveSvc, err = drive.NewService(ctx, option.WithHTTPClient(client))
 		if err != nil {
@@ -123,84 +99,8 @@ func NewService(conf config.GoogleDriveConfig, oauthConf config.OAuthConfig, aiU
 		aiUsageRepo: aiUsageRepo,
 		inuSvc:      inuSvc,
 		weatherSvc:  weatherSvc,
-		stationSvc:  stationSvc,
 		pumpingSvc:  pumpingSvc,
 		waterSvc:    waterSvc,
+		stationSvc:  stationSvc,
 	}, nil
-}
-
-func (s *service) SetEmailService(svc email.Service) {
-	s.emailSvc = svc
-}
-
-func (s *service) GetStatus(ctx context.Context) (*GoogleStatus, error) {
-	status := &GoogleStatus{}
-
-	if s.emailSvc != nil {
-		count, err := s.emailSvc.GetUnreadCount(ctx)
-		if err == nil {
-			status.UnreadEmails = int64(count)
-			status.UnreadEmailsStr = number.Format(int64(count))
-
-			if count > 0 {
-				list, err := s.emailSvc.GetRecentEmails(ctx, 20)
-				if err == nil {
-					status.UnreadEmailsList = list
-				}
-			}
-		} else {
-			fmt.Printf("Warning: failed to fetch unread emails via IMAP: %v\n", err)
-		}
-	}
-
-	about, err := s.driveSvc.About.Get().Fields("storageQuota").Do()
-	if err == nil && about.StorageQuota != nil {
-		status.DriveQuota = DriveQuota{
-			Limit:        about.StorageQuota.Limit,
-			LimitStr:     number.Format(about.StorageQuota.Limit),
-			Usage:        about.StorageQuota.Usage,
-			UsageStr:     number.Format(about.StorageQuota.Usage),
-			UsageInDrive: about.StorageQuota.UsageInDrive,
-		}
-	} else {
-		fmt.Printf("Warning: failed to fetch drive quota: %v\n", err)
-	}
-
-	aiStats, err := s.aiUsageRepo.GetAggregateStats(ctx, bson.M{})
-	if err == nil {
-		var totalTokens int64
-		if val, ok := aiStats["total_tokens"]; ok {
-			switch v := val.(type) {
-			case int32:
-				totalTokens = int64(v)
-			case int64:
-				totalTokens = v
-			case float64:
-				totalTokens = int64(v)
-			}
-		}
-
-		var reqCount int64
-		if val, ok := aiStats["request_count"]; ok {
-			switch v := val.(type) {
-			case int32:
-				reqCount = int64(v)
-			case int64:
-				reqCount = v
-			case float64:
-				reqCount = int64(v)
-			}
-		}
-
-		status.AiUsage = AiUsageStats{
-			TotalTokens:     totalTokens,
-			TotalTokensStr:  number.Format(totalTokens),
-			RequestCount:    reqCount,
-			RequestCountStr: number.Format(reqCount),
-			TotalCostUSD:    float64(totalTokens) * 0.00000015,
-			TotalCostUSDStr: number.FormatDecimal(float64(totalTokens)*0.00000015, 6),
-		}
-	}
-
-	return status, nil
 }

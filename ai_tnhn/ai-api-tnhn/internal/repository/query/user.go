@@ -44,14 +44,14 @@ func (p userRepository) Create(ctx context.Context, input *models.User) (*models
 
 func (p userRepository) Update(ctx context.Context, id string, input *models.User) error {
 	updateData := bson.M{
-		"name":       input.Name,
-		"email":      input.Email,
-		"username":   input.Username,
-		"role":       input.Role,
-		"active":     input.Active,
-		"org_id":     input.OrgID,
-		"updated_at": time.Now().Unix(),
-		"assigned_inundation_station_ids":       input.AssignedInundationStationIDs,
+		"name":                                input.Name,
+		"email":                               input.Email,
+		"username":                            input.Username,
+		"role":                                input.Role,
+		"active":                              input.Active,
+		"org_id":                              input.OrgID,
+		"updated_at":                          time.Now().Unix(),
+		"assigned_inundation_station_ids":     input.AssignedInundationStationIDs,
 		"assigned_emergency_construction_ids": input.AssignedEmergencyConstructionIDs,
 		"assigned_pumping_station_id":         input.AssignedPumpingStationID,
 	}

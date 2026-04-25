@@ -4,8 +4,7 @@ import (
 	"ai-api-tnhn/constant"
 	"ai-api-tnhn/internal/base/mgo/filter"
 	"ai-api-tnhn/internal/models"
-	"ai-api-tnhn/internal/service/auth"
-	pumpingstation "ai-api-tnhn/internal/service/pumping_station"
+	pumpingstation "ai-api-tnhn/internal/service/station/pumping_station"
 	"ai-api-tnhn/utils/web"
 	"strconv"
 
@@ -16,21 +15,18 @@ import (
 type PumpingStationHandler struct {
 	web.JsonRender
 	service     pumpingstation.Service
-	authService auth.Service
 	contextWith web.ContextWith
 }
 
-func NewPumpingStationHandler(service pumpingstation.Service, authService auth.Service, contextWith web.ContextWith) *PumpingStationHandler {
+func NewPumpingStationHandler(service pumpingstation.Service, contextWith web.ContextWith) *PumpingStationHandler {
 	return &PumpingStationHandler{
 		service:     service,
-		authService: authService,
 		contextWith: contextWith,
 	}
 }
 
 func (h *PumpingStationHandler) checkPermissions(c *gin.Context) (isSuperAdmin bool, isAllowedAll bool, user *models.User) {
-	token := h.contextWith.GetToken(c.Request)
-	user, err := h.authService.GetProfile(c.Request.Context(), token)
+	user, err := h.contextWith.GetUser(c)
 	if err != nil || user == nil {
 		return false, false, nil
 	}
@@ -261,9 +257,8 @@ func (h *PumpingStationHandler) List(c *gin.Context) {
 // @Failure 401 {object} web.ErrorResponse
 // @Router /admin/stations/pumping/report [post]
 func (h *PumpingStationHandler) CreateHistory(c *gin.Context) {
-	token := h.contextWith.GetToken(c.Request)
-	user, err := h.authService.GetProfile(c.Request.Context(), token)
-	if err != nil {
+	user, err := h.contextWith.GetUser(c)
+	if err != nil || user == nil {
 		h.SendError(c, web.Unauthorized("vui lòng đăng nhập lại"))
 		return
 	}

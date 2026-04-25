@@ -4,8 +4,7 @@ import (
 	"ai-api-tnhn/handler/filters"
 	"ai-api-tnhn/internal/dto"
 	"ai-api-tnhn/internal/models"
-	"ai-api-tnhn/internal/service/auth"
-	"ai-api-tnhn/internal/service/inundation"
+	"ai-api-tnhn/internal/service/station/inundation"
 	"ai-api-tnhn/utils/web"
 	"strconv"
 	"time"
@@ -16,21 +15,18 @@ import (
 type InundationHandler struct {
 	web.JsonRender
 	service     inundation.Service
-	authService auth.Service
 	contextWith web.ContextWith
 }
 
-func NewInundationHandler(service inundation.Service, authService auth.Service, contextWith web.ContextWith) *InundationHandler {
+func NewInundationHandler(service inundation.Service, contextWith web.ContextWith) *InundationHandler {
 	return &InundationHandler{
 		service:     service,
-		authService: authService,
 		contextWith: contextWith,
 	}
 }
 
 func (h *InundationHandler) checkPermissions(c *gin.Context) (isAllowedAll bool, user *models.User) {
-	token := h.contextWith.GetToken(c.Request)
-	user, err := h.authService.GetProfile(c.Request.Context(), token)
+	user, err := h.contextWith.GetUser(c)
 	if err != nil || user == nil {
 		return false, nil
 	}

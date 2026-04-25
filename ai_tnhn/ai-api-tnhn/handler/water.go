@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"ai-api-tnhn/internal/service/water"
+	"ai-api-tnhn/internal/service/station/water"
 	"ai-api-tnhn/utils/web"
 	"strconv"
 

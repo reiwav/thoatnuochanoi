@@ -47,6 +47,6 @@ func NewInundationReportListRequest() *InundationReportListRequest {
 	req := &InundationReportListRequest{
 		PaginationFilter: *filter.NewPaginationFilter(),
 	}
-	req.SetOrderBy("-created_at")
+	req.SetOrderBy("name")
 	return req
 }

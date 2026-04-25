@@ -3,7 +3,6 @@ package handler
 import (
 	"ai-api-tnhn/handler/filters"
 	"ai-api-tnhn/internal/models"
-	"ai-api-tnhn/internal/service/auth"
 	"ai-api-tnhn/internal/service/contract"
 	"ai-api-tnhn/utils/web"
 
@@ -13,14 +12,12 @@ import (
 type ContractHandler struct {
 	web.JsonRender
 	service     contract.Service
-	authService auth.Service
 	contextWith web.ContextWith
 }
 
-func NewContractHandler(service contract.Service, authService auth.Service, contextWith web.ContextWith) *ContractHandler {
+func NewContractHandler(service contract.Service, contextWith web.ContextWith) *ContractHandler {
 	return &ContractHandler{
 		service:     service,
-		authService: authService,
 		contextWith: contextWith,
 	}
 }

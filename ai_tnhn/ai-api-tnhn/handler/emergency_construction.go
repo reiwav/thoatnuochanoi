@@ -5,7 +5,7 @@ import (
 	"ai-api-tnhn/handler/filters"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/repository"
-	"ai-api-tnhn/internal/service/emergency_construction"
+	"ai-api-tnhn/internal/service/station/emergency_construction"
 	"ai-api-tnhn/utils/web"
 	"encoding/json"
 	"fmt"

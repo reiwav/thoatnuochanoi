@@ -8,28 +8,29 @@ import (
 	"ai-api-tnhn/internal/integration/thoatnuoc"
 	"ai-api-tnhn/internal/service/auth"
 	"ai-api-tnhn/internal/service/contract"
-	"ai-api-tnhn/internal/service/contract_category"
-	"ai-api-tnhn/internal/service/email"
-	"ai-api-tnhn/internal/service/emergency_construction"
+	"ai-api-tnhn/internal/service/contract/contract_category"
+	"ai-api-tnhn/internal/service/google/email"
+	"ai-api-tnhn/internal/service/station/emergency_construction"
 	"ai-api-tnhn/internal/service/employee"
 	"ai-api-tnhn/internal/service/google/gemini"
 	"ai-api-tnhn/internal/service/google/googleapi"
 	"ai-api-tnhn/internal/service/google/googledrive"
-	"ai-api-tnhn/internal/service/inundation"
+	"ai-api-tnhn/internal/service/station/inundation"
 	"ai-api-tnhn/internal/service/organization"
 	"ai-api-tnhn/internal/service/permission"
-	"ai-api-tnhn/internal/service/pump"
-	pumpingstation "ai-api-tnhn/internal/service/pumping_station"
+	"ai-api-tnhn/internal/service/station/pumping_station/pump"
+	pumpingstation "ai-api-tnhn/internal/service/station/pumping_station"
 	"ai-api-tnhn/internal/service/query"
 	"ai-api-tnhn/internal/service/report"
 	"ai-api-tnhn/internal/service/role"
 	"ai-api-tnhn/internal/service/setting"
 	"ai-api-tnhn/internal/service/station"
-	"ai-api-tnhn/internal/service/stationdata"
+	"ai-api-tnhn/internal/service/station/stationdata"
 	"ai-api-tnhn/internal/service/storage"
 	"ai-api-tnhn/internal/service/telegram"
 	"ai-api-tnhn/internal/service/token"
-	"ai-api-tnhn/internal/service/water"
+	"ai-api-tnhn/internal/service/station/water"
+	"ai-api-tnhn/internal/service/station/wastewater_treatment"
 	"ai-api-tnhn/internal/service/weather"
 	"context"
 )
@@ -58,7 +59,8 @@ type Services struct {
 	Telegram         telegram.BotTele
 	Drive            googledrive.Service
 	Storage          storage.Service
-	Setting          setting.Service
+	Setting            setting.Service
+	Wastewater         wastewater_treatment.Service
 }
 
 func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log logger.Logger) *Services {
@@ -125,7 +127,11 @@ func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log log
 	s.Query = query.NewService(db.DB)
 	s.StationData = stationdata.NewService(s.Station, s.Water)
 	s.Gemini, _ = gemini.NewService(cfg.GeminiAPIKey, cfg.GeminiAPIKeyContract, s.Water, s.GoogleApi, s.Inundation, s.Query, s.StationData, s.EmConstruction, s.Contract, s.Station, s.PumpingStation, repos.AiUsage, repos.AiChatLog, repos.User)
-	s.Report = report.NewService(cfg, log, s.Weather, s.GoogleApi, s.Inundation, s.PumpingStation, s.Station, s.Water, driveService, s.Gemini, s.Email, repos.AiChatLog)
+	if s.GoogleApi != nil && s.Gemini != nil {
+		s.GoogleApi.SetGeminiService(s.Gemini)
+	}
+
+	s.Report = report.NewService(cfg, log, s.GoogleApi, driveService, repos.AiChatLog)
 
 	if s.Gemini != nil {
 		targetWeatherSvc := s.Gemini
@@ -141,6 +147,8 @@ func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log log
 			})
 		}
 	}
+
+	s.Wastewater = wastewater_treatment.NewService(repos.WastewaterStation)
 
 	return s
 }

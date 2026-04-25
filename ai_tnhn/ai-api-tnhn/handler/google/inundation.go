@@ -43,7 +43,7 @@ func (h *handler) GetInundationSummary(c *gin.Context) {
 		} else {
 			displayText = fmt.Sprintf("Hiện có **%d** điểm đang ngập:\n\n", summary.ActivePoints)
 			for _, p := range summary.OngoingPoints {
-				displayText += fmt.Sprintf("- **%s**: %s (quản lý: %s)\n  *Bắt đầu:* %s\n", p.StreetName, p.Depth, p.OrgName, p.StartTime)
+				displayText += fmt.Sprintf("- **%s**: %.2f (quản lý: %s)\n  *Bắt đầu:* %s\n", p.StreetName, p.Depth, p.OrgName, p.StartTime)
 				if p.Description != "" {
 					displayText += fmt.Sprintf("  *Mô tả:* %s\n", p.Description)
 				}

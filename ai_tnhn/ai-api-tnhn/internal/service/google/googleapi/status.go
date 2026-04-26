@@ -110,6 +110,11 @@ func (s *service) GetLatestOCRText(ctx context.Context) string {
 func (s *service) GetCityStatus(ctx context.Context) (*CityStatus, error) {
 	var res CityStatus
 	var mu sync.Mutex
+
+	// Set a reasonable timeout for the entire status retrieval to prevent dashboard hanging
+	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
+	defer cancel()
+
 	g, gCtx := errgroup.WithContext(ctx)
 
 	g.Go(func() error {

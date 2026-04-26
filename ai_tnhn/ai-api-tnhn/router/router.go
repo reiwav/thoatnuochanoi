@@ -25,7 +25,7 @@ func (h *HandlerFuncs) Create(mid middleware.Middleware, orgHandler *handler.Org
 	r.GET("/swagger/*any", gs.WrapHandler(swaggerFiles.Handler))
 	// ... (cors omitted for brevity in replace_file_content if I were using it, but I'll include enough context)
 	r.Use(
-		//h.GinLogger(),
+		mid.TimeoutMiddleware(60*time.Second),
 		h.GinRecovery(),
 		cors.New(cors.Config{
 			AllowOrigins:     []string{"*"},

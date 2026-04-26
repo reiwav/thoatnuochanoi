@@ -159,7 +159,9 @@ func (w *SyncWorker) Stop() {
 }
 
 func (w *SyncWorker) processTask(task syncTask) {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+
 	if task.Type == TaskTypeReport {
 		report, err := w.InundationReportRepo.GetByID(ctx, task.ID)
 		if err == nil && report != nil {

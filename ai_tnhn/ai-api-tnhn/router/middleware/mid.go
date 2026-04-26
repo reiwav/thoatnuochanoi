@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"runtime/debug"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,6 +18,7 @@ type Middleware interface {
 	MidBasicType(role ...string) gin.HandlerFunc
 	Authorize(permKey string) gin.HandlerFunc
 	Recovery() gin.HandlerFunc
+	TimeoutMiddleware(timeout time.Duration) gin.HandlerFunc
 }
 
 func NewMiddleware(conf config.Config,

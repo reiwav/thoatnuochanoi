@@ -248,11 +248,9 @@ func (t *Table) R_SelectManyWithFields(ctx context.Context, filter bson.M, v int
 	var opts = options.Find().SetProjection(fields).SetSort(bson.D{{Key: "created_at", Value: -1}})
 	var cur, err = t.Find(ctx, filter, opts)
 	if err != nil {
-		if cur != nil {
-			cur.Close(ctx)
-		}
 		return err
 	}
+	defer cur.Close(ctx)
 	err = cur.All(ctx, v)
 	return err
 }
@@ -273,11 +271,9 @@ func (t *Table) R_SelectMany(ctx context.Context, filter bson.M, v interface{}) 
 	var opts = options.Find().SetSort(bson.D{{Key: "created_at", Value: -1}})
 	var cur, err = t.Find(ctx, filter, opts)
 	if err != nil {
-		if cur != nil {
-			cur.Close(ctx)
-		}
 		return err
 	}
+	defer cur.Close(ctx)
 	err = cur.All(ctx, v)
 	return err
 }
@@ -287,11 +283,9 @@ func (t *Table) R_SelectManyWithSort(ctx context.Context, filter bson.M, sort bs
 	var opts = options.Find().SetSort(sort)
 	var cur, err = t.Find(ctx, filter, opts)
 	if err != nil {
-		if cur != nil {
-			cur.Close(ctx)
-		}
 		return err
 	}
+	defer cur.Close(ctx)
 	err = cur.All(ctx, v)
 	return err
 }
@@ -342,6 +336,7 @@ func (t *Table) R_SelectAndSort(ctx context.Context, filter bson.M, sortFields i
 	if err != nil {
 		return err
 	}
+	defer cur.Close(ctx)
 	err = cur.All(ctx, res)
 	return err
 }
@@ -352,6 +347,7 @@ func (t *Table) R_Pipe(ctx context.Context, pipeline []bson.M, res interface{}) 
 	if err != nil {
 		return err
 	}
+	defer cur.Close(ctx)
 	err = cur.All(ctx, res)
 	return err
 }

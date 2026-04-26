@@ -64,6 +64,7 @@ func main() {
 		{Code: "inundation:review", Title: "Nhận xét điểm ngập", Group: "Điểm ngập", Type: "button", Description: "Quyền rà soát và gửi nhận xét cho nhân viên"},
 		{Code: "inundation:survey", Title: "XNTK", Group: "Điểm ngập", Type: "button", Description: "Quyền khảo sát & phối hợp xử lý điểm ngập"},
 		{Code: "inundation:mechanic", Title: "Cơ giới", Group: "Điểm ngập", Type: "button", Description: "Quyền bổ sung ảnh giám sát từ XN Cơ giới"},
+		{Code: "inundation:finish", Title: "Kết thúc ngập", Group: "Điểm ngập", Type: "button", Description: "Nút xác nhận hết ngập"},
 
 		// ─── Mực nước ───
 		{Code: "water:view", Title: "Xem", Group: "Mực nước", Type: "child_menu", Description: "Xem bảng sông hồ, lịch sử, danh sách"},
@@ -89,6 +90,14 @@ func main() {
 		{Code: "trambom:edit", Title: "Sửa", Group: "Trạm bơm", Type: "button", Description: "Sửa thông tin trạm bơm"},
 		{Code: "trambom:delete", Title: "Xóa", Group: "Trạm bơm", Type: "button", Description: "Xóa trạm bơm"},
 		{Code: "trambom:control", Title: "Điều khiển", Group: "Trạm bơm", Type: "button", Description: "Bật/tắt trạng thái trạm bơm"},
+
+		// ─── Trạm XLNT ───
+		{Code: "wastewater:view", Title: "Xem", Group: "Trạm XLNT", Type: "menu", Description: "Màn hình trạm xử lý nước thải"},
+		{Code: "wastewater:create", Title: "Thêm", Group: "Trạm XLNT", Type: "button", Description: "Thêm trạm XLNT mới"},
+		{Code: "wastewater:edit", Title: "Sửa", Group: "Trạm XLNT", Type: "button", Description: "Sửa thông tin trạm XLNT"},
+		{Code: "wastewater:delete", Title: "Xóa", Group: "Trạm XLNT", Type: "button", Description: "Xóa trạm XLNT"},
+		{Code: "wastewater:report", Title: "Nhập báo cáo", Group: "Trạm XLNT", Type: "button", Description: "Nhập báo cáo vận hành trạm XLNT"},
+		{Code: "wastewater:control", Title: "Điều khiển", Group: "Trạm XLNT", Type: "button", Description: "Bật/tắt trạng thái trạm XLNT"},
 
 		// ─── Sa hình ngập ───
 		{Code: "sa-hinh-ngap:view", Title: "Xem", Group: "Sa hình ngập", Type: "menu", Description: "Xem bản đồ sa hình ngập"},

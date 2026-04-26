@@ -35,7 +35,7 @@ const companyPages = {
     },
     {
       id: 'pumping:summary',
-      permission: 'trambom:view',
+      permission: ['trambom:view', 'wastewater:view'],
       title: 'Bảng Trạm bơm & XLNT',
       type: 'item',
       url: '/admin/station/pumping/summary',
@@ -78,7 +78,7 @@ const companyPages = {
         },
         {
           id: 'company:wastewater',
-          permission: ['trambom:view', 'trambom:edit', 'trambom:control'],
+          permission: ['wastewater:view', 'wastewater:edit', 'wastewater:control', 'wastewater:report'],
           title: 'Trạm XLNT',
           type: 'item',
           url: '/company/wastewater-treatment',
@@ -276,7 +276,7 @@ const adminPages = {
     },
     {
       id: 'admin:pumping-wastewater',
-      permission: ['trambom:view', 'trambom:control', 'trambom:edit'],
+      permission: ['trambom:view', 'trambom:control', 'trambom:edit', 'wastewater:view', 'wastewater:edit'],
       title: 'Quản lý Trạm bơm & XLNT',
       type: 'item',
       url: '/admin/tram-bom',

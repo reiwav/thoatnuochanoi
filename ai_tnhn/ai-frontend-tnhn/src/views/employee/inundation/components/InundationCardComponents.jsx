@@ -93,7 +93,7 @@ export const CardHeader = ({ point, latest, isHighPriority, navigate, openTask, 
                         </Tooltip>
                     )}
                     {isHighPriority && (
-                        <PermissionGuard permission="inundation:review">
+                        <PermissionGuard permission="inundation:finish">
                             <span>
                                 <Button
                                     variant="contained"

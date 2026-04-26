@@ -62,6 +62,10 @@ func (s *service) CreateHistory(ctx context.Context, user *models.User, history 
 		return nil, web.BadRequest("Tổng số lượng máy bơm báo cáo vượt quá số lượng thực tế của trạm")
 	}
 
+	if history.Timestamp == 0 {
+		history.Timestamp = time.Now().Unix()
+	}
+
 	if user == nil {
 		f := filter.NewPaginationFilter()
 		f.Page = 1
@@ -91,10 +95,6 @@ func (s *service) CreateHistory(ctx context.Context, user *models.User, history 
 		history.UserID = "SYSTEM"
 		history.UserName = "Hệ thống tự động"
 		history.Note = "Dữ liệu tự động từ hệ thống"
-	}
-
-	if history.Timestamp == 0 {
-		history.Timestamp = time.Now().Unix()
 	}
 
 	res, err := s.stationRepo.CreateHistory(ctx, history)

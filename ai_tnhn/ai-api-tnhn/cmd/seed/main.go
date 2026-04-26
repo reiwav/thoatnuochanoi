@@ -89,6 +89,7 @@ func main() {
 		{Code: "trambom:create", Title: "Thêm", Group: "Trạm bơm", Type: "button", Description: "Thêm trạm bơm mới"},
 		{Code: "trambom:edit", Title: "Sửa", Group: "Trạm bơm", Type: "button", Description: "Sửa thông tin trạm bơm"},
 		{Code: "trambom:delete", Title: "Xóa", Group: "Trạm bơm", Type: "button", Description: "Xóa trạm bơm"},
+		{Code: "trambom:report", Title: "Nhập báo cáo", Group: "Trạm bơm", Type: "button", Description: "Nhập báo cáo vận hành trạm bơm"},
 		{Code: "trambom:control", Title: "Điều khiển", Group: "Trạm bơm", Type: "button", Description: "Bật/tắt trạng thái trạm bơm"},
 
 		// ─── Trạm XLNT ───

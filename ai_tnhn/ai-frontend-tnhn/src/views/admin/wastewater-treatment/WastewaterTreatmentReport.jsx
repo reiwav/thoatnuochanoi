@@ -25,6 +25,7 @@ import {
 import wastewaterTreatmentApi from 'api/wastewaterTreatment';
 import { toast } from 'react-hot-toast';
 import dayjs from 'dayjs';
+import PermissionGuard from 'ui-component/PermissionGuard';
 
 const WastewaterTreatmentReport = ({ station, onSuccess }) => {
     const theme = useTheme();
@@ -168,27 +169,29 @@ const WastewaterTreatmentReport = ({ station, onSuccess }) => {
                 </Box>
 
                 <Box sx={{ mt: 3 }}>
-                    <Button
-                        fullWidth
-                        variant="contained"
-                        size="large"
-                        startIcon={<IconCheck size={22} />}
-                        onClick={handleSubmit}
-                        sx={{
-                            borderRadius: '16px',
-                            py: 1.5,
-                            fontSize: '1.1rem',
-                            fontWeight: 700,
-                            bgcolor: theme.palette.primary.main,
-                            textTransform: 'none',
-                            '&:hover': {
-                                bgcolor: theme.palette.primary.dark,
-                                transform: 'translateY(-1px)'
-                            }
-                        }}
-                    >
-                        Gửi báo cáo vận hành
-                    </Button>
+                    <PermissionGuard permission="wastewater:report">
+                        <Button
+                            fullWidth
+                            variant="contained"
+                            size="large"
+                            startIcon={<IconCheck size={22} />}
+                            onClick={handleSubmit}
+                            sx={{
+                                borderRadius: '16px',
+                                py: 1.5,
+                                fontSize: '1.1rem',
+                                fontWeight: 700,
+                                bgcolor: theme.palette.primary.main,
+                                textTransform: 'none',
+                                '&:hover': {
+                                    bgcolor: theme.palette.primary.dark,
+                                    transform: 'translateY(-1px)'
+                                }
+                            }}
+                        >
+                            Gửi báo cáo vận hành
+                        </Button>
+                    </PermissionGuard>
                 </Box>
             </Paper>
 

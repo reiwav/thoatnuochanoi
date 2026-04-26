@@ -32,14 +32,14 @@ const ActionButtons = ({ item, hasPermission, isCompany, user, handleHistory, ha
                 <IconHistory size={20} />
             </IconButton>
         </Tooltip>
-        {hasPermission('station:edit') && (isCompany || user?.org_id === item.org_id) && (
+        {hasPermission('wastewater:edit') && (isCompany || user?.org_id === item.org_id) && (
             <Tooltip title="Chỉnh sửa">
                 <IconButton color="primary" size="small" onClick={() => handleEdit(item)}>
                     <IconEdit size={20} />
                 </IconButton>
             </Tooltip>
         )}
-        {hasPermission('station:delete') && (isCompany || user?.org_id === item.org_id) && (
+        {hasPermission('wastewater:delete') && (isCompany || user?.org_id === item.org_id) && (
             <Tooltip title="Xóa">
                 <IconButton color="error" size="small" onClick={() => handleDelete(item)}>
                     <IconTrash size={20} />
@@ -189,7 +189,7 @@ const WastewaterTreatmentPage = () => {
     const [searchFilter, setSearchFilter] = useState('');
     const [filteredData, setFilteredData] = useState([]);
 
-    const canViewList = hasPermission(['trambom:view', 'trambom:edit', 'trambom:control']);
+    const canViewList = hasPermission(['wastewater:view', 'wastewater:edit', 'wastewater:control']);
 
     const fetchStations = async (silent = false) => {
         try {
@@ -282,7 +282,7 @@ const WastewaterTreatmentPage = () => {
     };
 
     if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 5 }}><CircularProgress /></Box>;
-    if (!hasPermission(['trambom:view', 'trambom:edit', 'trambom:control'])) return null;
+    if (!hasPermission(['wastewater:view', 'wastewater:edit', 'wastewater:control'])) return null;
 
     return (
         <MainCard
@@ -295,7 +295,7 @@ const WastewaterTreatmentPage = () => {
                     </Stack>
                 }
                 secondary={
-                    <PermissionGuard permission="trambom:edit">
+                    <PermissionGuard permission="wastewater:create">
                         <AnimateButton>
                             <Button 
                                 variant="contained" 

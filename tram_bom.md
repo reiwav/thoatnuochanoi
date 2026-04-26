@@ -26,8 +26,10 @@ Xây dựng tính năng quản lý danh sách trạm bơm và theo dõi lịch s
     - `operating_count` (int): Số lượng máy bơm đang vận hành.
     - `closed_count` (int): Số lượng máy bơm đang đóng.
     - `maintenance_count` (int): Số lượng máy bơm đang bảo dưỡng.
+    - `no_signal_count` (int): Số lượng máy bơm mất tín hiệu.
     - `note` (string): Ghi chú thêm (Ví dụ: "Dữ liệu tự động từ hệ thống").
-    - `timestamp` (int64): Thời gian báo cáo.
+    - `timestamp` (int64): Thời gian tạo bản ghi (Lần đầu ghi nhận trạng thái).
+    - `updated_at` (int64): Thời gian cập nhật cuối cùng (Nếu trạng thái không đổi).
 
 ## 3. Các bước thực hiện (Backend - Go API)
 
@@ -43,10 +45,14 @@ Xây dựng tính năng quản lý danh sách trạm bơm và theo dõi lịch s
 ### Bước 3: Xây dựng Service & Background Worker
 - Tạo logic quản lý trạm bơm.
 - **Background Worker**:
-    - Quét các trạm có `is_auto = true`.
-    - Duy trì kết nối SignalR SSE tới `link` của trạm.
-    - Chạy chu kỳ **10 giây/lần**.
-    - **Deduplication Logic**: So sánh kết quả vừa lấy được với bản ghi `History` mới nhất trong Database. Nếu trùng khớp cả 3 chỉ số bơm (`operating`, `closed`, `maintenance`) và `station_id` thì **BỎ QUA**, không ghi thêm dữ liệu.
+    - **Worker 1 (SignalR Fetcher)**: 
+        - Quét các trạm có `is_auto = true`.
+        - Duy trì kết nối SignalR SSE tới `link` của trạm, chạy chu kỳ **15 giây/lần**.
+        - **Deduplication Logic**: So sánh kết quả vừa lấy được với bản ghi `History` mới nhất. Nếu trùng khớp các chỉ số bơm và `station_id` thì **BỎ QUA**.
+        - **Cơ chế Reconnect**: Nếu mất kết nối server, thực hiện thử lại sau 5 phút và tăng dần thời gian chờ ở các lần thất bại tiếp theo (Exponential Backoff).
+    - **Worker 2 (Lifecycle Manager - Worker đang thiếu)**:
+        - Quản lý vòng đời của các tiến trình SignalR Fetcher.
+        - Tự động **Start / Restart / Stop** tiến trình lấy dữ liệu khi quản trị viên cập nhật thông tin trạm bơm (ví dụ: đổi `link`, bật/tắt `is_auto`, hoặc cập nhật `pump_count`).
 
 ## 4. Các bước thực hiện (Frontend - React)
 
@@ -75,16 +81,26 @@ Mỗi máy bơm được đại diện bởi **6 tham số liên tiếp** trong 
 | **6** | **Valve Fault** | Binary (0/1) | 1 = Van đang lỗi |
 
 ### B. Thuật toán tổng hợp trạng thái
-Với mỗi cụm 6 số, hệ thống sẽ phân loại máy bơm vào 1 trong 3 trạng thái:
+Với mỗi cụm 6 số, hệ thống sẽ phân loại máy bơm vào 1 trong 4 trạng thái:
 1.  **Maintenance (Bảo dưỡng)**: Nếu **Tham số 2 (Fault) == 1**.
-2.  **Operating (Vận hành)**: Nếu **Tham số 2 == 0** (Không lỗi) **VÀ** **Tham số 1 (On) == 1**.
-3.  **Closed (Đang đóng)**: Nếu **Tham số 2 == 0** (Không lỗi) **VÀ** **Tham số 1 (On) == 0**.
+2.  **No Signal (Mất tín hiệu)**: Nếu **tất cả 6 tham số đều bằng 0** (Đặc biệt: `Valve Open = 0` và `Valve Close = 0` đồng thời, chứng tỏ không có tín hiệu từ cảm biến), hoặc dữ liệu bị rỗng/lỗi định dạng.
+3.  **Operating (Vận hành)**: Nếu **Tham số 2 == 0** (Không lỗi), không rơi vào trường hợp Mất tín hiệu **VÀ** **Tham số 1 (On) == 1**.
+4.  **Closed (Đang đóng)**: Nếu **Tham số 2 == 0** (Không lỗi), không rơi vào trường hợp Mất tín hiệu **VÀ** **Tham số 1 (On) == 0**.
 
 ### C. Quy trình lưu trữ & Vòng đời
 1. Kết nối SignalR qua link cấu hình trong `PumpingStation`.
-2. Sau mỗi 10 giây, parse 120 đối số -> Tính tổng `operating`, `closed`, `maintenance`.
-3. So sánh với bản ghi `History` gần nhất. Chỉ `INSERT` nếu có sự thay đổi ở ít nhất 1 trong 3 chỉ số.
+2. Sau mỗi 15giây, parse 120 đối số -> Tính tổng `operating`, `closed`, `maintenance`, `no_signal_count`.
+3. So sánh với bản ghi `History` gần nhất:
+    - Nếu có thay đổi ít nhất 1 trong 4 chỉ số: **INSERT** bản ghi mới.
+    - Nếu không có thay đổi: **UPDATE** trường `updated_at` của bản ghi hiện tại để xác nhận dữ liệu vẫn live.
 4. Tự động Start/Restart/Stop job khi dữ liệu trạm bơm trong DB thay đổi.
+
+### D. Cơ chế tự động kết nối lại (Reconnection Strategy)
+Khi Worker gặp lỗi kết nối hoặc mất tín hiệu từ server SignalR:
+1. **Chiến lược Retry**:
+    - Lần đầu thất bại: Đợi **5 phút** rồi thử lại.
+    - Các lần tiếp theo: **Tăng dần thời gian chờ** (Exponential Backoff - ví dụ: 10p, 20p, 40p...) để tránh quá tải tài nguyên.
+3. **Phục hồi**: Ngay khi kết nối thành công, reset thời gian chờ và quay lại chu kỳ quét 15 giây/lần.
 
 ## 6. Danh sách công việc (Checklist)
 - [x] Backend: Model `PumpingStation` & `History`.

@@ -51,7 +51,7 @@ func (w *worker) Restart(ctx context.Context) {
 }
 
 func (w *worker) watchStations(ctx context.Context) {
-	ticker := time.NewTicker(10 * time.Second)
+	ticker := time.NewTicker(15 * time.Second)
 	defer ticker.Stop()
 
 	for {
@@ -77,12 +77,13 @@ func (w *worker) syncStations(ctx context.Context) {
 	for _, s := range stations {
 		if s.IsAuto && s.Link != "" {
 			if _, ok := w.cancelFuncs[s.ID]; !ok {
-				w.logger.GetLogger().Infof("Starting live sync for station: %s", s.Name)
+				w.logger.GetLogger().Infof("Starting live sync for station: %s (ID: %s, Link: %s)", s.Name, s.ID, s.Link)
 				jobCtx, cancel := context.WithCancel(ctx)
 				w.cancelFuncs[s.ID] = cancel
 				go w.runSignalRJob(jobCtx, s)
 			}
 		} else {
+			// w.logger.GetLogger().Debugf("Station %s is not auto or has no link", s.Name)
 			if cancel, ok := w.cancelFuncs[s.ID]; ok {
 				w.logger.GetLogger().Infof("Stopping live sync for station: %s", s.Name)
 				cancel()
@@ -109,6 +110,9 @@ func (w *worker) runSignalRJob(ctx context.Context, station *models.PumpingStati
 		baseUrl += "/signalr"
 	}
 
+	retryDelay := 5 * time.Minute
+	maxRetryDelay := 1 * time.Hour
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -117,16 +121,22 @@ func (w *worker) runSignalRJob(ctx context.Context, station *models.PumpingStati
 		default:
 			err := w.connectAndListen(ctx, baseUrl, station)
 			if err != nil {
-				w.logger.GetLogger().Errorf("SignalR connection error for %s: %v. Retrying in 15s...", station.Name, err)
-				
-				// Reset any active sync if it fails
+				w.logger.GetLogger().Errorf("SignalR connection error for %s: %v. Retrying in %v...", station.Name, err, retryDelay)
+
 				select {
 				case <-ctx.Done():
 					return
-				case <-time.After(15 * time.Second):
+				case <-time.After(retryDelay):
+					// Exponential backoff
+					retryDelay *= 2
+					if retryDelay > maxRetryDelay {
+						retryDelay = maxRetryDelay
+					}
 					continue
 				}
 			}
+			// Reset retry delay on successful connection
+			retryDelay = 5 * time.Minute
 		}
 	}
 }
@@ -134,7 +144,7 @@ func (w *worker) runSignalRJob(ctx context.Context, station *models.PumpingStati
 func (w *worker) connectAndListen(ctx context.Context, baseUrl string, station *models.PumpingStation) error {
 	// 1. Negotiate with timeout
 	negotiateUrl := fmt.Sprintf("%s/negotiate?clientProtocol=1.5&connectionData=%%5B%%7B%%22name%%22%%3A%%22pumphub%%22%%7D%%5D", baseUrl)
-	
+
 	client := &http.Client{Timeout: 15 * time.Second}
 	resp, err := client.Get(negotiateUrl)
 	if err != nil {
@@ -155,7 +165,7 @@ func (w *worker) connectAndListen(ctx context.Context, baseUrl string, station *
 
 	// 2. Connect via SSE with Context control
 	connectUrl := fmt.Sprintf("%s/connect?transport=serverSentEvents&clientProtocol=1.5&connectionToken=%s&connectionData=%%5B%%7B%%22name%%22%%3A%%22pumphub%%22%%7D%%5D", baseUrl, url.QueryEscape(negData.ConnectionToken))
-	
+
 	req, err := http.NewRequestWithContext(ctx, "GET", connectUrl, nil)
 	if err != nil {
 		return err
@@ -209,6 +219,7 @@ func (w *worker) connectAndListen(ctx context.Context, baseUrl string, station *
 			if data == "initialized" || data == "{}" {
 				continue
 			}
+			w.logger.GetLogger().Infof("Received SignalR data for %s: %s", station.Name, data)
 			w.handleIncomingData(ctx, station, data)
 		}
 	}
@@ -243,11 +254,33 @@ func (w *worker) parseAndSaveStatus(ctx context.Context, station *models.Pumping
 	operating := 0
 	closed := 0
 	maintenance := 0
+	noSignal := 0
 
 	// Each pump has 6 fields
-	// 5 Ordinary + 15 Emergency = 20 pumps
-	for i := 0; i < 20; i++ {
+	// We use the station.PumpCount to limit or the 120 args (max 20 pumps)
+	maxPumps := station.PumpCount
+	if maxPumps > 20 {
+		maxPumps = 20
+	}
+
+	for i := 0; i < maxPumps; i++ {
 		offset := i * 6
+
+		// Check No Signal (All 6 params are 0)
+		isNoSignal := true
+		for j := 0; j < 6; j++ {
+			val := fmt.Sprintf("%v", args[offset+j])
+			if val != "0" && val != "0.0" && val != "<nil>" && val != "" {
+				isNoSignal = false
+				break
+			}
+		}
+
+		if isNoSignal {
+			noSignal++
+			continue
+		}
+
 		on := fmt.Sprintf("%v", args[offset])
 		fault := fmt.Sprintf("%v", args[offset+1])
 
@@ -266,6 +299,7 @@ func (w *worker) parseAndSaveStatus(ctx context.Context, station *models.Pumping
 		OperatingCount:   operating,
 		ClosedCount:      closed,
 		MaintenanceCount: maintenance,
+		NoSignalCount:    noSignal,
 	}
 
 	_, err := w.service.CreateHistory(ctx, nil, history)

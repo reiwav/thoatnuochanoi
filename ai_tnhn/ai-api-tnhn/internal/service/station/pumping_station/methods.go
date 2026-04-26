@@ -75,6 +75,10 @@ func (s *service) CreateHistory(ctx context.Context, user *models.User, history 
 				latest.ClosedCount == history.ClosedCount &&
 				latest.MaintenanceCount == history.MaintenanceCount &&
 				latest.NoSignalCount == history.NoSignalCount {
+				// Cập nhật thời gian updated_at (MTime trong BaseModel) và timestamp mới nhất
+				latest.BeforeUpdate()
+				latest.Timestamp = history.Timestamp
+				_ = s.stationRepo.UpdateHistory(ctx, latest)
 				return latest, nil
 			}
 		}

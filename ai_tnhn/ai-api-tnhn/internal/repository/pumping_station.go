@@ -17,5 +17,6 @@ type PumpingStation interface {
 
 	// History
 	CreateHistory(ctx context.Context, history *models.PumpingStationHistory) (*models.PumpingStationHistory, error)
+	UpdateHistory(ctx context.Context, history *models.PumpingStationHistory) error
 	ListHistory(ctx context.Context, filter filter.Filter) ([]*models.PumpingStationHistory, int64, error)
 }

@@ -142,6 +142,10 @@ func (r pumpingStationRepository) CreateHistory(ctx context.Context, history *mo
 	return history, r.historyTable.R_Create(ctx, history)
 }
 
+func (r pumpingStationRepository) UpdateHistory(ctx context.Context, history *models.PumpingStationHistory) error {
+	return r.historyTable.R_Update(ctx, history)
+}
+
 func (r pumpingStationRepository) ListHistory(ctx context.Context, filter filter.Filter) ([]*models.PumpingStationHistory, int64, error) {
 	var items []*models.PumpingStationHistory
 	total, err := r.historyTable.R_SearchAndCount(ctx, filter, &items)

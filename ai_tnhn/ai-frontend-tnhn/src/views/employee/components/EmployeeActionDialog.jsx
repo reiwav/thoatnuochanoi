@@ -17,6 +17,7 @@ import { IconX } from '@tabler/icons-react';
 import { SurveyActionForm, MechActionForm, ReviewActionForm } from '../inundation/components/ActionForms';
 import PumpingStationReport from './PumpingStationReportForm';
 import InundationReportPanel from '../inundation/InundationReportPanel';
+import WastewaterTreatmentReport from '../../admin/wastewater-treatment/WastewaterTreatmentReport';
 
 const EmployeeActionDialog = ({ open, onClose, mode, data, onFinished }) => {
     const theme = useTheme();
@@ -25,7 +26,7 @@ const EmployeeActionDialog = ({ open, onClose, mode, data, onFinished }) => {
     const getTitle = () => {
         switch (mode) {
             case 'REPORT':
-                return `Báo cáo: ${data?.name}`;
+                return `Nhập báo cáo: ${data?.name}`;
             case 'SURVEY':
                 return `TK Giám sát: ${data?.name}`;
             case 'MECH':
@@ -33,9 +34,11 @@ const EmployeeActionDialog = ({ open, onClose, mode, data, onFinished }) => {
             case 'REVIEW':
                 return `Nhận xét: ${data?.name}`;
             case 'PUMPING':
-                return `Báo cáo Trạm bơm: ${data?.name}`;
+                return `Nhập báo cáo Trạm bơm: ${data?.name}`;
+            case 'WASTEWATER':
+                return `Nhập báo cáo Trạm XLNT: ${data?.name}`;
             default:
-                return 'Tác vụ nhân viên';
+                return 'Nhập báo cáo';
         }
     };
 
@@ -61,6 +64,8 @@ const EmployeeActionDialog = ({ open, onClose, mode, data, onFinished }) => {
                 return <ReviewActionForm point={data} onFinished={onFinished} onClose={onClose} />;
             case 'PUMPING':
                 return <PumpingStationReport station={data} onSuccess={onFinished} onClose={onClose} />;
+            case 'WASTEWATER':
+                return <WastewaterTreatmentReport station={data} onSuccess={onFinished} onClose={onClose} />;
             default:
                 return null;
         }

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 )
 
 type RainDataResponse struct {
@@ -62,15 +63,25 @@ type Service interface {
 	GetRawWaterData(ctx context.Context) (*WaterDataResponse, error)
 }
 
-type service struct{}
+type service struct {
+	client *http.Client
+}
 
 func NewService() Service {
-	return &service{}
+	return &service{
+		client: &http.Client{
+			Timeout: 15 * time.Second,
+		},
+	}
 }
 
 func (s *service) GetRawRainData(ctx context.Context) (*RainDataResponse, error) {
 	url := "https://noibo.thoatnuochanoi.vn/api/thuytri/getallrain?id=3a1a672f-c56f-4752-b86c-455e30427b87"
-	resp, err := http.Get(url)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := s.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to call rain API: %w", err)
 	}
@@ -98,7 +109,11 @@ func (s *service) GetRawRainData(ctx context.Context) (*RainDataResponse, error)
 
 func (s *service) GetRawWaterData(ctx context.Context) (*WaterDataResponse, error) {
 	url := "https://noibo.thoatnuochanoi.vn/api/thuytri/getallmucnuoc?id=3a1a672f-c56f-4752-b86c-455e30427b87"
-	resp, err := http.Get(url)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := s.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to call water API: %w", err)
 	}

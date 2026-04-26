@@ -4,6 +4,8 @@ import (
 	"ai-api-tnhn/internal/base/mgo/filter"
 	"ai-api-tnhn/internal/models"
 	"context"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // Rain Station Implementation
@@ -71,4 +73,22 @@ func (s *service) ListRiverStationsFiltered(ctx context.Context, orgID string, i
 
 func (s *service) GetOrgByID(ctx context.Context, id string) (*models.Organization, error) {
 	return s.orgRepo.GetByID(ctx, id)
+}
+
+func (s *service) GetAllRainStations(ctx context.Context) ([]*models.RainStation, error) {
+	var stations []*models.RainStation
+	err := s.rainRepo.R_SelectMany(ctx, bson.M{}, &stations)
+	return stations, err
+}
+
+func (s *service) GetAllLakeStations(ctx context.Context) ([]*models.LakeStation, error) {
+	var stations []*models.LakeStation
+	err := s.lakeRepo.R_SelectMany(ctx, bson.M{}, &stations)
+	return stations, err
+}
+
+func (s *service) GetAllRiverStations(ctx context.Context) ([]*models.RiverStation, error) {
+	var stations []*models.RiverStation
+	err := s.riverRepo.R_SelectMany(ctx, bson.M{}, &stations)
+	return stations, err
 }

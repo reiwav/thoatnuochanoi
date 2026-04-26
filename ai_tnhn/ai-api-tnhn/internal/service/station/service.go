@@ -14,6 +14,7 @@ type Service interface {
 	UpdateRainStation(ctx context.Context, id string, input *models.RainStation) error
 	DeleteRainStation(ctx context.Context, id string) error
 	ListRainStations(ctx context.Context, filter filter.Filter) ([]*models.RainStation, int64, error)
+	GetAllRainStations(ctx context.Context) ([]*models.RainStation, error)
 
 	// Lake Station
 	CreateLakeStation(ctx context.Context, input *models.LakeStation) (*models.LakeStation, error)
@@ -21,6 +22,7 @@ type Service interface {
 	UpdateLakeStation(ctx context.Context, id string, input *models.LakeStation) error
 	DeleteLakeStation(ctx context.Context, id string) error
 	ListLakeStations(ctx context.Context, filter filter.Filter) ([]*models.LakeStation, int64, error)
+	GetAllLakeStations(ctx context.Context) ([]*models.LakeStation, error)
 
 	// River Station
 	CreateRiverStation(ctx context.Context, input *models.RiverStation) (*models.RiverStation, error)
@@ -32,6 +34,7 @@ type Service interface {
 	ListLakeStationsFiltered(ctx context.Context, orgID string, ids []string) ([]*models.LakeStation, error)
 	ListRiverStationsFiltered(ctx context.Context, orgID string, ids []string) ([]*models.RiverStation, error)
 	GetOrgByID(ctx context.Context, id string) (*models.Organization, error)
+	GetAllRiverStations(ctx context.Context) ([]*models.RiverStation, error)
 }
 
 type service struct {

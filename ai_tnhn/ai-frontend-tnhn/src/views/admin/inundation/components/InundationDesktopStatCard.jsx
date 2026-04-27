@@ -9,7 +9,7 @@ import PermissionGuard from 'ui-component/PermissionGuard';
 import { SurveyInfoSection, MechInfoSection, ReviewCommentSection, ReportInfoSection } from '../../../employee/inundation/components/TechnicalSections';
 import AdminInundationActionMenu from './AdminInundationActionMenu';
 
-const InundationDesktopStatCard = ({ point, onAction, onOpenViewer, onOpenDetail, navigate, basePath }) => {
+const InundationDesktopStatCard = ({ point, onAction, onOpenViewer, onOpenDetail, onOpenHistory, navigate, basePath }) => {
     const theme = useTheme();
     const [expanded, setExpanded] = useState(false);
     const isFlooded = !!point.report_id;
@@ -58,7 +58,7 @@ const InundationDesktopStatCard = ({ point, onAction, onOpenViewer, onOpenDetail
                         </Typography>
                     </Box>
 
-                    <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 900, display: 'block', mb: 0.25, fontSize: '0.78rem', textTransform: 'uppercase' }}>
+                    <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 900, display: 'block', mb: 0.25, fontSize: '0.68rem', textTransform: 'uppercase' }}>
                         {point.org_name || 'Đơn vị quản lý'}
                     </Typography>
 
@@ -165,6 +165,22 @@ const InundationDesktopStatCard = ({ point, onAction, onOpenViewer, onOpenDetail
                                         </Stack>
                                     </Stack>
                                 )}
+                                {lastReport?.review_comment && (
+                                    <Stack direction="row" justifyContent="space-between">
+                                        <Stack direction="row" spacing={0.5} alignItems="center">
+                                            <IconMessageDots size={13} color={theme.palette.error.main} />
+                                            <Typography variant="caption" sx={{ fontWeight: 900, color: 'error.main' }}>
+                                                P. KT-CL: Đã nhận xét
+                                            </Typography>
+                                        </Stack>
+                                        <Stack direction="row" spacing={0.5} alignItems="center">
+                                            <IconUser size={13} color={theme.palette.error.main} />
+                                            <Typography variant="caption" sx={{ fontWeight: 900, color: 'error.main' }} noWrap>
+                                                {lastReport?.reviewer_name || 'N/A'}
+                                            </Typography>
+                                        </Stack>
+                                    </Stack>
+                                )}
                             </Stack>
                         )}
                     </Box>
@@ -239,7 +255,7 @@ const InundationDesktopStatCard = ({ point, onAction, onOpenViewer, onOpenDetail
                         point={point}
                         onAction={onAction}
                         sx={{ width: 30, height: 30 }}
-                        onViewHistory={(p) => navigate(`${basePath}/station/inundation/history?id=${p.id}`)}
+                        onViewHistory={() => onOpenHistory(point)}
                     />
                 </Stack>
             </CardContent>

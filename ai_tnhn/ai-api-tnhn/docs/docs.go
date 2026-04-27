@@ -6031,62 +6031,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/inundation/report/{id}/resolve": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Đánh dấu báo cáo ngập lụt đã được xử lý xong với thời gian kết thúc tùy chọn",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Ngập lụt"
-                ],
-                "summary": "Kết thúc báo cáo ngập lụt",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ID báo cáo",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Dữ liệu kết thúc",
-                        "name": "request",
-                        "in": "body",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "end_time": {
-                                    "type": "integer"
-                                }
-                            }
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "boolean"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/web.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/inundation/report/{id}/review": {
             "post": {
                 "security": [

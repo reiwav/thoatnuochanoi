@@ -4877,42 +4877,6 @@ paths:
       summary: Cập nhật trạng thái cơ giới hóa
       tags:
       - Ngập lụt
-  /inundation/report/{id}/resolve:
-    post:
-      consumes:
-      - application/json
-      description: Đánh dấu báo cáo ngập lụt đã được xử lý xong với thời gian kết
-        thúc tùy chọn
-      parameters:
-      - description: ID báo cáo
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Dữ liệu kết thúc
-        in: body
-        name: request
-        schema:
-          properties:
-            end_time:
-              type: integer
-          type: object
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: boolean
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Kết thúc báo cáo ngập lụt
-      tags:
-      - Ngập lụt
   /inundation/report/{id}/review:
     post:
       consumes:

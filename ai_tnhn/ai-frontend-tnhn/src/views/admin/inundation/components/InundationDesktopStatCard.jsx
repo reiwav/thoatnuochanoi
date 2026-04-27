@@ -95,11 +95,11 @@ const InundationDesktopStatCard = ({ point, onAction, onOpenViewer, onOpenDetail
                         <Grid container spacing={0.5} sx={{ alignItems: 'center' }}>
                             <Grid size={{ xs: 3.5 }}>
                                 <Typography variant="caption" sx={{ display: 'block', color: 'text.primary', fontWeight: 900, fontSize: { xs: '0.7rem', sm: '0.65rem' }, textTransform: 'uppercase' }}>Dài</Typography>
-                                <Typography variant="h5" sx={{ fontWeight: 900, fontSize: { xs: '1rem', sm: '1rem' }, color: 'text.primary' }}>{lastReport?.length || '...'}<span style={{ fontSize: '0.75rem', color: '#666', marginLeft: 2 }}>{lastReport?.length ? 'm' : ''}</span></Typography>
+                                <Typography variant="h5" sx={{ fontWeight: 900, fontSize: { xs: '1rem', sm: '1rem' }, color: 'text.primary' }}>{isFlooded ? (lastReport?.length || '...') : '...'}<span style={{ fontSize: '0.75rem', color: '#666', marginLeft: 2 }}>{(isFlooded && lastReport?.length) ? 'm' : ''}</span></Typography>
                             </Grid>
                             <Grid size={{ xs: 3.5 }}>
                                 <Typography variant="caption" sx={{ display: 'block', color: 'text.primary', fontWeight: 900, fontSize: { xs: '0.7rem', sm: '0.65rem' }, textTransform: 'uppercase' }}>Rộng</Typography>
-                                <Typography variant="h5" sx={{ fontWeight: 900, fontSize: { xs: '1rem', sm: '1rem' }, color: 'text.primary' }}>{lastReport?.width || '...'}<span style={{ fontSize: '0.75rem', color: '#666', marginLeft: 2 }}>{lastReport?.width ? 'm' : ''}</span></Typography>
+                                <Typography variant="h5" sx={{ fontWeight: 900, fontSize: { xs: '1rem', sm: '1rem' }, color: 'text.primary' }}>{isFlooded ? (lastReport?.width || '...') : '...'}<span style={{ fontSize: '0.75rem', color: '#666', marginLeft: 2 }}>{(isFlooded && lastReport?.width) ? 'm' : ''}</span></Typography>
                             </Grid>
                             <Grid size={{ xs: 5 }} sx={{ borderLeft: '1px solid', borderColor: 'divider', pl: 1 }}>
                                 <Typography variant="caption" sx={{ display: 'block', color: 'text.primary', fontWeight: 900, fontSize: { xs: '0.7rem', sm: '0.65rem' }, textTransform: 'uppercase' }}>Sâu</Typography>
@@ -112,8 +112,8 @@ const InundationDesktopStatCard = ({ point, onAction, onOpenViewer, onOpenDetail
                                         lineHeight: 1
                                     }}
                                 >
-                                    {lastReport?.depth || (lastReport?.depth === 0 ? '0' : '...')}
-                                    {lastReport?.depth != null && <span style={{ fontSize: '0.7rem', fontWeight: 700, marginLeft: 2, opacity: 0.6 }}>cm</span>}
+                                    {isFlooded ? (lastReport?.depth || (lastReport?.depth === 0 ? '0' : '...')) : '...'}
+                                    {isFlooded && lastReport?.depth != null && <span style={{ fontSize: '0.7rem', fontWeight: 700, marginLeft: 2, opacity: 0.6 }}>cm</span>}
                                 </Typography>
                             </Grid>
                         </Grid>
@@ -186,7 +186,7 @@ const InundationDesktopStatCard = ({ point, onAction, onOpenViewer, onOpenDetail
                     </Box>
 
                     {/* Image Previews */}
-                    {lastReport?.images?.length > 0 && (
+                    {isFlooded && lastReport?.images?.length > 0 && (
                         <Box sx={{ mb: 1.5 }}>
                             <Stack direction="row" spacing={0.5} justifyContent="center" sx={{ overflow: 'hidden' }}>
                                 {lastReport?.images?.slice(0, 4).map((img, i) => (
@@ -263,7 +263,7 @@ const InundationDesktopStatCard = ({ point, onAction, onOpenViewer, onOpenDetail
             <Collapse in={expanded} timeout="auto" unmountOnExit>
                 <Divider sx={{ borderStyle: 'dashed' }} />
                 <Box sx={{ p: 1.5, bgcolor: 'grey.50', textAlign: 'left' }}>
-                    {lastReport ? (
+                    {isFlooded && lastReport ? (
                         <Stack spacing={1.5}>
                             <ReportInfoSection latest={lastReport} handleOpenViewer={onOpenViewer} />
                             <ReviewCommentSection report={lastReport} />
@@ -271,7 +271,9 @@ const InundationDesktopStatCard = ({ point, onAction, onOpenViewer, onOpenDetail
                             <SurveyInfoSection latest={lastReport} />
                         </Stack>
                     ) : (
-                        <Typography variant="caption" color="text.disabled" sx={{ display: 'block', textAlign: 'center' }}>Không có dữ liệu chi tiết</Typography>
+                        <Typography variant="caption" color="text.disabled" sx={{ display: 'block', textAlign: 'center' }}>
+                            {lastReport ? 'Trạng thái bình thường. Xem chi tiết đợt ngập trong phần Lịch sử.' : 'Không có dữ liệu chi tiết'}
+                        </Typography>
                     )}
                 </Box>
             </Collapse>

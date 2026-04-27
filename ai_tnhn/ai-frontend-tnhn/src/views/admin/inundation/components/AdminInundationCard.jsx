@@ -260,16 +260,16 @@ const AdminInundationCard = ({ point, onAction, onOpenViewer, onOpenDetail, onOp
                 {/* Expanded Details Section */}
                 <Collapse in={expanded} timeout="auto" unmountOnExit>
                     <Box sx={{ mt: 2.5, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-                        {latestData ? (
+                        {isFlooded && latestData ? (
                             <Stack spacing={2}>
-                                {isFlooded && <ReportInfoSection latest={latestData} handleOpenViewer={onOpenViewer} />}
+                                <ReportInfoSection latest={latestData} handleOpenViewer={onOpenViewer} />
                                 <SurveyInfoSection latest={latestData} handleOpenViewer={onOpenViewer} />
                                 <MechInfoSection latest={latestData} handleOpenViewer={onOpenViewer} />
                                 <ReviewCommentSection latest={latestData} />
                             </Stack>
                         ) : (
                             <Typography variant="body2" color="textSecondary" align="center" sx={{ py: 2, fontStyle: 'italic' }}>
-                                Chưa có dữ liệu chi tiết
+                                {latestData ? 'Trạng thái bình thường. Xem chi tiết đợt ngập trong phần Lịch sử.' : 'Chưa có dữ liệu chi tiết'}
                             </Typography>
                         )}
                     </Box>

@@ -4,7 +4,7 @@ import {
     TableCell, TableContainer, TableHead, TableRow, Paper,
     IconButton, CircularProgress, Typography, Tooltip, Box, useTheme, Stack, Chip
 } from '@mui/material';
-import { IconTrash, IconPlus, IconEdit, IconClipboardCheck, IconDeviceFloppy } from '@tabler/icons-react';
+import { IconTrash, IconPlus, IconEdit, IconClipboardCheck } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 
 // project imports
@@ -51,34 +51,37 @@ const FloodLevelSetting = () => {
         setDialogOpen(true);
     };
 
-    const handleDelete = (index) => {
-        if (!window.confirm('Bạn có chắc chắn muốn xóa mức độ này? (Cần bấm Lưu để áp dụng lên máy chủ)')) return;
-        const newList = [...floodLevels];
-        newList.splice(index, 1);
-        setFloodLevels(newList);
+    const saveToServer = async (newList) => {
+        setSaving(true);
+        try {
+            await settingApi.updateFloodLevels(newList);
+            toast.success('Lưu cấu hình thành công');
+            setFloodLevels(newList);
+        } catch (err) {
+            toast.error(err.response?.data?.error || err.message || 'Lỗi lưu cấu hình');
+            // Re-fetch to sync with server if failed?
+            fetchFloodLevels();
+        } finally {
+            setSaving(false);
+        }
     };
 
-    const handleDialogSubmit = (values) => {
+    const handleDelete = async (index) => {
+        if (!window.confirm('Bạn có chắc chắn muốn xóa mức độ này?')) return;
+        const newList = [...floodLevels];
+        newList.splice(index, 1);
+        await saveToServer(newList);
+    };
+
+    const handleDialogSubmit = async (values) => {
         const newList = [...floodLevels];
         if (editingIndex > -1) {
             newList[editingIndex] = values;
         } else {
             newList.push(values);
         }
-        setFloodLevels(newList);
+        await saveToServer(newList);
         setDialogOpen(false);
-    };
-
-    const handleSaveToServer = async () => {
-        setSaving(true);
-        try {
-            await settingApi.updateFloodLevels(floodLevels);
-            toast.success('Lưu cấu hình thành công');
-        } catch (err) {
-            toast.error(err.message || 'Lỗi lưu cấu hình');
-        } finally {
-            setSaving(false);
-        }
     };
 
     return (
@@ -94,17 +97,6 @@ const FloodLevelSetting = () => {
                     <AnimateButton>
                         <Button variant="outlined" color="primary" startIcon={<IconPlus size={18} />} onClick={handleOpenCreate}>
                             Thêm mức độ
-                        </Button>
-                    </AnimateButton>
-                    <AnimateButton>
-                        <Button
-                            variant="contained"
-                            color="secondary"
-                            startIcon={saving ? <CircularProgress size={18} color="inherit" /> : <IconDeviceFloppy size={18} />}
-                            onClick={handleSaveToServer}
-                            disabled={saving}
-                        >
-                            Lưu cấu hình
                         </Button>
                     </AnimateButton>
                 </Stack>
@@ -187,6 +179,7 @@ const FloodLevelSetting = () => {
                 onSubmit={handleDialogSubmit}
                 level={editingLevel}
                 isEdit={editingIndex > -1}
+                loading={saving}
             />
         </MainCard>
     );

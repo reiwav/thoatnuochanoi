@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react';
 import {
     Dialog, DialogTitle, DialogContent, DialogActions,
     Button, TextField, Grid, Typography, Box, useTheme,
-    InputAdornment, FormControlLabel, Switch
+    InputAdornment, FormControlLabel, Switch, CircularProgress
 } from '@mui/material';
 import { IconClipboardCheck } from '@tabler/icons-react';
 
-const FloodLevelDialog = ({ open, onClose, onSubmit, level, isEdit }) => {
+const FloodLevelDialog = ({ open, onClose, onSubmit, level, isEdit, loading }) => {
     const theme = useTheme();
     const [values, setValues] = useState({
         code: '',
@@ -222,6 +222,8 @@ const FloodLevelDialog = ({ open, onClose, onSubmit, level, isEdit }) => {
                     variant="contained"
                     color="primary"
                     sx={{ borderRadius: '10px', px: 4, fontWeight: 700 }}
+                    disabled={loading}
+                    startIcon={loading && <CircularProgress size={16} color="inherit" />}
                 >
                     {isEdit ? 'Cập nhật' : 'Thêm mới'}
                 </Button>

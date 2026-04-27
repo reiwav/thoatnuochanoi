@@ -51,7 +51,7 @@ func (w *worker) Restart(ctx context.Context) {
 }
 
 func (w *worker) watchStations(ctx context.Context) {
-	ticker := time.NewTicker(15 * time.Second)
+	ticker := time.NewTicker(20 * time.Second)
 	defer ticker.Stop()
 
 	for {
@@ -280,14 +280,18 @@ func (w *worker) parseAndSaveStatus(ctx context.Context, station *models.Pumping
 			continue
 		}
 
-		on := fmt.Sprintf("%v", args[offset])
-		fault := fmt.Sprintf("%v", args[offset+1])
+		operatingBit := fmt.Sprintf("%v", args[offset+4])
+		maintenanceBit := fmt.Sprintf("%v", args[offset+3])
+		closedBit := fmt.Sprintf("%v", args[offset+1])
 
-		if fault == "1" {
-			maintenance++
-		} else if on == "1" {
+		if operatingBit == "1" {
 			operating++
+		} else if maintenanceBit == "1" {
+			maintenance++
+		} else if closedBit == "1" {
+			closed++
 		} else {
+			// If none are 1 but it's not No Signal, we count as closed
 			closed++
 		}
 	}

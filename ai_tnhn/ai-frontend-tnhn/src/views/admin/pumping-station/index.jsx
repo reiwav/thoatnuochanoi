@@ -46,7 +46,9 @@ const LogStatusChip = ({ report }) => {
     return (
         <Stack direction="row" spacing={0.5}>
             {report.operating_count > 0 && <Chip label={`Vận hành: ${report.operating_count}`} size="small" color="error" sx={{ fontWeight: 800, height: 20, fontSize: '0.65rem' }} />}
+            {report.closed_count > 0 && <Chip label={`Dừng: ${report.closed_count}`} size="small" color="success" sx={{ fontWeight: 800, height: 20, fontSize: '0.65rem' }} />}
             {report.maintenance_count > 0 && <Chip label={`Bảo dưỡng: ${report.maintenance_count}`} size="small" color="warning" sx={{ fontWeight: 800, height: 20, fontSize: '0.65rem' }} />}
+            {report.no_signal_count > 0 && <Chip label={`Ko tín hiệu: ${report.no_signal_count}`} size="small" sx={{ fontWeight: 800, height: 20, fontSize: '0.65rem', bgcolor: 'grey.300' }} />}
         </Stack>
     );
 };
@@ -147,6 +149,18 @@ const PumpingStationDesktopRow = ({ item, index, getOrgNames, handleHistory, han
                                         <Box sx={{ p: 1, bgcolor: 'white', borderRadius: 2, border: '1px solid', borderColor: 'success.light', textAlign: 'center' }}>
                                             <Typography variant="caption" color="success.main" sx={{ fontWeight: 800, display: 'block' }}>DỪNG</Typography>
                                             <Typography variant="h4" sx={{ fontWeight: 900 }}>{lastReport.closed_count}</Typography>
+                                        </Box>
+                                    </Grid>
+                                    <Grid item xs={6} sm={3}>
+                                        <Box sx={{ p: 1, bgcolor: 'white', borderRadius: 2, border: '1px solid', borderColor: 'warning.light', textAlign: 'center' }}>
+                                            <Typography variant="caption" color="warning.dark" sx={{ fontWeight: 800, display: 'block' }}>BẢO DƯỠNG</Typography>
+                                            <Typography variant="h4" sx={{ fontWeight: 900 }}>{lastReport.maintenance_count}</Typography>
+                                        </Box>
+                                    </Grid>
+                                    <Grid item xs={6} sm={3}>
+                                        <Box sx={{ p: 1, bgcolor: 'white', borderRadius: 2, border: '1px solid', borderColor: 'grey.300', textAlign: 'center' }}>
+                                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block' }}>KO TÍN HIỆU</Typography>
+                                            <Typography variant="h4" sx={{ fontWeight: 900 }}>{lastReport.no_signal_count}</Typography>
                                         </Box>
                                     </Grid>
                                     <Grid item xs={12} sm={6}>

@@ -42,13 +42,7 @@ export const SurveyActionForm = ({ point, onFinished }) => {
         fd.append('survey_checked', data.checked);
         fd.append('survey_note', data.note);
         data.images.forEach(img => fd.append('images', img));
-<<<<<<< HEAD
-
-        const success = await updateSurvey(point.active_report.id, fd);
-=======
-        
         const success = await updateSurvey(point.last_report.id, fd);
->>>>>>> e4899915e76de284ec659c62e585db918c1d49bc
         setLoading(false);
         if (success && onFinished) onFinished();
     };
@@ -134,13 +128,7 @@ export const MechActionForm = ({ point, onFinished }) => {
         fd.append('mech_r', data.r);
         fd.append('mech_s', data.s);
         data.images.forEach(img => fd.append('images', img));
-<<<<<<< HEAD
-
-        const success = await updateMech(point.active_report.id, fd);
-=======
-        
         const success = await updateMech(point.last_report.id, fd);
->>>>>>> e4899915e76de284ec659c62e585db918c1d49bc
         setLoading(false);
         if (success && onFinished) onFinished();
     };

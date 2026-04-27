@@ -7,6 +7,7 @@ import (
 	"ai-api-tnhn/utils/web"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type StationHandler struct {
@@ -198,15 +199,15 @@ func (h *StationHandler) ListRain(c *gin.Context) {
 	}
 
 	// // Permission-based filtering
-	// _, isAllowedAll, user := h.checkPermissions(c)
-	// if user != nil && !isAllowedAll {
-	// 	// UNION logic: Owned by Org OR in SharedOrgIDs list
-	// 	req.AddWhere("org_id_or_shared", "$or", []bson.M{
-	// 		{"org_id": user.OrgID},
-	// 		{"shared_org_ids": user.OrgID},
-	// 		{"share_all": true},
-	// 	})
-	// }
+	_, isAllowedAll, user := h.checkPermissions(c)
+	if user != nil && !isAllowedAll {
+		// UNION logic: Owned by Org OR in SharedOrgIDs list
+		req.AddWhere("org_id_or_shared", "$or", []bson.M{
+			{"org_id": user.OrgID},
+			{"shared_org_ids": user.OrgID},
+			{"share_all": true},
+		})
+	}
 
 	items, total, err := h.service.ListRainStations(c.Request.Context(), req)
 	web.AssertNil(err)
@@ -373,16 +374,16 @@ func (h *StationHandler) ListLake(c *gin.Context) {
 		return
 	}
 
-	// // Permission-based filtering
-	// _, isAllowedAll, user := h.checkPermissions(c)
-	// if user != nil && !isAllowedAll {
-	// 	// UNION logic: Owned by Org OR in SharedOrgIDs list
-	// 	req.AddWhere("org_id_or_shared", "$or", []bson.M{
-	// 		{"org_id": user.OrgID},
-	// 		{"shared_org_ids": user.OrgID},
-	// 		{"share_all": true},
-	// 	})
-	// }
+	// Permission-based filtering
+	_, isAllowedAll, user := h.checkPermissions(c)
+	if user != nil && !isAllowedAll {
+		// UNION logic: Owned by Org OR in SharedOrgIDs list
+		req.AddWhere("org_id_or_shared", "$or", []bson.M{
+			{"org_id": user.OrgID},
+			{"shared_org_ids": user.OrgID},
+			{"share_all": true},
+		})
+	}
 
 	items, total, err := h.service.ListLakeStations(c.Request.Context(), req)
 	web.AssertNil(err)
@@ -550,15 +551,15 @@ func (h *StationHandler) ListRiver(c *gin.Context) {
 	}
 
 	// // Permission-based filtering
-	// _, isAllowedAll, user := h.checkPermissions(c)
-	// if user != nil && !isAllowedAll {
-	// 	// UNION logic: Owned by Org OR in SharedOrgIDs list
-	// 	req.AddWhere("org_id_or_shared", "$or", []bson.M{
-	// 		{"org_id": user.OrgID},
-	// 		{"shared_org_ids": user.OrgID},
-	// 		{"share_all": true},
-	// 	})
-	// }
+	_, isAllowedAll, user := h.checkPermissions(c)
+	if user != nil && !isAllowedAll {
+		// UNION logic: Owned by Org OR in SharedOrgIDs list
+		req.AddWhere("org_id_or_shared", "$or", []bson.M{
+			{"org_id": user.OrgID},
+			{"shared_org_ids": user.OrgID},
+			{"share_all": true},
+		})
+	}
 
 	items, total, err := h.service.ListRiverStations(c.Request.Context(), req)
 	web.AssertNil(err)

@@ -90,7 +90,7 @@ func (s *service) GetPrimaryAndShared(ctx context.Context, user *models.User) (p
 
 	if user.IsCompany {
 		primaryOrgs = allOrgs
-		sharedOrgs = []*models.Organization{}
+		sharedOrgs = allOrgs
 	} else {
 		for _, org := range allOrgs {
 			if org.ID == user.OrgID {

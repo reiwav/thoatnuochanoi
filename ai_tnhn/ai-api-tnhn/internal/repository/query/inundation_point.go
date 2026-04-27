@@ -32,7 +32,11 @@ func (r *inundationStationRepo) ListByOrg(ctx context.Context, orgID string) ([]
 	var points []models.InundationStation
 	filter := bson.M{"active": true}
 	if orgID != "" {
-		filter["org_id"] = orgID
+		filter["$or"] = []bson.M{
+			{"org_id": orgID},
+			{"shared_org_ids": orgID},
+			{"share_all": true},
+		}
 	}
 	err := r.R_SelectManyWithSort(ctx, filter, bson.M{"name": 1}, &points)
 	return points, err

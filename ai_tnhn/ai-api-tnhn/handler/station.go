@@ -23,19 +23,6 @@ func NewStationHandler(service station.Service, contextWith web.ContextWith) *St
 	}
 }
 
-func (h *StationHandler) checkPermissions(c *gin.Context) (isSuperAdmin bool, isAllowedAll bool, user *models.User) {
-	user, err := h.contextWith.GetUser(c)
-	if err != nil || user == nil {
-		return false, false, nil
-	}
-
-	// Logic động: Super Admin hoặc Role có flag IsCompany=true trong DB mới được xem tất cả
-	isSuperAdmin = user.Role == "super_admin"
-	isAllowedAll = isSuperAdmin || user.IsCompany
-
-	return isSuperAdmin, isAllowedAll, user
-}
-
 // RAIN STATIONS
 // CreateRain godoc
 // @Summary Tạo mới trạm đo mưa
@@ -55,23 +42,13 @@ func (h *StationHandler) CreateRain(c *gin.Context) {
 		return
 	}
 
-	_, isAllowedAll, user := h.checkPermissions(c)
-	if user != nil {
-		if isAllowedAll {
-			// Super Admin or Company level: must provide OrgID
-			if m.OrgID == "" {
-				web.AssertNil(web.BadRequest("Vui lòng chọn xí nghiệp quản lý"))
-				return
-			}
-		} else {
-			// Branch level: auto-assign their own OrgID
-			m.OrgID = user.OrgID
-		}
-	}
-
-	if m.OrgID == "" {
-		web.AssertNil(web.BadRequest("Không xác định được xí nghiệp quản lý"))
+	user, err := h.contextWith.GetUser(c)
+	if err != nil || user == nil {
+		web.AssertNil(web.Unauthorized("Invalid user session"))
 		return
+	}
+	if !user.IsCompany {
+		m.OrgID = user.OrgID
 	}
 
 	if m.ShareAll {
@@ -103,12 +80,11 @@ func (h *StationHandler) UpdateRain(c *gin.Context) {
 		return
 	}
 
-	_, isAllowedAll, user := h.checkPermissions(c)
-	if user == nil {
-		web.AssertNil(web.Unauthorized("Invalid user session"))
+	user, err := h.contextWith.GetUser(c)
+	if err != nil || user == nil {
+		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
 		return
 	}
-
 	// Ownership check
 	current, err := h.service.GetRainStation(c.Request.Context(), id)
 	if err != nil || current == nil {
@@ -116,13 +92,9 @@ func (h *StationHandler) UpdateRain(c *gin.Context) {
 		return
 	}
 
-	if !isAllowedAll && current.OrgID != user.OrgID {
+	if !user.IsCompany && current.OrgID != user.OrgID {
 		web.AssertNil(web.Unauthorized("Bạn không có quyền chỉnh sửa trạm của đơn vị khác"))
 		return
-	}
-
-	if !isAllowedAll {
-		m.OrgID = current.OrgID
 	}
 
 	if m.ShareAll {
@@ -145,14 +117,14 @@ func (h *StationHandler) UpdateRain(c *gin.Context) {
 // @Router /admin/stations/rain/{id} [delete]
 func (h *StationHandler) DeleteRain(c *gin.Context) {
 	id := c.Param("id")
-	_, isAllowedAll, user := h.checkPermissions(c)
-	if user == nil {
-		web.AssertNil(web.Unauthorized("Invalid user session"))
+	user, err := h.contextWith.GetUser(c)
+	if err != nil || user == nil {
+		web.AssertNil(web.Unauthorized("Vui lòng đăng nhập lại"))
 		return
 	}
 
 	current, err := h.service.GetRainStation(c.Request.Context(), id)
-	if err == nil && current != nil && !isAllowedAll && current.OrgID != user.OrgID {
+	if err == nil && current != nil && !user.IsCompany && current.OrgID != user.OrgID {
 		web.AssertNil(web.Unauthorized("Bạn không có quyền xóa trạm của đơn vị khác"))
 		return
 	}
@@ -199,8 +171,12 @@ func (h *StationHandler) ListRain(c *gin.Context) {
 	}
 
 	// // Permission-based filtering
-	_, isAllowedAll, user := h.checkPermissions(c)
-	if user != nil && !isAllowedAll {
+	user, err := h.contextWith.GetUser(c)
+	if err != nil || user == nil {
+		web.AssertNil(web.Unauthorized("Invalid user session"))
+		return
+	}
+	if !user.IsCompany {
 		// UNION logic: Owned by Org OR in SharedOrgIDs list
 		req.AddWhere("org_id_or_shared", "$or", []bson.M{
 			{"org_id": user.OrgID},
@@ -233,21 +209,13 @@ func (h *StationHandler) CreateLake(c *gin.Context) {
 		return
 	}
 
-	_, isAllowedAll, user := h.checkPermissions(c)
-	if user != nil {
-		if isAllowedAll {
-			if m.OrgID == "" {
-				web.AssertNil(web.BadRequest("Vui lòng chọn xí nghiệp quản lý"))
-				return
-			}
-		} else {
-			m.OrgID = user.OrgID
-		}
-	}
-
-	if m.OrgID == "" {
-		web.AssertNil(web.BadRequest("Không xác định được xí nghiệp quản lý"))
+	user, err := h.contextWith.GetUser(c)
+	if err != nil || user == nil {
+		web.AssertNil(web.Unauthorized("Invalid user session"))
 		return
+	}
+	if !user.IsCompany {
+		m.OrgID = user.OrgID
 	}
 
 	if m.ShareAll {
@@ -279,8 +247,8 @@ func (h *StationHandler) UpdateLake(c *gin.Context) {
 		return
 	}
 
-	_, isAllowedAll, user := h.checkPermissions(c)
-	if user == nil {
+	user, err := h.contextWith.GetUser(c)
+	if err != nil || user == nil {
 		web.AssertNil(web.Unauthorized("Invalid user session"))
 		return
 	}
@@ -292,12 +260,12 @@ func (h *StationHandler) UpdateLake(c *gin.Context) {
 		return
 	}
 
-	if !isAllowedAll && current.OrgID != user.OrgID {
+	if !user.IsCompany && current.OrgID != user.OrgID {
 		web.AssertNil(web.Unauthorized("Bạn không có quyền chỉnh sửa trạm của đơn vị khác"))
 		return
 	}
 
-	if !isAllowedAll {
+	if !user.IsCompany {
 		m.OrgID = current.OrgID
 	}
 
@@ -321,14 +289,15 @@ func (h *StationHandler) UpdateLake(c *gin.Context) {
 // @Router /admin/stations/lake/{id} [delete]
 func (h *StationHandler) DeleteLake(c *gin.Context) {
 	id := c.Param("id")
-	_, isAllowedAll, user := h.checkPermissions(c)
-	if user == nil {
+
+	user, err := h.contextWith.GetUser(c)
+	if err != nil || user == nil {
 		web.AssertNil(web.Unauthorized("Invalid user session"))
 		return
 	}
 
 	current, err := h.service.GetLakeStation(c.Request.Context(), id)
-	if err == nil && current != nil && !isAllowedAll && current.OrgID != user.OrgID {
+	if err == nil && current != nil && !user.IsCompany && current.OrgID != user.OrgID {
 		web.AssertNil(web.Unauthorized("Bạn không có quyền xóa trạm của đơn vị khác"))
 		return
 	}
@@ -374,9 +343,13 @@ func (h *StationHandler) ListLake(c *gin.Context) {
 		return
 	}
 
-	// Permission-based filtering
-	_, isAllowedAll, user := h.checkPermissions(c)
-	if user != nil && !isAllowedAll {
+	user, err := h.contextWith.GetUser(c)
+	if err != nil || user == nil {
+		web.AssertNil(web.Unauthorized("Invalid user session"))
+		return
+	}
+
+	if !user.IsCompany {
 		// UNION logic: Owned by Org OR in SharedOrgIDs list
 		req.AddWhere("org_id_or_shared", "$or", []bson.M{
 			{"org_id": user.OrgID},
@@ -409,21 +382,14 @@ func (h *StationHandler) CreateRiver(c *gin.Context) {
 		return
 	}
 
-	_, isAllowedAll, user := h.checkPermissions(c)
-	if user != nil {
-		if isAllowedAll {
-			if m.OrgID == "" {
-				web.AssertNil(web.BadRequest("Vui lòng chọn xí nghiệp quản lý"))
-				return
-			}
-		} else {
-			m.OrgID = user.OrgID
-		}
+	user, err := h.contextWith.GetUser(c)
+	if err != nil || user == nil {
+		web.AssertNil(web.Unauthorized("Invalid user session"))
+		return
 	}
 
-	if m.OrgID == "" {
-		web.AssertNil(web.BadRequest("Không xác định được xí nghiệp quản lý"))
-		return
+	if !user.IsCompany {
+		m.OrgID = user.OrgID
 	}
 
 	if m.ShareAll {
@@ -455,8 +421,8 @@ func (h *StationHandler) UpdateRiver(c *gin.Context) {
 		return
 	}
 
-	_, isAllowedAll, user := h.checkPermissions(c)
-	if user == nil {
+	user, err := h.contextWith.GetUser(c)
+	if err != nil || user == nil {
 		web.AssertNil(web.Unauthorized("Invalid user session"))
 		return
 	}
@@ -468,12 +434,12 @@ func (h *StationHandler) UpdateRiver(c *gin.Context) {
 		return
 	}
 
-	if !isAllowedAll && current.OrgID != user.OrgID {
+	if !user.IsCompany && current.OrgID != user.OrgID {
 		web.AssertNil(web.Unauthorized("Bạn không có quyền chỉnh sửa trạm của đơn vị khác"))
 		return
 	}
 
-	if !isAllowedAll {
+	if !user.IsCompany {
 		m.OrgID = current.OrgID
 	}
 
@@ -497,14 +463,15 @@ func (h *StationHandler) UpdateRiver(c *gin.Context) {
 // @Router /admin/stations/river/{id} [delete]
 func (h *StationHandler) DeleteRiver(c *gin.Context) {
 	id := c.Param("id")
-	_, isAllowedAll, user := h.checkPermissions(c)
-	if user == nil {
+
+	user, err := h.contextWith.GetUser(c)
+	if err != nil || user == nil {
 		web.AssertNil(web.Unauthorized("Invalid user session"))
 		return
 	}
 
 	current, err := h.service.GetRiverStation(c.Request.Context(), id)
-	if err == nil && current != nil && !isAllowedAll && current.OrgID != user.OrgID {
+	if err == nil && current != nil && !user.IsCompany && current.OrgID != user.OrgID {
 		web.AssertNil(web.Unauthorized("Bạn không có quyền xóa trạm của đơn vị khác"))
 		return
 	}
@@ -551,8 +518,13 @@ func (h *StationHandler) ListRiver(c *gin.Context) {
 	}
 
 	// // Permission-based filtering
-	_, isAllowedAll, user := h.checkPermissions(c)
-	if user != nil && !isAllowedAll {
+	user, err := h.contextWith.GetUser(c)
+	if err != nil || user == nil {
+		web.AssertNil(web.Unauthorized("Invalid user session"))
+		return
+	}
+
+	if !user.IsCompany {
 		// UNION logic: Owned by Org OR in SharedOrgIDs list
 		req.AddWhere("org_id_or_shared", "$or", []bson.M{
 			{"org_id": user.OrgID},

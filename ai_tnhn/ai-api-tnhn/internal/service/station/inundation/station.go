@@ -142,12 +142,7 @@ func (s *service) DeletePoint(ctx context.Context, id string) error {
 	return s.inundationStationRepo.Delete(ctx, id)
 }
 
-func (s *service) ListPointsByOrg(ctx context.Context, user *models.User, isAllowedAll bool, orgIDFilter string) ([]models.InundationStation, error) {
-	orgID := user.OrgID
-	if isAllowedAll && orgIDFilter != "" {
-		orgID = orgIDFilter
-	}
-
+func (s *service) ListPointsByOrg(ctx context.Context, orgID string) ([]models.InundationStation, error) {
 	points, err := s.inundationStationRepo.ListByOrg(ctx, orgID)
 	if err != nil {
 		return nil, err

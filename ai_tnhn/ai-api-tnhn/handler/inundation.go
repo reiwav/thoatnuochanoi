@@ -6,6 +6,7 @@ import (
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/service/station/inundation"
 	"ai-api-tnhn/utils/web"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -25,18 +26,6 @@ func NewInundationHandler(service inundation.Service, contextWith web.ContextWit
 	}
 }
 
-func (h *InundationHandler) checkPermissions(c *gin.Context) (isAllowedAll bool, user *models.User) {
-	user, err := h.contextWith.GetUser(c)
-	if err != nil || user == nil {
-		return false, nil
-	}
-
-	// Logic động: Super Admin hoặc Role có flag IsCompany=true trong DB mới được xem tất cả
-	isAllowedAll = user.Role == "super_admin" || user.IsCompany
-
-	return isAllowedAll, user
-}
-
 // CreateReport godoc
 // @Summary Tạo báo cáo ngập lụt mới (nhân viên xí nghiệp tạo)
 // @Description Tạo một báo cáo ngập lụt mới với tùy chọn đính kèm hình ảnh
@@ -51,17 +40,17 @@ func (h *InundationHandler) checkPermissions(c *gin.Context) (isAllowedAll bool,
 // @Failure 400 {object} web.ErrorResponse
 // @Router /inundation/report [post]
 func (h *InundationHandler) CreateReport(c *gin.Context) {
-	// 1. Auth & Identification
-	_, user := h.checkPermissions(c)
-	if user == nil {
-		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
-		return
-	}
 
 	// 2. Bind Request DTO
 	var req models.InundationReportBase
 	if err := c.ShouldBind(&req); err != nil {
 		h.SendError(c, web.BadRequest("Invalid request data: "+err.Error()))
+		return
+	}
+
+	user, err := h.contextWith.GetUser(c)
+	if err != nil || user == nil {
+		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
 		return
 	}
 
@@ -91,12 +80,6 @@ func (h *InundationHandler) CreateReport(c *gin.Context) {
 // @Failure 401 {object} web.ErrorResponse
 // @Router /inundation/{id}/update [post]
 func (h *InundationHandler) AddUpdateSituation(c *gin.Context) {
-	_, user := h.checkPermissions(c)
-	if user == nil {
-		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
-		return
-	}
-
 	id := c.Param("id")
 	var req dto.AddUpdateSitutionRequest
 	if err := c.ShouldBind(&req); err != nil {
@@ -117,7 +100,12 @@ func (h *InundationHandler) AddUpdateSituation(c *gin.Context) {
 		},
 	}
 
-	err := h.service.AddUpdate(c.Request.Context(), user, id, update, images, req.Resolve)
+	user, err := h.contextWith.GetUser(c)
+	if err != nil || user == nil {
+		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
+		return
+	}
+	err = h.service.AddUpdate(c.Request.Context(), user, id, update, images, req.Resolve)
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -138,13 +126,14 @@ func (h *InundationHandler) AddUpdateSituation(c *gin.Context) {
 // @Failure 404 {object} web.ErrorResponse
 // @Router /inundation/report/{id} [get]
 func (h *InundationHandler) GetReport(c *gin.Context) {
-	_, user := h.checkPermissions(c)
-	if user == nil {
+	id := c.Param("id")
+
+	user, err := h.contextWith.GetUser(c)
+	if err != nil || user == nil {
 		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
 		return
 	}
 
-	id := c.Param("id")
 	report, err := h.service.GetReport(c.Request.Context(), user, id)
 	if err != nil {
 		h.SendError(c, err)
@@ -218,8 +207,8 @@ func (h *InundationHandler) ResolveReport(c *gin.Context) {
 // @Failure 401 {object} web.ErrorResponse
 // @Router /inundation/quick-finish [post]
 func (h *InundationHandler) QuickFinish(c *gin.Context) {
-	_, user := h.checkPermissions(c)
-	if user == nil {
+	user, err := h.contextWith.GetUser(c)
+	if err != nil || user == nil {
 		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
 		return
 	}
@@ -232,7 +221,7 @@ func (h *InundationHandler) QuickFinish(c *gin.Context) {
 		return
 	}
 
-	err := h.service.QuickFinish(c.Request.Context(), user, req.PointID)
+	err = h.service.QuickFinish(c.Request.Context(), user, req.PointID)
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -256,8 +245,8 @@ func (h *InundationHandler) QuickFinish(c *gin.Context) {
 // @Success 200 {object} object{data=[]models.InundationReport,total=int}
 // @Router /inundation/reports [get]
 func (h *InundationHandler) ListReports(c *gin.Context) {
-	isAllowedAll, user := h.checkPermissions(c)
-	if user == nil {
+	user, err := h.contextWith.GetUser(c)
+	if err != nil || user == nil {
 		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
 		return
 	}
@@ -268,6 +257,7 @@ func (h *InundationHandler) ListReports(c *gin.Context) {
 		return
 	}
 
+	isAllowedAll := user.IsCompany
 	reports, total, err := h.service.ListReportsWithFilter(c.Request.Context(), user, isAllowedAll, req.OrgID, req)
 	if err != nil {
 		h.SendError(c, err)
@@ -291,12 +281,13 @@ func (h *InundationHandler) ListReports(c *gin.Context) {
 // @Failure 401 {object} web.ErrorResponse
 // @Router /inundation/points-status [get]
 func (h *InundationHandler) GetPointsStatus(c *gin.Context) {
-	isAllowedAll, user := h.checkPermissions(c)
-	if user == nil {
+	user, err := h.contextWith.GetUser(c)
+	if err != nil || user == nil {
 		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
 		return
 	}
 
+	isAllowedAll := user.IsCompany
 	orgIDFilter := c.Query("org_id")
 	result, err := h.service.GetPointsStatus(c.Request.Context(), user, isAllowedAll, orgIDFilter)
 	if err != nil {
@@ -318,14 +309,18 @@ func (h *InundationHandler) GetPointsStatus(c *gin.Context) {
 // @Failure 401 {object} web.ErrorResponse
 // @Router /inundation/points-list [get]
 func (h *InundationHandler) ListPointsByOrg(c *gin.Context) {
-	isAllowedAll, user := h.checkPermissions(c)
-	if user == nil {
+	user, err := h.contextWith.GetUser(c)
+	if err != nil || user == nil {
 		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
 		return
 	}
 
 	orgIDFilter := c.Query("org_id")
-	result, err := h.service.ListPointsByOrg(c.Request.Context(), user, isAllowedAll, orgIDFilter)
+	if orgIDFilter == "" {
+		orgIDFilter = user.OrgID
+	}
+	fmt.Println("==========", orgIDFilter, user.IsCompany, user.OrgID, user.IsCompany)
+	result, err := h.service.ListPointsByOrg(c.Request.Context(), orgIDFilter)
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -353,11 +348,13 @@ func (h *InundationHandler) CreatePoint(c *gin.Context) {
 		return
 	}
 
-	isAllowedAll, user := h.checkPermissions(c)
-	if user == nil {
-		h.SendError(c, web.Unauthorized("Invalid user session"))
+	user, err := h.contextWith.GetUser(c)
+	if err != nil || user == nil {
+		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
 		return
 	}
+
+	isAllowedAll := user.IsCompany
 
 	if !isAllowedAll && user.OrgID != req.OrgID && (!req.ShareAll || !web.Contains(req.SharedOrgIDs, user.OrgID)) {
 		h.SendError(c, web.Unauthorized("Bạn không có quyền thêm điểm đo cho đơn vị khác"))
@@ -398,11 +395,13 @@ func (h *InundationHandler) UpdatePoint(c *gin.Context) {
 		return
 	}
 
-	isAllowedAll, user := h.checkPermissions(c)
-	if user == nil {
-		h.SendError(c, web.Unauthorized("Invalid user session"))
+	user, err := h.contextWith.GetUser(c)
+	if err != nil || user == nil {
+		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
 		return
 	}
+
+	isAllowedAll := user.IsCompany
 
 	// Fetch current point to retain org ID if not provided, or if user is not authorized
 	currentPoint, err := h.service.GetPointByID(c.Request.Context(), id)
@@ -452,11 +451,13 @@ func (h *InundationHandler) UpdatePoint(c *gin.Context) {
 func (h *InundationHandler) DeletePoint(c *gin.Context) {
 	id := c.Param("id")
 
-	isAllowedAll, user := h.checkPermissions(c)
-	if user == nil {
-		h.SendError(c, web.Unauthorized("Invalid user session"))
+	user, err := h.contextWith.GetUser(c)
+	if err != nil || user == nil {
+		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
 		return
 	}
+
+	isAllowedAll := user.IsCompany
 
 	// Ownership check: Only owner org or Company admin can delete
 	currentPoint, err := h.service.GetPointByID(c.Request.Context(), id)
@@ -491,8 +492,8 @@ func (h *InundationHandler) DeletePoint(c *gin.Context) {
 // @Failure 401 {object} web.ErrorResponse
 // @Router /inundation/update/{id}/review [post]
 func (h *InundationHandler) ReviewUpdate(c *gin.Context) {
-	_, user := h.checkPermissions(c)
-	if user == nil {
+	user, err := h.contextWith.GetUser(c)
+	if err != nil || user == nil {
 		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
 		return
 	}
@@ -509,7 +510,7 @@ func (h *InundationHandler) ReviewUpdate(c *gin.Context) {
 		return
 	}
 
-	err := h.service.ReviewUpdate(c.Request.Context(), user, id, req.Comment)
+	err = h.service.ReviewUpdate(c.Request.Context(), user, id, req.Comment)
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -531,8 +532,8 @@ func (h *InundationHandler) ReviewUpdate(c *gin.Context) {
 // @Failure 401 {object} web.ErrorResponse
 // @Router /inundation/report/{id}/review [post]
 func (h *InundationHandler) ReviewReport(c *gin.Context) {
-	_, user := h.checkPermissions(c)
-	if user == nil {
+	user, err := h.contextWith.GetUser(c)
+	if err != nil || user == nil {
 		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
 		return
 	}
@@ -549,7 +550,7 @@ func (h *InundationHandler) ReviewReport(c *gin.Context) {
 		return
 	}
 
-	err := h.service.ReviewReport(c.Request.Context(), user, id, req.Comment)
+	err = h.service.ReviewReport(c.Request.Context(), user, id, req.Comment)
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -572,8 +573,8 @@ func (h *InundationHandler) ReviewReport(c *gin.Context) {
 // @Failure 401 {object} web.ErrorResponse
 // @Router /inundation/report/{id} [put]
 func (h *InundationHandler) UpdateReport(c *gin.Context) {
-	_, user := h.checkPermissions(c)
-	if user == nil {
+	user, err := h.contextWith.GetUser(c)
+	if err != nil || user == nil {
 		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
 		return
 	}
@@ -587,7 +588,7 @@ func (h *InundationHandler) UpdateReport(c *gin.Context) {
 
 	images := h.getImages(c)
 
-	err := h.service.UpdateReport(c.Request.Context(), user, id, &req, images)
+	err = h.service.UpdateReport(c.Request.Context(), user, id, &req, images)
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -610,8 +611,8 @@ func (h *InundationHandler) UpdateReport(c *gin.Context) {
 // @Failure 401 {object} web.ErrorResponse
 // @Router /inundation/update/{id} [put]
 func (h *InundationHandler) UpdateSituationUpdateContent(c *gin.Context) {
-	_, user := h.checkPermissions(c)
-	if user == nil {
+	user, err := h.contextWith.GetUser(c)
+	if err != nil || user == nil {
 		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
 		return
 	}
@@ -636,7 +637,7 @@ func (h *InundationHandler) UpdateSituationUpdateContent(c *gin.Context) {
 		},
 	}
 
-	err := h.service.UpdateUpdateContent(c.Request.Context(), user, updatedUpdate, images)
+	err = h.service.UpdateUpdateContent(c.Request.Context(), user, updatedUpdate, images)
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -658,8 +659,8 @@ func (h *InundationHandler) UpdateSituationUpdateContent(c *gin.Context) {
 // @Failure 401 {object} web.ErrorResponse
 // @Router /inundation/report/{id}/survey [put]
 func (h *InundationHandler) UpdateSurvey(c *gin.Context) {
-	_, user := h.checkPermissions(c)
-	if user == nil {
+	user, err := h.contextWith.GetUser(c)
+	if err != nil || user == nil {
 		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
 		return
 	}
@@ -672,7 +673,7 @@ func (h *InundationHandler) UpdateSurvey(c *gin.Context) {
 	}
 	images := h.getImages(c)
 
-	err := h.service.UpdateSurvey(c.Request.Context(), user, id, &req, images)
+	err = h.service.UpdateSurvey(c.Request.Context(), user, id, &req, images)
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -694,8 +695,8 @@ func (h *InundationHandler) UpdateSurvey(c *gin.Context) {
 // @Failure 401 {object} web.ErrorResponse
 // @Router /inundation/report/{id}/mech [put]
 func (h *InundationHandler) UpdateMech(c *gin.Context) {
-	_, user := h.checkPermissions(c)
-	if user == nil {
+	user, err := h.contextWith.GetUser(c)
+	if err != nil || user == nil {
 		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
 		return
 	}
@@ -707,7 +708,7 @@ func (h *InundationHandler) UpdateMech(c *gin.Context) {
 		return
 	}
 	images := h.getImages(c)
-	err := h.service.UpdateMech(c.Request.Context(), user, id, &req, images)
+	err = h.service.UpdateMech(c.Request.Context(), user, id, &req, images)
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -733,11 +734,13 @@ func (h *InundationHandler) GetYearlyHistory(c *gin.Context) {
 		year = time.Now().Year()
 	}
 
-	isAllowedAll, user := h.checkPermissions(c)
-	if user == nil {
-		h.SendError(c, web.Unauthorized("Invalid user session"))
+	user, err := h.contextWith.GetUser(c)
+	if err != nil || user == nil {
+		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
 		return
 	}
+
+	isAllowedAll := user.IsCompany
 
 	orgID := user.OrgID
 	if isAllowedAll {
@@ -771,11 +774,13 @@ func (h *InundationHandler) ExportYearlyHistory(c *gin.Context) {
 		year = time.Now().Year()
 	}
 
-	isAllowedAll, user := h.checkPermissions(c)
-	if user == nil {
-		h.SendError(c, web.Unauthorized("Invalid user session"))
+	user, err := h.contextWith.GetUser(c)
+	if err != nil || user == nil {
+		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
 		return
 	}
+
+	isAllowedAll := user.IsCompany
 
 	orgID := user.OrgID
 	if isAllowedAll {

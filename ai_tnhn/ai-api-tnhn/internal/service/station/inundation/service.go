@@ -33,7 +33,7 @@ type Service interface {
 	GetPointByID(ctx context.Context, id string) (*models.InundationStation, error)
 	CreatePoint(ctx context.Context, point models.InundationStation) (string, error)
 	UpdatePoint(ctx context.Context, id string, point models.InundationStation) error
-	ListPointsByOrg(ctx context.Context, user *models.User, isAllowedAll bool, orgIDFilter string) ([]models.InundationStation, error)
+	ListPointsByOrg(ctx context.Context, orgID string) ([]models.InundationStation, error)
 	DeletePoint(ctx context.Context, id string) error
 
 	// Yearly history reporting

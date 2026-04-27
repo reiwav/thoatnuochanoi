@@ -103,6 +103,7 @@ func (m mid) MidBasicType(roles ...string) gin.HandlerFunc {
 		if roleData, _ := m.roleRepo.GetByCode(ctx, user.Role); roleData != nil {
 			user.IsEmployee = roleData.IsEmployee
 			user.IsCompany = roleData.IsCompany
+			user.OrgID = tok.OrgID // fix de filter theo token company
 		}
 		m.SetUser(ctx, user)
 

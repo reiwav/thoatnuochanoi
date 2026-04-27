@@ -164,36 +164,6 @@ func (h *InundationHandler) ListReportUpdates(c *gin.Context) {
 	h.SendData(c, updates)
 }
 
-// ResolveReport godoc
-// @Summary Kết thúc báo cáo ngập lụt
-// @Description Đánh dấu báo cáo ngập lụt đã được xử lý xong với thời gian kết thúc tùy chọn
-// @Tags Ngập lụt
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Param id path string true "ID báo cáo"
-// @Param request body object{end_time=int64} false "Dữ liệu kết thúc"
-// @Success 200 {boolean} bool
-// @Failure 401 {object} web.ErrorResponse
-// @Router /inundation/report/{id}/resolve [post]
-func (h *InundationHandler) ResolveReport(c *gin.Context) {
-	reportID := c.Param("id")
-	var req struct {
-		EndTime int64 `json:"end_time"`
-	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		// Ignore error if not provided
-	}
-
-	err := h.service.Resolve(c.Request.Context(), reportID, req.EndTime)
-	if err != nil {
-		h.SendError(c, err)
-		return
-	}
-
-	h.SendData(c, true)
-}
-
 // QuickFinish godoc
 // @Summary Kết thúc nhanh điểm ngập
 // @Description Đánh dấu điểm ngập đã hết ngập nhanh chóng

@@ -149,7 +149,6 @@ func (s *service) AddUpdate(ctx context.Context, user *models.User, reportID str
 	if err != nil {
 		return err
 	}
-	fmt.Println("==========", report.PointID)
 	// 2. Permission Check for Employee
 	err = s.validAssigned(ctx, user, report.PointID)
 	if err != nil {
@@ -413,7 +412,7 @@ func (s *service) UpdateReport(ctx context.Context, user *models.User, id string
 	}
 
 	// Permission Checks
-	isAllowedAll := user.Role == "super_admin" || user.IsCompany
+	isAllowedAll := user.IsCompany
 	if user.IsEmployee {
 		// Employees can ONLY edit if NeedsCorrection is true AND it belongs to their org
 		if !existing.NeedsCorrection {

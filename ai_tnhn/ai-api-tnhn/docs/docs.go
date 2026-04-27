@@ -4394,6 +4394,326 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/stations/wastewater": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Trạm xử lý nước thải"
+                ],
+                "summary": "Danh sách trạm xử lý nước thải",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Lọc theo đơn vị",
+                        "name": "org_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/web.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/definitions/models.WastewaterStation"
+                                                    }
+                                                },
+                                                "total": {
+                                                    "type": "integer"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Trạm xử lý nước thải"
+                ],
+                "summary": "Tạo mới trạm xử lý nước thải",
+                "parameters": [
+                    {
+                        "description": "Dữ liệu trạm",
+                        "name": "station",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.WastewaterStation"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/web.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.WastewaterStation"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/stations/wastewater/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Trạm xử lý nước thải"
+                ],
+                "summary": "Lấy chi tiết trạm xử lý nước thải",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID trạm",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/web.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.WastewaterStation"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Trạm xử lý nước thải"
+                ],
+                "summary": "Cập nhật trạm xử lý nước thải",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID trạm",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Dữ liệu cập nhật",
+                        "name": "station",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.WastewaterStation"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "Trạm xử lý nước thải"
+                ],
+                "summary": "Xóa trạm xử lý nước thải",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID trạm",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/stations/wastewater/{id}/history": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Trạm xử lý nước thải"
+                ],
+                "summary": "Xem lịch sử nhận xét trạm xử lý nước thải",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID trạm",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/web.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/definitions/models.WastewaterStationReport"
+                                                    }
+                                                },
+                                                "total": {
+                                                    "type": "integer"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/stations/wastewater/{id}/report": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Trạm xử lý nước thải"
+                ],
+                "summary": "Nhân viên cập nhật nhận xét trạm xử lý nước thải",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID trạm",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Nội dung nhận xét",
+                        "name": "report",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/wastewater_treatment.SubmitReportRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/water/lake/{id}/history": {
             "get": {
                 "security": [
@@ -5262,6 +5582,51 @@ const docTemplate = `{
                 }
             }
         },
+        "/inundation/quick-finish": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Đánh dấu điểm ngập đã hết ngập nhanh chóng",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Ngập lụt"
+                ],
+                "summary": "Kết thúc nhanh điểm ngập",
+                "parameters": [
+                    {
+                        "description": "ID điểm ngập",
+                        "name": "point_id",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/web.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/inundation/report": {
             "post": {
                 "security": [
@@ -5920,6 +6285,55 @@ const docTemplate = `{
                 }
             }
         },
+        "/inundation/report/{id}/updates": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Truy xuất toàn bộ lịch sử cập nhật (diễn biến) của một báo cáo ngập lụt cụ thể",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Ngập lụt"
+                ],
+                "summary": "Lấy danh sách cập nhật tình hình của một báo cáo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID báo cáo",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.InundationUpdate"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/web.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/web.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/inundation/reports": {
             "get": {
                 "security": [
@@ -6021,8 +6435,8 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "string",
-                        "example": "10cm",
+                        "type": "number",
+                        "example": 10,
                         "name": "depth",
                         "in": "formData"
                     },
@@ -6256,8 +6670,8 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "string",
-                        "example": "10cm",
+                        "type": "number",
+                        "example": 10,
                         "name": "depth",
                         "in": "formData"
                     },
@@ -6736,6 +7150,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Chưa ngập"
                 },
+                "is_flooding": {
+                    "description": "Trạng thái ngập",
+                    "type": "boolean"
+                },
                 "max_depth": {
                     "type": "number",
                     "example": 0.1
@@ -6756,9 +7174,6 @@ const docTemplate = `{
         },
         "models.InundationReport": {
             "type": "object",
-            "required": [
-                "point_id"
-            ],
             "properties": {
                 "address": {
                     "type": "string"
@@ -6770,8 +7185,8 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "depth": {
-                    "type": "string",
-                    "example": "20-30cm"
+                    "type": "number",
+                    "example": 20
                 },
                 "description": {
                     "type": "string",
@@ -6780,6 +7195,14 @@ const docTemplate = `{
                 "end_time": {
                     "type": "integer",
                     "example": 0
+                },
+                "flood_level_color": {
+                    "type": "string",
+                    "example": "#FFD600"
+                },
+                "flood_level_name": {
+                    "type": "string",
+                    "example": "Ngập nhẹ"
                 },
                 "id": {
                     "type": "string"
@@ -6794,6 +7217,9 @@ const docTemplate = `{
                         "[\"img1.jpg\"",
                         " \"img2.jpg\"]"
                     ]
+                },
+                "is_flooding": {
+                    "type": "boolean"
                 },
                 "is_review_updated": {
                     "type": "boolean",
@@ -6811,8 +7237,8 @@ const docTemplate = `{
                     "example": true
                 },
                 "mech_d": {
-                    "type": "string",
-                    "example": "D1"
+                    "type": "number",
+                    "example": 20
                 },
                 "mech_images": {
                     "type": "array",
@@ -6832,7 +7258,13 @@ const docTemplate = `{
                     "type": "string",
                     "example": "S1"
                 },
+                "mech_updated_at": {
+                    "type": "integer"
+                },
                 "mech_user_id": {
+                    "type": "string"
+                },
+                "mech_user_name": {
                     "type": "string"
                 },
                 "needs_correction": {
@@ -6886,10 +7318,6 @@ const docTemplate = `{
                         "[\"60f987654321\"]"
                     ]
                 },
-                "start_time": {
-                    "type": "integer",
-                    "example": 1620000000
-                },
                 "status": {
                     "description": "active, resolved",
                     "type": "string",
@@ -6913,7 +7341,13 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Đã khảo sát"
                 },
+                "survey_updated_at": {
+                    "type": "integer"
+                },
                 "survey_user_id": {
+                    "type": "string"
+                },
+                "survey_user_name": {
                     "type": "string"
                 },
                 "traffic_status": {
@@ -6936,6 +7370,10 @@ const docTemplate = `{
                 "user_id": {
                     "type": "string",
                     "example": "60a123456789"
+                },
+                "user_name": {
+                    "type": "string",
+                    "example": "Nguyễn Văn B"
                 },
                 "width": {
                     "type": "string",
@@ -7020,25 +7458,37 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "depth": {
-                    "type": "string",
-                    "example": "15cm"
+                    "type": "number",
+                    "example": 20
                 },
                 "description": {
                     "type": "string",
-                    "example": "Nước đang rút chậm"
+                    "example": "Ngập nhẹ"
+                },
+                "flood_level_color": {
+                    "type": "string",
+                    "example": "#FFD600"
+                },
+                "flood_level_name": {
+                    "type": "string",
+                    "example": "Ngập nhẹ"
                 },
                 "id": {
                     "type": "string"
                 },
                 "images": {
-                    "description": "Google Drive File IDs",
+                    "description": "Initial images",
                     "type": "array",
                     "items": {
                         "type": "string"
                     },
                     "example": [
-                        "[\"img3.jpg\"]"
+                        "[\"img1.jpg\"",
+                        " \"img2.jpg\"]"
                     ]
+                },
+                "is_flooding": {
+                    "type": "boolean"
                 },
                 "is_review_updated": {
                     "type": "boolean",
@@ -7046,13 +7496,15 @@ const docTemplate = `{
                 },
                 "length": {
                     "type": "string",
-                    "example": "10m"
+                    "example": "100m"
                 },
                 "mech_checked": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": true
                 },
                 "mech_d": {
-                    "type": "string"
+                    "type": "number",
+                    "example": 20
                 },
                 "mech_images": {
                     "type": "array",
@@ -7061,24 +7513,41 @@ const docTemplate = `{
                     }
                 },
                 "mech_note": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Máy xúc đã đến"
                 },
                 "mech_r": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "R1"
                 },
                 "mech_s": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "S1"
+                },
+                "mech_updated_at": {
+                    "type": "integer"
                 },
                 "mech_user_id": {
                     "type": "string"
                 },
+                "mech_user_name": {
+                    "type": "string"
+                },
                 "needs_correction": {
                     "type": "boolean",
-                    "example": false
+                    "example": true
+                },
+                "needs_correction_update_id": {
+                    "type": "string",
+                    "example": "update_123"
                 },
                 "old_data": {
                     "type": "array",
                     "items": {}
+                },
+                "point_id": {
+                    "type": "string",
+                    "example": "point_123"
                 },
                 "report_id": {
                     "type": "string",
@@ -7086,23 +7555,27 @@ const docTemplate = `{
                 },
                 "review_comment": {
                     "type": "string",
-                    "example": "Số liệu khớp"
+                    "example": "Đã xử lý"
                 },
                 "reviewer_email": {
                     "type": "string",
-                    "example": "admin@hsdc.com.vn"
+                    "example": "[EMAIL_ADDRESS]"
                 },
                 "reviewer_id": {
                     "type": "string",
-                    "example": "60a111111111"
+                    "example": "user_123"
                 },
                 "reviewer_name": {
                     "type": "string",
                     "example": "Admin"
                 },
+                "street_name": {
+                    "type": "string",
+                    "example": "Phố Huế"
+                },
                 "survey_checked": {
-                    "description": "Technical sync fields",
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": true
                 },
                 "survey_images": {
                     "type": "array",
@@ -7111,9 +7584,16 @@ const docTemplate = `{
                     }
                 },
                 "survey_note": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Đã khảo sát"
+                },
+                "survey_updated_at": {
+                    "type": "integer"
                 },
                 "survey_user_id": {
+                    "type": "string"
+                },
+                "survey_user_name": {
                     "type": "string"
                 },
                 "timestamp": {
@@ -7122,7 +7602,7 @@ const docTemplate = `{
                 },
                 "traffic_status": {
                     "type": "string",
-                    "example": "Chậm"
+                    "example": "DI_CHUYEN_CHAM"
                 },
                 "updated_at": {
                     "type": "integer"
@@ -7141,7 +7621,7 @@ const docTemplate = `{
                 },
                 "width": {
                     "type": "string",
-                    "example": "5m"
+                    "example": "50m"
                 }
             }
         },
@@ -7663,6 +8143,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Toàn quyền hệ thống"
                 },
+                "group": {
+                    "type": "string",
+                    "example": "inundation"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -7710,6 +8194,9 @@ const docTemplate = `{
                 },
                 "deleted_at": {
                     "type": "integer"
+                },
+                "group": {
+                    "type": "string"
                 },
                 "id": {
                     "type": "string"
@@ -7778,6 +8265,9 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "assigned_wastewater_station_id": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "integer"
                 },
@@ -7821,6 +8311,105 @@ const docTemplate = `{
                 "username": {
                     "type": "string",
                     "example": "admin"
+                }
+            }
+        },
+        "models.WastewaterStation": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "address": {
+                    "type": "string",
+                    "example": "Công viên Thống Nhất, Hà Nội"
+                },
+                "created_at": {
+                    "type": "integer"
+                },
+                "deleted_at": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "last_report": {
+                    "$ref": "#/definitions/models.WastewaterStationReport"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Trạm xử lý nước thải Bảy Mẫu"
+                },
+                "org_id": {
+                    "type": "string",
+                    "example": "60f123456789"
+                },
+                "priority": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "share_all": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "shared_org_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"60f987654321\"]"
+                    ]
+                },
+                "updated_at": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.WastewaterStationReport": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "integer"
+                },
+                "deleted_at": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "note": {
+                    "type": "string",
+                    "example": "Vận hành ổn định, nước đầu ra trong"
+                },
+                "station_id": {
+                    "type": "string",
+                    "example": "60f123456789"
+                },
+                "timestamp": {
+                    "type": "integer",
+                    "example": 1625097600
+                },
+                "updated_at": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "string",
+                    "example": "60a123456789"
+                },
+                "user_name": {
+                    "type": "string",
+                    "example": "Nguyễn Văn A"
+                }
+            }
+        },
+        "wastewater_treatment.SubmitReportRequest": {
+            "type": "object",
+            "properties": {
+                "note": {
+                    "type": "string",
+                    "example": "Vận hành ổn định, công nghệ xử lý đang hoạt động tốt"
                 }
             }
         },

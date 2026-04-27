@@ -296,6 +296,9 @@ definitions:
       description:
         example: Chưa ngập
         type: string
+      is_flooding:
+        description: Trạng thái ngập
+        type: boolean
       max_depth:
         example: 0.1
         type: number
@@ -318,14 +321,20 @@ definitions:
       deleted_at:
         type: integer
       depth:
-        example: 20-30cm
-        type: string
+        example: 20
+        type: number
       description:
         example: Ngập nhẹ
         type: string
       end_time:
         example: 0
         type: integer
+      flood_level_color:
+        example: '#FFD600'
+        type: string
+      flood_level_name:
+        example: Ngập nhẹ
+        type: string
       id:
         type: string
       images:
@@ -336,6 +345,8 @@ definitions:
         items:
           type: string
         type: array
+      is_flooding:
+        type: boolean
       is_review_updated:
         example: true
         type: boolean
@@ -348,8 +359,8 @@ definitions:
         example: true
         type: boolean
       mech_d:
-        example: D1
-        type: string
+        example: 20
+        type: number
       mech_images:
         items:
           type: string
@@ -363,7 +374,11 @@ definitions:
       mech_s:
         example: S1
         type: string
+      mech_updated_at:
+        type: integer
       mech_user_id:
+        type: string
+      mech_user_name:
         type: string
       needs_correction:
         example: true
@@ -402,9 +417,6 @@ definitions:
         items:
           type: string
         type: array
-      start_time:
-        example: 1620000000
-        type: integer
       status:
         description: active, resolved
         example: active
@@ -422,7 +434,11 @@ definitions:
       survey_note:
         example: Đã khảo sát
         type: string
+      survey_updated_at:
+        type: integer
       survey_user_id:
+        type: string
+      survey_user_name:
         type: string
       traffic_status:
         example: DI_CHUYEN_CHAM
@@ -439,11 +455,12 @@ definitions:
       user_id:
         example: 60a123456789
         type: string
+      user_name:
+        example: Nguyễn Văn B
+        type: string
       width:
         example: 50m
         type: string
-    required:
-    - point_id
     type: object
   models.InundationStation:
     properties:
@@ -500,79 +517,111 @@ definitions:
       deleted_at:
         type: integer
       depth:
-        example: 15cm
-        type: string
+        example: 20
+        type: number
       description:
-        example: Nước đang rút chậm
+        example: Ngập nhẹ
+        type: string
+      flood_level_color:
+        example: '#FFD600'
+        type: string
+      flood_level_name:
+        example: Ngập nhẹ
         type: string
       id:
         type: string
       images:
-        description: Google Drive File IDs
+        description: Initial images
         example:
-        - '["img3.jpg"]'
+        - '["img1.jpg"'
+        - ' "img2.jpg"]'
         items:
           type: string
         type: array
+      is_flooding:
+        type: boolean
       is_review_updated:
         example: true
         type: boolean
       length:
-        example: 10m
+        example: 100m
         type: string
       mech_checked:
+        example: true
         type: boolean
       mech_d:
-        type: string
+        example: 20
+        type: number
       mech_images:
         items:
           type: string
         type: array
       mech_note:
+        example: Máy xúc đã đến
         type: string
       mech_r:
+        example: R1
         type: string
       mech_s:
+        example: S1
         type: string
+      mech_updated_at:
+        type: integer
       mech_user_id:
         type: string
+      mech_user_name:
+        type: string
       needs_correction:
-        example: false
+        example: true
         type: boolean
+      needs_correction_update_id:
+        example: update_123
+        type: string
       old_data:
         items: {}
         type: array
+      point_id:
+        example: point_123
+        type: string
       report_id:
         example: 60f123456789
         type: string
       review_comment:
-        example: Số liệu khớp
+        example: Đã xử lý
         type: string
       reviewer_email:
-        example: admin@hsdc.com.vn
+        example: '[EMAIL_ADDRESS]'
         type: string
       reviewer_id:
-        example: 60a111111111
+        example: user_123
         type: string
       reviewer_name:
         example: Admin
         type: string
+      street_name:
+        example: Phố Huế
+        type: string
       survey_checked:
-        description: Technical sync fields
+        example: true
         type: boolean
       survey_images:
         items:
           type: string
         type: array
       survey_note:
+        example: Đã khảo sát
         type: string
+      survey_updated_at:
+        type: integer
       survey_user_id:
+        type: string
+      survey_user_name:
         type: string
       timestamp:
         example: 1682056800
         type: integer
       traffic_status:
-        example: Chậm
+        example: DI_CHUYEN_CHAM
         type: string
       updated_at:
         type: integer
@@ -586,7 +635,7 @@ definitions:
         example: Nguyễn Văn B
         type: string
       width:
-        example: 5m
+        example: 50m
         type: string
     type: object
   models.LakeStation:
@@ -966,6 +1015,9 @@ definitions:
       description:
         example: Toàn quyền hệ thống
         type: string
+      group:
+        example: inundation
+        type: string
       id:
         type: string
       is_company:
@@ -1001,6 +1053,8 @@ definitions:
         type: integer
       deleted_at:
         type: integer
+      group:
+        type: string
       id:
         type: string
       is_company:
@@ -1046,6 +1100,8 @@ definitions:
         items:
           type: string
         type: array
+      assigned_wastewater_station_id:
+        type: string
       created_at:
         type: integer
       deleted_at:
@@ -1077,6 +1133,75 @@ definitions:
         type: integer
       username:
         example: admin
+        type: string
+    type: object
+  models.WastewaterStation:
+    properties:
+      active:
+        example: true
+        type: boolean
+      address:
+        example: Công viên Thống Nhất, Hà Nội
+        type: string
+      created_at:
+        type: integer
+      deleted_at:
+        type: integer
+      id:
+        type: string
+      last_report:
+        $ref: '#/definitions/models.WastewaterStationReport'
+      name:
+        example: Trạm xử lý nước thải Bảy Mẫu
+        type: string
+      org_id:
+        example: 60f123456789
+        type: string
+      priority:
+        example: 1
+        type: integer
+      share_all:
+        example: false
+        type: boolean
+      shared_org_ids:
+        example:
+        - '["60f987654321"]'
+        items:
+          type: string
+        type: array
+      updated_at:
+        type: integer
+    type: object
+  models.WastewaterStationReport:
+    properties:
+      created_at:
+        type: integer
+      deleted_at:
+        type: integer
+      id:
+        type: string
+      note:
+        example: Vận hành ổn định, nước đầu ra trong
+        type: string
+      station_id:
+        example: 60f123456789
+        type: string
+      timestamp:
+        example: 1625097600
+        type: integer
+      updated_at:
+        type: integer
+      user_id:
+        example: 60a123456789
+        type: string
+      user_name:
+        example: Nguyễn Văn A
+        type: string
+    type: object
+  wastewater_treatment.SubmitReportRequest:
+    properties:
+      note:
+        example: Vận hành ổn định, công nghệ xử lý đang hoạt động tốt
         type: string
     type: object
   web.ErrorResponse:
@@ -3695,6 +3820,193 @@ paths:
       summary: Cập nhật trạm sông
       tags:
       - Trạm quan trắc - Sông
+  /admin/stations/wastewater:
+    get:
+      parameters:
+      - description: Lọc theo đơn vị
+        in: query
+        name: org_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  properties:
+                    data:
+                      items:
+                        $ref: '#/definitions/models.WastewaterStation'
+                      type: array
+                    total:
+                      type: integer
+                  type: object
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Danh sách trạm xử lý nước thải
+      tags:
+      - Trạm xử lý nước thải
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Dữ liệu trạm
+        in: body
+        name: station
+        required: true
+        schema:
+          $ref: '#/definitions/models.WastewaterStation'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.WastewaterStation'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Tạo mới trạm xử lý nước thải
+      tags:
+      - Trạm xử lý nước thải
+  /admin/stations/wastewater/{id}:
+    delete:
+      parameters:
+      - description: ID trạm
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: boolean
+      security:
+      - BearerAuth: []
+      summary: Xóa trạm xử lý nước thải
+      tags:
+      - Trạm xử lý nước thải
+    get:
+      parameters:
+      - description: ID trạm
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.WastewaterStation'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Lấy chi tiết trạm xử lý nước thải
+      tags:
+      - Trạm xử lý nước thải
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID trạm
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dữ liệu cập nhật
+        in: body
+        name: station
+        required: true
+        schema:
+          $ref: '#/definitions/models.WastewaterStation'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: boolean
+      security:
+      - BearerAuth: []
+      summary: Cập nhật trạm xử lý nước thải
+      tags:
+      - Trạm xử lý nước thải
+  /admin/stations/wastewater/{id}/history:
+    get:
+      parameters:
+      - description: ID trạm
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  properties:
+                    data:
+                      items:
+                        $ref: '#/definitions/models.WastewaterStationReport'
+                      type: array
+                    total:
+                      type: integer
+                  type: object
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Xem lịch sử nhận xét trạm xử lý nước thải
+      tags:
+      - Trạm xử lý nước thải
+  /admin/stations/wastewater/{id}/report:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID trạm
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Nội dung nhận xét
+        in: body
+        name: report
+        required: true
+        schema:
+          $ref: '#/definitions/wastewater_treatment.SubmitReportRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: boolean
+      security:
+      - BearerAuth: []
+      summary: Nhân viên cập nhật nhận xét trạm xử lý nước thải
+      tags:
+      - Trạm xử lý nước thải
   /admin/water/lake/{id}/history:
     get:
       description: Truy xuất dữ liệu mực nước hồ lịch sử của một trạm cụ thể
@@ -4081,10 +4393,10 @@ paths:
         name: id
         required: true
         type: string
-      - example: 10cm
+      - example: 10
         in: formData
         name: depth
-        type: string
+        type: number
       - example: Đã rút bớt nước
         in: formData
         name: description
@@ -4270,6 +4582,34 @@ paths:
       security:
       - BearerAuth: []
       summary: Cập nhật điểm đo ngập
+      tags:
+      - Ngập lụt
+  /inundation/quick-finish:
+    post:
+      consumes:
+      - application/json
+      description: Đánh dấu điểm ngập đã hết ngập nhanh chóng
+      parameters:
+      - description: ID điểm ngập
+        in: body
+        name: point_id
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: boolean
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Kết thúc nhanh điểm ngập
       tags:
       - Ngập lụt
   /inundation/report:
@@ -4702,6 +5042,38 @@ paths:
       summary: Cập nhật trạng thái khảo sát
       tags:
       - Ngập lụt
+  /inundation/report/{id}/updates:
+    get:
+      description: Truy xuất toàn bộ lịch sử cập nhật (diễn biến) của một báo cáo
+        ngập lụt cụ thể
+      parameters:
+      - description: ID báo cáo
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.InundationUpdate'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Lấy danh sách cập nhật tình hình của một báo cáo
+      tags:
+      - Ngập lụt
   /inundation/reports:
     get:
       description: Truy xuất danh sách báo cáo với các bộ lọc
@@ -4760,10 +5132,10 @@ paths:
         name: id
         required: true
         type: string
-      - example: 10cm
+      - example: 10
         in: formData
         name: depth
-        type: string
+        type: number
       - example: Đã rút bớt nước
         in: formData
         name: description

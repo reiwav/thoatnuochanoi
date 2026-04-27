@@ -129,7 +129,8 @@ func (s *service) calculateFloodLevel(ctx context.Context, depth float64) *model
 		return nil
 	}
 
-	for _, level := range setting.FloodLevels {
+	for i := range setting.FloodLevels {
+		level := setting.FloodLevels[i]
 		if depth >= level.MinDepth && depth < level.MaxDepth {
 			return &level
 		}

@@ -48,13 +48,13 @@ func (r *inundationStationRepo) GetByID(ctx context.Context, id string) (*models
 	return &point, err
 }
 
-func (r *inundationStationRepo) Create(ctx context.Context, point models.InundationStation) (string, error) {
-	err := r.R_Create(ctx, &point)
+func (r *inundationStationRepo) Create(ctx context.Context, point *models.InundationStation) (string, error) {
+	err := r.R_Create(ctx, point)
 	return point.ID, err
 }
 
-func (r *inundationStationRepo) Update(ctx context.Context, point models.InundationStation) error {
-	return r.R_Update(ctx, &point)
+func (r *inundationStationRepo) Update(ctx context.Context, point *models.InundationStation) error {
+	return r.R_Update(ctx, point)
 }
 
 func (r *inundationStationRepo) Delete(ctx context.Context, id string) error {

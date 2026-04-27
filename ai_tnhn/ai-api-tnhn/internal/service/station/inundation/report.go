@@ -71,9 +71,6 @@ func (s *service) CreateReport(ctx context.Context, user *models.User, input mod
 	// 5. Save report to DB
 	report.TrafficStatus = report.FloodLevelName
 
-	// Setup timestamps before creating
-	report.BeforeCreate("REP")
-
 	// ALWAYS Create an initial update record for history/timeline consistency
 	initialUpdate := &models.InundationUpdate{
 		ReportID:  report.ID,
@@ -116,7 +113,10 @@ func (s *service) CreateReport(ctx context.Context, user *models.User, input mod
 			point.ReportID = ""
 		}
 		point.LastReportID = report.ID
-		_ = s.inundationStationRepo.Update(ctx, *point)
+		err = s.inundationStationRepo.Update(ctx, point)
+		if err != nil {
+			fmt.Printf("ERROR: failed to update station status: %v\n", err)
+		}
 	}
 
 	return report, nil
@@ -396,7 +396,7 @@ func (s *service) Resolve(ctx context.Context, reportID string, endTime int64) e
 	point, _ := s.inundationStationRepo.GetByID(ctx, report.PointID)
 	if point != nil {
 		point.ReportID = ""
-		_ = s.inundationStationRepo.Update(ctx, *point)
+		_ = s.inundationStationRepo.Update(ctx, point)
 	}
 
 	return s.InundationReportRepo.Resolve(ctx, reportID, endTime)

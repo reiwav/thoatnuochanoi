@@ -34,7 +34,7 @@ type UpdateReportRequest struct {
 // AddUpdateSitutionRequest defines the inputs for adding a situational update to an active report
 type AddUpdateSitutionRequest struct {
 	Description   string  `form:"description" json:"description" example:"Đã rút bớt nước"`
-	Depth         float64 `form:"depth" json:"depth" example:"10cm"`
+	Depth         float64 `form:"depth" json:"depth" example:"10"`
 	TrafficStatus string  `form:"traffic_status" json:"traffic_status" example:"BINH_THUONG"`
 	Length        string  `form:"length" json:"length" example:"50m"`
 	Width         string  `form:"width" json:"width" example:"20m"`

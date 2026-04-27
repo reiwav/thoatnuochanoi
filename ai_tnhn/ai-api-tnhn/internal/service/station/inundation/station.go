@@ -16,7 +16,7 @@ func (s *service) CreatePoint(ctx context.Context, point models.InundationStatio
 	if point.Active == false {
 		point.Active = true
 	}
-	return s.inundationStationRepo.Create(ctx, point)
+	return s.inundationStationRepo.Create(ctx, &point)
 }
 func (s *service) GetPointsStatus(ctx context.Context, user *models.User, isAllowedAll bool, orgIDFilter string) ([]PointStatus, error) {
 	var orgID string
@@ -136,7 +136,7 @@ func (s *service) GetPointsStatus(ctx context.Context, user *models.User, isAllo
 }
 func (s *service) UpdatePoint(ctx context.Context, id string, point models.InundationStation) error {
 	point.ID = id
-	return s.inundationStationRepo.Update(ctx, point)
+	return s.inundationStationRepo.Update(ctx, &point)
 }
 func (s *service) DeletePoint(ctx context.Context, id string) error {
 	return s.inundationStationRepo.Delete(ctx, id)

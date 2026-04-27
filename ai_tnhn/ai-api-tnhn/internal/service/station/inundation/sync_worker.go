@@ -83,11 +83,9 @@ func (w *SyncWorker) Enqueue(id string, taskType TaskType) {
 
 func (w *SyncWorker) Start() {
 	// 1. Startup Scan: Process any existing leftover local images
-	fmt.Println("Inundation Sync Worker: Performing initial startup scan...")
 	w.syncLocalImages()
 
 	// 2. Start Worker Pool
-	fmt.Printf("Inundation Sync Worker: Starting pool with %d workers\n", w.workerCount)
 	for i := 0; i < w.workerCount; i++ {
 		go w.workerLoop(i)
 	}
@@ -123,7 +121,6 @@ func (w *SyncWorker) workerLoop(id int) {
 			select {
 			case <-w.done:
 				w.mu.Unlock()
-				fmt.Printf("SyncWorker Pool [%d]: Stopping...\n", id)
 				return
 			default:
 				// Wait for a task

@@ -6,7 +6,6 @@ import (
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/service/station/inundation"
 	"ai-api-tnhn/utils/web"
-	"fmt"
 	"strconv"
 	"time"
 
@@ -319,7 +318,6 @@ func (h *InundationHandler) ListPointsByOrg(c *gin.Context) {
 	if orgIDFilter == "" {
 		orgIDFilter = user.OrgID
 	}
-	fmt.Println("==========", orgIDFilter, user.IsCompany, user.OrgID, user.IsCompany)
 	result, err := h.service.ListPointsByOrg(c.Request.Context(), orgIDFilter)
 	if err != nil {
 		h.SendError(c, err)

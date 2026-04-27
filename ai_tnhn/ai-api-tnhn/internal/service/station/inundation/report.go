@@ -232,8 +232,6 @@ func (s *service) ListReportsWithFilter(ctx context.Context, user *models.User, 
 	if isAllowedAll {
 		if orgIDFilter != "" {
 			orgID = orgIDFilter
-		} else {
-			orgID = "" // Default to all if no filter provided
 		}
 	} else {
 		orgID = user.OrgID
@@ -451,7 +449,7 @@ func (s *service) UpdateReport(ctx context.Context, user *models.User, id string
 	existing.TrafficStatus = existing.FloodLevelName
 	existing.NeedsCorrection = false
 	existing.NeedsCorrectionUpdateID = ""
-	
+
 	// If updated to a non-flooding level, we should clear point status and resolve later
 	shouldResolve := level != nil && !level.IsFlooding
 
@@ -635,7 +633,7 @@ func (s *service) UpdateMech(ctx context.Context, user *models.User, id string, 
 		existing.FloodLevelColor = level.Color
 		existing.IsFlooding = level.IsFlooding
 	}
-	
+
 	shouldResolve := level != nil && !level.IsFlooding
 	if input.MechS != "" {
 		existing.Length = input.MechS

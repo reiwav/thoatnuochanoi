@@ -118,7 +118,7 @@ const EmployeeInundationDashboard = () => {
     };
 
     const renderFilterBar = () => (
-        <Box sx={{ mb: 2 }}>
+        <Box sx={{ mb: 2, px: { xs: 1, sm: 0 } }}>
             <TextField
                 fullWidth
                 placeholder="Tìm tên đường, địa chỉ..."
@@ -180,9 +180,9 @@ const EmployeeInundationDashboard = () => {
     };
 
     return (
-        <Box sx={{ px: 1.5, pt: 2, pb: 10 }}>
+        <Box sx={{ px: { xs: 0.5, sm: 1.5 }, pt: 2, pb: 10 }}>
             {/* Header */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, px: { xs: 1, sm: 0 } }}>
                 <Typography variant="h3" sx={{ fontWeight: 900, color: 'primary.main' }}>
                     {activeTab === 2 ? 'Lịch sử' : activeTab === 3 ? 'Tài khoản' : 'Điểm trực ngập'}
                 </Typography>

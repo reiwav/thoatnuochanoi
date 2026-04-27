@@ -143,8 +143,8 @@ const AdminInundationDashboard = () => {
 
     return (
         <MainCard
-            contentSX={{ p: { xs: 1.5, sm: 2.5 } }}
-            sx={{ mx: { xs: -1.5, sm: 0 }, borderRadius: { xs: 0, sm: 4 } }}
+            contentSX={{ px: { xs: 0, sm: 2.5 } }}
+            sx={{ mx: { xs: -2, sm: 0 }, borderRadius: { xs: 0, sm: 4 }, border: { xs: 'none', sm: '1px solid' }, borderColor: 'divider' }}
             title={
                 <Stack direction="row" alignItems="center" spacing={1}>
                     <IconLayoutDashboard size={isMobile ? 20 : 24} color={theme.palette.primary.main} />
@@ -192,7 +192,7 @@ const AdminInundationDashboard = () => {
 
 
             {/* Filter Bar */}
-            <Box sx={{ mb: 3 }}>
+            <Box sx={{ mb: 2, px: { xs: 1.5, sm: 0 } }} sm={{ mb: 3 }}>
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                     <Grid container spacing={2} alignItems="center">
                         <Grid size={{ xs: 12, md: 4 }}>
@@ -239,7 +239,7 @@ const AdminInundationDashboard = () => {
                 {loading ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}><CircularProgress /></Box>
                 ) : (
-                    <Box>
+                    <Box sx={{ px: { xs: 1, sm: 0 } }}>
                         {filteredPoints.length === 0 ? (
                             <Paper sx={{ py: 6, textAlign: 'center', borderRadius: 4, border: '1px dashed', borderColor: 'divider', bgcolor: 'grey.50' }}>
                                 <Typography color="textSecondary">Không tìm thấy điểm ngập</Typography>
@@ -247,7 +247,7 @@ const AdminInundationDashboard = () => {
                         ) : (
                             <Grid container spacing={2}>
                                 {filteredPoints.map((point) => (
-                                    <Grid size={{ xs: 12, sm: 6, md: 4, lg: 4 }} key={point.id}>
+                                    <Grid size={{ xs: 12, sm: 6, md: 3 }} key={point.id} sx={{ display: 'flex' }}>
                                         <InundationDesktopStatCard
                                             point={point}
                                             onAction={handleAction}

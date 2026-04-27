@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { 
-    Dialog, DialogActions, DialogContent, DialogTitle, Button, Table, TableBody, TableCell, 
+import {
+    Dialog, DialogActions, DialogContent, DialogTitle, Button, Table, TableBody, TableCell,
     TableContainer, TableHead, TableRow, Paper, useMediaQuery, Stack, Box, Typography, Divider, IconButton, Grid
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
@@ -33,10 +33,10 @@ const PumpingStationHistoryDialog = ({ open, handleClose, item }) => {
     };
 
     return (
-        <Dialog 
-            open={open} 
-            onClose={handleClose} 
-            fullWidth 
+        <Dialog
+            open={open}
+            onClose={handleClose}
+            fullWidth
             maxWidth="md"
             fullScreen={isMobile}
             slotProps={{ paper: { sx: { borderRadius: isMobile ? 0 : 3 } } }}
@@ -49,13 +49,13 @@ const PumpingStationHistoryDialog = ({ open, handleClose, item }) => {
             </DialogTitle>
             <DialogContent sx={{ p: isMobile ? 1.5 : 3 }}>
                 {/* Desktop Table View */}
-                <TableContainer 
-                    component={Paper} 
-                    variant="outlined" 
-                    sx={{ 
+                <TableContainer
+                    component={Paper}
+                    variant="outlined"
+                    sx={{
                         display: { xs: 'none', md: 'block' },
                         borderRadius: 2,
-                        overflow: 'hidden' 
+                        overflow: 'hidden'
                     }}
                 >
                     <Table size="small">
@@ -74,7 +74,7 @@ const PumpingStationHistoryDialog = ({ open, handleClose, item }) => {
                             {history.length > 0 ? (
                                 history.map((row) => (
                                     <TableRow key={row.id} hover>
-                                        <TableCell>{dayjs(row.timestamp * 1000).format('DD/MM/YYYY HH:mm')}</TableCell>
+                                        <TableCell>{dayjs(row.updated_at * 1000).format('DD/MM/YYYY HH:mm')}</TableCell>
                                         <TableCell>{row.user_name}</TableCell>
                                         <TableCell align="center" sx={{ color: 'error.main', fontWeight: 700 }}>{row.operating_count}</TableCell>
                                         <TableCell align="center" sx={{ color: 'success.main', fontWeight: 700 }}>{row.closed_count}</TableCell>

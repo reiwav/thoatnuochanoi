@@ -51,7 +51,7 @@ func (w *worker) Restart(ctx context.Context) {
 }
 
 func (w *worker) watchStations(ctx context.Context) {
-	ticker := time.NewTicker(15 * time.Second)
+	ticker := time.NewTicker(20 * time.Second)
 	defer ticker.Stop()
 
 	for {

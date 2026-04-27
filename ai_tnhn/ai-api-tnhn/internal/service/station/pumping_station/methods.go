@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"sort"
 	"strings"
 	"time"
@@ -79,10 +80,20 @@ func (s *service) CreateHistory(ctx context.Context, user *models.User, history 
 				latest.ClosedCount == history.ClosedCount &&
 				latest.MaintenanceCount == history.MaintenanceCount &&
 				latest.NoSignalCount == history.NoSignalCount {
-				// Cập nhật thời gian updated_at (MTime trong BaseModel) và timestamp mới nhất
+				
 				latest.BeforeUpdate()
 				latest.Timestamp = history.Timestamp
-				_ = s.stationRepo.UpdateHistory(ctx, latest)
+				errUpdate := s.stationRepo.UpdateHistory(ctx, latest)
+				if errUpdate != nil {
+					fmt.Printf("[ERROR] UpdateHistory failed: %v\n", errUpdate)
+				}
+
+				station.LastReport = latest
+				errStation := s.stationRepo.Update(ctx, station.ID, station)
+				if errStation != nil {
+					fmt.Printf("[ERROR] Update Station LastReport failed: %v\n", errStation)
+				}
+
 				return latest, nil
 			}
 		}
@@ -94,7 +105,7 @@ func (s *service) CreateHistory(ctx context.Context, user *models.User, history 
 	} else {
 		history.UserID = "SYSTEM"
 		history.UserName = "Hệ thống tự động"
-		history.Note = "Dữ liệu tự động từ hệ thống"
+		history.Note = "Dữ liệu tự động (Worker: " + os.Getenv("HOSTNAME") + ")"
 	}
 
 	res, err := s.stationRepo.CreateHistory(ctx, history)

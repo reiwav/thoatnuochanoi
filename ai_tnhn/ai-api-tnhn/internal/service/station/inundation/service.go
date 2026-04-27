@@ -32,7 +32,7 @@ type Service interface {
 	GetPointsStatus(ctx context.Context, user *models.User, isAllowedAll bool, orgIDFilter string) ([]PointStatus, error)
 	GetPointByID(ctx context.Context, id string) (*models.InundationStation, error)
 	CreatePoint(ctx context.Context, point models.InundationStation) (string, error)
-	UpdatePoint(ctx context.Context, id string, point models.InundationStation) error
+	UpdatePoint(ctx context.Context, id string, point *models.InundationStation) error
 	ListPointsByOrg(ctx context.Context, orgID string) ([]models.InundationStation, error)
 	DeletePoint(ctx context.Context, id string) error
 

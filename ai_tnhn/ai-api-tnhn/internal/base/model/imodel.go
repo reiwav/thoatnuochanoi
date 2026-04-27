@@ -25,7 +25,9 @@ func (m *BaseModel) BeforeCreate(prefix string) {
 	now := time.Now().Unix()
 	m.CTime = now
 	m.MTime = now
-	m.ID = prefix + "_" + xid.New().String()
+	if m.ID == "" {
+		m.ID = prefix + "_" + xid.New().String()
+	}
 	fmt.Println(m)
 }
 

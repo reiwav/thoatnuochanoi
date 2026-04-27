@@ -67,9 +67,14 @@ func (s *service) CreateReport(ctx context.Context, user *models.User, input mod
 			report.Status = "resolved"
 			report.EndTime = time.Now().Unix()
 		}
+	} else {
+		return nil, web.BadRequest("Flood level not found")
 	}
 	// 5. Save report to DB
 	report.TrafficStatus = report.FloodLevelName
+
+	// Pre-generate report ID so the initial update can reference it
+	report.BeforeCreate("inu")
 
 	// ALWAYS Create an initial update record for history/timeline consistency
 	initialUpdate := &models.InundationUpdate{
@@ -437,15 +442,16 @@ func (s *service) UpdateReport(ctx context.Context, user *models.User, id string
 	}
 
 	existing.Depth = report.Depth
+	existing.Length = report.Length
+	existing.Width = report.Width
+	existing.Description = report.Description
+
 	level := s.calculateFloodLevel(ctx, existing.Depth)
 	if level != nil {
 		existing.FloodLevelName = level.Name
 		existing.FloodLevelColor = level.Color
 		existing.IsFlooding = level.IsFlooding
 	}
-	existing.Length = report.Length
-	existing.Width = report.Width
-	existing.Description = report.Description
 	existing.TrafficStatus = existing.FloodLevelName
 	existing.NeedsCorrection = false
 	existing.NeedsCorrectionUpdateID = ""

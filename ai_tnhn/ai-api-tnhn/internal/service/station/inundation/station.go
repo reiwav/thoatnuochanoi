@@ -22,7 +22,7 @@ func (s *service) GetPointsStatus(ctx context.Context, user *models.User, isAllo
 	var orgID string
 	var pointIDs []string
 
-	if user.IsEmployee && !isAllowedAll {
+	if user.IsEmployee && !isAllowedAll { // nếu là nhân viên và không được phép xem tất cả các điểm
 		// Employee: only points assigned to account
 		for _, pid := range user.AssignedInundationStationIDs {
 			if pid != "" {
@@ -44,45 +44,50 @@ func (s *service) GetPointsStatus(ctx context.Context, user *models.User, isAllo
 	}
 
 	// 1. Get all managed points (Union of owned points and shared points)
-	allPointsMap := make(map[string]models.InundationStation)
 	var ownedPoints = make([]models.InundationStation, 0)
 	var err error
 
 	if orgID != "" {
-		err = s.inundationStationRepo.R_SelectMany(ctx, bson.M{"$or": []bson.M{
-			{"org_id": orgID},
-			{"shared_org_ids": orgID},
-			{"share_all": true},
-		}}, &ownedPoints)
+		err = s.inundationStationRepo.R_SelectMany(ctx, bson.M{
+			"active": true,
+			"$or": []bson.M{
+				{"org_id": orgID},
+				{"shared_org_ids": orgID},
+				{"share_all": true},
+			},
+		}, &ownedPoints)
 	} else if orgID == "" && len(pointIDs) == 0 {
 		ownedPoints, err = s.inundationStationRepo.ListByOrg(ctx, "")
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	allPointsMap := make(map[string]models.InundationStation)
+	for _, p := range ownedPoints {
+		allPointsMap[p.ID] = p
 	}
 
 	if len(pointIDs) > 0 {
 		for _, pid := range pointIDs {
 			if _, exists := allPointsMap[pid]; !exists {
 				p, err := s.inundationStationRepo.GetByID(ctx, pid)
-				if err == nil && p != nil {
-					ownedPoints = append(ownedPoints, *p)
+				if err == nil && p != nil && p.Active {
+					allPointsMap[p.ID] = *p
 				}
 			}
 		}
 	}
 
-	if err != nil {
-		return nil, err
-	}
-	for _, p := range ownedPoints {
-		allPointsMap[p.ID] = p
-	}
-	pIDs := make([]string, 0)
-	//points := make([]models.InundationStation, 0, len(allPointsMap))
-	for _, p := range allPointsMap {
-		pIDs = append(pIDs, p.ID)
+	if len(allPointsMap) == 0 {
+		return []PointStatus{}, nil
 	}
 
-	if len(ownedPoints) == 0 {
-		return []PointStatus{}, nil
+	// Convert map back to slice for consistent processing
+	finalPoints := make([]models.InundationStation, 0, len(allPointsMap))
+	for _, p := range allPointsMap {
+		finalPoints = append(finalPoints, p)
 	}
 
 	// 1.5 Get organization mapping
@@ -93,8 +98,8 @@ func (s *service) GetPointsStatus(ctx context.Context, user *models.User, isAllo
 	}
 
 	// 4. Build merged result
-	result := make([]PointStatus, len(ownedPoints))
-	for i, p := range ownedPoints {
+	result := make([]PointStatus, len(finalPoints))
+	for i, p := range finalPoints {
 		result[i] = PointStatus{
 			InundationStation: p,
 			Status:            "normal",
@@ -134,9 +139,9 @@ func (s *service) GetPointsStatus(ctx context.Context, user *models.User, isAllo
 
 	return result, nil
 }
-func (s *service) UpdatePoint(ctx context.Context, id string, point models.InundationStation) error {
+func (s *service) UpdatePoint(ctx context.Context, id string, point *models.InundationStation) error {
 	point.ID = id
-	return s.inundationStationRepo.Update(ctx, &point)
+	return s.inundationStationRepo.Update(ctx, point)
 }
 func (s *service) DeletePoint(ctx context.Context, id string) error {
 	return s.inundationStationRepo.Delete(ctx, id)

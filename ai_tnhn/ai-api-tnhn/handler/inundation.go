@@ -414,21 +414,22 @@ func (h *InundationHandler) UpdatePoint(c *gin.Context) {
 		return
 	}
 
-	point := models.InundationStation{
-		Name:         req.Name,
-		Address:      req.Address,
-		Lat:          req.Lat,
-		Lng:          req.Lng,
-		OrgID:        req.OrgID,
-		SharedOrgIDs: req.SharedOrgIDs,
-		ShareAll:     req.ShareAll,
+	// Update only allowed fields while retaining others
+	currentPoint.Name = req.Name
+	currentPoint.Address = req.Address
+	currentPoint.Lat = req.Lat
+	currentPoint.Lng = req.Lng
+	currentPoint.ShareAll = req.ShareAll
+	if req.OrgID != "" {
+		currentPoint.OrgID = req.OrgID
+	}
+	if currentPoint.ShareAll {
+		currentPoint.SharedOrgIDs = []string{}
+	} else {
+		currentPoint.SharedOrgIDs = req.SharedOrgIDs
 	}
 
-	if point.OrgID == "" {
-		point.OrgID = currentPoint.OrgID
-	}
-
-	err = h.service.UpdatePoint(c.Request.Context(), id, point)
+	err = h.service.UpdatePoint(c.Request.Context(), id, currentPoint)
 	if err != nil {
 		h.SendError(c, err)
 		return

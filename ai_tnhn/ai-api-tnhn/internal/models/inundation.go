@@ -56,7 +56,7 @@ type InundationReportBase struct {
 	UserName        string   `bson:"user_name" json:"user_name" example:"Nguyễn Văn B"`
 	UserEmail       string   `bson:"user_email" json:"user_email" example:"emp@hsdc.com.vn"`
 	Images          []string `bson:"images" json:"images" example:"[\"img1.jpg\", \"img2.jpg\"]"` // Initial images
-	IsFlooding      bool     `bson:"isflooding" json:"is_flooding"`
+	IsFlooding      bool     `bson:"is_flooding" json:"is_flooding"`
 }
 
 type ReportReviewBase struct {

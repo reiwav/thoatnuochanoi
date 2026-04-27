@@ -39,19 +39,12 @@ func (r *inundationRepo) List(ctx context.Context, filter filter.Filter) ([]*mod
 	return reports, total, err
 }
 
-func (r *inundationRepo) UpdateStatus(ctx context.Context, id string, status string) error {
-	update := bson.M{"status": status, "updated_at": time.Now().Unix()}
-	if status == "resolved" || status == "normal" {
-		update["traffic_status"] = ""
-	}
-	return r.R_UnsafeUpdateByID(ctx, id, bson.M{"$set": update})
-}
-
 func (r *inundationRepo) Resolve(ctx context.Context, id string, endTime int64) error {
 	return r.R_UnsafeUpdateByID(ctx, id, bson.M{"$set": bson.M{
 		"status":         "resolved",
 		"end_time":       endTime,
 		"traffic_status": "",
+		"is_flooding":    false,
 		"updated_at":     time.Now().Unix(),
 	}})
 }

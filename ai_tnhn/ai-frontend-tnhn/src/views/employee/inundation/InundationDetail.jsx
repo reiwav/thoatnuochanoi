@@ -168,10 +168,10 @@ const InundationDetail = ({ selectedReport, loadingReport, user, hideHeader = fa
                             {item.images?.length > 0 && (
                                 <Box sx={{ display: 'flex', gap: 1, mt: 1.5, overflowX: 'auto', pb: 1 }}>
                                     {item.images.map((img, i) => (
-                                        <Box 
-                                            key={i} component="img" src={getInundationImageUrl(img)} 
-                                            onClick={() => handleOpenViewer(item.images, i)} 
-                                            sx={{ width: 80, height: 80, borderRadius: 2, objectFit: 'cover', cursor: 'zoom-in', border: '1px solid', borderColor: 'divider' }} 
+                                        <Box
+                                            key={i} component="img" src={getInundationImageUrl(img)}
+                                            onClick={() => handleOpenViewer(item.images, i)}
+                                            sx={{ width: 80, height: 80, borderRadius: 2, objectFit: 'cover', cursor: 'zoom-in', border: '1px solid', borderColor: 'divider' }}
                                         />
                                     ))}
                                 </Box>

@@ -14,7 +14,7 @@ import { SurveyInfoSection, MechInfoSection, ReviewCommentSection, ReportInfoSec
 import PermissionGuard from 'ui-component/PermissionGuard';
 import { getInundationImageUrl } from 'utils/imageHelper';
 
-const AdminInundationCard = ({ point, onAction, onOpenViewer, onOpenDetail, navigate, basePath }) => {
+const AdminInundationCard = ({ point, onAction, onOpenViewer, onOpenDetail, onOpenHistory, navigate, basePath }) => {
     const theme = useTheme();
     const [expanded, setExpanded] = useState(false);
     const isFlooded = !!point.report_id;
@@ -82,7 +82,7 @@ const AdminInundationCard = ({ point, onAction, onOpenViewer, onOpenDetail, navi
                         <AdminInundationActionMenu
                             point={point}
                             onAction={onAction}
-                            onViewHistory={(p) => navigate(`${basePath}/station/inundation/history?id=${p.id}`)}
+                            onViewHistory={() => onOpenHistory(point)}
                         />
                     </Stack>
                 </Box>
@@ -236,7 +236,7 @@ const AdminInundationCard = ({ point, onAction, onOpenViewer, onOpenDetail, navi
                                 </Tooltip>
                             </PermissionGuard>
                             <PermissionGuard permission="inundation:mechanic">
-                                <Tooltip title="Xí Nghiệp cơ giới">
+                                <Tooltip title="XN cơ giới">
                                     <span>
                                         <IconButton size="small" color="info" onClick={() => onAction('mech', point)} sx={{ bgcolor: 'info.lighter' }}>
                                             <IconEngine size={18} />

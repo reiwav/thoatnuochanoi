@@ -233,8 +233,8 @@ const EmployeeInundationDashboard = () => {
             />
 
             <ImageViewer viewer={viewer} onClose={() => setViewer({ ...viewer, open: false })} onPrev={() => setViewer(v => ({ ...v, index: (v.index - 1 + v.images.length) % v.images.length }))} onNext={() => setViewer(v => ({ ...v, index: (v.index + 1) % v.images.length }))} />
-            
-            <InundationDetailDialog 
+
+            <InundationDetailDialog
                 open={detailDialog.open}
                 onClose={() => setDetailDialog({ open: false, point: null })}
                 point={detailDialog.point}

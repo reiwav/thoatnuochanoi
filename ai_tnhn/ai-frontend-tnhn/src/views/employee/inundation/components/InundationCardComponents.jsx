@@ -187,7 +187,7 @@ export const CardMetrics = ({ isHighPriority, latest, theme }) => (
                     <Stack direction="row" spacing={1} alignItems="center" sx={{ px: 1 }}>
                         <IconEngine size={14} color={theme.palette.secondary.main} />
                         <Typography variant="caption" sx={{ fontWeight: 800, color: 'secondary.dark' }}>
-                            CG xử lý: Đã xử lý
+                            XN cơ giới: Đã xử lý
                         </Typography>
                     </Stack>
                 )}

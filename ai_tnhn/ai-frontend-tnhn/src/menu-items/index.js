@@ -1,9 +1,9 @@
-import { adminPages, companyPages } from './admin'
+import { adminPages } from './admin'
 
 // ==============================|| MENU ITEMS ||============================== //
 
 const menuItems = {
-  items: [companyPages, adminPages]
+  items: [adminPages]
 };
 
 export default menuItems;

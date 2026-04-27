@@ -31,6 +31,7 @@ dayjs.locale('vi');
 import AdminInundationActionMenu from './components/AdminInundationActionMenu';
 import EmployeeActionDialog from '../../employee/components/EmployeeActionDialog';
 import InundationDetailDialog from '../../shared/inundation/InundationDetailDialog';
+import InundationHistoryDialog from '../../shared/inundation/InundationHistoryDialog';
 import ImageViewer from './components/ImageViewer';
 import PermissionGuard from 'ui-component/PermissionGuard';
 import { getInundationImageUrl } from 'utils/imageHelper';
@@ -65,6 +66,7 @@ const AdminInundationDashboard = () => {
     const [taskDialog, setTaskDialog] = useState({ open: false, mode: '', data: null });
     const [confirmFinish, setConfirmFinish] = useState({ open: false, point: null });
     const [detailDialog, setDetailDialog] = useState({ open: false, point: null });
+    const [historyDialog, setHistoryDialog] = useState({ open: false, point: null });
 
     // Initial Fetch
     useEffect(() => {
@@ -109,6 +111,7 @@ const AdminInundationDashboard = () => {
 
     const handleOpenViewer = (imgs, idx = 0) => setViewer({ open: true, images: imgs, index: idx });
     const handleOpenDetail = (point) => setDetailDialog({ open: true, point });
+    const handleOpenHistory = (point) => setHistoryDialog({ open: true, point });
 
     const handleAction = (mode, point) => {
         if (mode === 'quick_finish') {
@@ -192,7 +195,7 @@ const AdminInundationDashboard = () => {
 
 
             {/* Filter Bar */}
-            <Box sx={{ mb: 2, px: { xs: 1.5, sm: 0 } }} sm={{ mb: 3 }}>
+            <Box sx={{ mb: 3, px: { xs: 1.5, sm: 0 } }} sm={{ mb: 3 }}>
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                     <Grid container spacing={2} alignItems="center">
                         <Grid size={{ xs: 12, md: 4 }}>
@@ -247,12 +250,13 @@ const AdminInundationDashboard = () => {
                         ) : (
                             <Grid container spacing={2}>
                                 {filteredPoints.map((point) => (
-                                    <Grid size={{ xs: 12, sm: 6, md: 3 }} key={point.id} sx={{ display: 'flex' }}>
+                                    <Grid size={{ xs: 12, sm: 6, lg: 3, xl: 4 }} key={point.id} sx={{ display: 'flex' }}>
                                         <InundationDesktopStatCard
                                             point={point}
                                             onAction={handleAction}
                                             onOpenViewer={handleOpenViewer}
                                             onOpenDetail={handleOpenDetail}
+                                            onOpenHistory={handleOpenHistory}
                                             navigate={navigate}
                                             basePath={basePath}
                                         />
@@ -270,6 +274,12 @@ const AdminInundationDashboard = () => {
                 open={detailDialog.open}
                 onClose={() => setDetailDialog({ open: false, point: null })}
                 point={detailDialog.point}
+            />
+
+            <InundationHistoryDialog
+                open={historyDialog.open}
+                onClose={() => setHistoryDialog({ open: false, point: null })}
+                point={historyDialog.point}
             />
 
             <EmployeeActionDialog

@@ -24,7 +24,7 @@ const inundationApi = {
         return axiosClient.get(`/inundation/report/${id}`);
     },
     getPointHistory: (pointId, fromTime, toTime) => {
-        let url = `/inundation/reports?point_id=${pointId}&size=100&is_flooding=true`;
+        let url = `/inundation/reports?point_id=${pointId}&size=100`;
         if (fromTime) url += `&from_time=${fromTime}`;
         if (toTime) url += `&to_time=${toTime}`;
         return axiosClient.get(url);

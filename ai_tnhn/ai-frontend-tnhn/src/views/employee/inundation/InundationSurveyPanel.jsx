@@ -66,7 +66,7 @@ const InundationSurveyPanel = ({ report, pointId, onSuccess }) => {
                 formData.append('status', 'active');
                 // Also add required fields for new report
                 formData.append('street_name', new URLSearchParams(window.location.search).get('name') || '');
-                
+
 
                 await inundationApi.createReport(formData);
                 toast.success('Đã tạo báo cáo và gửi dữ liệu khảo sát');
@@ -136,7 +136,7 @@ const InundationSurveyPanel = ({ report, pointId, onSuccess }) => {
                     multiline
                     rows={4}
                     label="Ghi chú khảo sát"
-                    placeholder="Nhập nội dung khảo sát thiết kế..."
+                    placeholder="Nhập nội dung XN KSTK"
                     value={surveyData.survey_note}
                     onChange={(e) => setSurveyData(prev => ({ ...prev, survey_note: e.target.value }))}
                     sx={{ '& .MuiInputLabel-root': { fontWeight: 800 } }}

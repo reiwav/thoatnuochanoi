@@ -117,7 +117,7 @@ const InundationForm = () => {
         const allTabs = [
             { id: 0, label: selectedReport ? 'Cập nhật' : 'Báo mới', icon: <IconPlus size={18} />, hidden: isMechWorker || isSurveyWorker || !useAuthStore.getState().hasPermission('inundation:edit') },
             { id: 1, label: 'Chi tiết', icon: <IconHistory size={18} />, hidden: isMechWorker || isSurveyWorker || !useAuthStore.getState().hasPermission('inundation:view') },
-            { id: 'mech', label: 'Cơ giới', icon: <IconSettings size={18} />, hidden: !(useAuthStore.getState().hasPermission('inundation:mech') || useAuthStore.getState().hasPermission('inundation:mechanic')) },
+            { id: 'mech', label: 'XN Cơ giới', icon: <IconSettings size={18} />, hidden: !(useAuthStore.getState().hasPermission('inundation:mech') || useAuthStore.getState().hasPermission('inundation:mechanic')) },
             { id: 'survey', label: 'Khảo sát', icon: <IconRuler size={18} />, hidden: !useAuthStore.getState().hasPermission('inundation:survey') }
         ];
 
@@ -205,17 +205,17 @@ const InundationForm = () => {
     };
 
     return (
-        <Box sx={{ 
-            px: { xs: 2, md: 0 }, 
-            pt: { xs: 2, md: 0 }, 
-            pb: { xs: 4, md: 0 } 
+        <Box sx={{
+            px: { xs: 2, md: 0 },
+            pt: { xs: 2, md: 0 },
+            pb: { xs: 4, md: 0 }
         }}>
             {/* Mobile Header: Visible only on xs/sm */}
-            <Box sx={{ 
-                display: { xs: 'flex', md: 'none' }, 
-                alignItems: 'center', 
-                gap: 1, 
-                mb: 2 
+            <Box sx={{
+                display: { xs: 'flex', md: 'none' },
+                alignItems: 'center',
+                gap: 1,
+                mb: 2
             }}>
                 <IconButton size="small" onClick={() => navigate(-1)}>
                     <IconArrowLeft size={20} />

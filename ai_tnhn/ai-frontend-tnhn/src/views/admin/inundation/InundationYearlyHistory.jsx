@@ -14,6 +14,7 @@ import inundationApi from 'api/inundation';
 import organizationApi from 'api/organization';
 import useAuthStore from 'store/useAuthStore';
 import OrganizationSelect from 'ui-component/filter/OrganizationSelect';
+import InundationHistoryDialog from '../../shared/inundation/InundationHistoryDialog';
 
 const InundationYearlyHistory = () => {
     const { user } = useAuthStore();
@@ -234,128 +235,11 @@ const InundationYearlyHistory = () => {
                 </Box>
             </Stack>
 
-            {/* Details Dialog */}
-            <Dialog
+            <InundationHistoryDialog
                 open={detailOpen}
                 onClose={() => setDetailOpen(false)}
-                maxWidth="md"
-                fullWidth
-                slotProps={{ paper: { sx: { borderRadius: { xs: 0, sm: 4 }, m: { xs: 0, sm: 2 }, maxHeight: { xs: '100%', sm: '90vh' } } } }}
-                fullScreen={useMediaQuery(theme => theme.breakpoints.down('sm'))}
-            >
-                <DialogTitle sx={{ m: 0, p: 2, bgcolor: '#f8f9fa', borderBottom: '1px solid #eee' }}>
-                    <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                        Chi tiết lịch sử ngập: {selectedPoint?.street_name || selectedPoint?.point_id}
-                    </Typography>
-                    <IconButton
-                        onClick={() => setDetailOpen(false)}
-                        sx={{ position: 'absolute', right: 8, top: 8, color: (theme) => theme.palette.grey[500] }}
-                    >
-                        <IconX size={20} />
-                    </IconButton>
-                </DialogTitle>
-                <DialogContent sx={{ p: { xs: 2, sm: 3 } }}>
-                    <Stack spacing={3}>
-                        <Box>
-                            <Grid container spacing={2}>
-                                <Grid item xs={12} sm={6}>
-                                    <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 700 }}>ĐỊA CHỈ</Typography>
-                                    <Typography variant="body1" sx={{ fontWeight: 600 }}>{selectedPoint?.address || '...'}</Typography>
-                                </Grid>
-                                <Grid item xs={6} sm={3}>
-                                    <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 700 }}>ĐƠN VỊ</Typography>
-                                    <Typography variant="body1" sx={{ fontWeight: 600 }}>{selectedPoint?.org_code}</Typography>
-                                </Grid>
-                                <Grid item xs={6} sm={3}>
-                                    <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 700 }}>SỐ LẦN NGẬP</Typography>
-                                    <Typography variant="h4" sx={{ fontWeight: 800, color: 'error.main' }}>{selectedPoint?.count}</Typography>
-                                </Grid>
-                            </Grid>
-                        </Box>
-
-                        <Divider />
-
-                        {/* Desktop Table View */}
-                        <TableContainer component={Paper} variant="outlined" sx={{ display: { xs: 'none', md: 'block' }, borderRadius: '8px' }}>
-                            <Table size="small">
-                                <TableHead sx={{ bgcolor: '#f1f3f4' }}>
-                                    <TableRow>
-                                        <TableCell align="center" sx={{ fontWeight: 700, width: '80px' }}>Đợt ngập</TableCell>
-                                        <TableCell sx={{ fontWeight: 700 }}>Thời gian bắt đầu</TableCell>
-                                        <TableCell sx={{ fontWeight: 700 }}>Kích thước (DxRxS)</TableCell>
-                                        <TableCell align="center" sx={{ fontWeight: 700 }}>Thời gian ngập</TableCell>
-                                        <TableCell align="center" sx={{ fontWeight: 700, width: '100px' }}>Thao tác</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {selectedPoint?.events.map((event, idx) => (
-                                        <TableRow key={event.id} hover>
-                                            <TableCell align="center" sx={{ fontWeight: 600 }}>#{selectedPoint.events.length - idx}</TableCell>
-                                            <TableCell>
-                                                <Stack direction="row" spacing={1} alignItems="center">
-                                                    <IconClock size={16} color="#666" />
-                                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                                        {dayjs.unix(event.created_at).format('DD/MM/YYYY HH:mm:ss')}
-                                                    </Typography>
-                                                </Stack>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Stack direction="row" spacing={1} alignItems="center">
-                                                    <IconRulerMeasure size={16} color="#d32f2f" />
-                                                    <Typography variant="body2" color="error" sx={{ fontWeight: 700 }}>
-                                                        {event.length} x {event.width} x {event.depth}
-                                                    </Typography>
-                                                </Stack>
-                                            </TableCell>
-                                            <TableCell align="center" sx={{ fontWeight: 600 }}>
-                                                {formatDuration(event.durationSeconds)}
-                                            </TableCell>
-                                            <TableCell align="center">
-                                                <Button
-                                                    size="small"
-                                                    variant="outlined"
-                                                    onClick={() => window.open(`/admin/inundation/form?id=${event.id}&tab=1&readonly=true`, '_blank')}
-                                                    sx={{ borderRadius: '6px', fontSize: '0.75rem', py: 0 }}
-                                                >
-                                                    Xem
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
-
-                        {/* Mobile Card View */}
-                        <Stack spacing={2} sx={{ display: { xs: 'flex', md: 'none' } }}>
-                            {selectedPoint?.events.map((event, idx) => (
-                                <Paper key={event.id} variant="outlined" sx={{ p: 2, borderRadius: 3 }}>
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 800 }}># {selectedPoint.events.length - idx}</Typography>
-                                        <Typography variant="body2" sx={{ fontWeight: 600, color: 'error.main' }}>
-                                            {event.length}x{event.width}x{event.depth}
-                                        </Typography>
-                                    </Box>
-                                    <Stack spacing={1}>
-                                        <Typography variant="caption" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            <IconClock size={14} /> {dayjs.unix(event.created_at).format('DD/MM/YYYY HH:mm:ss')}
-                                        </Typography>
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <Typography variant="body2" sx={{ fontWeight: 700 }}>{formatDuration(event.durationSeconds)}</Typography>
-                                            <Button
-                                                variant="outlined" size="small"
-                                                onClick={() => window.open(`/admin/inundation/form?id=${event.id}&tab=1&readonly=true`, '_blank')}
-                                            >
-                                                Xem báo cáo
-                                            </Button>
-                                        </Box>
-                                    </Stack>
-                                </Paper>
-                            ))}
-                        </Stack>
-                    </Stack>
-                </DialogContent>
-            </Dialog>
+                point={selectedPoint ? { id: selectedPoint.point_id, name: selectedPoint.street_name, address: selectedPoint.address, org_code: selectedPoint.org_code, count: selectedPoint.count } : null}
+            />
         </MainCard>
     );
 };

@@ -70,8 +70,8 @@ const InundationForm = () => {
                     // Interceptor đã bóc tách nên points đã là mảng hoặc payload chính
                     const pointsArray = Array.isArray(points) ? points : (points?.data || []);
                     const p = pointsArray.find(item => item.id === pointId);
-                    if (p && p.active_report) {
-                        setSelectedReport(p.active_report);
+                    if (p && p.report_id && p.last_report) {
+                        setSelectedReport(p.last_report);
                     } else {
                         setSelectedReport(null);
                     }

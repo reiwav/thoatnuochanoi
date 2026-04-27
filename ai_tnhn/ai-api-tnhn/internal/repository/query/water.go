@@ -91,6 +91,9 @@ func (p rainRepository) GetAggregateStats(ctx context.Context, filter bson.M, gr
 
 	return results, nil
 }
+func (p rainRepository) Create(ctx context.Context, record *models.RainRecord) error {
+	return p.R_Create(ctx, record)
+}
 
 // =============================================================================
 
@@ -136,6 +139,9 @@ func (p lakeRepository) GetLatest(ctx context.Context, stationID int64) (*models
 	}
 	return m, err
 }
+func (p lakeRepository) Create(ctx context.Context, record *models.LakeRecord) error {
+	return p.R_Create(ctx, record)
+}
 
 // =============================================================================
 
@@ -180,4 +186,7 @@ func (p riverRepository) GetLatest(ctx context.Context, stationID int64) (*model
 		return nil, nil
 	}
 	return m, err
+}
+func (p riverRepository) Create(ctx context.Context, record *models.RiverRecord) error {
+	return p.R_Create(ctx, record)
 }

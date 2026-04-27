@@ -10,6 +10,7 @@ import (
 	"ai-api-tnhn/internal/service/query"
 	"ai-api-tnhn/internal/service/station"
 	"ai-api-tnhn/internal/service/station/stationdata"
+	"ai-api-tnhn/internal/service/station/rain"
 	"ai-api-tnhn/internal/service/station/water"
 	"context"
 	"fmt"
@@ -41,12 +42,13 @@ type service struct {
 	contractSvc           contract.Service
 	stationSvc            station.Service
 	pumpingSvc            pumpingstation.Service
+	rainSvc               rain.Service
 	aiUsageRepo           repository.AiUsage
 	aiChatLogRepo         repository.AiChatLog
 	userRepo              repository.User
 }
 
-func NewService(k, kc string, w water.Service, g googleapi.Service, i inundation.Service, q query.Service, sd stationdata.Service, e emergency_construction.Service, c contract.Service, s station.Service, p pumpingstation.Service, ar repository.AiUsage, al repository.AiChatLog, ur repository.User) (Service, error) {
+func NewService(k, kc string, w water.Service, r rain.Service, g googleapi.Service, i inundation.Service, q query.Service, sd stationdata.Service, e emergency_construction.Service, c contract.Service, s station.Service, p pumpingstation.Service, ar repository.AiUsage, al repository.AiChatLog, ur repository.User) (Service, error) {
 	if k == "" {
 		return nil, fmt.Errorf("gemini api key is required")
 	}
@@ -73,5 +75,5 @@ func NewService(k, kc string, w water.Service, g googleapi.Service, i inundation
 	if len(cl) == 0 {
 		return nil, fmt.Errorf("failed to create any valid gemini client")
 	}
-	return &service{clients: cl, contractClients: ccl, waterSvc: w, googleApiSvc: g, inuSvc: i, querySvc: q, stationDataSvc: sd, emcSvc: e, contractSvc: c, stationSvc: s, pumpingSvc: p, aiUsageRepo: ar, aiChatLogRepo: al, userRepo: ur}, nil
+	return &service{clients: cl, contractClients: ccl, waterSvc: w, rainSvc: r, googleApiSvc: g, inuSvc: i, querySvc: q, stationDataSvc: sd, emcSvc: e, contractSvc: c, stationSvc: s, pumpingSvc: p, aiUsageRepo: ar, aiChatLogRepo: al, userRepo: ur}, nil
 }

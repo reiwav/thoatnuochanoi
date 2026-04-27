@@ -21,6 +21,7 @@ func InitRouter(cfg *config.Config, s *Services, r *Repositories, log logger.Log
 	stationHandler := handler.NewStationHandler(s.Station, contextWith)
 	inuHandler := handler.NewInundationHandler(s.Inundation, contextWith)
 	waterHandler := handler.NewWaterHandler(s.Water)
+	rainHandler := handler.NewRainHandler(s.Rain)
 	emConstructionHandler := handler.NewEmergencyConstructionHandler(s.EmConstruction, r.AiChatLog)
 	weatherHandler := handler.NewWeatherHandler(s.Weather)
 	contractCategoryHandler := handler.NewContractCategoryHandler(s.ContractCategory, contextWith)
@@ -57,7 +58,7 @@ func InitRouter(cfg *config.Config, s *Services, r *Repositories, log logger.Log
 		GenerateQuickReportV3:          googleHandler.GenerateQuickReportV3,
 		GenerateQuickReportTextHandler: googleHandler.GenerateQuickReportText,
 		GenerateAIDynamicReportHandler: googleHandler.GenerateAIDynamicReport,
-		GetRainDataByDate:              waterHandler.GetRainDataByDate,
+		GetRainDataByDate:              rainHandler.GetRainDataByDate,
 		DatabaseQueryHandler:           queryHandler.Query,
 		GetPermissionMatrixHandler:    permHandler.GetMatrix,
 		UpdatePermissionMatrixHandler: permHandler.UpdateMatrix,
@@ -65,5 +66,5 @@ func InitRouter(cfg *config.Config, s *Services, r *Repositories, log logger.Log
 		GetWeatherForecastHandler:     googleHandler.GetWeatherForecast,
 	}
 
-	return handlers.Create(mid, orgHandler, empHandler, stationHandler, inuHandler, waterHandler, googleHandler, queryHandler, emConstructionHandler, weatherHandler, contractCategoryHandler, contractHandler, pumpingStationHandler, wastewaterHandler, permHandler, roleHandler, settingHandler)
+	return handlers.Create(mid, orgHandler, empHandler, stationHandler, inuHandler, waterHandler, rainHandler, googleHandler, queryHandler, emConstructionHandler, weatherHandler, contractCategoryHandler, contractHandler, pumpingStationHandler, wastewaterHandler, permHandler, roleHandler, settingHandler)
 }

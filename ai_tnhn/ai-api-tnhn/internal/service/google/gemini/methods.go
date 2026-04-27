@@ -35,7 +35,7 @@ func (s *service) Chat(ctx context.Context, prompt string, history []googleapi.C
 	raw, aug := prompt, prompt
 	if strings.Contains(strings.ToLower(prompt), "mưa") && (strings.Contains(strings.ToLower(prompt), "3 ngày trước") || strings.Contains(strings.ToLower(prompt), "ba ngày trước")) {
 		dStr := time.Now().AddDate(0, 0, -3).Format("2006-01-02")
-		if data, err := s.waterSvc.GetRainDataByDate(ctx, dStr); err == nil {
+		if data, err := s.rainSvc.GetRainDataByDate(ctx, dStr); err == nil {
 			dj, _ := json.Marshal(data)
 			aug = fmt.Sprintf("[Hệ thống context]: Lượng mưa thực tế %s: %s\n\n[Câu hỏi]: %s", dStr, string(dj), prompt)
 		}

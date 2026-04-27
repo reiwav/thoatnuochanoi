@@ -15,6 +15,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import AnimateButton from 'ui-component/extended/AnimateButton';
 import stationApi from 'api/station';
 import organizationApi from 'api/organization';
+import OrganizationSelect from 'ui-component/filter/OrganizationSelect';
 import LakeDialog from './LakeDialog';
 import useAuthStore from 'store/useAuthStore';
 import { getDataArray } from 'utils/apiHelper';
@@ -41,7 +42,7 @@ const StationLakeList = () => {
     
     // Khởi tạo bộ lọc đơn vị thông minh: Tránh việc gọi API 2 lần (1 lần không có org_id, 1 lần có org_id do OrganizationSelect ép vào)
     const isCompanyLevel = isCompany || user?.role === 'super_admin';
-    const initialOrgId = (!isCompanyLevel && user?.org_id) ? user.org_id : '';
+    const initialOrgId = '';
 
     const [filterInputs, setFilterInputs] = useState({ search: '', active: '', org_id: initialOrgId });
     const [params, setParams] = useState({ search: '', active: '', org_id: initialOrgId });
@@ -193,6 +194,14 @@ const StationLakeList = () => {
                         slotProps={{ input: { sx: { borderRadius: 3 } } }}
                         sx={{ width: { xs: '100%', sm: 300 } }}
                     />
+
+                    {isCompanyLevel && (
+                        <OrganizationSelect
+                            value={filterInputs.org_id}
+                            onChange={(e) => setFilterInputs({ ...filterInputs, org_id: e.target.value })}
+                            sx={{ width: { xs: '100%', sm: 250 } }}
+                        />
+                    )}
                 </Stack>
             </Box>
 

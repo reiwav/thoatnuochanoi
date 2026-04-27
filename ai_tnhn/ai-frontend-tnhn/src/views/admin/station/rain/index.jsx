@@ -150,7 +150,7 @@ const StationRainList = () => {
 
     // Khởi tạo bộ lọc đơn vị thông minh: Tránh việc gọi API 2 lần (1 lần không có org_id, 1 lần có org_id do OrganizationSelect ép vào)
     const isCompanyLevel = isCompany || user?.role === 'super_admin';
-    const initialOrgId = (!isCompanyLevel && user?.org_id) ? user.org_id : '';
+    const initialOrgId = '';
     
     const [filterInputs, setFilterInputs] = useState({ search: '', active: '', org_id: initialOrgId });
     const [params, setParams] = useState({ search: '', active: '', org_id: initialOrgId });
@@ -294,11 +294,13 @@ const StationRainList = () => {
                         sx={{ width: { xs: '100%', sm: 300 } }}
                     />
 
-                    <OrganizationSelect
-                        value={filterInputs.org_id}
-                        onChange={(e) => setFilterInputs({ ...filterInputs, org_id: e.target.value })}
-                        sx={{ width: { xs: '100%', sm: 250 } }}
-                    />
+                    {isCompanyLevel && (
+                        <OrganizationSelect
+                            value={filterInputs.org_id}
+                            onChange={(e) => setFilterInputs({ ...filterInputs, org_id: e.target.value })}
+                            sx={{ width: { xs: '100%', sm: 250 } }}
+                        />
+                    )}
                 </Stack>
             </Box>
 

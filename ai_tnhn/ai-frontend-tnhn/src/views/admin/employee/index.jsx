@@ -335,13 +335,15 @@ const EmployeeList = () => {
                         slotProps={{ input: { sx: { borderRadius: 3 } } }}
                         sx={{ flex: 1 }}
                     />
-                    <OrganizationSelect
-                        value={filterInputs.org_id}
-                        onChange={(e) => setFilterInputs({ ...filterInputs, org_id: e.target.value })}
-                        size="small"
-                        label="Đơn vị / Xí nghiệp"
-                        sx={{ width: { xs: '100%', sm: 250 } }}
-                    />
+                    {isCompanyLevel && (
+                        <OrganizationSelect
+                            value={filterInputs.org_id}
+                            onChange={(e) => setFilterInputs({ ...filterInputs, org_id: e.target.value })}
+                            size="small"
+                            label="Đơn vị / Xí nghiệp"
+                            sx={{ width: { xs: '100%', sm: 250 } }}
+                        />
+                    )}
                 </Stack>
             </Box>
 

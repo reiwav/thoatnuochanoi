@@ -8,6 +8,8 @@ import (
 	"context"
 	"errors"
 	"strings"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func (s *service) Create(ctx context.Context, input *models.User, currentUserRole string) (*models.User, error) {
@@ -79,6 +81,22 @@ func (s *service) GetByID(ctx context.Context, id string) (*models.User, error) 
 	return s.userRepo.GetByID(ctx, id)
 }
 
-func (s *service) List(ctx context.Context, filter filter.Filter) ([]*models.User, int64, error) {
-	return s.userRepo.List(ctx, filter)
+func (s *service) List(ctx context.Context, f filter.Filter, currentGroup string) ([]*models.User, int64, error) {
+	if currentGroup != "" {
+		roles, err := s.roleRepo.GetAll(ctx)
+		if err == nil {
+			var allowedRoles []string
+			for _, r := range roles {
+				if r.Group == currentGroup {
+					allowedRoles = append(allowedRoles, r.Code)
+				}
+			}
+			if len(allowedRoles) > 0 {
+				f.AddWhere("role", "role", bson.M{"$in": allowedRoles})
+			} else {
+				return []*models.User{}, 0, nil
+			}
+		}
+	}
+	return s.userRepo.List(ctx, f)
 }

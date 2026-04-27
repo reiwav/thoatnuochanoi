@@ -19,15 +19,15 @@ func NewRoleRepo(dbc *mongo.Database, name, prefix string, l logger.Logger) repo
 	return roleRepository{db.NewTable(name, prefix, dbc, l)}
 }
 
-func (r roleRepository) GetAll(ctx context.Context) ([]*models.Role, error) {
-	var list []*models.Role
+func (r roleRepository) GetAll(ctx context.Context) ([]models.Role, error) {
+	var list []models.Role
 	err := r.R_SelectAndSort(ctx, bson.M{"deleted_at": 0}, bson.D{{Key: "level", Value: 1}}, 0, 0, &list)
 	return list, err
 }
 
 func (r roleRepository) GetByCode(ctx context.Context, code string) (*models.Role, error) {
 	var m *models.Role
-	err := r.R_SelectOne(ctx, bson.M{"code": code, "deleted_at": 0}, &m)
+	err := r.R_SelectOne(ctx, bson.M{"code": code}, &m)
 	return m, err
 }
 
@@ -44,6 +44,7 @@ func (r roleRepository) Update(ctx context.Context, id string, role *models.Role
 			"code":        role.Code,
 			"description": role.Description,
 			"level":       role.Level,
+			"group":       role.Group,
 			"is_company":  role.IsCompany,
 			"is_employee": role.IsEmployee,
 			"updated_at":  role.MTime,

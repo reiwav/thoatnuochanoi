@@ -5,7 +5,7 @@ import (
 	"context"
 )
 
-func (s *service) GetAll(ctx context.Context, currentUserRole string) ([]*models.Role, error) {
+func (s *service) GetAll(ctx context.Context, currentUserRole string) ([]models.Role, error) {
 	allRoles, err := s.roleRepo.GetAll(ctx)
 	if err != nil {
 		return nil, err
@@ -17,12 +17,15 @@ func (s *service) GetAll(ctx context.Context, currentUserRole string) ([]*models
 
 	currentInfo, err := s.roleRepo.GetByCode(ctx, currentUserRole)
 	if err != nil || currentInfo == nil {
-		return []*models.Role{}, nil
+		return []models.Role{}, nil
 	}
 
-	var filtered []*models.Role
+	var filtered []models.Role
 	for _, r := range allRoles {
-		if r.Level >= currentInfo.Level {
+		if r.Level < currentInfo.Level {
+			continue
+		}
+		if r.Group == "" || r.Group == currentInfo.Group {
 			filtered = append(filtered, r)
 		}
 	}

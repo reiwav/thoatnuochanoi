@@ -29,5 +29,9 @@ func (s *service) checkRoleLevel(ctx context.Context, currentUserRole, targetRol
 		return web.Forbidden("Bạn không có quyền thực hiện thao tác này cho vai trò có cấp độ cao hơn (Level nhỏ hơn)")
 	}
 
+	if currentInfo.Group != "" && targetInfo.Group != currentInfo.Group {
+		return web.Forbidden("Bạn chỉ có quyền thực hiện thao tác cho vai trò thuộc nhóm: " + currentInfo.Group)
+	}
+
 	return nil
 }

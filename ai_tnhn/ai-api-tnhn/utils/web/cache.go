@@ -15,6 +15,7 @@ type ContextWith interface {
 	GetUserID(ctx *gin.Context) (string, error)
 	GetQrcodeID(ctx *gin.Context) (string, error)
 	GetRole(ctx *gin.Context) (string, error)
+	GetGroup(ctx *gin.Context) (string, error)
 	SetQrcodeID(ctx *gin.Context, uID string)
 	GetToken(r *http.Request) string
 	GetTokenSocket(r http.Header, requets url.URL) string
@@ -38,6 +39,7 @@ type ClientCache struct {
 	OrgID      string
 	DeviceID   string
 	Role       string
+	Group      string
 	IsEmployee bool
 	IsCompany  bool
 }
@@ -76,6 +78,11 @@ func (c *ClientCache) GetRole(ctx *gin.Context) (string, error) {
 		return "", BadRequest("role not found")
 	}
 	return role, nil
+}
+
+func (c *ClientCache) GetGroup(ctx *gin.Context) (string, error) {
+	group := c.GetTokenFromContext(ctx).Group
+	return group, nil
 }
 
 func (c *ClientCache) GetDeviceID(ctx *gin.Context) (string, error) {

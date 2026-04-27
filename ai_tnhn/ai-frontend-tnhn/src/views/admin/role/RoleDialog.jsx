@@ -14,6 +14,7 @@ const RoleDialog = ({ open, onClose, onSubmit, role, isEdit }) => {
         code: '',
         description: '',
         level: 0,
+        group: '',
         is_company: false,
         is_employee: false
     });
@@ -26,6 +27,7 @@ const RoleDialog = ({ open, onClose, onSubmit, role, isEdit }) => {
                 code: role.code || '',
                 description: role.description || '',
                 level: role.level || 0,
+                group: role.group || '',
                 is_company: role.is_company || false,
                 is_employee: role.is_employee || false
             });
@@ -35,6 +37,7 @@ const RoleDialog = ({ open, onClose, onSubmit, role, isEdit }) => {
                 code: '',
                 description: '',
                 level: 0,
+                group: '',
                 is_company: false,
                 is_employee: false
             });
@@ -135,7 +138,7 @@ const RoleDialog = ({ open, onClose, onSubmit, role, isEdit }) => {
                             sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
                         />
                     </Grid>
-                    <Grid item xs={12}>
+                    <Grid item xs={12} sm={6}>
                         <TextField
                             fullWidth
                             label="Cấp độ (Level)"
@@ -144,7 +147,20 @@ const RoleDialog = ({ open, onClose, onSubmit, role, isEdit }) => {
                             value={values.level}
                             onChange={handleChange}
                             variant="outlined"
-                            helperText="0: Super Admin, 1, 2, ... (Số càng thấp quyền càng cao)"
+                            helperText="0: Super Admin, 1, 2... (Thấp hơn là quyền cao hơn)"
+                            sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
+                        />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                        <TextField
+                            fullWidth
+                            label="Nhóm (Group)"
+                            name="group"
+                            value={values.group}
+                            onChange={handleChange}
+                            variant="outlined"
+                            placeholder="Ví dụ: inundation, pumping..."
+                            helperText="Dùng để phân nhóm các vai trò quản lý"
                             sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
                         />
                     </Grid>

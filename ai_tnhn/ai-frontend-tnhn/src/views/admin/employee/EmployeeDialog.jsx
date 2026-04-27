@@ -103,7 +103,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
     const handleChange = (field, value) => {
         setFormData(prev => {
             const newData = { ...prev, [field]: value };
-            
+
             // Nếu không có quyền chọn đơn vị, luôn giữ org_id theo mặc định
             if (field === 'org_id' && !canSelectOrg) {
                 newData.org_id = defaultOrgId;

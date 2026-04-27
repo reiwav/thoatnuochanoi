@@ -219,7 +219,6 @@ func (w *worker) connectAndListen(ctx context.Context, baseUrl string, station *
 			if data == "initialized" || data == "{}" {
 				continue
 			}
-			w.logger.GetLogger().Infof("Received SignalR data for %s: %s", station.Name, data)
 			w.handleIncomingData(ctx, station, data)
 		}
 	}

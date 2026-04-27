@@ -66,6 +66,7 @@ func (s *service) Login(ctx context.Context, input LoginRequest) (*models.Token,
 		Name:       u.Name,
 		OrgID:      u.OrgID,
 		Role:       u.Role,
+		Group:      roleData.Group,
 		IsEmployee: roleData.IsEmployee,
 		IsCompany:  roleData.IsCompany,
 	}
@@ -129,9 +130,11 @@ func (s *service) OAuthLogin(ctx context.Context, email string) (*models.Token, 
 
 	isEmployee := false
 	isCompany := false
+	group := ""
 	if roleData, err := s.roleRepo.GetByCode(ctx, role); err == nil && roleData != nil {
 		isEmployee = roleData.IsEmployee
 		isCompany = roleData.IsCompany
+		group = roleData.Group
 	}
 
 	tk := &models.Token{
@@ -139,6 +142,7 @@ func (s *service) OAuthLogin(ctx context.Context, email string) (*models.Token, 
 		Name:       u.Name,
 		OrgID:      u.OrgID,
 		Role:       role,
+		Group:      group,
 		IsEmployee: isEmployee,
 		IsCompany:  isCompany,
 	}

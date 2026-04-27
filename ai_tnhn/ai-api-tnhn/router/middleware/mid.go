@@ -84,6 +84,7 @@ func (m mid) MidBasicType(roles ...string) gin.HandlerFunc {
 			Token:      tokenID,
 			OrgID:      tok.OrgID,
 			Role:       tok.Role,
+			Group:      tok.Group,
 			Name:       tok.Name,
 			IsEmployee: tok.IsEmployee,
 			IsCompany:  tok.IsCompany,

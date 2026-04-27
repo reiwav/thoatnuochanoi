@@ -140,7 +140,8 @@ func (h *EmployeeHandler) List(c *gin.Context) {
 		req.OrgID = orgID
 	}
 
-	res, total, err := h.service.List(c.Request.Context(), req)
+	currentGroup, _ := h.contextWith.GetGroup(c)
+	res, total, err := h.service.List(c.Request.Context(), req, currentGroup)
 	web.AssertNil(err)
 	h.SendData(c, gin.H{
 		"data":  res,

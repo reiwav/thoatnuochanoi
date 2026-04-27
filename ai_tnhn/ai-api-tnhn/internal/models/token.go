@@ -8,6 +8,7 @@ type Token struct {
 	Name            string `bson:"name" json:"name"`
 	OrgID           string `bson:"org_id" json:"org_id"`
 	Role            string `bson:"role" json:"role"`
+	Group           string `bson:"group" json:"group"`
 	IsEmployee      bool   `bson:"is_employee" json:"is_employee"`
 	IsCompany       bool   `bson:"is_company" json:"is_company"`
 }

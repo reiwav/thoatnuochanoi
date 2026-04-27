@@ -7,7 +7,7 @@ import (
 )
 
 type Service interface {
-	GetAll(ctx context.Context, currentUserRole string) ([]*models.Role, error)
+	GetAll(ctx context.Context, currentUserRole string) ([]models.Role, error)
 	GetByCode(ctx context.Context, code string) (*models.Role, error)
 	Create(ctx context.Context, role *models.Role) error
 	Update(ctx context.Context, id string, role *models.Role) error

@@ -119,6 +119,7 @@ const RoleList = () => {
                             <TableCell sx={{ fontWeight: 800, py: 2, pl: 3 }}>Tên Vai trò</TableCell>
                             <TableCell sx={{ fontWeight: 800 }}>Mã (Code)</TableCell>
                             <TableCell sx={{ fontWeight: 800 }}>Level</TableCell>
+                            <TableCell sx={{ fontWeight: 800 }}>Nhóm (Group)</TableCell>
                             <TableCell sx={{ fontWeight: 800 }}>Phân loại</TableCell>
                             <TableCell sx={{ fontWeight: 800 }}>Nhân sự</TableCell>
                             <TableCell sx={{ fontWeight: 800 }}>Mô tả</TableCell>
@@ -143,6 +144,18 @@ const RoleList = () => {
                                         <Typography variant="body2" sx={{ fontWeight: 700, color: row.level === 0 ? 'error.main' : 'text.primary' }}>
                                             {row.level ?? 0}
                                         </Typography>
+                                    </TableCell>
+                                    <TableCell>
+                                        {row.group ? (
+                                            <Chip 
+                                                label={row.group} 
+                                                size="small" 
+                                                variant="outlined" 
+                                                sx={{ fontWeight: 700, color: 'secondary.main', borderColor: 'secondary.main' }} 
+                                            />
+                                        ) : (
+                                            <Typography variant="caption" color="text.disabled">Global</Typography>
+                                        )}
                                     </TableCell>
                                     <TableCell>
                                         <Chip 

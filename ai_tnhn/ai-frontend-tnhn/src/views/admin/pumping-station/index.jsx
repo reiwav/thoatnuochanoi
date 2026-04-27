@@ -54,8 +54,8 @@ const LogStatusChip = ({ report }) => {
 };
 
 const ActionButtons = ({ item, type, hasPermission, isCompany, user, handleHistory, handleEdit, handleDelete }) => {
-    const editPerm = type === 'pumping' ? 'trambom:edit' : 'station:edit';
-    const deletePerm = type === 'pumping' ? 'trambom:delete' : 'station:delete';
+    const editPerm = type === 'pumping' ? 'trambom:edit' : 'wastewater:edit';
+    const deletePerm = type === 'pumping' ? 'trambom:delete' : 'wastewater:delete';
     
     return (
         <Stack direction="row" spacing={0.5} justifyContent="flex-end">
@@ -448,17 +448,19 @@ const PumpingStationPage = () => {
             }
             secondary={
                 !drillDownStation && (
-                    <AnimateButton>
-                        <Button 
-                            variant="contained" 
-                            color={activeTab === 0 ? "primary" : "secondary"}
-                            startIcon={<IconPlus size={20} />} 
-                            onClick={handleAdd}
-                            sx={{ borderRadius: 2.5, fontWeight: 800, px: 3 }}
-                        >
-                            Thêm {activeTab === 0 ? 'trạm bơm' : 'trạm XLNT'}
-                        </Button>
-                    </AnimateButton>
+                    <PermissionGuard permission={activeTab === 0 ? "trambom:create" : "wastewater:create"}>
+                        <AnimateButton>
+                            <Button 
+                                variant="contained" 
+                                color={activeTab === 0 ? "primary" : "secondary"}
+                                startIcon={<IconPlus size={20} />} 
+                                onClick={handleAdd}
+                                sx={{ borderRadius: 2.5, fontWeight: 800, px: 3 }}
+                            >
+                                Thêm {activeTab === 0 ? 'trạm bơm' : 'trạm XLNT'}
+                            </Button>
+                        </AnimateButton>
+                    </PermissionGuard>
                 )
             }
         >

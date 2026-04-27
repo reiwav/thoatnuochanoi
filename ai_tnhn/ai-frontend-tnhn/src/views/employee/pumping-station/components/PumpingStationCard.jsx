@@ -9,6 +9,7 @@ import {
     IconEngine, IconEdit, IconClock, IconDotsVertical,
     IconHistory
 } from '@tabler/icons-react';
+import PermissionGuard from 'ui-component/PermissionGuard';
 
 const PumpingStationCard = ({ station, onUpdate, onViewHistory }) => {
     const theme = useTheme();
@@ -103,10 +104,12 @@ const PumpingStationCard = ({ station, onUpdate, onViewHistory }) => {
                         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                     >
-                        <MenuItem onClick={() => handleAction('update')}>
-                            <ListItemIcon><IconEdit size={18} /></ListItemIcon>
-                            <ListItemText primary="Nhập báo cáo" />
-                        </MenuItem>
+                        <PermissionGuard permission="trambom:report">
+                            <MenuItem onClick={() => handleAction('update')}>
+                                <ListItemIcon><IconEdit size={18} /></ListItemIcon>
+                                <ListItemText primary="Nhập báo cáo" />
+                            </MenuItem>
+                        </PermissionGuard>
                         <MenuItem onClick={() => handleAction('history')}>
                             <ListItemIcon><IconHistory size={18} /></ListItemIcon>
                             <ListItemText primary="Lịch sử" />

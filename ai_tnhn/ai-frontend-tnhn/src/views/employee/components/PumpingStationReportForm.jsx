@@ -22,6 +22,7 @@ import {
     IconClock,
     IconTool
 } from '@tabler/icons-react';
+import PermissionGuard from 'ui-component/PermissionGuard';
 import pumpingStationApi from 'api/pumpingStation';
 import { toast } from 'react-hot-toast';
 import PumpingStationHistoryDialog from './PumpingStationHistoryDialog';
@@ -228,28 +229,30 @@ const PumpingStationReport = ({ station, onSuccess, onClose }) => {
                     </Typography>
                 </Box>
                 <Stack direction="column" spacing={1.5} sx={{ mt: 3 }}>
-                    <Button
-                        variant="contained"
-                        fullWidth
-                        startIcon={<IconCheck />}
-                        onClick={handleSubmit}
-                        disabled={totalPumped === 0}
-                        sx={{
-                            borderRadius: 2,
-                            py: 1.2,
-                            fontSize: '0.95rem',
-                            fontWeight: 700,
-                            bgcolor: theme.palette.primary.main,
-                            textTransform: 'none',
-                            '&:hover': {
-                                bgcolor: theme.palette.primary.dark,
-                                transform: 'translateY(-2px)'
-                            },
-                            transition: 'all 0.3s ease'
-                        }}
-                    >
-                        Gửi báo cáo vận hành
-                    </Button>
+                    <PermissionGuard permission="trambom:report">
+                        <Button
+                            variant="contained"
+                            fullWidth
+                            startIcon={<IconCheck />}
+                            onClick={handleSubmit}
+                            disabled={totalPumped === 0}
+                            sx={{
+                                borderRadius: 2,
+                                py: 1.2,
+                                fontSize: '0.95rem',
+                                fontWeight: 700,
+                                bgcolor: theme.palette.primary.main,
+                                textTransform: 'none',
+                                '&:hover': {
+                                    bgcolor: theme.palette.primary.dark,
+                                    transform: 'translateY(-2px)'
+                                },
+                                transition: 'all 0.3s ease'
+                            }}
+                        >
+                            Gửi báo cáo vận hành
+                        </Button>
+                    </PermissionGuard>
                     <Button
                         variant="outlined"
                         color="inherit"

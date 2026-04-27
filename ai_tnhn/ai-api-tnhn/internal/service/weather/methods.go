@@ -103,12 +103,12 @@ func (s *service) GetGeminiForecast(ctx context.Context) ([]ForecastDay, error) 
 	for i := 0; i < len(data.Daily.Time) && i < 3; i++ {
 		t, _ := time.Parse("2006-01-02", data.Daily.Time[i])
 		res = append(res, ForecastDay{
-			Date:           t.Format("02/01"),
-			Description:    s.getWDesc(data.Daily.Weathercode[i]),
-			TemperatureMin: data.Daily.Temperature2mMin[i],
-			TemperatureMax: data.Daily.Temperature2mMax[i],
+			Date:            t.Format("02/01"),
+			Description:     s.getWDesc(data.Daily.Weathercode[i]),
+			TemperatureMin:  data.Daily.Temperature2mMin[i],
+			TemperatureMax:  data.Daily.Temperature2mMax[i],
 			RainProbability: data.Daily.PrecipitationProbabilityMax[i],
-			RainFall:       data.Daily.PrecipitationSum[i],
+			RainFall:        data.Daily.PrecipitationSum[i],
 		})
 	}
 	s.geminiForecast, s.lastGeminiFetch = res, now

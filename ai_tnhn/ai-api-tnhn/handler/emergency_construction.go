@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"ai-api-tnhn/constant"
 	"ai-api-tnhn/handler/filters"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/repository"
@@ -166,7 +165,7 @@ func (h *EmergencyConstructionHandler) List(c *gin.Context) {
 			{"shared_org_ids": targetOrgID},
 		})
 		req.OrgID = "" // Clear the strict OrgID filter
-	} else if client.Role == constant.ROLE_EMPLOYEE || client.IsEmployee {
+	} else if client.IsEmployee {
 		// Default mobile app view for employees: only their assigned items
 		user, err := h.service.GetUserByID(c.Request.Context(), client.UserID)
 		if err == nil && user != nil {
@@ -217,7 +216,7 @@ func (h *EmergencyConstructionHandler) ListHistory(c *gin.Context) {
 		req.OrgID = client.OrgID
 	}
 
-	if client.Role == constant.ROLE_EMPLOYEE || client.IsEmployee {
+	if client.IsEmployee {
 		user, err := h.service.GetUserByID(c.Request.Context(), client.UserID)
 		if err == nil && user != nil {
 			if len(user.AssignedEmergencyConstructionIDs) > 0 {
@@ -269,7 +268,7 @@ func (h *EmergencyConstructionHandler) GetHistory(c *gin.Context) {
 // @Router /admin/emergency-constructions/{id}/progress [get]
 func (h *EmergencyConstructionHandler) GetProgressByID(c *gin.Context) {
 	client := h.GetTokenFromContext(c)
-	if client.Role == constant.ROLE_EMPLOYEE || client.IsEmployee {
+	if client.IsEmployee {
 		web.AssertNil(web.Forbidden("Bạn không có quyền xem chi tiết báo cáo này"))
 		return
 	}
@@ -297,7 +296,7 @@ func (h *EmergencyConstructionHandler) GetProgressByID(c *gin.Context) {
 func (h *EmergencyConstructionHandler) ReportProgress(c *gin.Context) {
 	// Security: check if employee is assigned to this construction
 	client := h.GetTokenFromContext(c)
-	if client.Role == constant.ROLE_EMPLOYEE || client.IsEmployee {
+	if client.IsEmployee {
 		constructionID := c.PostForm("construction_id")
 		user, err := h.service.GetUserByID(c.Request.Context(), client.UserID)
 		if err == nil && user != nil {
@@ -331,7 +330,7 @@ func (h *EmergencyConstructionHandler) ReportProgress(c *gin.Context) {
 // @Router /admin/emergency-constructions/progress/{id} [put]
 func (h *EmergencyConstructionHandler) UpdateProgress(c *gin.Context) {
 	client := h.GetTokenFromContext(c)
-	if client.Role == constant.ROLE_EMPLOYEE || client.IsEmployee {
+	if client.IsEmployee {
 		web.AssertNil(web.Forbidden("Bạn không có quyền chỉnh sửa báo cáo này"))
 		return
 	}

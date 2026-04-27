@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"ai-api-tnhn/constant"
 	"ai-api-tnhn/internal/base/mgo/filter"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/utils/hash"
@@ -123,15 +122,10 @@ func (s *service) OAuthLogin(ctx context.Context, email string) (*models.Token, 
 		return nil, web.BadRequest("Account is disabled")
 	}
 
-	role := u.Role
-	if role == "giam_doc_xi_nghiep" {
-		role = constant.ROLE_GIAM_DOC_XN
-	}
-
 	isEmployee := false
 	isCompany := false
 	group := ""
-	if roleData, err := s.roleRepo.GetByCode(ctx, role); err == nil && roleData != nil {
+	if roleData, err := s.roleRepo.GetByCode(ctx, u.Role); err == nil && roleData != nil {
 		isEmployee = roleData.IsEmployee
 		isCompany = roleData.IsCompany
 		group = roleData.Group
@@ -141,7 +135,7 @@ func (s *service) OAuthLogin(ctx context.Context, email string) (*models.Token, 
 		UserID:     u.ID,
 		Name:       u.Name,
 		OrgID:      u.OrgID,
-		Role:       role,
+		Role:       u.Role,
 		Group:      group,
 		IsEmployee: isEmployee,
 		IsCompany:  isCompany,

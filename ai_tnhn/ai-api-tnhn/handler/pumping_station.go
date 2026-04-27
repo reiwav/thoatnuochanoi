@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"ai-api-tnhn/constant"
 	"ai-api-tnhn/internal/base/mgo/filter"
 	"ai-api-tnhn/internal/models"
 	pumpingstation "ai-api-tnhn/internal/service/station/pumping_station"
@@ -213,7 +212,7 @@ func (h *PumpingStationHandler) List(c *gin.Context) {
 		if qOrgID != "" {
 			f.AddWhere("org_id", "org_id", qOrgID)
 		}
-	} else if user.Role == constant.ROLE_EMPLOYEE || user.IsEmployee {
+	} else if user.IsEmployee {
 		// Employee: ONLY their assigned station
 		if user.AssignedPumpingStationID != "" {
 			f.AddWhere("id", "_id", user.AssignedPumpingStationID)

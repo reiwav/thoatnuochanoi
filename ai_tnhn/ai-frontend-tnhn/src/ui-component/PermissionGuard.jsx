@@ -8,7 +8,9 @@ import useAuthStore from 'store/useAuthStore';
  * @param {React.ReactNode} fallback - Optional content to render if not permitted
  */
 const PermissionGuard = ({ permission, children, fallback = null }) => {
-    const { hasPermission } = useAuthStore();
+    // Explicitly subscribe to permissions to trigger re-renders when they load
+    useAuthStore((state) => state.permissions);
+    const hasPermission = useAuthStore((state) => state.hasPermission);
     
     if (hasPermission(permission)) {
         return <>{children}</>;

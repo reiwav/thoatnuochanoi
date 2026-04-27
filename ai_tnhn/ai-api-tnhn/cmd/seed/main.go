@@ -63,7 +63,7 @@ func main() {
 		{Code: "inundation:report", Title: "Báo cáo", Group: "Điểm ngập", Type: "button", Description: "Báo cáo điểm ngập"},
 		{Code: "inundation:review", Title: "Nhận xét điểm ngập", Group: "Điểm ngập", Type: "button", Description: "Quyền rà soát và gửi nhận xét cho nhân viên"},
 		{Code: "inundation:survey", Title: "XNTK", Group: "Điểm ngập", Type: "button", Description: "Quyền khảo sát & phối hợp xử lý điểm ngập"},
-		{Code: "inundation:mechanic", Title: "Cơ giới", Group: "Điểm ngập", Type: "button", Description: "Quyền bổ sung ảnh giám sát từ XN Cơ giới"},
+		{Code: "inundation:mechanic", Title: "XN Cơ giới", Group: "Điểm ngập", Type: "button", Description: "Quyền bổ sung ảnh giám sát từ XN Cơ giới"},
 		{Code: "inundation:finish", Title: "Kết thúc ngập", Group: "Điểm ngập", Type: "button", Description: "Nút xác nhận hết ngập"},
 
 		// ─── Mực nước ───

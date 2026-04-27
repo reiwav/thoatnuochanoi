@@ -42,7 +42,7 @@ export const SurveyActionForm = ({ point, onFinished }) => {
         fd.append('survey_checked', data.checked);
         fd.append('survey_note', data.note);
         data.images.forEach(img => fd.append('images', img));
-        
+
         const success = await updateSurvey(point.active_report.id, fd);
         setLoading(false);
         if (success && onFinished) onFinished();
@@ -129,7 +129,7 @@ export const MechActionForm = ({ point, onFinished }) => {
         fd.append('mech_r', data.r);
         fd.append('mech_s', data.s);
         data.images.forEach(img => fd.append('images', img));
-        
+
         const success = await updateMech(point.active_report.id, fd);
         setLoading(false);
         if (success && onFinished) onFinished();
@@ -240,7 +240,7 @@ export const ReviewActionForm = ({ point, onFinished }) => {
                 startIcon={loading ? <CircularProgress size={16} color="inherit" /> : <IconSend size={16} />}
                 sx={{ borderRadius: 2, fontWeight: 800 }}
             >
-                GỬI PHẢN HỒI RÀ SOÁT
+                GỬI NHẬN XÉT
             </Button>
         </Stack>
     );

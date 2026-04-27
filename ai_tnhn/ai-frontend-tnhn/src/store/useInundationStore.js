@@ -9,7 +9,7 @@ const useInundationStore = create((set, get) => ({
     organizations: [],
     historyReports: [],
     totalHistory: 0,
-    
+
     loading: false,
     loadingHistory: false,
     error: null,
@@ -37,7 +37,7 @@ const useInundationStore = create((set, get) => ({
                 inundationApi.getPointsStatus(),
                 organizationApi.getAll()
             ]);
-            
+
             set({
                 points: getDataArray(pointsRes),
                 organizations: getDataArray(orgsRes),
@@ -134,7 +134,7 @@ const useInundationStore = create((set, get) => ({
             return false;
         }
     },
-    
+
     quickFinishPoint: async (pointId) => {
         try {
             await inundationApi.quickFinish(pointId);

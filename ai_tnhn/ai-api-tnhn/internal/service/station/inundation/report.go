@@ -566,7 +566,7 @@ func (s *service) UpdateSurvey(ctx context.Context, user *models.User, id string
 			UserID:      user.ID,
 			UserEmail:   user.Email,
 			UserName:    user.Name,
-			Description: "Cập nhật thông tin khảo sát thiết kế",
+			Description: "Cập nhật thông tin XN KSTK",
 		},
 		ReportSurveyBase: models.ReportSurveyBase{
 			SurveyChecked:   existing.SurveyChecked,
@@ -611,7 +611,7 @@ func (s *service) UpdateMech(ctx context.Context, user *models.User, id string, 
 			}
 		}
 		if !isAuthorized {
-			return web.Unauthorized("Bạn không có quyền cập nhật thông tin cơ giới")
+			return web.Unauthorized("Bạn không có quyền cập nhật thông tin XN Cơ giới")
 		}
 	}
 
@@ -666,7 +666,7 @@ func (s *service) UpdateMech(ctx context.Context, user *models.User, id string, 
 			UserID:          user.ID,
 			UserEmail:       user.Email,
 			UserName:        user.Name,
-			Description:     "Cập nhật dữ liệu từ xí nghiệp cơ giới",
+			Description:     "Cập nhật dữ liệu từ XN Cơ giới",
 			Depth:           existing.Depth,
 			FloodLevelName:  existing.FloodLevelName,
 			FloodLevelColor: existing.FloodLevelColor,

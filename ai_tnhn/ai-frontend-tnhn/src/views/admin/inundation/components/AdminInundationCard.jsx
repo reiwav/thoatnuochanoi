@@ -236,7 +236,7 @@ const AdminInundationCard = ({ point, onAction, onOpenViewer, onOpenDetail, navi
                                 </Tooltip>
                             </PermissionGuard>
                             <PermissionGuard permission="inundation:mechanic">
-                                <Tooltip title="Xí Nghiệp cơ giới">
+                                <Tooltip title="XN cơ giới">
                                     <span>
                                         <IconButton size="small" color="info" onClick={() => onAction('mech', point)} sx={{ bgcolor: 'info.lighter' }}>
                                             <IconEngine size={18} />

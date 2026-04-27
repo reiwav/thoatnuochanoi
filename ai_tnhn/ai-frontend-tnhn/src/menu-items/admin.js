@@ -10,61 +10,6 @@ const icons = {
   IconDoor, IconEngine, IconMap, IconTornado, IconClipboardCheck
 };
 
-const companyPages = {
-  id: 'company-tasks',
-  title: 'GIÁM SÁT HIỆN TRƯỜNG',
-  type: 'group',
-  children: [
-    {
-      id: 'rain:view-summary',
-      permission: 'rain:view',
-      title: 'Bảng mưa',
-      type: 'item',
-      url: '/admin/station/rain/summary',
-      icon: icons.IconTable,
-      breadcrumbs: false
-    },
-    {
-      id: 'water:summary',
-      permission: 'water:view',
-      title: 'Bảng sông hồ',
-      type: 'item',
-      url: '/admin/station/water/summary',
-      icon: icons.IconList,
-      breadcrumbs: false
-    },
-    {
-      id: 'pumping:summary',
-      permission: ['trambom:view', 'wastewater:view'],
-      title: 'Bảng Trạm bơm & XLNT',
-      type: 'item',
-      url: '/admin/station/pumping/summary',
-      icon: icons.IconEngine,
-      breadcrumbs: false
-    },
-    {
-      id: 'inundation:dashboard',
-      permission: ['inundation:view', 'inundation:review', 'inundation:survey', 'inundation:mechanic', 'inundation:report'],
-      title: 'Cập nhật điểm ngập',
-      type: 'item',
-      url: '/admin/inundation',
-      icon: icons.IconTornado,
-      breadcrumbs: false
-    },
-    {
-      id: 'company:inundation',
-      permission: ['employee'],
-      exactRole: 'employee',
-      title: 'Điểm trực ngập',
-      type: 'item',
-      url: '/company/inundation',
-      icon: icons.IconTornado,
-      breadcrumbs: false
-    },
-
-  ]
-};
-
 const adminPages = {
   id: 'admin',
   title: 'QUẢN TRỊ',
@@ -87,6 +32,15 @@ const adminPages = {
       type: 'collapse',
       icon: icons.IconCloudRain,
       children: [
+        {
+          id: 'rain:view-summary',
+          permission: 'rain:view',
+          title: 'Bảng mưa',
+          type: 'item',
+          url: '/admin/station/rain/summary',
+          icon: icons.IconTable,
+          breadcrumbs: false
+        },
         {
           id: 'rain:view-list',
           permission: 'rain:view',
@@ -140,6 +94,25 @@ const adminPages = {
           url: '/admin/station/inundation/yearly',
           icon: icons.IconTable,
           breadcrumbs: false
+        },
+        {
+          id: 'inundation:dashboard',
+          permission: ['inundation:view', 'inundation:review', 'inundation:survey', 'inundation:mechanic', 'inundation:report'],
+          title: 'Cập nhật điểm ngập',
+          type: 'item',
+          url: '/admin/inundation',
+          icon: icons.IconTornado,
+          breadcrumbs: false
+        },
+        {
+          id: 'company:inundation',
+          permission: ['employee'],
+          exactRole: 'employee',
+          title: 'Điểm trực ngập',
+          type: 'item',
+          url: '/company/inundation',
+          icon: icons.IconTornado,
+          breadcrumbs: false
         }
       ]
     },
@@ -150,6 +123,15 @@ const adminPages = {
       type: 'collapse',
       icon: icons.IconRipple,
       children: [
+        {
+          id: 'water:summary',
+          permission: 'water:view',
+          title: 'Bảng sông hồ',
+          type: 'item',
+          url: '/admin/station/water/summary',
+          icon: icons.IconList,
+          breadcrumbs: false
+        },
         {
           id: 'lake',
           permission: 'water:view',
@@ -256,6 +238,15 @@ const adminPages = {
       icon: icons.IconEngine,
       children: [
         {
+          id: 'pumping:summary',
+          permission: ['trambom:view', 'wastewater:view'],
+          title: 'Bảng Trạm bơm & XLNT',
+          type: 'item',
+          url: '/admin/station/pumping/summary',
+          icon: icons.IconEngine,
+          breadcrumbs: false
+        },
+        {
           id: 'admin:trambom',
           permission: ['trambom:view', 'trambom:edit', 'trambom:control'],
           title: 'Quản lý Trạm bơm',
@@ -335,7 +326,7 @@ const adminPages = {
           url: '/admin/setting/flood-levels',
           icon: icons.IconClipboardCheck,
           breadcrumbs: false
-        }
+        },
       ]
     },
     {
@@ -377,5 +368,4 @@ const adminPages = {
   ]
 };
 
-export { adminPages, companyPages };
-export default adminPages;
+export { adminPages };

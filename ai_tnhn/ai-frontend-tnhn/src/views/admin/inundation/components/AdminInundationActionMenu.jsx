@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { IconButton, Menu, MenuItem, ListItemIcon, ListItemText, Divider, useTheme, alpha, Typography } from '@mui/material';
-import { 
-    IconDotsVertical, 
-    IconMessageDots, 
-    IconReportMedical, 
-    IconRulerMeasure, 
-    IconTruck, 
+import {
+    IconDotsVertical,
+    IconMessageDots,
+    IconReportMedical,
+    IconRulerMeasure,
+    IconTruck,
     IconCircleCheck,
     IconHistory,
     IconPlus
@@ -13,8 +13,8 @@ import {
 
 import PermissionGuard from 'ui-component/PermissionGuard';
 
-const AdminInundationActionMenu = ({ 
-    point, 
+const AdminInundationActionMenu = ({
+    point,
     onAction,
     onViewHistory
 }) => {
@@ -47,7 +47,7 @@ const AdminInundationActionMenu = ({
                 size="small"
                 onClick={handleClick}
                 color={hasActiveReport ? "error" : "default"}
-                sx={{ 
+                sx={{
                     bgcolor: hasActiveReport ? alpha(theme.palette.error.main, 0.05) : 'transparent',
                     '&:hover': { bgcolor: hasActiveReport ? alpha(theme.palette.error.main, 0.1) : 'grey.100' }
                 }}
@@ -84,25 +84,25 @@ const AdminInundationActionMenu = ({
                 <PermissionGuard permission="inundation:review">
                     <MenuItem onClick={handleMenuClick('comment')}>
                         <ListItemIcon><IconMessageDots size={22} color={theme.palette.error.main} /></ListItemIcon>
-                        <ListItemText 
+                        <ListItemText
                             primary={
                                 <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'error.main' }}>
-                                    Nhận xét rà soát
+                                    Nhận xét của P. KT-CL
                                 </Typography>
-                            } 
+                            }
                         />
                     </MenuItem>
                 </PermissionGuard>
-                
+
                 <PermissionGuard permission="inundation:report">
                     <MenuItem onClick={handleMenuClick('report')}>
                         <ListItemIcon><IconReportMedical size={22} color={theme.palette.secondary.main} /></ListItemIcon>
-                        <ListItemText 
+                        <ListItemText
                             primary={
                                 <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'secondary.main' }}>
                                     Cập nhật diễn biến
                                 </Typography>
-                            } 
+                            }
                         />
                     </MenuItem>
                 </PermissionGuard>
@@ -110,12 +110,12 @@ const AdminInundationActionMenu = ({
                 <PermissionGuard permission="inundation:survey">
                     <MenuItem onClick={handleMenuClick('survey')}>
                         <ListItemIcon><IconRulerMeasure size={22} color={theme.palette.primary.main} /></ListItemIcon>
-                        <ListItemText 
+                        <ListItemText
                             primary={
                                 <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'primary.main' }}>
-                                    Khảo sát thiết kế
+                                    XN KSTK
                                 </Typography>
-                            } 
+                            }
                         />
                     </MenuItem>
                 </PermissionGuard>
@@ -123,12 +123,12 @@ const AdminInundationActionMenu = ({
                 <PermissionGuard permission="inundation:mechanic">
                     <MenuItem onClick={handleMenuClick('mech')}>
                         <ListItemIcon><IconTruck size={22} color={theme.palette.info.main} /></ListItemIcon>
-                        <ListItemText 
+                        <ListItemText
                             primary={
                                 <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'info.main' }}>
-                                    Cơ giới
+                                    XN Cơ giới
                                 </Typography>
-                            } 
+                            }
                         />
                     </MenuItem>
                 </PermissionGuard>
@@ -136,33 +136,33 @@ const AdminInundationActionMenu = ({
                 <Divider />
 
                 <PermissionGuard permission="inundation:review">
-                    <MenuItem 
-                        onClick={handleMenuClick('quick_finish')} 
+                    <MenuItem
+                        onClick={handleMenuClick('quick_finish')}
                         disabled={!hasActiveReport}
-                        sx={{ 
+                        sx={{
                             color: 'success.main',
                             '&:hover': { bgcolor: alpha(theme.palette.success.main, 0.1) + ' !important' }
                         }}
                     >
                         <ListItemIcon><IconCircleCheck size={22} color={theme.palette.success.main} /></ListItemIcon>
-                        <ListItemText 
+                        <ListItemText
                             primary={
                                 <Typography variant="subtitle1" sx={{ fontWeight: 900, color: 'success.main' }}>
                                     Kết thúc nhanh
                                 </Typography>
-                            } 
+                            }
                         />
                     </MenuItem>
                 </PermissionGuard>
 
                 <MenuItem onClick={() => { handleClose(); onViewHistory(point); }}>
                     <ListItemIcon><IconHistory size={22} color={theme.palette.grey[600]} /></ListItemIcon>
-                    <ListItemText 
+                    <ListItemText
                         primary={
                             <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary' }}>
                                 Lịch sử điểm ngập
                             </Typography>
-                        } 
+                        }
                     />
                 </MenuItem>
             </Menu>

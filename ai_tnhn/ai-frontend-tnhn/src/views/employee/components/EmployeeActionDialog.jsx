@@ -30,7 +30,7 @@ const EmployeeActionDialog = ({ open, onClose, mode, data, onFinished }) => {
             case 'SURVEY':
                 return `TK Giám sát: ${data?.name}`;
             case 'MECH':
-                return `CG xử lý: ${data?.name}`;
+                return `Xí Nghiệp cơ giới: ${data?.name}`;
             case 'REVIEW':
                 return `Nhận xét: ${data?.name}`;
             case 'PUMPING':
@@ -48,11 +48,11 @@ const EmployeeActionDialog = ({ open, onClose, mode, data, onFinished }) => {
         switch (mode) {
             case 'REPORT':
                 return (
-                    <InundationReportPanel 
-                        selectedReport={data.active_report} 
-                        pointId={data.id} 
-                        initialStreetName={data.name} 
-                        onSuccess={onFinished} 
+                    <InundationReportPanel
+                        selectedReport={data.active_report}
+                        pointId={data.id}
+                        initialStreetName={data.name}
+                        onSuccess={onFinished}
                         isCorrectionMode={data.active_report?.needs_correction}
                     />
                 );

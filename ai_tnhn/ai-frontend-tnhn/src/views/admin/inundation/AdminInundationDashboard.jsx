@@ -192,7 +192,7 @@ const AdminInundationDashboard = () => {
 
 
             {/* Filter Bar */}
-            <Box sx={{ mb: 2, px: { xs: 1.5, sm: 0 } }} sm={{ mb: 3 }}>
+            <Box sx={{ mb: 3, px: { xs: 1.5, sm: 0 } }} sm={{ mb: 3 }}>
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                     <Grid container spacing={2} alignItems="center">
                         <Grid size={{ xs: 12, md: 4 }}>
@@ -247,7 +247,7 @@ const AdminInundationDashboard = () => {
                         ) : (
                             <Grid container spacing={2}>
                                 {filteredPoints.map((point) => (
-                                    <Grid size={{ xs: 12, sm: 6, md: 3 }} key={point.id} sx={{ display: 'flex' }}>
+                                    <Grid size={{ xs: 12, sm: 6, lg: 3, xl: 4 }} key={point.id} sx={{ display: 'flex' }}>
                                         <InundationDesktopStatCard
                                             point={point}
                                             onAction={handleAction}

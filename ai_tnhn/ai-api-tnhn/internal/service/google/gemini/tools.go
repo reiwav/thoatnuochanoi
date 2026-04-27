@@ -154,7 +154,7 @@ func (s *service) handleContractToolCall(ctx context.Context, c *genai.FunctionC
 }
 
 func (s *service) handleDR(ctx context.Context, c *genai.FunctionCall, orgID string, ids []string) (interface{}, error) {
-	d, e := s.waterSvc.GetRainDataByDate(ctx, c.Args["date"].(string))
+	d, e := s.rainSvc.GetRainDataByDate(ctx, c.Args["date"].(string))
 	if e != nil || orgID == "" {
 		return d, e
 	}

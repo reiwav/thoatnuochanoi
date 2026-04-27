@@ -126,7 +126,6 @@ func (t *Table) R_CreateIndexMany(ctx context.Context, mods []mongo.IndexModel, 
 func (t *Table) R_Create(ctx context.Context, model model.IModel) error {
 
 	model.BeforeCreate(t.Prefix)
-	fmt.Println(model)
 	var _, err = t.InsertOne(ctx, model)
 
 	if err != nil {

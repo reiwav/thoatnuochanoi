@@ -95,7 +95,7 @@ func (s *service) GetRainAnalytics(ctx context.Context, stationID int64, year in
 		}
 	}
 
-	stats, err := s.waterSvc.GetRainAggregateStats(ctx, stationID, startDate, endDate, groupBy)
+	stats, err := s.rainSvc.GetRainAggregateStats(ctx, stationID, startDate, endDate, groupBy)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +163,7 @@ func (s *service) GetRainSummaryByWard(ctx context.Context, year int, month int,
 		stationToWard[int64(st.OldID)] = st.TenPhuong
 	}
 
-	stats, err := s.waterSvc.GetRainAggregateStats(ctx, 0, startDate, endDate, "station_id")
+	stats, err := s.rainSvc.GetRainAggregateStats(ctx, 0, startDate, endDate, "station_id")
 	if err != nil {
 		return nil, err
 	}

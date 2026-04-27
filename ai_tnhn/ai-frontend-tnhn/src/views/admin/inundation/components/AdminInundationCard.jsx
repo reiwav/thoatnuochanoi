@@ -18,7 +18,7 @@ const AdminInundationCard = ({ point, onAction, onOpenViewer, onOpenDetail, navi
     const theme = useTheme();
     const [expanded, setExpanded] = useState(false);
     const isFlooded = !!point.report_id;
-    const report = point.active_report;
+    const report = point.last_report;
     const lastReport = point.last_report;
     const displayColor = isFlooded ? (report?.flood_level_color || theme.palette.error.main) : (lastReport?.flood_level_color || theme.palette.success.main);
 

@@ -2,6 +2,7 @@ package stationdata
 
 import (
 	"ai-api-tnhn/internal/service/station"
+	"ai-api-tnhn/internal/service/station/rain"
 	"ai-api-tnhn/internal/service/station/water"
 	"context"
 )
@@ -17,11 +18,13 @@ type Service interface {
 type service struct {
 	stationSvc station.Service
 	waterSvc   water.Service
+	rainSvc    rain.Service
 }
 
-func NewService(stationSvc station.Service, waterSvc water.Service) Service {
+func NewService(stationSvc station.Service, waterSvc water.Service, rainSvc rain.Service) Service {
 	return &service{
 		stationSvc: stationSvc,
 		waterSvc:   waterSvc,
+		rainSvc:    rainSvc,
 	}
 }

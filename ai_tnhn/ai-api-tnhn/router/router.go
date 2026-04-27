@@ -19,7 +19,7 @@ import (
 )
 
 // Create handlers
-func (h *HandlerFuncs) Create(mid middleware.Middleware, orgHandler *handler.OrganizationHandler, empHandler *handler.EmployeeHandler, stationHandler *handler.StationHandler, inuHandler *handler.InundationHandler, waterHandler *handler.WaterHandler, googleHandler google.Handler, queryHandler *handler.QueryHandler, emConstructionHandler *handler.EmergencyConstructionHandler, weatherHandler *handler.WeatherHandler, contractCategoryHandler *handler.ContractCategoryHandler, contractHandler *handler.ContractHandler, pumpingHandler *handler.PumpingStationHandler, wastewaterHandler *handler.WastewaterTreatmentHandler, permHandler *handler.PermissionHandler, roleHandler *handler.RoleHandler, settingHandler *handler.SettingHandler) *gin.Engine {
+func (h *HandlerFuncs) Create(mid middleware.Middleware, orgHandler *handler.OrganizationHandler, empHandler *handler.EmployeeHandler, stationHandler *handler.StationHandler, inuHandler *handler.InundationHandler, waterHandler *handler.WaterHandler, rainHandler *handler.RainHandler, googleHandler google.Handler, queryHandler *handler.QueryHandler, emConstructionHandler *handler.EmergencyConstructionHandler, weatherHandler *handler.WeatherHandler, contractCategoryHandler *handler.ContractCategoryHandler, contractHandler *handler.ContractHandler, pumpingHandler *handler.PumpingStationHandler, wastewaterHandler *handler.WastewaterTreatmentHandler, permHandler *handler.PermissionHandler, roleHandler *handler.RoleHandler, settingHandler *handler.SettingHandler) *gin.Engine {
 	r := gin.Default()
 	// Swagger
 	r.GET("/swagger/*any", gs.WrapHandler(swaggerFiles.Handler))
@@ -70,6 +70,7 @@ func (h *HandlerFuncs) Create(mid middleware.Middleware, orgHandler *handler.Org
 	h.EmployeeRoutes(apiAdmin, mid, empHandler)
 	h.StationRoutes(apiAdmin, mid, stationHandler, pumpingHandler, wastewaterHandler)
 	h.WaterRoutes(apiAdmin, mid, waterHandler)
+	h.RainRoutes(apiAdmin, mid, rainHandler)
 	h.InundationRoutes(api, mid, inuHandler)
 	h.GoogleRoutes(apiAdmin, mid, googleHandler)
 	h.EmergencyConstructionRoutes(apiAdmin, mid, emConstructionHandler)

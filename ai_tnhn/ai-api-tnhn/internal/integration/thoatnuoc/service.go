@@ -58,9 +58,19 @@ type WaterDataResponse struct {
 	} `json:"Content"`
 }
 
+type RainChartDataResponse struct {
+	Data string `json:"Data"`
+}
+
+type RainChartDataPoint struct {
+	ThoiGian string  `json:"ThoiGian"`
+	LuongMua float64 `json:"LuongMua"`
+}
+
 type Service interface {
 	GetRawRainData(ctx context.Context) (*RainDataResponse, error)
 	GetRawWaterData(ctx context.Context) (*WaterDataResponse, error)
+	GetRainChartData(ctx context.Context, sessionID string, stationOldID int, date string) ([]RainChartDataPoint, error)
 }
 
 type service struct {
@@ -130,4 +140,41 @@ func (s *service) GetRawWaterData(ctx context.Context) (*WaterDataResponse, erro
 	}
 
 	return &waterData, nil
+}
+
+func (s *service) GetRainChartData(ctx context.Context, sessionID string, stationOldID int, date string) ([]RainChartDataPoint, error) {
+	url := fmt.Sprintf("https://thoatnuochanoi.vn/qlnl/Contains/ajax/phai.ashx?type=solieumua&tram=%d&ngay=%s", stationOldID, date)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Cookie", "ASP.NET_SessionId="+sessionID)
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+
+	resp, err := s.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to call rain chart API: %w", err)
+	}
+	defer resp.Body.Close()
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if string(bodyBytes) == "{}" || string(bodyBytes) == "{\"Data\":\"[]\"}" {
+		return nil, nil
+	}
+
+	var apiResponse RainChartDataResponse
+	if err := json.Unmarshal(bodyBytes, &apiResponse); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal rain chart response: %w", err)
+	}
+
+	var dataPoints []RainChartDataPoint
+	if err := json.Unmarshal([]byte(apiResponse.Data), &dataPoints); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal rain chart data points: %w", err)
+	}
+
+	return dataPoints, nil
 }

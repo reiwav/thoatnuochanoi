@@ -49,11 +49,11 @@ const EmployeeActionDialog = ({ open, onClose, mode, data, onFinished }) => {
             case 'REPORT':
                 return (
                     <InundationReportPanel 
-                        selectedReport={data.active_report} 
+                        selectedReport={data.last_report} 
                         pointId={data.id} 
                         initialStreetName={data.name} 
                         onSuccess={onFinished} 
-                        isCorrectionMode={data.active_report?.needs_correction}
+                        isCorrectionMode={data.last_report?.needs_correction}
                     />
                 );
             case 'SURVEY':

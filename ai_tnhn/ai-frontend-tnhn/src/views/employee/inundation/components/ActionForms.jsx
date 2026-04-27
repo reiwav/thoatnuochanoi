@@ -14,8 +14,8 @@ export const SurveyActionForm = ({ point, onFinished }) => {
     const updateSurvey = useInundationStore(state => state.updateSurvey);
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState({
-        checked: point.active_report?.survey_checked || false,
-        note: point.active_report?.survey_note || '',
+        checked: point.last_report?.survey_checked || false,
+        note: point.last_report?.survey_note || '',
         images: [],
         previews: []
     });
@@ -36,14 +36,14 @@ export const SurveyActionForm = ({ point, onFinished }) => {
     };
 
     const handleSubmit = async () => {
-        if (!point.active_report) return;
+        if (!point.report_id || !point.last_report) return;
         setLoading(true);
         const fd = new FormData();
         fd.append('survey_checked', data.checked);
         fd.append('survey_note', data.note);
         data.images.forEach(img => fd.append('images', img));
         
-        const success = await updateSurvey(point.active_report.id, fd);
+        const success = await updateSurvey(point.last_report.id, fd);
         setLoading(false);
         if (success && onFinished) onFinished();
     };
@@ -95,11 +95,11 @@ export const MechActionForm = ({ point, onFinished }) => {
     const updateMech = useInundationStore(state => state.updateMech);
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState({
-        checked: point.active_report?.mech_checked || false,
-        note: point.active_report?.mech_note || '',
-        d: point.active_report?.mech_d || '',
-        r: point.active_report?.mech_r || '',
-        s: point.active_report?.mech_s || '',
+        checked: point.last_report?.mech_checked || false,
+        note: point.last_report?.mech_note || '',
+        d: point.last_report?.mech_d || '',
+        r: point.last_report?.mech_r || '',
+        s: point.last_report?.mech_s || '',
         images: [],
         previews: []
     });
@@ -120,7 +120,7 @@ export const MechActionForm = ({ point, onFinished }) => {
     };
 
     const handleSubmit = async () => {
-        if (!point.active_report) return;
+        if (!point.report_id || !point.last_report) return;
         setLoading(true);
         const fd = new FormData();
         fd.append('mech_checked', data.checked);
@@ -130,7 +130,7 @@ export const MechActionForm = ({ point, onFinished }) => {
         fd.append('mech_s', data.s);
         data.images.forEach(img => fd.append('images', img));
         
-        const success = await updateMech(point.active_report.id, fd);
+        const success = await updateMech(point.last_report.id, fd);
         setLoading(false);
         if (success && onFinished) onFinished();
     };
@@ -190,9 +190,9 @@ export const ReviewActionForm = ({ point, onFinished }) => {
     const [comment, setComment] = useState('');
 
     const handleSubmit = async () => {
-        if (!point.active_report || !comment.trim()) return;
+        if (!point.report_id || !point.last_report || !comment.trim()) return;
         setLoading(true);
-        const report = point.active_report;
+        const report = point.last_report;
         const updates = report.updates || [];
         const isUpdate = updates.length > 0;
         const targetId = isUpdate ? [...updates].sort((a, b) => b.timestamp - a.timestamp)[0].id : report.id;
@@ -205,7 +205,7 @@ export const ReviewActionForm = ({ point, onFinished }) => {
         }
     };
 
-    const latest = point.active_report || point.last_report;
+    const latest = point.last_report;
 
     if (latest?.needs_correction) {
         return (

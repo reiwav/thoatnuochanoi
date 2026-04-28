@@ -25,4 +25,5 @@ type User struct {
 	AssignedEmergencyConstructionIDs []string `bson:"assigned_emergency_construction_ids" json:"assigned_emergency_construction_ids"`
 	AssignedPumpingStationID         string   `bson:"assigned_pumping_station_id" json:"assigned_pumping_station_id"`
 	AssignedWastewaterStationID      string   `bson:"assigned_wastewater_station_id" json:"assigned_wastewater_station_id"`
+	AssignedSluiceGateID             string   `bson:"assigned_sluice_gate_id" json:"assigned_sluice_gate_id"`
 }

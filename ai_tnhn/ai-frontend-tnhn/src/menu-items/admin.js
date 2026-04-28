@@ -223,11 +223,11 @@ const adminPages = {
       ]
     },
     {
-      id: 'cuapai:view',
-      permission: ['cuapai:view', 'cuapai:control'],
+      id: 'sluice-gate:view',
+      permission: ['sluice-gate:view', 'sluice-gate:edit', 'sluice-gate:control'],
       title: 'Cửa phai',
       type: 'item',
-      url: '/admin/cua-pai',
+      url: '/admin/cua-phai',
       icon: icons.IconDoor,
       breadcrumbs: false
     },

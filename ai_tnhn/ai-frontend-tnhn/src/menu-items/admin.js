@@ -78,6 +78,15 @@ const adminPages = {
       icon: icons.IconTornado,
       children: [
         {
+          id: 'inundation:dashboard',
+          permission: ['inundation:view', 'inundation:review', 'inundation:survey', 'inundation:mechanic', 'inundation:report'],
+          title: 'Bảng ngập',
+          type: 'item',
+          url: '/admin/inundation',
+          icon: icons.IconTornado,
+          breadcrumbs: false
+        },
+        {
           id: 'inundation:list',
           permission: 'inundation:view',
           title: 'Danh sách',
@@ -95,15 +104,7 @@ const adminPages = {
           icon: icons.IconTable,
           breadcrumbs: false
         },
-        {
-          id: 'inundation:dashboard',
-          permission: ['inundation:view', 'inundation:review', 'inundation:survey', 'inundation:mechanic', 'inundation:report'],
-          title: 'Cập nhật điểm ngập',
-          type: 'item',
-          url: '/admin/inundation',
-          icon: icons.IconTornado,
-          breadcrumbs: false
-        },
+
         {
           id: 'company:inundation',
           permission: ['employee'],

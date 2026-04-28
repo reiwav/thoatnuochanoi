@@ -3,6 +3,7 @@ package inundation
 import (
 	"ai-api-tnhn/internal/base/mgo/filter"
 	"ai-api-tnhn/internal/models"
+	"ai-api-tnhn/internal/service/station/inundation/shared"
 	"ai-api-tnhn/utils/web"
 	"context"
 	"fmt"
@@ -77,33 +78,11 @@ func (s *service) CreateReport(ctx context.Context, user *models.User, input mod
 	report.BeforeCreate("inu")
 
 	// ALWAYS Create an initial update record for history/timeline consistency
-	initialUpdate := &models.InundationUpdate{
-		ReportID:  report.ID,
-		Timestamp: report.CTime,
-		InundationReportBase: models.InundationReportBase{
-			UserID:        report.UserID,
-			UserName:      report.UserName,
-			UserEmail:     report.UserEmail,
-			Description:   report.Description,
-			Depth:         report.Depth,
-			Length:        report.Length,
-			Width:         report.Width,
-			TrafficStatus: report.FloodLevelName,
-			Images:        report.Images,
-			IsFlooding:    report.IsFlooding,
-		},
-	}
-	if initialUpdate.Description == "" {
-		if report.IsFlooding {
-			initialUpdate.Description = "Bắt đầu đợt ngập"
-		} else {
-			initialUpdate.Description = "Kiểm tra hiện trường (Chuẩn bị/Bình thường)"
-		}
-	}
-	err = s.inundationUpdateRepo.Create(ctx, initialUpdate)
+	initialUpdate, err := shared.SetAndCreateInundationUpdate(ctx, report, s.inundationUpdateRepo)
 	if err != nil {
 		return nil, err
 	}
+
 	report.LastReportID = initialUpdate.ID
 	err = s.InundationReportRepo.Create(ctx, report)
 	if err != nil {

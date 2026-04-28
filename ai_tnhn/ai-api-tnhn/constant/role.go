@@ -1,6 +1,7 @@
 package constant
 
 const (
+<<<<<<< HEAD
 	ROLE_SUPER_ADMIN      = "super_admin"
 	ROLE_ADMIN_ORG        = "admin_org"
 	ROLE_MANAGER_CONTRACT = "manager_contract"
@@ -19,4 +20,7 @@ const (
 	ROLE_CONG_NHAN_CTY    = "cong_nhan_cty"
 	ROLE_XN_KS_TK         = "xn_ks_tk"
 	ROLE_XN_CO_GIOI       = "xn_co_gioi"
+=======
+	ROLE_SUPER_ADMIN = "super_admin"
+>>>>>>> long_mobile
 )

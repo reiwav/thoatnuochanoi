@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"ai-api-tnhn/handler/filters"
 	"ai-api-tnhn/internal/base/mgo/filter"
 	"ai-api-tnhn/internal/models"
 	pumpingstation "ai-api-tnhn/internal/service/station/pumping_station"
@@ -286,26 +287,14 @@ func (h *PumpingStationHandler) CreateHistory(c *gin.Context) {
 // @Success 200 {object} web.Response{data=object{data=[]models.PumpingStationHistory,total=int}}
 // @Router /admin/stations/pumping/{id}/history [get]
 func (h *PumpingStationHandler) ListHistory(c *gin.Context) {
-	id := c.Param("id")
-	f := filter.NewBasicFilter()
-	f.AddWhere("station_id", "station_id", id)
-
-	fromTimeStr := c.Query("from_time")
-	if fromTimeStr != "" {
-		if fromTime, err := strconv.ParseInt(fromTimeStr, 10, 64); err == nil && fromTime > 0 {
-			f.AddWhere("from_time", "timestamp", bson.M{"$gte": fromTime})
-		}
+	req := filters.NewPumpingStationHistoryRequest()
+	if err := c.ShouldBindQuery(req); err != nil {
+		h.SendError(c, web.BadRequest(err.Error()))
+		return
 	}
-	toTimeStr := c.Query("to_time")
-	if toTimeStr != "" {
-		if toTime, err := strconv.ParseInt(toTimeStr, 10, 64); err == nil && toTime > 0 {
-			f.AddWhere("to_time", "timestamp", bson.M{"$lte": toTime})
-		}
-	}
+	req.StationID = c.Param("id")
 
-	f.SetOrderBy("-timestamp")
-
-	res, total, err := h.service.ListHistory(c.Request.Context(), f)
+	res, total, err := h.service.ListHistory(c.Request.Context(), req)
 	if err != nil {
 		h.SendError(c, err)
 		return

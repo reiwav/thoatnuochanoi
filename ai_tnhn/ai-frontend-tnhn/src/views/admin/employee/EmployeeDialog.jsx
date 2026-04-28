@@ -78,15 +78,14 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
     useEffect(() => {
         const fetchLocationData = async () => {
             if (!open) return;
-            const orgIdToUse = formData.org_id || defaultOrgId;
             setFetchingData(true);
             try {
                 const [pointsRes, consRes, pumpRes, wastewaterRes, sluiceRes, rolesRes] = await Promise.all([
-                    inundationApi.getPointsList({ per_page: 1000, org_id: orgIdToUse }),
-                    emergencyConstructionApi.getAll({ per_page: 1000, org_id: orgIdToUse }),
-                    pumpingStationApi.list({ per_page: 1000, org_id: orgIdToUse }),
-                    wastewaterTreatmentApi.list({ per_page: 1000, org_id: orgIdToUse }),
-                    sluiceGateApi.list({ per_page: 1000, org_id: orgIdToUse }),
+                    inundationApi.getPointsList({ per_page: 1000 }),
+                    emergencyConstructionApi.getAll({ per_page: 1000 }),
+                    pumpingStationApi.list({ per_page: 1000 }),
+                    wastewaterTreatmentApi.list({ per_page: 1000 }),
+                    sluiceGateApi.list({ per_page: 1000 }),
                     axiosClient.get('/admin/roles')
                 ]);
 
@@ -105,7 +104,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
         };
 
         fetchLocationData();
-    }, [open, formData.org_id, defaultOrgId]);
+    }, [open]);
 
     const handleChange = (field, value) => {
         setFormData(prev => {

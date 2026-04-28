@@ -22,7 +22,7 @@ func (s *service) Create(ctx context.Context, input *models.User, currentUserRol
 	}
 	input.Active = true
 
-	if err := s.validateAssignments(ctx, "", input.OrgID, input.AssignedInundationStationIDs, input.AssignedRainStationIDs, input.AssignedLakeStationIDs, input.AssignedRiverStationIDs, input.AssignedEmergencyConstructionIDs, input.AssignedPumpingStationID, input.AssignedWastewaterStationID); err != nil {
+	if err := s.validateAssignments(ctx, "", input.OrgID, input.AssignedInundationStationIDs, input.AssignedRainStationIDs, input.AssignedLakeStationIDs, input.AssignedRiverStationIDs, input.AssignedEmergencyConstructionIDs, input.AssignedPumpingStationID, input.AssignedWastewaterStationID, input.AssignedSluiceGateID); err != nil {
 		return nil, err
 	}
 
@@ -57,16 +57,20 @@ func (s *service) Update(ctx context.Context, id string, input *models.User, cur
 	}
 	existing.Active = input.Active
 	existing.AssignedInundationStationIDs = input.AssignedInundationStationIDs
+	existing.AssignedRainStationIDs = input.AssignedRainStationIDs
+	existing.AssignedLakeStationIDs = input.AssignedLakeStationIDs
+	existing.AssignedRiverStationIDs = input.AssignedRiverStationIDs
 	existing.AssignedEmergencyConstructionIDs = input.AssignedEmergencyConstructionIDs
 	existing.AssignedPumpingStationID = input.AssignedPumpingStationID
 	existing.AssignedWastewaterStationID = input.AssignedWastewaterStationID
+	existing.AssignedSluiceGateID = input.AssignedSluiceGateID
 
 	if input.Password != "" && strings.TrimSpace(string(input.Password)) != "" {
 		str, _ := input.Password.GererateHashedPassword()
 		existing.Password = hash.NewPassword(str)
 	}
 
-	if err := s.validateAssignments(ctx, id, existing.OrgID, existing.AssignedInundationStationIDs, existing.AssignedRainStationIDs, existing.AssignedLakeStationIDs, existing.AssignedRiverStationIDs, existing.AssignedEmergencyConstructionIDs, existing.AssignedPumpingStationID, existing.AssignedWastewaterStationID); err != nil {
+	if err := s.validateAssignments(ctx, id, existing.OrgID, existing.AssignedInundationStationIDs, existing.AssignedRainStationIDs, existing.AssignedLakeStationIDs, existing.AssignedRiverStationIDs, existing.AssignedEmergencyConstructionIDs, existing.AssignedPumpingStationID, existing.AssignedWastewaterStationID, existing.AssignedSluiceGateID); err != nil {
 		return err
 	}
 

@@ -1035,6 +1035,63 @@ definitions:
       updated_at:
         type: integer
     type: object
+  models.SluiceGate:
+    properties:
+      active:
+        example: true
+        type: boolean
+      address:
+        example: Số 1, đường X
+        type: string
+      created_at:
+        type: integer
+      deleted_at:
+        type: integer
+      id:
+        type: string
+      name:
+        example: Cửa phai A
+        type: string
+      org_id:
+        example: tnhn
+        type: string
+      priority:
+        example: 1
+        type: integer
+      share_all:
+        type: boolean
+      shared_org_ids:
+        items:
+          type: string
+        type: array
+      updated_at:
+        type: integer
+    type: object
+  models.SluiceGateHistory:
+    properties:
+      action:
+        description: open, close, maintain
+        example: open
+        type: string
+      created_at:
+        type: integer
+      deleted_at:
+        type: integer
+      fullname:
+        type: string
+      id:
+        type: string
+      note:
+        type: string
+      sluice_gate_id:
+        type: string
+      updated_at:
+        type: integer
+      user_id:
+        type: string
+      username:
+        type: string
+    type: object
   models.StationAreaType:
     enum:
     - ""
@@ -1100,6 +1157,8 @@ definitions:
         items:
           type: string
         type: array
+      assigned_sluice_gate_id:
+        type: string
       assigned_wastewater_station_id:
         type: string
       created_at:
@@ -3820,6 +3879,193 @@ paths:
       summary: Cập nhật trạm sông
       tags:
       - Trạm quan trắc - Sông
+  /admin/stations/sluice-gate:
+    get:
+      parameters:
+      - description: Lọc theo đơn vị
+        in: query
+        name: org_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  properties:
+                    data:
+                      items:
+                        $ref: '#/definitions/models.SluiceGate'
+                      type: array
+                    total:
+                      type: integer
+                  type: object
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Danh sách cửa phai
+      tags:
+      - Cửa phai
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Dữ liệu cửa phai
+        in: body
+        name: station
+        required: true
+        schema:
+          $ref: '#/definitions/models.SluiceGate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.SluiceGate'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Tạo mới cửa phai
+      tags:
+      - Cửa phai
+  /admin/stations/sluice-gate/{id}:
+    delete:
+      parameters:
+      - description: ID cửa phai
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: boolean
+      security:
+      - BearerAuth: []
+      summary: Xóa cửa phai
+      tags:
+      - Cửa phai
+    get:
+      parameters:
+      - description: ID cửa phai
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.SluiceGate'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Lấy chi tiết cửa phai
+      tags:
+      - Cửa phai
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID cửa phai
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dữ liệu cập nhật
+        in: body
+        name: station
+        required: true
+        schema:
+          $ref: '#/definitions/models.SluiceGate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: boolean
+      security:
+      - BearerAuth: []
+      summary: Cập nhật cửa phai
+      tags:
+      - Cửa phai
+  /admin/stations/sluice-gate/{id}/history:
+    get:
+      parameters:
+      - description: ID cửa phai
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  properties:
+                    data:
+                      items:
+                        $ref: '#/definitions/models.SluiceGateHistory'
+                      type: array
+                    total:
+                      type: integer
+                  type: object
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Xem lịch sử vận hành cửa phai
+      tags:
+      - Cửa phai
+  /admin/stations/sluice-gate/{id}/report:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID cửa phai
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Nội dung báo cáo
+        in: body
+        name: report
+        required: true
+        schema:
+          $ref: '#/definitions/models.SluiceGateHistory'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: boolean
+      security:
+      - BearerAuth: []
+      summary: Nhân viên gửi báo cáo vận hành cửa phai
+      tags:
+      - Cửa phai
   /admin/stations/wastewater:
     get:
       parameters:

@@ -81,19 +81,11 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
             setFetchingData(true);
             try {
                 const [pointsRes, consRes, pumpRes, wastewaterRes, sluiceRes, rolesRes] = await Promise.all([
-<<<<<<< HEAD
-                    inundationApi.getPointsList({ per_page: 1000, org_id: orgIdToUse }),
-                    emergencyConstructionApi.getAll({ per_page: 1000, org_id: orgIdToUse }),
-                    pumpingStationApi.list({ per_page: 1000, org_id: orgIdToUse }),
-                    wastewaterTreatmentApi.list({ per_page: 1000, org_id: orgIdToUse }),
-                    sluiceGateApi.list({ per_page: 1000, org_id: orgIdToUse }),
-=======
                     inundationApi.getPointsList({ per_page: 1000 }),
                     emergencyConstructionApi.getAll({ per_page: 1000 }),
                     pumpingStationApi.list({ per_page: 1000 }),
                     wastewaterTreatmentApi.list({ per_page: 1000 }),
                     sluiceGateApi.list({ per_page: 1000 }),
->>>>>>> long_mobile
                     axiosClient.get('/admin/roles')
                 ]);
 

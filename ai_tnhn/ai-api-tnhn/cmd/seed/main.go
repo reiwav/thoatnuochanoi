@@ -6,7 +6,6 @@ import (
 	"ai-api-tnhn/internal/base/mgo/db"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/repository/query"
-	"ai-api-tnhn/constant"
 	"ai-api-tnhn/internal/service/permission"
 	"ai-api-tnhn/internal/service/role"
 	"context"
@@ -38,7 +37,6 @@ func main() {
 
 	roleRepo := query.NewRoleRepo(mgo.DB, "roles", "role", logSvc)
 	roleService := role.NewService(roleRepo)
-
 
 	log.Info("Starting database seeding (Role-Permission Matrix)...")
 
@@ -147,22 +145,6 @@ func main() {
 		log.Fatalf("Failed to seed permissions: %v", err)
 	}
 
-<<<<<<< HEAD
-	// 2.1 Seed Role metadata into the new 'roles' collection
-	initialRoles := []models.Role{
-		{Code: constant.ROLE_SUPER_ADMIN, Name: "Super Admin (System)", Description: "Toàn quyền hệ thống", Level: 1, IsCompany: true},
-		{Code: constant.ROLE_CHU_TICH_CTY, Name: "Chủ tịch công ty", Description: "Ban lãnh đạo công ty", Level: 2, IsCompany: true},
-		{Code: constant.ROLE_GIAM_DOC_CTY, Name: "Giám đốc công ty", Description: "Ban điều hành công ty", Level: 2, IsCompany: true},
-		{Code: constant.ROLE_PHO_GIAM_DOC_CTY, Name: "Phó giám đốc công ty", Description: "Ban điều hành công ty", Level: 2, IsCompany: true},
-		{Code: constant.ROLE_PHONG_HT_MT_CDS, Name: "Phòng HT – MT – CĐS", Description: "Phòng CNTT & Chuyển đổi số", Level: 3, IsCompany: true},
-		{Code: constant.ROLE_PHONG_KT_CL, Name: "Phòng Kỹ thuật chất lượng", Description: "Phòng nghiệp vụ kỹ thuật", Level: 3},
-		{Code: constant.ROLE_GIAM_DOC_XN, Name: "Giám đốc xí nghiệp", Description: "Lãnh đạo đơn vị cơ sở", Level: 3},
-		{Code: constant.ROLE_TRUONG_PHONG_KT, Name: "Trưởng phòng kỹ thuật", Description: "Quản lý kỹ thuật cơ sở", Level: 4},
-		{Code: constant.ROLE_CONG_NHAN_CTY, Name: "Công nhân công ty", Description: "Nhân viên vận hành hiện trường", Level: 5, IsEmployee: true},
-		{Code: constant.ROLE_XN_KS_TK, Name: "Xí nghiệp XNTK", Description: "Đơn vị khảo sát và thiết kế", Level: 4},
-		{Code: constant.ROLE_XN_CO_GIOI, Name: "Xí nghiệp Cơ giới", Description: "Đơn vị vận hành xe máy, thiết bị cơ giới", Level: 4},
-	}
-=======
 	// // 2.1 Seed Role metadata into the new 'roles' collection
 	// initialRoles := []models.Role{
 	// 	{Code: constant.ROLE_SUPER_ADMIN, Name: "Super Admin (System)", Description: "Toàn quyền hệ thống", Level: 1, IsCompany: true},
@@ -199,7 +181,6 @@ func main() {
 	// for _, p := range initialPermissions {
 	// 	allPermCodes = append(allPermCodes, p.Code)
 	// }
->>>>>>> long_mobile
 
 	for _, r := range initialRoles {
 		existing, _ := roleService.GetByCode(ctx, r.Code)
@@ -207,15 +188,15 @@ func main() {
 			_ = roleService.Create(ctx, &r)
 			log.Infof("✓ Created Role entity: %s", r.Name)
 		} else {
-            // Update to ensure not deleted and has correct level
-            existing.Name = r.Name
-            existing.Level = r.Level
-            existing.IsCompany = r.IsCompany
-            existing.IsEmployee = r.IsEmployee
-            existing.DTime = 0 // Un-delete
-            _ = roleService.Update(ctx, existing.ID, existing)
+			// Update to ensure not deleted and has correct level
+			existing.Name = r.Name
+			existing.Level = r.Level
+			existing.IsCompany = r.IsCompany
+			existing.IsEmployee = r.IsEmployee
+			existing.DTime = 0 // Un-delete
+			_ = roleService.Update(ctx, existing.ID, existing)
 			log.Infof("✓ Updated Role entity: %s", r.Name)
-        }
+		}
 	}
 
 	allPermCodes := []string{}
@@ -223,26 +204,6 @@ func main() {
 		allPermCodes = append(allPermCodes, p.Code)
 	}
 
-<<<<<<< HEAD
-	// 2. Map Permissions to Roles based on Organizational Matrix
-
-	// Roles with Full Access (Company Level + System Admin)
-	fullAccessRoles := []string{
-		constant.ROLE_SUPER_ADMIN,
-		constant.ROLE_CHU_TICH_CTY,
-		constant.ROLE_GIAM_DOC_CTY,
-		constant.ROLE_PHO_GIAM_DOC_CTY,
-		constant.ROLE_PHONG_HT_MT_CDS,
-	}
-	for _, r := range fullAccessRoles {
-		if err := permService.UpdateMatrix(ctx, r, allPermCodes); err != nil {
-			log.Errorf("Failed to update matrix for role %s: %v", r, err)
-		} else {
-			log.Infof("✓ Seeded full access for role: %s", r)
-		}
-	}
-
-=======
 	// // 5. Phòng Kỹ thuật chất lượng (phong_kt_cl)
 	// // Theo DB: Xem/Nhập tất cả VH + AI báo cáo + Xem quản trị cơ bản
 	// _ = permService.UpdateMatrix(ctx, constant.ROLE_PHONG_KT_CL, []string{
@@ -256,61 +217,7 @@ func main() {
 	// 	"contract:view", "contract-category:view", "contract-ai:chat",
 	// })
 	// log.Info("✓ Seeded granular role: phong_kt_cl")
->>>>>>> long_mobile
 
-
-<<<<<<< HEAD
-	// 5. Phòng Kỹ thuật chất lượng (phong_kt_cl)
-	// Theo DB: Xem/Nhập tất cả VH + AI báo cáo + Xem quản trị cơ bản
-	_ = permService.UpdateMatrix(ctx, constant.ROLE_PHONG_KT_CL, []string{
-		"rain:view", "rain:create", "rain:edit", "rain:export", "rain:delete",
-		"inundation:view", "inundation:create", "inundation:edit", "inundation:delete", "inundation:review",
-		"water:view", "water:create", "water:edit", "water:export", "water:delete",
-		"sluice-gate:view", "trambom:view", "trambom:create", "trambom:edit", "trambom:delete",
-		"ai:chat", "ai:report", "ai:synthesis", "ai:post-rain", "ai:report-emergency",
-		"emergency:view", "emergency:create", "emergency:edit", "emergency:export",
-		"employee:view", "organization:view", "role:view", "role-matrix:view",
-		"contract:view", "contract-category:view", "contract-ai:chat",
-	})
-	log.Info("✓ Seeded granular role: phong_kt_cl")
-
-	// 6 & 7. Giám đốc xí nghiệp & Trưởng phòng kỹ thuật (giam_doc_xn, truong_phong_kt)
-	// Theo DB: Xem/Nhập mưa, ngập + Xem trạm bơm + CT khẩn cấp + Xem NV
-	enterpriseManagerPerms := []string{
-		"rain:view", "rain:create", "rain:edit", "rain:export",
-		"inundation:view", "inundation:create", "inundation:edit",
-		"trambom:view",
-		"employee:view",
-		"emergency:view", "emergency:create", "emergency:edit", "emergency:export",
-	}
-	_ = permService.UpdateMatrix(ctx, constant.ROLE_GIAM_DOC_XN, enterpriseManagerPerms)
-	_ = permService.UpdateMatrix(ctx, constant.ROLE_TRUONG_PHONG_KT, enterpriseManagerPerms)
-	log.Info("✓ Seeded granular enterprise management roles")
-
-	// 8. Công nhân công ty (cong_nhan_cty)
-	// Theo DB: Xem mưa/ngập/nước/cửa phai/trạm bơm + Báo cáo ngập + CT khẩn cấp
-	_ = permService.UpdateMatrix(ctx, constant.ROLE_CONG_NHAN_CTY, []string{
-		"rain:view",
-		"inundation:view", "inundation:create", "inundation:edit",
-		"water:view",
-		"sluice-gate:view",
-		"trambom:view",
-		"emergency:view", "emergency:create",
-	})
-	log.Info("✓ Seeded granular role: cong_nhan_cty")
-
-	// 9. Xí nghiệp XNTK
-	_ = permService.UpdateMatrix(ctx, constant.ROLE_XN_KS_TK, []string{
-		"inundation:view", "inundation:survey",
-	})
-	log.Info("✓ Seeded specialized role: xn_ks_tk")
-
-	// 10. Xí nghiệp Cơ giới
-	_ = permService.UpdateMatrix(ctx, constant.ROLE_XN_CO_GIOI, []string{
-		"inundation:view", "inundation:mechanic",
-	})
-	log.Info("✓ Seeded specialized role: xn_co_gioi")
-=======
 	// // 8. Công nhân công ty (cong_nhan_cty)
 	// // Theo DB: Xem mưa/ngập/nước/cửa phai/trạm bơm + Báo cáo ngập + CT khẩn cấp
 	// _ = permService.UpdateMatrix(ctx, constant.ROLE_CONG_NHAN_CTY, []string{
@@ -334,7 +241,6 @@ func main() {
 	// 	"inundation:view", "inundation:mechanic",
 	// })
 	// log.Info("✓ Seeded specialized role: xn_co_gioi")
->>>>>>> long_mobile
 
 	// // 3. Seed Mock Users for Testing
 	// log.Info("Seeding mock users for testing...")

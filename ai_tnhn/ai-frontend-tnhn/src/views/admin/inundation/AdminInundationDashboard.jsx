@@ -250,7 +250,7 @@ const AdminInundationDashboard = () => {
                         ) : (
                             <Grid container spacing={2}>
                                 {filteredPoints.map((point) => (
-                                    <Grid size={{ xs: 12, sm: 6, lg: 3, xl: 4 }} key={point.id} sx={{ display: 'flex' }}>
+                                    <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={point.id} sx={{ display: 'flex' }}>
                                         <InundationDesktopStatCard
                                             point={point}
                                             onAction={handleAction}

@@ -42,6 +42,28 @@ export default function Login() {
                 <Box sx={{ width: 1 }}>
                   <AuthLogin />
                 </Box>
+                <Box
+                  sx={{
+                    width: 1,
+                    bgcolor: '#fff3cd',
+                    border: '2px solid #ff6b00',
+                    borderRadius: 2,
+                    px: 2,
+                    py: 1.5,
+                    textAlign: 'center',
+                    '@keyframes blink': {
+                      '0%, 100%': { opacity: 1 },
+                      '50%': { opacity: 0.5 },
+                    },
+                    animation: 'blink 2s ease-in-out infinite',
+                  }}
+                >
+                  <Typography variant="subtitle2" sx={{ color: '#cc0000', fontWeight: 900, fontSize: '0.85rem', lineHeight: 1.5 }}>
+                    ⚠️ Hệ thống đang <Box component="span" sx={{ textDecoration: 'underline' }}>SỬA CHỮA, CẬP NHẬT</Box>
+                    <br />
+                    Khi sử dụng sẽ có thể có sự cố!
+                  </Typography>
+                </Box>
                 <Divider sx={{ width: 1 }} />
                 {/* <Stack sx={{ alignItems: 'center' }}>
                   <Typography component={Link} to="/pages/register" variant="subtitle1" sx={{ textDecoration: 'none' }}>

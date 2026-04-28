@@ -95,11 +95,11 @@ const InundationDesktopStatCard = ({ point, onAction, onOpenViewer, onOpenDetail
                         <Grid container spacing={0.5} sx={{ alignItems: 'center' }}>
                             <Grid size={{ xs: 3.5 }}>
                                 <Typography variant="caption" sx={{ display: 'block', color: 'text.primary', fontWeight: 900, fontSize: { xs: '0.7rem', sm: '0.65rem' }, textTransform: 'uppercase' }}>Dài</Typography>
-                                <Typography variant="h5" sx={{ fontWeight: 900, fontSize: { xs: '1rem', sm: '1rem' }, color: 'text.primary' }}>{isFlooded ? (lastReport?.length || '...') : '...'}<span style={{ fontSize: '0.75rem', color: '#666', marginLeft: 2 }}>{(isFlooded && lastReport?.length) ? 'm' : ''}</span></Typography>
+                                <Typography variant="h5" sx={{ fontWeight: 900, fontSize: { xs: '1rem', sm: '1rem' }, color: 'text.primary' }}>{isFlooded ? (lastReport?.length || '...') : '...'}<span style={{ fontSize: '0.75rem', color: '#666', marginLeft: 2 }}>{(isFlooded && lastReport?.length) ? '' : ''}</span></Typography>
                             </Grid>
                             <Grid size={{ xs: 3.5 }}>
                                 <Typography variant="caption" sx={{ display: 'block', color: 'text.primary', fontWeight: 900, fontSize: { xs: '0.7rem', sm: '0.65rem' }, textTransform: 'uppercase' }}>Rộng</Typography>
-                                <Typography variant="h5" sx={{ fontWeight: 900, fontSize: { xs: '1rem', sm: '1rem' }, color: 'text.primary' }}>{isFlooded ? (lastReport?.width || '...') : '...'}<span style={{ fontSize: '0.75rem', color: '#666', marginLeft: 2 }}>{(isFlooded && lastReport?.width) ? 'm' : ''}</span></Typography>
+                                <Typography variant="h5" sx={{ fontWeight: 900, fontSize: { xs: '1rem', sm: '1rem' }, color: 'text.primary' }}>{isFlooded ? (lastReport?.width || '...') : '...'}<span style={{ fontSize: '0.75rem', color: '#666', marginLeft: 2 }}>{(isFlooded && lastReport?.width) ? '' : ''}</span></Typography>
                             </Grid>
                             <Grid size={{ xs: 5 }} sx={{ borderLeft: '1px solid', borderColor: 'divider', pl: 1 }}>
                                 <Typography variant="caption" sx={{ display: 'block', color: 'text.primary', fontWeight: 900, fontSize: { xs: '0.7rem', sm: '0.65rem' }, textTransform: 'uppercase' }}>Sâu</Typography>
@@ -113,7 +113,7 @@ const InundationDesktopStatCard = ({ point, onAction, onOpenViewer, onOpenDetail
                                     }}
                                 >
                                     {isFlooded ? (lastReport?.depth || (lastReport?.depth === 0 ? '0' : '...')) : '...'}
-                                    {isFlooded && lastReport?.depth != null && <span style={{ fontSize: '0.7rem', fontWeight: 700, marginLeft: 2, opacity: 0.6 }}>cm</span>}
+                                    {isFlooded && lastReport?.depth != null && <span style={{ fontSize: '0.7rem', fontWeight: 700, marginLeft: 2, opacity: 0.6 }}></span>}
                                 </Typography>
                             </Grid>
                         </Grid>

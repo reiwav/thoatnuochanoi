@@ -10,6 +10,7 @@ import inundationApi from 'api/inundation';
 import emergencyConstructionApi from 'api/emergencyConstruction';
 import pumpingStationApi from 'api/pumpingStation';
 import wastewaterTreatmentApi from 'api/wastewaterTreatment';
+import sluiceGateApi from 'api/sluiceGate';
 import SelectionDialog from './SelectionDialog';
 import useAuthStore from 'store/useAuthStore';
 import axiosClient from 'api/axiosClient';
@@ -21,6 +22,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
     const [constructions, setConstructions] = useState([]);
     const [pumpingStations, setPumpingStations] = useState([]);
     const [wastewaterStations, setWastewaterStations] = useState([]);
+    const [sluiceGates, setSluiceGates] = useState([]);
     const [roles, setRoles] = useState([]);
     const [fetchingData, setFetchingData] = useState(false);
     const [pointSelectionOpen, setPointSelectionOpen] = useState(false);
@@ -35,6 +37,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
         assigned_emergency_construction_ids: [],
         assigned_pumping_station_id: '',
         assigned_wastewater_station_id: '',
+        assigned_sluice_gate_id: '',
         active: true
     });
 
@@ -51,6 +54,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                     assigned_emergency_construction_ids: employee.assigned_emergency_construction_ids || [],
                     assigned_pumping_station_id: employee.assigned_pumping_station_id || '',
                     assigned_wastewater_station_id: employee.assigned_wastewater_station_id || '',
+                    assigned_sluice_gate_id: employee.assigned_sluice_gate_id || '',
                     active: employee.active !== undefined ? employee.active : true
                 });
             } else {
@@ -64,6 +68,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                     assigned_emergency_construction_ids: [],
                     assigned_pumping_station_id: '',
                     assigned_wastewater_station_id: '',
+                    assigned_sluice_gate_id: '',
                     active: true
                 });
             }
@@ -76,11 +81,12 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
             const orgIdToUse = formData.org_id || defaultOrgId;
             setFetchingData(true);
             try {
-                const [pointsRes, consRes, pumpRes, wastewaterRes, rolesRes] = await Promise.all([
+                const [pointsRes, consRes, pumpRes, wastewaterRes, sluiceRes, rolesRes] = await Promise.all([
                     inundationApi.getPointsList({ per_page: 1000, org_id: orgIdToUse }),
                     emergencyConstructionApi.getAll({ per_page: 1000, org_id: orgIdToUse }),
                     pumpingStationApi.list({ per_page: 1000, org_id: orgIdToUse }),
                     wastewaterTreatmentApi.list({ per_page: 1000, org_id: orgIdToUse }),
+                    sluiceGateApi.list({ per_page: 1000, org_id: orgIdToUse }),
                     axiosClient.get('/admin/roles')
                 ]);
 
@@ -89,6 +95,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                 setConstructions(Array.isArray(consRes?.data) ? consRes.data : (Array.isArray(consRes) ? consRes : []));
                 setPumpingStations(Array.isArray(pumpRes?.data) ? pumpRes.data : (Array.isArray(pumpRes) ? pumpRes : []));
                 setWastewaterStations(Array.isArray(wastewaterRes?.data) ? wastewaterRes.data : (Array.isArray(wastewaterRes) ? wastewaterRes : []));
+                setSluiceGates(Array.isArray(sluiceRes?.data) ? sluiceRes.data : (Array.isArray(sluiceRes) ? sluiceRes : []));
                 setRoles(Array.isArray(rolesRes) ? rolesRes : []);
             } catch (err) {
                 console.error('Lỗi tải dữ liệu:', err);
@@ -297,6 +304,24 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                                         <MenuItem value=""><em>Không gán</em></MenuItem>
                                         {(wastewaterStations || []).map((station) => (
                                             <MenuItem key={station.id} value={station.id}>{station.name}</MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                            </Box>
+
+                            <Box>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'primary.main', mb: 1, mt: 1 }}>Cửa phai được giao</Typography>
+                                <FormControl fullWidth size="small">
+                                    <InputLabel>Chọn cửa phai</InputLabel>
+                                    <Select
+                                        value={formData.assigned_sluice_gate_id}
+                                        label="Chọn cửa phai"
+                                        onChange={(e) => handleChange('assigned_sluice_gate_id', e.target.value)}
+                                        sx={{ borderRadius: 3, fontWeight: 600 }}
+                                    >
+                                        <MenuItem value=""><em>Không gán</em></MenuItem>
+                                        {(sluiceGates || []).map((gate) => (
+                                            <MenuItem key={gate.id} value={gate.id}>{gate.name}</MenuItem>
                                         ))}
                                     </Select>
                                 </FormControl>

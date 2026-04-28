@@ -39,6 +39,8 @@ const PumpingStationPage = Loadable(lazy(() => import('views/admin/pumping-stati
 const FloodLevelSetting = Loadable(lazy(() => import('views/admin/setting/FloodLevelSetting')));
 const WastewaterTreatmentPage = Loadable(lazy(() => import('views/admin/wastewater-treatment')));
 const EmployeeWastewaterPage = Loadable(lazy(() => import('views/employee/wastewater')));
+const SluiceGatePage = Loadable(lazy(() => import('views/admin/sluice-gate')));
+const EmployeeSluiceGatePage = Loadable(lazy(() => import('views/employee/sluice-gate')));
 const UnderDevelopment = Loadable(lazy(() => import('views/pages/under-development')));
 
 // ==============================|| MAIN ROUTING ||============================== //
@@ -77,7 +79,7 @@ const MainRoutes = {
         { path: 'station/inundation/list', element: <StationInundationList /> },
         { path: 'station/inundation/history', element: <InundationStationHistory /> },
         { path: 'station/inundation/yearly', element: <InundationYearlyHistory /> },
-        { path: 'cua-phai', element: <UnderDevelopment /> },
+        { path: 'cua-phai', element: <SluiceGatePage /> },
         { path: 'tram-bom', element: <PumpingStationPage /> },
         { path: 'sa-hinh-ngap', element: <UnderDevelopment /> },
         { path: 'wastewater-treatment', element: <WastewaterTreatmentPage /> },
@@ -104,7 +106,8 @@ const MainRoutes = {
         { path: 'station/rain/compare', element: <StationRainCompare /> },
         { path: 'station/inundation/history', element: <InundationHistoryDetail /> },
         { path: 'tram-bom', element: <EmployeePumpingStationDashboard /> },
-        { path: 'wastewater-treatment', element: <EmployeeWastewaterPage /> }
+        { path: 'wastewater-treatment', element: <EmployeeWastewaterPage /> },
+        { path: 'cua-phai', element: <EmployeeSluiceGatePage /> }
       ]
     }
   ]

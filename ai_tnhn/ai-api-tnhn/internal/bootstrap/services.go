@@ -27,6 +27,7 @@ import (
 	"ai-api-tnhn/internal/service/station/rain"
 	"ai-api-tnhn/internal/service/station/pumping_station/pump"
 	"ai-api-tnhn/internal/service/station/stationdata"
+	"ai-api-tnhn/internal/service/station/sluice_gate"
 	"ai-api-tnhn/internal/service/station/wastewater_treatment"
 	"ai-api-tnhn/internal/service/station/water"
 	"ai-api-tnhn/internal/service/storage"
@@ -63,6 +64,7 @@ type Services struct {
 	Storage          storage.Service
 	Setting          setting.Service
 	Wastewater       wastewater_treatment.Service
+	SluiceGate       sluice_gate.Service
 }
 
 func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log logger.Logger) *Services {
@@ -155,6 +157,7 @@ func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log log
 	}
 
 	s.Wastewater = wastewater_treatment.NewService(repos.WastewaterStation)
+	s.SluiceGate = sluice_gate.NewService(repos.SluiceGate)
 
 	return s
 }

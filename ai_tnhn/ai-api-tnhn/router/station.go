@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (h HandlerFuncs) StationRoutes(api *gin.RouterGroup, mid middleware.Middleware, stationHandler *handler.StationHandler, pumpingHandler *handler.PumpingStationHandler, wastewaterHandler *handler.WastewaterTreatmentHandler) {
+func (h HandlerFuncs) StationRoutes(api *gin.RouterGroup, mid middleware.Middleware, stationHandler *handler.StationHandler, pumpingHandler *handler.PumpingStationHandler, wastewaterHandler *handler.WastewaterTreatmentHandler, sluiceHandler *handler.SluiceGateHandler) {
 	station := api.Group("/stations")
 	station.Use(mid.MidBasicType())
 
@@ -63,5 +63,17 @@ func (h HandlerFuncs) StationRoutes(api *gin.RouterGroup, mid middleware.Middlew
 		wastewater.DELETE("/:id", wastewaterHandler.Delete)
 		wastewater.POST("/:id/report", wastewaterHandler.SubmitReport)
 		wastewater.GET("/:id/history", wastewaterHandler.ListHistory)
+	}
+
+	// Sluice Gate Stations
+	sluice := station.Group("/sluice-gate")
+	{
+		sluice.GET("", sluiceHandler.List)
+		sluice.GET("/:id", sluiceHandler.Get)
+		sluice.POST("", sluiceHandler.Create)
+		sluice.PUT("/:id", sluiceHandler.Update)
+		sluice.DELETE("/:id", sluiceHandler.Delete)
+		sluice.POST("/:id/report", sluiceHandler.Report)
+		sluice.GET("/:id/history", sluiceHandler.ListHistory)
 	}
 }

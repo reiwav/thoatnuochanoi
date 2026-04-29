@@ -51,7 +51,7 @@ const InundationDesktopStatCard = ({ point, onAction, onOpenViewer, onOpenDetail
                                 WebkitLineClamp: 2,
                                 WebkitBoxOrient: 'vertical',
                                 overflow: 'hidden',
-                                fontSize: '1.05rem'
+                                fontSize: '0.9rem'
                             }}
                         >
                             {point.name}

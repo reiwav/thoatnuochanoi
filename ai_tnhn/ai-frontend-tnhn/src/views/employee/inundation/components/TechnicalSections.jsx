@@ -113,7 +113,7 @@ export const MechInfoSection = ({ latest, handleOpenViewer }) => {
         <Box sx={{ p: 1.5, bgcolor: 'secondary.lighter', borderRadius: 2, border: '1px solid', borderColor: 'secondary.main', mb: 1 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                 <Typography variant="caption" sx={{ fontWeight: 900, color: 'secondary.main', textTransform: 'uppercase' }}>
-                    ⚙️ CG xử lý:
+                    ⚙️ XN Cơ giới:
                 </Typography>
                 {latest.mech_checked && (
                     <Chip

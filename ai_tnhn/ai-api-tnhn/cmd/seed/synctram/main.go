@@ -73,25 +73,46 @@ func syncRainStations(ctx context.Context, rainRepo repository.RainStation) {
 
 	stations, _, err := rainRepo.List(ctx, nil)
 	if err != nil {
-		log.Printf("Error listing rain stations: %v", err)
-		return
+		log.Fatalf("Failed to list rain stations: %v", err)
 	}
 
 	for _, old := range data {
 		var target *models.RainStation
 
 		// 1. Match by OldID
-		for _, st := range stations {
-			if st.OldID == old.Id {
-				target = st
-				break
+		if old.Id != 0 {
+			for _, st := range stations {
+				if st.OldID == old.Id {
+					target = st
+					break
+				}
 			}
 		}
 
-		// 2. Fallback to Name
+		// 2. Fallback to Name + Ward
 		if target == nil {
 			for _, st := range stations {
-				if cleanName(st.TenTram) == cleanName(old.TenTram) {
+				if cleanName(st.TenTram) == cleanName(old.TenTram) && cleanName(st.TenPhuong) == cleanName(old.TenPhuong) {
+					target = st
+					break
+				}
+			}
+		}
+
+		// 3. Fallback to Address
+		if target == nil {
+			for _, st := range stations {
+				if cleanName(st.DiaChi) != "" && cleanName(st.DiaChi) == cleanName(old.DiaChi) {
+					target = st
+					break
+				}
+			}
+		}
+
+		// 4. Last fallback to Name only (only match if st.OldID is 0 to avoid stealing ID)
+		if target == nil {
+			for _, st := range stations {
+				if st.OldID == 0 && cleanName(st.TenTram) == cleanName(old.TenTram) {
 					target = st
 					break
 				}
@@ -112,33 +133,71 @@ func syncRainStations(ctx context.Context, rainRepo repository.RainStation) {
 			target.Active = old.Active
 			target.ManHinh = old.ManHinh
 			target.PhuongId = old.PhuongId
+			target.Loai = detectAreaType(old.TenPhuong)
 
 			err = rainRepo.Update(ctx, target.ID, target)
 			if err != nil {
 				log.Printf("Failed to update rain station %s: %v", target.TenTram, err)
 			} else {
-				fmt.Printf("Updated rain station: %s\n", target.TenTram)
+				// Update in-memory list to avoid duplicate matches
+				for i := range stations {
+					if stations[i].ID == target.ID {
+						stations[i].OldID = target.OldID
+						break
+					}
+				}
+				fmt.Printf("Updated rain station: %s (ID: %d)\n", target.TenTram, target.OldID)
 			}
 		} else {
 			// Create new
 			newStation := &models.RainStation{
-				OldID:     old.Id,
-				TenTram:   old.TenTram,
-				TenPhuong: old.TenPhuong,
-				DiaChi:    old.DiaChi,
-				Lat:       old.Lat,
-				Lng:       old.Lng,
-				ThuTu:     old.ThuTu,
-				Active:    old.Active,
-				ManHinh:   old.ManHinh,
-				PhuongId:  old.PhuongId,
+				OldID:         old.Id,
+				TenTram:       old.TenTram,
+				TenPhuong:     old.TenPhuong,
+				DiaChi:        old.DiaChi,
+				Lat:           old.Lat,
+				Lng:           old.Lng,
+				ThuTu:         old.ThuTu,
+				ManHinh:       old.ManHinh,
+				PhuongId:      old.PhuongId,
+				Active:        old.Active,
+				Loai:          detectAreaType(old.TenPhuong),
+				OrgID:         "org_001",
+				TrongSoBaoCao: 1,
 			}
 			_, err = rainRepo.Create(ctx, newStation)
 			if err != nil {
 				log.Printf("Failed to create rain station %s: %v", old.TenTram, err)
 			} else {
-				fmt.Printf("Created rain station: %s\n", old.TenTram)
+				fmt.Printf("Created rain station: %s (ID: %d)\n", old.TenTram, old.Id)
 			}
+		}
+	}
+
+	// SPECIAL CASE: Check for Station 33 (Sông Cầu Ngà) if missing from RainStation
+	found33 := false
+	for _, st := range stations {
+		if st.OldID == 33 {
+			found33 = true
+			break
+		}
+	}
+	if !found33 {
+		fmt.Println("Station 33 not found in RainStation, creating from Water data if exists...")
+		// We'll manually insert it as requested since it's missing from tram_mua_data.json
+		newStation := &models.RainStation{
+			OldID:         33,
+			TenTram:       "Sông Cầu Ngà",
+			DiaChi:        "Trạm bơm Cầu Ngà",
+			Active:        true,
+			OrgID:         "org_001",
+			TrongSoBaoCao: 1,
+		}
+		_, err = rainRepo.Create(ctx, newStation)
+		if err != nil {
+			log.Printf("Failed to create special rain station 33: %v", err)
+		} else {
+			fmt.Println("Created special rain station 33 (Sông Cầu Ngà)")
 		}
 	}
 }
@@ -244,6 +303,20 @@ func syncWaterStations(ctx context.Context, lakeRepo repository.LakeStation, riv
 
 func cleanName(name string) string {
 	return strings.ToLower(strings.TrimSpace(name))
+}
+
+func detectAreaType(tenPhuong string) models.StationAreaType {
+	lower := strings.ToLower(tenPhuong)
+	if strings.Contains(lower, "phường") {
+		return models.StationAreaPhuong
+	}
+	if strings.Contains(lower, "xã") {
+		return models.StationAreaXa
+	}
+	if strings.Contains(lower, "thị trấn") {
+		return models.StationAreaThiTran
+	}
+	return models.StationAreaNone
 }
 
 func readJSON[T any](path string) (T, error) {

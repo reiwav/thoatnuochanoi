@@ -7,6 +7,7 @@ import (
 	"ai-api-tnhn/internal/repository"
 	"ai-api-tnhn/internal/service/station"
 	"context"
+	"fmt"
 	"time"
 )
 
@@ -38,7 +39,7 @@ func (w *worker) Start(ctx context.Context) {
 }
 
 func (w *worker) run(ctx context.Context) {
-	ticker := time.NewTicker(15 * time.Minute)
+	ticker := time.NewTicker(15 * time.Second)
 	defer ticker.Stop()
 
 	// Initial sync
@@ -70,6 +71,9 @@ func (w *worker) sync(ctx context.Context) {
 }
 
 func (w *worker) syncStation(ctx context.Context, s *models.RainStation) {
+	if s.OldID != 33 {
+		return
+	}
 	latest, err := w.rainRepo.GetLatest(ctx, int64(s.OldID))
 	var startDate time.Time
 	if err == nil && latest != nil {
@@ -88,21 +92,34 @@ func (w *worker) syncStation(ctx context.Context, s *models.RainStation) {
 
 func (w *worker) fetchAndSave(ctx context.Context, s *models.RainStation, date time.Time, latest *models.RainRecord) {
 	dateStr := date.Format("2006-01-02")
+	w.logger.GetLogger().Infof("RainWorker: [DEBUG] Fetching data for station %s (%d) on %s", s.TenTram, s.OldID, dateStr)
+	dateStr = "2026-05-02"
 	dataPoints, err := w.thoatnuocSvc.GetRainChartData(ctx, w.sessionID, s.OldID, dateStr)
+	fmt.Println("====== dataPoints: ", len(dataPoints))
 	if err != nil {
 		w.logger.GetLogger().Errorf("RainWorker: Failed to fetch data for station %s on %s: %v", s.TenTram, dateStr, err)
 		return
 	}
 
+	if len(dataPoints) == 0 {
+		w.logger.GetLogger().Infof("RainWorker: [DEBUG] No data points returned for station %s on %s", s.TenTram, dateStr)
+		return
+	}
+
+	w.logger.GetLogger().Infof("RainWorker: [DEBUG] Received %d points for station %s on %s", len(dataPoints), s.TenTram, dateStr)
+
 	inserted := 0
+	skipped := 0
 	for _, dp := range dataPoints {
 		ts, err := time.ParseInLocation("2006-01-02T15:04:05", dp.ThoiGian, time.Local)
 		if err != nil {
+			w.logger.GetLogger().Errorf("RainWorker: [DEBUG] Failed to parse timestamp %s: %v", dp.ThoiGian, err)
 			continue
 		}
 
 		// Skip if already in DB (check against latest timestamp)
 		if latest != nil && !ts.After(latest.Timestamp) {
+			skipped++
 			continue
 		}
 
@@ -122,7 +139,5 @@ func (w *worker) fetchAndSave(ctx context.Context, s *models.RainStation, date t
 		inserted++
 	}
 
-	if inserted > 0 {
-		w.logger.GetLogger().Infof("RainWorker: Successfully synced %d new records for station %s on %s", inserted, s.TenTram, dateStr)
-	}
+	w.logger.GetLogger().Infof("RainWorker: Finished station %s on %s. Inserted: %d, Skipped: %d", s.TenTram, dateStr, inserted, skipped)
 }

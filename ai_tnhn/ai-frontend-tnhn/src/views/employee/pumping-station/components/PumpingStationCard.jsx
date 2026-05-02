@@ -119,7 +119,7 @@ const PumpingStationCard = ({ station, onUpdate, onViewHistory }) => {
             </Stack>
 
             {/* Visualize Progress Bar */}
-            {station.pump_count > 0 && (
+            {/* {station.pump_count > 0 && (
                 <Box sx={{ height: 10, bgcolor: 'grey.100', borderRadius: 5, overflow: 'hidden', display: 'flex', mb: 2.5, border: '1px solid', borderColor: 'divider' }}>
                     {stats.map((s, i) => (
                         s.value > 0 && (
@@ -138,12 +138,12 @@ const PumpingStationCard = ({ station, onUpdate, onViewHistory }) => {
                         <Box sx={{ width: `${((station.pump_count - totalStats) / station.pump_count) * 100}%`, bgcolor: 'transparent', height: '100%' }} />
                     )}
                 </Box>
-            )}
+            )} */}
 
-            <Box sx={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(2, 1fr)', 
-                gap: 1, 
+            <Box sx={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, 1fr)',
+                gap: 1,
                 mt: 1,
                 flexGrow: 1
             }}>
@@ -172,7 +172,7 @@ const PumpingStationCard = ({ station, onUpdate, onViewHistory }) => {
             {station.pump_count > 0 && (
                 <Box sx={{ mt: 2.5, pt: 1.5, borderTop: '1px dashed', borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5, fontSize: '0.75rem' }}>
-                        Định mức máy bơm
+                        Tổng số bơm
                     </Typography>
                     <Typography variant="h4" sx={{ fontWeight: 900, color: 'primary.main' }}>
                         {station.pump_count} máy

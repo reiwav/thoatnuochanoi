@@ -181,22 +181,26 @@ func main() {
 	// 	allPermCodes = append(allPermCodes, p.Code)
 	// }
 
-	// // 2. Map Permissions to Roles based on Organizational Matrix
-
-	// // Roles with Full Access (Company Level + System Admin)
-	// fullAccessRoles := []string{
-	// 	constant.ROLE_SUPER_ADMIN,
-	// 	constant.ROLE_CHU_TICH_CTY,
-	// 	constant.ROLE_GIAM_DOC_CTY,
-	// 	constant.ROLE_PHO_GIAM_DOC_CTY,
-	// 	constant.ROLE_PHONG_HT_MT_CDS,
-	// }
-	// for _, r := range fullAccessRoles {
-	// 	if err := permService.UpdateMatrix(ctx, r, allPermCodes); err != nil {
-	// 		log.Errorf("Failed to update matrix for role %s: %v", r, err)
+	// for _, r := range initialRoles {
+	// 	existing, _ := roleService.GetByCode(ctx, r.Code)
+	// 	if existing == nil {
+	// 		_ = roleService.Create(ctx, &r)
+	// 		log.Infof("✓ Created Role entity: %s", r.Name)
 	// 	} else {
-	// 		log.Infof("✓ Seeded full access for role: %s", r)
+	// 		// Update to ensure not deleted and has correct level
+	// 		existing.Name = r.Name
+	// 		existing.Level = r.Level
+	// 		existing.IsCompany = r.IsCompany
+	// 		existing.IsEmployee = r.IsEmployee
+	// 		existing.DTime = 0 // Un-delete
+	// 		_ = roleService.Update(ctx, existing.ID, existing)
+	// 		log.Infof("✓ Updated Role entity: %s", r.Name)
 	// 	}
+	// }
+
+	// allPermCodes := []string{}
+	// for _, p := range initialPermissions {
+	// 	allPermCodes = append(allPermCodes, p.Code)
 	// }
 
 	// // 5. Phòng Kỹ thuật chất lượng (phong_kt_cl)
@@ -212,19 +216,6 @@ func main() {
 	// 	"contract:view", "contract-category:view", "contract-ai:chat",
 	// })
 	// log.Info("✓ Seeded granular role: phong_kt_cl")
-
-	// // 6 & 7. Giám đốc xí nghiệp & Trưởng phòng kỹ thuật (giam_doc_xn, truong_phong_kt)
-	// // Theo DB: Xem/Nhập mưa, ngập + Xem trạm bơm + CT khẩn cấp + Xem NV
-	// enterpriseManagerPerms := []string{
-	// 	"rain:view", "rain:create", "rain:edit", "rain:export",
-	// 	"inundation:view", "inundation:create", "inundation:edit",
-	// 	"trambom:view",
-	// 	"employee:view",
-	// 	"emergency:view", "emergency:create", "emergency:edit", "emergency:export",
-	// }
-	// _ = permService.UpdateMatrix(ctx, constant.ROLE_GIAM_DOC_XN, enterpriseManagerPerms)
-	// _ = permService.UpdateMatrix(ctx, constant.ROLE_TRUONG_PHONG_KT, enterpriseManagerPerms)
-	// log.Info("✓ Seeded granular enterprise management roles")
 
 	// // 8. Công nhân công ty (cong_nhan_cty)
 	// // Theo DB: Xem mưa/ngập/nước/cửa phai/trạm bơm + Báo cáo ngập + CT khẩn cấp

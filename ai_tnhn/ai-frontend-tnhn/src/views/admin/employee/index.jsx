@@ -204,7 +204,9 @@ const EmployeeList = () => {
 
             if (orgRes) {
                 const list = Array.isArray(orgRes) ? orgRes : [...(orgRes.primary || []), ...(orgRes.shared || [])];
-                setOrganizations(list);
+                // Deduplicate by ID
+                const uniqueList = Array.from(new Map(list.map(item => [item.id, item])).values());
+                setOrganizations(uniqueList);
             }
             if (roleRes) {
                 setRoles(roleRes || []);

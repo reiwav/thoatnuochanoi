@@ -63,5 +63,9 @@ func (s *service) QuickFinishV2(ctx context.Context, user *models.User, pointID 
 	if err != nil {
 		return err
 	}
+
+	// Notify SSE subscribers about the change
+	go s.notifyPointChange(pointID)
+
 	return nil
 }

@@ -43,6 +43,9 @@ type Service interface {
 
 	// Summary for external consumers
 	GetInundationSummary(ctx context.Context, orgID string, isAllowedAll bool, assignedInuIDs []string) (*InundationSummaryData, error)
+
+	// SSE Hub
+	GetHub() *Hub
 }
 
 type service struct {
@@ -55,6 +58,7 @@ type service struct {
 	cacheMu               sync.RWMutex
 	syncWorker            *SyncWorker
 	settingSvc            repository.AppSetting
+	hub                   *Hub
 }
 
 func NewService(
@@ -73,7 +77,32 @@ func NewService(
 		driveSvc:              driveSvc,
 		settingSvc:            settingRepo,
 		folderCache:           make(map[string]string),
+		hub:                   NewHub(),
 	}
 
 	return svc
+}
+
+// GetHub returns the SSE Hub for handler use
+func (s *service) GetHub() *Hub {
+	return s.hub
+}
+
+// notifyPointChange broadcasts an SSE event to subscribers related to the given point
+func (s *service) notifyPointChange(pointID string) {
+	if s.hub == nil || pointID == "" {
+		return
+	}
+	// Use background context for async notification to avoid issues with request context cancellation
+	ctx := context.Background()
+	point, err := s.inundationStationRepo.GetByID(ctx, pointID)
+	if err != nil || point == nil {
+		return
+	}
+	s.hub.NotifyPointChange(PointChangeInfo{
+		PointID:      point.ID,
+		OrgID:        point.OrgID,
+		SharedOrgIDs: point.SharedOrgIDs,
+		ShareAll:     point.ShareAll,
+	})
 }

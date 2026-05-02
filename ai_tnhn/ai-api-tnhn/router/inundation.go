@@ -9,6 +9,10 @@ import (
 
 func (h HandlerFuncs) InundationRoutes(api *gin.RouterGroup, mid middleware.Middleware, inuHandler *handler.InundationHandler) {
 	group := api.Group("/inundation")
+
+	// SSE stream — outside auth middleware group (handles its own auth via token query param)
+	group.GET("/stream", inuHandler.StreamSSE)
+
 	group.Use(mid.MidBasicType()) // Require login
 	{
 		group.POST("/report", inuHandler.CreateReport)

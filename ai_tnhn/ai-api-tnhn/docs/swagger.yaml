@@ -5276,6 +5276,26 @@ paths:
       summary: Danh sách báo cáo ngập lụt
       tags:
       - Ngập lụt
+  /inundation/stream:
+    get:
+      description: Kết nối SSE để nhận thông báo khi điểm ngập thay đổi (targeted
+        theo permission)
+      parameters:
+      - description: Access token
+        in: query
+        name: token
+        required: true
+        type: string
+      produces:
+      - text/event-stream
+      responses:
+        "200":
+          description: SSE stream
+          schema:
+            type: string
+      summary: SSE stream cho real-time cập nhật điểm ngập
+      tags:
+      - Ngập lụt
   /inundation/update/{id}:
     put:
       consumes:

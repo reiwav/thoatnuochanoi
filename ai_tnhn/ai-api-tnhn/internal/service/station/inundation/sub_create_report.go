@@ -55,6 +55,10 @@ func (s *service) CreateReport(ctx context.Context, user *models.User, input mod
 	fmt.Printf("=========== Report Update: %v\n", report)
 	// ALWAYS Create an initial update record for history/timeline consistency
 	shared.SetAndCreateInundationUpdate(ctx, report, s.inundationUpdateRepo)
+
+	// Notify SSE subscribers about the change
+	go s.notifyPointChange(input.PointID)
+
 	return report, nil
 }
 

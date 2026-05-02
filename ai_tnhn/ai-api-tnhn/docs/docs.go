@@ -6672,6 +6672,35 @@ const docTemplate = `{
                 }
             }
         },
+        "/inundation/stream": {
+            "get": {
+                "description": "Kết nối SSE để nhận thông báo khi điểm ngập thay đổi (targeted theo permission)",
+                "produces": [
+                    "text/event-stream"
+                ],
+                "tags": [
+                    "Ngập lụt"
+                ],
+                "summary": "SSE stream cho real-time cập nhật điểm ngập",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Access token",
+                        "name": "token",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "SSE stream",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/inundation/update/{id}": {
             "put": {
                 "security": [

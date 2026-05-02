@@ -58,6 +58,9 @@ func (s *service) UpdateSurvey(ctx context.Context, user *models.User, id string
 	}
 	_ = s.inundationUpdateRepo.Create(ctx, newUpdate)
 
+	// Notify SSE subscribers about the change
+	go s.notifyPointChange(existing.PointID)
+
 	return nil
 }
 

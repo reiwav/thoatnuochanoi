@@ -14,6 +14,10 @@ const useInundationStore = create((set, get) => ({
     loadingHistory: false,
     error: null,
 
+    // SSE State
+    sseConnected: false,
+    eventSource: null,
+
     // Filters & Pagination state
     filters: {
         activeTab: 0,
@@ -145,6 +149,70 @@ const useInundationStore = create((set, get) => ({
             toast.error('Lỗi khi kết thúc nhanh');
             return false;
         }
+    },
+
+    // SSE Actions
+    connectSSE: () => {
+        const { eventSource, sseConnected } = get();
+        if (eventSource || sseConnected) return;
+
+        let token = '';
+        try {
+            const authStorage = localStorage.getItem('auth-storage');
+            if (authStorage) {
+                const state = JSON.parse(authStorage);
+                token = state?.state?.token;
+            }
+            if (!token) {
+                token = localStorage.getItem('admin_token');
+            }
+        } catch (e) {
+            console.error('Failed to get token for SSE', e);
+        }
+
+        if (!token) return;
+
+        const baseUrl = import.meta.env?.VITE_APP_API_URL || '';
+        const url = `${baseUrl}/api/inundation/stream?token=${token}`;
+        
+        const es = new EventSource(url);
+        
+        let debounceTimer = null;
+        const debouncedFetch = () => {
+            if (debounceTimer) clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                get().fetchPoints();
+            }, 500);
+        };
+
+        es.addEventListener('points_updated', (e) => {
+            console.log('SSE: points_updated event received');
+            debouncedFetch();
+        });
+
+        es.addEventListener('connected', () => {
+            console.log('SSE: Connected to inundation stream');
+            set({ sseConnected: true });
+        });
+
+        es.onerror = (err) => {
+            console.error('SSE Error:', err);
+            // EventSource automatically reconnects, but we might want to update status
+            if (es.readyState === EventSource.CLOSED) {
+                set({ sseConnected: false });
+            }
+        };
+
+        set({ eventSource: es });
+    },
+
+    disconnectSSE: () => {
+        const { eventSource } = get();
+        if (eventSource) {
+            eventSource.close();
+            console.log('SSE: Disconnected');
+        }
+        set({ eventSource: null, sseConnected: false });
     }
 }));
 

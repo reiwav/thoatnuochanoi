@@ -58,6 +58,9 @@ func (s *service) ReviewReport(ctx context.Context, user *models.User, reportID,
 		_ = s.InundationReportRepo.Update(ctx, report)
 	}
 
+	// Notify SSE subscribers about the change
+	go s.notifyPointChange(report.PointID)
+
 	return nil
 }
 func (s *service) ReviewUpdate(ctx context.Context, user *models.User, updateID, comment string) error {
@@ -113,7 +116,15 @@ func (s *service) ReviewUpdate(ctx context.Context, user *models.User, updateID,
 		}
 	}
 
-	return s.InundationReportRepo.Update(ctx, report)
+	err = s.InundationReportRepo.Update(ctx, report)
+	if err != nil {
+		return err
+	}
+
+	// Notify SSE subscribers about the change
+	go s.notifyPointChange(report.PointID)
+
+	return nil
 }
 func (s *service) GetUpdateByID(ctx context.Context, updateID string) (*models.InundationUpdate, error) {
 	return s.inundationUpdateRepo.GetByID(ctx, updateID)
@@ -201,6 +212,9 @@ func (s *service) UpdateUpdateContent2(ctx context.Context, user *models.User, r
 	if shouldResolve {
 		_ = s.Resolve(ctx, report.ID, 0)
 	}
+
+	// Notify SSE subscribers about the change
+	go s.notifyPointChange(report.PointID)
 
 	return nil
 }

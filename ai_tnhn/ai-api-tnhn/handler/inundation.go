@@ -4,8 +4,11 @@ import (
 	"ai-api-tnhn/handler/filters"
 	"ai-api-tnhn/internal/dto"
 	"ai-api-tnhn/internal/models"
+	"ai-api-tnhn/internal/repository"
 	"ai-api-tnhn/internal/service/station/inundation"
 	"ai-api-tnhn/utils/web"
+	"fmt"
+	"io"
 	"strconv"
 	"time"
 
@@ -16,12 +19,18 @@ type InundationHandler struct {
 	web.JsonRender
 	service     inundation.Service
 	contextWith web.ContextWith
+	tokenRepo   repository.Token
+	userRepo    repository.User
+	roleRepo    repository.Role
 }
 
-func NewInundationHandler(service inundation.Service, contextWith web.ContextWith) *InundationHandler {
+func NewInundationHandler(service inundation.Service, contextWith web.ContextWith, tokenRepo repository.Token, userRepo repository.User, roleRepo repository.Role) *InundationHandler {
 	return &InundationHandler{
 		service:     service,
 		contextWith: contextWith,
+		tokenRepo:   tokenRepo,
+		userRepo:    userRepo,
+		roleRepo:    roleRepo,
 	}
 }
 
@@ -753,4 +762,97 @@ func (h *InundationHandler) getImages(c *gin.Context) []inundation.ImageContent 
 		}
 	}
 	return images
+}
+
+// StreamSSE godoc
+// @Summary SSE stream cho real-time cập nhật điểm ngập
+// @Description Kết nối SSE để nhận thông báo khi điểm ngập thay đổi (targeted theo permission)
+// @Tags Ngập lụt
+// @Produce text/event-stream
+// @Param token query string true "Access token"
+// @Success 200 {string} string "SSE stream"
+// @Router /inundation/stream [get]
+func (h *InundationHandler) StreamSSE(c *gin.Context) {
+	// 1. Authenticate via query param
+	token := c.Query("token")
+	if token == "" {
+		c.JSON(401, gin.H{"error": "token is required"})
+		return
+	}
+
+	tok, err := h.tokenRepo.GetByID(c.Request.Context(), token)
+	if err != nil || tok == nil {
+		c.JSON(401, gin.H{"error": "invalid token"})
+		return
+	}
+
+	user, err := h.userRepo.GetByID(c.Request.Context(), tok.UserID)
+	if err != nil || user == nil {
+		c.JSON(401, gin.H{"error": "user not found"})
+		return
+	}
+
+	// Populate role fields
+	if roleData, _ := h.roleRepo.GetByCode(c.Request.Context(), user.Role); roleData != nil {
+		user.IsEmployee = roleData.IsEmployee
+		user.IsCompany = roleData.IsCompany
+		if !user.IsCompany {
+			user.OrgID = tok.OrgID
+		}
+	}
+
+	// 2. Subscribe to SSE Hub
+	hub := h.service.GetHub()
+	if hub == nil {
+		c.JSON(500, gin.H{"error": "SSE hub not available"})
+		return
+	}
+
+	sub := &inundation.Subscriber{
+		UserID:      user.ID,
+		OrgID:       user.OrgID,
+		Role:        user.Role,
+		IsCompany:   user.IsCompany,
+		IsEmployee:  user.IsEmployee,
+		AssignedIDs: user.AssignedInundationStationIDs,
+	}
+	ch := hub.Subscribe(sub)
+
+	// 3. Set SSE headers
+	c.Writer.Header().Set("Content-Type", "text/event-stream")
+	c.Writer.Header().Set("Cache-Control", "no-cache")
+	c.Writer.Header().Set("Connection", "keep-alive")
+	c.Writer.Header().Set("X-Accel-Buffering", "no") // Disable nginx buffering
+	c.Writer.Flush()
+
+	// Send initial connection event
+	fmt.Fprintf(c.Writer, "event: connected\ndata: ok\n\n")
+	c.Writer.Flush()
+
+	// 4. Stream events
+	clientGone := c.Request.Context().Done()
+	heartbeat := time.NewTicker(30 * time.Second)
+	defer heartbeat.Stop()
+	defer hub.Unsubscribe(user.ID)
+
+	for {
+		select {
+		case <-clientGone:
+			return
+		case event, ok := <-ch:
+			if !ok {
+				// Channel closed (user reconnected elsewhere)
+				return
+			}
+			fmt.Fprintf(c.Writer, "event: %s\ndata: {}\n\n", event)
+			c.Writer.Flush()
+			// Check if client is still connected
+			if _, err := io.WriteString(c.Writer, ""); err != nil {
+				return
+			}
+		case <-heartbeat.C:
+			fmt.Fprintf(c.Writer, ": heartbeat\n\n")
+			c.Writer.Flush()
+		}
+	}
 }

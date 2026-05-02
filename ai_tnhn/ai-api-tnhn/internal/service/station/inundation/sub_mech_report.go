@@ -95,5 +95,8 @@ func (s *service) UpdateMech(ctx context.Context, user *models.User, id string, 
 		_ = s.Resolve(ctx, id, 0)
 	}
 
+	// Notify SSE subscribers about the change
+	go s.notifyPointChange(existing.PointID)
+
 	return nil
 }

@@ -28,6 +28,10 @@ func (s *service) UpdateUpdateSitution(ctx context.Context, user *models.User, r
 	go s.inundationUpdateRepo.Create(ctx, &models.InundationUpdate{
 		InundationReportBase: report.InundationReportBase,
 	})
+
+	// Notify SSE subscribers about the change
+	go s.notifyPointChange(report.PointID)
+
 	return report, err
 }
 
@@ -117,6 +121,9 @@ func (s *service) UpdateReport(ctx context.Context, user *models.User, id string
 	if shouldResolve {
 		_ = s.QuickFinishV2(ctx, user, id)
 	}
+
+	// Notify SSE subscribers about the change
+	go s.notifyPointChange(existing.PointID)
 
 	return nil
 }

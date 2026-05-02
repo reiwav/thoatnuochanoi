@@ -59,12 +59,17 @@ const EmployeeInundationDashboard = () => {
         fetchPermissions();
     }, []);
 
-    // Polling Logic (20s)
+    // SSE + fallback polling (60s)
     useEffect(() => {
+        const { connectSSE, disconnectSSE } = useInundationStore.getState();
+        connectSSE();
         const interval = setInterval(() => {
             if (activeTab <= 1) fetchPoints();
-        }, 20000);
-        return () => clearInterval(interval);
+        }, 60000);
+        return () => {
+            disconnectSSE();
+            clearInterval(interval);
+        };
     }, [activeTab]);
 
     // History Pagination Fetch

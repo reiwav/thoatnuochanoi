@@ -80,12 +80,17 @@ const AdminInundationDashboard = () => {
         }
     }, [filters.activeTab, filters.orgFilter, filters.fromTime, filters.toTime, filters.isFlooding, page]);
 
-    // Polling (10s)
+    // SSE + fallback polling (60s)
     useEffect(() => {
+        const { connectSSE, disconnectSSE } = useInundationStore.getState();
+        connectSSE();
         const interval = setInterval(() => {
             fetchPoints();
-        }, 10000);
-        return () => clearInterval(interval);
+        }, 60000);
+        return () => {
+            disconnectSSE();
+            clearInterval(interval);
+        };
     }, []);
 
     const floodedCount = useMemo(() => points.filter(p => !!p.report_id).length, [points]);

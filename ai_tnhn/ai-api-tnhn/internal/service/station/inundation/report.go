@@ -208,7 +208,11 @@ func (s *service) Resolve(ctx context.Context, reportID string, endTime int64) e
 		_ = s.inundationStationRepo.Update(ctx, point)
 	}
 
-	return s.InundationReportRepo.Resolve(ctx, reportID, endTime)
+	err = s.InundationReportRepo.Resolve(ctx, reportID, endTime)
+	if err == nil {
+		go s.notifyPointChange(report.PointID)
+	}
+	return err
 }
 
 func (s *service) QuickFinish(ctx context.Context, user *models.User, pointID string) error {

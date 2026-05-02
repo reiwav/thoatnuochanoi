@@ -4628,61 +4628,6 @@ paths:
       summary: Cập nhật thông tin cá nhân
       tags:
       - Xác thực
-  /inundation/{id}/update:
-    post:
-      consumes:
-      - multipart/form-data
-      description: Thêm thông tin cập nhật cho một báo cáo ngập lụt hiện có
-      parameters:
-      - description: ID báo cáo
-        in: path
-        name: id
-        required: true
-        type: string
-      - example: 10
-        in: formData
-        name: depth
-        type: number
-      - example: Đã rút bớt nước
-        in: formData
-        name: description
-        type: string
-      - example: 50m
-        in: formData
-        name: length
-        type: string
-      - example: false
-        in: formData
-        name: resolve
-        type: boolean
-      - example: BINH_THUONG
-        in: formData
-        name: traffic_status
-        type: string
-      - example: 20m
-        in: formData
-        name: width
-        type: string
-      - description: Hình ảnh cập nhật
-        in: formData
-        name: images
-        type: file
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.InundationUpdate'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/web.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Thêm cập nhật tình hình
-      tags:
-      - Ngập lụt
   /inundation/points:
     post:
       consumes:
@@ -5342,27 +5287,68 @@ paths:
         name: id
         required: true
         type: string
-      - example: 10
+      - example: 20
         in: formData
         name: depth
         type: number
-      - example: Đã rút bớt nước
+      - example: Ngập nhẹ
         in: formData
         name: description
         type: string
-      - example: 50m
+      - example: '#FFD600'
+        in: formData
+        name: flood_level_color
+        type: string
+      - example: Ngập nhẹ
+        in: formData
+        name: flood_level_name
+        type: string
+      - collectionFormat: csv
+        description: Initial images
+        example:
+        - '["img1.jpg"'
+        - ' "img2.jpg"]'
+        in: formData
+        items:
+          type: string
+        name: images
+        type: array
+      - in: formData
+        name: is_flooding
+        type: boolean
+      - example: 100m
         in: formData
         name: length
+        type: string
+      - example: point_123
+        in: formData
+        name: point_id
         type: string
       - example: false
         in: formData
         name: resolve
         type: boolean
-      - example: BINH_THUONG
+      - example: Phố Huế
+        in: formData
+        name: street_name
+        type: string
+      - example: DI_CHUYEN_CHAM
         in: formData
         name: traffic_status
         type: string
-      - example: 20m
+      - example: emp@hsdc.com.vn
+        in: formData
+        name: user_email
+        type: string
+      - example: 60a123456789
+        in: formData
+        name: user_id
+        type: string
+      - example: Nguyễn Văn B
+        in: formData
+        name: user_name
+        type: string
+      - example: 50m
         in: formData
         name: width
         type: string

@@ -6700,20 +6700,57 @@ const docTemplate = `{
                     },
                     {
                         "type": "number",
-                        "example": 10,
+                        "example": 20,
                         "name": "depth",
                         "in": "formData"
                     },
                     {
                         "type": "string",
-                        "example": "Đã rút bớt nước",
+                        "example": "Ngập nhẹ",
                         "name": "description",
                         "in": "formData"
                     },
                     {
                         "type": "string",
-                        "example": "50m",
+                        "example": "#FFD600",
+                        "name": "flood_level_color",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "Ngập nhẹ",
+                        "name": "flood_level_name",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "example": [
+                            "[\"img1.jpg\"",
+                            " \"img2.jpg\"]"
+                        ],
+                        "description": "Initial images",
+                        "name": "images",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "boolean",
+                        "name": "is_flooding",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "100m",
                         "name": "length",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "point_123",
+                        "name": "point_id",
                         "in": "formData"
                     },
                     {
@@ -6724,13 +6761,37 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "example": "BINH_THUONG",
+                        "example": "Phố Huế",
+                        "name": "street_name",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "DI_CHUYEN_CHAM",
                         "name": "traffic_status",
                         "in": "formData"
                     },
                     {
                         "type": "string",
-                        "example": "20m",
+                        "example": "emp@hsdc.com.vn",
+                        "name": "user_email",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "60a123456789",
+                        "name": "user_id",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "Nguyễn Văn B",
+                        "name": "user_name",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "50m",
                         "name": "width",
                         "in": "formData"
                     },
@@ -6896,91 +6957,6 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "type": "file"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/web.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/inundation/{id}/update": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Thêm thông tin cập nhật cho một báo cáo ngập lụt hiện có",
-                "consumes": [
-                    "multipart/form-data"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Ngập lụt"
-                ],
-                "summary": "Thêm cập nhật tình hình",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ID báo cáo",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "number",
-                        "example": 10,
-                        "name": "depth",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "Đã rút bớt nước",
-                        "name": "description",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "50m",
-                        "name": "length",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "boolean",
-                        "example": false,
-                        "name": "resolve",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "BINH_THUONG",
-                        "name": "traffic_status",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "20m",
-                        "name": "width",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "file",
-                        "description": "Hình ảnh cập nhật",
-                        "name": "images",
-                        "in": "formData"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.InundationUpdate"
                         }
                     },
                     "401": {

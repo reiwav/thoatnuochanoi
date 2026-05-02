@@ -43,12 +43,16 @@ type InundationReport struct {
 }
 
 type InundationReportBase struct {
-	PointID         string   `bson:"pointid" form:"point_id" json:"point_id" example:"point_123"`
-	StreetName      string   `bson:"streetname" form:"street_name" json:"street_name" example:"Phố Huế"`
-	Depth           float64  `bson:"depth" form:"depth" json:"depth" example:"20"`
-	Length          string   `bson:"length" form:"length" json:"length" example:"100m"`
-	Width           string   `bson:"width" form:"width" json:"width" example:"50m"`
-	Description     string   `bson:"description" form:"description" json:"description" example:"Ngập nhẹ"`
+	PointID     string  `bson:"pointid" form:"point_id" json:"point_id" example:"point_123"`
+	StreetName  string  `bson:"streetname" form:"street_name" json:"street_name" example:"Phố Huế"`
+	Depth       float64 `bson:"depth" form:"depth" json:"depth" example:"20"`
+	Length      string  `bson:"length" form:"length" json:"length" example:"100m"`
+	Width       string  `bson:"width" form:"width" json:"width" example:"50m"`
+	Description string  `bson:"description" form:"description" json:"description" example:"Ngập nhẹ"`
+	ReportBase  `bson:",inline"`
+}
+
+type ReportBase struct {
 	TrafficStatus   string   `bson:"trafficstatus" form:"traffic_status" json:"traffic_status" example:"DI_CHUYEN_CHAM"`
 	FloodLevelName  string   `bson:"flood_level_name" form:"flood_level_name" json:"flood_level_name" example:"Ngập nhẹ"`
 	FloodLevelColor string   `bson:"flood_level_color" form:"flood_level_color" json:"flood_level_color" example:"#FFD600"`

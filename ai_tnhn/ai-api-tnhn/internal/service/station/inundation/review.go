@@ -1,11 +1,12 @@
 package inundation
 
 import (
+	"ai-api-tnhn/constant"
+	"ai-api-tnhn/internal/dto"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/utils/web"
 	"context"
 	"fmt"
-	"time"
 )
 
 func (s *service) ReviewReport(ctx context.Context, user *models.User, reportID, comment string) error {
@@ -18,27 +19,16 @@ func (s *service) ReviewReport(ctx context.Context, user *models.User, reportID,
 	if err != nil {
 		return err
 	}
-	if report.Status != "active" {
+	if report.Status != constant.InundationStatusActive {
 		return fmt.Errorf("chỉ được phép nhận xét khi báo cáo đang ở trạng thái active")
 	}
 
 	// Permission Check
 	isAllowedAll := user.Role == "super_admin" || user.IsCompany
 	if !isAllowedAll {
-		isAuthorized := report.OrgID == user.OrgID
-		if !isAuthorized && user.OrgID != "" {
-			point, err := s.inundationStationRepo.GetByID(ctx, report.PointID)
-			if err == nil && point != nil {
-				for _, sid := range point.SharedOrgIDs {
-					if sid == user.OrgID {
-						isAuthorized = true
-						break
-					}
-				}
-			}
-		}
-		if !isAuthorized {
-			return web.Unauthorized("Bạn không có quyền nhận xét bản tin này")
+		err := s.validatePermission(ctx, user, report)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -85,27 +75,16 @@ func (s *service) ReviewUpdate(ctx context.Context, user *models.User, updateID,
 	if err != nil {
 		return err
 	}
-	if report.Status != "active" {
+	if report.Status != constant.InundationStatusActive {
 		return fmt.Errorf("chỉ được phép nhận xét khi báo cáo đang ở trạng thái active")
 	}
 
 	// Permission Check
 	isAllowedAll := user.Role == "super_admin" || user.IsCompany
 	if !isAllowedAll {
-		isAuthorized := report.OrgID == user.OrgID
-		if !isAuthorized && user.OrgID != "" {
-			point, err := s.inundationStationRepo.GetByID(ctx, report.PointID)
-			if err == nil && point != nil {
-				for _, sid := range point.SharedOrgIDs {
-					if sid == user.OrgID {
-						isAuthorized = true
-						break
-					}
-				}
-			}
-		}
-		if !isAuthorized {
-			return web.Unauthorized("Bạn không có quyền nhận xét bản tin này")
+		err := s.validatePermission(ctx, user, report)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -139,9 +118,9 @@ func (s *service) ReviewUpdate(ctx context.Context, user *models.User, updateID,
 func (s *service) GetUpdateByID(ctx context.Context, updateID string) (*models.InundationUpdate, error) {
 	return s.inundationUpdateRepo.GetByID(ctx, updateID)
 }
-func (s *service) UpdateUpdateContent(ctx context.Context, user *models.User, updatedData *models.InundationUpdate, images []ImageContent) error {
+func (s *service) UpdateUpdateContent2(ctx context.Context, user *models.User, reportID string, updatedData dto.AddUpdateSitutionRequest, images []ImageContent) error {
 	// 1. Get the parent report
-	report, err := s.InundationReportRepo.GetByID(ctx, updatedData.ReportID)
+	report, err := s.InundationReportRepo.GetByID(ctx, reportID)
 	if err != nil {
 		return err
 	}
@@ -162,24 +141,13 @@ func (s *service) UpdateUpdateContent(ctx context.Context, user *models.User, up
 		if !report.NeedsCorrection {
 			return web.Forbidden("Chỉ được phép sửa thông tin khi có yêu cầu (nhận xét) từ người rà soát")
 		}
-		if report.OrgID != user.OrgID {
-			return web.Unauthorized("Bạn không có quyền chỉnh sửa bản tin của đơn vị khác")
-		}
+		// if report.OrgID != user.OrgID {
+		// 	return web.Unauthorized("Bạn không có quyền chỉnh sửa bản tin của đơn vị khác")
+		// }
 	} else if !isAllowedAll {
-		isAuthorized := report.OrgID == user.OrgID
-		if !isAuthorized && user.OrgID != "" {
-			point, err := s.inundationStationRepo.GetByID(ctx, report.PointID)
-			if err == nil && point != nil {
-				for _, sid := range point.SharedOrgIDs {
-					if sid == user.OrgID {
-						isAuthorized = true
-						break
-					}
-				}
-			}
-		}
-		if !isAuthorized {
-			return web.Unauthorized("Bạn không có quyền chỉnh sửa bản tin này")
+		err := s.validatePermission(ctx, user, report)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -202,14 +170,11 @@ func (s *service) UpdateUpdateContent(ctx context.Context, user *models.User, up
 	update.IsReviewUpdated = true
 
 	if len(images) > 0 {
-		savedPaths, err := s.saveLocalImages(fmt.Sprintf("%s_fix_%d", updateID, time.Now().Unix()), images)
-		if err == nil {
-			newImages := []string{}
-			for _, path := range savedPaths {
-				newImages = append(newImages, "local:"+path)
-			}
-			update.Images = newImages
+		imagesSave, err := s.saveAndGetImages(images, updateID)
+		if err != nil {
+			return err
 		}
+		update.Images = imagesSave
 	}
 
 	// 4. Save the updated record
@@ -232,10 +197,29 @@ func (s *service) UpdateUpdateContent(ctx context.Context, user *models.User, up
 	report.IsReviewUpdated = true
 
 	_ = s.InundationReportRepo.Update(ctx, report)
-	
+
 	if shouldResolve {
 		_ = s.Resolve(ctx, report.ID, 0)
 	}
 
+	return nil
+}
+
+func (s *service) validatePermission(ctx context.Context, user *models.User, report *models.InundationReport) error {
+	isAuthorized := report.OrgID == user.OrgID
+	if !isAuthorized && user.OrgID != "" {
+		point, err := s.inundationStationRepo.GetByID(ctx, report.PointID)
+		if err == nil && point != nil {
+			for _, sid := range point.SharedOrgIDs {
+				if sid == user.OrgID {
+					isAuthorized = true
+					break
+				}
+			}
+		}
+	}
+	if !isAuthorized {
+		return web.Unauthorized("Bạn không có quyền chỉnh sửa bản tin này")
+	}
 	return nil
 }

@@ -2,6 +2,7 @@ package inundation
 
 import (
 	"ai-api-tnhn/internal/base/mgo/filter"
+	"ai-api-tnhn/internal/dto"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/repository"
 	"ai-api-tnhn/internal/service/google/googledrive"
@@ -11,13 +12,12 @@ import (
 
 type Service interface {
 	CreateReport(ctx context.Context, user *models.User, report models.InundationReportBase, images []ImageContent) (*models.InundationReport, error)
-	AddUpdate(ctx context.Context, user *models.User, reportID string, update *models.InundationUpdate, images []ImageContent, resolve bool) error
+	UpdateUpdateSitution(ctx context.Context, user *models.User, reportID string, update dto.AddUpdateSitutionRequest, images []ImageContent) (*models.InundationReport, error)
 	ListReports(ctx context.Context, orgID string) ([]*models.InundationReport, int64, error)
 	ListReportsWithFilter(ctx context.Context, user *models.User, isAllowedAll bool, orgIDFilter string, f filter.Filter) ([]*models.InundationReport, int64, error)
 	GetReport(ctx context.Context, user *models.User, reportID string) (*models.InundationReport, error)
 	ListReportUpdates(ctx context.Context, reportID string) ([]models.InundationUpdate, error)
-	Resolve(ctx context.Context, reportID string, endTime int64) error
-	QuickFinish(ctx context.Context, user *models.User, pointID string) error
+	QuickFinishV2(ctx context.Context, user *models.User, reportID string) error
 	UpdateReport(ctx context.Context, user *models.User, id string, report *models.InundationReportBase, images []ImageContent) error
 	UpdateSurvey(ctx context.Context, user *models.User, id string, report *models.ReportSurveyBase, images []ImageContent) error
 	UpdateMech(ctx context.Context, user *models.User, id string, report *models.ReportMechBase, images []ImageContent) error
@@ -26,7 +26,8 @@ type Service interface {
 	ReviewReport(ctx context.Context, user *models.User, reportID, comment string) error
 	ReviewUpdate(ctx context.Context, user *models.User, updateID, comment string) error
 	GetUpdateByID(ctx context.Context, updateID string) (*models.InundationUpdate, error)
-	UpdateUpdateContent(ctx context.Context, user *models.User, update *models.InundationUpdate, images []ImageContent) error
+	//UpdateUpdateContent(ctx context.Context, user *models.User, update *models.InundationUpdate, images []ImageContent) error
+	UpdateUpdateContent2(ctx context.Context, user *models.User, reportID string, update dto.AddUpdateSitutionRequest, images []ImageContent) error
 
 	// Points management
 	GetPointsStatus(ctx context.Context, user *models.User, isAllowedAll bool, orgIDFilter string) ([]PointStatus, error)

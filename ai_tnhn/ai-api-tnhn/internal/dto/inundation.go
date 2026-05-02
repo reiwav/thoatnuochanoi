@@ -1,5 +1,7 @@
 package dto
 
+import "ai-api-tnhn/internal/models"
+
 // CreateReportRequest defines the inputs for creating a new inundation report
 type CreateReportRequest struct {
 	PointID       string `form:"point_id" json:"point_id" binding:"required" example:"point_123"`
@@ -33,12 +35,8 @@ type UpdateReportRequest struct {
 
 // AddUpdateSitutionRequest defines the inputs for adding a situational update to an active report
 type AddUpdateSitutionRequest struct {
-	Description   string  `form:"description" json:"description" example:"Đã rút bớt nước"`
-	Depth         float64 `form:"depth" json:"depth" example:"10"`
-	TrafficStatus string  `form:"traffic_status" json:"traffic_status" example:"BINH_THUONG"`
-	Length        string  `form:"length" json:"length" example:"50m"`
-	Width         string  `form:"width" json:"width" example:"20m"`
-	Resolve       bool    `form:"resolve" json:"resolve" example:"false"`
+	models.InundationReportBase
+	Resolve bool `form:"resolve" json:"resolve" example:"false"`
 }
 
 // ReviewRequest defines the inputs for adding a review comment

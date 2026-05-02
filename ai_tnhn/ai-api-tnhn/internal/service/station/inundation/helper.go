@@ -123,6 +123,21 @@ func (s *service) saveLocalImages(prefix string, images []ImageContent) ([]strin
 	return savedPaths, nil
 }
 
+func (s *service) saveAndGetImages(images []ImageContent, reportID string) ([]string, error) {
+	if len(images) > 0 {
+		var imagesSave = make([]string, 0)
+		savedPaths, err := s.saveLocalImages(fmt.Sprintf("%s_%d", reportID, time.Now().UnixNano()), images)
+		if err != nil {
+			return nil, err
+		}
+		for _, path := range savedPaths {
+			imagesSave = append(imagesSave, "local:"+path)
+		}
+		return imagesSave, err
+	}
+	return nil, nil
+}
+
 func (s *service) calculateFloodLevel(ctx context.Context, depth float64) *models.FloodLevel {
 	setting, err := s.settingSvc.GetByCode(ctx, "FloodLevel")
 	if err != nil || setting == nil {

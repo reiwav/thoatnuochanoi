@@ -65,20 +65,7 @@ func (h *InundationHandler) CreateReport(c *gin.Context) {
 	h.SendData(c, report)
 }
 
-// AddUpdateSituation godoc
-// @Summary Thêm cập nhật tình hình
-// @Description Thêm thông tin cập nhật cho một báo cáo ngập lụt hiện có
-// @Tags Ngập lụt
-// @Accept multipart/form-data
-// @Produce json
-// @Security BearerAuth
-// @Param id path string true "ID báo cáo"
-// @Param update formData dto.AddUpdateSitutionRequest true "Dữ liệu cập nhật"
-// @Param images formData file false "Hình ảnh cập nhật"
-// @Success 200 {object} models.InundationUpdate
-// @Failure 401 {object} web.ErrorResponse
-// @Router /inundation/{id}/update [post]
-func (h *InundationHandler) AddUpdateSituation(c *gin.Context) {
+func (h *InundationHandler) AddUpdateSituation2(c *gin.Context) {
 	id := c.Param("id")
 	var req dto.AddUpdateSitutionRequest
 	if err := c.ShouldBind(&req); err != nil {
@@ -87,30 +74,11 @@ func (h *InundationHandler) AddUpdateSituation(c *gin.Context) {
 	}
 
 	images := h.getImages(c)
-
-	update := &models.InundationUpdate{
-		ReportID: id,
-		InundationReportBase: models.InundationReportBase{
-			Description:   req.Description,
-			Depth:         req.Depth,
-			TrafficStatus: req.TrafficStatus,
-			Length:        req.Length,
-			Width:         req.Width,
-		},
-	}
-
 	user, err := h.contextWith.GetUser(c)
-	if err != nil || user == nil {
-		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
-		return
-	}
-	err = h.service.AddUpdate(c.Request.Context(), user, id, update, images, req.Resolve)
-	if err != nil {
-		h.SendError(c, err)
-		return
-	}
-
-	h.SendData(c, update)
+	web.AssertNil(err)
+	report, err := h.service.UpdateUpdateSitution(c.Request.Context(), user, id, req, images)
+	web.AssertNil(err)
+	h.SendData(c, report)
 }
 
 // GetReport godoc
@@ -190,7 +158,7 @@ func (h *InundationHandler) QuickFinish(c *gin.Context) {
 		return
 	}
 
-	err = h.service.QuickFinish(c.Request.Context(), user, req.PointID)
+	err = h.service.QuickFinishV2(c.Request.Context(), user, req.PointID)
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -586,7 +554,7 @@ func (h *InundationHandler) UpdateSituationUpdateContent(c *gin.Context) {
 		return
 	}
 
-	id := c.Param("id")
+	reportID := c.Param("id")
 	var req dto.AddUpdateSitutionRequest
 	if err := c.ShouldBind(&req); err != nil {
 		h.SendError(c, web.BadRequest("Invalid request data: "+err.Error()))
@@ -595,18 +563,20 @@ func (h *InundationHandler) UpdateSituationUpdateContent(c *gin.Context) {
 
 	images := h.getImages(c)
 
-	updatedUpdate := &models.InundationUpdate{
-		ReportID: id,
-		InundationReportBase: models.InundationReportBase{
-			Description:   req.Description,
-			Depth:         req.Depth,
-			Length:        req.Length,
-			Width:         req.Width,
-			TrafficStatus: req.TrafficStatus,
-		},
-	}
+	// updatedUpdate := &models.InundationUpdate{
+	// 	ReportID: id,
+	// 	InundationReportBase: models.InundationReportBase{
+	// 		Description: req.Description,
+	// 		Depth:       req.Depth,
+	// 		Length:      req.Length,
+	// 		Width:       req.Width,
+	// 		ReportBase: models.ReportBase{
+	// 			TrafficStatus: req.TrafficStatus,
+	// 		},
+	// 	},
+	// }
 
-	err = h.service.UpdateUpdateContent(c.Request.Context(), user, updatedUpdate, images)
+	err = h.service.UpdateUpdateContent2(c.Request.Context(), user, reportID, req, images)
 	if err != nil {
 		h.SendError(c, err)
 		return

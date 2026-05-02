@@ -7,7 +7,6 @@ import (
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/repository/query"
 	"ai-api-tnhn/internal/service/permission"
-	"ai-api-tnhn/internal/service/role"
 	"context"
 
 	"github.com/joho/godotenv"
@@ -35,8 +34,8 @@ func main() {
 	rolePermRepo := query.NewRolePermissionRepo(mgo.DB, "role_permissions", "rp", logSvc)
 	permService := permission.NewService(permRepo, rolePermRepo)
 
-	roleRepo := query.NewRoleRepo(mgo.DB, "roles", "role", logSvc)
-	roleService := role.NewService(roleRepo)
+	//roleRepo := query.NewRoleRepo(mgo.DB, "roles", "role", logSvc)
+	//roleService := role.NewService(roleRepo)
 
 	log.Info("Starting database seeding (Role-Permission Matrix)...")
 
@@ -182,27 +181,27 @@ func main() {
 	// 	allPermCodes = append(allPermCodes, p.Code)
 	// }
 
-	for _, r := range initialRoles {
-		existing, _ := roleService.GetByCode(ctx, r.Code)
-		if existing == nil {
-			_ = roleService.Create(ctx, &r)
-			log.Infof("✓ Created Role entity: %s", r.Name)
-		} else {
-			// Update to ensure not deleted and has correct level
-			existing.Name = r.Name
-			existing.Level = r.Level
-			existing.IsCompany = r.IsCompany
-			existing.IsEmployee = r.IsEmployee
-			existing.DTime = 0 // Un-delete
-			_ = roleService.Update(ctx, existing.ID, existing)
-			log.Infof("✓ Updated Role entity: %s", r.Name)
-		}
-	}
+	// for _, r := range initialRoles {
+	// 	existing, _ := roleService.GetByCode(ctx, r.Code)
+	// 	if existing == nil {
+	// 		_ = roleService.Create(ctx, &r)
+	// 		log.Infof("✓ Created Role entity: %s", r.Name)
+	// 	} else {
+	// 		// Update to ensure not deleted and has correct level
+	// 		existing.Name = r.Name
+	// 		existing.Level = r.Level
+	// 		existing.IsCompany = r.IsCompany
+	// 		existing.IsEmployee = r.IsEmployee
+	// 		existing.DTime = 0 // Un-delete
+	// 		_ = roleService.Update(ctx, existing.ID, existing)
+	// 		log.Infof("✓ Updated Role entity: %s", r.Name)
+	// 	}
+	// }
 
-	allPermCodes := []string{}
-	for _, p := range initialPermissions {
-		allPermCodes = append(allPermCodes, p.Code)
-	}
+	// allPermCodes := []string{}
+	// for _, p := range initialPermissions {
+	// 	allPermCodes = append(allPermCodes, p.Code)
+	// }
 
 	// // 5. Phòng Kỹ thuật chất lượng (phong_kt_cl)
 	// // Theo DB: Xem/Nhập tất cả VH + AI báo cáo + Xem quản trị cơ bản

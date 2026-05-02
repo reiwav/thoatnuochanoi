@@ -3,6 +3,7 @@ package repository
 import (
 	"ai-api-tnhn/internal/models"
 	"context"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -13,6 +14,7 @@ type Rain interface {
 	GetLatest(ctx context.Context, stationID int64) (*models.RainRecord, error)
 	GetAggregateStats(ctx context.Context, filter bson.M, groupBy string) ([]map[string]interface{}, error)
 	Create(ctx context.Context, record *models.RainRecord) error
+	Exists(ctx context.Context, stationID int64, timestamp time.Time) (bool, error)
 }
 
 type Lake interface {
@@ -20,6 +22,7 @@ type Lake interface {
 	GetByDate(ctx context.Context, date string) ([]*models.LakeRecord, error)
 	GetLatest(ctx context.Context, stationID int64) (*models.LakeRecord, error)
 	Create(ctx context.Context, record *models.LakeRecord) error
+	Exists(ctx context.Context, stationID int64, timestamp time.Time) (bool, error)
 }
 
 type River interface {
@@ -27,4 +30,5 @@ type River interface {
 	GetByDate(ctx context.Context, date string) ([]*models.RiverRecord, error)
 	GetLatest(ctx context.Context, stationID int64) (*models.RiverRecord, error)
 	Create(ctx context.Context, record *models.RiverRecord) error
+	Exists(ctx context.Context, stationID int64, timestamp time.Time) (bool, error)
 }

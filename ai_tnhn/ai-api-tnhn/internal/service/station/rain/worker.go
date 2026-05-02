@@ -23,13 +23,14 @@ type worker struct {
 	sessionID    string
 }
 
+// ASP.NET_SessionId=kzela2aw0gdvzxvrthicl14n
 func NewWorker(l logger.Logger, rain repository.Rain, stationSvc station.Service, thoatnuocSvc thoatnuoc.Service) Worker {
 	return &worker{
 		logger:       l,
 		rainRepo:     rain,
 		stationSvc:   stationSvc,
 		thoatnuocSvc: thoatnuocSvc,
-		sessionID:    "5xazplb5mwlmi4hr0hyqy0th", // Hardcoded session ID
+		sessionID:    "kzela2aw0gdvzxvrthicl14n", // Hardcoded session ID
 	}
 }
 
@@ -39,7 +40,7 @@ func (w *worker) Start(ctx context.Context) {
 }
 
 func (w *worker) run(ctx context.Context) {
-	ticker := time.NewTicker(15 * time.Second)
+	ticker := time.NewTicker(1 * time.Minute)
 	defer ticker.Stop()
 
 	// Initial sync
@@ -67,13 +68,11 @@ func (w *worker) sync(ctx context.Context) {
 			continue
 		}
 		w.syncStation(ctx, s)
+		time.Sleep(time.Millisecond * 200)
 	}
 }
 
 func (w *worker) syncStation(ctx context.Context, s *models.RainStation) {
-	if s.OldID != 33 {
-		return
-	}
 	latest, err := w.rainRepo.GetLatest(ctx, int64(s.OldID))
 	var startDate time.Time
 	if err == nil && latest != nil {
@@ -85,25 +84,43 @@ func (w *worker) syncStation(ctx context.Context, s *models.RainStation) {
 
 	// Iterate from startDate to today
 	now := time.Now()
+	totalInserted := 0
 	for d := startDate; !d.After(now); d = d.AddDate(0, 0, 1) {
-		w.fetchAndSave(ctx, s, d, latest)
+		totalInserted += w.fetchAndSave(ctx, s, d, latest)
+	}
+
+	// If no data found up to now, save a marker for the previous day to avoid re-scanning
+	if totalInserted == 0 {
+		markerTime := now.AddDate(0, 0, -1)
+		// Only save if this marker is actually newer than what we have
+		if latest == nil || markerTime.After(latest.Timestamp) {
+			record := &models.RainRecord{
+				StationID:   int64(s.OldID),
+				StationName: s.TenTram,
+				Date:        markerTime.Format("2006-01-02"),
+				Timestamp:   markerTime,
+				Value:       0,
+			}
+			_ = w.rainRepo.Create(ctx, record)
+			w.logger.GetLogger().Infof("RainWorker: Saved marker (0) for station %s at %v to avoid re-scan", s.TenTram, markerTime)
+		}
 	}
 }
 
-func (w *worker) fetchAndSave(ctx context.Context, s *models.RainStation, date time.Time, latest *models.RainRecord) {
+func (w *worker) fetchAndSave(ctx context.Context, s *models.RainStation, date time.Time, latest *models.RainRecord) int {
 	dateStr := date.Format("2006-01-02")
 	w.logger.GetLogger().Infof("RainWorker: [DEBUG] Fetching data for station %s (%d) on %s", s.TenTram, s.OldID, dateStr)
-	dateStr = "2026-05-02"
+
 	dataPoints, err := w.thoatnuocSvc.GetRainChartData(ctx, w.sessionID, s.OldID, dateStr)
 	fmt.Println("====== dataPoints: ", len(dataPoints))
 	if err != nil {
 		w.logger.GetLogger().Errorf("RainWorker: Failed to fetch data for station %s on %s: %v", s.TenTram, dateStr, err)
-		return
+		return 0
 	}
 
 	if len(dataPoints) == 0 {
 		w.logger.GetLogger().Infof("RainWorker: [DEBUG] No data points returned for station %s on %s", s.TenTram, dateStr)
-		return
+		return 0
 	}
 
 	w.logger.GetLogger().Infof("RainWorker: [DEBUG] Received %d points for station %s on %s", len(dataPoints), s.TenTram, dateStr)
@@ -118,10 +135,17 @@ func (w *worker) fetchAndSave(ctx context.Context, s *models.RainStation, date t
 		}
 
 		// Skip if already in DB (check against latest timestamp)
-		if latest != nil && !ts.After(latest.Timestamp) {
+		if latest != nil && !ts.In(time.UTC).After(latest.Timestamp.In(time.UTC)) {
 			skipped++
 			continue
 		}
+
+		// Extra check to ensure same timestamp is not saved
+		// exists, err := w.rainRepo.Exists(ctx, int64(s.OldID), ts)
+		// if err == nil && exists {
+		// 	skipped++
+		// 	continue
+		// }
 
 		record := &models.RainRecord{
 			StationID:   int64(s.OldID),
@@ -140,4 +164,5 @@ func (w *worker) fetchAndSave(ctx context.Context, s *models.RainStation, date t
 	}
 
 	w.logger.GetLogger().Infof("RainWorker: Finished station %s on %s. Inserted: %d, Skipped: %d", s.TenTram, dateStr, inserted, skipped)
+	return inserted
 }

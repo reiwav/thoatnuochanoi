@@ -6,6 +6,7 @@ import (
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/repository"
 	"context"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -53,6 +54,14 @@ func (p rainRepository) GetLatest(ctx context.Context, stationID int64) (*models
 		return nil, nil
 	}
 	return m, err
+}
+
+func (p rainRepository) Exists(ctx context.Context, stationID int64, timestamp time.Time) (bool, error) {
+	count, err := p.Collection.CountDocuments(ctx, bson.M{
+		"station_id": stationID,
+		"timestamp":  timestamp,
+	})
+	return count > 0, err
 }
 
 func (p rainRepository) GetAggregateStats(ctx context.Context, filter bson.M, groupBy string) ([]map[string]interface{}, error) {
@@ -143,6 +152,14 @@ func (p lakeRepository) Create(ctx context.Context, record *models.LakeRecord) e
 	return p.R_Create(ctx, record)
 }
 
+func (p lakeRepository) Exists(ctx context.Context, stationID int64, timestamp time.Time) (bool, error) {
+	count, err := p.Collection.CountDocuments(ctx, bson.M{
+		"station_id": stationID,
+		"timestamp":  timestamp,
+	})
+	return count > 0, err
+}
+
 // =============================================================================
 
 type riverRepository struct {
@@ -189,4 +206,12 @@ func (p riverRepository) GetLatest(ctx context.Context, stationID int64) (*model
 }
 func (p riverRepository) Create(ctx context.Context, record *models.RiverRecord) error {
 	return p.R_Create(ctx, record)
+}
+
+func (p riverRepository) Exists(ctx context.Context, stationID int64, timestamp time.Time) (bool, error) {
+	count, err := p.Collection.CountDocuments(ctx, bson.M{
+		"station_id": stationID,
+		"timestamp":  timestamp,
+	})
+	return count > 0, err
 }

@@ -8,6 +8,12 @@ const StationDesktopRow = ({ row, canEdit, canDelete, handleOpenEdit, handleDele
         <TableCell sx={{ fontWeight: 800, fontSize: '1rem', color: 'primary.dark' }}>
             {row.TenTram}
         </TableCell>
+        <TableCell sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>
+            {row.TenTramHTML || '-'}
+        </TableCell>
+        <TableCell sx={{ fontSize: '0.9rem', fontWeight: 700 }}>
+            {row.OldID || row.Id || '-'}
+        </TableCell>
         <TableCell sx={{ fontSize: '0.9rem', fontWeight: 600 }}>
             {organizationName || '-'}
         </TableCell>

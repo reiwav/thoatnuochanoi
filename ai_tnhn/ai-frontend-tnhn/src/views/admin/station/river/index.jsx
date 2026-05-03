@@ -97,6 +97,8 @@ const StationMobileCard = ({ row, canEdit, canDelete, handleOpenEdit, handleDele
 const StationDesktopRow = ({ row, canEdit, canDelete, handleOpenEdit, handleDelete, organizationName, organizationNamesMap }) => (
     <TableRow hover>
         <TableCell sx={{ fontWeight: 800, fontSize: '1.05rem', color: 'primary.dark' }}>{row.TenTram}</TableCell>
+        <TableCell sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>{row.TenTramHTML || '-'}</TableCell>
+        <TableCell sx={{ fontSize: '0.95rem', fontWeight: 700 }}>{row.OldID || row.Id || '-'}</TableCell>
         <TableCell sx={{ fontSize: '0.95rem', fontWeight: 600 }}>{organizationName || '-'}</TableCell>
         <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, fontSize: '0.85rem' }}>
             {row.share_all ? 'Tất cả xí nghiệp' : (row.shared_org_ids?.map(id => organizationNamesMap[id]).filter(n => n).join(', ') || '-')}
@@ -329,6 +331,8 @@ const StationRiverList = () => {
                     <TableHead sx={{ bgcolor: 'grey.50' }}>
                         <TableRow>
                             <TableCell sx={{ fontWeight: 800, fontSize: '0.95rem' }}>Tên trạm</TableCell>
+                            <TableCell sx={{ fontWeight: 800, fontSize: '0.95rem' }}>Trạm HTML</TableCell>
+                            <TableCell sx={{ fontWeight: 800, fontSize: '0.95rem' }}>Old ID</TableCell>
                             <TableCell sx={{ fontWeight: 800, fontSize: '0.95rem' }}>Xí nghiệp quản lý</TableCell>
                             <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, fontWeight: 800, fontSize: '0.95rem' }}>Xí nghiệp phối hợp</TableCell>
                             <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, fontWeight: 800, fontSize: '0.95rem' }}>Loại</TableCell>

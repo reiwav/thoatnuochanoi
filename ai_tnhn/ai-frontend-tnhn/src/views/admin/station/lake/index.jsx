@@ -243,6 +243,8 @@ const StationLakeList = () => {
                     <TableHead sx={{ bgcolor: 'grey.50' }}>
                         <TableRow>
                             <TableCell sx={{ fontWeight: 800, fontSize: '0.9rem' }}>Tên trạm</TableCell>
+                            <TableCell sx={{ fontWeight: 800, fontSize: '0.9rem' }}>Trạm HTML</TableCell>
+                            <TableCell sx={{ fontWeight: 800, fontSize: '0.9rem' }}>Old ID</TableCell>
                             <TableCell sx={{ fontWeight: 800, fontSize: '0.9rem' }}>Xí nghiệp quản lý</TableCell>
                             <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, fontWeight: 800, fontSize: '0.9rem' }}>Xí nghiệp phối hợp</TableCell>
                             <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, fontWeight: 800, fontSize: '0.9rem' }}>Loại</TableCell>

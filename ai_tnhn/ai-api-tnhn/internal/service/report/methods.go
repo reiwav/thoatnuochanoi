@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -38,13 +39,19 @@ func (s *service) GenerateQuickReportV3(ctx context.Context, userID string) (*Qu
 	lakeDataRaw, riverDataRaw := [][]string{{"Hồ", "Mực nước"}}, [][]string{{"Sông", "Mực nước"}}
 	phuongDataRaw, xaDataRaw := [][]string{{"Phường", "Lượng mưa (mm)"}}, [][]string{{"Xã", "Lượng mưa (mm)"}}
 
-	// 1. Lấy và Map dữ liệu trạm Sông
+	// 1. Lấy và Map dữ liệu trạm Sông (Trọng số 1-5, lấy 5 trạm)
 	var rivers []*models.RiverStation
-	_ = s.riverStationRepo.R_SelectManyWithSort(ctx, bson.M{"trong_so_bao_cao": bson.M{"$gt": 0}}, bson.M{"trong_so_bao_cao": 1}, &rivers)
+	_ = s.riverStationRepo.R_SelectManyWithSort(ctx, bson.M{"trong_so_bao_cao": bson.M{"$gt": 0, "$lte": 5}}, bson.M{"trong_so_bao_cao": 1}, &rivers)
+	if len(rivers) > 5 {
+		rivers = rivers[:5]
+	}
 
-	// 2. Lấy và Map dữ liệu trạm Hồ
+	// 2. Lấy và Map dữ liệu trạm Hồ (Trọng số 1-5, lấy 5 trạm)
 	var lakes []*models.LakeStation
-	_ = s.lakeStationRepo.R_SelectManyWithSort(ctx, bson.M{"trong_so_bao_cao": bson.M{"$gt": 0}}, bson.M{"trong_so_bao_cao": 1}, &lakes)
+	_ = s.lakeStationRepo.R_SelectManyWithSort(ctx, bson.M{"trong_so_bao_cao": bson.M{"$gt": 0, "$lte": 5}}, bson.M{"trong_so_bao_cao": 1}, &lakes)
+	if len(lakes) > 5 {
+		lakes = lakes[:5]
+	}
 
 	if city.RawWater != nil {
 		wMap := make(map[int]float64)
@@ -61,9 +68,9 @@ func (s *service) GenerateQuickReportV3(ctx context.Context, userID string) (*Qu
 		}
 	}
 
-	// 3. Lấy và Map dữ liệu trạm Mưa (Phường/Xã)
+	// 3. Lấy dữ liệu trạm Mưa
 	var rainStations []*models.RainStation
-	_ = s.rainStationRepo.R_SelectManyWithSort(ctx, bson.M{}, bson.M{"trong_so_bao_cao": 1}, &rainStations)
+	_ = s.rainStationRepo.R_SelectManyWithSort(ctx, bson.M{"trong_so_bao_cao": bson.M{"$gt": 0}}, bson.M{"trong_so_bao_cao": 1}, &rainStations)
 
 	if city.Weather != nil {
 		mMap := make(map[int]float64)
@@ -71,15 +78,46 @@ func (s *service) GenerateQuickReportV3(ctx context.Context, userID string) (*Qu
 			mMap[m.ID] = m.TotalRain
 		}
 
+		type stationRain struct {
+			rs   *models.RainStation
+			rain float64
+		}
+		var phuongs, xas []stationRain
 		for _, rs := range rainStations {
-			if totalRain, ok := mMap[rs.OldID]; ok && totalRain > 0 {
-				row := []string{rs.TenPhuong, fmt.Sprintf("%.1f", totalRain)}
-				if rs.Loai == models.StationAreaXa {
-					xaDataRaw = append(xaDataRaw, row)
-				} else {
-					phuongDataRaw = append(phuongDataRaw, row)
-				}
+			sr := stationRain{rs: rs, rain: mMap[rs.OldID]}
+			if rs.Loai == models.StationAreaXa {
+				xas = append(xas, sr)
+			} else {
+				phuongs = append(phuongs, sr)
 			}
+		}
+
+		// Sắp xếp Phường: Mưa lớn nhất lên đầu
+		sort.Slice(phuongs, func(i, j int) bool {
+			return phuongs[i].rain > phuongs[j].rain
+		})
+		if len(phuongs) > 10 {
+			phuongs = phuongs[:10]
+		}
+
+		// Sắp xếp Xã: Có mưa lên đầu, sau đó theo trọng số tăng dần
+		sort.Slice(xas, func(i, j int) bool {
+			iHasRain := xas[i].rain > 0
+			jHasRain := xas[j].rain > 0
+			if iHasRain != jHasRain {
+				return iHasRain // i có mưa thì lên trước
+			}
+			return xas[i].rs.TrongSoBaoCao < xas[j].rs.TrongSoBaoCao
+		})
+		if len(xas) > 10 {
+			xas = xas[:10]
+		}
+
+		for _, p := range phuongs {
+			phuongDataRaw = append(phuongDataRaw, []string{p.rs.TenTram, fmt.Sprintf("%.1f", p.rain)})
+		}
+		for _, x := range xas {
+			xaDataRaw = append(xaDataRaw, []string{x.rs.TenTram, fmt.Sprintf("%.1f", x.rain)})
 		}
 	}
 

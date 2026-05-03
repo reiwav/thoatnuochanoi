@@ -2,6 +2,7 @@ package filters
 
 import (
 	"ai-api-tnhn/internal/base/mgo/filter"
+
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -16,7 +17,7 @@ func NewPumpingStationHistoryRequest() *PumpingStationHistoryRequest {
 	req := &PumpingStationHistoryRequest{
 		PaginationFilter: *filter.NewPaginationFilter(),
 	}
-	req.SetOrderBy("-timestamp")
+	req.SetOrderBy("-priority")
 	return req
 }
 

@@ -35,10 +35,10 @@ const PumpingStationCard = ({ station, onUpdate, onViewHistory }) => {
     };
 
     const stats = [
-        { label: 'Vận hành', value: lastReport.operating_count || 0, color: theme.palette.error.main, bg: alpha(theme.palette.error.main, 0.05) },
-        { label: 'Không VH', value: lastReport.closed_count || 0, color: theme.palette.success.main, bg: alpha(theme.palette.success.main, 0.05) },
-        { label: 'Bảo dưỡng', value: lastReport.maintenance_count || 0, color: '#FBC02D', bg: alpha('#FFEB3B', 0.1) },
-        { label: 'Mất tín hiệu', value: lastReport.no_signal_count || 0, color: theme.palette.text.secondary, bg: 'grey.100' }
+        { label: 'Vận hành', value: lastReport.operating_count || 0, color: theme.palette.error.main, bg: alpha(theme.palette.error.main, 0.08), blink: true },
+        { label: 'Không VH', value: lastReport.closed_count || 0, color: theme.palette.success.main, bg: alpha(theme.palette.success.main, 0.08), blink: true },
+        { label: 'Bảo dưỡng', value: lastReport.maintenance_count || 0, color: '#FBC02D', bg: alpha('#FFEB3B', 0.15), blink: true },
+        { label: 'Mất tín hiệu', value: lastReport.no_signal_count || 0, color: theme.palette.text.secondary, bg: 'grey.100', blink: false }
     ];
 
     const totalStats = stats.reduce((acc, s) => acc + s.value, 0);
@@ -155,11 +155,24 @@ const PumpingStationCard = ({ station, onUpdate, onViewHistory }) => {
                         borderRadius: 3,
                         bgcolor: s.bg,
                         border: '1px solid',
-                        borderColor: alpha(s.color, 0.15),
+                        borderColor: alpha(s.color, 0.25),
                         display: 'flex',
                         flexDirection: 'column',
                         justifyContent: 'center',
-                        minHeight: 65
+                        minHeight: 65,
+                        transition: 'all 0.3s ease',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        ...(s.blink && s.value > 0 && {
+                            animation: 'blink 2s infinite ease-in-out',
+                            borderColor: alpha(s.color, 0.6),
+                            boxShadow: `0 0 8px ${alpha(s.color, 0.2)}`
+                        }),
+                        '@keyframes blink': {
+                            '0%': { opacity: 1, transform: 'scale(1)' },
+                            '50%': { opacity: 0.85, transform: 'scale(0.98)' },
+                            '100%': { opacity: 1, transform: 'scale(1)' }
+                        }
                     }}>
                         <Typography variant="h3" sx={{ fontWeight: 900, color: s.color }}>{s.value}</Typography>
                         <Typography variant="caption" sx={{ fontWeight: 800, color: s.color, display: 'block', fontSize: '0.65rem', textTransform: 'uppercase', mt: 0.2 }}>

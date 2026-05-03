@@ -122,6 +122,9 @@ func (w *worker) runSignalRJob(ctx context.Context, station *models.PumpingStati
 			err := w.connectAndListen(ctx, baseUrl, station)
 			if err != nil {
 				w.logger.GetLogger().Errorf("SignalR connection error for %s: %v. Retrying in %v...", station.Name, err, retryDelay)
+				
+				// Record all pumps as 'No Signal' on connection loss
+				w.recordNoSignalStatus(ctx, station)
 
 				select {
 				case <-ctx.Done():
@@ -139,6 +142,18 @@ func (w *worker) runSignalRJob(ctx context.Context, station *models.PumpingStati
 			retryDelay = 5 * time.Minute
 		}
 	}
+}
+
+func (w *worker) recordNoSignalStatus(ctx context.Context, station *models.PumpingStation) {
+	history := &models.PumpingStationHistory{
+		StationID:        station.ID,
+		OperatingCount:   0,
+		ClosedCount:      0,
+		MaintenanceCount: 0,
+		NoSignalCount:    station.PumpCount,
+		Note:             "Mất kết nối SignalR",
+	}
+	_, _ = w.service.CreateHistory(ctx, nil, history)
 }
 
 func (w *worker) connectAndListen(ctx context.Context, baseUrl string, station *models.PumpingStation) error {
@@ -265,33 +280,19 @@ func (w *worker) parseAndSaveStatus(ctx context.Context, station *models.Pumping
 	for i := 0; i < maxPumps; i++ {
 		offset := i * 6
 
-		// Check No Signal (All 6 params are 0)
-		isNoSignal := true
-		for j := 0; j < 6; j++ {
-			val := fmt.Sprintf("%v", args[offset+j])
-			if val != "0" && val != "0.0" && val != "<nil>" && val != "" {
-				isNoSignal = false
-				break
-			}
-		}
+		// Correct Mapping & Logic:
+		// Red (Operating): index 0 (Pump On) == 1
+		// Yellow (Maintenance): index 0 == 0 AND index 1 (Pump Fault) == 1 AND index 3 (Valve Open) == 0
+		// Green (Closed): Everything else
+		onBit := fmt.Sprintf("%v", args[offset+0])
+		faultBit := fmt.Sprintf("%v", args[offset+1])
+		valveOpenBit := fmt.Sprintf("%v", args[offset+3])
 
-		if isNoSignal {
-			noSignal++
-			continue
-		}
-
-		operatingBit := fmt.Sprintf("%v", args[offset+4])
-		maintenanceBit := fmt.Sprintf("%v", args[offset+3])
-		closedBit := fmt.Sprintf("%v", args[offset+1])
-
-		if operatingBit == "1" {
+		if onBit == "1" {
 			operating++
-		} else if maintenanceBit == "1" {
+		} else if faultBit == "1" && valveOpenBit == "0" {
 			maintenance++
-		} else if closedBit == "1" {
-			closed++
 		} else {
-			// If none are 1 but it's not No Signal, we count as closed
 			closed++
 		}
 	}

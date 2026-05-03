@@ -82,18 +82,19 @@ Mỗi máy bơm được đại diện bởi **6 tham số liên tiếp** trong 
 
 ### B. Thuật toán tổng hợp trạng thái
 Với mỗi cụm 6 số, hệ thống sẽ phân loại máy bơm vào 1 trong 4 trạng thái:
-1.  **Maintenance (Bảo dưỡng)**: Nếu **Tham số 2 (Fault) == 1**.
-2.  **No Signal (Mất tín hiệu)**: Nếu **tất cả 6 tham số đều bằng 0** (Đặc biệt: `Valve Open = 0` và `Valve Close = 0` đồng thời, chứng tỏ không có tín hiệu từ cảm biến), hoặc dữ liệu bị rỗng/lỗi định dạng.
-3.  **Operating (Vận hành)**: Nếu **Tham số 2 == 0** (Không lỗi), không rơi vào trường hợp Mất tín hiệu **VÀ** **Tham số 1 (On) == 1**.
-4.  **Closed (Đang đóng)**: Nếu **Tham số 2 == 0** (Không lỗi), không rơi vào trường hợp Mất tín hiệu **VÀ** **Tham số 1 (On) == 0**.
+1.  **No Signal (Mất tín hiệu - Xám)**: Nếu **tất cả 6 tham số đều bằng 0**, hoặc dữ liệu bị rỗng/lỗi định dạng. (Ưu tiên kiểm tra đầu tiên).
+2.  **Maintenance (Bảo dưỡng - Nháy Vàng)**: Nếu **Tham số 2 (Pump Fault) == 1**.
+3.  **Operating (Vận hành - Nháy Đỏ)**: Nếu **Tham số 1 (Pump On) == 1** (Và không bị lỗi/mất tín hiệu).
+4.  **Closed (Không vận hành - Nháy Xanh)**: Nếu **Tham số 1 (Pump On) == 0** (Và không bị lỗi/mất tín hiệu).
 
 ### C. Quy trình lưu trữ & Vòng đời
 1. Kết nối SignalR qua link cấu hình trong `PumpingStation`.
 2. Sau mỗi 15giây, parse 120 đối số -> Tính tổng `operating`, `closed`, `maintenance`, `no_signal_count`.
-3. So sánh với bản ghi `History` gần nhất:
+3. **Xử lý mất kết nối**: Nếu SignalR bị ngắt kết nối (Disconnect), hệ thống phải ghi nhận trạng thái **Mất tín hiệu (Gray)** cho toàn bộ số máy bơm của trạm đó.
+4. So sánh với bản ghi `History` gần nhất:
     - Nếu có thay đổi ít nhất 1 trong 4 chỉ số: **INSERT** bản ghi mới.
     - Nếu không có thay đổi: **UPDATE** trường `updated_at` của bản ghi hiện tại để xác nhận dữ liệu vẫn live.
-4. Tự động Start/Restart/Stop job khi dữ liệu trạm bơm trong DB thay đổi.
+5. Tự động Start/Restart/Stop job khi dữ liệu trạm bơm trong DB thay đổi.
 
 ### D. Cơ chế tự động kết nối lại (Reconnection Strategy)
 Khi Worker gặp lỗi kết nối hoặc mất tín hiệu từ server SignalR:

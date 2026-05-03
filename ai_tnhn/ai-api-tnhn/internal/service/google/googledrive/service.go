@@ -5,12 +5,13 @@ import (
 	"context"
 	"io"
 
-	"google.golang.org/api/drive/v3"
-	"google.golang.org/api/option"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 	"fmt"
 	"strings"
+
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
+	"google.golang.org/api/drive/v3"
+	"google.golang.org/api/option"
 )
 
 var DefaultSubfolders = []string{"QUYET-DINH", "HO-SO-PHAP-LY", "BAN-VE-THI-CONG", "HO-SO-CHAT-LUONG", "HO-SO-THANH-TOAN", "DINH-MUC-BO-DON-GIA"}
@@ -58,7 +59,7 @@ func NewService(conf config.GoogleDriveConfig, oauthConf config.OAuthConfig) (Se
 		client := oCfg.Client(ctx, token)
 		opts = append(opts, option.WithHTTPClient(client))
 	} else {
-		// Priority 3: Fallback (use AuthCredentialsJSON if possible, else original)
+		// Priority 3: Fallback (use original JSON if type unknown)
 		opts = append(opts, option.WithAuthCredentialsJSON(option.ServiceAccount, []byte(conf.Credentials)))
 	}
 

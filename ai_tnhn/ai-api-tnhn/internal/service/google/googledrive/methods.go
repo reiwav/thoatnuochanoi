@@ -63,7 +63,7 @@ func (s *service) FindOrCreateFolder(ctx context.Context, parentID, folderName s
 }
 
 func (s *service) TriggerReportGeneration(ctx context.Context, webhookURL, templateID, targetID string, payload map[string]interface{}) (string, error) {
-	data := map[string]interface{}{"templateFileId": templateID, "targetFolderId": targetID, "data": payload}
+	data := map[string]interface{}{"doc_id": templateID, "targetFolderId": targetID, "data": payload}
 	jsonBody, _ := json.Marshal(data)
 	req, _ := http.NewRequestWithContext(ctx, "POST", webhookURL, bytes.NewBuffer(jsonBody))
 	req.Header.Set("Content-Type", "application/json")
@@ -74,6 +74,7 @@ func (s *service) TriggerReportGeneration(ctx context.Context, webhookURL, templ
 	}
 	defer resp.Body.Close()
 	body, _ := io.ReadAll(resp.Body)
+	fmt.Printf("[DEBUG] =========== Apps Script Response: %s\n", string(body))
 	return string(body), nil
 }
 

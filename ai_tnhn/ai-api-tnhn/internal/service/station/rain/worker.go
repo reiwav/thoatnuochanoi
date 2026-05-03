@@ -8,7 +8,6 @@ import (
 	"ai-api-tnhn/internal/service/setting"
 	"ai-api-tnhn/internal/service/station"
 	"context"
-	"fmt"
 	"sync"
 	"time"
 )
@@ -76,7 +75,6 @@ func (w *worker) run(ctx context.Context) {
 func (w *worker) sync(ctx context.Context) {
 	stations, err := w.stationSvc.GetAllRainStations(ctx)
 	if err != nil {
-		w.logger.GetLogger().Errorf("RainWorker: Failed to list rain stations: %v", err)
 		return
 	}
 
@@ -119,38 +117,37 @@ func (w *worker) syncStation(ctx context.Context, s *models.RainStation) {
 				Value:       0,
 			}
 			_ = w.rainRepo.Create(ctx, record)
-			w.logger.GetLogger().Infof("RainWorker: Saved marker (0) for station %s at %v to avoid re-scan", s.TenTram, markerTime)
+			//w.logger.GetLogger().Infof("RainWorker: Saved marker (0) for station %s at %v to avoid re-scan", s.TenTram, markerTime)
 		}
 	}
 }
 
 func (w *worker) fetchAndSave(ctx context.Context, s *models.RainStation, date time.Time, latest *models.RainRecord) int {
 	dateStr := date.Format("2006-01-02")
-	w.logger.GetLogger().Infof("RainWorker: [DEBUG] Fetching data for station %s (%d) on %s", s.TenTram, s.OldID, dateStr)
+	//w.logger.GetLogger().Infof("RainWorker: [DEBUG] Fetching data for station %s (%d) on %s", s.TenTram, s.OldID, dateStr)
 
 	w.mu.RLock()
 	sid := w.sessionID
 	w.mu.RUnlock()
 	dataPoints, err := w.thoatnuocSvc.GetRainChartData(ctx, sid, s.OldID, dateStr)
-	fmt.Println("====== dataPoints: ", len(dataPoints))
 	if err != nil {
-		w.logger.GetLogger().Errorf("RainWorker: Failed to fetch data for station %s on %s: %v", s.TenTram, dateStr, err)
+		//w.logger.GetLogger().Errorf("RainWorker: Failed to fetch data for station %s on %s: %v", s.TenTram, dateStr, err)
 		return 0
 	}
 
 	if len(dataPoints) == 0 {
-		w.logger.GetLogger().Infof("RainWorker: [DEBUG] No data points returned for station %s on %s", s.TenTram, dateStr)
+		//w.logger.GetLogger().Infof("RainWorker: [DEBUG] No data points returned for station %s on %s", s.TenTram, dateStr)
 		return 0
 	}
 
-	w.logger.GetLogger().Infof("RainWorker: [DEBUG] Received %d points for station %s on %s", len(dataPoints), s.TenTram, dateStr)
+	//w.logger.GetLogger().Infof("RainWorker: [DEBUG] Received %d points for station %s on %s", len(dataPoints), s.TenTram, dateStr)
 
 	inserted := 0
 	skipped := 0
 	for _, dp := range dataPoints {
 		ts, err := time.ParseInLocation("2006-01-02T15:04:05", dp.ThoiGian, time.Local)
 		if err != nil {
-			w.logger.GetLogger().Errorf("RainWorker: [DEBUG] Failed to parse timestamp %s: %v", dp.ThoiGian, err)
+			//w.logger.GetLogger().Errorf("RainWorker: [DEBUG] Failed to parse timestamp %s: %v", dp.ThoiGian, err)
 			continue
 		}
 
@@ -177,12 +174,12 @@ func (w *worker) fetchAndSave(ctx context.Context, s *models.RainStation, date t
 
 		err = w.rainRepo.Create(ctx, record)
 		if err != nil {
-			w.logger.GetLogger().Errorf("RainWorker: Failed to save record for %s at %v: %v", s.TenTram, ts, err)
+			//w.logger.GetLogger().Errorf("RainWorker: Failed to save record for %s at %v: %v", s.TenTram, ts, err)
 			continue
 		}
 		inserted++
 	}
 
-	w.logger.GetLogger().Infof("RainWorker: Finished station %s on %s. Inserted: %d, Skipped: %d", s.TenTram, dateStr, inserted, skipped)
+	//w.logger.GetLogger().Infof("RainWorker: Finished station %s on %s. Inserted: %d, Skipped: %d", s.TenTram, dateStr, inserted, skipped)
 	return inserted
 }

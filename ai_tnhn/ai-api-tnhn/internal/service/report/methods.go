@@ -130,7 +130,8 @@ func (s *service) GenerateQuickReportV3(ctx context.Context, userID string) (*Qu
 	if err != nil {
 		return nil, fmt.Errorf("failed to upload template: %w", err)
 	}
-
+	jsonBytes, _ := json.Marshal(payload)
+	fmt.Println("======================", string(jsonBytes))
 	resp, err := s.driveSvc.TriggerReportGeneration(ctx, s.cfg.GoogleDriveConfig.AppsScriptWebhookURL, templateID, folderID, payload)
 	if err != nil {
 		return nil, fmt.Errorf("failed to trigger Apps Script: %w", err)

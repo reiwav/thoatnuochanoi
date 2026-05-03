@@ -21,7 +21,7 @@ func InitRouter(cfg *config.Config, s *Services, r *Repositories, log logger.Log
 	stationHandler := handler.NewStationHandler(s.Station, contextWith)
 	inuHandler := handler.NewInundationHandler(s.Inundation, contextWith, r.Token, r.User, r.Role)
 	waterHandler := handler.NewWaterHandler(s.Water)
-	rainHandler := handler.NewRainHandler(s.Rain)
+	rainHandler := handler.NewRainHandler(s.Rain, s.RainWorker)
 	emConstructionHandler := handler.NewEmergencyConstructionHandler(s.EmConstruction, r.AiChatLog)
 	weatherHandler := handler.NewWeatherHandler(s.Weather)
 	contractCategoryHandler := handler.NewContractCategoryHandler(s.ContractCategory, contextWith)

@@ -65,6 +65,7 @@ type Services struct {
 	Setting          setting.Service
 	Wastewater       wastewater_treatment.Service
 	SluiceGate       sluice_gate.Service
+	RainWorker       rain.Worker
 }
 
 func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log logger.Logger) *Services {
@@ -107,6 +108,7 @@ func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log log
 	forecastSvc := forecast.NewService()
 	s.Rain = rain.NewService(repos.Rain)
 	rainWorker := rain.NewWorker(log, repos.Rain, s.Station, thoatnuocSvc)
+	s.RainWorker = rainWorker
 	rainWorker.Start(context.Background())
 
 	s.Weather = weather.NewService(repos.HistoricalRain, s.Station, thoatnuocSvc, forecastSvc)

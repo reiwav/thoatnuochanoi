@@ -11,11 +11,13 @@ import (
 type RainHandler struct {
 	web.JsonRender
 	service rain.Service
+	worker  rain.Worker
 }
 
-func NewRainHandler(service rain.Service) *RainHandler {
+func NewRainHandler(service rain.Service, worker rain.Worker) *RainHandler {
 	return &RainHandler{
 		service: service,
+		worker:  worker,
 	}
 }
 
@@ -68,4 +70,17 @@ func (h *RainHandler) GetRainChart(c *gin.Context) {
 	res, err := h.service.GetRainChart(c.Request.Context(), stationID, date)
 	web.AssertNil(err)
 	h.SendData(c, res)
+}
+
+func (h *RainHandler) UpdateWorkerSession(c *gin.Context) {
+	var body struct {
+		SessionID string `json:"session_id" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	h.worker.SetSessionID(body.SessionID)
+	h.SendData(c, "Session updated successfully")
 }

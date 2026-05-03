@@ -14,4 +14,5 @@ func (h HandlerFuncs) RainRoutes(api *gin.RouterGroup, mid middleware.Middleware
 	rain.GET("/:id/history", rainHandler.GetRainHistory)
 	rain.GET("/:id/chart", rainHandler.GetRainChart)
 	rain.GET("/by-date", rainHandler.GetRainDataByDate)
+	rain.POST("/worker/session", rainHandler.UpdateWorkerSession)
 }

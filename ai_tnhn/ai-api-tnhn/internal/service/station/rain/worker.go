@@ -8,11 +8,13 @@ import (
 	"ai-api-tnhn/internal/service/station"
 	"context"
 	"fmt"
+	"sync"
 	"time"
 )
 
 type Worker interface {
 	Start(ctx context.Context)
+	SetSessionID(sessionID string)
 }
 
 type worker struct {
@@ -21,6 +23,7 @@ type worker struct {
 	stationSvc   station.Service
 	thoatnuocSvc thoatnuoc.Service
 	sessionID    string
+	mu           sync.RWMutex
 }
 
 // ASP.NET_SessionId=kzela2aw0gdvzxvrthicl14n
@@ -30,8 +33,15 @@ func NewWorker(l logger.Logger, rain repository.Rain, stationSvc station.Service
 		rainRepo:     rain,
 		stationSvc:   stationSvc,
 		thoatnuocSvc: thoatnuocSvc,
-		sessionID:    "kzela2aw0gdvzxvrthicl14n", // Hardcoded session ID
+		sessionID:    "kzela2aw0gdvzxvrthicl14n", // Initial session ID
 	}
+}
+
+func (w *worker) SetSessionID(sessionID string) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.sessionID = sessionID
+	w.logger.GetLogger().Infof("RainWorker: SessionID updated to %s", sessionID)
 }
 
 func (w *worker) Start(ctx context.Context) {
@@ -40,7 +50,7 @@ func (w *worker) Start(ctx context.Context) {
 }
 
 func (w *worker) run(ctx context.Context) {
-	ticker := time.NewTicker(1 * time.Minute)
+	ticker := time.NewTicker(15 * time.Minute)
 	defer ticker.Stop()
 
 	// Initial sync
@@ -111,7 +121,10 @@ func (w *worker) fetchAndSave(ctx context.Context, s *models.RainStation, date t
 	dateStr := date.Format("2006-01-02")
 	w.logger.GetLogger().Infof("RainWorker: [DEBUG] Fetching data for station %s (%d) on %s", s.TenTram, s.OldID, dateStr)
 
-	dataPoints, err := w.thoatnuocSvc.GetRainChartData(ctx, w.sessionID, s.OldID, dateStr)
+	w.mu.RLock()
+	sid := w.sessionID
+	w.mu.RUnlock()
+	dataPoints, err := w.thoatnuocSvc.GetRainChartData(ctx, sid, s.OldID, dateStr)
 	fmt.Println("====== dataPoints: ", len(dataPoints))
 	if err != nil {
 		w.logger.GetLogger().Errorf("RainWorker: Failed to fetch data for station %s on %s: %v", s.TenTram, dateStr, err)

@@ -74,7 +74,11 @@ func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log log
 		log.GetLogger().Info("Telegram bot initialized")
 	}
 
-	driveService, _ := googledrive.NewService(cfg.GoogleDriveConfig, cfg.OAuthConfig)
+	driveService, err := googledrive.NewService(cfg.GoogleDriveConfig, cfg.OAuthConfig)
+	if err != nil {
+		log.GetLogger().Errorf("Failed to initialize Google Drive service: %v", err)
+		panic(err)
+	}
 
 	var storageSvc storage.Service
 	if cfg.StorageType == "local" {

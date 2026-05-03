@@ -874,6 +874,11 @@ definitions:
         example: Nguyễn Văn A
         type: string
     type: object
+  models.RainSetting:
+    properties:
+      session_id:
+        type: string
+    type: object
   models.RainStation:
     properties:
       Active:
@@ -3159,6 +3164,44 @@ paths:
       security:
       - BearerAuth: []
       summary: Cập nhật danh sách mức độ ngập lụt
+      tags:
+      - Cấu hình
+  /admin/settings/rain:
+    get:
+      description: Truy xuất cấu hình của RainWorker (sessionID, ...)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.RainSetting'
+      security:
+      - BearerAuth: []
+      summary: Lấy cấu hình worker mưa
+      tags:
+      - Cấu hình
+    put:
+      consumes:
+      - application/json
+      description: Cập nhật cấu hình của RainWorker và áp dụng ngay lập tức
+      parameters:
+      - description: Cấu hình mưa
+        in: body
+        name: setting
+        required: true
+        schema:
+          $ref: '#/definitions/models.RainSetting'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: boolean
+      security:
+      - BearerAuth: []
+      summary: Cập nhật cấu hình worker mưa
       tags:
       - Cấu hình
   /admin/stations/lake:

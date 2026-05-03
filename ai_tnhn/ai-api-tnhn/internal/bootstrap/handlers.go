@@ -30,7 +30,7 @@ func InitRouter(cfg *config.Config, s *Services, r *Repositories, log logger.Log
 	permHandler := handler.NewPermissionHandler(s.Permission, contextWith)
 	roleHandler := handler.NewRoleHandler(s.Role, contextWith)
 	queryHandler := handler.NewQueryHandler(s.Query)
-	settingHandler := handler.NewSettingHandler(s.Setting, contextWith)
+	settingHandler := handler.NewSettingHandler(s.Setting, s.RainWorker, contextWith)
 	wastewaterHandler := handler.NewWastewaterTreatmentHandler(s.Wastewater, contextWith)
 	sluiceGateHandler := handler.NewSluiceGateHandler(s.SluiceGate, contextWith)
 	googleHandler := google.NewHandler(s.GoogleApi, s.Gemini, s.Drive, s.Water, s.Email, contextWith, cfg.GoogleDriveConfig, log, s.Weather, r.AiChatLog, s.Report)
@@ -61,10 +61,10 @@ func InitRouter(cfg *config.Config, s *Services, r *Repositories, log logger.Log
 		GenerateAIDynamicReportHandler: googleHandler.GenerateAIDynamicReport,
 		GetRainDataByDate:              rainHandler.GetRainDataByDate,
 		DatabaseQueryHandler:           queryHandler.Query,
-		GetPermissionMatrixHandler:    permHandler.GetMatrix,
-		UpdatePermissionMatrixHandler: permHandler.UpdateMatrix,
-		GetMyPermissionsHandler:       permHandler.GetMyPermissions,
-		GetWeatherForecastHandler:     googleHandler.GetWeatherForecast,
+		GetPermissionMatrixHandler:     permHandler.GetMatrix,
+		UpdatePermissionMatrixHandler:  permHandler.UpdateMatrix,
+		GetMyPermissionsHandler:        permHandler.GetMyPermissions,
+		GetWeatherForecastHandler:      googleHandler.GetWeatherForecast,
 	}
 
 	return handlers.Create(mid, orgHandler, empHandler, stationHandler, inuHandler, waterHandler, rainHandler, googleHandler, queryHandler, emConstructionHandler, weatherHandler, contractCategoryHandler, contractHandler, pumpingStationHandler, wastewaterHandler, sluiceGateHandler, permHandler, roleHandler, settingHandler)

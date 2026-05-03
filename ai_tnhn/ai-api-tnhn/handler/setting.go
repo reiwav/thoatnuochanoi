@@ -3,6 +3,7 @@ package handler
 import (
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/service/setting"
+	"ai-api-tnhn/internal/service/station/rain"
 	"ai-api-tnhn/utils/web"
 
 	"github.com/gin-gonic/gin"
@@ -11,12 +12,14 @@ import (
 type SettingHandler struct {
 	web.JsonRender
 	service     setting.Service
+	worker      rain.Worker
 	contextWith web.ContextWith
 }
 
-func NewSettingHandler(service setting.Service, contextWith web.ContextWith) *SettingHandler {
+func NewSettingHandler(service setting.Service, worker rain.Worker, contextWith web.ContextWith) *SettingHandler {
 	return &SettingHandler{
 		service:     service,
+		worker:      worker,
 		contextWith: contextWith,
 	}
 }
@@ -84,6 +87,61 @@ func (h *SettingHandler) UpdateFloodLevels(c *gin.Context) {
 	if err != nil {
 		h.SendError(c, err)
 		return
+	}
+
+	h.SendData(c, true)
+}
+
+// GetRainSetting godoc
+// @Summary Lấy cấu hình worker mưa
+// @Description Truy xuất cấu hình của RainWorker (sessionID, ...)
+// @Tags Cấu hình
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} models.RainSetting
+// @Router /admin/settings/rain [get]
+func (h *SettingHandler) GetRainSetting(c *gin.Context) {
+	setting, err := h.service.GetRainSetting(c.Request.Context())
+	if err != nil {
+		h.SendError(c, err)
+		return
+	}
+
+	h.SendData(c, setting)
+}
+
+// UpdateRainSetting godoc
+// @Summary Cập nhật cấu hình worker mưa
+// @Description Cập nhật cấu hình của RainWorker và áp dụng ngay lập tức
+// @Tags Cấu hình
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param setting body models.RainSetting true "Cấu hình mưa"
+// @Success 200 {boolean} bool
+// @Router /admin/settings/rain [put]
+func (h *SettingHandler) UpdateRainSetting(c *gin.Context) {
+	isAdmin, _ := h.checkAdmin(c)
+	if !isAdmin {
+		h.SendError(c, web.Unauthorized("Bạn không có quyền thực hiện"))
+		return
+	}
+
+	var req models.RainSetting
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.SendError(c, web.BadRequest("Invalid request data: "+err.Error()))
+		return
+	}
+
+	err := h.service.UpdateRainSetting(c.Request.Context(), &req)
+	if err != nil {
+		h.SendError(c, err)
+		return
+	}
+
+	// Apply changes to the running worker immediately
+	if h.worker != nil {
+		h.worker.SetSessionID(req.SessionID)
 	}
 
 	h.SendData(c, true)

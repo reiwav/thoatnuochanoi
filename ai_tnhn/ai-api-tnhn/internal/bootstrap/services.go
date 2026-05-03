@@ -24,10 +24,10 @@ import (
 	"ai-api-tnhn/internal/service/station/emergency_construction"
 	"ai-api-tnhn/internal/service/station/inundation"
 	pumpingstation "ai-api-tnhn/internal/service/station/pumping_station"
-	"ai-api-tnhn/internal/service/station/rain"
 	"ai-api-tnhn/internal/service/station/pumping_station/pump"
-	"ai-api-tnhn/internal/service/station/stationdata"
+	"ai-api-tnhn/internal/service/station/rain"
 	"ai-api-tnhn/internal/service/station/sluice_gate"
+	"ai-api-tnhn/internal/service/station/stationdata"
 	"ai-api-tnhn/internal/service/station/wastewater_treatment"
 	"ai-api-tnhn/internal/service/station/water"
 	"ai-api-tnhn/internal/service/storage"
@@ -107,7 +107,8 @@ func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log log
 	thoatnuocSvc := thoatnuoc.NewService()
 	forecastSvc := forecast.NewService()
 	s.Rain = rain.NewService(repos.Rain)
-	rainWorker := rain.NewWorker(log, repos.Rain, s.Station, thoatnuocSvc)
+	s.Setting = setting.NewService(repos.AppSetting)
+	rainWorker := rain.NewWorker(log, s.Setting, repos.Rain, s.Station, thoatnuocSvc)
 	s.RainWorker = rainWorker
 	rainWorker.Start(context.Background())
 
@@ -128,7 +129,6 @@ func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log log
 
 	s.Permission = permission.NewService(repos.Permission, repos.RolePermission)
 	s.Role = role.NewService(repos.Role)
-	s.Setting = setting.NewService(repos.AppSetting)
 
 	pumpWorker := pump.NewWorker(log, s.PumpingStation)
 	s.PumpingStation.SetWorker(pumpWorker)

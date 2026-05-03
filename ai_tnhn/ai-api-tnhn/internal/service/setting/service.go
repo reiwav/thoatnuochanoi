@@ -10,6 +10,8 @@ type Service interface {
 	GetFloodLevels(ctx context.Context) ([]models.FloodLevel, error)
 	UpdateFloodLevels(ctx context.Context, levels []models.FloodLevel) error
 	GetSetting(ctx context.Context) (*models.AppSetting, error)
+	GetRainSetting(ctx context.Context) (*models.RainSetting, error)
+	UpdateRainSetting(ctx context.Context, rainSetting *models.RainSetting) error
 }
 
 type service struct {

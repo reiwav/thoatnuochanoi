@@ -17,7 +17,22 @@ type appSettingRepository struct {
 }
 
 func NewAppSettingRepository(dbc *mongo.Database, name, prefix string, l logger.Logger) repository.AppSetting {
-	return appSettingRepository{db.NewTable(name, prefix, dbc, l)}
+	repo := appSettingRepository{db.NewTable(name, prefix, dbc, l)}
+
+	// Drop stale unique index on "key" field (causes duplicate key errors)
+	ctx := context.Background()
+	_, _ = dbc.Collection(name).Indexes().DropOne(ctx, "key_1")
+
+	// Ensure unique index on "code" field
+	_, err := dbc.Collection(name).Indexes().CreateOne(ctx, mongo.IndexModel{
+		Keys:    bson.D{{Key: "code", Value: 1}},
+		Options: options.Index().SetUnique(true).SetSparse(true),
+	})
+	if err != nil {
+		l.GetLogger().Errorf("Failed to create indexes for %s: %v", name, err)
+	}
+
+	return repo
 }
 
 func (r appSettingRepository) Get(ctx context.Context) (*models.AppSetting, error) {
@@ -45,7 +60,7 @@ func (r appSettingRepository) GetByCode(ctx context.Context, code string) (*mode
 }
 
 func (r appSettingRepository) Save(ctx context.Context, setting *models.AppSetting) error {
-	if setting.Code == "" {
+	if setting.ID == "" {
 		return r.R_Create(ctx, setting)
 	}
 

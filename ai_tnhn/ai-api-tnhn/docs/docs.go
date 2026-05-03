@@ -3186,6 +3186,68 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/settings/rain": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Truy xuất cấu hình của RainWorker (sessionID, ...)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Cấu hình"
+                ],
+                "summary": "Lấy cấu hình worker mưa",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.RainSetting"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Cập nhật cấu hình của RainWorker và áp dụng ngay lập tức",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Cấu hình"
+                ],
+                "summary": "Cập nhật cấu hình worker mưa",
+                "parameters": [
+                    {
+                        "description": "Cấu hình mưa",
+                        "name": "setting",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.RainSetting"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/stations/lake": {
             "get": {
                 "security": [
@@ -8211,6 +8273,14 @@ const docTemplate = `{
                 "user_name": {
                     "type": "string",
                     "example": "Nguyễn Văn A"
+                }
+            }
+        },
+        "models.RainSetting": {
+            "type": "object",
+            "properties": {
+                "session_id": {
+                    "type": "string"
                 }
             }
         },

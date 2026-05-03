@@ -70,7 +70,7 @@ func (s *service) GenerateQuickReportV3(ctx context.Context, userID string) (*Qu
 
 	// 3. Lấy dữ liệu trạm Mưa
 	var rainStations []*models.RainStation
-	_ = s.rainStationRepo.R_SelectManyWithSort(ctx, bson.M{"trong_so_bao_cao": bson.M{"$gt": 0}}, bson.M{"trong_so_bao_cao": 1}, &rainStations)
+	_ = s.rainStationRepo.R_SelectManyWithSort(ctx, bson.M{}, bson.M{"trong_so_bao_cao": 1}, &rainStations)
 
 	if city.Weather != nil {
 		mMap := make(map[int]float64)

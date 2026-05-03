@@ -10,8 +10,6 @@ import (
 	"context"
 
 	"github.com/joho/godotenv"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func main() {
@@ -274,23 +272,23 @@ func main() {
 	// 	}
 	// }
 
-	log.Info("Initializing system settings...")
-	settingsCol := mgo.DB.Collection("settings")
-	_, err = settingsCol.UpdateOne(ctx,
-		bson.M{"code": "RainSetting"},
-		bson.M{
-			"$setOnInsert": bson.M{
-				"code": "RainSetting",
-				"RainSetting": models.RainSetting{
-					SessionID: "kzela2aw0gdvzxvrthicl14n",
-				},
-			},
-		},
-		options.Update().SetUpsert(true),
-	)
-	if err != nil {
-		log.Errorf("Failed to seed rain_setting: %v", err)
-	}
+	// log.Info("Initializing system settings...")
+	// settingsCol := mgo.DB.Collection("settings")
+	// _, err = settingsCol.UpdateOne(ctx,
+	// 	bson.M{"code": "RainSetting"},
+	// 	bson.M{
+	// 		"$setOnInsert": bson.M{
+	// 			"code": "RainSetting",
+	// 			"RainSetting": models.RainSetting{
+	// 				SessionID: "kzela2aw0gdvzxvrthicl14n",
+	// 			},
+	// 		},
+	// 	},
+	// 	options.Update().SetUpsert(true),
+	// )
+	// if err != nil {
+	// 	log.Errorf("Failed to seed rain_setting: %v", err)
+	// }
 
 	log.Info("Database seeding completed successfully!")
 }

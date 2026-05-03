@@ -1,9 +1,9 @@
 package googleapi
 
 import (
-	"ai-api-tnhn/internal/service/google/email"
 	"ai-api-tnhn/utils/number"
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -45,18 +45,24 @@ func (s *service) GetStatus(ctx context.Context) (*GoogleStatus, error) {
 		var totalTokens int64
 		if val, ok := aiStats["total_tokens"]; ok {
 			switch v := val.(type) {
-			case int32: totalTokens = int64(v)
-			case int64: totalTokens = v
-			case float64: totalTokens = int64(v)
+			case int32:
+				totalTokens = int64(v)
+			case int64:
+				totalTokens = v
+			case float64:
+				totalTokens = int64(v)
 			}
 		}
 
 		var reqCount int64
 		if val, ok := aiStats["request_count"]; ok {
 			switch v := val.(type) {
-			case int32: reqCount = int64(v)
-			case int64: reqCount = v
-			case float64: reqCount = int64(v)
+			case int32:
+				reqCount = int64(v)
+			case int64:
+				reqCount = v
+			case float64:
+				reqCount = int64(v)
 			}
 		}
 
@@ -77,23 +83,24 @@ func (s *service) GetLatestOCRText(ctx context.Context) string {
 	if s.emailSvc == nil || s.geminiSvc == nil {
 		return ""
 	}
-	cacheKey := "latest_ocr_text"
-	if cached, ok := s.cache.Load(cacheKey); ok {
-		if detail, ok := cached.(*email.EmailDetail); ok {
-			if time.Since(time.Unix(detail.Timestamp, 0)) < 2*time.Hour {
-				return detail.Body
-			}
-		}
-	}
 
-	emailDetail, err := s.ReadEmailByTitle(ctx, "Dự báo thời tiết")
-	if err != nil || emailDetail == nil || len(emailDetail.Attachments) == 0 {
+	// 1. Lấy ID của email thời tiết mới nhất theo bộ lọc của bạn
+	emailID, err := s.emailSvc.GetLatestWeatherEmailID(ctx)
+	if err != nil || emailID == 0 {
 		return ""
 	}
 
-	att := emailDetail.Attachments[0]
-	raw, err := s.emailSvc.DownloadAttachment(ctx, emailDetail.ID, att.ID)
-	if err != nil {
+	// 2. Kiểm tra cache theo Email ID
+	cacheKey := fmt.Sprintf("ocr_id_%d", emailID)
+	if cached, ok := s.cache.Load(cacheKey); ok {
+		if text, ok := cached.(string); ok && text != "" {
+			return text
+		}
+	}
+
+	// 3. Nếu chưa có trong cache, tải file và OCR bằng Gemini
+	raw, _, err := s.emailSvc.GetEmailAttachmentRawByID(ctx, emailID)
+	if err != nil || len(raw) == 0 {
 		return ""
 	}
 
@@ -102,17 +109,20 @@ func (s *service) GetLatestOCRText(ctx context.Context) string {
 		return ""
 	}
 
-	emailDetail.Body = ocrText
-	s.cache.Store(cacheKey, emailDetail)
+	// 4. Lưu lại vào cache
+	s.cache.Store(cacheKey, ocrText)
+	fmt.Printf("time=\"%s\" level=info msg=\"DynamicReport: OCR OK, %d chars, cached with Email ID %d\"\n",
+		time.Now().Format("2006-01-02 15:04:05"), len(ocrText), emailID)
+
 	return ocrText
 }
 
 func (s *service) GetCityStatus(ctx context.Context) (*CityStatus, error) {
-	var res CityStatus
+	var res = &CityStatus{}
 	var mu sync.Mutex
 
 	// Set a reasonable timeout for the entire status retrieval to prevent dashboard hanging
-	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 120*time.Second)
 	defer cancel()
 
 	g, gCtx := errgroup.WithContext(ctx)
@@ -161,5 +171,5 @@ func (s *service) GetCityStatus(ctx context.Context) (*CityStatus, error) {
 	})
 
 	_ = g.Wait()
-	return &res, nil
+	return res, nil
 }

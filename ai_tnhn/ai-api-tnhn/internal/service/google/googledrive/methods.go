@@ -67,7 +67,7 @@ func (s *service) TriggerReportGeneration(ctx context.Context, webhookURL, templ
 	jsonBody, _ := json.Marshal(data)
 	req, _ := http.NewRequestWithContext(ctx, "POST", webhookURL, bytes.NewBuffer(jsonBody))
 	req.Header.Set("Content-Type", "application/json")
-	client := &http.Client{Timeout: 60 * time.Second}
+	client := &http.Client{Timeout: 120 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", err

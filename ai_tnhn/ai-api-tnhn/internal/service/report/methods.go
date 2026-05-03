@@ -36,7 +36,7 @@ func (s *service) GenerateQuickReportV3(ctx context.Context, userID string) (*Qu
 		return nil, fmt.Errorf("failed to fetch city status: %w", err)
 	}
 
-	lakeDataRaw, riverDataRaw := [][]string{{"Hồ", "Mực nước"}}, [][]string{{"Sông", "Mực nước"}}
+	lakeDataRaw, riverDataRaw := [][]string{{"Hồ", "Mực nước(m)"}}, [][]string{{"Sông", "Mực nước(m)"}}
 	phuongDataRaw, xaDataRaw := [][]string{{"Phường", "Lượng mưa (mm)"}}, [][]string{{"Xã", "Lượng mưa (mm)"}}
 
 	// 1. Lấy và Map dữ liệu trạm Sông (Trọng số 1-5, lấy 5 trạm)
@@ -61,10 +61,10 @@ func (s *service) GenerateQuickReportV3(ctx context.Context, userID string) (*Qu
 			wMap[idInt] = d.ThuongLuu_HT
 		}
 		for _, r := range rivers {
-			riverDataRaw = append(riverDataRaw, []string{r.TenTram, fmt.Sprintf("%.2fm", wMap[r.OldID]/100.0)})
+			riverDataRaw = append(riverDataRaw, []string{r.TenTram, fmt.Sprintf("%.2f", wMap[r.OldID]/100.0)})
 		}
 		for _, l := range lakes {
-			lakeDataRaw = append(lakeDataRaw, []string{l.TenTram, fmt.Sprintf("%.2fm", wMap[l.OldID]/100.0)})
+			lakeDataRaw = append(lakeDataRaw, []string{l.TenTram, fmt.Sprintf("%.2f", wMap[l.OldID]/100.0)})
 		}
 	}
 

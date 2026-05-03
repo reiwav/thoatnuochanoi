@@ -34,10 +34,9 @@ func NewRainHandler(service rain.Service, worker rain.Worker) *RainHandler {
 // @Router /admin/water/rain/{id}/history [get]
 func (h *RainHandler) GetRainHistory(c *gin.Context) {
 	stationID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-	limit, _ := strconv.ParseInt(c.DefaultQuery("limit", "100"), 10, 64)
 	date := c.Query("date")
 
-	res, err := h.service.GetRainDataByStation(c.Request.Context(), stationID, limit, date)
+	res, err := h.service.GetRainDataByStation(c.Request.Context(), stationID, date)
 	web.AssertNil(err)
 	h.SendData(c, res)
 }

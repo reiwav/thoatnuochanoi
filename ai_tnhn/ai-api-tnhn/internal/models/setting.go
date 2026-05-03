@@ -8,7 +8,12 @@ import (
 type AppSetting struct {
 	model.BaseModel `bson:",inline"`
 	Code            string       `json:"code" bson:"code"` // FloodLevel, etc.
-	FloodLevels     []FloodLevel `json:"flood_levels" bson:"flood_levels"`
+	FloodLevels     []FloodLevel `json:"flood_levels,omitempty" bson:"flood_levels,omitempty"`
+	RainSetting     *RainSetting `json:"rain_setting,omitempty" bson:"rain_setting,omitempty"`
+}
+
+type RainSetting struct {
+	SessionID string `json:"session_id" bson:"session_id"`
 }
 
 type FloodLevel struct {

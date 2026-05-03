@@ -36,11 +36,12 @@ const ContractPage = Loadable(lazy(() => import('views/admin/contract')));
 const RoleMatrixPage = Loadable(lazy(() => import('views/admin/role-matrix')));
 const RoleListPage = Loadable(lazy(() => import('views/admin/role/RoleList')));
 const PumpingStationPage = Loadable(lazy(() => import('views/admin/pumping-station')));
-const FloodLevelSetting = Loadable(lazy(() => import('views/admin/setting/FloodLevelSetting')));
-const WastewaterTreatmentPage = Loadable(lazy(() => import('views/admin/wastewater-treatment')));
-const EmployeeWastewaterPage = Loadable(lazy(() => import('views/employee/wastewater')));
 const SluiceGatePage = Loadable(lazy(() => import('views/admin/sluice-gate')));
 const EmployeeSluiceGatePage = Loadable(lazy(() => import('views/employee/sluice-gate')));
+const FloodLevelSetting = Loadable(lazy(() => import('views/admin/setting/FloodLevelSetting')));
+const RainSetting = Loadable(lazy(() => import('views/admin/setting/RainSetting')));
+const WastewaterTreatmentPage = Loadable(lazy(() => import('views/admin/wastewater-treatment')));
+const EmployeeWastewaterPage = Loadable(lazy(() => import('views/employee/wastewater')));
 const UnderDevelopment = Loadable(lazy(() => import('views/pages/under-development')));
 
 // ==============================|| MAIN ROUTING ||============================== //
@@ -89,7 +90,8 @@ const MainRoutes = {
         { path: 'contract', element: <ContractPage /> },
         { path: 'role-matrix', element: <RoleMatrixPage /> },
         { path: 'role', element: <RoleListPage /> },
-        { path: 'setting/flood-levels', element: <FloodLevelSetting /> }
+        { path: 'setting/flood-levels', element: <FloodLevelSetting /> },
+        { path: 'setting/rain', element: <RainSetting /> }
       ]
     },
     {

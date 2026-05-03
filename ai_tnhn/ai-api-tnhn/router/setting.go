@@ -13,5 +13,7 @@ func (h HandlerFuncs) SettingRoutes(apiAdmin *gin.RouterGroup, mid middleware.Mi
 	{
 		group.GET("/flood-levels", settingHandler.GetFloodLevels)
 		group.PUT("/flood-levels", settingHandler.UpdateFloodLevels)
+		group.GET("/rain", settingHandler.GetRainSetting)
+		group.PUT("/rain", settingHandler.UpdateRainSetting)
 	}
 }

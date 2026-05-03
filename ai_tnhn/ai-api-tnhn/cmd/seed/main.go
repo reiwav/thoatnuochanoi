@@ -10,6 +10,8 @@ import (
 	"context"
 
 	"github.com/joho/godotenv"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func main() {
@@ -132,6 +134,10 @@ func main() {
 		{Code: "contract-category:view", Title: "Xem", Group: "Hợp đồng", Type: "child_menu", Description: "Danh mục hợp đồng"},
 		{Code: "contract-category:edit", Title: "Sửa", Group: "Hợp đồng", Type: "button", Description: "Sửa danh mục"},
 		{Code: "contract-category:delete", Title: "Xóa", Group: "Hợp đồng", Type: "button", Description: "Xóa danh mục"},
+
+		// ─── Cấu hình ───
+		{Code: "settings:view", Title: "Xem", Group: "Cấu hình", Type: "child_menu", Description: "Xem cấu hình hệ thống"},
+		{Code: "settings:edit", Title: "Sửa", Group: "Cấu hình", Type: "button", Description: "Sửa cấu hình hệ thống"},
 	}
 
 	log.Info("Dropping old permissions collection for clean re-seed...")
@@ -267,6 +273,24 @@ func main() {
 	// 		log.Infof("✓ Created mock user: %s (pass: tnhn@2026)", u.Username)
 	// 	}
 	// }
+
+	log.Info("Initializing system settings...")
+	settingsCol := mgo.DB.Collection("settings")
+	_, err = settingsCol.UpdateOne(ctx,
+		bson.M{"code": "RainSetting"},
+		bson.M{
+			"$setOnInsert": bson.M{
+				"code": "RainSetting",
+				"RainSetting": models.RainSetting{
+					SessionID: "kzela2aw0gdvzxvrthicl14n",
+				},
+			},
+		},
+		options.Update().SetUpsert(true),
+	)
+	if err != nil {
+		log.Errorf("Failed to seed rain_setting: %v", err)
+	}
 
 	log.Info("Database seeding completed successfully!")
 }

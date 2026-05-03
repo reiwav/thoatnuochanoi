@@ -36,3 +36,24 @@ func (s *service) UpdateFloodLevels(ctx context.Context, levels []models.FloodLe
 	setting.FloodLevels = levels
 	return s.repo.Save(ctx, setting)
 }
+
+func (s *service) GetRainSetting(ctx context.Context) (*models.RainSetting, error) {
+	setting, err := s.repo.GetByCode(ctx, "RainSetting")
+	if err != nil {
+		return nil, err
+	}
+	if setting.RainSetting == nil {
+		return &models.RainSetting{}, nil
+	}
+	return setting.RainSetting, nil
+}
+
+func (s *service) UpdateRainSetting(ctx context.Context, rainSetting *models.RainSetting) error {
+	setting, err := s.repo.GetByCode(ctx, "RainSetting")
+	if err != nil {
+		return err
+	}
+	setting.Code = "RainSetting"
+	setting.RainSetting = rainSetting
+	return s.repo.Save(ctx, setting)
+}

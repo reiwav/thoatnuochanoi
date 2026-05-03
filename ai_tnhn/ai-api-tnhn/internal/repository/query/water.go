@@ -36,6 +36,20 @@ func (p rainRepository) GetByStationID(ctx context.Context, stationID int64, lim
 	return records, err
 }
 
+func (p rainRepository) GetAllByStationID(ctx context.Context, stationID int64, startTime time.Time, endTime time.Time) ([]models.RainRecord, error) {
+	var records []models.RainRecord
+	err := p.R_SelectManyWithSort(ctx,
+		bson.M{
+			"station_id": stationID,
+			"timestamp": bson.M{
+				"$gte": startTime,
+				"$lte": endTime,
+			},
+		},
+		bson.M{"timestamp": -1}, &records)
+	return records, err
+}
+
 func (p rainRepository) GetByDate(ctx context.Context, date string) ([]*models.RainRecord, error) {
 	var records []*models.RainRecord
 	cursor, err := p.Collection.Find(ctx, bson.M{"date": date})

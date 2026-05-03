@@ -5,6 +5,7 @@ import (
 	"ai-api-tnhn/internal/integration/thoatnuoc"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/repository"
+	"ai-api-tnhn/internal/service/setting"
 	"ai-api-tnhn/internal/service/station"
 	"context"
 	"fmt"
@@ -27,13 +28,19 @@ type worker struct {
 }
 
 // ASP.NET_SessionId=kzela2aw0gdvzxvrthicl14n
-func NewWorker(l logger.Logger, rain repository.Rain, stationSvc station.Service, thoatnuocSvc thoatnuoc.Service) Worker {
+func NewWorker(l logger.Logger, settingSvc setting.Service, rain repository.Rain, stationSvc station.Service, thoatnuocSvc thoatnuoc.Service) Worker {
+	ctx := context.Background()
+	sessionID := "kzela2aw0gdvzxvrthicl14n"
+	setting, _ := settingSvc.GetRainSetting(ctx)
+	if setting != nil {
+		sessionID = setting.SessionID
+	}
 	return &worker{
 		logger:       l,
 		rainRepo:     rain,
 		stationSvc:   stationSvc,
 		thoatnuocSvc: thoatnuocSvc,
-		sessionID:    "kzela2aw0gdvzxvrthicl14n", // Initial session ID
+		sessionID:    sessionID,
 	}
 }
 

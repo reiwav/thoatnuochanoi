@@ -321,11 +321,20 @@ const adminPages = {
         },
         {
           id: 'setting:flood-level',
-          permission: 'organization:view', // Using organization:view as a proxy for admin settings for now
+          permission: 'settings:view',
           title: 'Cấu hình điểm ngập',
           type: 'item',
           url: '/admin/setting/flood-levels',
           icon: icons.IconClipboardCheck,
+          breadcrumbs: false
+        },
+        {
+          id: 'setting:rain',
+          permission: 'settings:view',
+          title: 'Cấu hình Rain Worker',
+          type: 'item',
+          url: '/admin/setting/rain',
+          icon: icons.IconCloudRain,
           breadcrumbs: false
         },
       ]

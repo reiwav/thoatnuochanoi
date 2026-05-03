@@ -1,7 +1,6 @@
 package weather
 
 import (
-	"ai-api-tnhn/internal/base/mgo/filter"
 	"ai-api-tnhn/internal/utils"
 	"context"
 	"fmt"
@@ -10,7 +9,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 func (s *service) GetRawRainData(ctx context.Context) (*RainDataResponse, error) {
@@ -137,28 +135,32 @@ func (s *service) GetRainSummary(ctx context.Context, orgID string, assignedIDs 
 	if err != nil {
 		return nil, err
 	}
-	f := filter.NewBasicFilter()
-	if orgID != "" {
-		f.AddWhere("org", "$or", []bson.M{{"org_id": orgID}, {"shared_org_ids": orgID}})
-	}
-	if len(assignedIDs) > 0 {
-		f.AddWhere("id", "_id", bson.M{"$in": assignedIDs})
-	}
-	stations, _, _ := s.stationSvc.ListRainStations(ctx, f)
-	permitted := make(map[int]string)
-	for _, st := range stations {
-		if st.OldID > 0 {
-			permitted[st.OldID] = st.TenPhuong
-		}
-	}
+	// f := filter.NewBasicFilter()
+	// if orgID != "" {
+	// 	f.AddWhere("org", "$or", []bson.M{{"org_id": orgID}, {"shared_org_ids": orgID}})
+	// }
+	// if len(assignedIDs) > 0 {
+	// 	f.AddWhere("id", "_id", bson.M{"$in": assignedIDs})
+	// }
+	// stations, _, _ := s.stationSvc.ListRainStations(ctx, f)
+	// permitted := make(map[int]string)
+	// for _, st := range stations {
+	// 	if st.OldID > 0 {
+	// 		permitted[st.OldID] = st.TenPhuong
+	// 	}
+	// }
 
+	permitted := make(map[int]string)
+	for _, d := range rainData.Content.Tram {
+		permitted[d.Id] = d.TenPhuong
+	}
 	now, rainyCount, measurements := time.Now().In(utils.VietnamTZ), 0, []RainStationStat{}
 	for _, d := range rainData.Content.Data {
-		var id int
-		fmt.Sscanf(fmt.Sprintf("%v", d.TramId), "%d", &id)
-		if (orgID != "" && permitted[id] == "") || d.LuongMua_HT == 0 {
-			continue
-		}
+		//var id int
+		// fmt.Sscanf(fmt.Sprintf("%v", d.TramId), "%d", &id)
+		// if (orgID != "" && permitted[id] == "") || d.LuongMua_HT == 0 {
+		// 	continue
+		// }
 		tFullBD, _ := utils.ParseTime(d.ThoiGian_BD)
 		tFullHT, _ := utils.ParseTime(d.ThoiGian_HT)
 		isRaining := false
@@ -179,7 +181,8 @@ func (s *service) GetRainSummary(ctx context.Context, orgID string, assignedIDs 
 			sessionRain = 0
 		}
 		measurements = append(measurements, RainStationStat{
-			Name:          permitted[id],
+			Name:          permitted[d.Id],
+			ID:            d.Id,
 			TotalRain:     d.LuongMua_HT,
 			SessionRain:   sessionRain,
 			StartTime:     tBD,

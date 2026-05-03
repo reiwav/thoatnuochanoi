@@ -16,19 +16,34 @@ type Service interface {
 }
 
 type service struct {
-	cfg           *config.Config
-	log           logger.Logger
-	googleSvc     googleapi.Service
-	driveSvc      googledrive.Service
-	aiChatLogRepo repository.AiChatLog
+	cfg              *config.Config
+	log              logger.Logger
+	googleSvc        googleapi.Service
+	driveSvc         googledrive.Service
+	aiChatLogRepo    repository.AiChatLog
+	rainStationRepo  repository.RainStation
+	lakeStationRepo  repository.LakeStation
+	riverStationRepo repository.RiverStation
 }
 
-func NewService(cfg *config.Config, log logger.Logger, googleSvc googleapi.Service, driveSvc googledrive.Service, aiChatLogRepo repository.AiChatLog) Service {
+func NewService(
+	cfg *config.Config,
+	log logger.Logger,
+	googleSvc googleapi.Service,
+	driveSvc googledrive.Service,
+	aiChatLogRepo repository.AiChatLog,
+	rainStationRepo repository.RainStation,
+	lakeStationRepo repository.LakeStation,
+	riverStationRepo repository.RiverStation,
+) Service {
 	return &service{
-		cfg:           cfg,
-		log:           log,
-		googleSvc:     googleSvc,
-		driveSvc:      driveSvc,
-		aiChatLogRepo: aiChatLogRepo,
+		cfg:              cfg,
+		log:              log,
+		googleSvc:        googleSvc,
+		driveSvc:         driveSvc,
+		aiChatLogRepo:    aiChatLogRepo,
+		rainStationRepo:  rainStationRepo,
+		lakeStationRepo:  lakeStationRepo,
+		riverStationRepo: riverStationRepo,
 	}
 }

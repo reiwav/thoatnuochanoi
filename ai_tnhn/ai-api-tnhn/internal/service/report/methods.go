@@ -9,9 +9,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
-	"strings"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func (s *service) GenerateQuickReportText(ctx context.Context, userID string) (string, error) {
@@ -38,33 +38,49 @@ func (s *service) GenerateQuickReportV3(ctx context.Context, userID string) (*Qu
 	lakeDataRaw, riverDataRaw := [][]string{{"Hồ", "Mực nước"}}, [][]string{{"Sông", "Mực nước"}}
 	phuongDataRaw, xaDataRaw := [][]string{{"Phường", "Lượng mưa (mm)"}}, [][]string{{"Xã", "Lượng mưa (mm)"}}
 
-	riverConfigs := []struct{ id, name string }{
-		{"3", "Sông Tô Lịch (Đập Thanh Liệt)"}, {"170", "Sông Nhuệ (Cống Hà Đông)"}, {"4", "Sông Tô Lịch (Hoàng Quốc Việt)"},
-		{"23", "Sông Kim Ngưu (Cống Lò Đúc)"}, {"28", "Sông Lừ -HL CĐT Lừ Sét"},
-	}
-	lakeConfigs := []struct{ id, name string }{
-		{"35", "Hồ Hoàn Kiếm"}, {"33", "Hồ Tây A TL"}, {"39", "Hồ Linh Đàm"}, {"40", "Hồ Đống Đa"}, {"42", "Hồ Định Công"},
-	}
+	// 1. Lấy và Map dữ liệu trạm Sông
+	var rivers []*models.RiverStation
+	_ = s.riverStationRepo.R_SelectManyWithSort(ctx, bson.M{"trong_so_bao_cao": bson.M{"$gt": 0}}, bson.M{"trong_so_bao_cao": 1}, &rivers)
+
+	// 2. Lấy và Map dữ liệu trạm Hồ
+	var lakes []*models.LakeStation
+	_ = s.lakeStationRepo.R_SelectManyWithSort(ctx, bson.M{"trong_so_bao_cao": bson.M{"$gt": 0}}, bson.M{"trong_so_bao_cao": 1}, &lakes)
 
 	if city.RawWater != nil {
-		wMap := make(map[string]float64)
+		wMap := make(map[int]float64)
 		for _, d := range city.RawWater.Content.Data {
-			wMap[d.TramId] = d.ThuongLuu_HT
+			idInt := 0
+			fmt.Sscanf(d.TramId, "%d", &idInt)
+			wMap[idInt] = d.ThuongLuu_HT
 		}
-		for _, cfg := range lakeConfigs {
-			lakeDataRaw = append(lakeDataRaw, []string{cfg.name, fmt.Sprintf("%.2fm", wMap[cfg.id]/100.0)})
+		for _, r := range rivers {
+			riverDataRaw = append(riverDataRaw, []string{r.TenTram, fmt.Sprintf("%.2fm", wMap[r.OldID]/100.0)})
 		}
-		for _, cfg := range riverConfigs {
-			riverDataRaw = append(riverDataRaw, []string{cfg.name, fmt.Sprintf("%.2fm", wMap[cfg.id]/100.0)})
+		for _, l := range lakes {
+			lakeDataRaw = append(lakeDataRaw, []string{l.TenTram, fmt.Sprintf("%.2fm", wMap[l.OldID]/100.0)})
 		}
 	}
 
-	phuongs, xas := s.mapRainData(city.Weather)
-	for _, v := range phuongs {
-		phuongDataRaw = append(phuongDataRaw, []string{v.name, fmt.Sprintf("%.1f", v.val)})
-	}
-	for _, v := range xas {
-		xaDataRaw = append(xaDataRaw, []string{v.name, fmt.Sprintf("%.1f", v.val)})
+	// 3. Lấy và Map dữ liệu trạm Mưa (Phường/Xã)
+	var rainStations []*models.RainStation
+	_ = s.rainStationRepo.R_SelectManyWithSort(ctx, bson.M{}, bson.M{"trong_so_bao_cao": 1}, &rainStations)
+
+	if city.Weather != nil {
+		mMap := make(map[int]float64)
+		for _, m := range city.Weather.Measurements {
+			mMap[m.ID] = m.TotalRain
+		}
+
+		for _, rs := range rainStations {
+			if totalRain, ok := mMap[rs.OldID]; ok && totalRain > 0 {
+				row := []string{rs.TenPhuong, fmt.Sprintf("%.1f", totalRain)}
+				if rs.Loai == models.StationAreaXa {
+					xaDataRaw = append(xaDataRaw, row)
+				} else {
+					phuongDataRaw = append(phuongDataRaw, row)
+				}
+			}
+		}
 	}
 
 	timeMua := s.formatRainTime(city.Weather)
@@ -82,7 +98,7 @@ func (s *service) GenerateQuickReportV3(ctx context.Context, userID string) (*Qu
 
 	noiDungTramBom := "Hiện tại không ghi nhận trạm bơm nào đang vận hành."
 	if city.Pumping != nil {
-		noiDungTramBom = city.Pumping.SummaryText
+		noiDungTramBom = city.Pumping.SummaryPriorityText
 	}
 
 	splitTable := func(data [][]string) ([][]string, [][]string) {
@@ -147,45 +163,6 @@ func (s *service) GenerateQuickReportV3(ctx context.Context, userID string) (*Qu
 		_ = s.aiChatLogRepo.Save(ctx, &models.AiChatLog{UserID: userID, Role: "model", Content: fmt.Sprintf("Đã tạo xong báo cáo nhanh! Bạn có thể xem và tải về tại đây:\n%s", resLink), ChatType: "support", Timestamp: time.Now()})
 	}
 	return &QuickReportResult{ReportURL: resLink, DocID: templateID}, nil
-}
-
-func (s *service) mapRainData(rainSum *weather.RainSummaryData) (phuongs []itemVal, xas []itemVal) {
-	if rainSum == nil {
-		return
-	}
-	fixedXas := []string{"Xã Tân Triều", "Xã Thanh Liệt", "Xã Vĩnh Quỳnh", "Xã Tam Hiệp", "Xã Tứ Hiệp", "Xã Ngũ Hiệp", "Xã Vạn Phúc", "Xã Hữu Hòa", "Xã Tả Thanh Oai", "Xã Đại Áng"}
-	anyXaRain := false
-	for _, m := range rainSum.Measurements {
-		if strings.Contains(strings.ToLower(m.Name), "xã") {
-			xas = append(xas, itemVal{m.Name, m.TotalRain})
-			if m.TotalRain > 0 {
-				anyXaRain = true
-			}
-		} else {
-			phuongs = append(phuongs, itemVal{m.Name, m.TotalRain})
-		}
-	}
-	sort.Slice(phuongs, func(i, j int) bool { return phuongs[i].val > phuongs[j].val })
-	if len(phuongs) > 10 {
-		phuongs = phuongs[:10]
-	}
-
-	if anyXaRain {
-		m := make(map[string]float64)
-		for _, x := range xas {
-			m[x.name] = x.val
-		}
-		xas = []itemVal{}
-		for _, n := range fixedXas {
-			xas = append(xas, itemVal{n, m[n]})
-		}
-	} else {
-		sort.Slice(xas, func(i, j int) bool { return xas[i].val > xas[j].val })
-		if len(xas) > 10 {
-			xas = xas[:10]
-		}
-	}
-	return
 }
 
 func (s *service) formatRainTime(rainSum *weather.RainSummaryData) string {

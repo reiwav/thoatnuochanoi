@@ -14,16 +14,16 @@ type RainDataResponse struct {
 	Code    int `json:"Code"`
 	Content struct {
 		Tram []struct {
-			Id        interface{} `json:"Id"` // Can be float64 or string from external API
-			TenTram   string      `json:"TenTram"`
-			TenPhuong string      `json:"TenPhuong"`
-			DiaChi    string      `json:"DiaChi"`
-			Lat       string      `json:"Lat"`
-			Lng       string      `json:"Lng"`
-			ThuTu     int         `json:"ThuTu"`
-			ManHinh   int         `json:"ManHinh"`
-			PhuongId  int         `json:"PhuongId"`
-			Active    bool        `json:"Active"`
+			Id        int    `json:"Id"` // Can be float64 or string from external API
+			TenTram   string `json:"TenTram"`
+			TenPhuong string `json:"TenPhuong"`
+			DiaChi    string `json:"DiaChi"`
+			Lat       string `json:"Lat"`
+			Lng       string `json:"Lng"`
+			ThuTu     int    `json:"ThuTu"`
+			ManHinh   int    `json:"ManHinh"`
+			PhuongId  int    `json:"PhuongId"`
+			Active    bool   `json:"Active"`
 		} `json:"tram"`
 		Data []struct {
 			Id          int         `json:"Id"`

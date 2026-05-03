@@ -145,7 +145,7 @@ func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log log
 		s.GoogleApi.SetGeminiService(s.Gemini)
 	}
 
-	s.Report = report.NewService(cfg, log, s.GoogleApi, driveService, repos.AiChatLog)
+	s.Report = report.NewService(cfg, log, s.GoogleApi, driveService, repos.AiChatLog, repos.RainStation, repos.LakeStation, repos.RiverStation)
 
 	if s.Gemini != nil {
 		targetWeatherSvc := s.Gemini

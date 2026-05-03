@@ -80,7 +80,7 @@ func (s *service) CreateHistory(ctx context.Context, user *models.User, history 
 				latest.ClosedCount == history.ClosedCount &&
 				latest.MaintenanceCount == history.MaintenanceCount &&
 				latest.NoSignalCount == history.NoSignalCount {
-				
+
 				latest.BeforeUpdate()
 				latest.Timestamp = history.Timestamp
 				errUpdate := s.stationRepo.UpdateHistory(ctx, latest)
@@ -138,6 +138,7 @@ func (s *service) GetPumpingStationSummary(ctx context.Context, orgID string, as
 	if len(assignedIDs) > 0 {
 		f.AddWhere("id_in", "_id", bson.M{"$in": assignedIDs})
 	}
+	f.SetOrderBy("priority")
 
 	stations, _, err := s.List(ctx, f)
 	if err != nil {
@@ -192,18 +193,27 @@ func (s *service) GetPumpingStationSummary(ctx context.Context, orgID string, as
 		}
 		return stationStats[i].Name < stationStats[j].Name
 	})
-
+	summaryText := "Hiện tại không ghi nhận trạm bơm nào đang vận hành."
+	summaryPriorityText := summaryText
+	var prioritys []string
 	var stInfos []string
 	for _, st := range stationStats {
 		if st.OperatingCount == 0 {
 			continue
 		}
-		stInfos = append(stInfos, fmt.Sprintf("%s: %d/%d đang vận hành, cập nhật lúc: %s.", st.Name, st.OperatingCount, st.PumpCount, st.LastUpdate))
+		txt := fmt.Sprintf("%s: %d/%d đang vận hành, cập nhật lúc: %s.", st.Name, st.OperatingCount, st.PumpCount, st.LastUpdate)
+		if st.Priority > 0 {
+			prioritys = append(prioritys, txt)
+		}
+		stInfos = append(stInfos, txt)
 	}
 
-	summaryText := "Hiện tại không ghi nhận trạm bơm nào đang vận hành."
+	if len(prioritys) > 0 {
+		summaryPriorityText = strings.Join(prioritys, ",")
+	}
+
 	if len(stInfos) > 0 {
-		summaryText = strings.Join(stInfos, "\n")
+		summaryText = strings.Join(stInfos, ",")
 	}
 
 	return &PumpingStationSummaryData{
@@ -212,5 +222,6 @@ func (s *service) GetPumpingStationSummary(ctx context.Context, orgID string, as
 		TotalOperatingPumps: totalOperating,
 		Stations:            stationStats,
 		SummaryText:         summaryText,
+		SummaryPriorityText: summaryPriorityText,
 	}, nil
 }

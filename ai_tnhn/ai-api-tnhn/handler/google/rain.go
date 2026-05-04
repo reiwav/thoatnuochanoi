@@ -82,23 +82,29 @@ func (h *handler) GetRainSummaryText(c *gin.Context) {
 }
 
 func (h *handler) formatRainSummary(summary *weather.RainSummaryData) string {
-	displayText := ""
 	if len(summary.Measurements) == 0 {
-		return "Hiện tại ghi nhận không có mưa tại tất cả các trạm."
+		return "Hiện tại không mưa."
 	}
 
 	statusLine := "- Hiện tại không còn mưa"
 	if summary.RainyStations > 0 {
 		statusLine = fmt.Sprintf("- Số trạm đang có mưa: %d", summary.RainyStations)
 	}
-	displayText = fmt.Sprintf("Tình hình mưa hiện tại:\n- Tổng số trạm: %d\n%s\n- Trạm mưa lớn nhất trong ngày: %s (%.1fmm)\n\nChi tiết danh sách các trạm có mưa trong ngày:\n",
+	displayText := fmt.Sprintf("Tình hình mưa hiện tại:\n- Tổng số trạm: %d\n%s\n- Trạm mưa lớn nhất trong ngày: %s (%.1fmm)\n\nChi tiết danh sách các trạm có mưa trong ngày:\n",
 		summary.TotalStations, statusLine, summary.MaxRainStation.Name, summary.MaxRainStation.TotalRain)
+
 	for _, m := range summary.Measurements {
-		status := "✅ Đã tạnh"
-		if m.IsRaining {
-			status = "⛈️ Đang mưa"
+		if m.TotalRain == 0 {
+			continue
 		}
-		displayText += fmt.Sprintf("- %s: %.1fmm (%s - %s) [%s]\n", m.Name, m.TotalRain, m.StartTime, m.EndTime, status)
+		statusIcon := "🌧️"
+		statusText := "Đang mưa"
+		if !m.IsRaining {
+			statusIcon = "✅"
+			statusText = "Đã tạnh"
+		}
+		displayText += fmt.Sprintf("- %s: %.1fmm (%s - %s) [%s] %s\n",
+			m.Name, m.TotalRain, m.StartTime, m.EndTime, statusIcon, statusText)
 	}
 	return displayText
 }

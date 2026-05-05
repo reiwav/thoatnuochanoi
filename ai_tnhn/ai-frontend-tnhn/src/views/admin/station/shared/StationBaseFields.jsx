@@ -1,10 +1,11 @@
-import React from 'react';
 import {
-    Grid, TextField, MenuItem, FormControlLabel, Switch, Typography, Stack
+    Grid, TextField, MenuItem, FormControlLabel, Switch, Typography, Stack, Box
 } from '@mui/material';
 import MultiSelectCheckboxes from 'ui-component/MultiSelectCheckboxes';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
 
-const StationBaseFields = ({ formData, handleChange, organizations }) => {
+const StationBaseFields = ({ formData, handleChange, organizations, showExtendedFields = false }) => {
     return (
         <Stack spacing={2.5}>
             <TextField
@@ -18,6 +19,37 @@ const StationBaseFields = ({ formData, handleChange, organizations }) => {
                 value={formData.DiaChi}
                 onChange={(e) => handleChange('DiaChi', e.target.value)}
             />
+
+            {showExtendedFields && (
+                <>
+                    <Grid container spacing={2}>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth label="Mã trạm (ID cũ)" type="number"
+                                value={formData.Id || ''}
+                                onChange={(e) => handleChange('Id', e.target.value)}
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth label="Tên phường/xã"
+                                value={formData.TenPhuong || ''}
+                                onChange={(e) => handleChange('TenPhuong', e.target.value)}
+                            />
+                        </Grid>
+                    </Grid>
+
+                    <Box>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>Tên trạm (HTML)</Typography>
+                        <ReactQuill
+                            theme="snow"
+                            value={formData.TenTramHTML || ''}
+                            onChange={(content) => handleChange('TenTramHTML', content)}
+                            style={{ height: '150px', marginBottom: '50px' }}
+                        />
+                    </Box>
+                </>
+            )}
 
             <Grid container spacing={2}>
                 <Grid item xs={12} sm={6}>

@@ -15,6 +15,7 @@ type RainStation struct {
 	model.BaseModel `bson:",inline"`
 	OldID           int             `json:"Id" bson:"old_id" example:"101"`
 	TenTram         string          `json:"TenTram" bson:"ten_tram" example:"Trạm đo mưa Hoàn Kiếm"`
+	TenTramHTML     string          `json:"TenTramHTML" bson:"ten_tram_html" example:"<b>Trạm đo mưa Hồ Hoàn Kiếm</b>"`
 	TenPhuong       string          `json:"TenPhuong" bson:"ten_phuong" example:"Phường Tràng Tiền"`
 	Loai            StationAreaType `json:"Loai" bson:"loai" example:"phuong"` // 1: phường, 2: xã
 	DiaChi          string          `json:"DiaChi" bson:"dia_chi" example:"Số 1 Tràng Tiền"`

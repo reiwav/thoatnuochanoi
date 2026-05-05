@@ -19,7 +19,10 @@ const LakeDialog = ({ open, onClose, onSubmit, station, isEdit, organizations })
         Loai: '',
         NguongCanhBao: '',
         ThuTu: 0,
-        TrongSoBaoCao: 0
+        TrongSoBaoCao: 0,
+        Id: '',
+        TenTramHTML: '',
+        TenPhuong: ''
     });
 
     useEffect(() => {
@@ -37,7 +40,10 @@ const LakeDialog = ({ open, onClose, onSubmit, station, isEdit, organizations })
                     Loai: station.Loai || '',
                     NguongCanhBao: station.NguongCanhBao !== undefined ? station.NguongCanhBao : '',
                     ThuTu: station.ThuTu !== undefined ? station.ThuTu : 0,
-                    TrongSoBaoCao: station.TrongSoBaoCao !== undefined ? station.TrongSoBaoCao : 0
+                    TrongSoBaoCao: station.TrongSoBaoCao !== undefined ? station.TrongSoBaoCao : 0,
+                    Id: station.Id || '',
+                    TenTramHTML: station.TenTramHTML || '',
+                    TenPhuong: station.TenPhuong || ''
                 });
             } else {
                 setFormData({
@@ -52,7 +58,10 @@ const LakeDialog = ({ open, onClose, onSubmit, station, isEdit, organizations })
                     Loai: '',
                     NguongCanhBao: '',
                     ThuTu: 0,
-                    TrongSoBaoCao: 0
+                    TrongSoBaoCao: 0,
+                    Id: '',
+                    TenTramHTML: '',
+                    TenPhuong: ''
                 });
             }
         }
@@ -74,7 +83,8 @@ const LakeDialog = ({ open, onClose, onSubmit, station, isEdit, organizations })
             ...formData,
             NguongCanhBao: formData.NguongCanhBao !== '' ? parseFloat(formData.NguongCanhBao) : 0,
             ThuTu: parseInt(formData.ThuTu) || 0,
-            TrongSoBaoCao: parseInt(formData.TrongSoBaoCao) || 0
+            TrongSoBaoCao: parseInt(formData.TrongSoBaoCao) || 0,
+            Id: parseInt(formData.Id) || 0
         };
         onSubmit(submitData);
     };
@@ -92,6 +102,7 @@ const LakeDialog = ({ open, onClose, onSubmit, station, isEdit, organizations })
                     formData={formData} 
                     handleChange={handleChange} 
                     organizations={organizations} 
+                    showExtendedFields={true}
                 />
                 
                 <TextField

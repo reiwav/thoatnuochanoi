@@ -133,12 +133,12 @@ func (s *service) SetWorker(w interface{}) {
 func (s *service) GetPumpingStationSummary(ctx context.Context, orgID string, assignedIDs []string) (*PumpingStationSummaryData, error) {
 	f := filter.NewBasicFilter()
 	if orgID != "" {
-		f.AddWhere("org_wrapper", "$or", []bson.M{{"org_id": orgID}, {"shared_org_ids": orgID}})
+		f.AddWhere("org_wrapper", "$or", []bson.M{{"org_id": orgID}, {"shared_org_ids": orgID}, {"shared_all": true}})
 	}
 	if len(assignedIDs) > 0 {
 		f.AddWhere("id_in", "_id", bson.M{"$in": assignedIDs})
 	}
-	f.SetOrderBy("priority")
+	f.AddSort("priority", -1)
 
 	stations, _, err := s.List(ctx, f)
 	if err != nil {

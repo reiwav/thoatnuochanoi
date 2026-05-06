@@ -132,7 +132,7 @@ const InundationDesktopRow = ({ row, canEdit, canDelete, handleOpenEdit, handleD
 const StationInundationList = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-    const { user, isCompany, hasPermission } = useAuthStore();
+    const { user, isCompany, isSuperAdmin, hasPermission, permissions } = useAuthStore();
     const canCreate = hasPermission('inundation:create');
     const canEdit = hasPermission('inundation:edit');
     const canDelete = hasPermission('inundation:delete');
@@ -318,8 +318,8 @@ const StationInundationList = () => {
                             row={row}
                             handleOpenEdit={handleOpenEdit}
                             handleDelete={() => handleDelete(row)}
-                            canEdit={canEdit && (isCompany || user?.org_id === row.org_id)}
-                            canDelete={canDelete && (isCompany || user?.org_id === row.org_id)}
+                            canEdit={canEdit && (isSuperAdmin || isCompany || user?.org_id === row.org_id)}
+                            canDelete={canDelete && (isSuperAdmin || isCompany || user?.org_id === row.org_id)}
                         />
                     ))
                 )}
@@ -332,7 +332,7 @@ const StationInundationList = () => {
                 borderColor: 'divider', 
                 boxShadow: 'none', 
                 borderRadius: '16px',
-                overflow: 'hidden'
+                overflowX: 'auto'
             }}>
                 <Table>
                     <TableHead sx={{ bgcolor: 'grey.50' }}>
@@ -357,8 +357,8 @@ const StationInundationList = () => {
                                     row={row}
                                     handleOpenEdit={handleOpenEdit}
                                     handleDelete={() => handleDelete(row)}
-                                    canEdit={canEdit && (isCompany || user?.org_id === row.org_id)}
-                                    canDelete={canDelete && (isCompany || user?.org_id === row.org_id)}
+                                    canEdit={canEdit && (isSuperAdmin || isCompany || user?.org_id === row.org_id)}
+                                    canDelete={canDelete && (isSuperAdmin || isCompany || user?.org_id === row.org_id)}
                                     organizationNamesMap={organizationNamesMap}
                                 />
                             ))

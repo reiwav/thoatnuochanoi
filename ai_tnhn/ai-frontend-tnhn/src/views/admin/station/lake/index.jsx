@@ -3,7 +3,7 @@ import {
     Button, Grid, TextField, Table, TableBody,
     TableCell, TableContainer, TableHead, TableRow, Paper,
     CircularProgress, TablePagination, Typography,
-    useTheme, useMediaQuery, Box, InputAdornment, Stack
+    useTheme, useMediaQuery, Box, InputAdornment, Stack, Alert
 } from '@mui/material';
 import PermissionGuard from 'ui-component/PermissionGuard';
 import { IconPlus, IconSearch } from '@tabler/icons-react';
@@ -25,13 +25,13 @@ import StationMobileCard from './components/StationMobileCard';
 import StationDesktopRow from './components/StationDesktopRow';
 
 const StationLakeList = () => {
-    const { user, isCompany, hasPermission } = useAuthStore();
+    const { user, isCompany, isSuperAdmin, hasPermission, permissions } = useAuthStore();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-    const canCreate = hasPermission('water:create');
-    const canEdit = hasPermission('water:edit');
-    const canDelete = hasPermission('water:delete');
+    const canCreate = isSuperAdmin || hasPermission('water:create');
+    const canEdit = isSuperAdmin || hasPermission('water:edit');
+    const canDelete = isSuperAdmin || hasPermission('water:delete');
 
     const [loading, setLoading] = useState(false);
     const [stations, setStations] = useState([]);
@@ -222,8 +222,8 @@ const StationLakeList = () => {
                             row={row}
                             handleOpenEdit={handleOpenEdit}
                             handleDelete={() => handleDelete(row)}
-                            canEdit={canEdit && (isCompany || user?.org_id === row.org_id)}
-                            canDelete={canDelete && (isCompany || user?.org_id === row.org_id)}
+                            canEdit={canEdit && (isSuperAdmin || isCompany || user?.org_id === row.org_id)}
+                            canDelete={canDelete && (isSuperAdmin || isCompany || user?.org_id === row.org_id)}
                             organizationName={getOrgName(row.org_id)}
                         />
                     ))
@@ -237,7 +237,7 @@ const StationLakeList = () => {
                 borderColor: 'divider', 
                 boxShadow: 'none', 
                 borderRadius: '16px',
-                overflow: 'hidden'
+                overflowX: 'auto'
             }}>
                 <Table>
                     <TableHead sx={{ bgcolor: 'grey.50' }}>
@@ -249,10 +249,10 @@ const StationLakeList = () => {
                             <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, fontWeight: 800, fontSize: '0.9rem' }}>Xí nghiệp phối hợp</TableCell>
                             <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, fontWeight: 800, fontSize: '0.9rem' }}>Loại</TableCell>
                             <TableCell sx={{ display: { xs: 'none', xl: 'table-cell' }, fontWeight: 800, fontSize: '0.9rem' }}>Địa chỉ</TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 800, fontSize: '0.9rem' }}>Thứ tự</TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 800, fontSize: '0.9rem' }}>Trọng số</TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 800, fontSize: '0.9rem' }}>Ngưỡng</TableCell>
-                            <TableCell sx={{ fontWeight: 800, fontSize: '0.9rem' }}>Trạng thái</TableCell>
+                            <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' }, fontWeight: 800, fontSize: '0.9rem' }}>Thứ tự</TableCell>
+                            <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' }, fontWeight: 800, fontSize: '0.9rem' }}>Trọng số</TableCell>
+                            <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' }, fontWeight: 800, fontSize: '0.9rem' }}>Ngưỡng</TableCell>
+                            <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, fontWeight: 800, fontSize: '0.9rem' }}>Trạng thái</TableCell>
                             {(canEdit || canDelete) && <TableCell align="right" sx={{ fontWeight: 800, fontSize: '0.9rem' }}>Thao tác</TableCell>}
                         </TableRow>
                     </TableHead>
@@ -276,8 +276,8 @@ const StationLakeList = () => {
                                     row={row}
                                     handleOpenEdit={handleOpenEdit}
                                     handleDelete={() => handleDelete(row)}
-                                    canEdit={canEdit && (isCompany || user?.org_id === row.org_id)}
-                                    canDelete={canDelete && (isCompany || user?.org_id === row.org_id)}
+                                    canEdit={canEdit && (isSuperAdmin || isCompany || user?.org_id === row.org_id)}
+                                    canDelete={canDelete && (isSuperAdmin || isCompany || user?.org_id === row.org_id)}
                                     organizationName={getOrgName(row.org_id)}
                                     organizationNamesMap={organizationNamesMap}
                                 />

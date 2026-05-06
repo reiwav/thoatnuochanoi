@@ -87,10 +87,10 @@ const useAuthStore = create(
 
       hasPermission: (permissionId) => {
         const { role: currentRole, isSuperAdmin, permissions } = get();
-        if (!currentRole) return false;
-        
         // Super Admin always has permission
         if (isSuperAdmin) return true;
+
+        if (!currentRole) return false;
 
         // If permissionId is an array, check if user has ANY of the permissions 
         // OR if their role matches one of the values in the array (legacy support)

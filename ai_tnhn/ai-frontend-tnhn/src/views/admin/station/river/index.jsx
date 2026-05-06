@@ -97,7 +97,11 @@ const StationMobileCard = ({ row, canEdit, canDelete, handleOpenEdit, handleDele
 const StationDesktopRow = ({ row, canEdit, canDelete, handleOpenEdit, handleDelete, organizationName, organizationNamesMap }) => (
     <TableRow hover>
         <TableCell sx={{ fontWeight: 800, fontSize: '1.05rem', color: 'primary.dark' }}>{row.TenTram}</TableCell>
-        <TableCell sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>{row.TenTramHTML || '-'}</TableCell>
+        <TableCell sx={{ fontSize: '0.85rem', color: 'text.secondary', maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <Tooltip title={row.TenTramHTML || ''} placement="top">
+                <span>{row.TenTramHTML || '-'}</span>
+            </Tooltip>
+        </TableCell>
         <TableCell sx={{ fontSize: '0.95rem', fontWeight: 700 }}>{row.OldID || row.Id || '-'}</TableCell>
         <TableCell sx={{ fontSize: '0.95rem', fontWeight: 600 }}>{organizationName || '-'}</TableCell>
         <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, fontSize: '0.85rem' }}>
@@ -126,7 +130,7 @@ const StationDesktopRow = ({ row, canEdit, canDelete, handleOpenEdit, handleDele
 );
 
 const StationRiverList = () => {
-    const { user, isCompany, hasPermission } = useAuthStore();
+    const { user, isCompany, isSuperAdmin, hasPermission, permissions } = useAuthStore();
     const canCreate = hasPermission('water:create');
     const canEdit = hasPermission('water:edit');
     const canDelete = hasPermission('water:delete');
@@ -310,8 +314,8 @@ const StationRiverList = () => {
                             row={row}
                             handleOpenEdit={handleOpenEdit}
                             handleDelete={() => handleDelete(row)}
-                            canEdit={canEdit && (isCompany || user?.org_id === row.org_id)}
-                            canDelete={canDelete && (isCompany || user?.org_id === row.org_id)}
+                            canEdit={canEdit && (isSuperAdmin || isCompany || user?.org_id === row.org_id)}
+                            canDelete={canDelete && (isSuperAdmin || isCompany || user?.org_id === row.org_id)}
                             organizationName={getOrgName(row.org_id)}
                         />
                     ))
@@ -325,7 +329,7 @@ const StationRiverList = () => {
                 borderColor: 'divider', 
                 boxShadow: 'none', 
                 borderRadius: '16px',
-                overflow: 'hidden'
+                overflowX: 'auto'
             }}>
                 <Table>
                     <TableHead sx={{ bgcolor: 'grey.50' }}>
@@ -356,8 +360,8 @@ const StationRiverList = () => {
                                     row={row}
                                     handleOpenEdit={handleOpenEdit}
                                     handleDelete={() => handleDelete(row)}
-                                    canEdit={canEdit && (isCompany || user?.org_id === row.org_id)}
-                                    canDelete={canDelete && (isCompany || user?.org_id === row.org_id)}
+                                    canEdit={canEdit && (isSuperAdmin || isCompany || user?.org_id === row.org_id)}
+                                    canDelete={canDelete && (isSuperAdmin || isCompany || user?.org_id === row.org_id)}
                                     organizationName={getOrgName(row.org_id)}
                                     organizationNamesMap={organizationNamesMap}
                                 />

@@ -6,9 +6,12 @@ import StationDialogWrapper from '../shared/StationDialogWrapper';
 import StationBaseFields from '../shared/StationBaseFields';
 
 const RiverDialog = ({ open, onClose, onSubmit, station, isEdit, organizations }) => {
-    const { user, isCompany } = useAuthStore();
+    const { user, isCompany, isSuperAdmin } = useAuthStore();
     const [formData, setFormData] = useState({
+        Id: 0,
         TenTram: '',
+        TenTramHTML: '',
+        TenPhuong: '',
         DiaChi: '',
         Lat: '',
         Lng: '',
@@ -26,7 +29,10 @@ const RiverDialog = ({ open, onClose, onSubmit, station, isEdit, organizations }
         if (open) {
             if (isEdit && station) {
                 setFormData({
+                    Id: station.Id !== undefined ? station.Id : 0,
                     TenTram: station.TenTram || '',
+                    TenTramHTML: station.TenTramHTML || '',
+                    TenPhuong: station.TenPhuong || '',
                     DiaChi: station.DiaChi || '',
                     Lat: station.Lat || '',
                     Lng: station.Lng || '',
@@ -41,7 +47,10 @@ const RiverDialog = ({ open, onClose, onSubmit, station, isEdit, organizations }
                 });
             } else {
                 setFormData({
+                    Id: 0,
                     TenTram: '',
+                    TenTramHTML: '',
+                    TenPhuong: '',
                     DiaChi: '',
                     Lat: '',
                     Lng: '',
@@ -72,6 +81,7 @@ const RiverDialog = ({ open, onClose, onSubmit, station, isEdit, organizations }
         if (!formData.TenTram) return toast.error('Vui lòng nhập tên trạm');
         const submitData = { 
             ...formData,
+            Id: parseInt(formData.Id) || 0,
             NguongCanhBao: formData.NguongCanhBao !== '' ? parseFloat(formData.NguongCanhBao) : 0,
             ThuTu: parseInt(formData.ThuTu) || 0,
             TrongSoBaoCao: parseInt(formData.TrongSoBaoCao) || 0
@@ -94,6 +104,32 @@ const RiverDialog = ({ open, onClose, onSubmit, station, isEdit, organizations }
                     organizations={organizations} 
                 />
                 
+                {isSuperAdmin && (
+                    <Grid container spacing={2}>
+                        <Grid item xs={12} sm={4}>
+                            <TextField
+                                fullWidth label="ID cũ (old_id)" type="number"
+                                value={formData.Id}
+                                onChange={(e) => handleChange('Id', e.target.value)}
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={4}>
+                            <TextField
+                                fullWidth label="Tên trạm HTML"
+                                value={formData.TenTramHTML}
+                                onChange={(e) => handleChange('TenTramHTML', e.target.value)}
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={4}>
+                            <TextField
+                                fullWidth label="Tên phường/xã"
+                                value={formData.TenPhuong}
+                                onChange={(e) => handleChange('TenPhuong', e.target.value)}
+                            />
+                        </Grid>
+                    </Grid>
+                )}
+
                 <TextField
                     fullWidth label="Loại"
                     placeholder="Ví dụ: Sông Nhuệ, Sông Hồng..."
@@ -108,7 +144,7 @@ const RiverDialog = ({ open, onClose, onSubmit, station, isEdit, organizations }
                 />
 
                 <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
+                    <Grid item xs={12} sm={isSuperAdmin ? 6 : 12}>
                         <TextField
                             fullWidth label="Độ ưu tiên" type="number"
                             value={formData.ThuTu}
@@ -116,13 +152,15 @@ const RiverDialog = ({ open, onClose, onSubmit, station, isEdit, organizations }
                             helperText="Số nhỏ = ưu tiên cao"
                         />
                     </Grid>
-                    <Grid item xs={12} sm={6}>
-                        <TextField
-                            fullWidth label="Trọng số báo cáo" type="number"
-                            value={formData.TrongSoBaoCao}
-                            onChange={(e) => handleChange('TrongSoBaoCao', e.target.value)}
-                        />
-                    </Grid>
+                    {isSuperAdmin && (
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth label="Trọng số báo cáo" type="number"
+                                value={formData.TrongSoBaoCao}
+                                onChange={(e) => handleChange('TrongSoBaoCao', e.target.value)}
+                            />
+                        </Grid>
+                    )}
                 </Grid>
             </Stack>
         </StationDialogWrapper>

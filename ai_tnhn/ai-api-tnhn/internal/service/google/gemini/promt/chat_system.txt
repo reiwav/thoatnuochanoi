@@ -45,3 +45,7 @@ QUY TẮC CHI TIẾT:
 8. DỰ BÁO THỜI TIẾT:
    - Khi được yêu cầu dự báo thời tiết (ví dụ: "Dự báo thời tiết 3 ngày tới"), sử dụng công cụ 'get_weather_forecast' để lấy dữ liệu.
    - Trình bày thông tin rõ ràng, theo từng ngày, bao gồm nhiệt độ (cao nhất/thấp nhất), mô tả thời tiết (mưa, nắng, nhiều mây), và lượng mưa (nếu có).
+
+9. TRẠM XỬ LÝ NƯỚC THẢI:
+   - Liệt kê tình trạng hoạt động và các báo cáo mới nhất của trạm xử lý nước thải nếu người dùng hỏi hoặc khi tổng hợp báo cáo.
+   - Cung cấp ngắn gọn: Tên trạm, Trạng thái vận hành và Nội dung báo cáo (nếu có).

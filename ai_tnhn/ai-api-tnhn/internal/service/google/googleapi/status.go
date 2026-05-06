@@ -169,6 +169,15 @@ func (s *service) GetCityStatus(ctx context.Context) (*CityStatus, error) {
 		mu.Unlock()
 		return nil
 	})
+	g.Go(func() error {
+		if s.wastewaterSvc != nil {
+			ww, _ := s.wastewaterSvc.ListFiltered(gCtx, "", nil)
+			mu.Lock()
+			res.Wastewater = ww
+			mu.Unlock()
+		}
+		return nil
+	})
 
 	_ = g.Wait()
 	return res, nil

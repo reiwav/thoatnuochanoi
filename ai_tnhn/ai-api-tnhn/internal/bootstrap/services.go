@@ -121,8 +121,9 @@ func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log log
 	s.Email = email.NewService(cfg.EmailConfig)
 	s.Inundation = inundation.NewService(repos.InundationReport, repos.InundationUpdate, repos.InundationStation, repos.Organization, s.Drive, repos.AppSetting)
 
+	s.Wastewater = wastewater_treatment.NewService(repos.WastewaterStation)
 	s.PumpingStation = pumpingstation.NewService(repos.PumpingStation, repos.User, repos.Organization)
-	s.GoogleApi, _ = googleapi.NewService(cfg.GoogleDriveConfig, cfg.OAuthConfig, repos.AiUsage, s.Inundation, s.Weather, s.Station, s.PumpingStation, s.Water)
+	s.GoogleApi, _ = googleapi.NewService(cfg.GoogleDriveConfig, cfg.OAuthConfig, repos.AiUsage, s.Inundation, s.Weather, s.Station, s.PumpingStation, s.Water, s.Wastewater)
 	if s.GoogleApi != nil {
 		s.GoogleApi.SetEmailService(s.Email)
 	}
@@ -162,7 +163,6 @@ func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log log
 		}
 	}
 
-	s.Wastewater = wastewater_treatment.NewService(repos.WastewaterStation)
 	s.SluiceGate = sluice_gate.NewService(repos.SluiceGate)
 
 	return s

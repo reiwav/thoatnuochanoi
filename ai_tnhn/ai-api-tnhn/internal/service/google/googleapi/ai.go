@@ -155,5 +155,20 @@ func (s *service) buildDynamicPrompt(status *CityStatus, hh, dd, mm, yyyy string
 		pumpStr = status.Pumping.SummaryText
 	}
 
-	return fmt.Sprintf(promt.Get("report_dynamic"), hh, dd+"/"+mm+"/"+yyyy, rainIntro, waterStr, inuStr, pumpStr)
+	wwStr := "Không có báo cáo trạm xử lý nước thải."
+	if len(status.Wastewater) > 0 {
+		var wwInfos []string
+		for _, w := range status.Wastewater {
+			note := "Không có báo cáo"
+			if w.LastReport != nil && w.LastReport.Note != "" {
+				note = w.LastReport.Note
+			}
+			wwInfos = append(wwInfos, fmt.Sprintf("- %s: %s", w.Name, note))
+		}
+		if len(wwInfos) > 0 {
+			wwStr = strings.Join(wwInfos, "\n")
+		}
+	}
+
+	return fmt.Sprintf(promt.Get("report_dynamic"), hh, dd+"/"+mm+"/"+yyyy, rainIntro, waterStr, inuStr, pumpStr, wwStr)
 }

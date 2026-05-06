@@ -1,6 +1,7 @@
 package googleapi
 
 import (
+	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/service/google/email"
 	"ai-api-tnhn/internal/service/station/inundation"
 	pumpingstation "ai-api-tnhn/internal/service/station/pumping_station"
@@ -38,6 +39,7 @@ type CityStatus struct {
 	Water      *water.WaterSummaryData
 	Inundation *inundation.InundationSummaryData
 	Pumping    *pumpingstation.PumpingStationSummaryData
+	Wastewater []*models.WastewaterStation
 	RawWater   *weather.WaterDataResponse
 	OCRText    string
 }

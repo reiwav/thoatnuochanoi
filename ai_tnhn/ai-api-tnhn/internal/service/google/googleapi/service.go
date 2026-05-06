@@ -8,6 +8,7 @@ import (
 	"ai-api-tnhn/internal/service/station/inundation"
 	pumpingstation "ai-api-tnhn/internal/service/station/pumping_station"
 	"ai-api-tnhn/internal/service/station/water"
+	"ai-api-tnhn/internal/service/station/wastewater_treatment"
 	"ai-api-tnhn/internal/service/weather"
 	"context"
 	"fmt"
@@ -48,15 +49,16 @@ type service struct {
 	weatherSvc  weather.Service
 	stationSvc  station.Service
 	pumpingSvc  pumpingstation.Service
-	waterSvc    water.Service
-	geminiSvc   interface {
+	waterSvc      water.Service
+	wastewaterSvc wastewater_treatment.Service
+	geminiSvc     interface {
 		ExtractTextFromPDF(ctx context.Context, pdfBytes []byte) (string, error)
 		Chat(ctx context.Context, prompt string, history []ChatMessage, userID string, isCompany bool, logPrompt string) (string, error)
 	}
 	cache sync.Map
 }
 
-func NewService(conf config.GoogleDriveConfig, oauthConf config.OAuthConfig, aiUsageRepo repository.AiUsage, inuSvc inundation.Service, weatherSvc weather.Service, stationSvc station.Service, pumpingSvc pumpingstation.Service, waterSvc water.Service) (Service, error) {
+func NewService(conf config.GoogleDriveConfig, oauthConf config.OAuthConfig, aiUsageRepo repository.AiUsage, inuSvc inundation.Service, weatherSvc weather.Service, stationSvc station.Service, pumpingSvc pumpingstation.Service, waterSvc water.Service, wastewaterSvc wastewater_treatment.Service) (Service, error) {
 	ctx := context.Background()
 	var driveSvc *drive.Service
 	var gmailSvc *gmail.Service
@@ -100,7 +102,8 @@ func NewService(conf config.GoogleDriveConfig, oauthConf config.OAuthConfig, aiU
 		inuSvc:      inuSvc,
 		weatherSvc:  weatherSvc,
 		pumpingSvc:  pumpingSvc,
-		waterSvc:    waterSvc,
-		stationSvc:  stationSvc,
+		waterSvc:      waterSvc,
+		stationSvc:    stationSvc,
+		wastewaterSvc: wastewaterSvc,
 	}, nil
 }

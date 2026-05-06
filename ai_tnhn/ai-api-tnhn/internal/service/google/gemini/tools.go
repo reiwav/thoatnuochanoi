@@ -119,7 +119,15 @@ func (s *service) handleToolCall(ctx context.Context, c *genai.FunctionCall, uID
 		if u != nil && u.AssignedPumpingStationID != "" {
 			aPump = []string{u.AssignedPumpingStationID}
 		}
-		return s.pumpingSvc.GetPumpingStationSummary(ctx, orgID, aPump)
+		p, err := s.pumpingSvc.GetPumpingStationSummary(ctx, orgID, aPump)
+		var ww interface{}
+		if s.wastewaterSvc != nil {
+			ww, _ = s.wastewaterSvc.ListFiltered(ctx, orgID, nil)
+		}
+		return map[string]interface{}{
+			"pumping_stations": p,
+			"wastewater_stations": ww,
+		}, err
 	case constant.ToolEmergencyList, constant.ToolEmergencyHistory, constant.ToolUnfinishedEmergencyHistory, constant.ToolRecentEmergencyReports, constant.ToolReportEmergencyProgress:
 		return s.handleCT(ctx, c, uID)
 	case constant.ToolDatabaseQuery:

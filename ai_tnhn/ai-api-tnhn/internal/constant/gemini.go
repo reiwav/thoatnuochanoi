@@ -55,7 +55,7 @@ var ToolDescriptions = map[string]string{
 	ToolWeatherForecast:            "Lấy dự báo thời tiết cho các ngày tới.",
 	ToolLiveWaterSummary:           "Lấy mực nước hiện tại hố/sông.",
 	ToolLiveInundationSummary:      "Tình hình ngập hiện tại.",
-	ToolLivePumpingSummary:         "Tình hình trạm bơm hiện tại.",
+	ToolLivePumpingSummary:         "Tình hình trạm bơm và trạm xử lý nước thải hiện tại.",
 	ToolRainSummaryByWard:          "Tổng hợp mưa theo phường.",
 	ToolDatabaseQuery:              "Truy vấn MongoDB.",
 	ToolReadEmailByTitle:           "Đọc email theo tiêu đề.",

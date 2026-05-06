@@ -138,13 +138,18 @@ func (r wastewaterStationRepository) List(ctx context.Context, f filter.Filter) 
 }
 
 func (r wastewaterStationRepository) ListFiltered(ctx context.Context, orgID string, ids []string) ([]*models.WastewaterStation, error) {
-	query := bson.M{
-		"$or": []bson.M{
-			{"org_id": orgID},
-			{"shared_org_ids": orgID},
-			{"share_all": true},
-			{"_id": bson.M{"$in": ids}},
-		},
+	query := bson.M{}
+	if orgID != "" {
+		query = bson.M{
+			"$or": []bson.M{
+				{"org_id": orgID},
+				{"shared_org_ids": orgID},
+				{"share_all": true},
+				{"_id": bson.M{"$in": ids}},
+			},
+		}
+	} else if len(ids) > 0 {
+		query = bson.M{"_id": bson.M{"$in": ids}}
 	}
 	var items []*models.WastewaterStation
 	err := r.stationTable.R_SelectManyWithSort(ctx, query, bson.M{"name": 1}, &items)

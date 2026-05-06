@@ -6,7 +6,7 @@ import remarkGfm from 'remark-gfm';
 import dayjs from 'dayjs';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const MessageItem = memo(({ msg, userInfo, handleEmailDetail, handleEmcHistory }) => {
+const MessageItem = memo(({ msg, userInfo, handleEmailDetail, handleEmcHistory, handleRainChart }) => {
     const isUser = msg.role === 'user';
 
     return (
@@ -115,6 +115,34 @@ const MessageItem = memo(({ msg, userInfo, handleEmailDetail, handleEmcHistory }
                                                     >
                                                         <IconBolt size={14} />
                                                         <Typography variant="caption" fontWeight={700} sx={{ color: 'inherit' }}>Xem lịch sử</Typography>
+                                                    </IconButton>
+                                                </Tooltip>
+                                            </Box>
+                                        );
+                                    }
+                                    if (props.href && props.href.startsWith('#rain-chart-')) {
+                                        const parts = props.href.replace('#rain-chart-', '').split('-');
+                                        const oldId = parts[0];
+                                        const date = parts.slice(1).join('-'); // Handle cases where date might contain hyphens
+                                        return (
+                                            <Box component="span" sx={{ display: 'inline-block', my: 0.5 }}>
+                                                <Tooltip title="Xem biểu đồ lượng mưa">
+                                                    <IconButton
+                                                        size="small"
+                                                        color="info"
+                                                        sx={{
+                                                            bgcolor: isUser ? 'rgba(255,255,255,0.1)' : 'rgba(0, 188, 212, 0.1)',
+                                                            '&:hover': { bgcolor: '#00bcd4', color: 'white' },
+                                                            borderRadius: '8px',
+                                                            gap: 0.5, px: 1.5, height: '32px'
+                                                        }}
+                                                        onClick={(e) => {
+                                                            e?.preventDefault();
+                                                            handleRainChart(oldId, date, props.children);
+                                                        }}
+                                                    >
+                                                        <IconBolt size={14} />
+                                                        <Typography variant="caption" fontWeight={700} sx={{ color: 'inherit' }}>{props.children}</Typography>
                                                     </IconButton>
                                                 </Tooltip>
                                             </Box>

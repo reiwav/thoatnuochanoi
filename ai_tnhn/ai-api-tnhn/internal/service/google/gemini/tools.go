@@ -190,21 +190,21 @@ func (s *service) handleLS(ctx context.Context, c *genai.FunctionCall, o string,
 		sts, e := s.stationSvc.ListRainStationsFiltered(ctx, o, r)
 		var res []map[string]interface{}
 		for _, st := range sts {
-			res = append(res, map[string]interface{}{"id": st.ID, "name": st.TenTram, "phuong": st.TenPhuong, "address": st.DiaChi})
+			res = append(res, map[string]interface{}{"id": st.ID, "old_id": st.OldID, "name": st.TenTram, "phuong": st.TenPhuong, "address": st.DiaChi})
 		}
 		return res, e
 	case "lake":
 		sts, e := s.stationSvc.ListLakeStationsFiltered(ctx, o, l)
 		var res []map[string]interface{}
 		for _, st := range sts {
-			res = append(res, map[string]interface{}{"id": st.ID, "name": st.TenTram, "phuong": st.TenPhuong, "loai": st.Loai})
+			res = append(res, map[string]interface{}{"id": st.ID, "old_id": st.OldID, "name": st.TenTram, "phuong": st.TenPhuong, "loai": st.Loai})
 		}
 		return res, e
 	case "river":
 		sts, e := s.stationSvc.ListRiverStationsFiltered(ctx, o, rv)
 		var res []map[string]interface{}
 		for _, st := range sts {
-			res = append(res, map[string]interface{}{"id": st.ID, "name": st.TenTram, "phuong": st.TenPhuong, "loai": st.Loai})
+			res = append(res, map[string]interface{}{"id": st.ID, "old_id": st.OldID, "name": st.TenTram, "phuong": st.TenPhuong, "loai": st.Loai})
 		}
 		return res, e
 	}

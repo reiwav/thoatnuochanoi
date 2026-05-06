@@ -59,8 +59,6 @@ func (p rainStationRepository) ListFiltered(ctx context.Context, orgID string, i
 
 	if len(conds) > 0 {
 		f["$or"] = conds
-	} else {
-		return items, nil
 	}
 	err := p.R_SelectManyWithSort(ctx, f, bson.M{"name": 1}, &items)
 	return items, err
@@ -113,8 +111,6 @@ func (p lakeStationRepository) ListFiltered(ctx context.Context, orgID string, i
 
 	if len(conds) > 0 {
 		f["$or"] = conds
-	} else {
-		return items, nil
 	}
 
 	err := p.R_SelectManyWithSort(ctx, f, bson.M{"name": 1}, &items)
@@ -168,8 +164,6 @@ func (p riverStationRepository) ListFiltered(ctx context.Context, orgID string, 
 
 	if len(conds) > 0 {
 		f["$or"] = conds
-	} else {
-		return items, nil
 	}
 
 	err := p.R_SelectManyWithSort(ctx, f, bson.M{"name": 1}, &items)

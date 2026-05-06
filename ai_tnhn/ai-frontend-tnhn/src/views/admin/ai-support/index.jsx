@@ -20,6 +20,8 @@ import MessageItem from './components/MessageItem';
 import ChatHeader from './components/ChatHeader';
 import SuggestedQuestions from './components/SuggestedQuestions';
 import StatsContent from './components/StatsContent';
+import RainChartDialog from './components/RainChartDialog';
+import stationApi from 'api/station';
 
 dayjs.extend(relativeTime);
 dayjs.locale('vi');
@@ -48,6 +50,15 @@ const AiSupport = () => {
     const [openReportDialog, setOpenReportDialog] = useState(false);
     const [exporting, setExporting] = useState(false);
     const [showScrollBottom, setShowScrollBottom] = useState(false);
+
+    // Rain Chart State
+    const [rainChart, setRainChart] = useState({
+        open: false,
+        loading: false,
+        data: [],
+        stationName: '',
+        date: ''
+    });
 
     const shouldScrollToBottom = useRef(true);
     const scrollRef = useRef(null);
@@ -371,6 +382,19 @@ const AiSupport = () => {
         }
     }, [reportDate]);
 
+    const handleRainChart = useCallback(async (oldId, date, stationName) => {
+        setRainChart(prev => ({ ...prev, open: true, loading: true, stationName, date, data: [] }));
+        try {
+            const res = await stationApi.rain.getHistory(oldId, { date, limit: 5000 });
+            if (res) {
+                setRainChart(prev => ({ ...prev, data: Array.isArray(res) ? res : (res.data || []), loading: false }));
+            }
+        } catch (error) {
+            console.error('Failed to fetch rain history:', error);
+            setRainChart(prev => ({ ...prev, loading: false }));
+        }
+    }, []);
+
     const formatBytes = (bytes) => {
         if (!bytes) return '0 B';
         const k = 1024, sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -442,6 +466,7 @@ const AiSupport = () => {
                         userInfo={userInfo}
                         handleEmailDetail={handleEmailDetail}
                         handleEmcHistory={handleEmcHistory}
+                        handleRainChart={handleRainChart}
                     />
                 ))}
                 {loading && (
@@ -563,6 +588,15 @@ const AiSupport = () => {
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            <RainChartDialog
+                open={rainChart.open}
+                onClose={() => setRainChart(prev => ({ ...prev, open: false }))}
+                stationName={rainChart.stationName}
+                date={rainChart.date}
+                data={rainChart.data}
+                loading={rainChart.loading}
+            />
         </Box>
     );
 };

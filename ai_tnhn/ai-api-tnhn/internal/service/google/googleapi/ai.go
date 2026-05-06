@@ -5,6 +5,7 @@ import (
 	"ai-api-tnhn/internal/service/google/gemini/promt"
 	"context"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -103,6 +104,19 @@ func (s *service) buildViberPrompt(status *CityStatus, hh, dd, mm, yyyy string) 
 		}
 	}
 
+	pumpInfo := "không có trạm bơm nào vận hành"
+	if status.Pumping != nil {
+		var pumpNames []string
+		for _, st := range status.Pumping.Stations {
+			if st.PumpCount > 0 && st.Priority > 0 {
+				pumpNames = append(pumpNames, st.Name)
+			}
+		}
+		if len(pumpNames) > 0 {
+			pumpInfo = "các trạm bơm " + strings.Join(pumpNames, ", ")
+		}
+	}
+
 	rawSummary := fmt.Sprintf(`- Thời điểm báo cáo: %s ngày %s/%s/%s
 - Thời điểm bắt đầu mưa: %s
 - Thời điểm kết thúc mưa: %s
@@ -110,9 +124,10 @@ func (s *service) buildViberPrompt(status *CityStatus, hh, dd, mm, yyyy string) 
 - Diện mưa: %s (%d điểm đo)
 - Lượng mưa phổ biến: %.1f đến %.1f mm
 - Điểm mưa lớn nhất: %s (%.1f mm)
-- Tình trạng úng ngập: %s`,
+- Tình trạng úng ngập: %s
+- Danh sách trạm bơm: %s`,
 		hh, dd, mm, yyyy, rainStartTime, rainEndTime, rainIntensity, rainSpread, status.Weather.RainyStations,
-		avgRain, status.Weather.MaxRainStation.TotalRain, status.Weather.MaxRainStation.Name, status.Weather.MaxRainStation.TotalRain, inuInfo)
+		avgRain, status.Weather.MaxRainStation.TotalRain, status.Weather.MaxRainStation.Name, status.Weather.MaxRainStation.TotalRain, inuInfo, pumpInfo)
 
 	return fmt.Sprintf(promt.Get("report_viber"), rawSummary)
 }

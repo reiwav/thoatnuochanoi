@@ -11,6 +11,7 @@ const (
 	ToolListStations       = "list_stations_by_type"
 	ToolRainAnalytics      = "get_rain_analytics"
 	ToolCoveredWards       = "get_covered_wards"
+	ToolWeatherForecast    = "get_weather_forecast"
 	ToolLiveWaterSummary   = "get_live_water_summary"
 	ToolLiveInundationSummary = "get_live_inundation_summary"
 	ToolLivePumpingSummary = "get_live_pumping_summary"
@@ -51,6 +52,7 @@ var ToolDescriptions = map[string]string{
 	ToolListStations:               "Lấy danh sách trạm (rain, lake, river).",
 	ToolRainAnalytics:              "Phân tích lượng mưa.",
 	ToolCoveredWards:               "Lấy danh sách phường/xã có trạm đo.",
+	ToolWeatherForecast:            "Lấy dự báo thời tiết cho các ngày tới.",
 	ToolLiveWaterSummary:           "Lấy mực nước hiện tại hố/sông.",
 	ToolLiveInundationSummary:      "Tình hình ngập hiện tại.",
 	ToolLivePumpingSummary:         "Tình hình trạm bơm hiện tại.",

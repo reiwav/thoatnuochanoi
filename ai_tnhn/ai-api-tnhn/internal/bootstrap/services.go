@@ -140,7 +140,7 @@ func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log log
 
 	s.Query = query.NewService(db.DB)
 	s.StationData = stationdata.NewService(s.Station, s.Water, s.Rain)
-	s.Gemini, _ = gemini.NewService(cfg.GeminiAPIKey, cfg.GeminiAPIKeyContract, s.Water, s.Rain, s.GoogleApi, s.Inundation, s.Query, s.StationData, s.EmConstruction, s.Contract, s.Station, s.PumpingStation, repos.AiUsage, repos.AiChatLog, repos.User)
+	s.Gemini, _ = gemini.NewService(cfg.GeminiAPIKey, cfg.GeminiAPIKeyContract, s.Water, s.Rain, s.GoogleApi, s.Inundation, s.Query, s.StationData, s.EmConstruction, s.Contract, s.Station, s.PumpingStation, s.Weather, repos.AiUsage, repos.AiChatLog, repos.User)
 	if s.GoogleApi != nil && s.Gemini != nil {
 		s.GoogleApi.SetGeminiService(s.Gemini)
 	}
@@ -150,7 +150,7 @@ func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log log
 	if s.Gemini != nil {
 		targetWeatherSvc := s.Gemini
 		if cfg.GeminiAPIKeyWeather != "" {
-			weatherGeminiSvc, err := gemini.NewService(cfg.GeminiAPIKeyWeather, cfg.GeminiAPIKeyWeather, s.Water, s.Rain, s.GoogleApi, s.Inundation, s.Query, s.StationData, s.EmConstruction, s.Contract, s.Station, s.PumpingStation, repos.AiUsage, repos.AiChatLog, repos.User)
+			weatherGeminiSvc, err := gemini.NewService(cfg.GeminiAPIKeyWeather, cfg.GeminiAPIKeyWeather, s.Water, s.Rain, s.GoogleApi, s.Inundation, s.Query, s.StationData, s.EmConstruction, s.Contract, s.Station, s.PumpingStation, s.Weather, repos.AiUsage, repos.AiChatLog, repos.User)
 			if err == nil {
 				targetWeatherSvc = weatherGeminiSvc
 			}

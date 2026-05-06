@@ -28,6 +28,7 @@ func (s *service) getChatTools() []*genai.FunctionDeclaration {
 		{Name: constant.ToolRainAnalytics, Description: constant.ToolDescriptions[constant.ToolRainAnalytics],
 			Parameters: &genai.Schema{Type: genai.TypeObject, Properties: map[string]*genai.Schema{"station_id": {Type: genai.TypeInteger}, "year": {Type: genai.TypeInteger}, "month": {Type: genai.TypeInteger}, "start_date": {Type: genai.TypeString}, "end_date": {Type: genai.TypeString}, "group_by": {Type: genai.TypeString}}}},
 		{Name: constant.ToolCoveredWards, Description: constant.ToolDescriptions[constant.ToolCoveredWards]},
+		{Name: constant.ToolWeatherForecast, Description: constant.ToolDescriptions[constant.ToolWeatherForecast]},
 		{Name: constant.ToolLiveWaterSummary, Description: constant.ToolDescriptions[constant.ToolLiveWaterSummary]},
 		{Name: constant.ToolLiveInundationSummary, Description: constant.ToolDescriptions[constant.ToolLiveInundationSummary]},
 		{Name: constant.ToolLivePumpingSummary, Description: constant.ToolDescriptions[constant.ToolLivePumpingSummary]},
@@ -103,6 +104,8 @@ func (s *service) handleToolCall(ctx context.Context, c *genai.FunctionCall, uID
 		return s.handleRA(ctx, c, orgID, aRain)
 	case constant.ToolCoveredWards:
 		return s.handleCW(ctx, orgID, aRain)
+	case constant.ToolWeatherForecast:
+		return s.weatherSvc.GetForecast(ctx)
 	case constant.ToolRainSummaryByWard:
 		return s.stationDataSvc.GetRainSummaryByWard(ctx, int(c.Args["year"].(float64)), int(c.Args["month"].(float64)), c.Args["start_date"].(string), c.Args["end_date"].(string))
 	case constant.ToolLiveInundationSummary:

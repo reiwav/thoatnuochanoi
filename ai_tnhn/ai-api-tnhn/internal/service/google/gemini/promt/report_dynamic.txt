@@ -1,16 +1,16 @@
 **BÁO CÁO TỔNG HỢP TÌNH HÌNH THOÁT NƯỚC THÀNH PHỐ**
 Thời điểm: %s ngày %s
 
-1. TÌNH HÌNH MƯA:
+1. LƯỢNG MƯA MƯA:
 %s
 
-2. TÌNH HÌNH MỰC NƯỚC:
+2. MỰC NƯỚC SÔNG, HỒ:
 %s
 
-3. TÌNH HÌNH ÚNG NGẬP:
+3. TÌNH HÌNH NGẬP:
 %s
 
-4. TÌNH HÌNH VẬN HÀNH TRẠM BƠM:
+4. CÔNG TÁC VẬN HÀNH TRẠM BƠM:
 %s
 
 ---

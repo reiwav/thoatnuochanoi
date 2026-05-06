@@ -4,13 +4,16 @@ Thời điểm: %s ngày %s
 1. LƯỢNG MƯA:
 %s
 
-2. MỰC NƯỚC SÔNG, HỒ:
+2. MỰC NƯỚC SÔNG:
 %s
 
-3. HIỆN TRẠNG NGẬP:
+3. MỰC NƯỚC HỒ:
 %s
 
-4. CÔNG TÁC VẬN HÀNH TRẠM BƠM:
+4. HIỆN TRẠNG NGẬP:
+%s
+
+5. CÔNG TÁC VẬN HÀNH TRẠM BƠM:
 %s
 
 5. TRẠM XỬ LÝ NƯỚC THẢI:
@@ -21,4 +24,4 @@ YÊU CẦU:
 - Dựa trên dữ liệu thực tế ở trên, hãy tóm tắt tình hình thoát nước thành phố.
 - Phân tích và dự báo ngắn gọn (nếu có thông tin thời tiết).
 - Kết cấu báo cáo chuyên nghiệp, súc tích.
-- BẮT BUỘC giữ nguyên đúng tên và thứ tự của 5 mục: 1. LƯỢNG MƯA, 2. MỰC NƯỚC SÔNG, HỒ, 3. HIỆN TRẠNG NGẬP, 4. CÔNG TÁC VẬN HÀNH TRẠM BƠM, 5. TRẠM XỬ LÝ NƯỚC THẢI. KHÔNG được tự ý đổi tên (VD: không được đổi thành Tình hình ngập lụt) hoặc đảo lộn thứ tự.
+- BẮT BUỘC giữ nguyên đúng tên và thứ tự của các mục ở trên. KHÔNG được tự ý đổi tên (VD: không được đổi thành Tình hình ngập lụt) hoặc đảo lộn thứ tự.

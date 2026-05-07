@@ -47,6 +47,7 @@ const StationHistory = ({ type }) => {
     const loadHistory = useCallback(async () => {
         if (!selectedStation) return;
         setLoading(true);
+        setHistory([]); // Reset history when starting new fetch to avoid showing old data
         try {
             const apiMap = {
                 rain: stationApi.rain,
@@ -64,6 +65,7 @@ const StationHistory = ({ type }) => {
             }
         } catch (err) {
             console.error('Failed to load history:', err);
+            setHistory([]);
         } finally {
             setLoading(false);
         }
@@ -152,6 +154,7 @@ const StationHistory = ({ type }) => {
                                 value={selectedDate}
                                 onChange={(newValue) => setSelectedDate(newValue)}
                                 format="DD/MM/YYYY"
+                                disableFuture
                                 slotProps={{
                                     textField: {
                                         fullWidth: true,

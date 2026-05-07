@@ -32,7 +32,11 @@ ENV=${1:-prod}
 if [ "$ENV" == "dev" ]; then
     API_URL="https://hsdc.reiway.vn"
     VITE_MODE="development"
+    # Backend Env for DEV
+    BACKEND_PORT="8082"
+    BACKEND_DB_PATH="mongodb://himitech:himitech%4023031993@150.95.108.247:37017"
     echo "Environment: DEV ($API_URL) - Mode: $VITE_MODE"
+    echo "Backend: Port $BACKEND_PORT, DB $BACKEND_DB_PATH"
 else
     API_URL="https://htbc.thoatnuochanoi.vn"
     VITE_MODE="production"

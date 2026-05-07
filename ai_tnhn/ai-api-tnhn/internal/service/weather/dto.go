@@ -23,6 +23,7 @@ type ForecastDay struct {
 type RainStationStat struct {
 	ID            int       `json:"id"`
 	Name          string    `json:"name"`
+	Address       string    `json:"address"`
 	TotalRain     float64   `json:"total_rain"`
 	SessionRain   float64   `json:"session_rain"`
 	StartTime     string    `json:"start_time"`
@@ -30,6 +31,8 @@ type RainStationStat struct {
 	StartTimeFull time.Time `json:"start_time_full"`
 	EndTimeFull   time.Time `json:"end_time_full"`
 	IsRaining     bool      `json:"is_raining"`
+	Type          string    `json:"type"`     // phuong or xa
+	Priority      int       `json:"priority"` // TrongSoBaoCao
 }
 
 type RainSummaryData struct {

@@ -5,6 +5,7 @@ import (
 	"ai-api-tnhn/internal/service/weather"
 	"ai-api-tnhn/utils/web"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -90,21 +91,49 @@ func (h *handler) formatRainSummary(summary *weather.RainSummaryData) string {
 	if summary.RainyStations > 0 {
 		statusLine = fmt.Sprintf("- Số trạm đang có mưa: %d", summary.RainyStations)
 	}
-	displayText := fmt.Sprintf("Tình hình mưa hiện tại:\n- Tổng số trạm: %d\n%s\n- Trạm mưa lớn nhất trong ngày: %s (%.1fmm)\n\nChi tiết danh sách các trạm có mưa trong ngày:\n",
+	
+	header := fmt.Sprintf("### Tình hình mưa hiện tại:\n- Tổng số trạm: %d\n%s\n- Trạm mưa lớn nhất trong ngày: **%s** (%.1fmm)\n",
 		summary.TotalStations, statusLine, summary.MaxRainStation.Name, summary.MaxRainStation.TotalRain)
 
+	var phuongList, xaList []weather.RainStationStat
 	for _, m := range summary.Measurements {
-		if m.TotalRain == 0 {
-			continue
+		if m.Type == "xa" {
+			xaList = append(xaList, m)
+		} else {
+			phuongList = append(phuongList, m)
 		}
-		statusIcon := "🌧️"
-		statusText := "Đang mưa"
-		if !m.IsRaining {
-			statusIcon = "✅"
-			statusText = "Đã tạnh"
-		}
-		displayText += fmt.Sprintf("- %s: %.1fmm (%s - %s) [%s] %s\n",
-			m.Name, m.TotalRain, m.StartTime, m.EndTime, statusIcon, statusText)
 	}
-	return displayText
+
+	// Sort Phường descending by TotalRain
+	sort.Slice(phuongList, func(i, j int) bool {
+		return phuongList[i].TotalRain > phuongList[j].TotalRain
+	})
+
+	// Sort Xã descending by Priority (TrongSoBaoCao), then by TotalRain
+	sort.Slice(xaList, func(i, j int) bool {
+		if xaList[i].Priority != xaList[j].Priority {
+			return xaList[i].Priority > xaList[j].Priority
+		}
+		return xaList[i].TotalRain > xaList[j].TotalRain
+	})
+
+	renderTable := func(title string, list []weather.RainStationStat) string {
+		if len(list) == 0 {
+			return ""
+		}
+		res := fmt.Sprintf("\n**%s**\n\n| STT | Trạm | Địa chỉ | Lượng mưa | Thời gian | Trạng thái |\n| :--- | :--- | :--- | :---: | :---: | :---: |\n", title)
+		for i, m := range list {
+			statusIcon := "🌧️"
+			statusText := "Đang mưa"
+			if !m.IsRaining {
+				statusIcon = "✅"
+				statusText = "Đã tạnh"
+			}
+			res += fmt.Sprintf("| %d | %s | %s | %.1fmm | %s - %s | %s %s |\n",
+				i+1, m.Name, m.Address, m.TotalRain, m.StartTime, m.EndTime, statusIcon, statusText)
+		}
+		return res
+	}
+
+	return header + renderTable("Khu vực Phường (Nội thành)", phuongList) + renderTable("Khu vực Xã (Ngoại thành)", xaList)
 }

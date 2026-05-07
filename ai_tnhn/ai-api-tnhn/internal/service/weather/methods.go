@@ -142,25 +142,28 @@ func (s *service) GetRainSummary(ctx context.Context, orgID string, assignedIDs 
 	// if len(assignedIDs) > 0 {
 	// 	f.AddWhere("id", "_id", bson.M{"$in": assignedIDs})
 	// }
-	// stations, _, _ := s.stationSvc.ListRainStations(ctx, f)
-	// permitted := make(map[int]string)
-	// for _, st := range stations {
-	// 	if st.OldID > 0 {
-	// 		permitted[st.OldID] = st.TenPhuong
-	// 	}
-	// }
-
-	permitted := make(map[int]string)
-	for _, d := range rainData.Content.Tram {
-		permitted[d.Id] = d.TenPhuong
+	stations, _ := s.stationSvc.GetAllRainStations(ctx)
+	type stationMeta struct {
+		Name     string
+		Address  string
+		Type     string
+		Priority int
 	}
+	permitted := make(map[int]stationMeta)
+	for _, st := range stations {
+		if st.OldID > 0 {
+			permitted[st.OldID] = stationMeta{
+				Name:     st.TenTram,
+				Address:  st.DiaChi,
+				Type:     string(st.Loai),
+				Priority: st.TrongSoBaoCao,
+			}
+		}
+	}
+
+	// permitted := make(map[int]string)
 	now, rainyCount, measurements := time.Now().In(utils.VietnamTZ), 0, []RainStationStat{}
 	for _, d := range rainData.Content.Data {
-		//var id int
-		// fmt.Sscanf(fmt.Sprintf("%v", d.TramId), "%d", &id)
-		// if (orgID != "" && permitted[id] == "") || d.LuongMua_HT == 0 {
-		// 	continue
-		// }
 		tFullBD, _ := utils.ParseTime(d.ThoiGian_BD)
 		tFullHT, _ := utils.ParseTime(d.ThoiGian_HT)
 		isRaining := false
@@ -180,9 +183,17 @@ func (s *service) GetRainSummary(ctx context.Context, orgID string, assignedIDs 
 		if sessionRain < 0 {
 			sessionRain = 0
 		}
+		var tramID int
+		fmt.Sscanf(fmt.Sprintf("%v", d.TramId), "%d", &tramID)
+		meta := permitted[tramID]
+		if meta.Name == "" || d.LuongMua_HT == 0 {
+			continue
+		}
+
 		measurements = append(measurements, RainStationStat{
-			Name:          permitted[d.Id],
-			ID:            d.Id,
+			Name:          meta.Name,
+			Address:       meta.Address,
+			ID:            tramID,
 			TotalRain:     d.LuongMua_HT,
 			SessionRain:   sessionRain,
 			StartTime:     tBD,
@@ -190,6 +201,8 @@ func (s *service) GetRainSummary(ctx context.Context, orgID string, assignedIDs 
 			StartTimeFull: tFullBD,
 			EndTimeFull:   tFullHT,
 			IsRaining:     isRaining,
+			Type:          meta.Type,
+			Priority:      meta.Priority,
 		})
 	}
 	if len(measurements) == 0 {

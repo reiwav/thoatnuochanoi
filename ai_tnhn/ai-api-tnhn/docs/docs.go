@@ -8003,10 +8003,6 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Hồ Hoàn Kiếm"
                 },
-                "TenTramHTML": {
-                    "type": "string",
-                    "example": "\u003cb\u003eHồ Hoàn Kiếm\u003c/b\u003e"
-                },
                 "ThuTu": {
                     "type": "integer",
                     "example": 1
@@ -8421,10 +8417,6 @@ const docTemplate = `{
                 "TenTram": {
                     "type": "string",
                     "example": "Sông Tô Lịch"
-                },
-                "TenTramHTML": {
-                    "type": "string",
-                    "example": "\u003cb\u003eSông Tô Lịch\u003c/b\u003e"
                 },
                 "ThuTu": {
                     "type": "integer",

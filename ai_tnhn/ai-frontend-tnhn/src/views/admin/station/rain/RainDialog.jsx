@@ -10,7 +10,6 @@ const RainDialog = ({ open, onClose, onSubmit, station, isEdit, organizations })
     const [formData, setFormData] = useState({
         Id: 0,
         TenTram: '',
-        TenTramHTML: '',
         TenPhuong: '',
         DiaChi: '',
         Lat: '',
@@ -31,7 +30,6 @@ const RainDialog = ({ open, onClose, onSubmit, station, isEdit, organizations })
                 setFormData({
                     Id: station.Id !== undefined ? station.Id : 0,
                     TenTram: station.TenTram || '',
-                    TenTramHTML: station.TenTramHTML || '',
                     TenPhuong: station.TenPhuong || '',
                     DiaChi: station.DiaChi || '',
                     Lat: station.Lat || '',

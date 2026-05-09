@@ -673,9 +673,6 @@ definitions:
       TenTram:
         example: Hồ Hoàn Kiếm
         type: string
-      TenTramHTML:
-        example: <b>Hồ Hoàn Kiếm</b>
-        type: string
       ThuTu:
         example: 1
         type: integer
@@ -977,9 +974,6 @@ definitions:
         type: string
       TenTram:
         example: Sông Tô Lịch
-        type: string
-      TenTramHTML:
-        example: <b>Sông Tô Lịch</b>
         type: string
       ThuTu:
         example: 1

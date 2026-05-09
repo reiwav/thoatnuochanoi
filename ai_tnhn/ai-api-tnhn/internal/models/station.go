@@ -35,7 +35,6 @@ type LakeStation struct {
 	model.BaseModel `bson:",inline"`
 	OldID           int      `json:"Id" bson:"old_id" example:"201"`
 	TenTram         string   `json:"TenTram" bson:"ten_tram" example:"Hồ Hoàn Kiếm"`
-	TenTramHTML     string   `json:"TenTramHTML" bson:"ten_tram_html" example:"<b>Hồ Hoàn Kiếm</b>"`
 	TenPhuong       string   `json:"TenPhuong" bson:"ten_phuong" example:"Phường Hàng Trống"`
 	DiaChi          string   `json:"DiaChi" bson:"dia_chi" example:"Quanh hồ Hoàn Kiếm"`
 	Lat             string   `json:"Lat" bson:"lat" example:"21.0285"`
@@ -56,7 +55,6 @@ type RiverStation struct {
 	model.BaseModel `bson:",inline"`
 	OldID           int      `json:"Id" bson:"old_id" example:"301"`
 	TenTram         string   `json:"TenTram" bson:"ten_tram" example:"Sông Tô Lịch"`
-	TenTramHTML     string   `json:"TenTramHTML" bson:"ten_tram_html" example:"<b>Sông Tô Lịch</b>"`
 	TenPhuong       string   `json:"TenPhuong" bson:"ten_phuong" example:"Láng Hạ"`
 	DiaChi          string   `json:"DiaChi" bson:"dia_chi" example:"Đường Láng"`
 	Lat             string   `json:"Lat" bson:"lat" example:"21.0123"`

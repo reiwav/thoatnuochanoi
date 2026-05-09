@@ -8,11 +8,6 @@ const StationDesktopRow = ({ row, canEdit, canDelete, handleOpenEdit, handleDele
         <TableCell sx={{ fontWeight: 800, fontSize: '1rem', color: 'primary.dark' }}>
             {row.TenTram}
         </TableCell>
-        <TableCell sx={{ fontSize: '0.85rem', color: 'text.secondary', maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            <Tooltip title={row.TenTramHTML || ''} placement="top">
-                <span>{row.TenTramHTML || '-'}</span>
-            </Tooltip>
-        </TableCell>
         <TableCell sx={{ fontSize: '0.9rem', fontWeight: 700 }}>
             {row.OldID || row.Id || '-'}
         </TableCell>
@@ -42,12 +37,12 @@ const StationDesktopRow = ({ row, canEdit, canDelete, handleOpenEdit, handleDele
         </TableCell>
         {(canEdit || canDelete) && (
             <TableCell align="right">
-                <ActionButtons 
-                    row={row} 
-                    canEdit={canEdit} 
-                    canDelete={canDelete} 
-                    handleOpenEdit={handleOpenEdit} 
-                    handleDelete={handleDelete} 
+                <ActionButtons
+                    row={row}
+                    canEdit={canEdit}
+                    canDelete={canDelete}
+                    handleOpenEdit={handleOpenEdit}
+                    handleDelete={handleDelete}
                 />
             </TableCell>
         )}

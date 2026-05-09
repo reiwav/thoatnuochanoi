@@ -10,7 +10,6 @@ const LakeDialog = ({ open, onClose, onSubmit, station, isEdit, organizations })
     const [formData, setFormData] = useState({
         Id: 0,
         TenTram: '',
-        TenTramHTML: '',
         TenPhuong: '',
         DiaChi: '',
         Lat: '',
@@ -31,7 +30,6 @@ const LakeDialog = ({ open, onClose, onSubmit, station, isEdit, organizations })
                 setFormData({
                     Id: station.Id !== undefined ? station.Id : 0,
                     TenTram: station.TenTram || '',
-                    TenTramHTML: station.TenTramHTML || '',
                     TenPhuong: station.TenPhuong || '',
                     DiaChi: station.DiaChi || '',
                     Lat: station.Lat || '',
@@ -49,7 +47,6 @@ const LakeDialog = ({ open, onClose, onSubmit, station, isEdit, organizations })
                 setFormData({
                     Id: 0,
                     TenTram: '',
-                    TenTramHTML: '',
                     TenPhuong: '',
                     DiaChi: '',
                     Lat: '',
@@ -79,7 +76,7 @@ const LakeDialog = ({ open, onClose, onSubmit, station, isEdit, organizations })
 
     const handleSave = () => {
         if (!formData.TenTram) return toast.error('Vui lòng nhập tên trạm');
-        const submitData = { 
+        const submitData = {
             ...formData,
             Id: parseInt(formData.Id) || 0,
             NguongCanhBao: formData.NguongCanhBao !== '' ? parseFloat(formData.NguongCanhBao) : 0,
@@ -98,12 +95,12 @@ const LakeDialog = ({ open, onClose, onSubmit, station, isEdit, organizations })
             isEdit={isEdit}
         >
             <Stack spacing={2.5}>
-                <StationBaseFields 
-                    formData={formData} 
-                    handleChange={handleChange} 
-                    organizations={organizations} 
+                <StationBaseFields
+                    formData={formData}
+                    handleChange={handleChange}
+                    organizations={organizations}
                 />
-                
+
                 {isSuperAdmin && (
                     <Grid container spacing={2}>
                         <Grid item xs={12} sm={4}>
@@ -111,13 +108,6 @@ const LakeDialog = ({ open, onClose, onSubmit, station, isEdit, organizations })
                                 fullWidth label="ID cũ (old_id)" type="number"
                                 value={formData.Id}
                                 onChange={(e) => handleChange('Id', e.target.value)}
-                            />
-                        </Grid>
-                        <Grid item xs={12} sm={4}>
-                            <TextField
-                                fullWidth label="Tên trạm HTML"
-                                value={formData.TenTramHTML}
-                                onChange={(e) => handleChange('TenTramHTML', e.target.value)}
                             />
                         </Grid>
                         <Grid item xs={12} sm={4}>

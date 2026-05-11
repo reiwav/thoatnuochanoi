@@ -18,7 +18,7 @@ const StationRainSummary = () => {
             if (res) {
                 const tramList = res.tram || [];
                 const dataList = res.data || [];
-                
+
                 setStations(tramList);
                 setWeatherData(dataList);
             }
@@ -225,8 +225,7 @@ const StationRainSummary = () => {
                             boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
                             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                             border: '1px solid rgba(255,255,255,0.1)',
-                            overflow: 'hidden',
-                            '&:hover': {
+                                    '&:hover': {
                                 transform: 'translateY(-8px)',
                                 boxShadow: '0 12px 24px rgba(0,0,0,0.2)',
                             }
@@ -239,77 +238,55 @@ const StationRainSummary = () => {
                                 flexDirection: 'column',
                                 justifyContent: 'space-between'
                             }}>
-                                <Box>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                                     <Typography
                                         variant="h5"
                                         sx={{
-                                            color: '#0288d1',
+                                            color: '#1a237e',
                                             fontWeight: 800,
                                             mb: 0.5,
                                             textTransform: 'uppercase',
-                                            lineHeight: 1.2,
-                                            fontSize: { xs: '0.8rem', sm: '1rem' },
-                                            minHeight: '2.4em',
-                                            display: '-webkit-box',
-                                            WebkitLineClamp: 2,
-                                            WebkitBoxOrient: 'vertical',
-                                            overflow: 'hidden'
+                                            lineHeight: 1.1,
+                                            fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                                            minHeight: '2.2em',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center'
                                         }}
                                     >
                                         {row.name}
                                     </Typography>
-                                    {row.thuTu > 0 && (
-                                        <Typography variant="caption" sx={{ color: '#ff6f00', fontWeight: 800, fontSize: '0.7rem' }}>
-                                            Ưu tiên: {row.thuTu}
-                                        </Typography>
-                                    )}
 
-                                    <Typography
-                                        variant="caption"
-                                        sx={{
-                                            color: 'text.secondary',
-                                            display: 'block',
-                                            mb: 2,
-                                            fontWeight: 500,
-                                            fontStyle: 'italic',
-                                            minHeight: '2.8em',
-                                            lineHeight: 1.2
-                                        }}
-                                    >
-                                        {row.address}
-                                    </Typography>
-
-                                    <Box sx={{
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: 1,
-                                        px: 1.5,
-                                        py: 0.5,
-                                        borderRadius: 2,
-                                        bgcolor: row.isRaining ? 'rgba(76, 175, 80, 0.1)' : 'rgba(0,0,0,0.05)',
-                                        mb: 1
-                                    }}>
-                                        <Box sx={{
-                                            width: 8,
-                                            height: 8,
-                                            borderRadius: '50%',
-                                            bgcolor: row.isRaining ? '#4caf50' : '#9e9e9e',
-                                            boxShadow: row.isRaining ? '0 0 8px #4caf50' : 'none'
-                                        }} />
-                                        <Typography
-                                            variant="caption"
-                                            sx={{
-                                                fontWeight: 700,
-                                                color: row.isRaining ? '#2e7d32' : 'text.secondary',
-                                                textTransform: 'uppercase'
-                                            }}
-                                        >
-                                            {row.isRaining ? 'Đang mưa' : 'Không mưa'}
-                                        </Typography>
+                                    <Box sx={{ minHeight: '2.2em', display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
+                                        {row.isRaining ? (
+                                            <Box sx={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: 0.5,
+                                                px: 1,
+                                                py: 0.25,
+                                                borderRadius: 1,
+                                                bgcolor: 'rgba(211, 47, 47, 0.1)'
+                                            }}>
+                                                <Box sx={{
+                                                    width: 6,
+                                                    height: 6,
+                                                    borderRadius: '50%',
+                                                    bgcolor: '#d32f2f'
+                                                }} />
+                                                <Typography variant="caption" sx={{ fontWeight: 800, color: '#d32f2f', fontSize: '0.65rem' }}>
+                                                    ĐANG MƯA
+                                                </Typography>
+                                            </Box>
+                                        ) : (
+                                            <Typography variant="caption" sx={{ color: '#546e7a', fontWeight: 600, fontSize: '0.65rem', lineHeight: 1.1, textTransform: 'uppercase' }}>
+                                                {row.address}
+                                            </Typography>
+                                        )}
                                     </Box>
                                 </Box>
 
-                                <Box sx={{ my: 1 }}>
+                                <Box sx={{ my: 0.5 }}>
                                     <Typography
                                         variant="h2"
                                         sx={{
@@ -326,7 +303,7 @@ const StationRainSummary = () => {
 
                                 <Box sx={{
                                     mt: 'auto',
-                                    pt: 2,
+                                    pt: 1,
                                     borderTop: '1px dashed rgba(0,0,0,0.1)',
                                     display: 'flex',
                                     flexDirection: 'column',

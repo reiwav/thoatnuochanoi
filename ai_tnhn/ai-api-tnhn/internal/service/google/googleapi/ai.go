@@ -5,18 +5,67 @@ import (
 	"ai-api-tnhn/internal/service/google/gemini/promt"
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 )
 
-func (s *service) GenerateAIReport(ctx context.Context, reportType string, userID string) (string, error) {
+type RainTableRow struct {
+	STT       int    `json:"STT"`
+	Tram      string `json:"Trạm"`
+	DiaChi    string `json:"Địa chỉ"`
+	LuongMua  string `json:"Lượng mưa"`
+	ThoiGian  string `json:"Thời gian"`
+	TrangThai string  `json:"Trạng thái"`
+	Type      string  `json:"type"`
+	Priority  int     `json:"priority"`
+	TotalRain float64 `json:"total_rain"`
+}
+
+type WaterTableRow struct {
+	STT     int    `json:"STT"`
+	Ten     string `json:"Tên"`
+	GiaTri   string `json:"Giá trị"`
+	CapNhat  string `json:"Cập nhật"`
+	Priority int    `json:"priority"`
+}
+
+type PumpTableRow struct {
+	Ten        string `json:"Tên trạm bơm"`
+	VanHanh    int    `json:"Vận hành"`
+	KhongVH    int    `json:"Không VH"`
+	BaoDuong   int    `json:"Bảo dưỡng"`
+	MatTinHieu int    `json:"Mất tín hiệu"`
+	TongSoBom  int    `json:"Tổng số bơm"`
+	CapNhat    string `json:"Cập nhật"`
+	Priority   int    `json:"priority"`
+}
+
+type WastewaterTableRow struct {
+	STT      int    `json:"STT"`
+	Ten      string `json:"Tên"`
+	BaoCao   string `json:"Báo cáo"`
+	ThoiGian string `json:"Thời gian"`
+}
+
+type InundationTableRow struct {
+	STT       int    `json:"STT"`
+	ViTri     string `json:"Vị trí ngập"`
+	DoSau     string `json:"Độ sâu"`
+	KichThuoc string `json:"Kích thước"`
+	GioBatDau string `json:"Giờ bắt đầu"`
+	TrangThai string `json:"Trạng thái"`
+	DonVi     string `json:"Đơn vị trực"`
+}
+
+func (s *service) GenerateAIReport(ctx context.Context, reportType string, userID string) (*ChatResponse, error) {
 	if s.geminiSvc == nil {
-		return "", fmt.Errorf("gemini service is not initialized")
+		return nil, fmt.Errorf("gemini service is not initialized")
 	}
 
 	status, err := s.GetCityStatus(ctx)
 	if err != nil {
-		return "", fmt.Errorf("failed to get city status: %w", err)
+		return nil, fmt.Errorf("failed to get city status: %w", err)
 	}
 
 	now := time.Now()
@@ -32,10 +81,152 @@ func (s *service) GenerateAIReport(ctx context.Context, reportType string, userI
 	case constant.ReportTypeDynamic:
 		prompt = s.buildDynamicPrompt(status, hh, dd, mm, yyyy)
 	default:
-		return "", fmt.Errorf("unsupported report type: %s", reportType)
+		return nil, fmt.Errorf("unsupported report type: %s", reportType)
 	}
 
-	return s.geminiSvc.Chat(ctx, prompt, nil, userID, true, constant.LogPrefixGenerateReport+reportType)
+	res, err := s.geminiSvc.Chat(ctx, prompt, nil, userID, true, "SKIP_LOG")
+	if err != nil {
+		return nil, err
+	}
+
+	if res != nil {
+		if res.Tables == nil {
+			res.Tables = make(map[string]interface{})
+		}
+		if status.Weather != nil && len(status.Weather.Measurements) > 0 {
+			indices := make([]int, len(status.Weather.Measurements))
+			for i := range indices {
+				indices[i] = i
+			}
+			sort.SliceStable(indices, func(i, j int) bool {
+				mI := status.Weather.Measurements[indices[i]]
+				mJ := status.Weather.Measurements[indices[j]]
+				isPhuongXaI := strings.Contains(strings.ToLower(mI.Type), "phường") || strings.Contains(strings.ToLower(mI.Type), "xã")
+				isPhuongXaJ := strings.Contains(strings.ToLower(mJ.Type), "phường") || strings.Contains(strings.ToLower(mJ.Type), "xã")
+				if isPhuongXaI != isPhuongXaJ {
+					return isPhuongXaJ
+				}
+				if mI.Priority != mJ.Priority {
+					return mI.Priority > mJ.Priority
+				}
+				return mI.TotalRain > mJ.TotalRain
+			})
+
+			var rains []RainTableRow
+			for i, idx := range indices {
+				m := status.Weather.Measurements[idx]
+				statusStr := "✅ Đã tạnh"
+				if m.IsRaining {
+					statusStr = "🌧️ Đang mưa"
+				}
+				timeStr := ""
+				if m.StartTime != "" && m.EndTime != "" {
+					timeStr = fmt.Sprintf("%s - %s", m.StartTime, m.EndTime)
+				} else if m.EndTime != "" {
+					timeStr = m.EndTime
+				}
+				rains = append(rains, RainTableRow{
+					STT:       i + 1,
+					Tram:      m.Name,
+					DiaChi:    m.Address,
+					LuongMua:  fmt.Sprintf("%.1fmm", m.TotalRain),
+					ThoiGian:  timeStr,
+					TrangThai: statusStr,
+					Type:      m.Type,
+					Priority:  m.Priority,
+					TotalRain: m.TotalRain,
+				})
+			}
+			res.Tables["rains"] = rains
+		}
+		if status.Water != nil {
+			if len(status.Water.LakeStations) > 0 {
+				var lakes []WaterTableRow
+				for i, m := range status.Water.LakeStations {
+					lakes = append(lakes, WaterTableRow{
+						STT:     i + 1,
+						Ten:      m.Name,
+						GiaTri:   fmt.Sprintf("%.2fm", m.Level),
+						CapNhat:  m.ThoiGian,
+						Priority: m.Priority,
+					})
+				}
+				res.Tables["lakes"] = lakes
+			}
+			if len(status.Water.RiverStations) > 0 {
+				var rivers []WaterTableRow
+				for i, m := range status.Water.RiverStations {
+					rivers = append(rivers, WaterTableRow{
+						STT:     i + 1,
+						Ten:      m.Name,
+						GiaTri:   fmt.Sprintf("%.2fm", m.Level),
+						CapNhat:  m.ThoiGian,
+						Priority: m.Priority,
+					})
+				}
+				res.Tables["rivers"] = rivers
+			}
+		}
+		if status.Inundation != nil && len(status.Inundation.OngoingPoints) > 0 {
+			var inundations []InundationTableRow
+			for i, m := range status.Inundation.OngoingPoints {
+				inundations = append(inundations, InundationTableRow{
+					STT:       i + 1,
+					ViTri:     m.StreetName,
+					DoSau:     fmt.Sprintf("%.2fm", m.Depth),
+					KichThuoc: m.FormattedDepth,
+					GioBatDau: m.StartTime,
+					TrangThai: m.CurrentStatus,
+					DonVi:     m.OrgName,
+				})
+			}
+			res.Tables["inundations"] = inundations
+		}
+		if status.Pumping != nil && len(status.Pumping.Stations) > 0 {
+			var pumping []PumpTableRow
+			for _, m := range status.Pumping.Stations {
+				noSig := 0
+				if m.PumpCount > 0 && m.OperatingCount == 0 && m.ClosedCount == 0 && m.MaintenanceCount == 0 {
+					noSig = m.PumpCount
+				}
+				pumping = append(pumping, PumpTableRow{
+					Ten:        m.Name,
+					VanHanh:    m.OperatingCount,
+					KhongVH:    m.ClosedCount,
+					BaoDuong:   m.MaintenanceCount,
+					MatTinHieu: noSig,
+					TongSoBom:  m.PumpCount,
+					CapNhat:    m.LastUpdate,
+					Priority:   m.Priority,
+				})
+			}
+			res.Tables["pumping_stations"] = pumping
+		}
+		if status.Wastewater != nil && len(status.Wastewater) > 0 {
+			var wastewater []WastewaterTableRow
+			for i, m := range status.Wastewater {
+				bc := "Bình thường"
+				tg := "-"
+				if m.LastReport != nil {
+					if m.LastReport.Note != "" {
+						bc = m.LastReport.Note
+					}
+					if m.LastReport.Timestamp > 0 {
+						tg = time.Unix(m.LastReport.Timestamp, 0).In(time.FixedZone("ICT", 7*3600)).Format("15:04 02/01/2006")
+					}
+				}
+				wastewater = append(wastewater, WastewaterTableRow{
+					STT:      i + 1,
+					Ten:      m.Name,
+					BaoCao:   bc,
+					ThoiGian: tg,
+				})
+			}
+			res.Tables["wastewater"] = wastewater
+		}
+	}
+
+	return res, nil
 }
 
 func (s *service) buildActiveRainPrompt(status *CityStatus, hh, dd, mm, yyyy string) string {
@@ -79,9 +270,15 @@ func (s *service) buildViberPrompt(status *CityStatus, hh, dd, mm, yyyy string) 
 		rainIntensity = "lớn"
 	}
 
-	rainSpread := "diện hẹp"
-	if status.Weather.RainyStations > 20 {
-		rainSpread = "diện rộng"
+	//(điểm đang mưa và điểm đã mưa): Nếu từ 1-4 điểm thì gọi là "mưa vùng", từ 5-10 điểm thì gọi là "mưa rải rác trên diện rộng", lớn hơn 10 điểm thì gọi là "mưa trên diện rộng".
+	rainSpread := "mưa vùng"
+	totalRain := len(status.Weather.Measurements) + status.Weather.RainyStations
+	if totalRain < 5 {
+		rainSpread = "mưa vùng"
+	} else if totalRain <= 10 {
+		rainSpread = "mưa rải rác trên diện rộng"
+	} else {
+		rainSpread = "mưa trên diện rộng"
 	}
 
 	inuInfo := "Trên các tuyến đường an toàn, không xảy ra úng ngập"
@@ -170,5 +367,10 @@ func (s *service) buildDynamicPrompt(status *CityStatus, hh, dd, mm, yyyy string
 		}
 	}
 
-	return fmt.Sprintf(promt.Get("report_dynamic"), hh, dd+"/"+mm+"/"+yyyy, rainIntro, waterStr, inuStr, pumpStr, wwStr)
+	ocrStr := "Không có thông tin dự báo."
+	if status.OCRText != "" {
+		ocrStr = status.OCRText
+	}
+
+	return fmt.Sprintf(promt.Get("report_dynamic"), hh, dd+"/"+mm+"/"+yyyy, rainIntro, waterStr, inuStr, pumpStr, wwStr, ocrStr)
 }

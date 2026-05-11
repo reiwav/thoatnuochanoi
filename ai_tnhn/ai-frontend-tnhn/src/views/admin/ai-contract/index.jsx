@@ -16,6 +16,45 @@ import 'dayjs/locale/vi';
 dayjs.extend(relativeTime);
 dayjs.locale('vi');
 
+const AiTable = ({ title, data }) => {
+    if (!data || !Array.isArray(data) || data.length === 0) return null;
+    const columns = Object.keys(data[0]).filter(k => typeof data[0][k] !== 'object' && k !== 'id' && k !== 'old_id');
+    
+    const formatHeader = (key) => {
+        const nameMap = {
+            'name': 'Tên hợp đồng', 'amount': 'Giá trị', 'status': 'Trạng thái',
+            'start_date': 'Ngày bắt đầu', 'end_date': 'Ngày kết thúc', 'contract_no': 'Số HĐ',
+            'partner': 'Đối tác', 'progress': 'Tiến độ'
+        };
+        return nameMap[key] || key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ');
+    };
+    
+    return (
+        <Box sx={{ my: 2, width: '100%' }}>
+            {title && <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, textTransform: 'uppercase', fontSize: '12px', opacity: 0.8 }}>{title}</Typography>}
+            <Box sx={{ overflowX: 'auto', border: '1px solid', borderColor: 'divider', borderRadius: '8px', bgcolor: 'background.paper' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                    <thead style={{ backgroundColor: 'rgba(0,0,0,0.04)' }}>
+                        <tr>
+                            {columns.map(col => <th key={col} style={{ padding: '10px', borderBottom: '1px solid rgba(0,0,0,0.1)', textAlign: 'left', fontWeight: 600, color: '#333' }}>{formatHeader(col)}</th>)}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {data.map((row, i) => (
+                            <tr key={i} style={{ borderBottom: '1px solid rgba(0,0,0,0.05)', backgroundColor: 'transparent' }}>
+                                {columns.map(col => (
+                                    <td key={col} style={{ padding: '8px 10px', color: '#000' }}>
+                                        {typeof row[col] === 'boolean' ? (row[col] ? 'Có' : 'Không') : row[col]}
+                                    </td>
+                                ))}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </Box>
+        </Box>
+    );
+};
 
 const AiContract = () => {
     const { user: userInfo } = useAuthStore();
@@ -32,14 +71,29 @@ const AiContract = () => {
         try {
             console.log('Fetching contract chat history...');
             const res = await contractApi.getChatHistory('contract', 3);
-            console.log('Contract chat history response:', res.data);
-            if (res.data?.status === 'success' && Array.isArray(res.data.data)) {
-                const historyLogs = res.data.data.map(log => ({
-                    id: log.id,
-                    role: log.role === 'model' ? 'ai' : 'user',
-                    text: log.content,
-                    timestamp: log.timestamp
-                }));
+            if (res && Array.isArray(res)) {
+                const historyLogs = res.map(log => {
+                    let text = log.content;
+                    let tables = null;
+                    if (log.role === 'model') {
+                        try {
+                            const parsed = JSON.parse(log.content);
+                            if (parsed && typeof parsed === 'object' && parsed.text) {
+                                text = parsed.text;
+                                tables = parsed.tables;
+                            }
+                        } catch (e) {
+                            // ignore
+                        }
+                    }
+                    return {
+                        id: log.id,
+                        role: log.role === 'model' ? 'ai' : 'user',
+                        text: text,
+                        tables: tables,
+                        timestamp: log.timestamp
+                    };
+                });
                 if (historyLogs.length > 0) {
                     setMessages(historyLogs);
                 } else {
@@ -84,10 +138,30 @@ const AiContract = () => {
                 prompt: textToSend,
                 history: history
             });
+            let text = 'Xin lỗi, tôi gặp trục trặc khi xử lý câu hỏi này.';
+            let tables = null;
+            if (res && typeof res === 'object' && res.text) {
+                text = res.text;
+                tables = res.tables;
+            } else if (typeof res === 'string') {
+                try {
+                    const parsed = JSON.parse(res);
+                    if (parsed && parsed.text) {
+                        text = parsed.text;
+                        tables = parsed.tables;
+                    } else {
+                        text = res;
+                    }
+                } catch(e) {
+                    text = res;
+                }
+            }
+
             const aiMsg = {
                 id: Date.now() + 1,
                 role: 'ai',
-                text: res.data?.data || 'Xin lỗi, tôi gặp trục trặc khi xử lý câu hỏi này.',
+                text: text,
+                tables: tables,
                 timestamp: new Date()
             };
 
@@ -174,50 +248,103 @@ const AiContract = () => {
                                     '& ul, & ol': { pl: 2, my: 1 },
                                     '& li': { mb: 0.5 }
                                 }}>
-                                    <ReactMarkdown
-                                        remarkPlugins={[remarkGfm]}
-                                        transformUri={uri => uri}
-                                        components={{
-                                            a: ({ node, ...props }) => {
-                                                if (props.href && props.href.startsWith('#contract-detail-')) {
-                                                    const contractId = props.href.replace('#contract-detail-', '');
-                                                    return (
-                                                        <Box component="span" sx={{ display: 'inline-block', my: 0.5 }}>
-                                                            <Tooltip title="Xem chi tiết hợp đồng này">
-                                                                <IconButton
-                                                                    size="small"
-                                                                    color="primary"
-                                                                    sx={{
-                                                                        bgcolor: 'primary.light',
-                                                                        '&:hover': { bgcolor: 'primary.main', color: 'white' },
-                                                                        borderRadius: '8px',
-                                                                        fontSize: '12px',
-                                                                        px: 1.5,
-                                                                        py: 0.5,
-                                                                        height: 'auto',
-                                                                        width: 'auto',
-                                                                        gap: 0.5
-                                                                    }}
-                                                                    onClick={(e) => {
-                                                                        e?.preventDefault();
-                                                                        navigate(`/admin/contract?id=${contractId}`);
-                                                                    }}
-                                                                >
-                                                                    <IconEye size={14} />
-                                                                    <Typography variant="caption" fontWeight={700} sx={{ color: 'inherit' }}>
-                                                                        Xem chi tiết
-                                                                    </Typography>
-                                                                </IconButton>
-                                                            </Tooltip>
-                                                        </Box>
-                                                    );
-                                                }
-                                                return <a {...props} target="_blank" rel="noopener noreferrer" style={{ color: '#1B5E20', fontWeight: 600 }} />;
+
+                                    {(() => {
+                                        const rawText = typeof msg.text === 'string' ? msg.text : JSON.stringify(msg.text);
+                                        const parts = rawText.split(/(\[TABLE:[a-zA-Z0-9_]+\])/g);
+                                        const renderedKeys = new Set();
+                                        
+                                        const renderTable = (key) => {
+                                            if (!msg.tables || !msg.tables[key]) return null;
+                                            renderedKeys.add(key);
+                                            const data = msg.tables[key];
+                                            if (Array.isArray(data)) {
+                                                return <AiTable key={key} title={key} data={data} />;
                                             }
-                                        }}
-                                    >
-                                        {typeof msg.text === 'string' ? msg.text : JSON.stringify(msg.text)}
-                                    </ReactMarkdown>
+                                            if (typeof data === 'object' && data !== null) {
+                                                return Object.entries(data).map(([subKey, subData]) => {
+                                                    if (Array.isArray(subData)) {
+                                                        return <AiTable key={`${key}-${subKey}`} title={`${key} - ${subKey}`} data={subData} />;
+                                                    }
+                                                    return null;
+                                                });
+                                            }
+                                            return null;
+                                        };
+
+                                        const content = parts.map((part, index) => {
+                                            const match = part.match(/^\[TABLE:([a-zA-Z0-9_]+)\]$/);
+                                            if (match) {
+                                                return <Box key={index} sx={{ my: 2 }}>{renderTable(match[1])}</Box>;
+                                            }
+                                            if (!part.trim()) return null;
+                                            return (
+                                                <ReactMarkdown
+                                                    key={index}
+                                                    remarkPlugins={[remarkGfm]}
+                                                    components={{
+                                                        table: ({ node, ...props }) => <table style={{ borderCollapse: 'collapse', width: '100%', marginBottom: '1rem', border: `1px solid ${isUser ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)'}` }} {...props} />,
+                                                        th: ({ node, ...props }) => <th style={{ border: `1px solid ${isUser ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)'}`, padding: '8px', backgroundColor: isUser ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', textAlign: 'left' }} {...props} />,
+                                                        td: ({ node, ...props }) => <td style={{ border: `1px solid ${isUser ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)'}`, padding: '8px' }} {...props} />,
+                                                        p: ({ node, ...props }) => <p style={{ margin: '0 0 0.5rem 0', wordBreak: 'break-word' }} {...props} />,
+                                                        a: ({ node, ...props }) => {
+                                                            if (props.href && props.href.startsWith('#contract-detail-')) {
+                                                                const contractId = props.href.replace('#contract-detail-', '');
+                                                                return (
+                                                                    <Box component="span" sx={{ display: 'inline-block', my: 0.5 }}>
+                                                                        <Tooltip title="Xem chi tiết hợp đồng này">
+                                                                            <IconButton
+                                                                                size="small"
+                                                                                color="primary"
+                                                                                sx={{
+                                                                                    bgcolor: 'primary.light',
+                                                                                    '&:hover': { bgcolor: 'primary.main', color: 'white' },
+                                                                                    borderRadius: '8px',
+                                                                                    fontSize: '12px',
+                                                                                    px: 1.5,
+                                                                                    py: 0.5,
+                                                                                    height: 'auto',
+                                                                                    width: 'auto',
+                                                                                    gap: 0.5
+                                                                                }}
+                                                                                onClick={(e) => {
+                                                                                    e?.preventDefault();
+                                                                                    navigate(`/admin/contract?id=${contractId}`);
+                                                                                }}
+                                                                            >
+                                                                                <IconEye size={14} />
+                                                                                <Typography variant="caption" fontWeight={700} sx={{ color: 'inherit' }}>
+                                                                                    Xem chi tiết
+                                                                                </Typography>
+                                                                            </IconButton>
+                                                                        </Tooltip>
+                                                                    </Box>
+                                                                );
+                                                            }
+                                                            return <a {...props} target="_blank" rel="noopener noreferrer" style={{ color: '#1B5E20', fontWeight: 600 }} />;
+                                                        }
+                                                    }}
+                                                >
+                                                    {part}
+                                                </ReactMarkdown>
+                                            );
+                                        });
+
+                                        const unrenderedTables = msg.tables && typeof msg.tables === 'object' 
+                                            ? Object.keys(msg.tables).filter(key => !renderedKeys.has(key)) 
+                                            : [];
+
+                                        return (
+                                            <>
+                                                {content}
+                                                {unrenderedTables.length > 0 && (
+                                                    <Box sx={{ mt: 2 }}>
+                                                        {unrenderedTables.map(key => renderTable(key))}
+                                                    </Box>
+                                                )}
+                                            </>
+                                        );
+                                    })()}
                                 </Box>
                                 {msg.timestamp && (
                                     <Typography

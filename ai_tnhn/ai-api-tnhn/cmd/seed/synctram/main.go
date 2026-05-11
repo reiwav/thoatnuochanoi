@@ -9,7 +9,6 @@ import (
 	"io"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -54,17 +53,17 @@ func main() {
 	database := mgo.DB
 
 	// collections
-	collRain := database.Collection("rain_stations")
+	//collRain := database.Collection("rain_stations")
 	collLake := database.Collection("lake_stations")
 	collRiver := database.Collection("river_stations")
 
 	log.Info("Dropping existing collections...")
-	collRain.Drop(ctx)
+	//collRain.Drop(ctx)
 	collLake.Drop(ctx)
 	collRiver.Drop(ctx)
 
 	log.Info("Processing tram_mua.json...")
-	processRainStations(ctx, log, collRain)
+	//processRainStations(ctx, log, collRain)
 
 	log.Info("Processing tram_nuoc.json...")
 	processWaterStations(ctx, log, collLake, collRiver)
@@ -73,7 +72,7 @@ func main() {
 }
 
 func processRainStations(ctx context.Context, log *logrus.Logger, coll *mongo.Collection) {
-	file, err := os.Open("cmd/seed/synctram/tram_mua.json")
+	file, err := os.Open("tram_mua.json")
 	if err != nil {
 		log.Fatalf("Cannot open tram_mua.json: %v", err)
 	}
@@ -128,7 +127,7 @@ func processRainStations(ctx context.Context, log *logrus.Logger, coll *mongo.Co
 }
 
 func processWaterStations(ctx context.Context, log *logrus.Logger, collLake *mongo.Collection, collRiver *mongo.Collection) {
-	file, err := os.Open("cmd/seed/synctram/tram_nuoc.json")
+	file, err := os.Open("tram_nuoc.json")
 	if err != nil {
 		log.Fatalf("Cannot open tram_nuoc.json: %v", err)
 	}
@@ -149,28 +148,29 @@ func processWaterStations(ctx context.Context, log *logrus.Logger, collLake *mon
 
 	for _, tw := range tempWaters {
 		oldId, _ := strconv.Atoi(tw.Id)
-		tenTram := tw.TenTramHTML
-		if strings.TrimSpace(tenTram) == "" {
-			tenTram = tw.TenTram
-		}
+		tenTram := tw.TenTram
 
 		if tw.Loai == "1" {
 			// River Station
 			riverStation := models.RiverStation{
-				OldID:   oldId,
-				TenTram: tenTram,
-				Loai:    "river",
-				Active:  true,
+				OldID:     oldId,
+				TenTram:   tenTram,
+				TenPhuong: tw.TenTramHTML,
+				DiaChi:    tw.TenTramHTML,
+				Loai:      "river",
+				Active:    true,
 			}
 			riverStation.BeforeCreate("river")
 			riverDocs = append(riverDocs, riverStation)
 		} else if tw.Loai == "2" {
 			// Lake Station
 			lakeStation := models.LakeStation{
-				OldID:   oldId,
-				TenTram: tenTram,
-				Loai:    "lake",
-				Active:  true,
+				OldID:     oldId,
+				TenTram:   tenTram,
+				TenPhuong: tw.TenTramHTML,
+				DiaChi:    tw.TenTramHTML,
+				Loai:      "lake",
+				Active:    true,
 			}
 			lakeStation.BeforeCreate("lake")
 			lakeDocs = append(lakeDocs, lakeStation)

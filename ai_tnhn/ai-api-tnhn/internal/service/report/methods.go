@@ -3,6 +3,7 @@ package report
 import (
 	"ai-api-tnhn/internal/constant"
 	"ai-api-tnhn/internal/models"
+	"ai-api-tnhn/internal/service/google/googleapi"
 	"ai-api-tnhn/internal/service/weather"
 	"context"
 	"encoding/json"
@@ -15,12 +16,41 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func (s *service) GenerateQuickReportText(ctx context.Context, userID string) (string, error) {
-	return s.googleSvc.GenerateAIReport(ctx, constant.ReportTypeViber, userID)
+func (s *service) GenerateQuickReportText(ctx context.Context, userID string) (*googleapi.ChatResponse, error) {
+	res, err := s.googleSvc.GenerateAIReport(ctx, constant.ReportTypeViber, userID)
+	if err != nil {
+		return nil, err
+	}
+	s.saveChatLog(userID, "Lấy báo cáo nhanh tình hình (Văn bản)", res, "support")
+	return res, nil
 }
 
-func (s *service) GenerateAIDynamicReport(ctx context.Context, userID string) (string, error) {
-	return s.googleSvc.GenerateAIReport(ctx, constant.ReportTypeDynamic, userID)
+func (s *service) GenerateAIDynamicReport(ctx context.Context, userID string) (*googleapi.ChatResponse, error) {
+	res, err := s.googleSvc.GenerateAIReport(ctx, constant.ReportTypeDynamic, userID)
+	if err != nil {
+		return nil, err
+	}
+	s.saveChatLog(userID, "Lấy báo cáo nhanh tình hình", res, "support")
+	return res, nil
+}
+
+func (s *service) saveChatLog(userID, userMsg string, res *googleapi.ChatResponse, chatType string) {
+	if s.aiChatLogRepo == nil || userID == "" || res == nil {
+		return
+	}
+	go func() {
+		now := time.Now()
+		ctx := context.Background()
+		_ = s.aiChatLogRepo.Save(ctx, &models.AiChatLog{
+			UserID: userID, Role: "user", Content: userMsg,
+			ChatType: chatType, Timestamp: now.Add(-1 * time.Second),
+		})
+		resBytes, _ := json.Marshal(res)
+		_ = s.aiChatLogRepo.Save(ctx, &models.AiChatLog{
+			UserID: userID, Role: "model", Content: string(resBytes),
+			ChatType: chatType, Timestamp: now,
+		})
+	}()
 }
 
 func (s *service) GenerateQuickReportV3(ctx context.Context, userID string) (*QuickReportResult, error) {
@@ -122,9 +152,10 @@ func (s *service) GenerateQuickReportV3(ctx context.Context, userID string) (*Qu
 	}
 
 	timeMua := s.formatRainTime(city.Weather)
-	noidung, _ := s.googleSvc.GenerateAIReport(ctx, constant.ReportTypeActiveRain, userID)
-	if noidung == "" {
-		noidung = "Báo cáo tình hình mưa"
+	noidung := "Báo cáo tình hình mưa"
+	chatRes, _ := s.googleSvc.GenerateAIReport(ctx, constant.ReportTypeActiveRain, userID)
+	if chatRes != nil && chatRes.Text != "" {
+		noidung = chatRes.Text
 	}
 
 	motaUngNgap, chiTietCacDiem, soLuongUngNgap := "không xuất hiện điểm úng ngập", "", 0

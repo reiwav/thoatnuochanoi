@@ -24,8 +24,8 @@ import (
 )
 
 type Service interface {
-	Chat(ctx context.Context, prompt string, history []googleapi.ChatMessage, userID string, isCompany bool, logPrompt string) (string, error)
-	ChatContract(ctx context.Context, prompt string, history []googleapi.ChatMessage, userID string, isCompany bool, logPrompt string) (string, error)
+	Chat(ctx context.Context, prompt string, history []googleapi.ChatMessage, userID string, isCompany bool, logPrompt string) (*googleapi.ChatResponse, error)
+	ChatContract(ctx context.Context, prompt string, history []googleapi.ChatMessage, userID string, isCompany bool, logPrompt string) (*googleapi.ChatResponse, error)
 	ExtractTextFromPDF(ctx context.Context, pdfBytes []byte) (string, error)
 }
 

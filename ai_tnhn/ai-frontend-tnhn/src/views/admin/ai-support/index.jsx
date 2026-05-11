@@ -92,12 +92,28 @@ const AiSupport = () => {
             const res = await axiosClient.get(`/admin/google/chat/history?chat_type=support&limit=${limit}${beforeParam}`);
 
             if (res && Array.isArray(res)) {
-                const historyLogs = res.map(log => ({
-                    id: log.id,
-                    role: log.role === 'model' ? 'ai' : 'user',
-                    text: log.content,
-                    timestamp: log.timestamp
-                }));
+                const historyLogs = res.map(log => {
+                    let text = log.content;
+                    let tables = null;
+                    if (log.role === 'model') {
+                        try {
+                            const parsed = JSON.parse(log.content);
+                            if (parsed && typeof parsed === 'object' && parsed.text) {
+                                text = parsed.text;
+                                tables = parsed.tables;
+                            }
+                        } catch (e) {
+                            // ignore, fallback to text
+                        }
+                    }
+                    return {
+                        id: log.id,
+                        role: log.role === 'model' ? 'ai' : 'user',
+                        text: text,
+                        tables: tables,
+                        timestamp: log.timestamp
+                    };
+                });
 
                 if (before) {
                     const scrollContainer = scrollRef.current;
@@ -191,10 +207,30 @@ const AiSupport = () => {
                 prompt: textToSend,
                 history: history
             });
+            let text = 'Xin lỗi, tôi gặp trục trặc khi xử lý câu hỏi này.';
+            let tables = null;
+            if (res && typeof res === 'object' && res.text) {
+                text = res.text;
+                tables = res.tables;
+            } else if (typeof res === 'string') {
+                try {
+                    const parsed = JSON.parse(res);
+                    if (parsed && parsed.text) {
+                        text = parsed.text;
+                        tables = parsed.tables;
+                    } else {
+                        text = res;
+                    }
+                } catch(e) {
+                    text = res;
+                }
+            }
+
             const aiMsg = {
                 id: Date.now() + 1,
                 role: 'ai',
-                text: res || 'Xin lỗi, tôi gặp trục trặc khi xử lý câu hỏi này.',
+                text: text,
+                tables: tables,
                 timestamp: new Date()
             };
             setMessages(prev => [...prev, aiMsg]);
@@ -316,7 +352,15 @@ const AiSupport = () => {
         setLoading(true);
         try {
             const res = await axiosClient.post('/admin/google/quick-report-text');
-            if (res) setMessages(prev => [...prev, { id: Date.now() + 1, role: 'ai', text: res, timestamp: new Date() }]);
+            if (res) {
+                let text = res;
+                let tables = null;
+                if (typeof res === 'object' && res.text) {
+                    text = res.text;
+                    tables = res.tables;
+                }
+                setMessages(prev => [...prev, { id: Date.now() + 1, role: 'ai', text, tables, timestamp: new Date() }]);
+            }
             shouldScrollToBottom.current = true;
         } catch (error) {
             setLoading(false);
@@ -331,7 +375,15 @@ const AiSupport = () => {
         setLoading(true);
         try {
             const res = await axiosClient.post('/admin/google/dynamic-report');
-            if (res) setMessages(prev => [...prev, { id: Date.now() + 1, role: 'ai', text: res, timestamp: new Date() }]);
+            if (res) {
+                let text = res;
+                let tables = null;
+                if (typeof res === 'object' && res.text) {
+                    text = res.text;
+                    tables = res.tables;
+                }
+                setMessages(prev => [...prev, { id: Date.now() + 1, role: 'ai', text, tables, timestamp: new Date() }]);
+            }
             shouldScrollToBottom.current = true;
         } catch (error) {
             setLoading(false);

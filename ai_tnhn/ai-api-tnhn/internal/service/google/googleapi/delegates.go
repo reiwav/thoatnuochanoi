@@ -27,7 +27,7 @@ func (s *service) GetInundationSummary(ctx context.Context, orgID string, isAllo
 
 func (s *service) SetGeminiService(svc interface {
 	ExtractTextFromPDF(ctx context.Context, pdfBytes []byte) (string, error)
-	Chat(ctx context.Context, prompt string, history []ChatMessage, userID string, isCompany bool, logPrompt string) (string, error)
+	Chat(ctx context.Context, prompt string, history []ChatMessage, userID string, isCompany bool, logPrompt string) (*ChatResponse, error)
 }) {
 	s.geminiSvc = svc
 }

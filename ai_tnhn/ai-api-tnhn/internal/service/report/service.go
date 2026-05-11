@@ -11,8 +11,8 @@ import (
 
 type Service interface {
 	GenerateQuickReportV3(ctx context.Context, userID string) (*QuickReportResult, error)
-	GenerateQuickReportText(ctx context.Context, userID string) (string, error)
-	GenerateAIDynamicReport(ctx context.Context, userID string) (string, error)
+	GenerateQuickReportText(ctx context.Context, userID string) (*googleapi.ChatResponse, error)
+	GenerateAIDynamicReport(ctx context.Context, userID string) (*googleapi.ChatResponse, error)
 }
 
 type service struct {

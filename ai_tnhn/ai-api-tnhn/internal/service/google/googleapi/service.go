@@ -20,6 +20,11 @@ import (
 	"google.golang.org/api/option"
 )
 
+type ChatResponse struct {
+	Text   string                 `json:"text"`
+	Tables map[string]interface{} `json:"tables,omitempty"`
+}
+
 type Service interface {
 	GetStatus(ctx context.Context) (*GoogleStatus, error)
 	GetRainSummary(ctx context.Context, orgID string, assignedIDs []string) (*weather.RainSummaryData, error)
@@ -33,11 +38,12 @@ type Service interface {
 	SetEmailService(svc email.Service)
 	SetGeminiService(svc interface {
 		ExtractTextFromPDF(ctx context.Context, pdfBytes []byte) (string, error)
-		Chat(ctx context.Context, prompt string, history []ChatMessage, userID string, isCompany bool, logPrompt string) (string, error)
+		Chat(ctx context.Context, prompt string, history []ChatMessage, userID string, isCompany bool, logPrompt string) (*ChatResponse, error)
 	})
 
 	GetCityStatus(ctx context.Context) (*CityStatus, error)
-	GenerateAIReport(ctx context.Context, reportType string, userID string) (string, error)
+	GetLatestOCRText(ctx context.Context) string
+	GenerateAIReport(ctx context.Context, reportType string, userID string) (*ChatResponse, error)
 }
 
 type service struct {
@@ -53,7 +59,7 @@ type service struct {
 	wastewaterSvc wastewater_treatment.Service
 	geminiSvc     interface {
 		ExtractTextFromPDF(ctx context.Context, pdfBytes []byte) (string, error)
-		Chat(ctx context.Context, prompt string, history []ChatMessage, userID string, isCompany bool, logPrompt string) (string, error)
+		Chat(ctx context.Context, prompt string, history []ChatMessage, userID string, isCompany bool, logPrompt string) (*ChatResponse, error)
 	}
 	cache sync.Map
 }

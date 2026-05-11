@@ -35,6 +35,7 @@ import (
 	"ai-api-tnhn/internal/service/token"
 	"ai-api-tnhn/internal/service/weather"
 	"context"
+	"time"
 )
 
 type Services struct {
@@ -158,7 +159,14 @@ func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log log
 		}
 		if s.Weather != nil {
 			s.Weather.SetForecastFunc(func(ctx context.Context, prompt string) (string, error) {
-				return targetWeatherSvc.Chat(ctx, prompt, nil, "system_weather", true, "SKIP_LOG")
+				res, err := targetWeatherSvc.Chat(ctx, prompt, nil, "system_weather", true, "SKIP_LOG")
+				if err != nil {
+					return "", err
+				}
+				if res != nil {
+					return res.Text, nil
+				}
+				return "", nil
 			})
 		}
 	}
@@ -196,6 +204,22 @@ func (s *Services) PostInit(log logger.Logger, repos *Repositories) {
 				}
 			}
 			log.GetLogger().Info("Google Drive automated storage initialization complete.")
+		}()
+	}
+	if s.GoogleApi != nil {
+		go func() {
+			log.GetLogger().Info("Starting automated Google Email OCR polling...")
+			ctx := context.Background()
+			
+			// Initial fetch on startup
+			s.GoogleApi.GetLatestOCRText(ctx)
+
+			// Poll every 5 minutes
+			ticker := time.NewTicker(5 * time.Minute)
+			defer ticker.Stop()
+			for range ticker.C {
+				s.GoogleApi.GetLatestOCRText(ctx)
+			}
 		}()
 	}
 }

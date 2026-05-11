@@ -4,12 +4,15 @@ import (
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/service/google/gemini/promt"
 	"ai-api-tnhn/internal/service/google/googleapi"
+	pumpingstation "ai-api-tnhn/internal/service/station/pumping_station"
 	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
 	"sync"
 	"time"
+
+	"ai-api-tnhn/internal/service/station/water"
 
 	"github.com/google/generative-ai-go/genai"
 	"golang.org/x/sync/errgroup"
@@ -31,7 +34,7 @@ func (s *service) getContractClient() *genai.Client {
 	return c
 }
 
-func (s *service) Chat(ctx context.Context, prompt string, history []googleapi.ChatMessage, userID string, isCompany bool, logPrompt string) (string, error) {
+func (s *service) Chat(ctx context.Context, prompt string, history []googleapi.ChatMessage, userID string, isCompany bool, logPrompt string) (*googleapi.ChatResponse, error) {
 	raw, aug := prompt, prompt
 	if strings.Contains(strings.ToLower(prompt), "mưa") && (strings.Contains(strings.ToLower(prompt), "3 ngày trước") || strings.Contains(strings.ToLower(prompt), "ba ngày trước")) {
 		dStr := time.Now().AddDate(0, 0, -3).Format("2006-01-02")
@@ -50,9 +53,11 @@ func (s *service) Chat(ctx context.Context, prompt string, history []googleapi.C
 	sess := m.StartChat()
 	resp, err := sess.SendMessage(ctx, genai.Text(aug))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	s.recordUsage(ctx, resp.UsageMetadata)
+
+	tables := make(map[string]interface{})
 
 	for {
 		if len(resp.Candidates) == 0 || resp.Candidates[0].Content == nil {
@@ -71,7 +76,6 @@ func (s *service) Chat(ctx context.Context, prompt string, history []googleapi.C
 		var mu sync.Mutex
 		g, gCtx := errgroup.WithContext(ctx)
 		for _, c := range calls {
-			c := c
 			g.Go(func() error {
 				res, te := s.handleToolCall(gCtx, c, userID, isCompany)
 				mu.Lock()
@@ -79,6 +83,32 @@ func (s *service) Chat(ctx context.Context, prompt string, history []googleapi.C
 				if te != nil {
 					trs = append(trs, genai.FunctionResponse{Name: c.Name, Response: map[string]interface{}{"error": te.Error()}})
 				} else {
+					if res != nil {
+						k := s.getToolKey(c)
+						if k != "" {
+							switch k {
+							case "pumping_summary":
+								if m, ok := res.(map[string]interface{}); ok {
+									for mk, mv := range m {
+										if mk == "pumping_stations" {
+											tables[mk] = s.transformPumpingStations(mv)
+										} else {
+											tables[mk] = mv
+										}
+									}
+								}
+							case "water_summary":
+								if wsd, ok := res.(*water.WaterSummaryData); ok {
+									tables["lakes"] = wsd.LakeStations
+									tables["rivers"] = wsd.RiverStations
+								} else {
+									tables["waters"] = res
+								}
+							default:
+								tables[k] = res
+							}
+						}
+					}
 					jb, _ := json.Marshal(res)
 					rs := string(jb)
 					if len(rs) > 30000 {
@@ -92,7 +122,7 @@ func (s *service) Chat(ctx context.Context, prompt string, history []googleapi.C
 		_ = g.Wait()
 		resp, err = sess.SendMessage(ctx, trs...)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 		s.recordUsage(ctx, resp.UsageMetadata)
 	}
@@ -100,11 +130,86 @@ func (s *service) Chat(ctx context.Context, prompt string, history []googleapi.C
 	for _, p := range resp.Candidates[0].Content.Parts {
 		fr += fmt.Sprintf("%v", p)
 	}
-	go s.saveLog(userID, raw, fr, logPrompt, "support")
-	return fr, nil
+
+	chatRes := &googleapi.ChatResponse{
+		Text:   strings.TrimSpace(fr),
+		Tables: tables,
+	}
+	resBytes, _ := json.Marshal(chatRes)
+
+	go s.saveLog(userID, raw, string(resBytes), logPrompt, "support")
+	return chatRes, nil
 }
 
-func (s *service) ChatContract(ctx context.Context, prompt string, history []googleapi.ChatMessage, userID string, isCompany bool, logPrompt string) (string, error) {
+func (s *service) getToolKey(c *genai.FunctionCall) string {
+	switch c.Name {
+	case "get_live_rain_summary", "get_rain_data_by_date", "get_rain_analytics", "get_rain_summary_by_ward":
+		return "rains"
+	case "get_live_water_summary":
+		return "water_summary" // special case
+	case "get_lake_data_by_date":
+		return "lakes"
+	case "get_river_data_by_date":
+		return "rivers"
+	case "get_live_inundation_summary":
+		return "inundations"
+	case "get_live_pumping_summary":
+		return "pumping_summary" // special case handled above
+	case "get_weather_forecast":
+		return "weather_forecasts"
+	case "list_stations":
+		if t, ok := c.Args["type"].(string); ok {
+			if t == "rain" {
+				return "rains"
+			}
+			return "waters"
+		}
+		return "stations"
+	case "get_unfinished_emergency_work_history", "list_emergency_reports", "get_recent_emergency_reports":
+		return "emergencies"
+	case "get_contract_summary", "get_expiring_contracts", "get_expired_contracts", "get_contract_stages_due_soon", "get_contract_stages_passed", "search_contracts":
+		return "contracts"
+	}
+	return c.Name
+}
+
+func (s *service) transformPumpingStations(raw interface{}) interface{} {
+	type pumpRow struct {
+		Ten        string `json:"Tên trạm bơm"`
+		VanHanh    int    `json:"Vận hành"`
+		KhongVH    int    `json:"Không VH"`
+		BaoDuong   int    `json:"Bảo dưỡng"`
+		MatTinHieu int    `json:"Mất tín hiệu"`
+		TongSoBom  int    `json:"Tổng số bơm"`
+		CapNhat    string `json:"Cập nhật"`
+		Priority   int    `json:"priority"`
+	}
+
+	// Handle *PumpingStationSummaryData
+	if summary, ok := raw.(*pumpingstation.PumpingStationSummaryData); ok && summary != nil {
+		var rows []pumpRow
+		for _, st := range summary.Stations {
+			noSig := 0
+			if st.PumpCount > 0 && st.OperatingCount == 0 && st.ClosedCount == 0 && st.MaintenanceCount == 0 {
+				noSig = st.PumpCount
+			}
+			rows = append(rows, pumpRow{
+				Ten:        st.Name,
+				VanHanh:    st.OperatingCount,
+				KhongVH:    st.ClosedCount,
+				BaoDuong:   st.MaintenanceCount,
+				MatTinHieu: noSig,
+				TongSoBom:  st.PumpCount,
+				CapNhat:    st.LastUpdate,
+				Priority:   st.Priority,
+			})
+		}
+		return rows
+	}
+	return raw
+}
+
+func (s *service) ChatContract(ctx context.Context, prompt string, history []googleapi.ChatMessage, userID string, isCompany bool, logPrompt string) (*googleapi.ChatResponse, error) {
 	raw := prompt
 	cl := s.getContractClient()
 	m := cl.GenerativeModel("gemini-2.5-flash")
@@ -114,9 +219,11 @@ func (s *service) ChatContract(ctx context.Context, prompt string, history []goo
 	sess := m.StartChat()
 	resp, err := sess.SendMessage(ctx, genai.Text(aug))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	s.recordUsage(ctx, resp.UsageMetadata)
+
+	tables := make(map[string]interface{})
 
 	for {
 		if len(resp.Candidates) == 0 || resp.Candidates[0].Content == nil {
@@ -143,6 +250,12 @@ func (s *service) ChatContract(ctx context.Context, prompt string, history []goo
 				if te != nil {
 					trs = append(trs, genai.FunctionResponse{Name: c.Name, Response: map[string]interface{}{"error": te.Error()}})
 				} else {
+					if res != nil {
+						k := s.getToolKey(c)
+						if k != "" {
+							tables[k] = res
+						}
+					}
 					jb, _ := json.Marshal(res)
 					rs := string(jb)
 					if len(rs) > 30000 {
@@ -156,7 +269,7 @@ func (s *service) ChatContract(ctx context.Context, prompt string, history []goo
 		_ = g.Wait()
 		resp, err = sess.SendMessage(ctx, trs...)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 		s.recordUsage(ctx, resp.UsageMetadata)
 	}
@@ -164,8 +277,15 @@ func (s *service) ChatContract(ctx context.Context, prompt string, history []goo
 	for _, p := range resp.Candidates[0].Content.Parts {
 		fr += fmt.Sprintf("%v", p)
 	}
-	go s.saveLog(userID, raw, fr, logPrompt, "contract")
-	return fr, nil
+
+	chatRes := &googleapi.ChatResponse{
+		Text:   strings.TrimSpace(fr),
+		Tables: tables,
+	}
+	resBytes, _ := json.Marshal(chatRes)
+
+	go s.saveLog(userID, raw, string(resBytes), logPrompt, "contract")
+	return chatRes, nil
 }
 
 func (s *service) ExtractTextFromPDF(ctx context.Context, b []byte) (string, error) {

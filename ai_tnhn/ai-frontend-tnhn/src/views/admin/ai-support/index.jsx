@@ -253,7 +253,11 @@ const AiSupport = () => {
         setLoading(true);
         try {
             const res = await axiosClient.get('/admin/google/rain-summary-text');
-            setMessages(prev => [...prev, { id: Date.now() + 1, role: 'ai', text: res || 'Không thể lấy dữ liệu mưa.' }]);
+            if (res && typeof res === 'object' && res.text) {
+                setMessages(prev => [...prev, { id: Date.now() + 1, role: 'ai', text: res.text, tables: res.tables }]);
+            } else {
+                setMessages(prev => [...prev, { id: Date.now() + 1, role: 'ai', text: res || 'Không thể lấy dữ liệu mưa.' }]);
+            }
             shouldScrollToBottom.current = true;
         } catch (error) {
             setMessages(prev => [...prev, { id: Date.now() + 1, role: 'ai', text: 'Lỗi tải dữ liệu.' }]);

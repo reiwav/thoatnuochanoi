@@ -3,8 +3,8 @@ import { Box, Typography } from '@mui/material';
 
 const WaterCard = ({ station }) => {
     const name = station['Tên'] || station['name'] || '';
-    const giaTri = station['Giá trị'] || (station.level !== undefined ? `${station.level.toFixed(2)}m` : '-');
-    
+    const giaTri = station['Giá trị'] || (station.level !== undefined ? `${station.level.toFixed(2)}` : '...');
+
     // Extract thoiGian and format it to show ONLY hours/minutes
     let rawThoiGian = station['Cập nhật'] || station['thoi_gian'] || '';
     let displayTime = '-';
@@ -44,13 +44,13 @@ const WaterCard = ({ station }) => {
                     </Typography>
                 )}
             </Box>
-            
-            <Box sx={{ 
-                p: '4px 8px', borderRadius: '6px', 
-                bgcolor: 'rgba(0,132,255,0.08)', borderLeft: `3px solid #0084FF` 
+
+            <Box sx={{
+                p: '4px 8px', borderRadius: '6px',
+                bgcolor: 'rgba(0,132,255,0.08)', borderLeft: `3px solid #0084FF`
             }}>
                 <Typography sx={{ fontSize: '14px', color: '#0084FF', fontWeight: 800, lineHeight: 1.2 }}>
-                    Mực nước: {giaTri}
+                    {giaTri}
                 </Typography>
             </Box>
         </Box>
@@ -94,7 +94,7 @@ const WaterTable = ({ title, data }) => {
                         ))}
                     </Box>
                 ))}
-                
+
                 {otherStations.length > 0 && (
                     <>
                         <Box

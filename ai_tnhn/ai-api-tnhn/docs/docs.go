@@ -2260,14 +2260,14 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Truy xuất bản tóm tắt văn bản đã được định dạng sẵn về tình hình mưa hiện tại",
+                "description": "Truy xuất bản tóm tắt về tình hình mưa hiện tại kèm dữ liệu bảng có cấu trúc",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "AI \u0026 Giám sát"
                 ],
-                "summary": "Lấy tóm tắt lượng mưa (dạng văn bản)",
+                "summary": "Lấy tóm tắt lượng mưa (dạng văn bản + bảng)",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2280,7 +2280,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "type": "string"
+                                            "$ref": "#/definitions/google.rainSummaryResponse"
                                         }
                                     }
                                 }
@@ -7115,6 +7115,18 @@ const docTemplate = `{
                 "comment": {
                     "type": "string",
                     "example": "Duyệt báo cáo"
+                }
+            }
+        },
+        "google.rainSummaryResponse": {
+            "type": "object",
+            "properties": {
+                "tables": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "text": {
+                    "type": "string"
                 }
             }
         },

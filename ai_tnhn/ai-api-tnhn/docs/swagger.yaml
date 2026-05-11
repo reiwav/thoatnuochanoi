@@ -38,6 +38,14 @@ definitions:
     required:
     - comment
     type: object
+  google.rainSummaryResponse:
+    properties:
+      tables:
+        additionalProperties: true
+        type: object
+      text:
+        type: string
+    type: object
   googledrive.FileInfo:
     properties:
       id:
@@ -2617,8 +2625,8 @@ paths:
       - AI & Giám sát
   /admin/google/rain-summary-text:
     get:
-      description: Truy xuất bản tóm tắt văn bản đã được định dạng sẵn về tình hình
-        mưa hiện tại
+      description: Truy xuất bản tóm tắt về tình hình mưa hiện tại kèm dữ liệu bảng
+        có cấu trúc
       produces:
       - application/json
       responses:
@@ -2629,11 +2637,11 @@ paths:
             - $ref: '#/definitions/web.Response'
             - properties:
                 data:
-                  type: string
+                  $ref: '#/definitions/google.rainSummaryResponse'
               type: object
       security:
       - BearerAuth: []
-      summary: Lấy tóm tắt lượng mưa (dạng văn bản)
+      summary: Lấy tóm tắt lượng mưa (dạng văn bản + bảng)
       tags:
       - AI & Giám sát
   /admin/google/status:

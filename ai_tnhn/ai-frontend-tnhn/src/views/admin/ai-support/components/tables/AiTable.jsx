@@ -20,16 +20,17 @@ const TABLE_COMPONENTS = {
     wastewater_stations: WastewaterTable,
     inundations: InundationTable,
     rains: RainTable,
+    list_stations_by_type: RainTable,
     lakes: WaterTable,
     rivers: WaterTable,
 };
 
-const AiTable = ({ title, data, tableKey }) => {
+const AiTable = ({ title, data, tableKey, handleRainChart }) => {
     if (!data || !Array.isArray(data) || data.length === 0) return null;
 
     const normalizedKey = String(tableKey).toLowerCase();
     const TableComponent = TABLE_COMPONENTS[normalizedKey] || DefaultTable;
-    return <TableComponent title={title} data={data} />;
+    return <TableComponent title={title} data={data} handleRainChart={handleRainChart} />;
 };
 
 export default AiTable;

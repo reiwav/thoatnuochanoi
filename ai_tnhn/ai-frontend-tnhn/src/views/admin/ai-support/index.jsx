@@ -266,6 +266,66 @@ const AiSupport = () => {
         }
     }, []);
 
+    const handleShowRainCharts = useCallback(async () => {
+        const text = 'Biểu đồ mưa hiện tại';
+        setMessages(prev => [...prev, { id: Date.now(), role: 'user', text }]);
+        setLoading(true);
+        try {
+            const res = await axiosClient.get('/admin/weather/rain');
+            if (res && res.tram && res.data) {
+                const tramMap = new Map();
+                res.tram.forEach(t => tramMap.set(t.Id?.toString() || t.id?.toString(), t));
+
+                const raining = res.data
+                    .filter(d => (d.LuongMua_HT || 0) > 0)
+                    .map(d => {
+                        const t = tramMap.get(d.TramId?.toString());
+                        return t ? {
+                            oldId: t.OldId || t.OldID,
+                            name: t.TenPhuong || t.name
+                        } : null;
+                    })
+                    .filter(Boolean);
+
+                if (raining.length === 0) {
+                    setMessages(prev => [...prev, { id: Date.now() + 1, role: 'ai', text: 'Hiện tại hệ thống không ghi nhận trạm nào có mưa.' }]);
+                } else {
+                    const today = new Date().toISOString().split('T')[0];
+                    // Create table data compatible with RainTable
+                    const rainTableData = res.data
+                        .filter(d => (d.LuongMua_HT || 0) > 0)
+                        .map((d, index) => {
+                            const t = tramMap.get(d.TramId?.toString());
+                            return {
+                                id: t?.OldId || t?.OldID || d.TramId,
+                                stt: index + 1,
+                                name: t?.TenPhuong || t?.name || `Trạm ${d.TramId}`,
+                                address: t?.DiaChi || '',
+                                total_rain: d.LuongMua_HT,
+                                type: t?.Type || (t?.TenPhuong ? 'phuong' : 'xa'),
+                                date: today
+                            };
+                        });
+
+                    setMessages(prev => [...prev, { 
+                        id: Date.now() + 1, 
+                        role: 'ai', 
+                        text: `Hệ thống ghi nhận ${raining.length} trạm đang có mưa trong ngày. Click vào trạm để xem biểu đồ chi tiết:\n\n[TABLE:rains]`,
+                        tables: {
+                            rains: rainTableData
+                        },
+                        timestamp: new Date()
+                    }]);
+                }
+            }
+            shouldScrollToBottom.current = true;
+        } catch (error) {
+            setMessages(prev => [...prev, { id: Date.now() + 1, role: 'ai', text: 'Lỗi tải dữ liệu biểu đồ.' }]);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
     const handleEmailDetail = useCallback(async (emailId) => {
         setLoading(true);
         try {
@@ -551,8 +611,10 @@ const AiSupport = () => {
                 <SuggestedQuestions
                     loading={loading}
                     handleRainSummary={handleRainSummary}
+                    handleShowRainCharts={handleShowRainCharts}
                     handleAIDynamicReport={handleAIDynamicReport}
                     handleSendQuestion={handleSend}
+                    handleRainChart={handleRainChart}
                     sx={{ mb: 1, px: 0.5 }}
                 />
 

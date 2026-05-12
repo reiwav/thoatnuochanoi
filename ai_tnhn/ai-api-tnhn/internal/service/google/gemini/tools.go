@@ -24,7 +24,10 @@ func (s *service) getChatTools() []*genai.FunctionDeclaration {
 			Parameters: &genai.Schema{Type: genai.TypeObject, Properties: map[string]*genai.Schema{"date": {Type: genai.TypeString, Description: "YYYY-MM-DD"}}, Required: []string{"date"}}},
 		{Name: constant.ToolSystemOverview, Description: constant.ToolDescriptions[constant.ToolSystemOverview]},
 		{Name: constant.ToolListStations, Description: constant.ToolDescriptions[constant.ToolListStations],
-			Parameters: &genai.Schema{Type: genai.TypeObject, Properties: map[string]*genai.Schema{"type": {Type: genai.TypeString, Description: "rain/lake/river"}}, Required: []string{"type"}}},
+			Parameters: &genai.Schema{Type: genai.TypeObject, Properties: map[string]*genai.Schema{
+				"type": {Type: genai.TypeString, Description: "rain/lake/river"},
+				"date": {Type: genai.TypeString, Description: "YYYY-MM-DD (optional, used for rain type to filter stations having data on that day)"},
+			}, Required: []string{"type"}}},
 		{Name: constant.ToolRainAnalytics, Description: constant.ToolDescriptions[constant.ToolRainAnalytics],
 			Parameters: &genai.Schema{Type: genai.TypeObject, Properties: map[string]*genai.Schema{"station_id": {Type: genai.TypeInteger}, "year": {Type: genai.TypeInteger}, "month": {Type: genai.TypeInteger}, "start_date": {Type: genai.TypeString}, "end_date": {Type: genai.TypeString}, "group_by": {Type: genai.TypeString}}}},
 		{Name: constant.ToolCoveredWards, Description: constant.ToolDescriptions[constant.ToolCoveredWards]},
@@ -188,9 +191,29 @@ func (s *service) handleLS(ctx context.Context, c *genai.FunctionCall, o string,
 	switch t {
 	case "rain":
 		sts, e := s.stationSvc.ListRainStationsFiltered(ctx, o, r)
+		if e == nil && c.Args["date"] != nil {
+			if dStr, ok := c.Args["date"].(string); ok && dStr != "" {
+				records, err := s.rainSvc.GetRainDataByDate(ctx, dStr)
+				if err == nil {
+					rainingMap := make(map[int]bool)
+					for _, rec := range records {
+						if rec.Value > 0 {
+							rainingMap[int(rec.StationID)] = true
+						}
+					}
+					var filteredSts []*models.RainStation
+					for _, st := range sts {
+						if rainingMap[st.OldID] {
+							filteredSts = append(filteredSts, st)
+						}
+					}
+					sts = filteredSts
+				}
+			}
+		}
 		var res []map[string]interface{}
 		for _, st := range sts {
-			res = append(res, map[string]interface{}{"id": st.ID, "old_id": st.OldID, "name": st.TenTram, "phuong": st.TenPhuong, "address": st.DiaChi})
+			res = append(res, map[string]interface{}{"id": st.ID, "old_id": st.OldID, "name": st.TenTram, "phuong": st.TenPhuong, "address": st.DiaChi, "date": c.Args["date"]})
 		}
 		return res, e
 	case "lake":

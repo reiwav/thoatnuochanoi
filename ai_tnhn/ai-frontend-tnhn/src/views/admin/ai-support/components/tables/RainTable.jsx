@@ -1,57 +1,83 @@
 import React, { useState } from 'react';
 import { Box, Typography } from '@mui/material';
 
-const RainCard = ({ station }) => {
-    const name = station['Trạm'] || station['Tên'] || station.name || '';
+const RainCard = ({ station, onClick }) => {
+    const name = station['Trạm'] || station['Tên'] || station.name || station.phuong || '';
     const thoiGian = station['Thời gian'] || '';
-    const luongMua = station['Lượng mưa'] || (station.total_rain ? `${station.total_rain.toFixed(1)}mm` : '0mm');
+    const tr = station.total_rain ?? station['total_rain'];
+    const luongMua = tr ? `${tr.toFixed(1)}mm` : null;
     const trangThai = station['Trạng thái'] || '';
 
     // Extract numerical value for coloring
-    let isRaining = trangThai.includes('Đang mưa');
-    let color = isRaining ? '#0084FF' : '#9e9e9e';
-    let bgColor = isRaining ? 'rgba(0,132,255,0.08)' : 'rgba(158,158,158,0.1)';
+    let isRaining = trangThai.includes('Đang mưa') || (tr > 0);
+    let color = isRaining ? '#0084FF' : '#555';
+    let bgColor = isRaining ? 'rgba(0,132,255,0.08)' : 'rgba(0,0,0,0.04)';
 
     return (
-        <Box sx={{
-            p: '8px 10px', borderRadius: '10px',
-            border: '1px solid', borderColor: 'divider',
-            bgcolor: 'background.paper', minWidth: 0,
-            display: 'flex', flexDirection: 'column', gap: '4px'
-        }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1 }}>
-                <Typography sx={{ fontWeight: 700, fontSize: '13px', lineHeight: 1.3, color: '#1a1a1a', flex: 1 }}>
+        <Box 
+            onClick={onClick}
+            sx={{
+                p: '10px 12px', borderRadius: '12px',
+                border: '1px solid', borderColor: isRaining ? 'rgba(0,132,255,0.3)' : 'divider',
+                bgcolor: 'background.paper', minWidth: 0,
+                display: 'flex', flexDirection: 'column', gap: '4px',
+                cursor: onClick ? 'pointer' : 'default',
+                '&:hover': onClick ? {
+                    borderColor: '#0084FF',
+                    boxShadow: '0 4px 12px rgba(0,132,255,0.15)',
+                    transform: 'translateY(-2px)',
+                    bgcolor: 'rgba(0,132,255,0.02)'
+                } : {},
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                height: '100%',
+                justifyContent: luongMua ? 'flex-start' : 'center'
+            }}
+        >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
+                <Typography sx={{ 
+                    fontWeight: 700, 
+                    fontSize: '13px', 
+                    lineHeight: 1.3, 
+                    color: isRaining ? '#0084FF' : '#1a1a1a', 
+                    flex: 1,
+                    textAlign: luongMua ? 'left' : 'center'
+                }}>
                     {name}
                 </Typography>
                 {thoiGian && thoiGian !== '-' && (
-                    <Typography sx={{ fontSize: '11px', color: 'text.secondary', fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0, mt: '2px' }}>
+                    <Typography sx={{ fontSize: '10px', color: 'text.secondary', fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}>
                         🕐 {thoiGian}
                     </Typography>
                 )}
             </Box>
             
-            <Box sx={{ 
-                p: '4px 8px', borderRadius: '6px', 
-                bgcolor: bgColor, borderLeft: `3px solid ${color}`,
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-            }}>
-                <Typography sx={{ fontSize: '14px', color: color, fontWeight: 800, lineHeight: 1.2 }}>
-                    {luongMua}
-                </Typography>
-                <Typography sx={{ fontSize: '10px', color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase' }}>
-                    {trangThai}
-                </Typography>
-            </Box>
+            {luongMua && (
+                <Box sx={{ 
+                    p: '4px 8px', borderRadius: '6px', 
+                    bgcolor: bgColor, borderLeft: `3px solid ${color}`,
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    mt: 0.5
+                }}>
+                    <Typography sx={{ fontSize: '13px', color: color, fontWeight: 800, lineHeight: 1.2 }}>
+                        {luongMua}
+                    </Typography>
+                    <Typography sx={{ fontSize: '9px', color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase' }}>
+                        {trangThai || (isRaining ? 'Có mưa' : 'Không mưa')}
+                    </Typography>
+                </Box>
+            )}
         </Box>
     );
 };
 
-const StationGroup = ({ title, data }) => {
+const StationGroup = ({ title, data, onStationClick }) => {
     const [expanded, setExpanded] = useState(false);
     if (!data || data.length === 0) return null;
 
-    const topStations = data.slice(0, 9);
-    const otherStations = data.slice(9);
+    const hasAnyRain = data.some(s => (s.total_rain ?? s['total_rain'] ?? 0) > 0);
+    const topCount = hasAnyRain ? 9 : 15; // Show more if it's just a selection list
+    const topStations = data.slice(0, topCount);
+    const otherStations = data.slice(topCount);
 
     const buildRows = (list) => {
         const rows = [];
@@ -65,15 +91,26 @@ const StationGroup = ({ title, data }) => {
     const otherRows = buildRows(otherStations);
 
     return (
-        <Box sx={{ mt: 1, mb: 2 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, textTransform: 'uppercase', fontSize: '12px', opacity: 0.8, color: '#555' }}>
+        <Box sx={{ mt: 1.5, mb: 2.5 }}>
+            <Typography variant="subtitle2" sx={{ 
+                fontWeight: 900, 
+                mb: 1.5, 
+                textTransform: 'uppercase', 
+                fontSize: '11px', 
+                letterSpacing: 1,
+                color: '#666',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                '&::after': { content: '""', flex: 1, height: '1px', bgcolor: 'rgba(0,0,0,0.06)' }
+            }}>
                 {title}
             </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {topRows.map((group, ri) => (
-                    <Box key={ri} sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }, gap: '6px' }}>
+                    <Box key={ri} sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
                         {group.map((station, si) => (
-                            <RainCard key={si} station={station} />
+                            <RainCard key={si} station={station} onClick={() => onStationClick?.(station)} />
                         ))}
                     </Box>
                 ))}
@@ -84,19 +121,19 @@ const StationGroup = ({ title, data }) => {
                             onClick={() => setExpanded(!expanded)}
                             sx={{
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                gap: 0.5, py: '6px', cursor: 'pointer', borderRadius: '8px',
-                                bgcolor: 'rgba(0,0,0,0.03)', '&:hover': { bgcolor: 'rgba(0,0,0,0.06)' },
-                                transition: 'background-color 0.2s'
+                                gap: 0.5, py: '8px', cursor: 'pointer', borderRadius: '10px',
+                                bgcolor: 'rgba(0,0,0,0.02)', '&:hover': { bgcolor: 'rgba(0,0,0,0.05)' },
+                                transition: 'all 0.2s', border: '1px dashed rgba(0,0,0,0.1)'
                             }}
                         >
-                            <Typography sx={{ fontSize: '11px', fontWeight: 700, color: '#666' }}>
-                                {expanded ? '▲ Thu gọn' : `▼ Chi tiết (${otherStations.length} trạm khác)`}
+                            <Typography sx={{ fontSize: '11px', fontWeight: 800, color: '#888' }}>
+                                {expanded ? '▲ THU GỌN' : `▼ XEM THÊM ${otherStations.length} TRẠM`}
                             </Typography>
                         </Box>
                         {expanded && otherRows.map((group, ri) => (
-                            <Box key={`o-${ri}`} sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }, gap: '6px' }}>
+                            <Box key={`o-${ri}`} sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
                                 {group.map((station, si) => (
-                                    <RainCard key={si} station={station} />
+                                    <RainCard key={si} station={station} onClick={() => onStationClick?.(station)} />
                                 ))}
                             </Box>
                         ))}
@@ -107,52 +144,47 @@ const StationGroup = ({ title, data }) => {
     );
 };
 
-const RainTable = ({ title, data }) => {
+const RainTable = ({ title, data, handleRainChart }) => {
     if (!data || !Array.isArray(data) || data.length === 0) return null;
 
-    // Lọc ra các trạm có lượng mưa > 0
-    const rainingStations = data.filter(s => {
-        const tr = s.total_rain ?? s['total_rain'] ?? 0;
-        return tr > 0;
-    });
+    const onStationClick = (s) => {
+        if (!handleRainChart) return;
+        const id = s.old_id || s.oldId || s.OldId || s.OldID || s.id || s['ID'];
+        const name = s.name || s.phuong || s['Trạm'] || s['Tên'];
+        const date = s.date || new Date().toISOString().split('T')[0];
+        handleRainChart(id, date, name);
+    };
+
+    // Phân loại: Ưu tiên s.type, nếu không có thì dựa vào tên/phường
+    const categorize = (s) => {
+        if (s.type) return s.type.toLowerCase();
+        const checkStr = (s.name || '' + s.phuong || '' + s.address || '').toLowerCase();
+        if (checkStr.includes('xã ') || checkStr.includes('huyện ') || checkStr.includes('ngoại thành')) return 'xa';
+        return 'phuong';
+    };
+
+    // Nếu tất cả trạm đều có total_rain === 0 hoặc không có total_rain, hiển thị tất cả
+    const hasAnyRain = data.some(s => (s.total_rain ?? s['total_rain'] ?? 0) > 0);
+    const displayStations = hasAnyRain ? data.filter(s => (s.total_rain ?? s['total_rain'] ?? 0) > 0) : data;
 
     // Phân loại
-    const phuongStations = rainingStations.filter(s => (s.type ?? s['type']) === 'phuong');
-    const xaStations = rainingStations.filter(s => (s.type ?? s['type']) === 'xa');
-    
-    // Nếu không có thông tin type, đưa vào danh sách chung
-    const unknownStations = rainingStations.filter(s => !(s.type ?? s['type']));
+    const phuongStations = displayStations.filter(s => categorize(s) === 'phuong');
+    const xaStations = displayStations.filter(s => categorize(s) === 'xa');
+    const unknownStations = displayStations.filter(s => !categorize(s));
 
-    // Sắp xếp Phường: Lượng mưa desc
-    phuongStations.sort((a, b) => {
-        const ra = a.total_rain ?? a['total_rain'] ?? 0;
-        const rb = b.total_rain ?? b['total_rain'] ?? 0;
-        return rb - ra;
-    });
-
-    // Sắp xếp Xã: Trọng số desc, Lượng mưa desc
-    xaStations.sort((a, b) => {
-        const pa = a.priority ?? a['priority'] ?? 0;
-        const pb = b.priority ?? b['priority'] ?? 0;
-        if (pb !== pa) return pb - pa;
-        const ra = a.total_rain ?? a['total_rain'] ?? 0;
-        const rb = b.total_rain ?? b['total_rain'] ?? 0;
-        return rb - ra;
-    });
-
-    // Sắp xếp Unknown: Lượng mưa desc
-    unknownStations.sort((a, b) => {
-        const ra = a.total_rain ?? a['total_rain'] ?? 0;
-        const rb = b.total_rain ?? b['total_rain'] ?? 0;
-        return rb - ra;
+    // Sắp xếp
+    const sortByRainOrName = (list) => [...list].sort((a, b) => {
+        const ra = (b.total_rain ?? 0) - (a.total_rain ?? 0);
+        if (ra !== 0) return ra;
+        return (a.name || a.phuong || '').localeCompare(b.name || b.phuong || '');
     });
 
     return (
         <Box sx={{ my: 1, width: '100%' }}>
             {title && <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, textTransform: 'uppercase', fontSize: '13px', opacity: 0.8 }}>{title}</Typography>}
-            {phuongStations.length > 0 && <StationGroup title="Khu vực Nội thành (Phường)" data={phuongStations} />}
-            {xaStations.length > 0 && <StationGroup title="Khu vực Ngoại thành (Xã)" data={xaStations} />}
-            {unknownStations.length > 0 && <StationGroup title="Khu vực Khác" data={unknownStations} />}
+            {phuongStations.length > 0 && <StationGroup title="Khu vực Nội thành (Phường)" data={sortByRainOrName(phuongStations)} onStationClick={onStationClick} />}
+            {xaStations.length > 0 && <StationGroup title="Khu vực Ngoại thành (Xã)" data={sortByRainOrName(xaStations)} onStationClick={onStationClick} />}
+            {unknownStations.length > 0 && <StationGroup title="Khu vực Khác" data={sortByRainOrName(unknownStations)} onStationClick={onStationClick} />}
         </Box>
     );
 };

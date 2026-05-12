@@ -1,10 +1,19 @@
 import React from 'react';
 import { Box, Paper, Typography } from '@mui/material';
 
-const SuggestedQuestions = ({ loading, handleRainSummary, handleAIDynamicReport, handleSendQuestion, sx = {} }) => {
+const SuggestedQuestions = ({ 
+    loading, 
+    handleRainSummary, 
+    handleShowRainCharts,
+    handleAIDynamicReport, 
+    handleSendQuestion, 
+    handleRainChart,
+    sx = {} 
+}) => {
     if (loading) return null;
 
     const questions = [
+        { text: 'Biểu đồ mưa hiện tại', type: 'charts' },
         { text: 'Lượng mưa hiện tại các điểm?', type: 'rain' },
         { text: 'Tình hình vận hành các trạm bơm.', type: 'question' },
         { text: 'Những điểm nào đang ngập?', type: 'question' },
@@ -32,6 +41,7 @@ const SuggestedQuestions = ({ loading, handleRainSummary, handleAIDynamicReport,
                     key={i}
                     onClick={() => {
                         if (q.type === 'rain') handleRainSummary();
+                        else if (q.type === 'charts') handleShowRainCharts();
                         else if (q.type === 'dynamic') handleAIDynamicReport();
                         else handleSendQuestion(q.text);
                     }}

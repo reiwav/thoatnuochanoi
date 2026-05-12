@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import { Box, Typography, Paper, Tooltip, IconButton } from '@mui/material';
-import { IconRobot, IconUser, IconMail, IconBolt } from '@tabler/icons-react';
+import { IconRobot, IconUser, IconMail, IconBolt, IconChartBar } from '@tabler/icons-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import dayjs from 'dayjs';
@@ -76,12 +76,12 @@ const MessageItem = memo(({ msg, userInfo, handleEmailDetail, handleEmcHistory, 
                                 renderedKeys.add(key);
                                 const data = msg.tables[key];
                                 if (Array.isArray(data)) {
-                                    return <AiTable key={key} title={key} data={data} tableKey={key} />;
+                                    return <AiTable key={key} title={key} data={data} tableKey={key} handleRainChart={handleRainChart} />;
                                 }
                                 if (typeof data === 'object' && data !== null) {
                                     return Object.entries(data).map(([subKey, subData]) => {
                                         if (Array.isArray(subData)) {
-                                            return <AiTable key={`${key}-${subKey}`} title={`${key} - ${subKey}`} data={subData} tableKey={key} />;
+                                            return <AiTable key={`${key}-${subKey}`} title={`${key} - ${subKey}`} data={subData} tableKey={key} handleRainChart={handleRainChart} />;
                                         }
                                         return null;
                                     });
@@ -198,6 +198,12 @@ const MessageItem = memo(({ msg, userInfo, handleEmailDetail, handleEmcHistory, 
                             return (
                                 <>
                                     {content}
+                                    {msg.tables && Object.keys(msg.tables).map(key => {
+                                        if (!renderedKeys.has(key)) {
+                                            return <Box key={`extra-${key}`} sx={{ mt: 1 }}>{renderTable(key)}</Box>;
+                                        }
+                                        return null;
+                                    })}
                                 </>
                             );
                         })()}

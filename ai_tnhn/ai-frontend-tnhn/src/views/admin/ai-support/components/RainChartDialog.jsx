@@ -9,6 +9,27 @@ import dayjs from 'dayjs';
 const RainChartDialog = ({ open, onClose, stationName, date, data, loading }) => {
     const theme = useTheme();
 
+    const stats = React.useMemo(() => {
+        if (!data || data.length === 0) return null;
+
+        let max = 0;
+        let start = data[0].timestamp;
+        let end = data[0].timestamp;
+
+        data.forEach(item => {
+            if (item.value > max) max = item.value;
+            const currentTs = new Date(item.timestamp);
+            if (currentTs < new Date(start)) start = item.timestamp;
+            if (currentTs > new Date(end)) end = item.timestamp;
+        });
+
+        return {
+            max: max.toFixed(1),
+            startTime: dayjs(start).format('HH:mm'),
+            endTime: dayjs(end).format('HH:mm')
+        };
+    }, [data]);
+
     const chartOptions = {
         chart: {
             type: 'line',
@@ -58,15 +79,37 @@ const RainChartDialog = ({ open, onClose, stationName, date, data, loading }) =>
     }];
 
     return (
-        <Dialog 
-            open={open} 
-            onClose={onClose} 
-            maxWidth="md" 
+        <Dialog
+            open={open}
+            onClose={onClose}
+            maxWidth="md"
             fullWidth
             slotProps={{ paper: { sx: { borderRadius: '16px' } } }}
         >
-            <DialogTitle sx={{ fontWeight: 800, pb: 1 }}>
-                Biểu đồ lượng mưa
+            <DialogTitle sx={{ fontWeight: 800, pb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+                <Typography variant="h6" component="span" sx={{ fontWeight: 800 }}>
+                    Biểu đồ lượng mưa
+                </Typography>
+                {stats && !loading && (
+                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase' }}>
+                                Lượng mưa:
+                            </Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 800, color: 'primary.main' }}>
+                                {stats.max}mm
+                            </Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase' }}>
+                                Thời gian:
+                            </Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 800, color: 'text.primary' }}>
+                                {stats.startTime} - {stats.endTime}
+                            </Typography>
+                        </Box>
+                    </Box>
+                )}
             </DialogTitle>
             <DialogContent>
                 <Box sx={{ minHeight: 350, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', pt: 2 }}>

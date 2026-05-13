@@ -502,12 +502,14 @@ const AiSupport = () => {
         setRainChart(prev => ({ ...prev, open: true, loading: true, stationName, date, data: [] }));
         try {
             const res = await stationApi.rain.getHistory(oldId, { date, limit: 5000 });
-            if (res) {
-                setRainChart(prev => ({ ...prev, data: Array.isArray(res) ? res : (res.data || []), loading: false }));
-            }
+            setRainChart(prev => ({ 
+                ...prev, 
+                data: Array.isArray(res) ? res : (res?.data || []), 
+                loading: false 
+            }));
         } catch (error) {
             console.error('Failed to fetch rain history:', error);
-            setRainChart(prev => ({ ...prev, loading: false }));
+            setRainChart(prev => ({ ...prev, loading: false, data: [] }));
         }
     }, []);
 

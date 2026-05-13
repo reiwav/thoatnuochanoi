@@ -111,8 +111,8 @@ func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log log
 	s.Station = station.NewService(repos.RainStation, repos.LakeStation, repos.RiverStation, repos.Organization)
 	thoatnuocSvc := thoatnuoc.NewService()
 	forecastSvc := forecast.NewService()
-	s.Rain = rain.NewService(repos.Rain)
 	s.Setting = setting.NewService(repos.AppSetting)
+	s.Rain = rain.NewService(repos.Rain, thoatnuocSvc, s.Setting)
 	rainWorker := rain.NewWorker(log, s.Setting, repos.Rain, s.Station, thoatnuocSvc)
 	s.RainWorker = rainWorker
 	rainWorker.Start(context.Background())

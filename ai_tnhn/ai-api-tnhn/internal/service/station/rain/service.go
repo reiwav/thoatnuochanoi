@@ -1,8 +1,10 @@
 package rain
 
 import (
+	"ai-api-tnhn/internal/integration/thoatnuoc"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/repository"
+	"ai-api-tnhn/internal/service/setting"
 	"context"
 	"time"
 
@@ -17,12 +19,16 @@ type Service interface {
 }
 
 type service struct {
-	rainRepo repository.Rain
+	rainRepo     repository.Rain
+	thoatnuocSvc thoatnuoc.Service
+	settingSvc   setting.Service
 }
 
-func NewService(rainRepo repository.Rain) Service {
+func NewService(rainRepo repository.Rain, thoatnuocSvc thoatnuoc.Service, settingSvc setting.Service) Service {
 	return &service{
-		rainRepo: rainRepo,
+		rainRepo:     rainRepo,
+		thoatnuocSvc: thoatnuocSvc,
+		settingSvc:   settingSvc,
 	}
 }
 
@@ -35,13 +41,21 @@ func (s *service) GetRainDataByStation(ctx context.Context, stationID int64, dat
 	if err != nil {
 		return nil, err
 	}
+
+	// Fallback to external API if local DB is empty
+	if len(res) == 0 {
+		records, err := s.fetchFromExternal(ctx, stationID, date)
+		if err == nil && len(records) > 0 {
+			for _, r := range records {
+				res = append(res, *r)
+			}
+		}
+	}
+
 	loc, _ := time.LoadLocation("Asia/Ho_Chi_Minh")
 
 	for i, item := range res {
-		// 2. Chuyển đổi Timestamp sang múi giờ VN
-		// Phương thức .In() sẽ tự động tính toán offset cho bạn
 		item.Timestamp = item.Timestamp.In(loc)
-
 		res[i] = item
 	}
 	return res, nil
@@ -71,5 +85,43 @@ func (s *service) GetRainAggregateStats(ctx context.Context, stationID int64, st
 }
 
 func (s *service) GetRainChart(ctx context.Context, stationOldID int64, date string) ([]*models.RainRecord, error) {
-	return s.rainRepo.GetByStationID(ctx, stationOldID, 1000, date)
+	res, err := s.rainRepo.GetByStationID(ctx, stationOldID, 1000, date)
+	if err != nil {
+		return nil, err
+	}
+
+	// Fallback to external API if local DB is empty
+	if len(res) == 0 {
+		return s.fetchFromExternal(ctx, stationOldID, date)
+	}
+
+	return res, nil
+}
+
+func (s *service) fetchFromExternal(ctx context.Context, stationOldID int64, date string) ([]*models.RainRecord, error) {
+	sessionID := "kzela2aw0gdvzxvrthicl14n" // Default session ID
+	st, _ := s.settingSvc.GetRainSetting(ctx)
+	if st != nil && st.SessionID != "" {
+		sessionID = st.SessionID
+	}
+
+	dataPoints, err := s.thoatnuocSvc.GetRainChartData(ctx, sessionID, int(stationOldID), date)
+	if err != nil {
+		return nil, err
+	}
+
+	var res []*models.RainRecord
+	for _, dp := range dataPoints {
+		ts, err := time.ParseInLocation("2006-01-02T15:04:05", dp.ThoiGian, time.Local)
+		if err != nil {
+			continue
+		}
+		res = append(res, &models.RainRecord{
+			StationID: stationOldID,
+			Date:      ts.Format("2006-01-02"),
+			Timestamp: ts,
+			Value:     dp.LuongMua,
+		})
+	}
+	return res, nil
 }

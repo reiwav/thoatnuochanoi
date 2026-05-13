@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -91,10 +92,10 @@ func (s *service) GenerateQuickReportV3(ctx context.Context, userID string) (*Qu
 			wMap[idInt] = d.ThuongLuu_HT
 		}
 		for _, r := range rivers {
-			riverDataRaw = append(riverDataRaw, []string{r.TenTram, fmt.Sprintf("%.2f", wMap[r.OldID]/100.0)})
+			riverDataRaw = append(riverDataRaw, []string{r.TenTram + " (" + r.DiaChi + ")", fmt.Sprintf("%.2f", wMap[r.OldID]/100.0)})
 		}
 		for _, l := range lakes {
-			lakeDataRaw = append(lakeDataRaw, []string{l.TenTram, fmt.Sprintf("%.2f", wMap[l.OldID]/100.0)})
+			lakeDataRaw = append(lakeDataRaw, []string{l.TenTram + " (" + l.DiaChi + ")", fmt.Sprintf("%.2f", wMap[l.OldID]/100.0)})
 		}
 	}
 
@@ -166,8 +167,23 @@ func (s *service) GenerateQuickReportV3(ctx context.Context, userID string) (*Qu
 	}
 
 	noiDungTramBom := "Hiện tại không ghi nhận trạm bơm nào đang vận hành."
+	danhSachTramBom := "không có trạm nào vận hành"
 	if city.Pumping != nil {
 		noiDungTramBom = city.Pumping.SummaryPriorityText
+
+		ict := time.FixedZone("ICT", 7*3600)
+		now := time.Now().In(ict)
+		startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, ict).Unix()
+
+		var names []string
+		for _, st := range city.Pumping.Stations {
+			if st.OperatingCount > 0 || st.LastOperationTime >= startOfDay {
+				names = append(names, st.Name)
+			}
+		}
+		if len(names) > 0 {
+			danhSachTramBom = strings.Join(names, ", ")
+		}
 	}
 
 	splitTable := func(data [][]string) ([][]string, [][]string) {
@@ -194,7 +210,8 @@ func (s *service) GenerateQuickReportV3(ctx context.Context, userID string) (*Qu
 		"dd": dd, "mm": mm, "yyyy": yyyy, "hh": hh, "noidung": noidung, "time_mua": timeMua,
 		"so_luong_ung_ngap": soLuongUngNgap, "mo_ta_ung_ngap": motaUngNgap, "chi_tiet_cac_diem": chiTietCacDiem,
 		"hien_trang_mua": hienTrangMua, "noi_dung_tram_bom": noiDungTramBom,
-		"table1_mua_phuong": phuong1, "table2_mua_phuong": phuong2, "table1_mua_xa": xa1, "table2_mua_xa": xa2,
+		"danh_sach_tram_bom": danhSachTramBom,
+		"table1_mua_phuong":  phuong1, "table2_mua_phuong": phuong2, "table1_mua_xa": xa1, "table2_mua_xa": xa2,
 		"table_song": riverDataRaw, "table_ho": lakeDataRaw,
 	}
 

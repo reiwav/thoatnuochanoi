@@ -75,14 +75,14 @@ const StationGroup = ({ title, data, onStationClick }) => {
     if (!data || data.length === 0) return null;
 
     const hasAnyRain = data.some(s => (s.total_rain ?? s['total_rain'] ?? 0) > 0);
-    const topCount = hasAnyRain ? 9 : 15; // Show more if it's just a selection list
+    const topCount = hasAnyRain ? 12 : 20; // Show more if it's just a selection list
     const topStations = data.slice(0, topCount);
     const otherStations = data.slice(topCount);
 
     const buildRows = (list) => {
         const rows = [];
-        for (let i = 0; i < list.length; i += 3) {
-            rows.push(list.slice(i, i + 3));
+        for (let i = 0; i < list.length; i += 4) {
+            rows.push(list.slice(i, i + 4));
         }
         return rows;
     };
@@ -108,7 +108,7 @@ const StationGroup = ({ title, data, onStationClick }) => {
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {topRows.map((group, ri) => (
-                    <Box key={ri} sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                    <Box key={ri} sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
                         {group.map((station, si) => (
                             <RainCard key={si} station={station} onClick={() => onStationClick?.(station)} />
                         ))}
@@ -131,7 +131,7 @@ const StationGroup = ({ title, data, onStationClick }) => {
                             </Typography>
                         </Box>
                         {expanded && otherRows.map((group, ri) => (
-                            <Box key={`o-${ri}`} sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                            <Box key={`o-${ri}`} sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
                                 {group.map((station, si) => (
                                     <RainCard key={si} station={station} onClick={() => onStationClick?.(station)} />
                                 ))}

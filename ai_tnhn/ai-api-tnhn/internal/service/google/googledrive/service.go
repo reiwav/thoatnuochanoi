@@ -14,14 +14,12 @@ import (
 	"google.golang.org/api/option"
 )
 
-var DefaultSubfolders = []string{"QUYET-DINH", "HO-SO-PHAP-LY", "BAN-VE-THI-CONG", "HO-SO-CHAT-LUONG", "HO-SO-THANH-TOAN", "DINH-MUC-BO-DON-GIA"}
-
 type Service interface {
 	UploadFile(ctx context.Context, folderID, name, mimeType string, content io.Reader, convert bool) (string, error)
 	UploadFileSimple(ctx context.Context, folderID, name, mimeType string, content io.Reader) (string, error)
 	CreateFolder(ctx context.Context, parentID, name string) (string, error)
 	CreateOrgFolder(ctx context.Context, orgName string) (string, error)
-	InitOrgFolders(ctx context.Context, orgName string) (string, error)
+	InitOrgFolders(ctx context.Context, orgName string, folderID string) (string, error)
 	FindOrCreateFolder(ctx context.Context, parentID, folderName string) (string, error)
 	TriggerReportGeneration(ctx context.Context, webhookURL, templateFileID, targetFolderID string, payload map[string]interface{}) (string, error)
 	CopyFile(ctx context.Context, fileID, parentID, newName string) (string, error)

@@ -45,15 +45,12 @@ func (w *storageWrapper) CreateOrgFolder(ctx context.Context, n string) (string,
 	return w.storageSvc.CreateFolder(ctx, ".", n)
 }
 
-func (w *storageWrapper) InitOrgFolders(ctx context.Context, n string) (string, error) {
+func (w *storageWrapper) InitOrgFolders(ctx context.Context, n string, folderID string) (string, error) {
 	var dID string
 	if w.driveSvc != nil {
-		dID, _ = w.driveSvc.InitOrgFolders(ctx, n)
+		dID, _ = w.driveSvc.InitOrgFolders(ctx, n, folderID)
 	}
 	oID, _ := w.storageSvc.CreateFolder(ctx, ".", n)
-	for _, sub := range DefaultSubfolders {
-		_, _ = w.storageSvc.CreateFolder(ctx, oID, sub)
-	}
 	if w.driveSvc != nil {
 		return dID, nil
 	}

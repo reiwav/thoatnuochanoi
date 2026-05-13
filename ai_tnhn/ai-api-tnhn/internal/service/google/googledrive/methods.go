@@ -42,14 +42,16 @@ func (s *service) CreateOrgFolder(ctx context.Context, orgName string) (string, 
 	return s.CreateFolder(ctx, s.cfg.RootFolderID, orgName)
 }
 
-func (s *service) InitOrgFolders(ctx context.Context, orgName string) (string, error) {
-	orgID, err := s.CreateOrgFolder(ctx, orgName)
-	if err != nil {
-		return "", err
+func (s *service) InitOrgFolders(ctx context.Context, orgName string, folderID string) (string, error) {
+	orgID := folderID
+	var err error
+	if orgID == "" {
+		orgID, err = s.FindOrCreateFolder(ctx, s.cfg.RootFolderID, orgName)
+		if err != nil {
+			return "", err
+		}
 	}
-	for _, sub := range DefaultSubfolders {
-		_, _ = s.CreateFolder(ctx, orgID, sub)
-	}
+
 	return orgID, nil
 }
 

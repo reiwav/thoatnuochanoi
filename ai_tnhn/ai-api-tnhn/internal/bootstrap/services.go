@@ -188,7 +188,7 @@ func (s *Services) PostInit(log logger.Logger, repos *Repositories) {
 			}
 
 			for _, org := range orgs {
-				folderID, err := s.Drive.InitOrgFolders(ctx, org.Name)
+				folderID, err := s.Drive.InitOrgFolders(ctx, org.Name, org.DriveFolderID)
 				if err != nil {
 					log.GetLogger().Errorf("Failed to init folders for org %s: %v", org.Name, err)
 					continue

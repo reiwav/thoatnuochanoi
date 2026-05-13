@@ -36,6 +36,14 @@ func (s *service) GetInundationSummary(ctx context.Context, orgID string, isAllo
 	var detailStrings []string
 
 	for _, r := range reports {
+		streetName := r.StreetName
+		if streetName == "" {
+			point, err := s.inundationStationRepo.GetByID(ctx, r.PointID)
+			if err == nil && point != nil {
+				streetName = point.Name
+			}
+		}
+
 		depthInfo := fmt.Sprintf("%v x %v x %.2f", r.Length, r.Width, r.Depth)
 		if r.Length == "" && r.Width == "" && r.Depth == 0 {
 			depthInfo = "chưa rõ độ sâu"
@@ -53,7 +61,7 @@ func (s *service) GetInundationSummary(ctx context.Context, orgID string, isAllo
 		}
 
 		stat := InundationStationStat{
-			StreetName:     r.StreetName,
+			StreetName:     streetName,
 			OrgName:        orgMap[r.OrgID],
 			Depth:          r.Depth,
 			Width:          r.Width,
@@ -66,7 +74,7 @@ func (s *service) GetInundationSummary(ctx context.Context, orgID string, isAllo
 			Updates:        updates,
 		}
 		ongoing = append(ongoing, stat)
-		detailStrings = append(detailStrings, fmt.Sprintf("%s (%s)", stat.StreetName, depthInfo))
+		detailStrings = append(detailStrings, fmt.Sprintf("%s (%s)", streetName, depthInfo))
 	}
 
 	sort.Slice(ongoing, func(i, j int) bool {

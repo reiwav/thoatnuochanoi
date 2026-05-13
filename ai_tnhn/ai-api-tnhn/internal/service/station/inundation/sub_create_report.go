@@ -86,6 +86,10 @@ func (s *service) setNewAndCreateReport(ctx context.Context, user *models.User,
 	input.UserName = user.Name
 	input.Images = images
 	input.PointID = station.ID
+	if input.StreetName == "" && station.Name != "" {
+		input.StreetName = station.Name
+	}
+
 	report := &models.InundationReport{
 		BaseModel: model.BaseModel{
 			ID: reportID,
@@ -129,6 +133,10 @@ func (s *service) setAndUpdateReport(ctx context.Context, user *models.User,
 	input.ReportBase.IsFlooding = level.IsFlooding
 	// 5. Save input.ReportBase to DB
 	input.ReportBase.TrafficStatus = input.ReportBase.FloodLevelName
+
+	if input.StreetName == "" {
+		input.StreetName = report.StreetName
+	}
 
 	report.InundationReportBase = input
 	err := s.InundationReportRepo.R_Update(ctx, report)

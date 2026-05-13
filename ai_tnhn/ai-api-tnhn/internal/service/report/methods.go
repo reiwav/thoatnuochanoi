@@ -183,19 +183,40 @@ func (s *service) GenerateQuickReportV3(ctx context.Context, userID string) (*Qu
 			noidung = aiData.RainSummary
 			motaUngNgap = aiData.InuSummary
 			chiTietCacDiem = aiData.InuDetails
+
+			// Fallback: If AI returned empty details or "no points" but we actually have active points
+			if (chiTietCacDiem == "" || strings.Contains(chiTietCacDiem, "Không có") || strings.Contains(chiTietCacDiem, "không có")) &&
+				city.Inundation != nil && city.Inundation.ActivePoints > 0 {
+				chiTietCacDiem = city.Inundation.FullSummary
+			}
+
+			// Fallback for rain summary
+			if (noidung == "" || len(noidung) < 10) && city.Weather != nil {
+				noidung = city.Weather.SummaryText
+			}
+
+			// Fallback for inu summary
+			if (motaUngNgap == "" || len(motaUngNgap) < 5) && city.Inundation != nil {
+				motaUngNgap = city.Inundation.SummaryText
+			}
 		} else {
 			// Fallback if AI didn't return valid JSON
-			noidung = chatRes.Text
+			if chatRes.Text != "" {
+				noidung = chatRes.Text
+			}
 			if city.Inundation != nil {
 				motaUngNgap = city.Inundation.SummaryText
 				chiTietCacDiem = city.Inundation.FullSummary
 			}
 		}
 	} else {
-		// Fallback if AI fails
+		// Fallback if AI fails completely
 		if city.Inundation != nil {
 			motaUngNgap = city.Inundation.SummaryText
 			chiTietCacDiem = city.Inundation.FullSummary
+		}
+		if city.Weather != nil {
+			noidung = city.Weather.SummaryText
 		}
 	}
 

@@ -84,6 +84,15 @@ func (s *service) GenerateAIReport(ctx context.Context, reportType string, userI
 		return nil, fmt.Errorf("unsupported report type: %s", reportType)
 	}
 
+	// If prompt is a simple message (not a complex prompt), return it directly as a ChatResponse
+	lowerPrompt := strings.ToLower(prompt)
+	if !strings.Contains(lowerPrompt, "nhiệm vụ") && !strings.Contains(lowerPrompt, "quy tắc") && !strings.Contains(lowerPrompt, "tóm tắt") {
+		return &ChatResponse{
+			Text:   prompt,
+			Tables: make(map[string]interface{}),
+		}, nil
+	}
+
 	res, err := s.geminiSvc.Chat(ctx, prompt, nil, userID, true, "SKIP_LOG")
 	if err != nil {
 		return nil, err
@@ -214,6 +223,8 @@ func (s *service) GenerateAIReport(ctx context.Context, reportType string, userI
 					if m.LastReport.Timestamp > 0 {
 						tg = time.Unix(m.LastReport.Timestamp, 0).In(time.FixedZone("ICT", 7*3600)).Format("15:04 02/01/2006")
 					}
+				} else if m.MTime > 0 {
+					tg = time.Unix(m.MTime, 0).In(time.FixedZone("ICT", 7*3600)).Format("15:04 02/01/2006")
 				}
 				wastewater = append(wastewater, WastewaterTableRow{
 					STT:      i + 1,
@@ -254,6 +265,12 @@ func (s *service) buildViberPrompt(status *CityStatus, hh, dd, mm, yyyy string) 
 	if status.Weather == nil {
 		return ""
 	}
+
+	// If no rain at all (both currently and today's total)
+	if status.Weather.RainyStations == 0 && status.Weather.MaxRainStation.TotalRain == 0 {
+		return fmt.Sprintf("Hiện tại không ghi nhận điểm mưa nào trên địa bàn Thành phố tại thời điểm %s ngày %s/%s/%s. Trên các tuyến đường an toàn, không xảy ra úng ngập.", hh, dd, mm, yyyy)
+	}
+
 	rainStartTime, rainEndTime := "rạng sáng", "thời điểm hiện tại"
 
 	if !status.Weather.StartTimeFull.IsZero() {

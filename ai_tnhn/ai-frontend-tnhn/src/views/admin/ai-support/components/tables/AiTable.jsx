@@ -25,12 +25,30 @@ const TABLE_COMPONENTS = {
     rivers: WaterTable,
 };
 
+const TITLE_VI = {
+    rains: 'Lượng mưa',
+    lakes: 'Mực nước hồ',
+    rivers: 'Mực nước sông',
+    inundations: 'Điểm ngập',
+    pumping_stations: 'Trạm bơm',
+    wastewater: 'Trạm XLNT',
+    wastewater_stations: 'Trạm XLNT',
+    list_stations_by_type: 'Danh sách trạm',
+};
+
+const translateTitle = (title) => {
+    if (!title) return title;
+    const key = title.toLowerCase().replace(/\s/g, '_');
+    return TITLE_VI[key] || title;
+};
+
 const AiTable = ({ title, data, tableKey, handleRainChart }) => {
     if (!data || !Array.isArray(data) || data.length === 0) return null;
 
     const normalizedKey = String(tableKey).toLowerCase();
     const TableComponent = TABLE_COMPONENTS[normalizedKey] || DefaultTable;
-    return <TableComponent title={title} data={data} handleRainChart={handleRainChart} />;
+    const viTitle = translateTitle(title);
+    return <TableComponent title={viTitle} data={data} handleRainChart={handleRainChart} />;
 };
 
 export default AiTable;

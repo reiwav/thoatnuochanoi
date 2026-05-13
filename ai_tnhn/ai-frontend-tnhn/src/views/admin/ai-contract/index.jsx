@@ -19,7 +19,7 @@ dayjs.locale('vi');
 const AiTable = ({ title, data }) => {
     if (!data || !Array.isArray(data) || data.length === 0) return null;
     const columns = Object.keys(data[0]).filter(k => typeof data[0][k] !== 'object' && k !== 'id' && k !== 'old_id');
-    
+
     const formatHeader = (key) => {
         const nameMap = {
             'name': 'Tên hợp đồng', 'amount': 'Giá trị', 'status': 'Trạng thái',
@@ -28,7 +28,7 @@ const AiTable = ({ title, data }) => {
         };
         return nameMap[key] || key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ');
     };
-    
+
     return (
         <Box sx={{ my: 2, width: '100%' }}>
             {title && <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, textTransform: 'uppercase', fontSize: '12px', opacity: 0.8 }}>{title}</Typography>}
@@ -152,7 +152,7 @@ const AiContract = () => {
                     } else {
                         text = res;
                     }
-                } catch(e) {
+                } catch (e) {
                     text = res;
                 }
             }
@@ -253,7 +253,7 @@ const AiContract = () => {
                                         const rawText = typeof msg.text === 'string' ? msg.text : JSON.stringify(msg.text);
                                         const parts = rawText.split(/(\[TABLE:[a-zA-Z0-9_]+\])/g);
                                         const renderedKeys = new Set();
-                                        
+
                                         const renderTable = (key) => {
                                             if (!msg.tables || !msg.tables[key]) return null;
                                             renderedKeys.add(key);
@@ -330,8 +330,8 @@ const AiContract = () => {
                                             );
                                         });
 
-                                        const unrenderedTables = msg.tables && typeof msg.tables === 'object' 
-                                            ? Object.keys(msg.tables).filter(key => !renderedKeys.has(key)) 
+                                        const unrenderedTables = msg.tables && typeof msg.tables === 'object'
+                                            ? Object.keys(msg.tables).filter(key => !renderedKeys.has(key))
                                             : [];
 
                                         return (

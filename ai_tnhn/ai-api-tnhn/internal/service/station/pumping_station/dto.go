@@ -8,8 +8,9 @@ type PumpingStationStat struct {
 	OperatingCount   int    `json:"operating_count"`
 	ClosedCount      int    `json:"closed_count"`
 	MaintenanceCount int    `json:"maintenance_count"`
-	Note             string `json:"note"`
-	LastUpdate       string `json:"last_update"`
+	Note              string `json:"note"`
+	LastUpdate        string `json:"last_update"`
+	LastOperationTime int64  `json:"last_operation_time"`
 }
 
 type PumpingStationSummaryData struct {

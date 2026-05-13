@@ -14,7 +14,8 @@ type PumpingStation struct {
 	SharedOrgIDs    []string               `json:"shared_org_ids" bson:"shared_org_ids" example:"[\"60f987654321\"]"`
 	ShareAll        bool                   `json:"share_all" bson:"share_all" example:"false"`
 	Priority        int                    `json:"priority" bson:"priority" example:"1"`
-	LastReport      *PumpingStationHistory `json:"last_report" bson:"last_report"`
+	LastReport        *PumpingStationHistory `json:"last_report" bson:"last_report"`
+	LastOperationTime int64                  `json:"last_operation_time" bson:"last_operation_time" example:"1625097600"`
 }
 
 type PumpingStationHistory struct {

@@ -89,6 +89,9 @@ func (s *service) CreateHistory(ctx context.Context, user *models.User, history 
 				}
 
 				station.LastReport = latest
+				if latest.OperatingCount > 0 {
+					station.LastOperationTime = latest.Timestamp
+				}
 				errStation := s.stationRepo.Update(ctx, station.ID, station)
 				if errStation != nil {
 					fmt.Printf("[ERROR] Update Station LastReport failed: %v\n", errStation)
@@ -111,6 +114,9 @@ func (s *service) CreateHistory(ctx context.Context, user *models.User, history 
 	res, err := s.stationRepo.CreateHistory(ctx, history)
 	if err == nil {
 		station.LastReport = res
+		if res.OperatingCount > 0 {
+			station.LastOperationTime = res.Timestamp
+		}
 		_ = s.stationRepo.Update(ctx, station.ID, station)
 	}
 	return res, err
@@ -182,8 +188,9 @@ func (s *service) GetPumpingStationSummary(ctx context.Context, orgID string, as
 			OperatingCount:   ops,
 			ClosedCount:      closed,
 			MaintenanceCount: maint,
-			Note:             note,
-			LastUpdate:       lastUpdate,
+			Note:              note,
+			LastUpdate:        lastUpdate,
+			LastOperationTime: st.LastOperationTime,
 		})
 	}
 

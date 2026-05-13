@@ -113,46 +113,62 @@ func (s *service) buildViberPrompt(status *CityStatus, hh, dd, mm, yyyy string) 
 	}
 
 	if status.Pumping != nil {
-		var pumpNames []string
+		ict := time.FixedZone("ICT", 7*3600)
+		now := time.Now().In(ict)
+		startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, ict).Unix()
+
+		var pumpDetails []string
 		for _, st := range status.Pumping.Stations {
 			if st.PumpCount > 0 && st.Priority > 0 {
-				pumpNames = append(pumpNames, st.Name)
+				statusText := ""
+				if st.OperatingCount > 0 {
+					statusText = fmt.Sprintf("Đang vận hành (%d/%d)", st.OperatingCount, st.PumpCount)
+				} else if st.LastOperationTime >= startOfDay {
+					lastTime := time.Unix(st.LastOperationTime, 0).In(ict).Format("15:04")
+					statusText = fmt.Sprintf("Vận hành gần nhất: %s", lastTime)
+				}
+
+				if statusText != "" {
+					pumpDetails = append(pumpDetails, fmt.Sprintf("%s: %s", st.Name, statusText))
+				}
 			}
 		}
-		data = append(data, fmt.Sprintf("OperatingPumps: %s", strings.Join(pumpNames, ", ")))
+		if len(pumpDetails) > 0 {
+			data = append(data, fmt.Sprintf("TramBom: %s", strings.Join(pumpDetails, "; ")))
+		}
 	}
 
 	return fmt.Sprintf(promt.Get("report_viber"), strings.Join(data, "\n"))
 }
 
 func (s *service) buildDynamicPrompt(status *CityStatus, hh, dd, mm, yyyy string) string {
-	rainIntro := "Currently no rain recorded in the city."
+	rainIntro := "Hiện tại thành phố không ghi nhận có mưa."
 	if status.Weather != nil {
 		rainIntro = status.Weather.SummaryText
 	}
 
-	waterStr := "System water levels are at safe levels."
+	waterStr := "Mực nước hệ thống đang ở mức an toàn."
 	if status.Water != nil && status.Water.SummaryText != "" {
 		waterStr = status.Water.SummaryText
 	}
 
-	inuStr := "Safe, no inundation."
+	inuStr := "An toàn, không ghi nhận điểm úng ngập."
 	if status.Inundation != nil {
 		inuStr = status.Inundation.FullSummary
 		if inuStr == "" {
 			inuStr = status.Inundation.SummaryText
 		}
 	}
-	pumpStr := "No pumping stations are currently operating."
+	pumpStr := "Hiện tại không ghi nhận trạm bơm nào đang vận hành."
 	if status.Pumping != nil {
 		pumpStr = status.Pumping.SummaryText
 	}
 
-	wwStr := "No reports from wastewater treatment plants."
+	wwStr := "Không có báo cáo từ các nhà máy xử lý nước thải."
 	if len(status.Wastewater) > 0 {
 		var wwInfos []string
 		for _, w := range status.Wastewater {
-			note := "No report"
+			note := "Không có báo cáo"
 			if w.LastReport != nil && w.LastReport.Note != "" {
 				note = w.LastReport.Note
 			}
@@ -163,7 +179,7 @@ func (s *service) buildDynamicPrompt(status *CityStatus, hh, dd, mm, yyyy string
 		}
 	}
 
-	ocrStr := "No forecast information available."
+	ocrStr := "Không có thông tin dự báo."
 	if status.OCRText != "" {
 		ocrStr = status.OCRText
 	}

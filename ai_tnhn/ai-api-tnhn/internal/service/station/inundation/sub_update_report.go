@@ -25,9 +25,18 @@ func (s *service) UpdateUpdateSitution(ctx context.Context, user *models.User, r
 	report.InundationReportBase = update.InundationReportBase
 	err = s.InundationReportRepo.Update(ctx, report)
 	//tạo bản ghi phụ
-	go s.inundationUpdateRepo.Create(ctx, &models.InundationUpdate{
+	newUpdate := &models.InundationUpdate{
 		InundationReportBase: report.InundationReportBase,
-	})
+		ReportID:             report.ID,
+		Timestamp:            time.Now().Unix(),
+	}
+	_ = s.inundationUpdateRepo.Create(ctx, newUpdate)
+
+	// Enqueue for Drive Sync
+	if s.syncWorker != nil {
+		s.syncWorker.Enqueue(report.ID, TaskTypeReport)
+		s.syncWorker.Enqueue(newUpdate.ID, TaskTypeUpdate)
+	}
 
 	// Notify SSE subscribers about the change
 	go s.notifyPointChange(report.PointID)
@@ -117,6 +126,12 @@ func (s *service) UpdateReport(ctx context.Context, user *models.User, id string
 		},
 	}
 	_ = s.inundationUpdateRepo.Create(ctx, newUpdate)
+
+	// Enqueue for Drive Sync
+	if s.syncWorker != nil {
+		s.syncWorker.Enqueue(id, TaskTypeReport)
+		s.syncWorker.Enqueue(newUpdate.ID, TaskTypeUpdate)
+	}
 
 	if shouldResolve {
 		_ = s.QuickFinishV2(ctx, user, id)

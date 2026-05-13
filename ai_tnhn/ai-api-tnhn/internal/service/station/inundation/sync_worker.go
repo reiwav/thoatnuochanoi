@@ -284,13 +284,11 @@ func (w *SyncWorker) syncLocalImages() {
 
 	// 1. Scan Reports
 	f := filter.NewPaginationFilter()
-	f.PerPage = 100
-	f.AddWhere("has_local_files", "", bson.M{
-		"$or": []bson.M{
-			{"images": bson.M{"$regex": "^local:"}},
-			{"survey_images": bson.M{"$regex": "^local:"}},
-			{"mech_images": bson.M{"$regex": "^local:"}},
-		},
+	f.PerPage = 500
+	f.AddWhere("$or", "$or", []bson.M{
+		{"images": bson.M{"$regex": "^local:"}},
+		{"survey_images": bson.M{"$regex": "^local:"}},
+		{"mech_images": bson.M{"$regex": "^local:"}},
 	})
 
 	reports, _, err := w.InundationReportRepo.List(ctx, f)
@@ -302,13 +300,11 @@ func (w *SyncWorker) syncLocalImages() {
 
 	// 2. Scan Updates
 	uf := filter.NewPaginationFilter()
-	uf.PerPage = 100
-	uf.AddWhere("has_local_files", "", bson.M{
-		"$or": []bson.M{
-			{"images": bson.M{"$regex": "^local:"}},
-			{"survey_images": bson.M{"$regex": "^local:"}},
-			{"mech_images": bson.M{"$regex": "^local:"}},
-		},
+	uf.PerPage = 500
+	uf.AddWhere("$or", "$or", []bson.M{
+		{"images": bson.M{"$regex": "^local:"}},
+		{"survey_images": bson.M{"$regex": "^local:"}},
+		{"mech_images": bson.M{"$regex": "^local:"}},
 	})
 
 	updates, _, err := w.inundationUpdateRepo.List(ctx, uf)

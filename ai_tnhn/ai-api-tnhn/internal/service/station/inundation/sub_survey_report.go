@@ -57,6 +57,12 @@ func (s *service) UpdateSurvey(ctx context.Context, user *models.User, id string
 		},
 	}
 	_ = s.inundationUpdateRepo.Create(ctx, newUpdate)
+	
+	// Enqueue for Drive Sync
+	if s.syncWorker != nil {
+		s.syncWorker.Enqueue(id, TaskTypeReport)
+		s.syncWorker.Enqueue(newUpdate.ID, TaskTypeUpdate)
+	}
 
 	// Notify SSE subscribers about the change
 	go s.notifyPointChange(existing.PointID)

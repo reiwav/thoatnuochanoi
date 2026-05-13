@@ -90,6 +90,12 @@ func (s *service) UpdateMech(ctx context.Context, user *models.User, id string, 
 		},
 	}
 	_ = s.inundationUpdateRepo.Create(ctx, newUpdate)
+	
+	// Enqueue for Drive Sync
+	if s.syncWorker != nil {
+		s.syncWorker.Enqueue(id, TaskTypeReport)
+		s.syncWorker.Enqueue(newUpdate.ID, TaskTypeUpdate)
+	}
 
 	if shouldResolve {
 		_ = s.Resolve(ctx, id, 0)

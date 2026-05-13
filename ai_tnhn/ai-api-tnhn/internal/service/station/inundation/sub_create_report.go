@@ -54,7 +54,17 @@ func (s *service) CreateReport(ctx context.Context, user *models.User, input mod
 	}
 	fmt.Printf("=========== Report Update: %v\n", report)
 	// ALWAYS Create an initial update record for history/timeline consistency
-	shared.SetAndCreateInundationUpdate(ctx, report, s.inundationUpdateRepo)
+	initialUpdate, err := shared.SetAndCreateInundationUpdate(ctx, report, s.inundationUpdateRepo)
+	if err != nil {
+		panic(err)
+	}
+	// Enqueue for Drive Sync
+	if s.syncWorker != nil {
+		s.syncWorker.Enqueue(report.ID, TaskTypeReport)
+		if initialUpdate != nil {
+			s.syncWorker.Enqueue(initialUpdate.ID, TaskTypeUpdate)
+		}
+	}
 
 	// Notify SSE subscribers about the change
 	go s.notifyPointChange(input.PointID)

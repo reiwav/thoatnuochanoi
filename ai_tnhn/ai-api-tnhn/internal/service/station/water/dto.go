@@ -6,6 +6,7 @@ type WaterStationStat struct {
 	Label    string  `json:"label"` // E.g., "Hồ", "Sông"
 	ThoiGian string  `json:"thoi_gian"`
 	Priority int     `json:"priority"`
+	Address  string  `json:"address"`
 }
 
 type WaterSummaryData struct {

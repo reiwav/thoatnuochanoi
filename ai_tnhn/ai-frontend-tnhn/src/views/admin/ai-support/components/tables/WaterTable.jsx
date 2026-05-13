@@ -3,6 +3,7 @@ import { Box, Typography } from '@mui/material';
 
 const WaterCard = ({ station }) => {
     const name = station['Tên'] || station['name'] || '';
+    const diaChi = station['Địa chỉ'] || station['address'] || '';
     const giaTri = station['Giá trị'] || (station.level !== undefined ? `${station.level.toFixed(2)}` : '...');
 
     // Extract thoiGian and format it to show ONLY hours/minutes
@@ -45,13 +46,32 @@ const WaterCard = ({ station }) => {
                 )}
             </Box>
 
-            <Box sx={{
-                p: '4px 8px', borderRadius: '6px',
-                bgcolor: 'rgba(0,132,255,0.08)', borderLeft: `3px solid #0084FF`
+            <Box sx={{ 
+                display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 1
             }}>
-                <Typography sx={{ fontSize: '14px', color: '#0084FF', fontWeight: 800, lineHeight: 1.2 }}>
-                    {giaTri}
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'baseline', gap: '4px', overflow: 'hidden', flex: 1 }}>
+                    {diaChi && (
+                        <>
+                            <Typography sx={{ fontSize: '11px', lineHeight: 1 }}>📍</Typography>
+                            <Typography sx={{ 
+                                fontSize: '11px', color: '#666', lineHeight: 1.2, 
+                                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+                            }}>
+                                {diaChi}
+                            </Typography>
+                        </>
+                    )}
+                </Box>
+                
+                <Box sx={{
+                    px: '6px', py: '2px', borderRadius: '4px',
+                    bgcolor: 'rgba(0,132,255,0.08)', borderLeft: `2px solid #0084FF`,
+                    flexShrink: 0
+                }}>
+                    <Typography sx={{ fontSize: '13px', color: '#0084FF', fontWeight: 800, lineHeight: 1.2 }}>
+                        {giaTri}
+                    </Typography>
+                </Box>
             </Box>
         </Box>
     );

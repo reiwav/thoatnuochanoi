@@ -11,20 +11,22 @@ import (
 )
 
 type RainTableRow struct {
-	STT       int    `json:"STT"`
-	Tram      string `json:"Trạm"`
-	DiaChi    string `json:"Địa chỉ"`
-	LuongMua  string `json:"Lượng mưa"`
-	ThoiGian  string `json:"Thời gian"`
+	STT       int     `json:"STT"`
+	Tram      string  `json:"Trạm"`
+	DiaChi    string  `json:"Địa chỉ"`
+	LuongMua  string  `json:"Lượng mưa"`
+	ThoiGian  string  `json:"Thời gian"`
 	TrangThai string  `json:"Trạng thái"`
 	Type      string  `json:"type"`
 	Priority  int     `json:"priority"`
 	TotalRain float64 `json:"total_rain"`
+	ID        int     `json:"id"`
 }
 
 type WaterTableRow struct {
-	STT     int    `json:"STT"`
-	Ten     string `json:"Tên"`
+	STT      int    `json:"STT"`
+	Ten      string `json:"Tên"`
+	DiaChi   string `json:"Địa chỉ"`
 	GiaTri   string `json:"Giá trị"`
 	CapNhat  string `json:"Cập nhật"`
 	Priority int    `json:"priority"`
@@ -138,12 +140,13 @@ func (s *service) GenerateAIReport(ctx context.Context, reportType string, userI
 					STT:       i + 1,
 					Tram:      m.Name,
 					DiaChi:    m.Address,
-					LuongMua:  fmt.Sprintf("%.1fmm", m.TotalRain),
+					LuongMua:  fmt.Sprintf("%.1f", m.TotalRain),
 					ThoiGian:  timeStr,
 					TrangThai: statusStr,
 					Type:      m.Type,
 					Priority:  m.Priority,
 					TotalRain: m.TotalRain,
+					ID:        m.ID,
 				})
 			}
 			res.Tables["rains"] = rains
@@ -153,9 +156,10 @@ func (s *service) GenerateAIReport(ctx context.Context, reportType string, userI
 				var lakes []WaterTableRow
 				for i, m := range status.Water.LakeStations {
 					lakes = append(lakes, WaterTableRow{
-						STT:     i + 1,
+						STT:      i + 1,
 						Ten:      m.Name,
-						GiaTri:   fmt.Sprintf("%.2fm", m.Level),
+						DiaChi:   m.Address,
+						GiaTri:   fmt.Sprintf("%.2f", m.Level),
 						CapNhat:  m.ThoiGian,
 						Priority: m.Priority,
 					})
@@ -166,9 +170,10 @@ func (s *service) GenerateAIReport(ctx context.Context, reportType string, userI
 				var rivers []WaterTableRow
 				for i, m := range status.Water.RiverStations {
 					rivers = append(rivers, WaterTableRow{
-						STT:     i + 1,
+						STT:      i + 1,
 						Ten:      m.Name,
-						GiaTri:   fmt.Sprintf("%.2fm", m.Level),
+						DiaChi:   m.Address,
+						GiaTri:   fmt.Sprintf("%.2f", m.Level),
 						CapNhat:  m.ThoiGian,
 						Priority: m.Priority,
 					})
@@ -182,7 +187,7 @@ func (s *service) GenerateAIReport(ctx context.Context, reportType string, userI
 				inundations = append(inundations, InundationTableRow{
 					STT:       i + 1,
 					ViTri:     m.StreetName,
-					DoSau:     fmt.Sprintf("%.2fm", m.Depth),
+					DoSau:     fmt.Sprintf("%.2f", m.Depth),
 					KichThuoc: m.FormattedDepth,
 					GioBatDau: m.StartTime,
 					TrangThai: m.CurrentStatus,
@@ -211,7 +216,7 @@ func (s *service) GenerateAIReport(ctx context.Context, reportType string, userI
 			}
 			res.Tables["pumping_stations"] = pumping
 		}
-		if status.Wastewater != nil && len(status.Wastewater) > 0 {
+		if len(status.Wastewater) > 0 {
 			var wastewater []WastewaterTableRow
 			for i, m := range status.Wastewater {
 				bc := "Bình thường"

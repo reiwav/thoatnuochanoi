@@ -10,7 +10,12 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func (s *service) getPermittedWaterStations(ctx context.Context, orgID string, assignedIDs []string) (map[string]int, error) {
+type PermittedStation struct {
+	Priority int
+	Address  string
+}
+
+func (s *service) getPermittedWaterStations(ctx context.Context, orgID string, assignedIDs []string) (map[string]PermittedStation, error) {
 	if s.stationSvc == nil {
 		return nil, fmt.Errorf("stationSvc is not initialized")
 	}
@@ -36,15 +41,21 @@ func (s *service) getPermittedWaterStations(ctx context.Context, orgID string, a
 		return nil, err
 	}
 
-	permitted := make(map[string]int)
+	permitted := make(map[string]PermittedStation)
 	for _, st := range lakeStations {
 		if st.OldID > 0 {
-			permitted[fmt.Sprintf("%d", st.OldID)] = st.TrongSoBaoCao
+			permitted[fmt.Sprintf("%d", st.OldID)] = PermittedStation{
+				Priority: st.TrongSoBaoCao,
+				Address:  st.DiaChi,
+			}
 		}
 	}
 	for _, st := range riverStations {
 		if st.OldID > 0 {
-			permitted[fmt.Sprintf("%d", st.OldID)] = st.TrongSoBaoCao
+			permitted[fmt.Sprintf("%d", st.OldID)] = PermittedStation{
+				Priority: st.TrongSoBaoCao,
+				Address:  st.DiaChi,
+			}
 		}
 	}
 	return permitted, nil
@@ -91,7 +102,8 @@ func (s *service) GetWaterSummary(ctx context.Context, orgID string, assignedIDs
 			Name:     info.Name,
 			Level:    d.ThuongLuu_HT,
 			ThoiGian: timeStr,
-			Priority: permitted[d.TramId],
+			Priority: permitted[d.TramId].Priority,
+			Address:  permitted[d.TramId].Address,
 		}
 		if info.Loai == "2" {
 			stat.Label = "Hồ"

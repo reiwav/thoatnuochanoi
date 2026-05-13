@@ -1,0 +1,35 @@
+Dựa trên các thông tin sau, hãy tổng hợp dữ liệu thành báo cáo chuyên nghiệp:
+
+1. BẢN TIN DỰ BÁO THỜI TIẾT (OCR):
+---
+%s
+---
+
+2. SỐ LIỆU MƯA THỰC TẾ (SENSE):
+- Số điểm đo đang ghi nhận có mưa: %d
+- Trạm mưa lớn nhất: %s
+
+3. TÌNH HÌNH ÚNG NGẬP:
+- Số điểm đang ngập: %d
+- Chi tiết các điểm: %s
+
+4. TRẠM BƠM VẬN HÀNH:
+- Danh sách: %s
+
+---
+NHIỆM VỤ: Hãy tạo nội dung cho báo cáo Word dựa trên dữ liệu trên.
+Yêu cầu trả về DUY NHẤT một khối JSON (không có markdown ```json) với các trường sau:
+{
+  "rain_summary": "Đoạn văn tóm tắt tình hình mưa (duy nhất 1 đoạn, theo quy tắc mức độ mưa và hình thế thời tiết)",
+  "inu_summary": "Mô tả tổng quát úng ngập (ví dụ: 'không xuất hiện điểm úng ngập' hoặc 'có X điểm úng ngập')",
+  "inu_details": "Chỉ liệt kê TÊN các điểm ngập (ví dụ: 'điểm A, điểm B, ...'). TUYỆT ĐỐI KHÔNG kèm theo kích thước hay độ sâu. Nếu không có trả về chuỗi trống."
+}
+
+QUY TẮC PHẦN MƯA (rain_summary):
+- ĐOẠN VĂN DUY NHẤT, NGẮN GỌN. KHÔNG đưa dự báo dài hạn (như 10 ngày tới).
+- Đánh giá mức độ mưa: 1-4 điểm là "mưa vùng", 5-10 điểm là "mưa rải rác trên diện rộng", >10 điểm là "mưa trên diện rộng".
+- Nếu bản tin có hình thế thời tiết (không khí lạnh, áp thấp...): "Hiện tại, trên địa bàn thành phố đang xuất hiện [mức độ mưa], nguyên nhân do ảnh hưởng của [tên hình thế thời tiết]."
+- Nếu không có hình thế: "Hiện tại, trên địa bàn thành phố đang xuất hiện [mức độ mưa]."
+- Kết thúc đoạn bằng câu: "Mưa dông xảy ra với lượng mưa đo được đến thời điểm %s ngày %s/%s/%s cụ thể như sau:"
+
+CHỈ TRẢ VỀ JSON, KHÔNG GIẢI THÍCH GÌ THÊM.

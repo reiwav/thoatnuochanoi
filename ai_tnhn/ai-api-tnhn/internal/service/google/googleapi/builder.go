@@ -186,3 +186,44 @@ func (s *service) buildDynamicPrompt(status *CityStatus, hh, dd, mm, yyyy string
 
 	return fmt.Sprintf(promt.Get("report_dynamic"), hh, dd+"/"+mm+"/"+yyyy, rainIntro, waterStr, inuStr, pumpStr, wwStr, ocrStr)
 }
+
+func (s *service) buildFullWordPrompt(status *CityStatus, hh, dd, mm, yyyy string) string {
+	ocrText := status.OCRText
+	if ocrText == "" {
+		ocrText = "Không có thông tin bản tin dự báo."
+	}
+
+	rainyStations := 0
+	maxRain := "Không ghi nhận"
+	if status.Weather != nil {
+		rainyStations = status.Weather.RainyStations
+		maxRain = fmt.Sprintf("%s (%.1f mm)", status.Weather.MaxRainStation.Name, status.Weather.MaxRainStation.TotalRain)
+	}
+
+	inuCount := 0
+	inuDetails := "Không có điểm ngập."
+	if status.Inundation != nil {
+		inuCount = status.Inundation.ActivePoints
+		var detailStrings []string
+		for _, p := range status.Inundation.OngoingPoints {
+			detailStrings = append(detailStrings, fmt.Sprintf("%s (ngập %v x %v x %.2f)", p.StreetName, p.Length, p.Width, p.Depth))
+		}
+		if len(detailStrings) > 0 {
+			inuDetails = strings.Join(detailStrings, ", ")
+		}
+	}
+
+	pumpDetails := "Không có trạm bơm nào vận hành."
+	if status.Pumping != nil {
+		pumpDetails = status.Pumping.SummaryText
+	}
+
+	return fmt.Sprintf(promt.Get("report_full_word"),
+		ocrText,
+		rainyStations, maxRain,
+		inuCount, inuDetails,
+		pumpDetails,
+		hh, dd, mm, yyyy,
+	)
+}
+

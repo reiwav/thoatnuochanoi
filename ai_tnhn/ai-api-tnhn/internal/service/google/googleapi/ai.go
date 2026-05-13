@@ -30,6 +30,8 @@ func (s *service) GenerateAIReport(ctx context.Context, reportType string, userI
 		prompt = s.buildViberPrompt(status, hh, dd, mm, yyyy)
 	case constant.ReportTypeDynamic:
 		prompt = s.buildDynamicPrompt(status, hh, dd, mm, yyyy)
+	case constant.ReportTypeFullWord:
+		prompt = s.buildFullWordPrompt(status, hh, dd, mm, yyyy)
 	default:
 		return nil, fmt.Errorf("unsupported report type: %s", reportType)
 	}

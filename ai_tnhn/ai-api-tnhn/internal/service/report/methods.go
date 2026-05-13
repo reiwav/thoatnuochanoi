@@ -154,16 +154,53 @@ func (s *service) GenerateQuickReportV3(ctx context.Context, userID string) (*Qu
 
 	timeMua := s.formatRainTime(city.Weather)
 	noidung := "Báo cáo tình hình mưa"
-	chatRes, _ := s.googleSvc.GenerateAIReport(ctx, constant.ReportTypeActiveRain, userID)
+	motaUngNgap, chiTietCacDiem, soLuongUngNgap := "không xuất hiện điểm úng ngập", "", 0
+
+	chatRes, _ := s.googleSvc.GenerateAIReport(ctx, constant.ReportTypeFullWord, userID)
 	if chatRes != nil && chatRes.Text != "" {
-		noidung = chatRes.Text
+		cleanJSON := chatRes.Text
+		if strings.Contains(cleanJSON, "```") {
+			parts := strings.Split(cleanJSON, "```")
+			for _, p := range parts {
+				p = strings.TrimSpace(p)
+				if strings.HasPrefix(p, "json") {
+					cleanJSON = strings.TrimPrefix(p, "json")
+					break
+				} else if strings.HasPrefix(p, "{") {
+					cleanJSON = p
+					break
+				}
+			}
+		}
+
+		var aiData struct {
+			RainSummary string `json:"rain_summary"`
+			InuSummary  string `json:"inu_summary"`
+			InuDetails  string `json:"inu_details"`
+		}
+		err := json.Unmarshal([]byte(cleanJSON), &aiData)
+		if err == nil {
+			noidung = aiData.RainSummary
+			motaUngNgap = aiData.InuSummary
+			chiTietCacDiem = aiData.InuDetails
+		} else {
+			// Fallback if AI didn't return valid JSON
+			noidung = chatRes.Text
+			if city.Inundation != nil {
+				motaUngNgap = city.Inundation.SummaryText
+				chiTietCacDiem = city.Inundation.FullSummary
+			}
+		}
+	} else {
+		// Fallback if AI fails
+		if city.Inundation != nil {
+			motaUngNgap = city.Inundation.SummaryText
+			chiTietCacDiem = city.Inundation.FullSummary
+		}
 	}
 
-	motaUngNgap, chiTietCacDiem, soLuongUngNgap := "không xuất hiện điểm úng ngập", "", 0
 	if city.Inundation != nil {
 		soLuongUngNgap = city.Inundation.ActivePoints
-		motaUngNgap = city.Inundation.SummaryText
-		chiTietCacDiem = city.Inundation.FullSummary
 	}
 
 	noiDungTramBom := "Hiện tại không ghi nhận trạm bơm nào đang vận hành."

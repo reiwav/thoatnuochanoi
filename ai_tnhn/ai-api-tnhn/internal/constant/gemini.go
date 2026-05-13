@@ -35,6 +35,7 @@ const (
 
 	// Report Types
 	ReportTypeActiveRain = "active_rain"
+	ReportTypeFullWord   = "full_word"
 	ReportTypeViber      = "viber"
 	ReportTypeDynamic    = "dynamic"
 

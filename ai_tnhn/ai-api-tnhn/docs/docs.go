@@ -7979,10 +7979,6 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Quanh hồ Hoàn Kiếm"
                 },
-                "Id": {
-                    "type": "integer",
-                    "example": 201
-                },
                 "Lat": {
                     "type": "string",
                     "example": "21.0285"
@@ -8002,6 +7998,10 @@ const docTemplate = `{
                 "NguongCanhBao": {
                     "type": "number",
                     "example": 1.5
+                },
+                "OldId": {
+                    "type": "integer",
+                    "example": 201
                 },
                 "PhuongId": {
                     "type": "integer",
@@ -8307,10 +8307,6 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Số 1 Tràng Tiền"
                 },
-                "Id": {
-                    "type": "integer",
-                    "example": 101
-                },
                 "Lat": {
                     "type": "string",
                     "example": "21.0285"
@@ -8335,6 +8331,10 @@ const docTemplate = `{
                 "NguongCanhBao": {
                     "type": "number",
                     "example": 50.5
+                },
+                "OldId": {
+                    "type": "integer",
+                    "example": 101
                 },
                 "PhuongId": {
                     "type": "integer",
@@ -8398,10 +8398,6 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Đường Láng"
                 },
-                "Id": {
-                    "type": "integer",
-                    "example": 301
-                },
                 "Lat": {
                     "type": "string",
                     "example": "21.0123"
@@ -8421,6 +8417,10 @@ const docTemplate = `{
                 "NguongCanhBao": {
                     "type": "number",
                     "example": 3
+                },
+                "OldId": {
+                    "type": "integer",
+                    "example": 301
                 },
                 "PhuongId": {
                     "type": "integer",

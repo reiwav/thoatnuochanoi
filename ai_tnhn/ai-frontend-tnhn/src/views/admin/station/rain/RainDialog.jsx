@@ -8,7 +8,7 @@ import StationBaseFields from '../shared/StationBaseFields';
 const RainDialog = ({ open, onClose, onSubmit, station, isEdit, organizations }) => {
     const { user, isCompany, isSuperAdmin } = useAuthStore();
     const [formData, setFormData] = useState({
-        Id: 0,
+        OldId: 0,
         TenTram: '',
         TenPhuong: '',
         DiaChi: '',
@@ -28,7 +28,7 @@ const RainDialog = ({ open, onClose, onSubmit, station, isEdit, organizations })
         if (open) {
             if (isEdit && station) {
                 setFormData({
-                    Id: station.Id !== undefined ? station.Id : 0,
+                    OldId: station.OldId !== undefined ? station.OldId : (station.Id !== undefined ? station.Id : 0),
                     TenTram: station.TenTram || '',
                     TenPhuong: station.TenPhuong || '',
                     DiaChi: station.DiaChi || '',
@@ -45,7 +45,7 @@ const RainDialog = ({ open, onClose, onSubmit, station, isEdit, organizations })
                 });
             } else {
                 setFormData({
-                    Id: 0,
+                    OldId: 0,
                     TenTram: '',
                     TenPhuong: '',
                     DiaChi: '',
@@ -78,7 +78,7 @@ const RainDialog = ({ open, onClose, onSubmit, station, isEdit, organizations })
         if (!formData.TenTram) return toast.error('Vui lòng nhập tên trạm');
         const submitData = {
             ...formData,
-            Id: parseInt(formData.Id) || 0,
+            OldId: parseInt(formData.OldId) || 0,
             NguongCanhBao: formData.NguongCanhBao !== '' ? parseFloat(formData.NguongCanhBao) : 0,
             ThuTu: parseInt(formData.ThuTu) || 0,
             TrongSoBaoCao: parseInt(formData.TrongSoBaoCao) || 0
@@ -106,8 +106,8 @@ const RainDialog = ({ open, onClose, onSubmit, station, isEdit, organizations })
                         <Grid item xs={12} sm={6}>
                             <TextField
                                 fullWidth label="ID cũ (old_id)" type="number"
-                                value={formData.Id}
-                                onChange={(e) => handleChange('Id', e.target.value)}
+                                value={formData.OldId}
+                                onChange={(e) => handleChange('OldId', e.target.value)}
                             />
                         </Grid>
                     )}

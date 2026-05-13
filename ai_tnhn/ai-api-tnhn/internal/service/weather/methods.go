@@ -144,6 +144,7 @@ func (s *service) GetRainSummary(ctx context.Context, orgID string, assignedIDs 
 	// }
 	stations, _ := s.stationSvc.GetAllRainStations(ctx)
 	type stationMeta struct {
+		ID       string
 		Name     string
 		Address  string
 		Type     string
@@ -153,6 +154,7 @@ func (s *service) GetRainSummary(ctx context.Context, orgID string, assignedIDs 
 	for _, st := range stations {
 		if st.OldID > 0 {
 			permitted[st.OldID] = stationMeta{
+				ID:       st.ID,
 				Name:     st.TenTram,
 				Address:  st.DiaChi,
 				Type:     string(st.Loai),
@@ -184,7 +186,18 @@ func (s *service) GetRainSummary(ctx context.Context, orgID string, assignedIDs 
 			sessionRain = 0
 		}
 		var tramID int
-		fmt.Sscanf(fmt.Sprintf("%v", d.TramId), "%d", &tramID)
+		switch v := d.TramId.(type) {
+		case int:
+			tramID = v
+		case int64:
+			tramID = int(v)
+		case float64:
+			tramID = int(v)
+		case string:
+			fmt.Sscanf(v, "%d", &tramID)
+		default:
+			fmt.Sscanf(fmt.Sprintf("%v", d.TramId), "%d", &tramID)
+		}
 		meta := permitted[tramID]
 		if meta.Name == "" || d.LuongMua_HT == 0 {
 			continue
@@ -193,7 +206,8 @@ func (s *service) GetRainSummary(ctx context.Context, orgID string, assignedIDs 
 		measurements = append(measurements, RainStationStat{
 			Name:          meta.Name,
 			Address:       meta.Address,
-			ID:            tramID,
+			ID:            meta.ID,
+			OldID:         tramID,
 			TotalRain:     d.LuongMua_HT,
 			SessionRain:   sessionRain,
 			StartTime:     tBD,

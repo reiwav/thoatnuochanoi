@@ -274,7 +274,7 @@ const AiSupport = () => {
             const res = await axiosClient.get('/admin/weather/rain');
             if (res && res.tram && res.data) {
                 const tramMap = new Map();
-                res.tram.forEach(t => tramMap.set(t.Id?.toString() || t.id?.toString(), t));
+                res.tram.forEach(t => tramMap.set(t.OldId?.toString() || t.id?.toString(), t));
 
                 const raining = res.data
                     .filter(d => (d.LuongMua_HT || 0) > 0)
@@ -297,7 +297,8 @@ const AiSupport = () => {
                         .map((d, index) => {
                             const t = tramMap.get(d.TramId?.toString());
                             return {
-                                id: t?.OldId || t?.OldID || d.TramId,
+                                id: t?.id || t?.ID || d.TramId?.toString(),
+                                old_id: t?.OldId || t?.OldID || d.TramId,
                                 stt: index + 1,
                                 name: t?.TenPhuong || t?.name || `Trạm ${d.TramId}`,
                                 address: t?.DiaChi || '',

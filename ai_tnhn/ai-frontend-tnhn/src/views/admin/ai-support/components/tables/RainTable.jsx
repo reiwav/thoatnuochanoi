@@ -14,7 +14,7 @@ const RainCard = ({ station, onClick }) => {
     let bgColor = isRaining ? 'rgba(0,132,255,0.08)' : 'rgba(0,0,0,0.04)';
 
     return (
-        <Box 
+        <Box
             onClick={onClick}
             sx={{
                 p: '10px 12px', borderRadius: '12px',
@@ -34,11 +34,11 @@ const RainCard = ({ station, onClick }) => {
             }}
         >
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
-                <Typography sx={{ 
-                    fontWeight: 700, 
-                    fontSize: '13px', 
-                    lineHeight: 1.3, 
-                    color: isRaining ? '#0084FF' : '#1a1a1a', 
+                <Typography sx={{
+                    fontWeight: 700,
+                    fontSize: '13px',
+                    lineHeight: 1.3,
+                    color: isRaining ? '#0084FF' : '#1a1a1a',
                     flex: 1,
                     textAlign: luongMua ? 'left' : 'center'
                 }}>
@@ -50,10 +50,10 @@ const RainCard = ({ station, onClick }) => {
                     </Typography>
                 )}
             </Box>
-            
+
             {luongMua && (
-                <Box sx={{ 
-                    p: '4px 8px', borderRadius: '6px', 
+                <Box sx={{
+                    p: '4px 8px', borderRadius: '6px',
                     bgcolor: bgColor, borderLeft: `3px solid ${color}`,
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                     mt: 0.5
@@ -92,11 +92,11 @@ const StationGroup = ({ title, data, onStationClick }) => {
 
     return (
         <Box sx={{ mt: 1.5, mb: 2.5 }}>
-            <Typography variant="subtitle2" sx={{ 
-                fontWeight: 900, 
-                mb: 1.5, 
-                textTransform: 'uppercase', 
-                fontSize: '11px', 
+            <Typography variant="subtitle2" sx={{
+                fontWeight: 900,
+                mb: 1.5,
+                textTransform: 'uppercase',
+                fontSize: '11px',
                 letterSpacing: 1,
                 color: '#666',
                 display: 'flex',
@@ -114,7 +114,7 @@ const StationGroup = ({ title, data, onStationClick }) => {
                         ))}
                     </Box>
                 ))}
-                
+
                 {otherStations.length > 0 && (
                     <>
                         <Box
@@ -149,9 +149,24 @@ const RainTable = ({ title, data, handleRainChart }) => {
 
     const onStationClick = (s) => {
         if (!handleRainChart) return;
-        const id = s.old_id || s.oldId || s.OldId || s.OldID || s.id || s['ID'];
-        const name = s.name || s.phuong || s['Trạm'] || s['Tên'];
+
+        // Comprehensive search for station ID across all known variants
+        const id = s.old_id || s.oldId || s.OldId || s.OldID;
+        const name = s.name || s.phuong || s['Trạm'] || s['Tên'] || s['TenTram'] || s['tram'];
         const date = s.date || new Date().toISOString().split('T')[0];
+
+        if (!id) {
+            console.error("RainTable: Missing station ID. Object data:", s);
+            // Fallback: search for any numerical value that might be an ID
+            const numericalKey = Object.keys(s).find(k => k.toLowerCase().includes('id') && (typeof s[k] === 'number' || !isNaN(s[k])));
+            if (numericalKey) {
+                console.warn(`RainTable: Using fallback key '${numericalKey}' for ID`);
+                handleRainChart(s[numericalKey], date, name);
+                return;
+            }
+            return;
+        }
+
         handleRainChart(id, date, name);
     };
 

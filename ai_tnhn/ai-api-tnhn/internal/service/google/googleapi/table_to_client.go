@@ -17,7 +17,8 @@ type RainTableRow struct {
 	Type      string  `json:"type"`
 	Priority  int     `json:"priority"`
 	TotalRain float64 `json:"total_rain"`
-	ID        int     `json:"id"`
+	ID        string  `json:"id"`
+	OldID     int     `json:"old_id"`
 }
 
 type WaterTableRow struct {
@@ -103,6 +104,7 @@ func (s *service) populateRainTable(res *ChatResponse, status *CityStatus) {
 			Priority:  m.Priority,
 			TotalRain: m.TotalRain,
 			ID:        m.ID,
+			OldID:     m.OldID,
 		})
 	}
 	res.Tables["rains"] = rains

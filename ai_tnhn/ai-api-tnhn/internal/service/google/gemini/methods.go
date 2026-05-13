@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"ai-api-tnhn/internal/service/station/water"
+	"ai-api-tnhn/internal/service/weather"
 
 	"github.com/google/generative-ai-go/genai"
 	"golang.org/x/sync/errgroup"
@@ -103,6 +104,12 @@ func (s *service) Chat(ctx context.Context, prompt string, history []googleapi.C
 									tables["rivers"] = wsd.RiverStations
 								} else {
 									tables["waters"] = res
+								}
+							case "rains":
+								if rsd, ok := res.(*weather.RainSummaryData); ok {
+									tables["rains"] = rsd.Measurements
+								} else {
+									tables["rains"] = res
 								}
 							default:
 								tables[k] = res

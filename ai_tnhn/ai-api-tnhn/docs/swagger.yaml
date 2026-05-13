@@ -654,9 +654,6 @@ definitions:
       DiaChi:
         example: Quanh hồ Hoàn Kiếm
         type: string
-      Id:
-        example: 201
-        type: integer
       Lat:
         example: "21.0285"
         type: string
@@ -672,6 +669,9 @@ definitions:
       NguongCanhBao:
         example: 1.5
         type: number
+      OldId:
+        example: 201
+        type: integer
       PhuongId:
         example: 1
         type: integer
@@ -895,9 +895,6 @@ definitions:
       DiaChi:
         example: Số 1 Tràng Tiền
         type: string
-      Id:
-        example: 101
-        type: integer
       Lat:
         example: "21.0285"
         type: string
@@ -915,6 +912,9 @@ definitions:
       NguongCanhBao:
         example: 50.5
         type: number
+      OldId:
+        example: 101
+        type: integer
       PhuongId:
         example: 1
         type: integer
@@ -959,9 +959,6 @@ definitions:
       DiaChi:
         example: Đường Láng
         type: string
-      Id:
-        example: 301
-        type: integer
       Lat:
         example: "21.0123"
         type: string
@@ -977,6 +974,9 @@ definitions:
       NguongCanhBao:
         example: 3
         type: number
+      OldId:
+        example: 301
+        type: integer
       PhuongId:
         example: 2
         type: integer

@@ -13,7 +13,7 @@ const (
 
 type RainStation struct {
 	model.BaseModel `bson:",inline"`
-	OldID           int             `json:"Id" bson:"old_id" example:"101"`
+	OldID           int             `json:"OldId" bson:"old_id" example:"101"`
 	TenTram         string          `json:"TenTram" bson:"ten_tram" example:"Trạm đo mưa Hoàn Kiếm"`
 	TenPhuong       string          `json:"TenPhuong" bson:"ten_phuong" example:"Phường Tràng Tiền"`
 	Loai            StationAreaType `json:"Loai" bson:"loai" example:"phuong"` // 1: phường, 2: xã
@@ -33,7 +33,7 @@ type RainStation struct {
 
 type LakeStation struct {
 	model.BaseModel `bson:",inline"`
-	OldID           int      `json:"Id" bson:"old_id" example:"201"`
+	OldID           int      `json:"OldId" bson:"old_id" example:"201"`
 	TenTram         string   `json:"TenTram" bson:"ten_tram" example:"Hồ Hoàn Kiếm"`
 	TenPhuong       string   `json:"TenPhuong" bson:"ten_phuong" example:"Phường Hàng Trống"`
 	DiaChi          string   `json:"DiaChi" bson:"dia_chi" example:"Quanh hồ Hoàn Kiếm"`
@@ -53,7 +53,7 @@ type LakeStation struct {
 
 type RiverStation struct {
 	model.BaseModel `bson:",inline"`
-	OldID           int      `json:"Id" bson:"old_id" example:"301"`
+	OldID           int      `json:"OldId" bson:"old_id" example:"301"`
 	TenTram         string   `json:"TenTram" bson:"ten_tram" example:"Sông Tô Lịch"`
 	TenPhuong       string   `json:"TenPhuong" bson:"ten_phuong" example:"Láng Hạ"`
 	DiaChi          string   `json:"DiaChi" bson:"dia_chi" example:"Đường Láng"`

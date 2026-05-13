@@ -106,7 +106,7 @@ func (s *service) GenerateQuickReportV3(ctx context.Context, userID string) (*Qu
 	if city.Weather != nil {
 		mMap := make(map[int]float64)
 		for _, m := range city.Weather.Measurements {
-			mMap[m.ID] = m.TotalRain
+			mMap[m.OldID] = m.TotalRain
 		}
 
 		type stationRain struct {

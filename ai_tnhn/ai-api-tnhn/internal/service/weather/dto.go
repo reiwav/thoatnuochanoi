@@ -21,7 +21,8 @@ type ForecastDay struct {
 }
 
 type RainStationStat struct {
-	ID            int       `json:"id"`
+	ID            string    `json:"id"`
+	OldID         int       `json:"old_id"`
 	Name          string    `json:"name"`
 	Address       string    `json:"address"`
 	TotalRain     float64   `json:"total_rain"`

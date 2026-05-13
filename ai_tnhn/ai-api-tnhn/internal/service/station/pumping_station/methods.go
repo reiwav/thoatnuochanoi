@@ -196,7 +196,7 @@ func (s *service) GetPumpingStationSummary(ctx context.Context, orgID string, as
 
 	sort.Slice(stationStats, func(i, j int) bool {
 		if stationStats[i].Priority != stationStats[j].Priority {
-			return stationStats[i].Priority < stationStats[j].Priority
+			return stationStats[i].Priority > stationStats[j].Priority
 		}
 		return stationStats[i].Name < stationStats[j].Name
 	})

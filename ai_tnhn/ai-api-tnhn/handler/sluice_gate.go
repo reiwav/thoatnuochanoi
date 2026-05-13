@@ -130,8 +130,8 @@ func (h *SluiceGateHandler) Get(c *gin.Context) {
 // @Router /admin/stations/sluice-gate [get]
 func (h *SluiceGateHandler) List(c *gin.Context) {
 	f := filter.NewBasicFilter()
-	f.SetOrderBy("priority")
-
+	f.AddSort("priority", -1)
+	f.AddSort("name", 1)
 	_, isAllowedAll, user := h.checkPermissions(c)
 	if user == nil {
 		h.SendError(c, web.Unauthorized("vui lòng đăng nhập lại"))
@@ -194,7 +194,7 @@ func (h *SluiceGateHandler) Report(c *gin.Context) {
 		h.SendError(c, web.BadRequest(err.Error()))
 		return
 	}
-	
+
 	req.UserID = user.ID
 	req.Username = user.Username
 	req.Fullname = user.Name

@@ -130,7 +130,8 @@ func (h *WastewaterTreatmentHandler) Get(c *gin.Context) {
 // @Router /admin/stations/wastewater [get]
 func (h *WastewaterTreatmentHandler) List(c *gin.Context) {
 	f := filter.NewBasicFilter()
-	f.SetOrderBy("priority")
+	f.AddSort("priority", -1)
+	f.AddSort("name", 1)
 
 	_, isAllowedAll, user := h.checkPermissions(c)
 	if user == nil {

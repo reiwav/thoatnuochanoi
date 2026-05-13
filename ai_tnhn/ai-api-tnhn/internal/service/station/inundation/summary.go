@@ -61,6 +61,7 @@ func (s *service) GetInundationSummary(ctx context.Context, orgID string, isAllo
 			FormattedDepth: depthInfo,
 			StartTime:      time.Unix(r.CTime, 0).Format("15:04 02/01/2006"),
 			Description:    r.Description,
+			Color:          r.FloodLevelColor,
 			CurrentStatus:  "Đang ngập lụt",
 			Updates:        updates,
 		}

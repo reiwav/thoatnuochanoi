@@ -20,6 +20,7 @@ type InundationStationStat struct {
 	FormattedDepth string                 `json:"formatted_depth"` // e.g. "100 x 50 x 0.20m"
 	StartTime      string                 `json:"start_time"`
 	Description    string                 `json:"description"`
+	Color          string                 `json:"color"`
 	CurrentStatus  string                 `json:"current_status"`
 	Updates        []InundationUpdateStat `json:"updates"`
 }

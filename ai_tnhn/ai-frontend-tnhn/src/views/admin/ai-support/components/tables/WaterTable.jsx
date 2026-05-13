@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, useTheme } from '@mui/material';
 
 const WaterCard = ({ station }) => {
+    const theme = useTheme();
     const name = station['Tên'] || station['name'] || '';
     const diaChi = station['Địa chỉ'] || station['address'] || '';
     const giaTri = station['Giá trị'] || (station.level !== undefined ? `${station.level.toFixed(2)}` : '...');
@@ -10,13 +11,10 @@ const WaterCard = ({ station }) => {
     let rawThoiGian = station['Cập nhật'] || station['thoi_gian'] || '';
     let displayTime = '-';
     if (rawThoiGian) {
-        // rawThoiGian might be "15:04 05/05/2026" or "15:04" or ISO string
-        // We just take the HH:mm part
         const match = rawThoiGian.match(/\d{2}:\d{2}/);
         if (match) {
             displayTime = match[0];
         } else {
-            // fallback if it's standard ISO string
             try {
                 const d = new Date(rawThoiGian);
                 if (!isNaN(d)) {
@@ -27,6 +25,9 @@ const WaterCard = ({ station }) => {
             }
         }
     }
+
+    const primaryColor = theme.palette.primary.main;
+    const primaryBg = theme.palette.primary.light + '20'; // ~12% opacity
 
     return (
         <Box sx={{
@@ -65,10 +66,10 @@ const WaterCard = ({ station }) => {
                 
                 <Box sx={{
                     px: '6px', py: '2px', borderRadius: '4px',
-                    bgcolor: 'rgba(0,132,255,0.08)', borderLeft: `2px solid #0084FF`,
+                    bgcolor: primaryBg, borderLeft: `2px solid ${primaryColor}`,
                     flexShrink: 0
                 }}>
-                    <Typography sx={{ fontSize: '13px', color: '#0084FF', fontWeight: 800, lineHeight: 1.2 }}>
+                    <Typography sx={{ fontSize: '13px', color: primaryColor, fontWeight: 800, lineHeight: 1.2 }}>
                         {giaTri}
                     </Typography>
                 </Box>
@@ -91,7 +92,6 @@ const WaterTable = ({ title, data }) => {
     const priorityStations = sorted.filter(s => (s.priority ?? s['priority'] ?? 0) > 0);
     const otherStations = sorted.filter(s => (s.priority ?? s['priority'] ?? 0) <= 0);
 
-    // Build rows (3 per row)
     const buildRows = (list) => {
         const rows = [];
         for (let i = 0; i < list.length; i += 3) {

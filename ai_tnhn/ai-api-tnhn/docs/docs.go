@@ -8190,6 +8190,10 @@ const docTemplate = `{
                     "type": "boolean",
                     "example": true
                 },
+                "last_operation_time": {
+                    "type": "integer",
+                    "example": 1625097600
+                },
                 "last_report": {
                     "$ref": "#/definitions/models.PumpingStationHistory"
                 },

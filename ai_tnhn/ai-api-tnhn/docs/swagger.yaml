@@ -812,6 +812,9 @@ definitions:
       is_auto:
         example: true
         type: boolean
+      last_operation_time:
+        example: 1625097600
+        type: integer
       last_report:
         $ref: '#/definitions/models.PumpingStationHistory'
       link:

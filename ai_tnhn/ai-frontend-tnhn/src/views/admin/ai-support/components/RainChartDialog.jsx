@@ -9,33 +9,38 @@ import dayjs from 'dayjs';
 const RainChartDialog = ({ open, onClose, stationName, date, data, loading }) => {
     const theme = useTheme();
 
+    const rainData = React.useMemo(() => {
+        if (!data || data.length === 0) return [];
+        const sorted = [...data].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        let firstIndex = -1;
+        let lastIndex = -1;
+        for (let i = 0; i < sorted.length; i++) {
+            if (sorted[i].value > 0) {
+                if (firstIndex === -1) firstIndex = i;
+                lastIndex = i;
+            }
+        }
+        if (firstIndex === -1) return [];
+
+        const start = Math.max(0, firstIndex - 1);
+        const end = Math.min(sorted.length - 1, lastIndex + 1);
+        return sorted.slice(start, end + 1);
+    }, [data]);
+
     const stats = React.useMemo(() => {
-        if (!data || data.length === 0) return null;
+        if (!rainData || rainData.length === 0) return null;
 
         let max = 0;
-        let start = data[0].timestamp;
-        let end = data[0].timestamp;
-
-        data.forEach(item => {
+        rainData.forEach(item => {
             if (item.value > max) max = item.value;
-            const currentTs = new Date(item.timestamp);
-            if (currentTs < new Date(start)) start = item.timestamp;
-            if (currentTs > new Date(end)) end = item.timestamp;
         });
 
         return {
             max: max.toFixed(1),
-            startTime: dayjs(start).format('HH:mm'),
-            endTime: dayjs(end).format('HH:mm')
+            startTime: dayjs(rainData[0].timestamp).format('HH:mm'),
+            endTime: dayjs(rainData[rainData.length - 1].timestamp).format('HH:mm')
         };
-    }, [data]);
-
-    const timeRange = React.useMemo(() => {
-        if (!date) return { min: undefined, max: undefined };
-        const min = dayjs(date).hour(7).minute(0).second(0).millisecond(0).valueOf();
-        const max = dayjs(date).add(1, 'day').hour(7).minute(0).second(0).millisecond(0).valueOf();
-        return { min, max };
-    }, [date]);
+    }, [rainData]);
 
     const chartOptions = {
         chart: {
@@ -52,14 +57,11 @@ const RainChartDialog = ({ open, onClose, stationName, date, data, loading }) =>
         dataLabels: { enabled: false },
         xaxis: {
             type: 'datetime',
-            min: timeRange.min,
-            max: timeRange.max,
-            tickAmount: 12,
             labels: {
                 datetimeUTC: false,
                 format: 'HH:mm'
             },
-            title: { text: 'Thời gian (7h - 7h hôm sau)' }
+            title: { text: 'Thời gian' }
         },
         yaxis: {
             title: { text: 'Lượng mưa (mm)' },
@@ -82,7 +84,7 @@ const RainChartDialog = ({ open, onClose, stationName, date, data, loading }) =>
 
     const chartSeries = [{
         name: 'Lượng mưa',
-        data: (data || []).map(item => ({
+        data: rainData.map(item => ({
             x: new Date(item.timestamp).getTime(),
             y: item.value || 0
         }))
@@ -125,12 +127,12 @@ const RainChartDialog = ({ open, onClose, stationName, date, data, loading }) =>
                 <Box sx={{ minHeight: 350, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', pt: 2 }}>
                     {loading ? (
                         <CircularProgress />
-                    ) : data && data.length > 0 ? (
+                    ) : rainData.length > 0 ? (
                         <Box sx={{ width: '100%' }}>
                             <ReactApexChart options={chartOptions} series={chartSeries} type="line" height={350} />
                         </Box>
                     ) : (
-                        <Typography color="text.secondary">Không có dữ liệu mưa cho ngày này.</Typography>
+                        <Typography color="text.secondary">Không có dữ liệu mưa (hoặc không mưa) trong ngày này.</Typography>
                     )}
                 </Box>
             </DialogContent>

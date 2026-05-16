@@ -94,33 +94,43 @@ const StationHistory = ({ type }) => {
         }
     };
 
-    const timeRange = React.useMemo(() => {
-        if (!selectedDate) return { min: undefined, max: undefined };
-        const min = dayjs(selectedDate).hour(7).minute(0).second(0).millisecond(0).valueOf();
-        const max = dayjs(selectedDate).add(1, 'day').hour(7).minute(0).second(0).millisecond(0).valueOf();
-        return { min, max };
-    }, [selectedDate]);
+    const activeData = React.useMemo(() => {
+        if (!history || history.length === 0) return [];
+        if (type !== 'rain') return [...history].reverse();
+        
+        const sorted = [...history].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        let firstIndex = -1;
+        let lastIndex = -1;
+        for (let i = 0; i < sorted.length; i++) {
+            if (sorted[i].value > 0) {
+                if (firstIndex === -1) firstIndex = i;
+                lastIndex = i;
+            }
+        }
+        if (firstIndex === -1) return [];
+
+        const start = Math.max(0, firstIndex - 1);
+        const end = Math.min(sorted.length - 1, lastIndex + 1);
+        return sorted.slice(start, end + 1);
+    }, [history, type]);
 
     const chartOptions = {
         chart: {
             type: 'line',
             height: 350,
-            toolbar: { show: false },
-            zoom: { enabled: false },
+            toolbar: { show: true },
+            zoom: { enabled: true },
             fontFamily: theme.typography.fontFamily
         },
         dataLabels: { enabled: false },
         stroke: { curve: 'smooth', width: 3 },
         xaxis: {
             type: 'datetime',
-            min: timeRange.min,
-            max: timeRange.max,
-            tickAmount: 12,
             labels: {
                 datetimeUTC: false,
                 format: 'HH:mm'
             },
-            title: { text: 'Thời gian (7h - 7h hôm sau)' }
+            title: { text: 'Thời gian' }
         },
         yaxis: {
             title: { text: getValueLabel() }
@@ -133,7 +143,7 @@ const StationHistory = ({ type }) => {
 
     const chartSeries = [{
         name: getValueLabel(),
-        data: [...history].reverse().map(item => ({
+        data: activeData.map(item => ({
             x: new Date(item.timestamp).getTime(),
             y: item.value || 0
         }))
@@ -182,7 +192,7 @@ const StationHistory = ({ type }) => {
                     </Box>
                 </Box>
 
-                {!loading && history.length > 0 && (
+                {!loading && activeData.length > 0 && (
                     <Box sx={{ p: 2, bgcolor: 'background.paper', borderRadius: '12px', border: '1px solid', borderColor: 'divider' }}>
                         <ReactApexChart options={chartOptions} series={chartSeries} type="line" height={350} />
                     </Box>

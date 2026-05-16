@@ -72,14 +72,14 @@ func (s *service) GenerateQuickReportV3(ctx context.Context, userID string) (*Qu
 
 	// 1. Lấy và Map dữ liệu trạm Sông (Trọng số > 0, lấy 5 trạm)
 	var rivers []*models.RiverStation
-	_ = s.riverStationRepo.R_SelectManyWithSort(ctx, bson.M{"trong_so_bao_cao": bson.M{"$gt": 0}}, bson.M{"trong_so_bao_cao": 1}, &rivers)
+	_ = s.riverStationRepo.R_SelectManyWithSort(ctx, bson.M{"trong_so_bao_cao": bson.M{"$gt": 0}}, bson.M{"trong_so_bao_cao": -1}, &rivers)
 	if len(rivers) > 5 {
 		rivers = rivers[:5]
 	}
 
 	// 2. Lấy và Map dữ liệu trạm Hồ (Trọng số > 0, lấy 5 trạm)
 	var lakes []*models.LakeStation
-	_ = s.lakeStationRepo.R_SelectManyWithSort(ctx, bson.M{"trong_so_bao_cao": bson.M{"$gt": 0}}, bson.M{"trong_so_bao_cao": 1}, &lakes)
+	_ = s.lakeStationRepo.R_SelectManyWithSort(ctx, bson.M{"trong_so_bao_cao": bson.M{"$gt": 0}}, bson.M{"trong_so_bao_cao": -1}, &lakes)
 	if len(lakes) > 5 {
 		lakes = lakes[:5]
 	}

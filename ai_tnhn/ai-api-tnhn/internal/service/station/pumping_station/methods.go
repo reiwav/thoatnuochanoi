@@ -204,9 +204,12 @@ func (s *service) GetPumpingStationSummary(ctx context.Context, orgID string, as
 		return stationStats[i].Name < stationStats[j].Name
 	})
 	summaryText := "Hiện tại không ghi nhận trạm bơm nào đang vận hành."
-	summaryPriorityText := summaryText
+	if totalOperatingStations > 0 {
+		summaryText = fmt.Sprintf("Hiện tại có %d trạm bơm đang vận hành để đảm bảo công tác thoát nước.", totalOperatingStations)
+	}
+
+	summaryPriorityText := "Hiện tại không ghi nhận trạm bơm nào đang vận hành."
 	var prioritys []string
-	var stInfos []string
 	for _, st := range stationStats {
 		if st.OperatingCount == 0 {
 			continue
@@ -215,15 +218,10 @@ func (s *service) GetPumpingStationSummary(ctx context.Context, orgID string, as
 		if st.Priority > 0 {
 			prioritys = append(prioritys, txt)
 		}
-		stInfos = append(stInfos, txt)
 	}
 
 	if len(prioritys) > 0 {
-		summaryPriorityText = strings.Join(prioritys, ",")
-	}
-
-	if len(stInfos) > 0 {
-		summaryText = strings.Join(stInfos, ",")
+		summaryPriorityText = strings.Join(prioritys, ", ")
 	}
 
 	return &PumpingStationSummaryData{

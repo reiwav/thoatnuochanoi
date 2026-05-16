@@ -181,13 +181,13 @@ func (s *service) GetPumpingStationSummary(ctx context.Context, orgID string, as
 		totalOperating += ops
 
 		stationStats = append(stationStats, PumpingStationStat{
-			Name:             st.Name,
-			Priority:         st.Priority,
-			OrgName:          orgMap[st.OrgID],
-			PumpCount:        st.PumpCount,
-			OperatingCount:   ops,
-			ClosedCount:      closed,
-			MaintenanceCount: maint,
+			Name:              st.Name,
+			Priority:          st.Priority,
+			OrgName:           orgMap[st.OrgID],
+			PumpCount:         st.PumpCount,
+			OperatingCount:    ops,
+			ClosedCount:       closed,
+			MaintenanceCount:  maint,
 			Note:              note,
 			LastUpdate:        lastUpdate,
 			LastOperationTime: st.LastOperationTime,

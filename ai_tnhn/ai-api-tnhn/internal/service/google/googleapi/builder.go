@@ -215,7 +215,26 @@ func (s *service) buildFullWordPrompt(status *CityStatus, hh, dd, mm, yyyy strin
 
 	pumpDetails := "Không có trạm bơm nào vận hành."
 	if status.Pumping != nil {
-		pumpDetails = status.Pumping.SummaryText
+		var list []string
+		ict := time.FixedZone("ICT", 7*3600)
+		for _, st := range status.Pumping.Stations {
+			if st.OperatingCount > 0 {
+				tStr := ""
+				if st.LastOperationTime > 0 {
+					tStr = time.Unix(st.LastOperationTime, 0).In(ict).Format("15h04")
+				} else {
+					tStr = time.Now().In(ict).Format("15h04")
+				}
+				pType := "trạm bơm thường"
+				if st.Priority > 0 {
+					pType = "trạm bơm đầu mối"
+				}
+				list = append(list, fmt.Sprintf("%s (%s): %d/%d máy đang vận hành lúc %s", st.Name, pType, st.OperatingCount, st.PumpCount, tStr))
+			}
+		}
+		if len(list) > 0 {
+			pumpDetails = strings.Join(list, "; ")
+		}
 	}
 
 	return fmt.Sprintf(promt.Get("report_full_word"),

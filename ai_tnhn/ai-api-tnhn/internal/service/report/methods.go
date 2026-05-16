@@ -156,6 +156,26 @@ func (s *service) GenerateQuickReportV3(ctx context.Context, userID string) (*Qu
 	noidung := "Báo cáo tình hình mưa"
 	motaUngNgap, chiTietCacDiem, soLuongUngNgap := "không xuất hiện điểm úng ngập", "", 0
 
+	noiDungTramBom := "Hiện tại không ghi nhận trạm bơm nào đang vận hành."
+	danhSachTramBom := "không có trạm nào vận hành"
+	if city.Pumping != nil {
+		noiDungTramBom = city.Pumping.SummaryPriorityText
+
+		ict := time.FixedZone("ICT", 7*3600)
+		now := time.Now().In(ict)
+		startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, ict).Unix()
+
+		var names []string
+		for _, st := range city.Pumping.Stations {
+			if st.OperatingCount > 0 || st.LastOperationTime >= startOfDay {
+				names = append(names, st.Name)
+			}
+		}
+		if len(names) > 0 {
+			danhSachTramBom = strings.Join(names, ", ")
+		}
+	}
+
 	chatRes, _ := s.googleSvc.GenerateAIReport(ctx, constant.ReportTypeFullWord, userID)
 	if chatRes != nil && chatRes.Text != "" {
 		cleanJSON := chatRes.Text
@@ -177,12 +197,16 @@ func (s *service) GenerateQuickReportV3(ctx context.Context, userID string) (*Qu
 			RainSummary string `json:"rain_summary"`
 			InuSummary  string `json:"inu_summary"`
 			InuDetails  string `json:"inu_details"`
+			PumpSummary string `json:"pump_summary"`
 		}
 		err := json.Unmarshal([]byte(cleanJSON), &aiData)
 		if err == nil {
 			noidung = aiData.RainSummary
 			motaUngNgap = aiData.InuSummary
 			chiTietCacDiem = aiData.InuDetails
+			if aiData.PumpSummary != "" {
+				noiDungTramBom = aiData.PumpSummary
+			}
 
 			// Fallback: If AI returned empty details or "no points" but we actually have active points
 			if (chiTietCacDiem == "" || strings.Contains(chiTietCacDiem, "Không có") || strings.Contains(chiTietCacDiem, "không có")) &&
@@ -222,26 +246,6 @@ func (s *service) GenerateQuickReportV3(ctx context.Context, userID string) (*Qu
 
 	if city.Inundation != nil {
 		soLuongUngNgap = city.Inundation.ActivePoints
-	}
-
-	noiDungTramBom := "Hiện tại không ghi nhận trạm bơm nào đang vận hành."
-	danhSachTramBom := "không có trạm nào vận hành"
-	if city.Pumping != nil {
-		noiDungTramBom = city.Pumping.SummaryPriorityText
-
-		ict := time.FixedZone("ICT", 7*3600)
-		now := time.Now().In(ict)
-		startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, ict).Unix()
-
-		var names []string
-		for _, st := range city.Pumping.Stations {
-			if st.OperatingCount > 0 || st.LastOperationTime >= startOfDay {
-				names = append(names, st.Name)
-			}
-		}
-		if len(names) > 0 {
-			danhSachTramBom = strings.Join(names, ", ")
-		}
 	}
 
 	splitTable := func(data [][]string) ([][]string, [][]string) {

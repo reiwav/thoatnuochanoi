@@ -60,6 +60,11 @@ func (s *service) GetInundationSummary(ctx context.Context, orgID string, isAllo
 			})
 		}
 
+		levelName := r.FloodLevelName
+		if levelName == "" {
+			levelName = "úng ngập"
+		}
+
 		stat := InundationStationStat{
 			StreetName:     streetName,
 			OrgName:        orgMap[r.OrgID],
@@ -71,10 +76,11 @@ func (s *service) GetInundationSummary(ctx context.Context, orgID string, isAllo
 			Description:    r.Description,
 			Color:          r.FloodLevelColor,
 			CurrentStatus:  "Đang ngập lụt",
+			FloodLevelName: levelName,
 			Updates:        updates,
 		}
 		ongoing = append(ongoing, stat)
-		detailStrings = append(detailStrings, fmt.Sprintf("%s (%s)", streetName, depthInfo))
+		detailStrings = append(detailStrings, fmt.Sprintf("%s (%s, %s)", streetName, levelName, depthInfo))
 	}
 
 	sort.Slice(ongoing, func(i, j int) bool {

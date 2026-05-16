@@ -22,6 +22,7 @@ type InundationStationStat struct {
 	Description    string                 `json:"description"`
 	Color          string                 `json:"color"`
 	CurrentStatus  string                 `json:"current_status"`
+	FloodLevelName string                 `json:"flood_level_name"`
 	Updates        []InundationUpdateStat `json:"updates"`
 }
 

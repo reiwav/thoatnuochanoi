@@ -96,17 +96,19 @@ func (s *service) buildViberPrompt(status *CityStatus, hh, dd, mm, yyyy string) 
 		data = append(data, fmt.Sprintf("InundationPoints: %d", status.Inundation.ActivePoints))
 		var inuDetails []string
 		for _, p := range status.Inundation.OngoingPoints {
-			// Clean street name as requested: remove "(đoạn thuộc phạm vi phường)"
 			cleanName := strings.ReplaceAll(p.StreetName, " (đoạn thuộc phạm vi phường)", "")
 			cleanName = strings.ReplaceAll(cleanName, "(đoạn thuộc phạm vi phường)", "")
 			cleanName = strings.TrimSpace(cleanName)
 
+			level := p.FloodLevelName
+			if level == "" {
+				level = "úng ngập"
+			}
 			dim := fmt.Sprintf("%v x %v x %.2f", p.Length, p.Width, p.Depth)
 			if p.Length == "" && p.Width == "" && p.Depth == 0 {
-				inuDetails = append(inuDetails, cleanName)
+				inuDetails = append(inuDetails, fmt.Sprintf("%s (%s)", cleanName, level))
 			} else {
-				// Format exactly as requested: Street Name (D x R x S)
-				inuDetails = append(inuDetails, fmt.Sprintf("%s (%s)", cleanName, dim))
+				inuDetails = append(inuDetails, fmt.Sprintf("%s (%s, %s)", cleanName, level, dim))
 			}
 		}
 		data = append(data, fmt.Sprintf("InundationList: %s", strings.Join(inuDetails, "; ")))
@@ -206,7 +208,11 @@ func (s *service) buildFullWordPrompt(status *CityStatus, hh, dd, mm, yyyy strin
 		inuCount = status.Inundation.ActivePoints
 		var detailStrings []string
 		for _, p := range status.Inundation.OngoingPoints {
-			detailStrings = append(detailStrings, fmt.Sprintf("%s (ngập %v x %v x %.2f)", p.StreetName, p.Length, p.Width, p.Depth))
+			level := p.FloodLevelName
+			if level == "" {
+				level = "úng ngập"
+			}
+			detailStrings = append(detailStrings, fmt.Sprintf("%s (%s, ngập %v x %v x %.2f)", p.StreetName, level, p.Length, p.Width, p.Depth))
 		}
 		if len(detailStrings) > 0 {
 			inuDetails = strings.Join(detailStrings, ", ")

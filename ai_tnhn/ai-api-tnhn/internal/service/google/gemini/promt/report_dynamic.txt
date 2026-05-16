@@ -26,3 +26,4 @@ YÊU CẦU:
 - Phân tích và dự báo ngắn gọn dựa trên Thông tin dự báo thời tiết được cung cấp ở mục 6.
 - Kết cấu báo cáo chuyên nghiệp, súc tích.
 - BẮT BUỘC giữ nguyên đúng tên và thứ tự của các mục ở trên. KHÔNG được tự ý đổi tên (VD: không được đổi thành Tình hình ngập lụt) hoặc đảo lộn thứ tự.
+- LƯU Ý ĐẶC BIỆT: Không ghi thêm thuộc phạm vi phường hay xã, chỉ nêu tên đường thôi.

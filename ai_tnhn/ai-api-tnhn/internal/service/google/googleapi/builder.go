@@ -96,9 +96,7 @@ func (s *service) buildViberPrompt(status *CityStatus, hh, dd, mm, yyyy string) 
 		data = append(data, fmt.Sprintf("InundationPoints: %d", status.Inundation.ActivePoints))
 		var inuDetails []string
 		for _, p := range status.Inundation.OngoingPoints {
-			cleanName := strings.ReplaceAll(p.StreetName, " (đoạn thuộc phạm vi phường)", "")
-			cleanName = strings.ReplaceAll(cleanName, "(đoạn thuộc phạm vi phường)", "")
-			cleanName = strings.TrimSpace(cleanName)
+			cleanName := p.StreetName
 
 			level := p.FloodLevelName
 			if level == "" {
@@ -251,4 +249,3 @@ func (s *service) buildFullWordPrompt(status *CityStatus, hh, dd, mm, yyyy strin
 		hh, dd, mm, yyyy,
 	)
 }
-

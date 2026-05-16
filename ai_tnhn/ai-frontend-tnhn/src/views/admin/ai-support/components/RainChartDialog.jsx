@@ -30,6 +30,13 @@ const RainChartDialog = ({ open, onClose, stationName, date, data, loading }) =>
         };
     }, [data]);
 
+    const timeRange = React.useMemo(() => {
+        if (!date) return { min: undefined, max: undefined };
+        const min = dayjs(date).hour(7).minute(0).second(0).millisecond(0).valueOf();
+        const max = dayjs(date).add(1, 'day').hour(7).minute(0).second(0).millisecond(0).valueOf();
+        return { min, max };
+    }, [date]);
+
     const chartOptions = {
         chart: {
             type: 'line',
@@ -45,11 +52,14 @@ const RainChartDialog = ({ open, onClose, stationName, date, data, loading }) =>
         dataLabels: { enabled: false },
         xaxis: {
             type: 'datetime',
+            min: timeRange.min,
+            max: timeRange.max,
+            tickAmount: 12,
             labels: {
                 datetimeUTC: false,
                 format: 'HH:mm'
             },
-            title: { text: 'Thời gian' }
+            title: { text: 'Thời gian (7h - 7h hôm sau)' }
         },
         yaxis: {
             title: { text: 'Lượng mưa (mm)' },

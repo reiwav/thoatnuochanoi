@@ -16,6 +16,8 @@ import 'dayjs/locale/vi';
 import MainCard from 'ui-component/cards/MainCard';
 import stationApi from 'api/station';
 
+const getStationId = (s) => s?.OldId ?? s?.old_id ?? s?.OldID ?? s?.Id ?? s?.id ?? '';
+
 const StationHistory = ({ type }) => {
     const theme = useTheme();
     const [loading, setLoading] = useState(false);
@@ -32,12 +34,12 @@ const StationHistory = ({ type }) => {
                 river: stationApi.river
             };
             const res = await apiMap[type].getAll({ per_page: 1000 });
-            // Interceptor đã bóc tách dữ liệu (.data cấp 1)
             if (res) {
-                // Ưu tiên lấy từ 'tram' nếu có (API weather), nếu không mới lấy 'data'
                 const data = res.tram || res.data || (Array.isArray(res) ? res : []);
                 setStations(data);
-                if (data.length > 0) setSelectedStation(data[0].Id || data[0].id);
+                if (data.length > 0) {
+                    setSelectedStation(getStationId(data[0]));
+                }
             }
         } catch (err) {
             console.error('Failed to load stations:', err);
@@ -92,6 +94,13 @@ const StationHistory = ({ type }) => {
         }
     };
 
+    const timeRange = React.useMemo(() => {
+        if (!selectedDate) return { min: undefined, max: undefined };
+        const min = dayjs(selectedDate).hour(7).minute(0).second(0).millisecond(0).valueOf();
+        const max = dayjs(selectedDate).add(1, 'day').hour(7).minute(0).second(0).millisecond(0).valueOf();
+        return { min, max };
+    }, [selectedDate]);
+
     const chartOptions = {
         chart: {
             type: 'line',
@@ -104,10 +113,14 @@ const StationHistory = ({ type }) => {
         stroke: { curve: 'smooth', width: 3 },
         xaxis: {
             type: 'datetime',
+            min: timeRange.min,
+            max: timeRange.max,
+            tickAmount: 12,
             labels: {
                 datetimeUTC: false,
-                format: 'dd/MM HH:mm'
-            }
+                format: 'HH:mm'
+            },
+            title: { text: 'Thời gian (7h - 7h hôm sau)' }
         },
         yaxis: {
             title: { text: getValueLabel() }
@@ -139,11 +152,14 @@ const StationHistory = ({ type }) => {
                                 onChange={(e) => setSelectedStation(e.target.value)}
                                 sx={{ fontSize: '1rem' }}
                             >
-                                {stations.map((s) => (
-                                    <MenuItem key={s.id} value={s.Id} sx={{ fontSize: '1rem', py: 1.5 }}>
-                                        {s.TenTram} ({s.DiaChi})
-                                    </MenuItem>
-                                ))}
+                                {stations.map((s) => {
+                                    const stId = getStationId(s);
+                                    return (
+                                        <MenuItem key={s.id || stId} value={stId} sx={{ fontSize: '1rem', py: 1.5 }}>
+                                            {s.TenTram} ({s.DiaChi || s.TenPhuong || ''})
+                                        </MenuItem>
+                                    );
+                                })}
                             </Select>
                         </FormControl>
                     </Box>

@@ -15,7 +15,7 @@ type Service interface {
 	GetRainDataByStation(ctx context.Context, stationID int64, date string) ([]models.RainRecord, error)
 	GetRainDataByDate(ctx context.Context, date string) ([]*models.RainRecord, error)
 	GetRainAggregateStats(ctx context.Context, stationID int64, startDate, endDate string, groupBy string) ([]map[string]interface{}, error)
-	GetRainChart(ctx context.Context, stationOldID int64, date string) ([]*models.RainRecord, error)
+	GetRainChart(ctx context.Context, stationOldID int64, date string) ([]models.RainRecord, error)
 }
 
 type service struct {
@@ -33,21 +33,37 @@ func NewService(rainRepo repository.Rain, thoatnuocSvc thoatnuoc.Service, settin
 }
 
 func (s *service) GetRainDataByStation(ctx context.Context, stationID int64, date string) ([]models.RainRecord, error) {
-	timeObj, _ := time.Parse("2006-01-02", date)
-	endTime := time.Date(timeObj.Year(), timeObj.Month(), timeObj.Day()+1, 7, 0, 0, 0, timeObj.Location())
-	startTime := time.Date(timeObj.Year(), timeObj.Month(), timeObj.Day(), 7, 0, 0, 0, timeObj.Location())
-
-	res, err := s.rainRepo.GetAllByStationID(ctx, stationID, startTime, endTime)
-	if err != nil {
-		return nil, err
+	if date == "" {
+		date = time.Now().Format("2006-01-02")
 	}
+	isToday := date == time.Now().Format("2006-01-02")
 
-	// Fallback to external API if local DB is empty
-	if len(res) == 0 {
+	var res []models.RainRecord
+
+	if isToday {
 		records, err := s.fetchFromExternal(ctx, stationID, date)
 		if err == nil && len(records) > 0 {
 			for _, r := range records {
 				res = append(res, *r)
+			}
+		}
+	} else {
+		timeObj, _ := time.Parse("2006-01-02", date)
+		endTime := time.Date(timeObj.Year(), timeObj.Month(), timeObj.Day()+1, 7, 0, 0, 0, timeObj.Location())
+		startTime := time.Date(timeObj.Year(), timeObj.Month(), timeObj.Day(), 7, 0, 0, 0, timeObj.Location())
+
+		dbRes, err := s.rainRepo.GetAllByStationID(ctx, stationID, startTime, endTime)
+		if err != nil {
+			return nil, err
+		}
+		res = dbRes
+
+		if len(res) == 0 {
+			records, err := s.fetchFromExternal(ctx, stationID, date)
+			if err == nil && len(records) > 0 {
+				for _, r := range records {
+					res = append(res, *r)
+				}
 			}
 		}
 	}
@@ -84,18 +100,13 @@ func (s *service) GetRainAggregateStats(ctx context.Context, stationID int64, st
 	return s.rainRepo.GetAggregateStats(ctx, filter, groupBy)
 }
 
-func (s *service) GetRainChart(ctx context.Context, stationOldID int64, date string) ([]*models.RainRecord, error) {
-	res, err := s.rainRepo.GetByStationID(ctx, stationOldID, 1000, date)
+func (s *service) GetRainChart(ctx context.Context, stationOldID int64, date string) ([]models.RainRecord, error) {
+	records, err := s.GetRainDataByStation(ctx, stationOldID, date)
 	if err != nil {
 		return nil, err
 	}
 
-	// Fallback to external API if local DB is empty
-	if len(res) == 0 {
-		return s.fetchFromExternal(ctx, stationOldID, date)
-	}
-
-	return res, nil
+	return records, nil
 }
 
 func (s *service) fetchFromExternal(ctx context.Context, stationOldID int64, date string) ([]*models.RainRecord, error) {

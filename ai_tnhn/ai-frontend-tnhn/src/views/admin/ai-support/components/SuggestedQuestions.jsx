@@ -1,22 +1,22 @@
 import React from 'react';
 import { Box, Paper, Typography } from '@mui/material';
 
-const SuggestedQuestions = ({ 
-    loading, 
-    handleRainSummary, 
+const SuggestedQuestions = ({
+    loading,
+    handleRainSummary,
     handleShowRainCharts,
-    handleAIDynamicReport, 
-    handleSendQuestion, 
+    handleAIDynamicReport,
+    handleSendQuestion,
     handleRainChart,
-    sx = {} 
+    sx = {}
 }) => {
     if (loading) return null;
 
     const questions = [
+        { text: 'Lượng mưa hiện tại?', type: 'rain' },
         { text: 'Biểu đồ mưa hiện tại', type: 'charts' },
-        { text: 'Lượng mưa hiện tại các điểm?', type: 'rain' },
-        { text: 'Tình hình vận hành các trạm bơm.', type: 'question' },
-        { text: 'Những điểm nào đang ngập?', type: 'question' },
+        { text: 'Trạng thái bơm?', type: 'question' },
+        { text: 'Những điểm nào ngập?', type: 'question' },
         { text: 'Dự báo thời tiết 3 ngày tới.', type: 'question' }
     ];
 

@@ -14,9 +14,10 @@ type PumpingStationStat struct {
 }
 
 type PumpingStationSummaryData struct {
-	TotalStations       int                  `json:"total_stations"`
-	TotalPumps          int                  `json:"total_pumps"`
-	TotalOperatingPumps int                  `json:"total_operating_pumps"`
+	TotalStations          int                  `json:"total_stations"`
+	TotalOperatingStations int                  `json:"total_operating_stations"`
+	TotalPumps             int                  `json:"total_pumps"`
+	TotalOperatingPumps    int                  `json:"total_operating_pumps"`
 	Stations            []PumpingStationStat `json:"stations"`
 	SummaryText         string               `json:"summary_text"` // Combined summary of operating stations
 	SummaryPriorityText string               `json:"summary_priority_text"`

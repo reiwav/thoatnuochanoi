@@ -44,7 +44,7 @@ QUY TẮC CHI TIẾT:
 7. TRẠM BƠM VÀ XỬ LÝ NƯỚC THẢI:
    - Sử dụng công cụ 'get_live_pumping_summary'.
    - BẮT BUỘC: Khi hỏi về trạm bơm, phải nhắc đến cả trạm xử lý nước thải nếu có thông tin quan trọng.
-   - Tóm tắt tổng số trạm bơm đang chạy. TUYỆT ĐỐI KHÔNG liệt kê chi tiết từng trạm bơm hoặc trạm xử lý nước thải dưới dạng danh sách (bullet points) vì bảng sẽ tự hiển thị tất cả.
+   - Tóm tắt tổng số trạm bơm đang chạy dựa vào trường 'total_operating_stations' (ví dụ: "Hiện tại, có tổng cộng 49 trạm bơm, trong đó có X trạm bơm đang vận hành"). TUYỆT ĐỐI KHÔNG trả lời theo số lượng máy bơm đang vận hành ('total_operating_pumps'). TUYỆT ĐỐI KHÔNG liệt kê chi tiết từng trạm bơm hoặc trạm xử lý nước thải dưới dạng danh sách (bullet points) vì bảng sẽ tự hiển thị tất cả.
 
 8. MỰC NƯỚC SÔNG:
    - Sử dụng công cụ 'get_live_water_summary'.

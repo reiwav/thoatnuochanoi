@@ -157,7 +157,7 @@ func (s *service) GetPumpingStationSummary(ctx context.Context, orgID string, as
 		orgMap[org.ID] = org.Name
 	}
 
-	var totalPumps, totalOperating int
+	var totalPumps, totalOperating, totalOperatingStations int
 	var stationStats []PumpingStationStat
 
 	for _, st := range stations {
@@ -177,6 +177,9 @@ func (s *service) GetPumpingStationSummary(ctx context.Context, orgID string, as
 			lastUpdate = time.Unix(st.LastReport.Timestamp, 0).In(time.FixedZone("ICT", 7*3600)).Format("15:04 02/01/2006")
 		}
 
+		if ops > 0 {
+			totalOperatingStations++
+		}
 		totalPumps += st.PumpCount
 		totalOperating += ops
 
@@ -224,11 +227,12 @@ func (s *service) GetPumpingStationSummary(ctx context.Context, orgID string, as
 	}
 
 	return &PumpingStationSummaryData{
-		TotalStations:       len(stations),
-		TotalPumps:          totalPumps,
-		TotalOperatingPumps: totalOperating,
-		Stations:            stationStats,
-		SummaryText:         summaryText,
-		SummaryPriorityText: summaryPriorityText,
+		TotalStations:          len(stations),
+		TotalOperatingStations: totalOperatingStations,
+		TotalPumps:             totalPumps,
+		TotalOperatingPumps:    totalOperating,
+		Stations:               stationStats,
+		SummaryText:            summaryText,
+		SummaryPriorityText:    summaryPriorityText,
 	}, nil
 }

@@ -147,6 +147,7 @@ func (h *handler) buildRainTableRows(summary *weather.RainSummaryData) []googlea
 			TotalRain: m.TotalRain,
 			ID:        m.ID,
 			OldID:     m.OldID,
+			IsRaining: m.IsRaining,
 		})
 	}
 	return rows

@@ -188,8 +188,8 @@ const RainTable = ({ title, data, handleRainChart }) => {
     return (
         <Box sx={{ my: 1, width: '100%' }}>
             {title && <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, textTransform: 'uppercase', fontSize: '13px', opacity: 0.8 }}>{title}</Typography>}
-            {phuongStations.length > 0 && <StationGroup title="Khu vực Nội thành (Phường)" data={sortByRainOrName(phuongStations)} onStationClick={onStationClick} />}
-            {xaStations.length > 0 && <StationGroup title="Khu vực Ngoại thành (Xã)" data={sortByRainOrName(xaStations)} onStationClick={onStationClick} />}
+            {phuongStations.length > 0 && <StationGroup title="Phường" data={sortByRainOrName(phuongStations)} onStationClick={onStationClick} />}
+            {xaStations.length > 0 && <StationGroup title="Xã" data={sortByRainOrName(xaStations)} onStationClick={onStationClick} />}
             {unknownStations.length > 0 && <StationGroup title="Khu vực Khác" data={sortByRainOrName(unknownStations)} onStationClick={onStationClick} />}
         </Box>
     );

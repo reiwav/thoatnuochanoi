@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"sort"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -243,16 +242,14 @@ func (s *service) GetRainSummary(ctx context.Context, orgID string, assignedIDs 
 	}
 	sumText := "Hiện tại thành phố không mưa."
 	if len(measurements) > 0 {
-		sumText = fmt.Sprintf("Hiện tại thành phố đang mưa %s %s. Lượng mưa:\n", spread, intensity)
-		lines := []string{}
-		for _, m := range measurements {
-			st := "Đang mưa"
-			if !m.IsRaining {
-				st = "Tạnh lúc " + m.EndTime
-			}
-			lines = append(lines, fmt.Sprintf("- %s: %.1fmm (%s)", m.Name, m.TotalRain, st))
+		stoppedCount := len(measurements) - rainyCount
+		if stoppedCount < 0 {
+			stoppedCount = 0
 		}
-		sumText += strings.Join(lines, "\n")
+		maxStationName := measurements[0].Name
+		maxStationRain := measurements[0].TotalRain
+		sumText = fmt.Sprintf("Trong ngày ghi nhận tổng cộng %d điểm có mưa, trong đó hiện tại đang mưa %d điểm và đã tạnh %d điểm. Lượng mưa lớn nhất ghi nhận tại %s đạt %.1f mm.",
+			len(measurements), rainyCount, stoppedCount, maxStationName, maxStationRain)
 	}
 	return &RainSummaryData{
 		TotalStations:  len(rainData.Content.Tram),

@@ -5,47 +5,48 @@ const RainCard = ({ station, onClick }) => {
     const name = station['Trạm'] || station['Tên'] || station.name || station.phuong || '';
     const thoiGian = station['Thời gian'] || '';
     const tr = station.total_rain ?? station['total_rain'];
-    const luongMua = tr ? `${tr.toFixed(1)}mm` : null;
-    const trangThai = station['Trạng thái'] || '';
+    const luongMua = tr ? `${tr.toFixed(1)} mm` : null;
 
-    // Extract numerical value for coloring
-    let isRaining = trangThai.includes('Đang mưa') || (tr > 0);
-    let color = isRaining ? '#0084FF' : '#555';
-    let bgColor = isRaining ? 'rgba(0,132,255,0.08)' : 'rgba(0,0,0,0.04)';
+    // Check isRaining from backend boolean or fallback to TrangThai string
+    const isRaining = station.is_raining ?? (typeof station['Trạng thái'] === 'string' && station['Trạng thái'].includes('Đang mưa'));
+    const color = isRaining ? '#d32f2f' : '#1b5e20';
+    const bgColor = isRaining ? 'rgba(211, 47, 47, 0.08)' : 'rgba(27, 94, 32, 0.08)';
+    const borderColor = isRaining ? 'rgba(211, 47, 47, 0.35)' : 'rgba(27, 94, 32, 0.35)';
 
     return (
         <Box
             onClick={onClick}
             sx={{
-                p: '10px 12px', borderRadius: '12px',
-                border: '1px solid', borderColor: isRaining ? 'rgba(0,132,255,0.3)' : 'divider',
+                p: '12px', borderRadius: '14px',
+                border: '1px solid', borderColor: borderColor,
                 bgcolor: 'background.paper', minWidth: 0,
-                display: 'flex', flexDirection: 'column', gap: '4px',
+                display: 'flex', flexDirection: 'column', gap: '8px',
                 cursor: onClick ? 'pointer' : 'default',
                 '&:hover': onClick ? {
-                    borderColor: '#0084FF',
-                    boxShadow: '0 4px 12px rgba(0,132,255,0.15)',
+                    borderColor: color,
+                    boxShadow: `0 6px 16px ${isRaining ? 'rgba(211,47,47,0.12)' : 'rgba(27,94,32,0.12)'}`,
                     transform: 'translateY(-2px)',
-                    bgcolor: 'rgba(0,132,255,0.02)'
+                    bgcolor: isRaining ? 'rgba(211,47,47,0.02)' : 'rgba(27,94,32,0.02)'
                 } : {},
                 transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                height: '100%',
-                justifyContent: luongMua ? 'flex-start' : 'center'
+                height: '100%'
             }}
         >
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                {/* 1. Tên bên trên */}
                 <Typography sx={{
-                    fontWeight: 700,
-                    fontSize: '13px',
+                    fontWeight: 800,
+                    fontSize: '14px',
                     lineHeight: 1.3,
-                    color: isRaining ? '#0084FF' : '#1a1a1a',
-                    flex: 1,
-                    textAlign: luongMua ? 'left' : 'center'
+                    color: color,
+                    wordBreak: 'break-word'
                 }}>
                     {name}
                 </Typography>
+
+                {/* 2. Thời gian phía dưới */}
                 {thoiGian && thoiGian !== '-' && (
-                    <Typography sx={{ fontSize: '10px', color: 'text.secondary', fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                    <Typography sx={{ fontSize: '11px', color: 'text.secondary', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
                         🕐 {thoiGian}
                     </Typography>
                 )}
@@ -53,17 +54,20 @@ const RainCard = ({ station, onClick }) => {
 
             {luongMua && (
                 <Box sx={{
-                    p: '4px 8px', borderRadius: '6px',
+                    p: '8px 10px', borderRadius: '10px',
                     bgcolor: bgColor, borderLeft: `3px solid ${color}`,
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    mt: 0.5
+                    display: 'flex', flexDirection: 'column', gap: '4px',
+                    mt: 'auto'
                 }}>
-                    <Typography sx={{ fontSize: '13px', color: color, fontWeight: 800, lineHeight: 1.2 }}>
-                        {luongMua}
-                    </Typography>
-                    <Typography sx={{ fontSize: '9px', color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase' }}>
-                        {trangThai || (isRaining ? 'Có mưa' : 'Không mưa')}
-                    </Typography>
+                    {/* 3. Tiếp theo là thông số */}
+                    <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+                        <Typography sx={{ fontSize: '20px', color: color, fontWeight: 900, lineHeight: 1.1 }}>
+                            {luongMua.split(' ')[0]}
+                        </Typography>
+                        <Typography sx={{ fontSize: '12px', color: color, fontWeight: 700, opacity: 0.85 }}>
+                            mm
+                        </Typography>
+                    </Box>
                 </Box>
             )}
         </Box>
@@ -78,17 +82,6 @@ const StationGroup = ({ title, data, onStationClick }) => {
     const topCount = hasAnyRain ? 12 : 20; // Show more if it's just a selection list
     const topStations = data.slice(0, topCount);
     const otherStations = data.slice(topCount);
-
-    const buildRows = (list) => {
-        const rows = [];
-        for (let i = 0; i < list.length; i += 4) {
-            rows.push(list.slice(i, i + 4));
-        }
-        return rows;
-    };
-
-    const topRows = buildRows(topStations);
-    const otherRows = buildRows(otherStations);
 
     return (
         <Box sx={{ mt: 1.5, mb: 2.5 }}>
@@ -107,13 +100,11 @@ const StationGroup = ({ title, data, onStationClick }) => {
                 {title}
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {topRows.map((group, ri) => (
-                    <Box key={ri} sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
-                        {group.map((station, si) => (
-                            <RainCard key={si} station={station} onClick={() => onStationClick?.(station)} />
-                        ))}
-                    </Box>
-                ))}
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)' }, gap: '8px' }}>
+                    {topStations.map((station, si) => (
+                        <RainCard key={si} station={station} onClick={() => onStationClick?.(station)} />
+                    ))}
+                </Box>
 
                 {otherStations.length > 0 && (
                     <>
@@ -130,13 +121,13 @@ const StationGroup = ({ title, data, onStationClick }) => {
                                 {expanded ? '▲ THU GỌN' : `▼ XEM THÊM ${otherStations.length} TRẠM`}
                             </Typography>
                         </Box>
-                        {expanded && otherRows.map((group, ri) => (
-                            <Box key={`o-${ri}`} sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
-                                {group.map((station, si) => (
-                                    <RainCard key={si} station={station} onClick={() => onStationClick?.(station)} />
+                        {expanded && (
+                            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)' }, gap: '8px' }}>
+                                {otherStations.map((station, si) => (
+                                    <RainCard key={`o-${si}`} station={station} onClick={() => onStationClick?.(station)} />
                                 ))}
                             </Box>
-                        ))}
+                        )}
                     </>
                 )}
             </Box>

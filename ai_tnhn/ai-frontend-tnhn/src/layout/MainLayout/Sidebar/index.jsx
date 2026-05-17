@@ -55,10 +55,10 @@ function Sidebar() {
     return (
       <>
         {downSM ? (
-          <Box sx={drawerSX}>
+          <SimpleBar sx={{ height: 'calc(100vh - 70px)', ...drawerSX }}>
             <MenuList />
             {drawerOpen && drawerContent}
-          </Box>
+          </SimpleBar>
         ) : (
           <SimpleBar sx={{ height: 'calc(100vh - 90px)', ...drawerSX }}>
             <MenuList />
@@ -86,7 +86,8 @@ function Sidebar() {
                 bgcolor: 'background.default',
                 color: 'text.primary',
                 borderRight: 'none',
-                overflow: 'hidden'
+                overflowY: downSM ? 'auto' : 'hidden',
+                overflowX: 'hidden'
               }
             }
           }}

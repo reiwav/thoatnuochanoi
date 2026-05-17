@@ -56,7 +56,6 @@ export default function NavCollapse({ menu, level, parentId }) {
     setAnchorEl(null);
     if (drawerOpen) {
       setOpen(!open);
-      setSelected(!selected ? menu.id : null);
     } else {
       setAnchorEl(event?.currentTarget);
     }

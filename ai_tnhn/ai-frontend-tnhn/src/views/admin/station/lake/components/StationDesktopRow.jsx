@@ -1,7 +1,7 @@
 import React from 'react';
 import { TableRow, TableCell, Tooltip } from '@mui/material';
-import StatusChip from './StatusChip';
-import ActionButtons from './ActionButtons';
+import StatusChip from '../../shared/components/StatusChip';
+import ActionButtons from '../../shared/components/ActionButtons';
 
 const StationDesktopRow = ({ row, canEdit, canDelete, handleOpenEdit, handleDelete, organizationName, organizationNamesMap }) => (
     <TableRow hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
@@ -9,22 +9,16 @@ const StationDesktopRow = ({ row, canEdit, canDelete, handleOpenEdit, handleDele
             {row.TenTram}
         </TableCell>
         <TableCell sx={{ fontSize: '0.9rem', fontWeight: 700 }}>
-            {row.OldID || row.Id || '-'}
+            {row.OldId || row.Id || '-'}
+        </TableCell>
+        <TableCell sx={{ fontSize: '0.9rem' }}>
+            {row.DiaChi || '-'}
         </TableCell>
         <TableCell sx={{ fontSize: '0.9rem', fontWeight: 600 }}>
             {organizationName || '-'}
         </TableCell>
         <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, fontSize: '0.85rem', color: 'text.secondary' }}>
             {row.share_all ? 'Toàn bộ' : (row.shared_org_ids?.map(id => organizationNamesMap[id]).filter(n => n).join(', ') || '-')}
-        </TableCell>
-        <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, fontWeight: 600 }}>
-            {row.Loai || '-'}
-        </TableCell>
-        <TableCell sx={{ display: { xs: 'none', xl: 'table-cell' }, fontSize: '0.85rem' }}>
-            {row.DiaChi || '-'}
-        </TableCell>
-        <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' }, fontWeight: 700 }}>
-            {row.ThuTu || 0}
         </TableCell>
         <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' }, fontWeight: 700 }}>
             {row.TrongSoBaoCao || 0}

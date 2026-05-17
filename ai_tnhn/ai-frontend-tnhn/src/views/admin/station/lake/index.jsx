@@ -3,7 +3,7 @@ import {
     Button, Grid, TextField, Table, TableBody,
     TableCell, TableContainer, TableHead, TableRow, Paper,
     CircularProgress, TablePagination, Typography,
-    useTheme, useMediaQuery, Box, InputAdornment, Stack, Alert
+    useTheme, useMediaQuery, Box, InputAdornment, Stack, Alert, TableSortLabel
 } from '@mui/material';
 import PermissionGuard from 'ui-component/PermissionGuard';
 import { IconPlus, IconSearch } from '@tabler/icons-react';
@@ -39,6 +39,7 @@ const StationLakeList = () => {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [totalItems, setTotalItems] = useState(0);
+    const [sortOrder, setSortOrder] = useState('default');
 
     // Khởi tạo bộ lọc đơn vị thông minh: Tránh việc gọi API 2 lần (1 lần không có org_id, 1 lần có org_id do OrganizationSelect ép vào)
     const isCompanyLevel = isCompany || user?.role === 'super_admin';
@@ -152,6 +153,15 @@ const StationLakeList = () => {
         return organizationNamesMap[orgId] || '';
     }, [organizationNamesMap]);
 
+    const sortedStations = useMemo(() => {
+        if (sortOrder === 'default' || !sortOrder) return stations;
+        return [...stations].sort((a, b) => {
+            const weightA = a.TrongSoBaoCao || 0;
+            const weightB = b.TrongSoBaoCao || 0;
+            return sortOrder === 'asc' ? weightA - weightB : weightB - weightA;
+        });
+    }, [stations, sortOrder]);
+
     return (
         <PermissionGuard permission="water:view" fallback={<Box sx={{ p: 3, textAlign: 'center' }}><Typography color="error" variant="h4">Bạn không có quyền truy cập vùng dữ liệu này.</Typography></Box>}>
             <MainCard
@@ -244,12 +254,22 @@ const StationLakeList = () => {
                             <TableRow>
                                 <TableCell sx={{ fontWeight: 800, fontSize: '0.9rem' }}>Tên trạm</TableCell>
                                 <TableCell sx={{ fontWeight: 800, fontSize: '0.9rem' }}>Old ID</TableCell>
+                                <TableCell sx={{ fontWeight: 800, fontSize: '0.9rem' }}>Địa chỉ</TableCell>
                                 <TableCell sx={{ fontWeight: 800, fontSize: '0.9rem' }}>Xí nghiệp quản lý</TableCell>
                                 <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, fontWeight: 800, fontSize: '0.9rem' }}>Xí nghiệp phối hợp</TableCell>
-                                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, fontWeight: 800, fontSize: '0.9rem' }}>Loại</TableCell>
-                                <TableCell sx={{ display: { xs: 'none', xl: 'table-cell' }, fontWeight: 800, fontSize: '0.9rem' }}>Địa chỉ</TableCell>
-                                <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' }, fontWeight: 800, fontSize: '0.9rem' }}>Thứ tự</TableCell>
-                                <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' }, fontWeight: 800, fontSize: '0.9rem' }}>Trọng số</TableCell>
+                                <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' }, fontWeight: 800, fontSize: '0.9rem' }}>
+                                    <TableSortLabel
+                                        active={sortOrder !== 'default'}
+                                        direction={sortOrder === 'default' ? 'asc' : sortOrder}
+                                        onClick={() => {
+                                            if (sortOrder === 'default') setSortOrder('desc');
+                                            else if (sortOrder === 'desc') setSortOrder('asc');
+                                            else setSortOrder('default');
+                                        }}
+                                    >
+                                        Trọng số
+                                    </TableSortLabel>
+                                </TableCell>
                                 <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' }, fontWeight: 800, fontSize: '0.9rem' }}>Ngưỡng</TableCell>
                                 <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, fontWeight: 800, fontSize: '0.9rem' }}>Trạng thái</TableCell>
                                 {(canEdit || canDelete) && <TableCell align="right" sx={{ fontWeight: 800, fontSize: '0.9rem' }}>Thao tác</TableCell>}
@@ -262,14 +282,14 @@ const StationLakeList = () => {
                                         <CircularProgress size={32} color="secondary" />
                                     </TableCell>
                                 </TableRow>
-                            ) : stations.length === 0 ? (
+                            ) : sortedStations.length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={10} align="center" sx={{ py: 8 }}>
                                         <Typography variant="h4" color="text.secondary" fontWeight={600}>Không tìm thấy trạm</Typography>
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                stations.map((row) => (
+                                sortedStations.map((row) => (
                                     <StationDesktopRow
                                         key={row.id}
                                         row={row}

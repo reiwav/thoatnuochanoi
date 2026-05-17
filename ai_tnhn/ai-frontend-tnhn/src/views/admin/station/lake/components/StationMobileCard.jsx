@@ -2,8 +2,8 @@ import React from 'react';
 import { 
     Box, Stack, Typography, Card, CardContent, Grid, Divider 
 } from '@mui/material';
-import StatusChip from './StatusChip';
-import ActionButtons from './ActionButtons';
+import StatusChip from '../../shared/components/StatusChip';
+import ActionButtons from '../../shared/components/ActionButtons';
 
 const StationMobileCard = ({ row, canEdit, canDelete, handleOpenEdit, handleDelete, organizationName }) => (
     <Card sx={{ 
@@ -32,7 +32,7 @@ const StationMobileCard = ({ row, canEdit, canDelete, handleOpenEdit, handleDele
                             {row.TenTram}
                         </Typography>
                         <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, bgcolor: '#f1f5f9', px: 1, py: 0.5, borderRadius: '4px' }}>
-                            {row.Loai || 'Hồ'}
+                            {row.DiaChi || 'Chưa cập nhật địa chỉ'}
                         </Typography>
                     </Box>
                     <StatusChip active={row.Active} />

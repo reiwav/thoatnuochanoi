@@ -39,8 +39,9 @@ const ActionButtons = ({ row, canEdit, canDelete, handleOpenEdit, handleDelete }
     </Stack>
 );
 
-const InundationMobileCard = ({ row, canEdit, canDelete, handleOpenEdit, handleDelete }) => {
+const InundationMobileCard = ({ row, canEdit, canDelete, handleOpenEdit, handleDelete, organizationNamesMap }) => {
     const [open, setOpen] = useState(false);
+    const sharedOrgText = row.share_all ? 'Tất cả xí nghiệp' : (row.shared_org_ids?.map(id => organizationNamesMap[id]).filter(n => n).join(', ') || '');
     return (
         <Card sx={{ mb: 2, borderRadius: '16px', border: '1px solid', borderColor: 'divider', boxShadow: '0 2px 12px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
             <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
@@ -60,6 +61,13 @@ const InundationMobileCard = ({ row, canEdit, canDelete, handleOpenEdit, handleD
                         <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>ĐƠN VỊ QUẢN LÝ</Typography>
                         <Typography variant="body2" sx={{ fontWeight: 700, color: 'secondary.main' }}>{row.org_name || '-'}</Typography>
                     </Box>
+
+                    {sharedOrgText && (
+                        <Box>
+                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>ĐƠN VỊ PHỐI HỢP</Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.8rem', color: 'text.secondary' }}>{sharedOrgText}</Typography>
+                        </Box>
+                    )}
 
                     <Divider sx={{ borderStyle: 'dashed' }} />
 
@@ -320,6 +328,7 @@ const StationInundationList = () => {
                             handleDelete={() => handleDelete(row)}
                             canEdit={canEdit && (isSuperAdmin || isCompany || user?.org_id === row.org_id)}
                             canDelete={canDelete && (isSuperAdmin || isCompany || user?.org_id === row.org_id)}
+                            organizationNamesMap={organizationNamesMap}
                         />
                     ))
                 )}

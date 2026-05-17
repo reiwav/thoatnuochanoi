@@ -56,17 +56,26 @@ func (w *worker) Start(ctx context.Context) {
 }
 
 func (w *worker) run(ctx context.Context) {
-	ticker := time.NewTicker(15 * time.Minute)
-	defer ticker.Stop()
+	loc, _ := time.LoadLocation("Asia/Ho_Chi_Minh")
 
-	// Initial sync
+	// Initial sync on startup
+	w.logger.GetLogger().Info("RainWorker: Performing initial sync on startup...")
 	w.sync(ctx)
 
 	for {
+		now := time.Now().In(loc)
+		next := time.Date(now.Year(), now.Month(), now.Day(), 7, 1, 0, 0, loc)
+		if !now.Before(next) {
+			next = next.AddDate(0, 0, 1)
+		}
+		duration := next.Sub(now)
+		w.logger.GetLogger().Infof("RainWorker: Next daily sync scheduled exactly at %v (in %v)", next.Format("2006-01-02 15:04:05"), duration.Round(time.Second))
+
 		select {
 		case <-ctx.Done():
 			return
-		case <-ticker.C:
+		case <-time.After(duration):
+			w.logger.GetLogger().Info("RainWorker: Executing daily 07:01 AM cronjob...")
 			w.sync(ctx)
 		}
 	}
@@ -93,8 +102,8 @@ func (w *worker) syncStation(ctx context.Context, s *models.RainStation) {
 	if err == nil && latest != nil {
 		startDate = latest.Timestamp
 	} else {
-		// Default to today if no records found
-		startDate = time.Now().AddDate(0, 0, -1) // Start from yesterday to be safe
+		// Scan back up to 5 days if no records found
+		startDate = time.Now().AddDate(0, 0, -7)
 	}
 
 	// Iterate from startDate to today
@@ -148,6 +157,14 @@ func (w *worker) fetchAndSave(ctx context.Context, s *models.RainStation, date t
 		ts, err := time.ParseInLocation("2006-01-02T15:04:05", dp.ThoiGian, time.Local)
 		if err != nil {
 			//w.logger.GetLogger().Errorf("RainWorker: [DEBUG] Failed to parse timestamp %s: %v", dp.ThoiGian, err)
+			continue
+		}
+
+		// Cutoff check: do not save any timestamp strictly after 07:00:00 AM of today
+		now := time.Now()
+		cutoff := time.Date(now.Year(), now.Month(), now.Day(), 7, 0, 0, 0, time.Local)
+		if ts.After(cutoff) {
+			skipped++
 			continue
 		}
 

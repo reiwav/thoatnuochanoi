@@ -27,58 +27,7 @@ func (s *service) isCurrentRainDay(date string) bool {
 	return date == currentRainDay || date == now.Format("2006-01-02")
 }
 
-func (s *service) handleDR(ctx context.Context, c *genai.FunctionCall, orgID string, ids []string) (interface{}, error) {
-	dStr := c.Args["date"].(string)
-	var targetTime time.Time
-	var hasTime bool
-	loc, _ := time.LoadLocation("Asia/Ho_Chi_Minh")
-	if tStr, ok := c.Args["time"].(string); ok && tStr != "" {
-		if tt, err := time.ParseInLocation("2006-01-02 15:04:05", dStr+" "+tStr, loc); err == nil {
-			targetTime = tt
-			hasTime = true
-			if targetTime.Hour() < 7 {
-				dStr = targetTime.AddDate(0, 0, -1).Format("2006-01-02")
-			}
-		} else if tt, err := time.ParseInLocation("2006-01-02 15:04", dStr+" "+tStr, loc); err == nil {
-			targetTime = tt
-			hasTime = true
-			if targetTime.Hour() < 7 {
-				dStr = targetTime.AddDate(0, 0, -1).Format("2006-01-02")
-			}
-		}
-	}
 
-	d, e := s.rainSvc.GetRainDataByDate(ctx, dStr)
-	if e != nil {
-		return nil, e
-	}
-	
-	// Filter by time
-	var timeFiltered []*models.RainRecord
-	for _, r := range d {
-		if !hasTime || !r.Timestamp.In(loc).After(targetTime) {
-			timeFiltered = append(timeFiltered, r)
-		}
-	}
-	d = timeFiltered
-
-	if orgID == "" {
-		return d, nil
-	}
-	
-	al, _ := s.stationSvc.ListRainStationsFiltered(ctx, orgID, ids)
-	am := make(map[int]bool)
-	for _, st := range al {
-		am[st.OldID] = true
-	}
-	var res []*models.RainRecord
-	for _, r := range d {
-		if am[int(r.StationID)] {
-			res = append(res, r)
-		}
-	}
-	return res, nil
-}
 
 func (s *service) handleLS(ctx context.Context, c *genai.FunctionCall, o string, r, l, rv []string) (interface{}, error) {
 	t := c.Args["type"].(string)

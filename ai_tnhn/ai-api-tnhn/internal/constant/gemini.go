@@ -4,7 +4,6 @@ const (
 	// Standard Tools
 	ToolGoogleStatus       = "get_google_status"
 	ToolLiveRainSummary    = "get_live_rain_summary"
-	ToolRainDataByDate     = "get_rain_data_by_date"
 	ToolLakeDataByDate     = "get_lake_data_by_date"
 	ToolRiverDataByDate    = "get_river_data_by_date"
 	ToolSystemOverview     = "get_system_overview"
@@ -46,7 +45,6 @@ const (
 var ToolDescriptions = map[string]string{
 	ToolGoogleStatus:               "Lấy trạng thái hệ thống: số email, Drive, AI stats.",
 	ToolLiveRainSummary:            "Tóm tắt tình hình mưa hiện tại.",
-	ToolRainDataByDate:             "Lấy dữ liệu mưa theo ngày.",
 	ToolLakeDataByDate:             "Lấy dữ liệu mực nước hồ.",
 	ToolRiverDataByDate:            "Lấy dữ liệu mực nước sông.",
 	ToolSystemOverview:             "Lấy tổng quan trạm đo.",

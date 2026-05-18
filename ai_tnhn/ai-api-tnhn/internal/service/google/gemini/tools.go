@@ -12,11 +12,6 @@ func (s *service) getChatTools() []*genai.FunctionDeclaration {
 	return []*genai.FunctionDeclaration{
 		{Name: constant.ToolGoogleStatus, Description: constant.ToolDescriptions[constant.ToolGoogleStatus]},
 		{Name: constant.ToolLiveRainSummary, Description: constant.ToolDescriptions[constant.ToolLiveRainSummary]},
-		{Name: constant.ToolRainDataByDate, Description: constant.ToolDescriptions[constant.ToolRainDataByDate],
-			Parameters: &genai.Schema{Type: genai.TypeObject, Properties: map[string]*genai.Schema{
-				"date": {Type: genai.TypeString, Description: "YYYY-MM-DD. MUST extract the exact date mentioned by user (do not adjust for night shifts)."},
-				"time": {Type: genai.TypeString, Description: "HH:mm:ss. MUST extract EXACTLY if user asks for a specific time (e.g., 0h -> 00:00:00, 6h13 -> 06:13:00)"},
-			}, Required: []string{"date"}}},
 		{Name: constant.ToolLakeDataByDate, Description: constant.ToolDescriptions[constant.ToolLakeDataByDate],
 			Parameters: &genai.Schema{Type: genai.TypeObject, Properties: map[string]*genai.Schema{"date": {Type: genai.TypeString, Description: "YYYY-MM-DD"}}, Required: []string{"date"}}},
 		{Name: constant.ToolRiverDataByDate, Description: constant.ToolDescriptions[constant.ToolRiverDataByDate],
@@ -93,8 +88,6 @@ func (s *service) handleToolCall(ctx context.Context, c *genai.FunctionCall, uID
 		return s.googleApiSvc.GetRainSummary(ctx, orgID, aRain)
 	case constant.ToolLiveWaterSummary:
 		return s.googleApiSvc.GetWaterSummary(ctx, orgID, append(aLake, aRiver...))
-	case constant.ToolRainDataByDate:
-		return s.handleDR(ctx, c, orgID, aRain)
 	case constant.ToolSystemOverview:
 		if orgID == "" {
 			return s.stationDataSvc.GetSystemOverview(ctx)

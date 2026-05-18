@@ -26,7 +26,7 @@ func (h *handler) ChatContract(c *gin.Context) {
 	}
 
 	var body struct {
-		Prompt  string               `json:"prompt"`
+		Prompt  string                  `json:"prompt"`
 		History []googleapi.ChatMessage `json:"history"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
@@ -52,7 +52,7 @@ func (h *handler) ChatContract(c *gin.Context) {
 // @Router /admin/google/chat [post]
 func (h *handler) Chat(c *gin.Context) {
 	var body struct {
-		Prompt  string               `json:"prompt"`
+		Prompt  string                  `json:"prompt"`
 		History []googleapi.ChatMessage `json:"history"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {

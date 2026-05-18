@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"strings"
 	"sync"
 	"time"
@@ -86,6 +87,7 @@ func (s *service) Chat(ctx context.Context, prompt string, history []googleapi.C
 				} else {
 					if res != nil {
 						k := s.getToolKey(c)
+						log.Printf("[Chat] tool=%s, key=%s, res_type=%T, res_nil=%v", c.Name, k, res, res == nil)
 						if k != "" {
 							switch k {
 							case "pumping_summary":
@@ -164,7 +166,7 @@ func (s *service) getToolKey(c *genai.FunctionCall) string {
 		return "pumping_summary" // special case handled above
 	case "get_weather_forecast":
 		return "weather_forecasts"
-	case "list_stations":
+	case "list_stations", "list_stations_by_type":
 		if t, ok := c.Args["type"].(string); ok {
 			if t == "rain" {
 				return "rains"

@@ -12,6 +12,7 @@ type Rain interface {
 	GetByStationID(ctx context.Context, stationID int64, limit int64, date string) ([]*models.RainRecord, error)
 	GetAllByStationID(ctx context.Context, stationID int64, startTime, endTime time.Time) ([]models.RainRecord, error)
 	GetByDate(ctx context.Context, date string) ([]*models.RainRecord, error)
+	GetByDateRange(ctx context.Context, startTime, endTime time.Time) ([]*models.RainRecord, error)
 	GetLatest(ctx context.Context, stationID int64) (*models.RainRecord, error)
 	GetAggregateStats(ctx context.Context, filter bson.M, groupBy string) ([]map[string]interface{}, error)
 	Create(ctx context.Context, record *models.RainRecord) error

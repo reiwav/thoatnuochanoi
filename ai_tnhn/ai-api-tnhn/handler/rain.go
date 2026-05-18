@@ -1,9 +1,11 @@
 package handler
 
 import (
+	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/service/station/rain"
 	"ai-api-tnhn/utils/web"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -34,10 +36,39 @@ func NewRainHandler(service rain.Service, worker rain.Worker) *RainHandler {
 // @Router /admin/water/rain/{id}/history [get]
 func (h *RainHandler) GetRainHistory(c *gin.Context) {
 	stationID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-	date := c.Query("date")
+	dateStr := c.Query("date")
+	var targetTime time.Time
+	var hasTime bool
 
-	res, err := h.service.GetRainDataByStation(c.Request.Context(), stationID, date)
+	if len(dateStr) > 10 { // Expected format: YYYY-MM-DD HH:mm:ss
+		loc, _ := time.LoadLocation("Asia/Ho_Chi_Minh")
+		if tt, err := time.ParseInLocation("2006-01-02 15:04:05", dateStr, loc); err == nil {
+			targetTime = tt
+			hasTime = true
+			if targetTime.Hour() < 7 {
+				dateStr = targetTime.AddDate(0, 0, -1).Format("2006-01-02")
+			} else {
+				dateStr = targetTime.Format("2006-01-02")
+			}
+		} else {
+			dateStr = dateStr[:10] // Fallback to just date
+		}
+	}
+
+	res, err := h.service.GetRainDataByStation(c.Request.Context(), stationID, dateStr)
 	web.AssertNil(err)
+
+	if hasTime {
+		var filtered []models.RainRecord
+		loc, _ := time.LoadLocation("Asia/Ho_Chi_Minh")
+		for _, r := range res {
+			if !r.Timestamp.In(loc).After(targetTime) {
+				filtered = append(filtered, r)
+			}
+		}
+		res = filtered
+	}
+
 	h.SendData(c, res)
 }
 

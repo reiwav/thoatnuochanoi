@@ -20,6 +20,42 @@ type RainTableRow struct {
 	ID        string  `json:"id"`
 	OldID     int     `json:"old_id"`
 	IsRaining bool    `json:"is_raining"`
+	Date      string  `json:"date,omitempty"`
+}
+
+// NewRainTableRow converts raw measurement data into a RainTableRow.
+// This is the single source of truth for the conversion logic, used by
+// handler/weather.go, gemini/tools.go, and table_to_client.go.
+func NewRainTableRow(stt int, id string, oldID int, name, address, typ string, priority int, totalRain float64, isRaining bool, startTime, endTime, date string) RainTableRow {
+	statusStr := "✅ Đã tạnh"
+	if isRaining {
+		statusStr = "🌧️ Đang mưa"
+	}
+	timeStr := ""
+	if startTime != "" && endTime != "" {
+		if startTime == endTime {
+			timeStr = endTime
+		} else {
+			timeStr = fmt.Sprintf("%s - %s", startTime, endTime)
+		}
+	} else if endTime != "" {
+		timeStr = endTime
+	}
+	return RainTableRow{
+		STT:       stt,
+		Tram:      name,
+		DiaChi:    address,
+		LuongMua:  fmt.Sprintf("%.1f", totalRain),
+		ThoiGian:  timeStr,
+		TrangThai: statusStr,
+		Type:      typ,
+		Priority:  priority,
+		TotalRain: totalRain,
+		ID:        id,
+		OldID:     oldID,
+		IsRaining: isRaining,
+		Date:      date,
+	}
 }
 
 type WaterTableRow struct {
@@ -84,30 +120,7 @@ func (s *service) populateRainTable(res *ChatResponse, status *CityStatus) {
 	var rains []RainTableRow
 	for i, idx := range indices {
 		m := status.Weather.Measurements[idx]
-		statusStr := "✅ Đã tạnh"
-		if m.IsRaining {
-			statusStr = "🌧️ Đang mưa"
-		}
-		timeStr := ""
-		if m.StartTime != "" && m.EndTime != "" {
-			timeStr = fmt.Sprintf("%s - %s", m.StartTime, m.EndTime)
-		} else if m.EndTime != "" {
-			timeStr = m.EndTime
-		}
-		rains = append(rains, RainTableRow{
-			STT:       i + 1,
-			Tram:      m.Name,
-			DiaChi:    m.Address,
-			LuongMua:  fmt.Sprintf("%.1f", m.TotalRain),
-			ThoiGian:  timeStr,
-			TrangThai: statusStr,
-			Type:      m.Type,
-			Priority:  m.Priority,
-			TotalRain: m.TotalRain,
-			ID:        m.ID,
-			OldID:     m.OldID,
-			IsRaining: m.IsRaining,
-		})
+		rains = append(rains, NewRainTableRow(i+1, m.ID, m.OldID, m.Name, m.Address, m.Type, m.Priority, m.TotalRain, m.IsRaining, m.StartTime, m.EndTime, ""))
 	}
 	res.Tables["rains"] = rains
 }

@@ -1,20 +1,32 @@
 package handler
 
 import (
+	"ai-api-tnhn/internal/models"
+	"ai-api-tnhn/internal/repository"
+	"ai-api-tnhn/internal/service/google/googleapi"
 	"ai-api-tnhn/internal/service/weather"
+	"ai-api-tnhn/utils/web"
+	"context"
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
 type WeatherHandler struct {
-	weatherSvc weather.Service
+	weatherSvc    weather.Service
+	aiChatLogRepo repository.AiChatLog
+	contextWith   web.ContextWith
 }
 
-func NewWeatherHandler(weatherSvc weather.Service) *WeatherHandler {
+func NewWeatherHandler(weatherSvc weather.Service, aiChatLogRepo repository.AiChatLog, contextWith web.ContextWith) *WeatherHandler {
 	return &WeatherHandler{
-		weatherSvc: weatherSvc,
+		weatherSvc:    weatherSvc,
+		aiChatLogRepo: aiChatLogRepo,
+		contextWith:   contextWith,
 	}
 }
 
@@ -34,11 +46,63 @@ func (h *WeatherHandler) GetRainSummary(c *gin.Context) {
 		return
 	}
 
+	summary, errSum := h.weatherSvc.GetRainSummary(c.Request.Context(), "", nil)
+	if errSum != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": errSum.Error()})
+		return
+	}
+
+	today := time.Now().Format("2006-01-02")
+	var items []googleapi.RainTableRow
+	for i, m := range summary.Measurements {
+		items = append(items, googleapi.NewRainTableRow(i+1, m.ID, m.OldID, m.Name, m.Address, m.Type, m.Priority, m.TotalRain, m.IsRaining, m.StartTime, m.EndTime, today))
+	}
+
+	if h.aiChatLogRepo != nil && h.contextWith != nil {
+		if userID, err := h.contextWith.GetUserID(c); err == nil && userID != "" {
+			now := time.Now()
+			ctx := context.Background()
+
+			// Save user prompt
+			_ = h.aiChatLogRepo.Save(ctx, &models.AiChatLog{
+				UserID:    userID,
+				Role:      "user",
+				Content:   "Biểu đồ mưa hiện tại",
+				ChatType:  "support",
+				Timestamp: now.Add(-1 * time.Second),
+			})
+
+			// Save AI response matching frontend format
+			aiText := fmt.Sprintf("Hệ thống ghi nhận %d trạm đang có mưa trong ngày. Click vào trạm để xem biểu đồ chi tiết:\n\n[TABLE:rains]", len(items))
+			if len(items) == 0 {
+				aiText = summary.SummaryText
+			}
+
+			chatRes := &googleapi.ChatResponse{
+				Text: aiText,
+				Tables: map[string]interface{}{
+					"rains": items,
+				},
+			}
+			resBytes, _ := json.Marshal(chatRes)
+
+			_ = h.aiChatLogRepo.Save(ctx, &models.AiChatLog{
+				UserID:    userID,
+				Role:      "model",
+				Content:   string(resBytes),
+				ChatType:  "support",
+				Timestamp: now,
+			})
+		}
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
 		"data": map[string]interface{}{
-			"tram": data.Content.Tram,
-			"data": data.Content.Data,
+			"tram":    data.Content.Tram,
+			"data":    data.Content.Data,
+			"items":   items,
+			"summary": summary.SummaryText,
 		},
 	})
 }

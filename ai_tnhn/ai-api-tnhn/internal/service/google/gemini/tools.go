@@ -1,15 +1,11 @@
 package gemini
 
 import (
-	"ai-api-tnhn/internal/base/mgo/filter"
 	"ai-api-tnhn/internal/constant"
-	"ai-api-tnhn/internal/models"
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/google/generative-ai-go/genai"
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 func (s *service) getChatTools() []*genai.FunctionDeclaration {
@@ -17,7 +13,10 @@ func (s *service) getChatTools() []*genai.FunctionDeclaration {
 		{Name: constant.ToolGoogleStatus, Description: constant.ToolDescriptions[constant.ToolGoogleStatus]},
 		{Name: constant.ToolLiveRainSummary, Description: constant.ToolDescriptions[constant.ToolLiveRainSummary]},
 		{Name: constant.ToolRainDataByDate, Description: constant.ToolDescriptions[constant.ToolRainDataByDate],
-			Parameters: &genai.Schema{Type: genai.TypeObject, Properties: map[string]*genai.Schema{"date": {Type: genai.TypeString, Description: "YYYY-MM-DD"}}, Required: []string{"date"}}},
+			Parameters: &genai.Schema{Type: genai.TypeObject, Properties: map[string]*genai.Schema{
+				"date": {Type: genai.TypeString, Description: "YYYY-MM-DD. MUST extract the exact date mentioned by user (do not adjust for night shifts)."},
+				"time": {Type: genai.TypeString, Description: "HH:mm:ss. MUST extract EXACTLY if user asks for a specific time (e.g., 0h -> 00:00:00, 6h13 -> 06:13:00)"},
+			}, Required: []string{"date"}}},
 		{Name: constant.ToolLakeDataByDate, Description: constant.ToolDescriptions[constant.ToolLakeDataByDate],
 			Parameters: &genai.Schema{Type: genai.TypeObject, Properties: map[string]*genai.Schema{"date": {Type: genai.TypeString, Description: "YYYY-MM-DD"}}, Required: []string{"date"}}},
 		{Name: constant.ToolRiverDataByDate, Description: constant.ToolDescriptions[constant.ToolRiverDataByDate],
@@ -26,7 +25,8 @@ func (s *service) getChatTools() []*genai.FunctionDeclaration {
 		{Name: constant.ToolListStations, Description: constant.ToolDescriptions[constant.ToolListStations],
 			Parameters: &genai.Schema{Type: genai.TypeObject, Properties: map[string]*genai.Schema{
 				"type": {Type: genai.TypeString, Description: "rain/lake/river"},
-				"date": {Type: genai.TypeString, Description: "YYYY-MM-DD (optional, used for rain type to filter stations having data on that day)"},
+				"date": {Type: genai.TypeString, Description: "YYYY-MM-DD. MUST extract the exact date mentioned by user (do not adjust). Optional, used to filter stations."},
+				"time": {Type: genai.TypeString, Description: "HH:mm:ss. MUST extract EXACTLY if user asks for a specific time (e.g., 0h -> 00:00:00)"},
 			}, Required: []string{"type"}}},
 		{Name: constant.ToolRainAnalytics, Description: constant.ToolDescriptions[constant.ToolRainAnalytics],
 			Parameters: &genai.Schema{Type: genai.TypeObject, Properties: map[string]*genai.Schema{"station_id": {Type: genai.TypeInteger}, "year": {Type: genai.TypeInteger}, "month": {Type: genai.TypeInteger}, "start_date": {Type: genai.TypeString}, "end_date": {Type: genai.TypeString}, "group_by": {Type: genai.TypeString}}}},
@@ -64,6 +64,8 @@ func (s *service) getContractTools() []*genai.FunctionDeclaration {
 		{Name: constant.ToolSearchContracts, Description: constant.ToolDescriptions[constant.ToolSearchContracts], Parameters: &genai.Schema{Type: genai.TypeObject, Properties: map[string]*genai.Schema{"keyword": {Type: genai.TypeString}}, Required: []string{"keyword"}}},
 	}
 }
+
+
 
 func (s *service) handleToolCall(ctx context.Context, c *genai.FunctionCall, uID string, isC bool) (interface{}, error) {
 	u, _ := s.userRepo.GetByID(ctx, uID)
@@ -164,150 +166,5 @@ func (s *service) handleContractToolCall(ctx context.Context, c *genai.FunctionC
 		return s.contractSvc.SearchContracts(ctx, c.Args["keyword"].(string))
 	default:
 		return nil, fmt.Errorf("unknown tool: %s", c.Name)
-	}
-}
-
-func (s *service) handleDR(ctx context.Context, c *genai.FunctionCall, orgID string, ids []string) (interface{}, error) {
-	d, e := s.rainSvc.GetRainDataByDate(ctx, c.Args["date"].(string))
-	if e != nil || orgID == "" {
-		return d, e
-	}
-	al, _ := s.stationSvc.ListRainStationsFiltered(ctx, orgID, ids)
-	am := make(map[int]bool)
-	for _, st := range al {
-		am[st.OldID] = true
-	}
-	var res []*models.RainRecord
-	for _, r := range d {
-		if am[int(r.StationID)] {
-			res = append(res, r)
-		}
-	}
-	return res, nil
-}
-
-func (s *service) handleLS(ctx context.Context, c *genai.FunctionCall, o string, r, l, rv []string) (interface{}, error) {
-	t := c.Args["type"].(string)
-	switch t {
-	case "rain":
-		sts, e := s.stationSvc.ListRainStationsFiltered(ctx, o, r)
-		if e == nil && c.Args["date"] != nil {
-			if dStr, ok := c.Args["date"].(string); ok && dStr != "" {
-				records, err := s.rainSvc.GetRainDataByDate(ctx, dStr)
-				if err == nil {
-					rainingMap := make(map[int]bool)
-					for _, rec := range records {
-						if rec.Value > 0 {
-							rainingMap[int(rec.StationID)] = true
-						}
-					}
-					var filteredSts []*models.RainStation
-					for _, st := range sts {
-						if rainingMap[st.OldID] {
-							filteredSts = append(filteredSts, st)
-						}
-					}
-					sts = filteredSts
-				}
-			}
-		}
-		var res []map[string]interface{}
-		for _, st := range sts {
-			res = append(res, map[string]interface{}{"id": st.ID, "old_id": st.OldID, "name": st.TenTram, "phuong": st.TenPhuong, "address": st.DiaChi, "date": c.Args["date"]})
-		}
-		return res, e
-	case "lake":
-		sts, e := s.stationSvc.ListLakeStationsFiltered(ctx, o, l)
-		var res []map[string]interface{}
-		for _, st := range sts {
-			res = append(res, map[string]interface{}{"id": st.ID, "old_id": st.OldID, "name": st.TenTram, "phuong": st.TenPhuong, "loai": st.Loai})
-		}
-		return res, e
-	case "river":
-		sts, e := s.stationSvc.ListRiverStationsFiltered(ctx, o, rv)
-		var res []map[string]interface{}
-		for _, st := range sts {
-			res = append(res, map[string]interface{}{"id": st.ID, "old_id": st.OldID, "name": st.TenTram, "phuong": st.TenPhuong, "loai": st.Loai})
-		}
-		return res, e
-	}
-	return nil, fmt.Errorf("invalid type")
-}
-
-func (s *service) handleRA(ctx context.Context, c *genai.FunctionCall, o string, ids []string) (interface{}, error) {
-	sID, _ := c.Args["station_id"].(float64)
-	if o != "" {
-		al, _ := s.stationSvc.ListRainStationsFiltered(ctx, o, ids)
-		f := false
-		for _, st := range al {
-			if int64(st.OldID) == int64(sID) {
-				f = true
-				break
-			}
-		}
-		if !f {
-			return nil, fmt.Errorf("no permission")
-		}
-	}
-	y, _ := c.Args["year"].(float64)
-	m, _ := c.Args["month"].(float64)
-	sd, _ := c.Args["start_date"].(string)
-	ed, _ := c.Args["end_date"].(string)
-	gb, _ := c.Args["group_by"].(string)
-	return s.stationDataSvc.GetRainAnalytics(ctx, int64(sID), int(y), int(m), sd, ed, gb)
-}
-
-func (s *service) handleCW(ctx context.Context, o string, ids []string) (interface{}, error) {
-	r, _ := s.stationSvc.ListRainStationsFiltered(ctx, o, ids)
-	w := make(map[string]bool)
-	for _, st := range r {
-		if st.TenPhuong != "" {
-			w[st.TenPhuong] = true
-		}
-	}
-	var res []string
-	for k := range w {
-		res = append(res, k)
-	}
-	return res, nil
-}
-
-func (s *service) handleCT(ctx context.Context, c *genai.FunctionCall, uID string) (interface{}, error) {
-	switch c.Name {
-	case constant.ToolReportEmergencyProgress:
-		p := &models.EmergencyConstructionProgress{ConstructionID: c.Args["construction_id"].(string), ReportDate: time.Now().Unix(), WorkDone: c.Args["work_done"].(string), ProgressPercentage: int(c.Args["progress_percentage"].(float64)), Issues: c.Args["issues"].(string), IsCompleted: c.Args["is_completed"].(bool), ReportedBy: uID}
-		if ed, ok := c.Args["expected_completion_date"].(string); ok && ed != "" {
-			if t, e := time.Parse("2006-01-02", ed); e == nil {
-				p.ExpectedCompletionDate = t.Unix()
-			}
-		}
-		return map[string]string{"status": "success"}, s.emcSvc.ReportProgress(ctx, p, nil)
-	case constant.ToolEmergencyHistory:
-		return s.emcSvc.GetProgressHistory(ctx, c.Args["construction_id"].(string))
-	case constant.ToolEmergencyList:
-		res, _, e := s.emcSvc.List(ctx, filter.NewPaginationFilter())
-		return res, e
-	case constant.ToolRecentEmergencyReports:
-		f := filter.NewPaginationFilter()
-		f.PerPage = 200
-		start := time.Now().AddDate(0, 0, -2)
-		end := time.Now()
-		if s, ok := c.Args["start_date"].(string); ok && s != "" {
-			if t, e := time.Parse("2006-01-02", s); e == nil {
-				start = t
-			}
-		}
-		if e, ok := c.Args["end_date"].(string); ok && e != "" {
-			if t, e := time.Parse("2006-01-02", e); e == nil {
-				end = t
-			}
-		}
-		f.AddWhere("report_date", "report_date", bson.M{"$gte": start.Unix(), "$lte": end.Unix()})
-		res, _, e := s.emcSvc.ListHistory(ctx, f)
-		return res, e
-	case constant.ToolUnfinishedEmergencyHistory:
-		return s.emcSvc.GetUnfinishedProgressHistory(ctx)
-	default:
-		return nil, fmt.Errorf("unknown tool")
 	}
 }

@@ -38,7 +38,7 @@ if [ "$ENV" == "dev" ]; then
     echo "Environment: DEV ($API_URL) - Mode: $VITE_MODE"
     echo "Backend: Port $BACKEND_PORT, DB $BACKEND_DB_PATH"
 else
-    API_URL="https://htbc.thoatnuochanoi.vn"
+    API_URL="https://api-htbc.thoatnuochanoi.vn"
     VITE_MODE="production"
     echo "Environment: PRODUCTION ($API_URL) - Mode: $VITE_MODE"
 fi

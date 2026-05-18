@@ -136,7 +136,15 @@ const StationGroup = ({ title, data, onStationClick }) => {
 };
 
 const RainTable = ({ title, data, handleRainChart }) => {
-    if (!data || !Array.isArray(data) || data.length === 0) return null;
+    if (!data || !Array.isArray(data) || data.length === 0) {
+        return (
+            <Box sx={{ p: 2, textAlign: 'center', bgcolor: 'rgba(0,0,0,0.02)', borderRadius: '12px', border: '1px dashed rgba(0,0,0,0.1)' }}>
+                <Typography variant="body2" color="text.secondary">
+                    Hệ thống không ghi nhận dữ liệu mưa nào trong khoảng thời gian này.
+                </Typography>
+            </Box>
+        );
+    }
 
     const onStationClick = (s) => {
         if (!handleRainChart) return;

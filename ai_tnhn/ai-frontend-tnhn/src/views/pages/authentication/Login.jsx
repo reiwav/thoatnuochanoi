@@ -59,9 +59,9 @@ export default function Login() {
                   }}
                 >
                   <Typography variant="subtitle2" sx={{ color: '#cc0000', fontWeight: 900, fontSize: '0.85rem', lineHeight: 1.5 }}>
-                    ⚠️ Hệ thống đang <Box component="span" sx={{ textDecoration: 'underline' }}>SỬA CHỮA, CẬP NHẬT</Box>
+                    ⚠️ Hệ thống <Box component="span" sx={{ textDecoration: 'underline' }}>TIẾP TỤC CẬP NHẬT</Box>
                     <br />
-                    Khi sử dụng sẽ có thể có sự cố!
+                    trong quá trình sử dụng có thể xuất hiện các hạn chế!
                   </Typography>
                 </Box>
                 <Divider sx={{ width: 1 }} />

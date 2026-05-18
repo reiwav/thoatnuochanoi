@@ -221,7 +221,7 @@ const AiSupport = () => {
                     } else {
                         text = res;
                     }
-                } catch(e) {
+                } catch (e) {
                     text = res;
                 }
             }
@@ -272,48 +272,16 @@ const AiSupport = () => {
         setLoading(true);
         try {
             const res = await axiosClient.get('/admin/weather/rain');
-            if (res && res.tram && res.data) {
-                const tramMap = new Map();
-                res.tram.forEach(t => tramMap.set(t.OldId?.toString() || t.id?.toString(), t));
-
-                const raining = res.data
-                    .filter(d => (d.LuongMua_HT || 0) > 0)
-                    .map(d => {
-                        const t = tramMap.get(d.TramId?.toString());
-                        return t ? {
-                            oldId: t.OldId || t.OldID,
-                            name: t.TenPhuong || t.name
-                        } : null;
-                    })
-                    .filter(Boolean);
-
-                if (raining.length === 0) {
-                    setMessages(prev => [...prev, { id: Date.now() + 1, role: 'ai', text: 'Hiện tại hệ thống không ghi nhận trạm nào có mưa.' }]);
+            if (res && res.items) {
+                if (res.items.length === 0) {
+                    setMessages(prev => [...prev, { id: Date.now() + 1, role: 'ai', text: res.summary || 'Hiện tại hệ thống không ghi nhận trạm nào có mưa trong ngày hôm nay.' }]);
                 } else {
-                    const today = new Date().toISOString().split('T')[0];
-                    // Create table data compatible with RainTable
-                    const rainTableData = res.data
-                        .filter(d => (d.LuongMua_HT || 0) > 0)
-                        .map((d, index) => {
-                            const t = tramMap.get(d.TramId?.toString());
-                            return {
-                                id: t?.id || t?.ID || d.TramId?.toString(),
-                                old_id: t?.OldId || t?.OldID || d.TramId,
-                                stt: index + 1,
-                                name: t?.TenPhuong || t?.name || `Trạm ${d.TramId}`,
-                                address: t?.DiaChi || '',
-                                total_rain: d.LuongMua_HT,
-                                type: t?.Type || (t?.TenPhuong ? 'phuong' : 'xa'),
-                                date: today
-                            };
-                        });
-
-                    setMessages(prev => [...prev, { 
-                        id: Date.now() + 1, 
-                        role: 'ai', 
-                        text: `Hệ thống ghi nhận ${raining.length} trạm đang có mưa trong ngày. Click vào trạm để xem biểu đồ chi tiết:\n\n[TABLE:rains]`,
+                    setMessages(prev => [...prev, {
+                        id: Date.now() + 1,
+                        role: 'ai',
+                        text: `${res.summary || `Hệ thống ghi nhận ${res.items.length} trạm đang có mưa trong ngày.`} Click vào trạm để xem biểu đồ chi tiết:\n\n[TABLE:rains]`,
                         tables: {
-                            rains: rainTableData
+                            rains: res.items
                         },
                         timestamp: new Date()
                     }]);
@@ -503,10 +471,10 @@ const AiSupport = () => {
         setRainChart(prev => ({ ...prev, open: true, loading: true, stationName, date, data: [] }));
         try {
             const res = await stationApi.rain.getHistory(oldId, { date, limit: 5000 });
-            setRainChart(prev => ({ 
-                ...prev, 
-                data: Array.isArray(res) ? res : (res?.data || []), 
-                loading: false 
+            setRainChart(prev => ({
+                ...prev,
+                data: Array.isArray(res) ? res : (res?.data || []),
+                loading: false
             }));
         } catch (error) {
             console.error('Failed to fetch rain history:', error);

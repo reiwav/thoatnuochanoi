@@ -60,6 +60,21 @@ func (p rainRepository) GetByDate(ctx context.Context, date string) ([]*models.R
 	return records, err
 }
 
+func (p rainRepository) GetByDateRange(ctx context.Context, startTime, endTime time.Time) ([]*models.RainRecord, error) {
+	var records []*models.RainRecord
+	cursor, err := p.Collection.Find(ctx, bson.M{
+		"timestamp": bson.M{
+			"$gte": startTime,
+			"$lte": endTime,
+		},
+	}, options.Find().SetSort(bson.M{"timestamp": -1}))
+	if err != nil {
+		return nil, err
+	}
+	err = cursor.All(ctx, &records)
+	return records, err
+}
+
 func (p rainRepository) GetLatest(ctx context.Context, stationID int64) (*models.RainRecord, error) {
 	var m *models.RainRecord
 	opts := options.FindOne().SetSort(bson.M{"timestamp": -1})

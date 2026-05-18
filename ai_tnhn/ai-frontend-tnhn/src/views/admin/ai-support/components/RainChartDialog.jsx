@@ -11,20 +11,7 @@ const RainChartDialog = ({ open, onClose, stationName, date, data, loading }) =>
 
     const rainData = React.useMemo(() => {
         if (!data || data.length === 0) return [];
-        const sorted = [...data].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-        let firstIndex = -1;
-        let lastIndex = -1;
-        for (let i = 0; i < sorted.length; i++) {
-            if (sorted[i].value > 0) {
-                if (firstIndex === -1) firstIndex = i;
-                lastIndex = i;
-            }
-        }
-        if (firstIndex === -1) return [];
-
-        const start = Math.max(0, firstIndex - 1);
-        const end = Math.min(sorted.length - 1, lastIndex + 1);
-        return sorted.slice(start, end + 1);
+        return [...data].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
     }, [data]);
 
     const stats = React.useMemo(() => {

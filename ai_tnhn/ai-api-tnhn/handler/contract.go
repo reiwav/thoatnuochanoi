@@ -170,10 +170,15 @@ func (h *ContractHandler) Upload(c *gin.Context) {
 		return
 	}
 
+	link := "https://drive.google.com/open?id=" + fileID
+	if len(fileID) > 6 && fileID[:6] == "local:" {
+		link = "/api/storage/file/" + fileID[6:]
+	}
+
 	h.SendData(c, gin.H{
 		"file_id": fileID,
 		"name":    file.Filename,
-		"link":    "https://drive.google.com/open?id=" + fileID,
+		"link":    link,
 	})
 }
 
@@ -250,10 +255,15 @@ func (h *ContractHandler) UploadToFolder(c *gin.Context) {
 		return
 	}
 
+	link := "https://drive.google.com/open?id=" + fileID
+	if len(fileID) > 6 && fileID[:6] == "local:" {
+		link = "/api/storage/file/" + fileID[6:]
+	}
+
 	h.SendData(c, gin.H{
 		"file_id": fileID,
 		"name":    file.Filename,
-		"link":    "https://drive.google.com/open?id=" + fileID,
+		"link":    link,
 	})
 }
 

@@ -22,5 +22,5 @@ type Contract struct {
 	Note            string                 `bson:"note" json:"note" example:"Hợp đồng trọng điểm"`
 	DriveFolderID   string                 `bson:"drive_folder_id" json:"drive_folder_id" example:"1abc2def3ghi"`
 	DriveFolderLink string                 `bson:"drive_folder_link" json:"drive_folder_link" example:"https://drive.google.com/..."`
-	Files           []googledrive.FileInfo `bson:"-" json:"files"`
+	Files           []googledrive.FileInfo `bson:"files" json:"files"`
 }

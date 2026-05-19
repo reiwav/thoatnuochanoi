@@ -16,8 +16,15 @@ func (s *service) ensureDriveFolder(ctx context.Context, contract *models.Contra
 	parentDriveID := ""
 	if orgID != "" && s.orgRepo != nil {
 		org, err := s.orgRepo.GetByID(ctx, orgID)
-		if err == nil && org != nil && org.Name != "" {
-			parentDriveID, _ = s.driveSvc.FindOrCreateFolder(ctx, "", org.Name)
+		if err == nil && org != nil {
+			if org.DriveFolderID != "" {
+				parentDriveID = org.DriveFolderID
+			} else if org.Name != "" {
+				parentDriveID, _ = s.driveSvc.InitOrgFolders(ctx, org.Name, org.DriveFolderID)
+				if parentDriveID != "" {
+					_ = s.orgRepo.UpdateDriveFolderID(ctx, orgID, parentDriveID)
+				}
+			}
 		}
 	}
 

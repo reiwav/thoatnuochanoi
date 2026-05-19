@@ -30,7 +30,14 @@ func (s *service) UploadFileSimple(ctx context.Context, folderID, name, mimeType
 }
 
 func (s *service) CreateFolder(ctx context.Context, parentID, name string) (string, error) {
-	f := &drive.File{Name: name, MimeType: "application/vnd.google-apps.folder", Parents: []string{parentID}}
+	pID := parentID
+	if pID == "" || pID == "." {
+		pID = s.cfg.RootFolderID
+	}
+	if pID == "" {
+		pID = "root"
+	}
+	f := &drive.File{Name: name, MimeType: "application/vnd.google-apps.folder", Parents: []string{pID}}
 	res, err := s.driveSvc.Files.Create(f).SupportsAllDrives(true).Do()
 	if err != nil {
 		return "", fmt.Errorf("failed to create folder: %w", err)
@@ -45,7 +52,7 @@ func (s *service) CreateOrgFolder(ctx context.Context, orgName string) (string, 
 func (s *service) InitOrgFolders(ctx context.Context, orgName string, folderID string) (string, error) {
 	orgID := folderID
 	var err error
-	if orgID == "" {
+	if orgID == "" || orgID == "." {
 		orgID, err = s.FindOrCreateFolder(ctx, s.cfg.RootFolderID, orgName)
 		if err != nil {
 			return "", err
@@ -56,12 +63,19 @@ func (s *service) InitOrgFolders(ctx context.Context, orgName string, folderID s
 }
 
 func (s *service) FindOrCreateFolder(ctx context.Context, parentID, folderName string) (string, error) {
-	q := fmt.Sprintf("name = '%s' and mimeType = 'application/vnd.google-apps.folder' and '%s' in parents and trashed = false", folderName, parentID)
+	pID := parentID
+	if pID == "" || pID == "." {
+		pID = s.cfg.RootFolderID
+	}
+	if pID == "" {
+		pID = "root"
+	}
+	q := fmt.Sprintf("name = '%s' and mimeType = 'application/vnd.google-apps.folder' and '%s' in parents and trashed = false", folderName, pID)
 	res, err := s.driveSvc.Files.List().Q(q).SupportsAllDrives(true).IncludeItemsFromAllDrives(true).Do()
 	if err == nil && len(res.Files) > 0 {
 		return res.Files[0].Id, nil
 	}
-	return s.CreateFolder(ctx, parentID, folderName)
+	return s.CreateFolder(ctx, pID, folderName)
 }
 
 func (s *service) TriggerReportGeneration(ctx context.Context, webhookURL, templateID, targetID string, payload map[string]interface{}) (string, error) {

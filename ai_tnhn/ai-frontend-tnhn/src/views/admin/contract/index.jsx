@@ -18,137 +18,7 @@ import useAuthStore from 'store/useAuthStore';
 import useContractStore from 'store/useContractStore';
 import PermissionGuard from 'ui-component/PermissionGuard';
 
-const Row = ({ row, handleOpenEdit, handleDelete, isMobile, formatPrice, getTotalPrice, hasPermission }) => {
-    const [open, setOpen] = useState(false);
-
-    return (
-        <>
-            <TableRow hover sx={{ '& > *': { borderBottom: 'unset' } }}>
-                <TableCell width={60}>
-                    <IconButton
-                        aria-label="expand row"
-                        size="small"
-                        onClick={() => setOpen(!open)}
-                        color={open ? 'secondary' : 'default'}
-                    >
-                        {open ? <IconChevronUp size={18} /> : <IconChevronDown size={18} />}
-                    </IconButton>
-                </TableCell>
-                <TableCell component="th" scope="row">
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <IconFileText size={18} style={{ marginRight: 8, color: '#1e88e5' }} />
-                        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>{row.name}</Typography>
-                    </Box>
-                </TableCell>
-                {!isMobile && (
-                    <TableCell>
-                        <Typography variant="body2">
-                            {row.start_date ? dayjs(row.start_date).format('DD/MM/YYYY') : '...'} - {row.end_date ? dayjs(row.end_date).format('DD/MM/YYYY') : '...'}
-                        </Typography>
-                    </TableCell>
-                )}
-                {!isMobile && (
-                    <TableCell sx={{ fontWeight: 700, color: 'success.main' }}>
-                        {formatPrice(getTotalPrice(row.stages))}
-                    </TableCell>
-                )}
-                <TableCell align="right">
-                    <Stack direction="row" spacing={1} justifyContent="flex-end">
-                        <PermissionGuard permission="contract:edit">
-                            <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>
-                                <IconEdit size={20} />
-                            </IconButton>
-                        </PermissionGuard>
-                        <PermissionGuard permission="contract:delete">
-                            <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}>
-                                <IconTrash size={20} />
-                            </IconButton>
-                        </PermissionGuard>
-                    </Stack>
-                </TableCell>
-            </TableRow>
-            <TableRow>
-                <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
-                    <Collapse in={open} timeout="auto" unmountOnExit>
-                        <Box sx={{ py: 2, px: 4, bgcolor: 'grey.50', borderRadius: '8px', mb: 2, mx: 2 }}>
-                            <Typography variant="h5" gutterBottom component="div" sx={{ mb: 2, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <IconCash size={18} /> Chi tiết các giai đoạn thanh toán
-                            </Typography>
-                            {row.stages && row.stages.length > 0 ? (
-                                <Table size="small" aria-label="stages">
-                                    <TableHead>
-                                        <TableRow>
-                                            <TableCell sx={{ fontWeight: 700 }}>Tên giai đoạn</TableCell>
-                                            <TableCell sx={{ fontWeight: 700 }}>Ngày dự kiến</TableCell>
-                                            <TableCell align="right" sx={{ fontWeight: 700 }}>Số tiền</TableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {row.stages.map((stage, idx) => (
-                                            <TableRow key={idx}>
-                                                <TableCell component="th" scope="row">
-                                                    {stage.name || `Giai đoạn ${idx + 1}`}
-                                                </TableCell>
-                                                <TableCell>
-                                                    {stage.date ? dayjs(stage.date).format('DD/MM/YYYY') : '---'}
-                                                </TableCell>
-                                                <TableCell align="right" sx={{ fontWeight: 600 }}>
-                                                    {formatPrice(stage.amount)}
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                        <TableRow>
-                                            <TableCell colSpan={2} sx={{ fontWeight: 700, pt: 2, textAlign: 'right' }}>Tổng cộng:</TableCell>
-                                            <TableCell align="right" sx={{ fontWeight: 700, pt: 2, color: 'success.main', fontSize: '1rem' }}>
-                                                {formatPrice(getTotalPrice(row.stages))}
-                                            </TableCell>
-                                        </TableRow>
-                                    </TableBody>
-                                </Table>
-                            ) : (
-                                <Typography variant="body2" color="textSecondary">Không có thông tin giai đoạn.</Typography>
-                            )}
-                            {row.note && (
-                                <Box sx={{ mt: 2, p: 1.5, borderLeft: '4px solid', borderColor: 'secondary.main', bgcolor: 'white' }}>
-                                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Ghi chú:</Typography>
-                                    <Typography variant="body2">{row.note}</Typography>
-                                </Box>
-                            )}
-                            {row.files && row.files.length > 0 && (
-                                <Box sx={{ mt: 2 }}>
-                                    <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <IconFileText size={18} /> Tài liệu đính kèm:
-                                    </Typography>
-                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                                        {row.files.map((file, idx) => (
-                                            <Button
-                                                key={idx}
-                                                variant="outlined"
-                                                size="small"
-                                                startIcon={<IconFileText size={14} />}
-                                                href={file.link || `https://drive.google.com/open?id=${file.id}`}
-                                                target="_blank"
-                                                sx={{ 
-                                                    textTransform: 'none', 
-                                                    borderRadius: '6px',
-                                                    borderColor: 'divider',
-                                                    bgcolor: 'white',
-                                                    '&:hover': { borderColor: 'primary.main', bgcolor: 'primary.lightest' }
-                                                }}
-                                            >
-                                                {file.name}
-                                            </Button>
-                                        ))}
-                                    </Box>
-                                </Box>
-                            )}
-                        </Box>
-                    </Collapse>
-                </TableCell>
-            </TableRow>
-        </>
-    );
-};
+import ContractRow from './ContractRow';
 
 const ContractList = () => {
     const theme = useTheme();
@@ -288,7 +158,7 @@ const ContractList = () => {
                             <TableRow><TableCell colSpan={6} align="center" sx={{ py: 3 }}>Chưa có hợp đồng nào.</TableCell></TableRow>
                         ) : (
                             contracts?.map((row) => (
-                                <Row 
+                                <ContractRow 
                                     key={row.id} 
                                     row={row} 
                                     handleOpenEdit={handleOpenEdit} 

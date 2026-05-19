@@ -30,12 +30,21 @@ type Service interface {
 }
 
 type service struct {
-	repo     repository.Contract
-	catRepo  repository.ContractCategory
-	orgRepo  repository.Organization
-	driveSvc googledrive.Service
+	repo       repository.Contract
+	catRepo    repository.ContractCategory
+	orgRepo    repository.Organization
+	driveSvc   googledrive.Service
+	syncWorker *SyncWorker
 }
 
 func NewService(repo repository.Contract, catRepo repository.ContractCategory, orgRepo repository.Organization, driveSvc googledrive.Service) Service {
-	return &service{repo: repo, catRepo: catRepo, orgRepo: orgRepo, driveSvc: driveSvc}
+	svc := &service{
+		repo:     repo,
+		catRepo:  catRepo,
+		orgRepo:  orgRepo,
+		driveSvc: driveSvc,
+	}
+	svc.syncWorker = NewSyncWorker(repo, orgRepo, driveSvc, svc.ensureDriveFolder)
+	svc.syncWorker.Start()
+	return svc
 }

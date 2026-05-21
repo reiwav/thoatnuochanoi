@@ -148,8 +148,16 @@ func (s *service) GetRainChartData(ctx context.Context, sessionID string, statio
 	if err != nil {
 		return nil, err
 	}
+	req.Header.Set("Accept", "application/json, text/javascript, */*; q=0.01")
+	req.Header.Set("Accept-Language", "vi-VN,vi;q=0.9")
+	req.Header.Set("Cache-Control", "no-cache")
+	req.Header.Set("Connection", "keep-alive")
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	req.Header.Set("Cookie", "ASP.NET_SessionId="+sessionID)
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+	req.Header.Set("Pragma", "no-cache")
+	req.Header.Set("Referer", "https://thoatnuochanoi.vn/qlnl/bieu-do-mua")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1")
+	req.Header.Set("X-Requested-With", "XMLHttpRequest")
 
 	resp, err := s.client.Do(req)
 	if err != nil {

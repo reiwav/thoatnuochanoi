@@ -2,12 +2,12 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import dayjs from 'dayjs';
 import { useSearchParams } from 'react-router-dom';
 import {
-    Box, Typography, Stack, Chip, Paper, CircularProgress, 
+    Box, Typography, Stack, Chip, Paper, CircularProgress,
     Divider, alpha, Grid, useMediaQuery
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { 
-    IconClock, IconRuler, IconCar, IconCalendarEvent, 
+import {
+    IconClock, IconRuler, IconCar, IconCalendarEvent,
     IconLayoutList
 } from '@tabler/icons-react';
 
@@ -40,7 +40,7 @@ const InundationHistoryView = ({ pointId: propPointId, hideHeader = false }) => 
             // Specialized point history API returning list of reports
             const reports = await inundationApi.getPointHistory(pointId);
             let dataArr = Array.isArray(reports) ? reports : (reports?.items || []);
-            
+
 
             const filtered = dataArr
                 .filter(r => r.point_id === pointId)
@@ -90,12 +90,12 @@ const InundationHistoryView = ({ pointId: propPointId, hideHeader = false }) => 
     return (
         <Box>
             {!hideHeader && (
-                <Paper 
+                <Paper
                     elevation={0}
-                    sx={{ 
-                        bgcolor: 'primary.main', 
-                        color: 'white', 
-                        borderRadius: '16px 16px 0 0', 
+                    sx={{
+                        bgcolor: 'primary.main',
+                        color: 'white',
+                        borderRadius: '16px 16px 0 0',
                         p: isMobile ? 2 : 3,
                         mb: 0,
                         textAlign: 'center'
@@ -107,19 +107,19 @@ const InundationHistoryView = ({ pointId: propPointId, hideHeader = false }) => 
                 </Paper>
             )}
 
-            <Box sx={{ 
-                bgcolor: 'white', 
-                p: isMobile ? 1.5 : 4, 
-                borderRadius: hideHeader ? 4 : '0 0 16px 16px', 
-                border: hideHeader ? 'none' : '1px solid', 
-                borderColor: 'grey.200', 
-                borderTop: 'none' 
+            <Box sx={{
+                bgcolor: 'white',
+                p: isMobile ? 1.5 : 4,
+                borderRadius: hideHeader ? 4 : '0 0 16px 16px',
+                border: hideHeader ? 'none' : '1px solid',
+                borderColor: 'grey.200',
+                borderTop: 'none'
             }}>
                 {history.map((report, idx) => {
                     const latest = getLatestData(report);
                     const trafficColor = getTrafficStatusColor(latest.traffic_status);
                     const updates = report.updates || [];
-                    
+
                     const eventTimeline = [
                         { ...report, isStart: true, ts: report.created_at || report.start_time, title: 'Báo cáo khởi tạo' },
                         ...updates.map(u => ({ ...u, isUpdate: true, ts: u.timestamp, title: u.description || 'Cập nhật diễn biến' }))
@@ -132,19 +132,19 @@ const InundationHistoryView = ({ pointId: propPointId, hideHeader = false }) => 
                                     <IconCalendarEvent size={20} />
                                     {formatDateTime(report.created_at || report.start_time)}
                                 </Typography>
-                                
+
                                 <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ gap: 1 }}>
-                                    <Chip 
+                                    <Chip
                                         size="small"
-                                        icon={<IconRuler size={14} />} 
+                                        icon={<IconRuler size={14} />}
                                         label={`${latest.length || '?'} x ${latest.width || '?'} x ${latest.depth || 0}`}
                                         sx={{ fontWeight: 800, bgcolor: 'grey.100' }}
                                     />
                                     {latest.traffic_status && (
-                                        <Chip 
+                                        <Chip
                                             size="small"
-                                            icon={<IconCar size={14} />} 
-                                            label={latest.traffic_status} 
+                                            icon={<IconCar size={14} />}
+                                            label={latest.traffic_status}
                                             color={trafficColor}
                                             sx={{ fontWeight: 800 }}
                                         />
@@ -155,11 +155,11 @@ const InundationHistoryView = ({ pointId: propPointId, hideHeader = false }) => 
                             <Box sx={{ pl: isMobile ? 1.5 : 3, borderLeft: '2px dashed', borderColor: 'grey.200', ml: isMobile ? 1 : 1.5 }}>
                                 {eventTimeline.map((item, midx) => (
                                     <Box key={midx} sx={{ position: 'relative', pl: isMobile ? 2.5 : 4, mb: 3 }}>
-                                        <Box sx={{ 
-                                            position: 'absolute', 
-                                            left: isMobile ? -14 : -17.5, top: 4, 
-                                            width: 14, height: 14, 
-                                            borderRadius: '50%', 
+                                        <Box sx={{
+                                            position: 'absolute',
+                                            left: isMobile ? -14 : -17.5, top: 4,
+                                            width: 14, height: 14,
+                                            borderRadius: '50%',
                                             bgcolor: 'white',
                                             border: '3px solid',
                                             borderColor: item.isStart ? 'primary.main' : 'success.main',
@@ -198,12 +198,12 @@ const InundationHistoryView = ({ pointId: propPointId, hideHeader = false }) => 
                                             {item.images?.length > 0 && (
                                                 <Box sx={{ display: 'flex', gap: 1, mt: 2, overflowX: 'auto', pb: 1 }}>
                                                     {item.images.map((img, i) => (
-                                                        <Box 
-                                                            key={i} 
-                                                            component="img" 
-                                                            src={img} 
+                                                        <Box
+                                                            key={i}
+                                                            component="img"
+                                                            src={img}
                                                             onClick={handleOpenViewer ? () => handleOpenViewer(item.images, i) : undefined}
-                                                            sx={{ width: 70, height: 70, borderRadius: 1.5, objectFit: 'cover', cursor: 'zoom-in' }} 
+                                                            sx={{ width: 70, height: 70, borderRadius: 1.5, objectFit: 'cover', cursor: 'zoom-in' }}
                                                         />
                                                     ))}
                                                 </Box>
@@ -218,9 +218,9 @@ const InundationHistoryView = ({ pointId: propPointId, hideHeader = false }) => 
                 })}
             </Box>
 
-            <ImageViewer 
-                viewer={viewer} 
-                onClose={() => setViewer(v => ({ ...v, open: false }))} 
+            <ImageViewer
+                viewer={viewer}
+                onClose={() => setViewer(v => ({ ...v, open: false }))}
                 onPrev={() => setViewer(v => ({ ...v, index: (v.index - 1 + v.images.length) % v.images.length }))}
                 onNext={() => setViewer(v => ({ ...v, index: (v.index + 1) % v.images.length }))}
             />

@@ -86,7 +86,15 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
         }
     }, [selectedReport]);
 
-    const handleChange = (e) => setValues({ ...values, [e.target.name]: e.target.value });
+    const handleChange = (e) => {
+        let { name, value } = e.target;
+        if (['length', 'width', 'depth'].includes(name)) {
+            value = value.replace(/,/g, '.');
+            // Optionally, prevent entering multiple dots or non-numeric chars
+            if (value && !/^\d*\.?\d*$/.test(value)) return;
+        }
+        setValues({ ...values, [name]: value });
+    };
 
     const handleImageChange = async (e) => {
         const pickedFiles = Array.from(e.target.files);
@@ -266,18 +274,18 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
                 <TextField
                     fullWidth label="Dài" name="length" value={values.length} onChange={handleChange}
                     type="text" placeholder="VD: 50"
-                    slotProps={{ input: { startAdornment: <InputAdornment position="start"><IconRuler size={15} color={theme.palette.text.secondary} /></InputAdornment> } }}
+                    slotProps={{ htmlInput: { inputMode: 'decimal' }, input: { startAdornment: <InputAdornment position="start"><IconRuler size={15} color={theme.palette.text.secondary} /></InputAdornment> } }}
                 />
                 <TextField
                     fullWidth label="Rộng" name="width" value={values.width} onChange={handleChange}
                     type="text" placeholder="VD: 3"
-                    slotProps={{ input: { startAdornment: <InputAdornment position="start"><IconRuler size={15} color={theme.palette.text.secondary} /></InputAdornment> } }}
+                    slotProps={{ htmlInput: { inputMode: 'decimal' }, input: { startAdornment: <InputAdornment position="start"><IconRuler size={15} color={theme.palette.text.secondary} /></InputAdornment> } }}
                 />
                 <TextField
                     fullWidth label="Sâu" name="depth" value={values.depth} onChange={handleChange}
-                    type="number" placeholder="VD: 20"
+                    type="text" placeholder="VD: 0.2"
                     slotProps={{
-                        htmlInput: { inputMode: 'decimal', step: 'any' },
+                        htmlInput: { inputMode: 'decimal' },
                         input: {
                             startAdornment: <InputAdornment position="start"><IconRuler size={15} color={theme.palette.text.secondary} /></InputAdornment>,
                             endAdornment: currentLevel && (

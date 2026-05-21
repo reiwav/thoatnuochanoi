@@ -16,7 +16,7 @@ const InundationDetailDialog = ({ open, onClose, point }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const { user } = useAuthStore();
-    
+
     const [loading, setLoading] = useState(false);
     const [selectedReport, setSelectedReport] = useState(null);
 

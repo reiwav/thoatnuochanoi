@@ -14,7 +14,7 @@ func SetSurveyAndUpdateReport(ctx context.Context, user *models.User, repo repos
 	mod := &models.InundationReport{
 		InundationReportBase: input,
 		OrgID:                station.OrgID,
-		SharedOrgIDs:         station.SharedOrgIDs,
+		//SharedOrgIDs:         station.SharedOrgIDs,
 	}
 	err := repo.R_Create(ctx, mod)
 	return mod, err

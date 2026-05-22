@@ -38,8 +38,8 @@ func (s *service) UpdateSurvey(ctx context.Context, user *models.User, id string
 	newUpdate := &models.InundationUpdate{
 		ReportID:  id,
 		Timestamp: time.Now().Unix(),
+		PointID:   existing.PointID,
 		InundationReportBase: models.InundationReportBase{
-			PointID: existing.PointID,
 			ReportBase: models.ReportBase{
 				UserID:    user.ID,
 				UserEmail: user.Email,
@@ -57,7 +57,7 @@ func (s *service) UpdateSurvey(ctx context.Context, user *models.User, id string
 		},
 	}
 	_ = s.inundationUpdateRepo.Create(ctx, newUpdate)
-	
+
 	// Enqueue for Drive Sync
 	if s.syncWorker != nil {
 		s.syncWorker.Enqueue(id, TaskTypeReport)

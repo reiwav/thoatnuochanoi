@@ -4,24 +4,9 @@ import "ai-api-tnhn/internal/models"
 
 // CreateReportRequest defines the inputs for creating a new inundation report
 type CreateReportRequest struct {
-	PointID       string `form:"point_id" json:"point_id" binding:"required" example:"point_123"`
-	StreetName    string `form:"street_name" json:"street_name" example:"Phố Huế"`
-	Depth         string `form:"depth" json:"depth" example:"20-30cm"`
-	Length        string `form:"length" json:"length" example:"100m"`
-	Width         string `form:"width" json:"width" example:"50m"`
-	Description   string `form:"description" json:"description" example:"Ngập nhẹ"`
-	TrafficStatus string `form:"traffic_status" json:"traffic_status" example:"DI_CHUYEN_CHAM"`
-	StartTime     int64  `form:"start_time" json:"start_time" example:"1620000000"`
-
-	// Administrative/Review context
-	MechD       string `form:"mech_d" json:"mech_d" example:"D1"`
-	MechR       string `form:"mech_r" json:"mech_r" example:"R1"`
-	MechS       string `form:"mech_s" json:"mech_s" example:"S1"`
-	MechChecked bool   `form:"mech_checked" json:"mech_checked" example:"true"`
-	MechNote    string `form:"mech_note" json:"mech_note" example:"Máy xúc đã đến"`
-
-	SurveyChecked bool   `form:"survey_checked" json:"survey_checked" example:"true"`
-	SurveyNote    string `form:"survey_note" json:"survey_note" example:"Đã khảo sát"`
+	PointID string `form:"point_id" json:"point_id" binding:"required" example:"point_123"`
+	//StreetName string `form:"street_name" json:"street_name" example:"Phố Huế"`
+	models.InundationReportBase
 }
 
 // UpdateReportRequest defines the inputs for updating an existing report

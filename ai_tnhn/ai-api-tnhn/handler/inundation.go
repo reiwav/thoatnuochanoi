@@ -50,7 +50,7 @@ func NewInundationHandler(service inundation.Service, contextWith web.ContextWit
 func (h *InundationHandler) CreateReport(c *gin.Context) {
 
 	// 2. Bind Request DTO
-	var req models.InundationReportBase
+	var req dto.CreateReportRequest
 	if err := c.ShouldBind(&req); err != nil {
 		h.SendError(c, web.BadRequest("Invalid request data: "+err.Error()))
 		return
@@ -65,7 +65,7 @@ func (h *InundationHandler) CreateReport(c *gin.Context) {
 	// 3. Parse Multipart Form for images
 	images := h.getImages(c)
 
-	report, err := h.service.CreateReport(c.Request.Context(), user, req, images)
+	report, err := h.service.CreateReport(c.Request.Context(), user, req.PointID, req.InundationReportBase, images)
 	if err != nil {
 		h.SendError(c, err)
 		return

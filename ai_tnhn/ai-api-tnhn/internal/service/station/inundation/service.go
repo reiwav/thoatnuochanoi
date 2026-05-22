@@ -11,7 +11,7 @@ import (
 )
 
 type Service interface {
-	CreateReport(ctx context.Context, user *models.User, report models.InundationReportBase, images []ImageContent) (*models.InundationReport, error)
+	CreateReport(ctx context.Context, user *models.User, pointID string, report models.InundationReportBase, images []ImageContent) (*models.InundationReport, error)
 	UpdateUpdateSitution(ctx context.Context, user *models.User, reportID string, update dto.AddUpdateSitutionRequest, images []ImageContent) (*models.InundationReport, error)
 	ListReports(ctx context.Context, orgID string) ([]*models.InundationReport, int64, error)
 	ListReportsWithFilter(ctx context.Context, user *models.User, isAllowedAll bool, orgIDFilter string, f filter.Filter) ([]*models.InundationReport, int64, error)

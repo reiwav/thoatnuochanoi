@@ -13,17 +13,17 @@ import (
 	"github.com/rs/xid"
 )
 
-func (s *service) CreateReport(ctx context.Context, user *models.User, input models.InundationReportBase, images []ImageContent) (*models.InundationReport, error) {
+func (s *service) CreateReport(ctx context.Context, user *models.User, pointID string, input models.InundationReportBase, images []ImageContent) (*models.InundationReport, error) {
 	// 3. Get Point info
-	if input.PointID == "" {
+	if pointID == "" {
 		return nil, web.BadRequest("Point ID is required")
 	}
 	// 1. Permission Check for Employee
-	err := s.validAssigned(user, input.PointID)
+	err := s.validAssigned(user, pointID)
 	if err != nil {
 		return nil, err
 	}
-	point, err := s.inundationStationRepo.GetByID(ctx, input.PointID)
+	point, err := s.inundationStationRepo.GetByID(ctx, pointID)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +67,7 @@ func (s *service) CreateReport(ctx context.Context, user *models.User, input mod
 	}
 
 	// Notify SSE subscribers about the change
-	go s.notifyPointChange(input.PointID)
+	go s.notifyPointChange(pointID)
 
 	return report, nil
 }
@@ -85,20 +85,18 @@ func (s *service) setNewAndCreateReport(ctx context.Context, user *models.User,
 	input.UserEmail = user.Email
 	input.UserName = user.Name
 	input.Images = images
-	input.PointID = station.ID
-	if input.StreetName == "" && station.Name != "" {
-		input.StreetName = station.Name
-	}
 
 	report := &models.InundationReport{
 		BaseModel: model.BaseModel{
 			ID: reportID,
 		},
+		PointID:              station.ID,
+		StreetName:           station.Name,
 		InundationReportBase: input,
 		OrgID:                station.OrgID,
-		SharedOrgIDs:         station.SharedOrgIDs,
-		Status:               "active",
-		LastReportID:         lastReportUpdateID,
+		//SharedOrgIDs:         station.SharedOrgIDs,
+		Status:       "active",
+		LastReportID: lastReportUpdateID,
 	}
 	report.FloodLevelName = level.Name
 	report.FloodLevelColor = level.Color
@@ -133,10 +131,6 @@ func (s *service) setAndUpdateReport(ctx context.Context, user *models.User,
 	input.ReportBase.IsFlooding = level.IsFlooding
 	// 5. Save input.ReportBase to DB
 	input.ReportBase.TrafficStatus = input.ReportBase.FloodLevelName
-
-	if input.StreetName == "" {
-		input.StreetName = report.StreetName
-	}
 
 	report.InundationReportBase = input
 	err := s.InundationReportRepo.R_Update(ctx, report)

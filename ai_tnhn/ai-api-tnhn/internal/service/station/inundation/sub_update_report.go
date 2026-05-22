@@ -17,8 +17,8 @@ func (s *service) UpdateUpdateSitution(ctx context.Context, user *models.User, r
 	if update.Resolve { // hết ngập
 		return nil, s.QuickFinishV2(ctx, user, report.PointID)
 	}
-	update.PointID = report.PointID
-	err = s.getSettingAndSetBase(ctx, reportID, &update.InundationReportBase, user, images)
+
+	err = s.getSettingAndSetBase(ctx, reportID, report.PointID, &update.InundationReportBase, user, images)
 	if err != nil {
 		return nil, err
 	}

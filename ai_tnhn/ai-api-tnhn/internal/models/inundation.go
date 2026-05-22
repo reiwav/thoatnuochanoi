@@ -5,10 +5,10 @@ import (
 )
 
 type InundationUpdate struct {
-	model.BaseModel `bson:",inline"`
-	ReportID        string `bson:"report_id" json:"report_id" example:"60f123456789"`
-	Timestamp       int64  `bson:"timestamp" json:"timestamp" example:"1682056800"`
-
+	model.BaseModel      `bson:",inline"`
+	ReportID             string `bson:"report_id" json:"report_id" example:"60f123456789"`
+	Timestamp            int64  `bson:"timestamp" json:"timestamp" example:"1682056800"`
+	PointID              string `bson:"pointid" form:"point_id" json:"point_id" example:"point_123"`
 	InundationReportBase `bson:",inline"`
 	ReportReviewBase     `bson:",inline"`
 	ReportSurveyBase     `bson:",inline"`
@@ -19,12 +19,20 @@ type InundationUpdate struct {
 
 type InundationReport struct {
 	model.BaseModel `bson:",inline"`
-	OrgID           string   `bson:"org_id" json:"org_id" example:"60f123456789"`
-	SharedOrgIDs    []string `bson:"shared_org_ids" json:"shared_org_ids" example:"[\"60f987654321\"]"`
-	ShareAll        bool     `bson:"share_all" json:"share_all" example:"false"`
+	OrgID           string `bson:"org_id" json:"org_id" example:"60f123456789"`
+	// SharedOrgIDs    []string `bson:"shared_org_ids" json:"shared_org_ids" example:"[\"60f987654321\"]"`
+	// ShareAll        bool     `bson:"share_all" json:"share_all" example:"false"`
 
 	Status  string `bson:"status" json:"status" example:"active"` // active, resolved
 	EndTime int64  `bson:"end_time" json:"end_time" example:"0"`
+
+	PointID    string `bson:"pointid" form:"point_id" json:"point_id" example:"point_123"`
+	StreetName string `bson:"streetname" form:"street_name" json:"street_name" example:"Phố Huế"`
+
+	ReviewHistoryID     string `bson:"review_history_id" json:"review_history_id"`
+	SurveyHistoryID     string `bson:"survey_history_id" json:"survey_history_id"`
+	MechHistoryID       string `bson:"mech_history_id" json:"mech_history_id"`
+	EnterpriseHistoryID string `bson:"enterprise_history_id" json:"enterprise_history_id"`
 
 	ReportReviewBase `bson:",inline"`
 	// Design Survey Data
@@ -43,8 +51,6 @@ type InundationReport struct {
 }
 
 type InundationReportBase struct {
-	PointID     string  `bson:"pointid" form:"point_id" json:"point_id" example:"point_123"`
-	StreetName  string  `bson:"streetname" form:"street_name" json:"street_name" example:"Phố Huế"`
 	Depth       float64 `bson:"depth" form:"depth" json:"depth" example:"20"`
 	Length      string  `bson:"length" form:"length" json:"length" example:"100m"`
 	Width       string  `bson:"width" form:"width" json:"width" example:"50m"`

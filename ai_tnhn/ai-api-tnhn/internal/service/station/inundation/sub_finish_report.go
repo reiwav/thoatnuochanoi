@@ -44,10 +44,11 @@ func (s *service) QuickFinishV2(ctx context.Context, user *models.User, pointID 
 	crteUpdate := models.InundationUpdate{
 		ReportID:  reportID,
 		Timestamp: now,
+		PointID:   existing.PointID,
 		InundationReportBase: models.InundationReportBase{
 			Description: "Kết thúc nhanh đợt ngập",
 			Depth:       0,
-			PointID:     existing.PointID,
+
 			ReportBase: models.ReportBase{
 				FloodLevelName:  "Bình thường",
 				FloodLevelColor: "#10b981",

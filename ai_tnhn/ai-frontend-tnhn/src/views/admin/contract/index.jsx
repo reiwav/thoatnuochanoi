@@ -33,6 +33,7 @@ const ContractList = () => {
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingContract, setEditingContract] = useState(null);
+    const [parentContract, setParentContract] = useState(null);
     const [filterInput, setFilterInput] = useState(filters.name);
 
     useEffect(() => {
@@ -51,12 +52,20 @@ const ContractList = () => {
     };
 
     const handleOpenCreate = () => {
+        setParentContract(null);
         setEditingContract(null);
         setDialogOpen(true);
     };
 
     const handleOpenEdit = (contract) => {
+        setParentContract(null);
         setEditingContract(contract);
+        setDialogOpen(true);
+    };
+
+    const handleAddAppendix = (parent) => {
+        setParentContract(parent);
+        setEditingContract(null);
         setDialogOpen(true);
     };
 
@@ -157,18 +166,23 @@ const ContractList = () => {
                         ) : contracts.length === 0 ? (
                             <TableRow><TableCell colSpan={6} align="center" sx={{ py: 3 }}>Chưa có hợp đồng nào.</TableCell></TableRow>
                         ) : (
-                            contracts?.map((row) => (
-                                <ContractRow 
-                                    key={row.id} 
-                                    row={row} 
-                                    handleOpenEdit={handleOpenEdit} 
-                                    handleDelete={handleDelete} 
-                                    isMobile={isMobile}
-                                    formatPrice={formatPrice}
-                                    getTotalPrice={getTotalPrice}
-                                    hasPermission={hasPermission}
-                                />
-                            ))
+                            (() => {
+                                const primaryContracts = contracts?.filter(c => !c.parent_id) || [];
+                                return primaryContracts.map((row) => (
+                                    <ContractRow 
+                                        key={row.id} 
+                                        row={row} 
+                                        appendices={contracts?.filter(c => c.parent_id === row.id) || []}
+                                        handleOpenEdit={handleOpenEdit} 
+                                        handleDelete={handleDelete} 
+                                        handleAddAppendix={handleAddAppendix}
+                                        isMobile={isMobile}
+                                        formatPrice={formatPrice}
+                                        getTotalPrice={getTotalPrice}
+                                        hasPermission={hasPermission}
+                                    />
+                                ));
+                            })()
                         )}
                     </TableBody>
                 </Table>
@@ -180,6 +194,7 @@ const ContractList = () => {
                 onSubmit={handleSubmit}
                 contract={editingContract}
                 isEdit={!!editingContract}
+                parentContract={parentContract}
             />
         </MainCard>
     );

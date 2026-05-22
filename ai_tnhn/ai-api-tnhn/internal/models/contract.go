@@ -15,6 +15,10 @@ type Contract struct {
 	model.BaseModel `bson:",inline"`
 	OrgID           string                 `bson:"org_id" json:"org_id" example:"60f123456789"`
 	Name            string                 `bson:"name" json:"name" example:"Hợp đồng Duy trì hệ thống thoát nước 2023"`
+	ContractNumber  string                 `bson:"contract_number" json:"contract_number" example:"HD/2026/001"`
+	InvestorName    string                 `bson:"investor_name" json:"investor_name" example:"Công ty Thoát nước"`
+	JVMembers       string                 `bson:"jv_members" json:"jv_members" example:"Thành viên A, Thành viên B"`
+	ParentID        string                 `bson:"parent_id" json:"parent_id" example:"60f123456789"`
 	CategoryID      string                 `bson:"category_id" json:"category_id" example:"60f121212121"`
 	StartDate       string                 `bson:"start_date" json:"start_date" example:"2023-01-01"`
 	EndDate         string                 `bson:"end_date" json:"end_date" example:"2023-12-31"`

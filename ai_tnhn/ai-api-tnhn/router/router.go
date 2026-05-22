@@ -28,17 +28,11 @@ func (h *HandlerFuncs) Create(mid middleware.Middleware, orgHandler *handler.Org
 		mid.TimeoutMiddleware(60*time.Second),
 		h.GinRecovery(),
 		cors.New(cors.Config{
-			AllowOrigins: []string{
-				"https://htbc.thoatnuochanoi.vn",
-				"http://htbc.thoatnuochanoi.vn",
-				"https://api-htbc.thoatnuochanoi.vn",
-				"http://localhost:3000",
-			},
-			AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-			AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-			ExposeHeaders:    []string{"Content-Length"},
-			AllowCredentials: true,
-			MaxAge:           12 * time.Hour,
+			AllowAllOrigins: true,
+			AllowMethods:    []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"},
+			AllowHeaders:    []string{"Origin", "Content-Length", "Content-Type", "Authorization", "Accept", "X-Requested-With"},
+			ExposeHeaders:   []string{"Content-Length"},
+			MaxAge:          12 * time.Hour,
 		}),
 	)
 	r.SetTrustedProxies(nil)

@@ -15,9 +15,13 @@ import dayjs from 'dayjs';
 import ContractStages from './ContractStages';
 import ContractDriveUpload from './ContractDriveUpload';
 
-const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit }) => {
+const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit, parentContract }) => {
     const [values, setValues] = useState({
         name: '',
+        contract_number: '',
+        investor_name: '',
+        jv_members: '',
+        parent_id: '',
         category_id: '',
         start_date: null,
         end_date: null,
@@ -34,9 +38,12 @@ const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit }) => {
         if (open) {
             loadCategories();
             if (isEdit && contract) {
-                setValues(prev => ({
-                    ...prev,
+                setValues({
                     name: contract.name || '',
+                    contract_number: contract.contract_number || '',
+                    investor_name: contract.investor_name || '',
+                    jv_members: contract.jv_members || '',
+                    parent_id: contract.parent_id || '',
                     category_id: contract.category_id || '',
                     start_date: contract.start_date ? dayjs(contract.start_date) : null,
                     end_date: contract.end_date ? dayjs(contract.end_date) : null,
@@ -47,12 +54,31 @@ const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit }) => {
                     note: contract.note || '',
                     drive_folder_id: contract.drive_folder_id || '',
                     drive_folder_link: contract.drive_folder_link || '',
-                    // Only overwrite files if they are not already set or if explicitly provided with content
-                    files: (contract.files && contract.files.length > 0) ? contract.files : prev.files
-                }));
+                    files: contract.files || []
+                });
+            } else if (parentContract) {
+                setValues({
+                    name: '',
+                    contract_number: '',
+                    investor_name: parentContract.investor_name || '',
+                    jv_members: parentContract.jv_members || '',
+                    parent_id: parentContract.id || '',
+                    category_id: parentContract.category_id || '',
+                    start_date: null,
+                    end_date: null,
+                    stages: [{ name: '', amount: 0, date: null }],
+                    note: '',
+                    drive_folder_id: '',
+                    drive_folder_link: '',
+                    files: []
+                });
             } else {
                 setValues({
                     name: '',
+                    contract_number: '',
+                    investor_name: '',
+                    jv_members: '',
+                    parent_id: '',
                     category_id: '',
                     start_date: null,
                     end_date: null,
@@ -64,7 +90,7 @@ const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit }) => {
                 });
             }
         }
-    }, [open, isEdit, contract]);
+    }, [open, isEdit, contract, parentContract]);
     // Note: We removed the direct 'contract' dependency to avoid frequent resets, 
     // but React lint might complain. Using functional update to preserve state.
 
@@ -154,14 +180,17 @@ const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit }) => {
         <LocalizationProvider dateAdapter={AdapterDayjs}>
             <Dialog 
                 open={open} 
-                onClose={onClose} 
+                onClose={(event, reason) => {
+                    if (reason === 'backdropClick') return;
+                    onClose();
+                }}
                 maxWidth="lg" 
                 fullWidth
                 slotProps={{ paper: { sx: { borderRadius: '16px' } } }}
             >
                 <DialogTitle sx={{ p: 3, pb: 2 }}>
                     <Typography variant="h3" component="div" sx={{ fontWeight: 700 }}>
-                        {isEdit ? 'Chỉnh sửa hợp đồng' : 'Thêm hợp đồng mới'}
+                        {values.parent_id ? (isEdit ? 'Chỉnh sửa phụ lục hợp đồng' : 'Thêm phụ lục hợp đồng mới') : (isEdit ? 'Chỉnh sửa hợp đồng' : 'Thêm hợp đồng mới')}
                     </Typography>
                 </DialogTitle>
                 <DialogContent dividers sx={{ p: 4 }}>
@@ -169,6 +198,16 @@ const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit }) => {
                         {/* Left Column: General Info & Upload */}
                         <Grid item xs={12} md={6}>
                             <Stack spacing={3}>
+                                <TextField
+                                    fullWidth
+                                    label="Số hợp đồng / Phụ lục"
+                                    name="contract_number"
+                                    value={values.contract_number}
+                                    onChange={handleChange}
+                                    required
+                                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
+                                />
+
                                 <TextField
                                     fullWidth
                                     label="Tên hợp đồng"
@@ -186,6 +225,7 @@ const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit }) => {
                                         value={values.category_id}
                                         onChange={handleChange}
                                         label="Danh mục"
+                                        disabled={!!values.parent_id}
                                     >
                                         {categories.map((c) => (
                                             <MenuItem key={c.id} value={c.id}>
@@ -197,17 +237,37 @@ const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit }) => {
                                     </Select>
                                 </FormControl>
 
+                                <TextField
+                                    fullWidth
+                                    label="Tên chủ đầu tư"
+                                    name="investor_name"
+                                    value={values.investor_name}
+                                    onChange={handleChange}
+                                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
+                                />
+
+                                <TextField
+                                    fullWidth
+                                    label="Thành viên liên danh (nếu có)"
+                                    name="jv_members"
+                                    value={values.jv_members}
+                                    onChange={handleChange}
+                                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
+                                />
+
                                 <Stack direction="row" spacing={2}>
                                     <DatePicker
                                         label="Ngày bắt đầu"
                                         value={values.start_date}
                                         onChange={(val) => setValues({ ...values, start_date: val })}
+                                        format="DD/MM/YYYY"
                                         slotProps={{ textField: { fullWidth: true, sx: { '& .MuiOutlinedInput-root': { borderRadius: '12px' } } } }}
                                     />
                                     <DatePicker
                                         label="Ngày hết hạn"
                                         value={values.end_date}
                                         onChange={(val) => setValues({ ...values, end_date: val })}
+                                        format="DD/MM/YYYY"
                                         slotProps={{ textField: { fullWidth: true, sx: { '& .MuiOutlinedInput-root': { borderRadius: '12px' } } } }}
                                     />
                                 </Stack>

@@ -56,6 +56,7 @@ const ContractStages = ({ stages, handleStageChange, addStage, removeStage }) =>
                                     label="Ngày dự kiến"
                                     value={stage.date}
                                     onChange={(val) => handleStageChange(index, 'date', val)}
+                                    format="DD/MM/YYYY"
                                     slotProps={{ textField: { fullWidth: true, size: 'small', sx: { bgcolor: 'white' } } }}
                                 />
                             </Stack>

@@ -18,11 +18,12 @@ type InundationReport interface {
 	ListByYear(ctx context.Context, orgID string, year int) ([]*models.InundationReport, error)
 }
 
-type InundationUpdate interface {
+type InundationHistory interface {
 	mgo.BaseTable
-	Create(ctx context.Context, update *models.InundationUpdate) error
-	GetByID(ctx context.Context, id string) (*models.InundationUpdate, error)
-	Update(ctx context.Context, update *models.InundationUpdate) error
-	ListByReportID(ctx context.Context, reportID string) ([]*models.InundationUpdate, error)
-	List(ctx context.Context, filter filter.Filter) ([]*models.InundationUpdate, int64, error)
+	Create(ctx context.Context, history *models.InundationHistory) error
+	GetByID(ctx context.Context, id string) (*models.InundationHistory, error)
+	GetByIDs(ctx context.Context, ids []string) ([]*models.InundationHistory, error)
+	Update(ctx context.Context, history *models.InundationHistory) error
+	ListByReportID(ctx context.Context, reportID string) ([]*models.InundationHistory, error)
+	List(ctx context.Context, filter filter.Filter) ([]*models.InundationHistory, int64, error)
 }

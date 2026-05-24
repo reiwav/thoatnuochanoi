@@ -82,8 +82,8 @@ func (h *Hub) NotifyPointChange(info PointChangeInfo) {
 
 // shouldNotify determines if a subscriber should receive the event
 func shouldNotify(sub *Subscriber, info PointChangeInfo) bool {
-	// Company users and super admins always receive all events
-	if sub.IsCompany || sub.Role == "super_admin" {
+	// Company users, super admins, and phong_kt_cl (Quality Control) always receive all events
+	if sub.IsCompany || sub.Role == "super_admin" || sub.Role == "phong_kt_cl" {
 		return true
 	}
 

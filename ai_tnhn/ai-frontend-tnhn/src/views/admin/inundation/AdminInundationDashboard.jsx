@@ -53,7 +53,7 @@ const AdminInundationDashboard = () => {
     const basePath = '/admin';
 
     const {
-        points, historyReports, totalHistory,
+        points, historyReports, totalHistory, floodLevels,
         loading, loadingHistory,
         fetchInitialData, fetchPoints, fetchHistory,
         filters, setFilters, quickFinishPoint
@@ -93,13 +93,57 @@ const AdminInundationDashboard = () => {
         };
     }, []);
 
+    // Function to match a point to its corresponding flood level from config
+    const getPointFloodLevel = (point) => {
+        if (!point.report_id) {
+            return floodLevels.find(l => !l.is_flooding) || null;
+        }
+        const depth = point.last_report?.depth || 0;
+        let matchedLevel = floodLevels.find(l => l.is_flooding && depth >= l.min_depth && depth < l.max_depth);
+        if (!matchedLevel) {
+            matchedLevel = floodLevels.find(l => l.name === point.last_report?.flood_level_name);
+        }
+        if (!matchedLevel) {
+            matchedLevel = floodLevels.find(l => l.is_flooding);
+        }
+        return matchedLevel || null;
+    };
+
+    const levelCounts = useMemo(() => {
+        const counts = {};
+        floodLevels.forEach(level => {
+            counts[level.code] = 0;
+        });
+
+        points.forEach(point => {
+            const matchedLevel = getPointFloodLevel(point);
+            if (matchedLevel) {
+                counts[matchedLevel.code] = (counts[matchedLevel.code] || 0) + 1;
+            }
+        });
+        return counts;
+    }, [points, floodLevels]);
+
     const floodedCount = useMemo(() => points.filter(p => !!p.report_id).length, [points]);
     const normalCount = useMemo(() => points.length - floodedCount, [points, floodedCount]);
 
     const filteredPoints = useMemo(() => {
         let result = points;
-        if (filters.statusFilter === 'active') result = result.filter(p => !!p.report_id);
-        if (filters.statusFilter === 'normal') result = result.filter(p => !p.report_id);
+
+        if (filters.statusFilter !== 'all') {
+            const selectedLevel = floodLevels.find(l => l.code === filters.statusFilter);
+            if (selectedLevel) {
+                result = result.filter(p => {
+                    const matchedLevel = getPointFloodLevel(p);
+                    return matchedLevel?.code === selectedLevel.code;
+                });
+            } else {
+                // Fallback for default filters
+                if (filters.statusFilter === 'active') result = result.filter(p => !!p.report_id);
+                if (filters.statusFilter === 'normal') result = result.filter(p => !p.report_id);
+            }
+        }
+
         if (filters.orgFilter !== 'all' && filters.orgFilter) {
             result = result.filter(p => p.org_id === filters.orgFilter);
         }
@@ -112,7 +156,7 @@ const AdminInundationDashboard = () => {
             if (!a.report_id && b.report_id) return 1;
             return a.name.localeCompare(b.name);
         });
-    }, [points, filters]);
+    }, [points, filters, floodLevels]);
 
     const handleOpenViewer = (imgs, idx = 0) => setViewer({ open: true, images: imgs, index: idx });
     const handleOpenDetail = (point) => setDetailDialog({ open: true, point });
@@ -127,6 +171,7 @@ const AdminInundationDashboard = () => {
         const modeMap = {
             'comment': 'REVIEW',
             'report': 'REPORT',
+            'report_enterprise': 'REPORT_ENTERPRISE',
             'survey': 'SURVEY',
             'mech': 'MECH'
         };
@@ -164,22 +209,45 @@ const AdminInundationDashboard = () => {
             secondary={
                 <Stack direction="row" spacing={1} alignItems="center">
                     {!isMobile && (
-                        <>
-                            <Chip
-                                label={`${floodedCount} Đang ngập`}
-                                color="error"
-                                variant="filled"
-                                size="small"
-                                sx={{ fontWeight: 800, borderRadius: 2 }}
-                            />
-                            <Chip
-                                label={`${normalCount} Bình thường`}
-                                color="success"
-                                variant="filled"
-                                size="small"
-                                sx={{ fontWeight: 800, borderRadius: 2, bgcolor: alpha(theme.palette.success.main, 1), color: '#fff' }}
-                            />
-                        </>
+                        <Stack direction="row" spacing={1}>
+                            {floodLevels.length > 0 ? (
+                                floodLevels.map(level => {
+                                    const count = levelCounts[level.code] || 0;
+                                    return (
+                                        <Chip
+                                            key={level.code}
+                                            label={`${count} ${level.name}`}
+                                            variant="filled"
+                                            size="small"
+                                            sx={{
+                                                fontWeight: 900,
+                                                borderRadius: 2,
+                                                bgcolor: level.color || 'grey.400',
+                                                color: '#fff',
+                                                textShadow: '0px 1px 2px rgba(0,0,0,0.35)'
+                                            }}
+                                        />
+                                    );
+                                })
+                            ) : (
+                                <>
+                                    <Chip
+                                        label={`${floodedCount} Đang ngập`}
+                                        color="error"
+                                        variant="filled"
+                                        size="small"
+                                        sx={{ fontWeight: 800, borderRadius: 2 }}
+                                    />
+                                    <Chip
+                                        label={`${normalCount} Bình thường`}
+                                        color="success"
+                                        variant="filled"
+                                        size="small"
+                                        sx={{ fontWeight: 800, borderRadius: 2, bgcolor: alpha(theme.palette.success.main, 1), color: '#fff' }}
+                                    />
+                                </>
+                            )}
+                        </Stack>
                     )}
                     <Tooltip title="Làm mới dữ liệu">
                         <IconButton
@@ -232,10 +300,82 @@ const AdminInundationDashboard = () => {
                                 value={filters.statusFilter}
                                 onChange={(e) => setFilters({ statusFilter: e.target.value })}
                                 slotProps={{ input: { sx: { borderRadius: 3 } } }}
+                                SelectProps={{
+                                    renderValue: (selected) => {
+                                        if (selected === 'all') {
+                                            return (
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <Box sx={{ width: 10, height: 10, borderRadius: '50%', border: '1px solid', borderColor: 'divider', bgcolor: 'transparent', flexShrink: 0 }} />
+                                                    Tất cả trạng thái
+                                                </Box>
+                                            );
+                                        }
+                                        if (selected === 'active') {
+                                            return (
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: 'error.main', flexShrink: 0 }} />
+                                                    Đang ngập
+                                                </Box>
+                                            );
+                                        }
+                                        if (selected === 'normal') {
+                                            return (
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: 'success.main', flexShrink: 0 }} />
+                                                    Bình thường
+                                                </Box>
+                                            );
+                                        }
+                                        const level = floodLevels.find(l => l.code === selected);
+                                        if (!level) return selected;
+                                        return (
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <Box
+                                                    sx={{
+                                                        width: 10,
+                                                        height: 10,
+                                                        borderRadius: '50%',
+                                                        bgcolor: level.color || 'grey.400',
+                                                        flexShrink: 0
+                                                    }}
+                                                />
+                                                {level.name}
+                                            </Box>
+                                        );
+                                    }
+                                }}
                             >
-                                <MenuItem key="all" value="all">Tất cả trạng thái</MenuItem>
-                                <MenuItem key="active" value="active">Đang ngập</MenuItem>
-                                <MenuItem key="normal" value="normal">Bình thường</MenuItem>
+                                <MenuItem key="all" value="all" sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                    <Box sx={{ width: 12, height: 12, borderRadius: '50%', border: '1px solid', borderColor: 'divider', bgcolor: 'transparent', flexShrink: 0 }} />
+                                    Tất cả trạng thái
+                                </MenuItem>
+                                {floodLevels.length > 0 ? (
+                                    floodLevels.map(level => (
+                                        <MenuItem key={level.code} value={level.code} sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                            <Box
+                                                sx={{
+                                                    width: 12,
+                                                    height: 12,
+                                                    borderRadius: '50%',
+                                                    bgcolor: level.color || 'grey.400',
+                                                    flexShrink: 0
+                                                }}
+                                            />
+                                            {level.name}
+                                        </MenuItem>
+                                    ))
+                                ) : (
+                                    <>
+                                        <MenuItem key="active" value="active" sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                            <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: 'error.main', flexShrink: 0 }} />
+                                            Đang ngập
+                                        </MenuItem>
+                                        <MenuItem key="normal" value="normal" sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                            <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: 'success.main', flexShrink: 0 }} />
+                                            Bình thường
+                                        </MenuItem>
+                                    </>
+                                )}
                             </TextField>
                         </Grid>
 

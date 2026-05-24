@@ -5,7 +5,7 @@ import { IconChevronUp, IconChevronDown, IconInfoCircle, IconMapPin, IconClock }
 import { getLatestData } from 'utils/inundationUtils';
 import { formatDateTime, formatDuration } from 'utils/dataHelper';
 import useInundationStore from 'store/useInundationStore';
-import { SurveyInfoSection, MechInfoSection, ReviewCommentSection } from './TechnicalSections';
+import { SurveyInfoSection, MechInfoSection, ReviewCommentSection, KtclInfoSection } from './TechnicalSections';
 
 const InundationHistoryCard = ({ report, isMobile, navigate, basePath, handleOpenViewer }) => {
     const theme = useTheme();
@@ -23,9 +23,10 @@ const InundationHistoryCard = ({ report, isMobile, navigate, basePath, handleOpe
                 <Typography variant="body2" color="text.secondary">Đơn vị quản lý: <b>{orgName}</b></Typography>
             </Box>
             <Grid container spacing={2}>
-                <Grid item xs={12} md={4}><SurveyInfoSection latest={latest} handleOpenViewer={handleOpenViewer} /></Grid>
-                <Grid item xs={12} md={4}><MechInfoSection latest={latest} handleOpenViewer={handleOpenViewer} /></Grid>
-                <Grid item xs={12} md={4}>
+                <Grid item xs={12} sm={6} md={3}><SurveyInfoSection latest={latest} handleOpenViewer={handleOpenViewer} /></Grid>
+                <Grid item xs={12} sm={6} md={3}><MechInfoSection latest={latest} handleOpenViewer={handleOpenViewer} /></Grid>
+                <Grid item xs={12} sm={6} md={3}><KtclInfoSection latest={latest} handleOpenViewer={handleOpenViewer} /></Grid>
+                <Grid item xs={12} sm={6} md={3}>
                     <Box sx={{ p: 1.5, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'grey.200' }}>
                         <Typography variant="caption" sx={{ fontWeight: 800, display: 'block', mb: 1 }}>ℹ️ TỔNG QUAN</Typography>
                         <ReviewCommentSection latest={latest} />

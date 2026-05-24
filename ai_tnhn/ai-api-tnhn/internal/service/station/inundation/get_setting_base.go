@@ -6,7 +6,7 @@ import (
 	"context"
 )
 
-func (s *service) getSettingAndSetBase(ctx context.Context, reportID, pointID string, update *models.InundationReportBase, user *models.User, images []ImageContent) error {
+func (s *service) getSettingAndSetBase(ctx context.Context, reportID, pointID string, update *models.ReportEnterpriseBase, user *models.User, images []ImageContent) error {
 	level := s.calculateFloodLevel(ctx, update.Depth)
 	if level == nil {
 		return web.BadRequest("Flood level not found")

@@ -40,6 +40,7 @@ const AdminInundationActionMenu = ({
 
     // Actions are only relevant if there's an active report
     const hasActiveReport = !!point.report_id;
+    const isCorrection = hasActiveReport && point.last_report?.needs_correction && !point.last_report?.is_review_updated;
 
     return (
         <>
@@ -100,7 +101,22 @@ const AdminInundationActionMenu = ({
                         <ListItemText
                             primary={
                                 <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'secondary.main' }}>
-                                    Cập nhật diễn biến
+                                    Báo cáo KT-CL
+                                </Typography>
+                            }
+                        />
+                    </MenuItem>
+                </PermissionGuard>
+
+                <PermissionGuard permission="inundation:enterprise_report">
+                    <MenuItem onClick={handleMenuClick('report_enterprise')}>
+                        <ListItemIcon>
+                            <IconReportMedical size={22} color={isCorrection ? theme.palette.warning.main : theme.palette.primary.main} />
+                        </ListItemIcon>
+                        <ListItemText
+                            primary={
+                                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: isCorrection ? 'warning.main' : 'primary.main' }}>
+                                    {isCorrection ? 'Chỉnh sửa lại điểm ngập' : 'Báo cáo địa bàn'}
                                 </Typography>
                             }
                         />

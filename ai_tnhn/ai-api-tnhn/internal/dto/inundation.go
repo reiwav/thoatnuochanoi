@@ -6,7 +6,7 @@ import "ai-api-tnhn/internal/models"
 type CreateReportRequest struct {
 	PointID string `form:"point_id" json:"point_id" binding:"required" example:"point_123"`
 	//StreetName string `form:"street_name" json:"street_name" example:"Phố Huế"`
-	models.InundationReportBase
+	models.ReportEnterpriseBase
 }
 
 // UpdateReportRequest defines the inputs for updating an existing report
@@ -20,7 +20,7 @@ type UpdateReportRequest struct {
 
 // AddUpdateSitutionRequest defines the inputs for adding a situational update to an active report
 type AddUpdateSitutionRequest struct {
-	models.InundationReportBase
+	models.ReportEnterpriseBase
 	Resolve bool `form:"resolve" json:"resolve" example:"false"`
 }
 

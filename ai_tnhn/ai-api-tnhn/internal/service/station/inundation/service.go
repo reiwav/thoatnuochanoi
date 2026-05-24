@@ -11,23 +11,24 @@ import (
 )
 
 type Service interface {
-	CreateReport(ctx context.Context, user *models.User, pointID string, report models.InundationReportBase, images []ImageContent) (*models.InundationReport, error)
-	UpdateUpdateSitution(ctx context.Context, user *models.User, reportID string, update dto.AddUpdateSitutionRequest, images []ImageContent) (*models.InundationReport, error)
+	ReportEnterprise(ctx context.Context, user *models.User, pointID string, report models.ReportEnterpriseBase, images []ImageContent) (*models.InundationReport, error)
+	ReportEnterpriseSituation(ctx context.Context, user *models.User, pointID string, update dto.AddUpdateSitutionRequest, images []ImageContent) (*models.InundationReport, error)
 	ListReports(ctx context.Context, orgID string) ([]*models.InundationReport, int64, error)
 	ListReportsWithFilter(ctx context.Context, user *models.User, isAllowedAll bool, orgIDFilter string, f filter.Filter) ([]*models.InundationReport, int64, error)
+	GetPointHistory(ctx context.Context, pointID string, lastReportID string, size int) ([]*models.InundationHistory, int64, error)
 	GetReport(ctx context.Context, user *models.User, reportID string) (*models.InundationReport, error)
-	ListReportUpdates(ctx context.Context, reportID string) ([]models.InundationUpdate, error)
-	QuickFinishV2(ctx context.Context, user *models.User, reportID string) error
-	UpdateReport(ctx context.Context, user *models.User, id string, report *models.InundationReportBase, images []ImageContent) error
-	UpdateSurvey(ctx context.Context, user *models.User, id string, report *models.ReportSurveyBase, images []ImageContent) error
-	UpdateMech(ctx context.Context, user *models.User, id string, report *models.ReportMechBase, images []ImageContent) error
+	ListReportHistory(ctx context.Context, reportID string) ([]models.InundationHistory, error)
+	QuickFinishV2(ctx context.Context, user *models.User, pointID string) error
+	CorrectEnterpriseReport(ctx context.Context, user *models.User, pointID string, report *models.ReportEnterpriseBase, images []ImageContent) error
+	ReportSurvey(ctx context.Context, user *models.User, pointID string, report *models.ReportSurveyBase, images []ImageContent) error
+	ReportMech(ctx context.Context, user *models.User, pointID string, report *models.ReportMechBase, images []ImageContent) error
+	ReportKTCL(ctx context.Context, user *models.User, pointID string, report *models.ReportKTCLBase, images []ImageContent) error
 
 	// Review and Correction
 	ReviewReport(ctx context.Context, user *models.User, reportID, comment string) error
 	ReviewUpdate(ctx context.Context, user *models.User, updateID, comment string) error
-	GetUpdateByID(ctx context.Context, updateID string) (*models.InundationUpdate, error)
-	//UpdateUpdateContent(ctx context.Context, user *models.User, update *models.InundationUpdate, images []ImageContent) error
-	UpdateUpdateContent2(ctx context.Context, user *models.User, reportID string, update dto.AddUpdateSitutionRequest, images []ImageContent) error
+	GetHistoryByID(ctx context.Context, historyID string) (*models.InundationHistory, error)
+	CorrectEnterpriseSituation(ctx context.Context, user *models.User, pointID string, update dto.AddUpdateSitutionRequest, images []ImageContent) error
 
 	// Points management
 	GetPointsStatus(ctx context.Context, user *models.User, isAllowedAll bool, orgIDFilter string) ([]PointStatus, error)
@@ -50,7 +51,7 @@ type Service interface {
 
 type service struct {
 	InundationReportRepo  repository.InundationReport
-	inundationUpdateRepo  repository.InundationUpdate
+	inundationHistoryRepo repository.InundationHistory
 	inundationStationRepo repository.InundationStation
 	orgRepo               repository.Organization
 	driveSvc              googledrive.Service
@@ -63,7 +64,7 @@ type service struct {
 
 func NewService(
 	inundationRepo repository.InundationReport,
-	inundationUpdateRepo repository.InundationUpdate,
+	inundationHistoryRepo repository.InundationHistory,
 	inundationStationRepo repository.InundationStation,
 	orgRepo repository.Organization,
 	driveSvc googledrive.Service,
@@ -71,7 +72,7 @@ func NewService(
 ) Service {
 	svc := &service{
 		InundationReportRepo:  inundationRepo,
-		inundationUpdateRepo:  inundationUpdateRepo,
+		inundationHistoryRepo: inundationHistoryRepo,
 		inundationStationRepo: inundationStationRepo,
 		orgRepo:               orgRepo,
 		driveSvc:              driveSvc,
@@ -80,7 +81,7 @@ func NewService(
 		hub:                   NewHub(),
 	}
 
-	svc.syncWorker = NewSyncWorker(inundationRepo, inundationUpdateRepo, orgRepo, driveSvc, svc.resolveUploadFolder)
+	svc.syncWorker = NewSyncWorker(inundationRepo, inundationHistoryRepo, orgRepo, driveSvc, svc.resolveUploadFolder)
 	svc.syncWorker.Start()
 
 	return svc
@@ -108,4 +109,15 @@ func (s *service) notifyPointChange(pointID string) {
 		SharedOrgIDs: point.SharedOrgIDs,
 		ShareAll:     point.ShareAll,
 	})
+}
+
+func (s *service) getOrgName(ctx context.Context, orgID string) string {
+	if orgID == "" {
+		return ""
+	}
+	org, err := s.orgRepo.GetByID(ctx, orgID)
+	if err != nil || org == nil {
+		return ""
+	}
+	return org.Name
 }

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import inundationApi from 'api/inundation';
 import organizationApi from 'api/organization';
+import settingApi from 'api/setting';
 import { toast } from 'react-hot-toast';
 import { getDataArray } from 'utils/apiHelper';
 
@@ -8,6 +9,7 @@ const useInundationStore = create((set, get) => ({
     points: [],
     organizations: [],
     historyReports: [],
+    floodLevels: [],
     totalHistory: 0,
 
     loading: false,
@@ -34,17 +36,28 @@ const useInundationStore = create((set, get) => ({
     })),
 
     // Actions
+    fetchFloodLevels: async () => {
+        try {
+            const res = await settingApi.getFloodLevels();
+            set({ floodLevels: getDataArray(res) });
+        } catch (err) {
+            console.error('Fetch flood levels failed', err);
+        }
+    },
+
     fetchInitialData: async () => {
         set({ loading: true });
         try {
-            const [pointsRes, orgsRes] = await Promise.all([
+            const [pointsRes, orgsRes, levelsRes] = await Promise.all([
                 inundationApi.getPointsStatus(),
-                organizationApi.getAll()
+                organizationApi.getAll(),
+                settingApi.getFloodLevels()
             ]);
 
             set({
                 points: getDataArray(pointsRes),
                 organizations: getDataArray(orgsRes),
+                floodLevels: getDataArray(levelsRes),
                 loading: false
             });
         } catch (err) {
@@ -87,9 +100,9 @@ const useInundationStore = create((set, get) => ({
     },
 
     // Technical Actions
-    updateSurvey: async (reportId, formData) => {
+    updateSurvey: async (pointId, formData) => {
         try {
-            await inundationApi.updateSurvey(reportId, formData);
+            await inundationApi.reportSurvey(pointId, formData);
             toast.success('Cập nhật XNTK thành công');
             get().fetchPoints();
             return true;
@@ -99,14 +112,26 @@ const useInundationStore = create((set, get) => ({
         }
     },
 
-    updateMech: async (reportId, formData) => {
+    updateMech: async (pointId, formData) => {
         try {
-            await inundationApi.updateMech(reportId, formData);
+            await inundationApi.reportMech(pointId, formData);
             toast.success('Cập nhật cơ giới thành công');
             get().fetchPoints();
             return true;
         } catch (err) {
             toast.error('Lỗi khi cập nhật cơ giới');
+            return false;
+        }
+    },
+
+    updateKTCL: async (pointId, formData) => {
+        try {
+            await inundationApi.reportKTCL(pointId, formData);
+            toast.success('Cập nhật KT-CL thành công');
+            get().fetchPoints();
+            return true;
+        } catch (err) {
+            toast.error('Lỗi khi cập nhật KT-CL');
             return false;
         }
     },

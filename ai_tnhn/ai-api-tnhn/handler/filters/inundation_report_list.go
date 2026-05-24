@@ -32,10 +32,10 @@ func (f *InundationReportListRequest) GetWhere() filter.Where {
 		f.AddWhere("street_name", "street_name", primitive.M{"$regex": f.Query, "$options": "i"})
 	}
 	if f.FromTime > 0 {
-		f.AddWhere("time_gt", "start_time", primitive.M{"$gte": f.FromTime})
+		f.AddWhere("time_gt", "created_at", primitive.M{"$gte": f.FromTime})
 	}
 	if f.ToTime > 0 {
-		f.AddWhere("time_lt", "start_time", primitive.M{"$lte": f.ToTime})
+		f.AddWhere("time_lt", "created_at", primitive.M{"$lte": f.ToTime})
 	}
 	if f.IsFlooding != nil {
 		f.AddWhere("is_flooding", "is_flooding", f.IsFlooding)

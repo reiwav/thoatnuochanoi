@@ -11,6 +11,12 @@ import (
 // TimeoutMiddleware wraps each request in a context with a specified timeout.
 func (m mid) TimeoutMiddleware(timeout time.Duration) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// Bypass timeout for SSE stream to prevent connection reset and goroutine races
+		if c.Request.URL.Path == "/api/inundation/stream" {
+			c.Next()
+			return
+		}
+
 		// Create a context with timeout
 		ctx, cancel := context.WithTimeout(c.Request.Context(), timeout)
 		defer cancel()

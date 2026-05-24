@@ -36,13 +36,13 @@ export const SurveyActionForm = ({ point, onFinished }) => {
     };
 
     const handleSubmit = async () => {
-        if (!point.report_id || !point.last_report) return;
+        if (!point.id) return;
         setLoading(true);
         const fd = new FormData();
         fd.append('survey_checked', data.checked);
         fd.append('survey_note', data.note);
         data.images.forEach(img => fd.append('images', img));
-        const success = await updateSurvey(point.last_report.id, fd);
+        const success = await updateSurvey(point.id, fd);
         setLoading(false);
         if (success && onFinished) onFinished();
     };
@@ -119,7 +119,7 @@ export const MechActionForm = ({ point, onFinished }) => {
     };
 
     const handleSubmit = async () => {
-        if (!point.report_id || !point.last_report) return;
+        if (!point.id) return;
         setLoading(true);
         const fd = new FormData();
         fd.append('mech_checked', data.checked);
@@ -128,7 +128,7 @@ export const MechActionForm = ({ point, onFinished }) => {
         fd.append('mech_r', data.r);
         fd.append('mech_s', data.s);
         data.images.forEach(img => fd.append('images', img));
-        const success = await updateMech(point.last_report.id, fd);
+        const success = await updateMech(point.id, fd);
         setLoading(false);
         if (success && onFinished) onFinished();
     };

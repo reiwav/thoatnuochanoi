@@ -7,7 +7,7 @@ import {
     IconMapPin, IconChevronDown, IconChevronUp
 } from '@tabler/icons-react';
 import AdminInundationActionMenu from './AdminInundationActionMenu';
-import { SurveyInfoSection, MechInfoSection, ReviewCommentSection, ReportInfoSection } from '../../../employee/inundation/components/TechnicalSections';
+import { SurveyInfoSection, MechInfoSection, ReviewCommentSection, ReportInfoSection, KtclInfoSection } from '../../../employee/inundation/components/TechnicalSections';
 import { AdminCardMetrics, AdminCardNormalState, AdminCardActionButtons } from './shared/AdminCardSubComponents';
 
 const AdminInundationCard = ({ point, onAction, onOpenViewer, onOpenDetail, onOpenHistory, navigate, basePath }) => {
@@ -122,6 +122,7 @@ const AdminInundationCard = ({ point, onAction, onOpenViewer, onOpenDetail, onOp
                                 <ReportInfoSection latest={latestData} handleOpenViewer={onOpenViewer} />
                                 <SurveyInfoSection latest={latestData} handleOpenViewer={onOpenViewer} />
                                 <MechInfoSection latest={latestData} handleOpenViewer={onOpenViewer} />
+                                <KtclInfoSection latest={latestData} handleOpenViewer={onOpenViewer} />
                                 <ReviewCommentSection latest={latestData} />
                             </Stack>
                         ) : (

@@ -60,11 +60,12 @@ func main() {
 		{Code: "inundation:create", Title: "Tạo mới", Group: "Điểm ngập", Type: "button", Description: "Tạo điểm ngập"},
 		{Code: "inundation:edit", Title: "Sửa", Group: "Điểm ngập", Type: "button", Description: "Chỉnh sửa trạng thái ngập"},
 		{Code: "inundation:delete", Title: "Xóa", Group: "Điểm ngập", Type: "button", Description: "Xóa báo cáo ngập"},
-		{Code: "inundation:report", Title: "Báo cáo", Group: "Điểm ngập", Type: "button", Description: "Báo cáo điểm ngập"},
+		{Code: "inundation:report", Title: "Báo cáo KTCL", Group: "Điểm ngập", Type: "button", Description: "Báo cáo điểm ngập của KTCL"},
 		{Code: "inundation:review", Title: "Nhận xét điểm ngập", Group: "Điểm ngập", Type: "button", Description: "Quyền rà soát và gửi nhận xét cho nhân viên"},
-		{Code: "inundation:survey", Title: "XNTK", Group: "Điểm ngập", Type: "button", Description: "Quyền khảo sát & phối hợp xử lý điểm ngập"},
-		{Code: "inundation:mechanic", Title: "XN Cơ giới", Group: "Điểm ngập", Type: "button", Description: "Quyền bổ sung ảnh giám sát từ XN Cơ giới"},
+		{Code: "inundation:survey", Title: "Báo cáo XNTK", Group: "Điểm ngập", Type: "button", Description: "Quyền khảo sát & phối hợp xử lý điểm ngập"},
+		{Code: "inundation:mechanic", Title: "Báo cáo XNCG", Group: "Điểm ngập", Type: "button", Description: "Quyền bổ sung ảnh giám sát từ XN Cơ giới"},
 		{Code: "inundation:finish", Title: "Kết thúc ngập", Group: "Điểm ngập", Type: "button", Description: "Nút xác nhận hết ngập"},
+		{Code: "inundation:enterprise_report", Title: "Báo cáo XN Địa bàn", Group: "Điểm ngập", Type: "button", Description: "Quyền báo cáo và cập nhật của Xí nghiệp địa bàn"},
 
 		// ─── Mực nước ───
 		{Code: "water:view", Title: "Xem", Group: "Mực nước", Type: "child_menu", Description: "Xem bảng sông hồ, lịch sử, danh sách"},

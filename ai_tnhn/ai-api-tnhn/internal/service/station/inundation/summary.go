@@ -51,15 +51,6 @@ func (s *service) GetInundationSummary(ctx context.Context, orgID string, isAllo
 			depthInfo = "ngập " + depthInfo
 		}
 
-		var updates []InundationUpdateStat
-		for _, u := range r.Updates {
-			updates = append(updates, InundationUpdateStat{
-				Timestamp:   time.Unix(u.Timestamp, 0).Format("15:04 02/01/2006"),
-				Description: u.Description,
-				Depth:       u.Depth,
-			})
-		}
-
 		levelName := r.FloodLevelName
 		if levelName == "" {
 			levelName = "úng ngập"
@@ -77,7 +68,6 @@ func (s *service) GetInundationSummary(ctx context.Context, orgID string, isAllo
 			Color:          r.FloodLevelColor,
 			CurrentStatus:  "Đang ngập lụt",
 			FloodLevelName: levelName,
-			Updates:        updates,
 		}
 		ongoing = append(ongoing, stat)
 		detailStrings = append(detailStrings, fmt.Sprintf("%s (%s, %s)", streetName, levelName, depthInfo))

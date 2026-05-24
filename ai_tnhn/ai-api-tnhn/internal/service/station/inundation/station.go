@@ -109,6 +109,7 @@ func (s *service) GetPointsStatus(ctx context.Context, user *models.User, isAllo
 		if p.LastReportID != "" {
 			lastReport, _ := s.InundationReportRepo.GetByID(ctx, p.LastReportID)
 			if lastReport != nil {
+				_ = s.fillReportBases(ctx, lastReport)
 				level := s.calculateFloodLevel(ctx, lastReport.Depth)
 				if level != nil {
 					lastReport.FloodLevelName = level.Name

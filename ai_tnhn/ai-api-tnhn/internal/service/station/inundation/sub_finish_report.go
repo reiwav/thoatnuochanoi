@@ -5,7 +5,6 @@ import (
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/utils/web"
 	"context"
-	"fmt"
 	"time"
 )
 
@@ -19,17 +18,10 @@ func (s *service) QuickFinishV2(ctx context.Context, user *models.User, pointID 
 		return web.BadRequest("Không tìm thấy báo cáo")
 	}
 	existing, err := s.InundationReportRepo.GetByID(ctx, reportID)
-	fmt.Println("======= existing: ", existing)
 	if err != nil {
 		return err
 	}
 
-	station.ReportID = ""
-	err = s.inundationStationRepo.Update(ctx, station)
-	fmt.Println("update station: ", err)
-	if err != nil {
-		return err
-	}
 	now := time.Now().Unix()
 	existing.Status = constant.InundationStatusResolved
 	existing.IsFlooding = false
@@ -37,30 +29,28 @@ func (s *service) QuickFinishV2(ctx context.Context, user *models.User, pointID 
 	existing.FloodLevelName = "Bình thường"
 	existing.FloodLevelColor = "#10b981"
 	existing.EndTime = now
+
+	newHistory, err := s.createHistoryAndEnqueueSync(ctx, reportID, user, s.getUserPermission(ctx, "inundation:enterprise_report"), 0, "", "", "Kết thúc nhanh đợt ngập", nil)
+	if err != nil {
+		return err
+	}
+
+	existing.EnterpriseHistoryID = newHistory.ID
+
 	err = s.InundationReportRepo.Update(ctx, existing)
 	if err != nil {
 		return err
 	}
-	crteUpdate := models.InundationUpdate{
-		ReportID:  reportID,
-		Timestamp: now,
-		PointID:   existing.PointID,
-		InundationReportBase: models.InundationReportBase{
-			Description: "Kết thúc nhanh đợt ngập",
-			Depth:       0,
 
-			ReportBase: models.ReportBase{
-				FloodLevelName:  "Bình thường",
-				FloodLevelColor: "#10b981",
-				TrafficStatus:   "Bình thường",
-				IsFlooding:      false,
-				UserID:          user.ID,
-				UserEmail:       user.Email,
-				UserName:        user.Name,
-			},
-		},
+	// Create a new resolved normal report representing post-flood normal state
+	newNormReportID, err := s.createNewResolvedNormalReport(ctx, station, now)
+	if err != nil {
+		return err
 	}
-	err = s.inundationUpdateRepo.Create(ctx, &crteUpdate)
+
+	station.ReportID = ""
+	station.LastReportID = newNormReportID
+	err = s.inundationStationRepo.Update(ctx, station)
 	if err != nil {
 		return err
 	}

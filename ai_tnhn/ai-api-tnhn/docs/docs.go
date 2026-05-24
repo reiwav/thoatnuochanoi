@@ -5733,6 +5733,868 @@ const docTemplate = `{
                 }
             }
         },
+        "/inundation/history": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Lấy lịch sử báo cáo ngập lụt của trạm/điểm ngập, có phân trang theo last_report_id",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Ngập lụt"
+                ],
+                "summary": "Lấy lịch sử báo cáo của một điểm ngập",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID điểm ngập",
+                        "name": "point_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID báo cáo cuối cùng của trang trước",
+                        "name": "last_report_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Số bản ghi mỗi trang",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/definitions/models.InundationReport"
+                                    }
+                                },
+                                "total": {
+                                    "type": "integer"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/inundation/point/{point_id}/correct": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Hiệu chỉnh thông tin chi tiết của báo cáo chính hiện có khi có yêu cầu rà soát",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Ngập lụt"
+                ],
+                "summary": "Hiệu chỉnh báo cáo ngập lụt chính của Địa bàn",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID điểm ngập",
+                        "name": "point_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "number",
+                        "example": 20,
+                        "name": "depth",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "Ngập nhẹ",
+                        "name": "description",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "integer",
+                        "name": "ent_updated_at",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "#FFD600",
+                        "name": "flood_level_color",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "Ngập nhẹ",
+                        "name": "flood_level_name",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "example": [
+                            "[\"img1.jpg\"",
+                            " \"img2.jpg\"]"
+                        ],
+                        "description": "Initial images",
+                        "name": "images",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "boolean",
+                        "name": "is_flooding",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "100m",
+                        "name": "length",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "DI_CHUYEN_CHAM",
+                        "name": "traffic_status",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "emp@hsdc.com.vn",
+                        "name": "user_email",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "60a123456789",
+                        "name": "user_id",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "Nguyễn Văn B",
+                        "name": "user_name",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "50m",
+                        "name": "width",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Hình ảnh",
+                        "name": "images",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                }
+            }
+        },
+        "/inundation/point/{point_id}/correct-update": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Hiệu chỉnh nội dung của bản cập nhật diễn biến mới nhất khi có yêu cầu rà soát",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Ngập lụt"
+                ],
+                "summary": "Hiệu chỉnh bản cập nhật diễn biến của Địa bàn",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID điểm ngập",
+                        "name": "point_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "number",
+                        "example": 20,
+                        "name": "depth",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "Ngập nhẹ",
+                        "name": "description",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "integer",
+                        "name": "ent_updated_at",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "#FFD600",
+                        "name": "flood_level_color",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "Ngập nhẹ",
+                        "name": "flood_level_name",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "example": [
+                            "[\"img1.jpg\"",
+                            " \"img2.jpg\"]"
+                        ],
+                        "description": "Initial images",
+                        "name": "images",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "boolean",
+                        "name": "is_flooding",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "100m",
+                        "name": "length",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "boolean",
+                        "example": false,
+                        "name": "resolve",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "DI_CHUYEN_CHAM",
+                        "name": "traffic_status",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "emp@hsdc.com.vn",
+                        "name": "user_email",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "60a123456789",
+                        "name": "user_id",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "Nguyễn Văn B",
+                        "name": "user_name",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "50m",
+                        "name": "width",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Hình ảnh",
+                        "name": "images",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                }
+            }
+        },
+        "/inundation/point/{point_id}/enterprise": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Tạo hoặc cập nhật báo cáo chính của Địa bàn",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Ngập lụt"
+                ],
+                "summary": "Địa bàn báo cáo ngập lụt",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID điểm ngập",
+                        "name": "point_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "number",
+                        "example": 20,
+                        "name": "depth",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "Ngập nhẹ",
+                        "name": "description",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "integer",
+                        "name": "ent_updated_at",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "#FFD600",
+                        "name": "flood_level_color",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "Ngập nhẹ",
+                        "name": "flood_level_name",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "example": [
+                            "[\"img1.jpg\"",
+                            " \"img2.jpg\"]"
+                        ],
+                        "description": "Initial images",
+                        "name": "images",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "boolean",
+                        "name": "is_flooding",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "100m",
+                        "name": "length",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "DI_CHUYEN_CHAM",
+                        "name": "traffic_status",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "emp@hsdc.com.vn",
+                        "name": "user_email",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "60a123456789",
+                        "name": "user_id",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "Nguyễn Văn B",
+                        "name": "user_name",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "50m",
+                        "name": "width",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Hình ảnh hiện trường",
+                        "name": "images",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.InundationReport"
+                        }
+                    }
+                }
+            }
+        },
+        "/inundation/point/{point_id}/ktcl": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Cập nhật trạng thái kiểm tra KTCL, ghi chú và các giá trị D/R/S của KTCL",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Ngập lụt"
+                ],
+                "summary": "KTCL báo cáo ngập lụt",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID điểm ngập",
+                        "name": "point_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "example": true,
+                        "name": "ktcl_checked",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "number",
+                        "name": "ktcl_d",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "ktcl_images",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "KTCL ghi chú",
+                        "name": "ktcl_note",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "name": "ktcl_r",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "name": "ktcl_s",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "integer",
+                        "name": "ktcl_updated_at",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "name": "ktcl_user_id",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "name": "ktcl_user_name",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Hình ảnh",
+                        "name": "images",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                }
+            }
+        },
+        "/inundation/point/{point_id}/mech": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Cập nhật trạng thái kiểm tra cơ giới, ghi chú và các giá trị D/R/S của Cơ giới",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Ngập lụt"
+                ],
+                "summary": "Cơ giới báo cáo ngập lụt",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID điểm ngập",
+                        "name": "point_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "example": true,
+                        "name": "mech_checked",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "number",
+                        "example": 20,
+                        "name": "mech_d",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "mech_images",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "Máy xúc đã đến",
+                        "name": "mech_note",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "R1",
+                        "name": "mech_r",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "S1",
+                        "name": "mech_s",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "integer",
+                        "name": "mech_updated_at",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "name": "mech_user_id",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "name": "mech_user_name",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Hình ảnh",
+                        "name": "images",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                }
+            }
+        },
+        "/inundation/point/{point_id}/survey": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Cập nhật trạng thái đã kiểm tra và ghi chú khảo sát của Khảo sát Thiết kế",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Ngập lụt"
+                ],
+                "summary": "Khảo sát báo cáo ngập lụt",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID điểm ngập",
+                        "name": "point_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "example": true,
+                        "name": "survey_checked",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "number",
+                        "name": "survey_d",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "survey_images",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "Đã khảo sát",
+                        "name": "survey_note",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "name": "survey_r",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "name": "survey_s",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "integer",
+                        "name": "survey_updated_at",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "name": "survey_user_id",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "name": "survey_user_name",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Hình ảnh",
+                        "name": "images",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                }
+            }
+        },
+        "/inundation/point/{point_id}/update": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Thêm bản diễn biến mới cho điểm ngập",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Ngập lụt"
+                ],
+                "summary": "Địa bàn cập nhật diễn biến",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID điểm ngập",
+                        "name": "point_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "number",
+                        "example": 20,
+                        "name": "depth",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "Ngập nhẹ",
+                        "name": "description",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "integer",
+                        "name": "ent_updated_at",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "#FFD600",
+                        "name": "flood_level_color",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "Ngập nhẹ",
+                        "name": "flood_level_name",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "example": [
+                            "[\"img1.jpg\"",
+                            " \"img2.jpg\"]"
+                        ],
+                        "description": "Initial images",
+                        "name": "images",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "boolean",
+                        "name": "is_flooding",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "100m",
+                        "name": "length",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "boolean",
+                        "example": false,
+                        "name": "resolve",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "DI_CHUYEN_CHAM",
+                        "name": "traffic_status",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "emp@hsdc.com.vn",
+                        "name": "user_email",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "60a123456789",
+                        "name": "user_id",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "Nguyễn Văn B",
+                        "name": "user_name",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "example": "50m",
+                        "name": "width",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Hình ảnh",
+                        "name": "images",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.InundationReport"
+                        }
+                    }
+                }
+            }
+        },
         "/inundation/points": {
             "post": {
                 "security": [
@@ -6009,146 +6871,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/inundation/report": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Tạo một báo cáo ngập lụt mới với tùy chọn đính kèm hình ảnh",
-                "consumes": [
-                    "multipart/form-data"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Ngập lụt"
-                ],
-                "summary": "Tạo báo cáo ngập lụt mới (nhân viên xí nghiệp tạo)",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "example": "20-30cm",
-                        "name": "depth",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "Ngập nhẹ",
-                        "name": "description",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "100m",
-                        "name": "length",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "boolean",
-                        "example": true,
-                        "name": "mech_checked",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "D1",
-                        "description": "Administrative/Review context",
-                        "name": "mech_d",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "Máy xúc đã đến",
-                        "name": "mech_note",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "R1",
-                        "name": "mech_r",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "S1",
-                        "name": "mech_s",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "point_123",
-                        "name": "point_id",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "example": 1620000000,
-                        "name": "start_time",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "Phố Huế",
-                        "name": "street_name",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "boolean",
-                        "example": true,
-                        "name": "survey_checked",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "Đã khảo sát",
-                        "name": "survey_note",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "DI_CHUYEN_CHAM",
-                        "name": "traffic_status",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "50m",
-                        "name": "width",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "file",
-                        "description": "Hình ảnh hiện trường",
-                        "name": "images",
-                        "in": "formData"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.InundationReport"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/web.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/web.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/inundation/report/{id}": {
             "get": {
                 "security": [
@@ -6188,224 +6910,6 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/web.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Cập nhật thông tin chi tiết của báo cáo hiện có với tùy chọn hình ảnh",
-                "consumes": [
-                    "multipart/form-data"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Ngập lụt"
-                ],
-                "summary": "Cập nhật báo cáo ngập lụt",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ID báo cáo",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "example": "30-40cm",
-                        "name": "depth",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "Ngập tăng",
-                        "name": "description",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "150m",
-                        "name": "length",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "UN_TAC",
-                        "name": "traffic_status",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "60m",
-                        "name": "width",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "file",
-                        "description": "Hình ảnh cập nhật",
-                        "name": "images",
-                        "in": "formData"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "boolean"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/web.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/inundation/report/{id}/mech": {
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Cập nhật trạng thái kiểm tra cơ giới, ghi chú và các giá trị D/R/S",
-                "consumes": [
-                    "multipart/form-data"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Ngập lụt"
-                ],
-                "summary": "Cập nhật trạng thái cơ giới hóa",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ID báo cáo",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "example": "20-30cm",
-                        "name": "depth",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "Ngập nhẹ",
-                        "name": "description",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "100m",
-                        "name": "length",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "boolean",
-                        "example": true,
-                        "name": "mech_checked",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "D1",
-                        "description": "Administrative/Review context",
-                        "name": "mech_d",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "Máy xúc đã đến",
-                        "name": "mech_note",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "R1",
-                        "name": "mech_r",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "S1",
-                        "name": "mech_s",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "point_123",
-                        "name": "point_id",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "example": 1620000000,
-                        "name": "start_time",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "Phố Huế",
-                        "name": "street_name",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "boolean",
-                        "example": true,
-                        "name": "survey_checked",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "Đã khảo sát",
-                        "name": "survey_note",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "DI_CHUYEN_CHAM",
-                        "name": "traffic_status",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "50m",
-                        "name": "width",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "file",
-                        "description": "Hình ảnh cơ giới",
-                        "name": "images",
-                        "in": "formData"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "boolean"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/web.ErrorResponse"
                         }
@@ -6470,147 +6974,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/inundation/report/{id}/survey": {
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Cập nhật trạng thái đã kiểm tra và ghi chú khảo sát của báo cáo",
-                "consumes": [
-                    "multipart/form-data"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Ngập lụt"
-                ],
-                "summary": "Cập nhật trạng thái khảo sát",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ID báo cáo",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "example": "20-30cm",
-                        "name": "depth",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "Ngập nhẹ",
-                        "name": "description",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "100m",
-                        "name": "length",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "boolean",
-                        "example": true,
-                        "name": "mech_checked",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "D1",
-                        "description": "Administrative/Review context",
-                        "name": "mech_d",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "Máy xúc đã đến",
-                        "name": "mech_note",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "R1",
-                        "name": "mech_r",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "S1",
-                        "name": "mech_s",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "point_123",
-                        "name": "point_id",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "example": 1620000000,
-                        "name": "start_time",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "Phố Huế",
-                        "name": "street_name",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "boolean",
-                        "example": true,
-                        "name": "survey_checked",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "Đã khảo sát",
-                        "name": "survey_note",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "DI_CHUYEN_CHAM",
-                        "name": "traffic_status",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "50m",
-                        "name": "width",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "file",
-                        "description": "Hình ảnh khảo sát",
-                        "name": "images",
-                        "in": "formData"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "boolean"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/web.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/inundation/report/{id}/updates": {
             "get": {
                 "security": [
@@ -6641,7 +7004,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.InundationUpdate"
+                                "$ref": "#/definitions/models.InundationHistory"
                             }
                         }
                     },
@@ -6758,152 +7121,6 @@ const docTemplate = `{
                         "description": "SSE stream",
                         "schema": {
                             "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/inundation/update/{id}": {
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Cập nhật nội dung của một bản cập nhật tình hình hiện có",
-                "consumes": [
-                    "multipart/form-data"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Ngập lụt"
-                ],
-                "summary": "Cập nhật nội dung cập nhật tình hình",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ID bản cập nhật",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "number",
-                        "example": 20,
-                        "name": "depth",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "Ngập nhẹ",
-                        "name": "description",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "#FFD600",
-                        "name": "flood_level_color",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "Ngập nhẹ",
-                        "name": "flood_level_name",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "example": [
-                            "[\"img1.jpg\"",
-                            " \"img2.jpg\"]"
-                        ],
-                        "description": "Initial images",
-                        "name": "images",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "boolean",
-                        "name": "is_flooding",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "100m",
-                        "name": "length",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "point_123",
-                        "name": "point_id",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "boolean",
-                        "example": false,
-                        "name": "resolve",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "Phố Huế",
-                        "name": "street_name",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "DI_CHUYEN_CHAM",
-                        "name": "traffic_status",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "emp@hsdc.com.vn",
-                        "name": "user_email",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "60a123456789",
-                        "name": "user_id",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "Nguyễn Văn B",
-                        "name": "user_name",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "example": "50m",
-                        "name": "width",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "file",
-                        "description": "Hình ảnh cập nhật",
-                        "name": "images",
-                        "in": "formData"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "boolean"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/web.ErrorResponse"
                         }
                     }
                 }
@@ -7515,10 +7732,86 @@ const docTemplate = `{
                 }
             }
         },
+        "models.InundationHistory": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "integer"
+                },
+                "deleted_at": {
+                    "type": "integer"
+                },
+                "depth": {
+                    "type": "number"
+                },
+                "flood_level_color": {
+                    "type": "string"
+                },
+                "flood_level_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "inundation_id": {
+                    "type": "string"
+                },
+                "length": {
+                    "type": "string"
+                },
+                "needs_correction": {
+                    "type": "boolean"
+                },
+                "note": {
+                    "type": "string"
+                },
+                "org_id": {
+                    "type": "string"
+                },
+                "org_name": {
+                    "type": "string"
+                },
+                "report_id": {
+                    "type": "string"
+                },
+                "review_comment": {
+                    "type": "string"
+                },
+                "role_permission": {
+                    "description": "inundation:enterprise_report, inundation:review, inundation:survey, inundation:mechanic",
+                    "type": "string"
+                },
+                "traffic_status": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "integer"
+                },
+                "user_email": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "user_name": {
+                    "type": "string"
+                },
+                "width": {
+                    "type": "string"
+                }
+            }
+        },
         "models.InundationReport": {
             "type": "object",
             "properties": {
                 "address": {
+                    "description": "Updates []InundationHistory ` + "`" + `bson:\"-\" json:\"updates\"` + "`" + `",
                     "type": "string"
                 },
                 "created_at": {
@@ -7539,6 +7832,12 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 0
                 },
+                "ent_updated_at": {
+                    "type": "integer"
+                },
+                "enterprise_history_id": {
+                    "type": "string"
+                },
                 "flood_level_color": {
                     "type": "string",
                     "example": "#FFD600"
@@ -7546,6 +7845,9 @@ const docTemplate = `{
                 "flood_level_name": {
                     "type": "string",
                     "example": "Ngập nhẹ"
+                },
+                "has_flooded": {
+                    "type": "boolean"
                 },
                 "id": {
                     "type": "string"
@@ -7568,7 +7870,39 @@ const docTemplate = `{
                     "type": "boolean",
                     "example": true
                 },
-                "last_report_id": {
+                "ktcl_checked": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "ktcl_d": {
+                    "type": "number"
+                },
+                "ktcl_history_id": {
+                    "type": "string"
+                },
+                "ktcl_images": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "ktcl_note": {
+                    "type": "string",
+                    "example": "KTCL ghi chú"
+                },
+                "ktcl_r": {
+                    "type": "string"
+                },
+                "ktcl_s": {
+                    "type": "string"
+                },
+                "ktcl_updated_at": {
+                    "type": "integer"
+                },
+                "ktcl_user_id": {
+                    "type": "string"
+                },
+                "ktcl_user_name": {
                     "type": "string"
                 },
                 "length": {
@@ -7582,6 +7916,9 @@ const docTemplate = `{
                 "mech_d": {
                     "type": "number",
                     "example": 20
+                },
+                "mech_history_id": {
+                    "type": "string"
                 },
                 "mech_images": {
                     "type": "array",
@@ -7636,6 +7973,12 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Đã xử lý"
                 },
+                "review_history_id": {
+                    "type": "string"
+                },
+                "review_updated_at": {
+                    "type": "integer"
+                },
                 "reviewer_email": {
                     "type": "string",
                     "example": "[EMAIL_ADDRESS]"
@@ -7647,19 +7990,6 @@ const docTemplate = `{
                 "reviewer_name": {
                     "type": "string",
                     "example": "Admin"
-                },
-                "share_all": {
-                    "type": "boolean",
-                    "example": false
-                },
-                "shared_org_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "[\"60f987654321\"]"
-                    ]
                 },
                 "status": {
                     "description": "active, resolved",
@@ -7674,6 +8004,12 @@ const docTemplate = `{
                     "type": "boolean",
                     "example": true
                 },
+                "survey_d": {
+                    "type": "number"
+                },
+                "survey_history_id": {
+                    "type": "string"
+                },
                 "survey_images": {
                     "type": "array",
                     "items": {
@@ -7683,6 +8019,12 @@ const docTemplate = `{
                 "survey_note": {
                     "type": "string",
                     "example": "Đã khảo sát"
+                },
+                "survey_r": {
+                    "type": "string"
+                },
+                "survey_s": {
+                    "type": "string"
                 },
                 "survey_updated_at": {
                     "type": "integer"
@@ -7699,12 +8041,6 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "integer"
-                },
-                "updates": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.InundationUpdate"
-                    }
                 },
                 "user_email": {
                     "type": "string",
@@ -7788,183 +8124,6 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "integer"
-                }
-            }
-        },
-        "models.InundationUpdate": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "integer"
-                },
-                "deleted_at": {
-                    "type": "integer"
-                },
-                "depth": {
-                    "type": "number",
-                    "example": 20
-                },
-                "description": {
-                    "type": "string",
-                    "example": "Ngập nhẹ"
-                },
-                "flood_level_color": {
-                    "type": "string",
-                    "example": "#FFD600"
-                },
-                "flood_level_name": {
-                    "type": "string",
-                    "example": "Ngập nhẹ"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "images": {
-                    "description": "Initial images",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "[\"img1.jpg\"",
-                        " \"img2.jpg\"]"
-                    ]
-                },
-                "is_flooding": {
-                    "type": "boolean"
-                },
-                "is_review_updated": {
-                    "type": "boolean",
-                    "example": true
-                },
-                "length": {
-                    "type": "string",
-                    "example": "100m"
-                },
-                "mech_checked": {
-                    "type": "boolean",
-                    "example": true
-                },
-                "mech_d": {
-                    "type": "number",
-                    "example": 20
-                },
-                "mech_images": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "mech_note": {
-                    "type": "string",
-                    "example": "Máy xúc đã đến"
-                },
-                "mech_r": {
-                    "type": "string",
-                    "example": "R1"
-                },
-                "mech_s": {
-                    "type": "string",
-                    "example": "S1"
-                },
-                "mech_updated_at": {
-                    "type": "integer"
-                },
-                "mech_user_id": {
-                    "type": "string"
-                },
-                "mech_user_name": {
-                    "type": "string"
-                },
-                "needs_correction": {
-                    "type": "boolean",
-                    "example": true
-                },
-                "needs_correction_update_id": {
-                    "type": "string",
-                    "example": "update_123"
-                },
-                "old_data": {
-                    "type": "array",
-                    "items": {}
-                },
-                "point_id": {
-                    "type": "string",
-                    "example": "point_123"
-                },
-                "report_id": {
-                    "type": "string",
-                    "example": "60f123456789"
-                },
-                "review_comment": {
-                    "type": "string",
-                    "example": "Đã xử lý"
-                },
-                "reviewer_email": {
-                    "type": "string",
-                    "example": "[EMAIL_ADDRESS]"
-                },
-                "reviewer_id": {
-                    "type": "string",
-                    "example": "user_123"
-                },
-                "reviewer_name": {
-                    "type": "string",
-                    "example": "Admin"
-                },
-                "street_name": {
-                    "type": "string",
-                    "example": "Phố Huế"
-                },
-                "survey_checked": {
-                    "type": "boolean",
-                    "example": true
-                },
-                "survey_images": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "survey_note": {
-                    "type": "string",
-                    "example": "Đã khảo sát"
-                },
-                "survey_updated_at": {
-                    "type": "integer"
-                },
-                "survey_user_id": {
-                    "type": "string"
-                },
-                "survey_user_name": {
-                    "type": "string"
-                },
-                "timestamp": {
-                    "type": "integer",
-                    "example": 1682056800
-                },
-                "traffic_status": {
-                    "type": "string",
-                    "example": "DI_CHUYEN_CHAM"
-                },
-                "updated_at": {
-                    "type": "integer"
-                },
-                "user_email": {
-                    "type": "string",
-                    "example": "emp@hsdc.com.vn"
-                },
-                "user_id": {
-                    "type": "string",
-                    "example": "60a123456789"
-                },
-                "user_name": {
-                    "type": "string",
-                    "example": "Nguyễn Văn B"
-                },
-                "width": {
-                    "type": "string",
-                    "example": "50m"
                 }
             }
         },

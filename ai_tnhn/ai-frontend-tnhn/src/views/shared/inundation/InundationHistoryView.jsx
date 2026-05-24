@@ -1,24 +1,19 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import dayjs from 'dayjs';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
     Box, Typography, Stack, Chip, Paper, CircularProgress,
-    Divider, alpha, Grid, useMediaQuery
+    Divider, alpha, Grid, useMediaQuery, Button
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import {
-    IconClock, IconRuler, IconCar, IconCalendarEvent,
-    IconLayoutList
+    IconClock, IconLayoutList
 } from '@tabler/icons-react';
 
 import inundationApi from 'api/inundation';
 import { getTrafficStatusColor } from 'utils/trafficStatusHelper';
 import { formatDateTime } from 'utils/dataHelper';
-import { getLatestData } from 'utils/inundationUtils';
-
-// Shared Components from employee view
-import { SurveyInfoSection, MechInfoSection, ReviewCommentSection } from '../../employee/inundation/components/TechnicalSections';
 import ImageViewer from '../../employee/inundation/components/ImageViewer';
+import { getInundationImageUrl } from 'utils/imageHelper';
 
 const InundationHistoryView = ({ pointId: propPointId, hideHeader = false }) => {
     const theme = useTheme();
@@ -27,34 +22,75 @@ const InundationHistoryView = ({ pointId: propPointId, hideHeader = false }) => 
     const pointId = propPointId || searchParams.get('id');
 
     const [loading, setLoading] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [hasMore, setHasMore] = useState(false);
+    const [total, setTotal] = useState(0);
     const [history, setHistory] = useState([]);
     const [viewer, setViewer] = useState({ open: false, images: [], index: 0 });
 
-    const loadHistory = useCallback(async () => {
+    const loadHistory = useCallback(async (lastHistoryId = null) => {
         if (!pointId) {
             setHistory([]);
+            setHasMore(false);
+            setTotal(0);
             return;
         }
-        setLoading(true);
+
+        const isLoadMore = !!lastHistoryId;
+        if (isLoadMore) {
+            setLoadingMore(true);
+        } else {
+            setLoading(true);
+        }
+
         try {
-            // Specialized point history API returning list of reports
-            const reports = await inundationApi.getPointHistory(pointId);
-            let dataArr = Array.isArray(reports) ? reports : (reports?.items || []);
+            const limit = 5;
+            const response = await inundationApi.getPointHistory(pointId, lastHistoryId, limit);
+            
+            let dataArr = [];
+            let totalCount = 0;
+            if (response) {
+                dataArr = Array.isArray(response) ? response : (response.data || response.items || []);
+                totalCount = typeof response.total === 'number' ? response.total : dataArr.length;
+            }
 
-
-            const filtered = dataArr
-                .filter(r => r.point_id === pointId)
-                .sort((a, b) => (b.created_at || b.start_time) - (a.created_at || a.start_time));
-            setHistory(filtered);
+            setHistory(prev => {
+                const combined = isLoadMore ? [...prev, ...dataArr] : dataArr;
+                const merged = [];
+                const seenIds = new Set();
+                for (const item of combined) {
+                    if (!seenIds.has(item.id)) {
+                        seenIds.add(item.id);
+                        merged.push(item);
+                    }
+                }
+                
+                setHasMore(merged.length < totalCount);
+                return merged;
+            });
+            setTotal(totalCount);
         } catch (err) {
             console.error('Failed to load history:', err);
-            setHistory([]);
+            if (!isLoadMore) {
+                setHistory([]);
+                setHasMore(false);
+                setTotal(0);
+            }
         } finally {
             setLoading(false);
+            setLoadingMore(false);
         }
     }, [pointId]);
 
-    useEffect(() => { loadHistory(); }, [loadHistory]);
+    useEffect(() => {
+        if (pointId) {
+            loadHistory();
+        } else {
+            setHistory([]);
+            setHasMore(false);
+            setTotal(0);
+        }
+    }, [pointId, loadHistory]);
 
     const handleOpenViewer = (images, index) => {
         setViewer({ open: true, images, index });
@@ -109,114 +145,254 @@ const InundationHistoryView = ({ pointId: propPointId, hideHeader = false }) => 
 
             <Box sx={{
                 bgcolor: 'white',
-                p: isMobile ? 1.5 : 4,
+                p: isMobile ? 1.5 : 3,
                 borderRadius: hideHeader ? 4 : '0 0 16px 16px',
                 border: hideHeader ? 'none' : '1px solid',
                 borderColor: 'grey.200',
-                borderTop: 'none'
+                borderTop: 'none',
+                position: 'relative'
             }}>
-                {history.map((report, idx) => {
-                    const latest = getLatestData(report);
-                    const trafficColor = getTrafficStatusColor(latest.traffic_status);
-                    const updates = report.updates || [];
+                {/* Visual timeline connector line */}
+                <Box sx={{
+                    position: 'absolute',
+                    left: isMobile ? 12 : 20,
+                    top: 0,
+                    bottom: 0,
+                    width: 2,
+                    bgcolor: 'grey.200',
+                    zIndex: 1
+                }} />
 
-                    const eventTimeline = [
-                        { ...report, isStart: true, ts: report.created_at || report.start_time, title: 'Báo cáo khởi tạo' },
-                        ...updates.map(u => ({ ...u, isUpdate: true, ts: u.timestamp, title: u.description || 'Cập nhật diễn biến' }))
-                    ].sort((a, b) => b.ts - a.ts);
+                {history.map((item, idx) => {
+                    const trafficColor = getTrafficStatusColor(item.traffic_status);
+                    
+                    let title = "Cập nhật diễn biến";
+                    let badgeColor = "primary";
+                    let badgeLabel = "Diễn biến";
+                    
+                    if (item.role_permission === "inundation:enterprise_report") {
+                        title = "Báo cáo Địa bàn";
+                        badgeColor = "info";
+                        badgeLabel = "Địa bàn";
+                    } else if (item.role_permission === "inundation:report") {
+                        title = "Khởi tạo bản tin";
+                        badgeColor = "secondary";
+                        badgeLabel = "Khởi tạo";
+                    } else if (item.role_permission === "inundation:survey") {
+                        title = "Xí nghiệp Khảo sát thiết kế";
+                        badgeColor = "success";
+                        badgeLabel = "Khảo sát";
+                    } else if (item.role_permission === "inundation:mechanic") {
+                        title = "Xí nghiệp Cơ giới";
+                        badgeColor = "warning";
+                        badgeLabel = "Cơ giới";
+                    } else if (item.role_permission === "inundation:review") {
+                        title = "Nhận xét KT-CL";
+                        badgeColor = "error";
+                        badgeLabel = "Phê duyệt";
+                    }
+
+                    const isReview = item.role_permission === "inundation:review";
 
                     return (
-                        <Box key={report.id} sx={{ mb: 5 }}>
-                            <Box sx={{ mb: 2.5, px: isMobile ? 0.5 : 0 }}>
-                                <Typography variant="h4" sx={{ mb: 1.5, fontWeight: 900, color: 'primary.dark', display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <IconCalendarEvent size={20} />
-                                    {formatDateTime(report.created_at || report.start_time)}
-                                </Typography>
+                        <Box key={item.id} sx={{ position: 'relative', pl: isMobile ? 3.5 : 5, mb: idx === history.length - 1 ? 0 : 2, zIndex: 2 }}>
+                            {/* Dot indicator */}
+                            <Box sx={{
+                                position: 'absolute',
+                                left: isMobile ? 5 : 13,
+                                top: 12,
+                                width: 14,
+                                height: 14,
+                                borderRadius: '50%',
+                                bgcolor: 'white',
+                                border: '3px solid',
+                                borderColor: `${badgeColor}.main`,
+                                boxShadow: theme.shadows[2],
+                                zIndex: 3
+                            }} />
 
-                                <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ gap: 1 }}>
-                                    <Chip
-                                        size="small"
-                                        icon={<IconRuler size={14} />}
-                                        label={`${latest.length || '?'} x ${latest.width || '?'} x ${latest.depth || 0}`}
-                                        sx={{ fontWeight: 800, bgcolor: 'grey.100' }}
-                                    />
-                                    {latest.traffic_status && (
-                                        <Chip
-                                            size="small"
-                                            icon={<IconCar size={14} />}
-                                            label={latest.traffic_status}
-                                            color={trafficColor}
-                                            sx={{ fontWeight: 800 }}
-                                        />
-                                    )}
-                                </Stack>
-                            </Box>
-
-                            <Box sx={{ pl: isMobile ? 1.5 : 3, borderLeft: '2px dashed', borderColor: 'grey.200', ml: isMobile ? 1 : 1.5 }}>
-                                {eventTimeline.map((item, midx) => (
-                                    <Box key={midx} sx={{ position: 'relative', pl: isMobile ? 2.5 : 4, mb: 3 }}>
-                                        <Box sx={{
-                                            position: 'absolute',
-                                            left: isMobile ? -14 : -17.5, top: 4,
-                                            width: 14, height: 14,
-                                            borderRadius: '50%',
-                                            bgcolor: 'white',
-                                            border: '3px solid',
-                                            borderColor: item.isStart ? 'primary.main' : 'success.main',
-                                            boxShadow: theme.shadows[1],
-                                            zIndex: 2
-                                        }} />
-
-                                        <Paper variant="outlined" sx={{ p: isMobile ? 1.5 : 2.5, borderRadius: 3, bgcolor: item.needs_correction ? alpha(theme.palette.error.main, 0.02) : 'white' }}>
-                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                                                <Box>
-                                                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary' }}>{item.title}</Typography>
-                                                    <Typography variant="caption" color="textSecondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                        <IconClock size={12} /> {formatDateTime(item.ts)}
-                                                    </Typography>
-                                                </Box>
-                                            </Box>
-
-                                            {(item.desc || item.description) && (
-                                                <Typography variant="body2" sx={{ mb: 1.5, color: 'text.secondary', lineHeight: 1.5 }}>
-                                                    {item.desc || item.description}
-                                                </Typography>
-                                            )}
-
-                                            <Stack spacing={2}>
-                                                <ReviewCommentSection latest={item} />
-                                                <Grid container spacing={2}>
-                                                    <Grid item xs={12} sm={6}>
-                                                        <SurveyInfoSection latest={item} handleOpenViewer={handleOpenViewer} />
-                                                    </Grid>
-                                                    <Grid item xs={12} sm={6}>
-                                                        <MechInfoSection latest={item} handleOpenViewer={handleOpenViewer} />
-                                                    </Grid>
-                                                </Grid>
-                                            </Stack>
-
-                                            {item.images?.length > 0 && (
-                                                <Box sx={{ display: 'flex', gap: 1, mt: 2, overflowX: 'auto', pb: 1 }}>
-                                                    {item.images.map((img, i) => (
-                                                        <Box
-                                                            key={i}
-                                                            component="img"
-                                                            src={img}
-                                                            onClick={handleOpenViewer ? () => handleOpenViewer(item.images, i) : undefined}
-                                                            sx={{ width: 70, height: 70, borderRadius: 1.5, objectFit: 'cover', cursor: 'zoom-in' }}
+                            <Paper variant="outlined" sx={{ p: isMobile ? 1.25 : 2, borderRadius: 3, bgcolor: item.needs_correction ? alpha(theme.palette.error.main, 0.02) : 'white' }}>
+                                {(() => {
+                                    const hasImages = item.images && item.images.length > 0;
+                                    return (
+                                        <Grid container spacing={2}>
+                                            {/* Column 1: Metadata & Creator info */}
+                                            <Grid item xs={12} md={hasImages ? 4 : 5} sx={{ borderRight: { md: '1px dashed' }, borderColor: { md: 'divider' }, pr: { md: 2 } }}>
+                                                <Stack spacing={0.75}>
+                                                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                                                        <Chip
+                                                            size="small"
+                                                            label={badgeLabel}
+                                                            color={badgeColor}
+                                                            sx={{ fontWeight: 900, borderRadius: 1.5 }}
                                                         />
-                                                    ))}
-                                                </Box>
+                                                        <Typography variant="caption" color="textSecondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                            <IconClock size={14} />
+                                                            {formatDateTime(item.created_at)}
+                                                        </Typography>
+                                                    </Stack>
+
+                                                    <Typography variant="h4" sx={{ fontWeight: 900, color: `${badgeColor}.dark`, fontSize: '1rem' }}>
+                                                        {title}
+                                                    </Typography>
+
+                                                    <Divider sx={{ opacity: 0.5 }} />
+
+                                                    <Stack spacing={0.25}>
+                                                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', fontSize: '0.825rem' }}>
+                                                            👤 {item.user_name || "Hệ thống"}
+                                                        </Typography>
+                                                        {item.user_email && (
+                                                            <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.725rem' }}>
+                                                                ✉️ {item.user_email}
+                                                            </Typography>
+                                                        )}
+                                                        {item.org_name && (
+                                                            <Typography variant="caption" sx={{ fontWeight: 700, color: 'primary.main', fontSize: '0.725rem' }}>
+                                                                🏢 {item.org_name}
+                                                            </Typography>
+                                                        )}
+                                                    </Stack>
+                                                </Stack>
+                                            </Grid>
+
+                                            {/* Column 2: Update details and parameters */}
+                                            <Grid item xs={12} md={hasImages ? 5 : 7} sx={{ borderRight: { md: hasImages ? '1px dashed' : 'none' }, borderColor: { md: 'divider' }, pr: { md: hasImages ? 2 : 0 }, pl: { md: 1.5 } }}>
+                                                <Stack spacing={1.25}>
+                                                    {/* Note / Remarks */}
+                                                    {(item.note || item.review_comment) && (
+                                                        <Box sx={{ p: 1.25, bgcolor: alpha(theme.palette.grey[100], 0.6), borderRadius: 2, borderLeft: '3px solid', borderColor: `${badgeColor}.main` }}>
+                                                            <Typography variant="body2" sx={{ fontStyle: 'italic', fontWeight: 600, color: 'text.secondary', lineHeight: 1.5, fontSize: '0.825rem' }}>
+                                                                "{item.note || item.review_comment}"
+                                                            </Typography>
+                                                        </Box>
+                                                    )}
+
+                                                    {/* Technical dimensions & status dashboard */}
+                                                    {!isReview && (
+                                                        <Box>
+                                                            <Grid container spacing={1}>
+                                                                <Grid item xs={6}>
+                                                                    <Paper variant="outlined" sx={{ p: 1, textAlign: 'center', borderRadius: 2, bgcolor: 'grey.50', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                                                        <Typography variant="caption" color="textSecondary" display="block" sx={{ fontWeight: 700, fontSize: '0.65rem' }}>📏 DxRxS</Typography>
+                                                                        <Typography variant="subtitle2" sx={{ fontWeight: 900, mt: 0.25, fontSize: '0.8rem' }}>
+                                                                            {item.length || '?'} x {item.width || '?'} x <span style={{ color: theme.palette.error.main, fontWeight: 900 }}>{item.depth || 0}</span>
+                                                                        </Typography>
+                                                                    </Paper>
+                                                                </Grid>
+
+                                                                <Grid item xs={6}>
+                                                                    <Paper variant="outlined" sx={{ p: 1, textAlign: 'center', borderRadius: 2, bgcolor: alpha(item.depth > 0 ? theme.palette.error.main : theme.palette.success.main, 0.05), height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                                                                        <Typography variant="caption" color="textSecondary" display="block" sx={{ fontWeight: 700, fontSize: '0.65rem', mb: 0.25 }}>🌊 Trạng thái</Typography>
+                                                                        <Chip 
+                                                                            size="small"
+                                                                            label={item.flood_level_name || (item.depth > 0 ? "Ngập" : "Bình thường")}
+                                                                            sx={{ 
+                                                                                fontWeight: 900,
+                                                                                bgcolor: item.flood_level_color || (item.depth > 0 ? 'error.main' : 'success.main'),
+                                                                                color: 'white',
+                                                                                fontSize: '0.7rem',
+                                                                                height: 18
+                                                                            }}
+                                                                        />
+                                                                    </Paper>
+                                                                </Grid>
+                                                            </Grid>
+                                                        </Box>
+                                                    )}
+                                                </Stack>
+                                            </Grid>
+
+                                            {/* Column 3: Images/Gallery (Far Right Box) */}
+                                            {hasImages && (
+                                                <Grid item xs={12} md={3} sx={{ pl: { md: 1.5 } }}>
+                                                    <Paper variant="outlined" sx={{ p: 1, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', bgcolor: alpha(theme.palette.grey[100], 0.3), borderRadius: 2 }}>
+                                                        <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 800, mb: 0.75, display: 'block', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: 0.5, textAlign: 'center' }}>📸 Hình ảnh ({item.images.length})</Typography>
+                                                        <Grid container spacing={0.75} justifyContent="center" alignItems="center">
+                                                            {item.images.slice(0, 6).map((img, imgIdx) => {
+                                                                // Sizing based on total count
+                                                                const count = item.images.length;
+                                                                const imgColSize = count === 1 ? 12 : count === 2 ? 6 : 4;
+                                                                const imgHeight = count === 1 ? 64 : count === 2 ? 48 : 40;
+                                                                const isLastToShow = imgIdx === 5 && count > 6;
+                                                                
+                                                                return (
+                                                                    <Grid item xs={imgColSize} key={imgIdx} sx={{ position: 'relative' }}>
+                                                                        <Box
+                                                                            component="img"
+                                                                            src={getInundationImageUrl(img)}
+                                                                            onClick={() => handleOpenViewer(item.images, imgIdx)}
+                                                                            sx={{
+                                                                                width: '100%',
+                                                                                height: imgHeight,
+                                                                                objectFit: 'cover',
+                                                                                borderRadius: 1,
+                                                                                cursor: 'pointer',
+                                                                                border: '1px solid',
+                                                                                borderColor: 'grey.200',
+                                                                                opacity: isLastToShow ? 0.4 : 1,
+                                                                                transition: 'transform 0.2s',
+                                                                                '&:hover': {
+                                                                                    transform: 'scale(1.05)',
+                                                                                    borderColor: 'primary.main'
+                                                                                }
+                                                                            }}
+                                                                        />
+                                                                        {isLastToShow && (
+                                                                            <Box
+                                                                                onClick={() => handleOpenViewer(item.images, 5)}
+                                                                                sx={{
+                                                                                    position: 'absolute',
+                                                                                    top: 6,
+                                                                                    left: 6,
+                                                                                    right: 0,
+                                                                                    bottom: 0,
+                                                                                    display: 'flex',
+                                                                                    alignItems: 'center',
+                                                                                    justifyContent: 'center',
+                                                                                    cursor: 'pointer',
+                                                                                    fontSize: '0.7rem',
+                                                                                    fontWeight: 900,
+                                                                                    color: 'text.primary',
+                                                                                    pointerEvents: 'none'
+                                                                                }}
+                                                                            >
+                                                                                +{count - 5}
+                                                                            </Box>
+                                                                        )}
+                                                                    </Grid>
+                                                                );
+                                                            })}
+                                                        </Grid>
+                                                    </Paper>
+                                                </Grid>
                                             )}
-                                        </Paper>
-                                    </Box>
-                                ))}
-                            </Box>
-                            {idx < history.length - 1 && <Divider sx={{ my: 4, borderStyle: 'dotted' }} />}
+                                        </Grid>
+                                    );
+                                })()}
+                            </Paper>
                         </Box>
                     );
                 })}
             </Box>
+
+            {hasMore && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, mb: 1 }}>
+                    <Button
+                        disabled={loadingMore}
+                        variant="outlined"
+                        color="primary"
+                        onClick={() => {
+                            const lastItem = history[history.length - 1];
+                            loadHistory(lastItem?.id);
+                        }}
+                        startIcon={loadingMore ? <CircularProgress size={16} color="inherit" /> : null}
+                        sx={{ fontWeight: 800, borderRadius: 2, px: 4 }}
+                    >
+                        {loadingMore ? 'Đang tải...' : 'Xem thêm lịch sử'}
+                    </Button>
+                </Box>
+            )}
 
             <ImageViewer
                 viewer={viewer}

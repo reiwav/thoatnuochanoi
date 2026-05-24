@@ -12,6 +12,7 @@ import (
 	"strconv"
 
 	"github.com/xuri/excelize/v2"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func (s *service) GetYearlyHistory(ctx context.Context, orgID string, year int) ([]*models.InundationReport, error) {
@@ -49,6 +50,7 @@ func (s *service) GetYearlyHistory(ctx context.Context, orgID string, year int) 
 
 	return reports, nil
 }
+
 func (s *service) ExportYearlyHistory(ctx context.Context, orgID string, year int) (string, error) {
 	reports, err := s.GetYearlyHistory(ctx, orgID, year)
 	if err != nil {
@@ -133,4 +135,49 @@ func (s *service) ExportYearlyHistory(ctx context.Context, orgID string, year in
 	}
 
 	return filePath, nil
+}
+
+func (s *service) GetPointHistory(ctx context.Context, pointID string, lastReportID string, size int) ([]*models.InundationHistory, int64, error) {
+	if size <= 0 {
+		size = 5
+	}
+
+	// Fallback: if pointID is actually a report ID, resolve it to the station/point ID
+	if len(pointID) > 5 && pointID[:5] == "inrep" {
+		report, err := s.InundationReportRepo.GetByID(ctx, pointID)
+		if err == nil && report != nil && report.PointID != "" {
+			pointID = report.PointID
+		}
+	}
+
+	station, err := s.inundationStationRepo.GetByID(ctx, pointID)
+	if err != nil || station == nil {
+		return []*models.InundationHistory{}, 0, nil
+	}
+
+	rf := filter.NewPaginationFilter()
+	rf.AddWhere("inundation_id", "inundation_id", pointID)
+	rf.SetOrderBy("-created_at")
+	rf.PerPage = int64(size)
+
+	if lastReportID != "" {
+		lastHistory, err := s.inundationHistoryRepo.GetByID(ctx, lastReportID)
+		if err == nil && lastHistory != nil {
+			rf.AddWhere("created_at_lt", "created_at", bson.M{"$lt": lastHistory.CTime})
+		}
+	}
+
+	histories, _, err := s.inundationHistoryRepo.List(ctx, rf)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	countFilter := filter.NewPaginationFilter()
+	countFilter.AddWhere("inundation_id", "inundation_id", pointID)
+	_, total, err := s.inundationHistoryRepo.List(ctx, countFilter)
+	if err != nil {
+		total = int64(len(histories))
+	}
+
+	return histories, total, nil
 }

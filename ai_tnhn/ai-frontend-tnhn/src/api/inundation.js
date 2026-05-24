@@ -1,8 +1,8 @@
 import axiosClient from './axiosClient';
 
 const inundationApi = {
-    createReport: (formData) => {
-        return axiosClient.post('/inundation/report', formData, {
+    reportEnterprise: (pointId, formData) => {
+        return axiosClient.put(`/inundation/point/${pointId}/enterprise`, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data'
             }
@@ -23,19 +23,18 @@ const inundationApi = {
     getReport: (id) => {
         return axiosClient.get(`/inundation/report/${id}`);
     },
-    getPointHistory: (pointId, fromTime, toTime) => {
-        let url = `/inundation/reports?point_id=${pointId}&size=100`;
-        if (fromTime) url += `&from_time=${fromTime}`;
-        if (toTime) url += `&to_time=${toTime}`;
+    getPointHistory: (pointId, lastReportId = '', limit = 5) => {
+        let url = `/inundation/history?point_id=${pointId}&size=${limit}`;
+        if (lastReportId) url += `&last_report_id=${lastReportId}`;
         return axiosClient.get(url);
     },
-    updateReport: (id, formData) => {
-        return axiosClient.put(`/inundation/report/${id}`, formData, {
+    correctEnterpriseReport: (pointId, formData) => {
+        return axiosClient.put(`/inundation/point/${pointId}/correct`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
     },
-    updateSituation: (id, formData) => {
-        return axiosClient.post(`/inundation/${id}/update`, formData, {
+    reportEnterpriseSituation: (pointId, formData) => {
+        return axiosClient.post(`/inundation/point/${pointId}/update`, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data'
             }
@@ -65,18 +64,23 @@ const inundationApi = {
     reviewUpdate: (id, comment) => {
         return axiosClient.post(`/inundation/update/${id}/review`, { comment });
     },
-    updateUpdateContent: (id, formData) => {
-        return axiosClient.put(`/inundation/update/${id}`, formData, {
+    correctEnterpriseSituation: (pointId, formData) => {
+        return axiosClient.put(`/inundation/point/${pointId}/correct-update`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
     },
-    updateSurvey: (id, formData) => {
-        return axiosClient.put(`/inundation/report/${id}/survey`, formData, {
+    reportSurvey: (pointId, formData) => {
+        return axiosClient.put(`/inundation/point/${pointId}/survey`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
     },
-    updateMech: (id, formData) => {
-        return axiosClient.put(`/inundation/report/${id}/mech`, formData, {
+    reportMech: (pointId, formData) => {
+        return axiosClient.put(`/inundation/point/${pointId}/mech`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+    },
+    reportKTCL: (pointId, formData) => {
+        return axiosClient.put(`/inundation/point/${pointId}/ktcl`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
     },

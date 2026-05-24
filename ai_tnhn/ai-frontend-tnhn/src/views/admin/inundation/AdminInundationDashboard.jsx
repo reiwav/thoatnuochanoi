@@ -85,7 +85,10 @@ const AdminInundationDashboard = () => {
         const { connectSSE, disconnectSSE } = useInundationStore.getState();
         connectSSE();
         const interval = setInterval(() => {
-            fetchPoints();
+            const isSseConnected = useInundationStore.getState().sseConnected;
+            if (!isSseConnected) {
+                fetchPoints();
+            }
         }, 60000);
         return () => {
             disconnectSSE();

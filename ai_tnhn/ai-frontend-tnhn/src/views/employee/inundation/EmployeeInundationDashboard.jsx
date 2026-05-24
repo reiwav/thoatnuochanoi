@@ -64,7 +64,10 @@ const EmployeeInundationDashboard = () => {
         const { connectSSE, disconnectSSE } = useInundationStore.getState();
         connectSSE();
         const interval = setInterval(() => {
-            if (activeTab <= 1) fetchPoints();
+            const isSseConnected = useInundationStore.getState().sseConnected;
+            if (!isSseConnected && activeTab <= 1) {
+                fetchPoints();
+            }
         }, 60000);
         return () => {
             disconnectSSE();

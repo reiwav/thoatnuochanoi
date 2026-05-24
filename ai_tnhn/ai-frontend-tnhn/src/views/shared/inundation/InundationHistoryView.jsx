@@ -308,23 +308,20 @@ const InundationHistoryView = ({ pointId: propPointId, hideHeader = false }) => 
                                                 <Grid item xs={12} md={3} sx={{ pl: { md: 1.5 } }}>
                                                     <Paper variant="outlined" sx={{ p: 1, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', bgcolor: alpha(theme.palette.grey[100], 0.3), borderRadius: 2 }}>
                                                         <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 800, mb: 0.75, display: 'block', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: 0.5, textAlign: 'center' }}>📸 Hình ảnh ({item.images.length})</Typography>
-                                                        <Grid container spacing={0.75} justifyContent="center" alignItems="center">
+                                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center', alignItems: 'center' }}>
                                                             {item.images.slice(0, 6).map((img, imgIdx) => {
-                                                                // Sizing based on total count
                                                                 const count = item.images.length;
-                                                                const imgColSize = count === 1 ? 12 : count === 2 ? 6 : 4;
-                                                                const imgHeight = count === 1 ? 64 : count === 2 ? 48 : 40;
                                                                 const isLastToShow = imgIdx === 5 && count > 6;
                                                                 
                                                                 return (
-                                                                    <Grid item xs={imgColSize} key={imgIdx} sx={{ position: 'relative' }}>
+                                                                    <Box key={imgIdx} sx={{ position: 'relative', width: 56, height: 56, flexShrink: 0 }}>
                                                                         <Box
                                                                             component="img"
                                                                             src={getInundationImageUrl(img)}
                                                                             onClick={() => handleOpenViewer(item.images, imgIdx)}
                                                                             sx={{
                                                                                 width: '100%',
-                                                                                height: imgHeight,
+                                                                                height: '100%',
                                                                                 objectFit: 'cover',
                                                                                 borderRadius: 1,
                                                                                 cursor: 'pointer',
@@ -343,27 +340,28 @@ const InundationHistoryView = ({ pointId: propPointId, hideHeader = false }) => 
                                                                                 onClick={() => handleOpenViewer(item.images, 5)}
                                                                                 sx={{
                                                                                     position: 'absolute',
-                                                                                    top: 6,
-                                                                                    left: 6,
+                                                                                    top: 0,
+                                                                                    left: 0,
                                                                                     right: 0,
                                                                                     bottom: 0,
                                                                                     display: 'flex',
                                                                                     alignItems: 'center',
                                                                                     justifyContent: 'center',
                                                                                     cursor: 'pointer',
-                                                                                    fontSize: '0.7rem',
+                                                                                    fontSize: '0.85rem',
                                                                                     fontWeight: 900,
-                                                                                    color: 'text.primary',
-                                                                                    pointerEvents: 'none'
+                                                                                    color: 'white',
+                                                                                    bgcolor: 'rgba(0, 0, 0, 0.5)',
+                                                                                    borderRadius: 1
                                                                                 }}
                                                                             >
                                                                                 +{count - 5}
                                                                             </Box>
                                                                         )}
-                                                                    </Grid>
+                                                                    </Box>
                                                                 );
                                                             })}
-                                                        </Grid>
+                                                        </Box>
                                                     </Paper>
                                                 </Grid>
                                             )}

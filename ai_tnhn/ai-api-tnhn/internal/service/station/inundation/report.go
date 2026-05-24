@@ -26,15 +26,6 @@ func (s *service) validAssigned(user *models.User, pointID string) error {
 	return nil
 }
 
-func (s *service) ListReports(ctx context.Context, orgID string) ([]*models.InundationReport, int64, error) {
-	// For simplicity, list active ones or just all for now
-	f := filter.NewPaginationFilter()
-	if orgID != "" {
-		f.AddWhere("org_id", "org_id", orgID)
-	}
-	f.SetOrderBy("-created_at")
-	return s.InundationReportRepo.List(ctx, f)
-}
 func (s *service) ListReportsWithFilter(ctx context.Context, user *models.User, isAllowedAll bool, orgIDFilter string, f filter.Filter) ([]*models.InundationReport, int64, error) {
 	orgID := user.OrgID
 	if isAllowedAll {

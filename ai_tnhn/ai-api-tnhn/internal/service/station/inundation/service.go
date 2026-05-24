@@ -14,7 +14,6 @@ import (
 type Service interface {
 	ReportEnterprise(ctx context.Context, user *models.User, pointID string, report models.ReportEnterpriseBase, images []ImageContent) (*models.InundationReport, error)
 	ReportEnterpriseSituation(ctx context.Context, user *models.User, pointID string, update dto.AddUpdateSitutionRequest, images []ImageContent) (*models.InundationReport, error)
-	ListReports(ctx context.Context, orgID string) ([]*models.InundationReport, int64, error)
 	ListReportsWithFilter(ctx context.Context, user *models.User, isAllowedAll bool, orgIDFilter string, f filter.Filter) ([]*models.InundationReport, int64, error)
 	GetPointHistory(ctx context.Context, pointID string, lastReportID string, size int) ([]*models.InundationHistory, int64, error)
 	GetReport(ctx context.Context, user *models.User, reportID string) (*models.InundationReport, error)
@@ -28,7 +27,6 @@ type Service interface {
 	// Review and Correction
 	ReviewReport(ctx context.Context, user *models.User, reportID, comment string) error
 	ReviewUpdate(ctx context.Context, user *models.User, updateID, comment string) error
-	GetHistoryByID(ctx context.Context, historyID string) (*models.InundationHistory, error)
 	CorrectEnterpriseSituation(ctx context.Context, user *models.User, pointID string, update dto.AddUpdateSitutionRequest, images []ImageContent) error
 
 	// Points management

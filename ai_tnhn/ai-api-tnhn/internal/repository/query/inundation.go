@@ -72,7 +72,8 @@ func (r *inundationRepo) ListByYear(ctx context.Context, orgID string, year int)
 			"$gte": startOfYear,
 			"$lte": endOfYear,
 		},
-		"deleted_at": 0,
+		"deleted_at":  0,
+		"has_flooded": true,
 	}
 
 	if orgID != "" {

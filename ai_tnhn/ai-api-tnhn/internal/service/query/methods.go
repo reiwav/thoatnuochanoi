@@ -29,6 +29,10 @@ func (s *service) Query(ctx context.Context, collectionName string, filter map[s
 		bsonFilter[k] = v
 	}
 
+	if collectionName == "inundation_reports" {
+		bsonFilter["has_flooded"] = true
+	}
+
 	opts := options.Find().SetLimit(limit)
 	cursor, err := coll.Find(ctx, bsonFilter, opts)
 	if err != nil {

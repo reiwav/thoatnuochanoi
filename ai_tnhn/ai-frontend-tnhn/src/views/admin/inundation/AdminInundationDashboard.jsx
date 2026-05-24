@@ -4,35 +4,19 @@ import {
   Box,
   Typography,
   Stack,
-  Chip,
-  Paper,
-  TextField,
-  MenuItem,
-  CircularProgress,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
   IconButton,
   Tooltip,
-  Grid,
   alpha,
   useMediaQuery
 } from '@mui/material';
-import { LocalizationProvider } from '@mui/x-date-pickers';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { useTheme } from '@mui/material/styles';
 import {
-  IconSearch,
-  IconAlertTriangle,
   IconRefresh,
   IconLayoutDashboard
 } from '@tabler/icons-react';
 
 import MainCard from 'ui-component/cards/MainCard';
 import useInundationStore from 'store/useInundationStore';
-import OrganizationSelect from 'ui-component/filter/OrganizationSelect';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/vi';
@@ -47,9 +31,10 @@ import InundationHistoryDialog from '../../shared/inundation/InundationHistoryDi
 import ImageViewer from './components/ImageViewer';
 
 // Extracted Components
-import InundationDesktopStatCard from './components/InundationDesktopStatCard';
-
-// --- MAIN DASHBOARD COMPONENT ---
+import InundationFilterBar from './components/InundationFilterBar';
+import ConfirmQuickFinishDialog from './components/ConfirmQuickFinishDialog';
+import InundationHeaderChips from './components/InundationHeaderChips';
+import InundationPointsGrid from './components/InundationPointsGrid';
 
 // --- MAIN DASHBOARD COMPONENT ---
 
@@ -200,47 +185,14 @@ const AdminInundationDashboard = () => {
       }
       secondary={
         <Stack direction="row" spacing={1} alignItems="center">
-          {!isMobile && (
-            <Stack direction="row" spacing={1}>
-              {floodLevels.length > 0 ? (
-                floodLevels.map((level) => {
-                  const count = levelCounts[level.code] || 0;
-                  return (
-                    <Chip
-                      key={level.code}
-                      label={`${count} ${level.name}`}
-                      variant="filled"
-                      size="small"
-                      sx={{
-                        fontWeight: 900,
-                        borderRadius: 2,
-                        bgcolor: level.color || 'grey.400',
-                        color: '#fff',
-                        textShadow: '0px 1px 2px rgba(0,0,0,0.35)'
-                      }}
-                    />
-                  );
-                })
-              ) : (
-                <>
-                  <Chip
-                    label={`${floodedCount} Đang ngập`}
-                    color="error"
-                    variant="filled"
-                    size="small"
-                    sx={{ fontWeight: 800, borderRadius: 2 }}
-                  />
-                  <Chip
-                    label={`${normalCount} Bình thường`}
-                    color="success"
-                    variant="filled"
-                    size="small"
-                    sx={{ fontWeight: 800, borderRadius: 2, bgcolor: alpha(theme.palette.success.main, 1), color: '#fff' }}
-                  />
-                </>
-              )}
-            </Stack>
-          )}
+          <InundationHeaderChips
+            isMobile={isMobile}
+            floodLevels={floodLevels}
+            levelCounts={levelCounts}
+            floodedCount={floodedCount}
+            normalCount={normalCount}
+            theme={theme}
+          />
           <Tooltip title="Làm mới dữ liệu">
             <IconButton
               color="primary"
@@ -258,175 +210,22 @@ const AdminInundationDashboard = () => {
       }
     >
       {/* Filter Bar */}
-      <Box sx={{ mb: 3, px: { xs: 1.5, sm: 0 } }} sm={{ mb: 3 }}>
-        <LocalizationProvider dateAdapter={AdapterDayjs}>
-          <Grid container spacing={2} alignItems="center">
-            <Grid size={{ xs: 12, md: 4 }}>
-              <TextField
-                fullWidth
-                size="small"
-                placeholder="Tìm tên đường, địa chỉ..."
-                value={filters.searchQuery}
-                onChange={(e) => setFilters({ searchQuery: e.target.value })}
-                slotProps={{
-                  input: {
-                    startAdornment: <IconSearch size={18} style={{ marginRight: 8, opacity: 0.5 }} />,
-                    sx: { borderRadius: 3 }
-                  }
-                }}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, md: 3 }}>
-              <OrganizationSelect
-                value={filters.orgFilter === 'all' ? '' : filters.orgFilter}
-                onChange={(e) => setFilters({ orgFilter: e.target.value || 'all' })}
-                label="Đơn vị quản lý"
-                sx={{ borderRadius: 3 }}
-              />
-            </Grid>
+      <InundationFilterBar
+        filters={filters}
+        setFilters={setFilters}
+        floodLevels={floodLevels}
+      />
 
-            <Grid size={{ xs: 12, md: 3 }}>
-              <TextField
-                select
-                fullWidth
-                size="small"
-                label="Trạng thái"
-                value={filters.statusFilter}
-                onChange={(e) => setFilters({ statusFilter: e.target.value })}
-                slotProps={{ input: { sx: { borderRadius: 3 } } }}
-                SelectProps={{
-                  renderValue: (selected) => {
-                    if (selected === 'all') {
-                      return (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Box
-                            sx={{
-                              width: 10,
-                              height: 10,
-                              borderRadius: '50%',
-                              border: '1px solid',
-                              borderColor: 'divider',
-                              bgcolor: 'transparent',
-                              flexShrink: 0
-                            }}
-                          />
-                          Tất cả trạng thái
-                        </Box>
-                      );
-                    }
-                    if (selected === 'active') {
-                      return (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: 'error.main', flexShrink: 0 }} />
-                          Đang ngập
-                        </Box>
-                      );
-                    }
-                    if (selected === 'normal') {
-                      return (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: 'success.main', flexShrink: 0 }} />
-                          Bình thường
-                        </Box>
-                      );
-                    }
-                    const level = floodLevels.find((l) => l.code === selected);
-                    if (!level) return selected;
-                    return (
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Box
-                          sx={{
-                            width: 10,
-                            height: 10,
-                            borderRadius: '50%',
-                            bgcolor: level.color || 'grey.400',
-                            flexShrink: 0
-                          }}
-                        />
-                        {level.name}
-                      </Box>
-                    );
-                  }
-                }}
-              >
-                <MenuItem key="all" value="all" sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                  <Box
-                    sx={{
-                      width: 12,
-                      height: 12,
-                      borderRadius: '50%',
-                      border: '1px solid',
-                      borderColor: 'divider',
-                      bgcolor: 'transparent',
-                      flexShrink: 0
-                    }}
-                  />
-                  Tất cả trạng thái
-                </MenuItem>
-                {floodLevels.length > 0 ? (
-                  floodLevels.map((level) => (
-                    <MenuItem key={level.code} value={level.code} sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                      <Box
-                        sx={{
-                          width: 12,
-                          height: 12,
-                          borderRadius: '50%',
-                          bgcolor: level.color || 'grey.400',
-                          flexShrink: 0
-                        }}
-                      />
-                      {level.name}
-                    </MenuItem>
-                  ))
-                ) : (
-                  <>
-                    <MenuItem key="active" value="active" sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                      <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: 'error.main', flexShrink: 0 }} />
-                      Đang ngập
-                    </MenuItem>
-                    <MenuItem key="normal" value="normal" sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                      <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: 'success.main', flexShrink: 0 }} />
-                      Bình thường
-                    </MenuItem>
-                  </>
-                )}
-              </TextField>
-            </Grid>
-          </Grid>
-        </LocalizationProvider>
-      </Box>
-
-      <Box>
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          <Box sx={{ px: { xs: 1, sm: 0 } }}>
-            {filteredPoints.length === 0 ? (
-              <Paper sx={{ py: 6, textAlign: 'center', borderRadius: 4, border: '1px dashed', borderColor: 'divider', bgcolor: 'grey.50' }}>
-                <Typography color="textSecondary">Không tìm thấy điểm ngập</Typography>
-              </Paper>
-            ) : (
-              <Grid container spacing={2}>
-                {filteredPoints.map((point) => (
-                  <Grid size={{ xs: 12, sm: 6, lg: 3 }} key={point.id} sx={{ display: 'flex' }}>
-                    <InundationDesktopStatCard
-                      point={point}
-                      onAction={handleAction}
-                      onOpenViewer={handleOpenViewer}
-                      onOpenDetail={handleOpenDetail}
-                      onOpenHistory={handleOpenHistory}
-                      navigate={navigate}
-                      basePath={basePath}
-                    />
-                  </Grid>
-                ))}
-              </Grid>
-            )}
-          </Box>
-        )}
-      </Box>
+      <InundationPointsGrid
+        loading={loading}
+        filteredPoints={filteredPoints}
+        onAction={handleAction}
+        onOpenViewer={handleOpenViewer}
+        onOpenDetail={handleOpenDetail}
+        onOpenHistory={handleOpenHistory}
+        navigate={navigate}
+        basePath={basePath}
+      />
 
       <ImageViewer
         viewer={viewer}
@@ -459,39 +258,12 @@ const AdminInundationDashboard = () => {
       />
 
       {/* Confirm Quick Finish Dialog */}
-      <Dialog
+      <ConfirmQuickFinishDialog
         open={confirmFinish.open}
         onClose={() => setConfirmFinish({ open: false, point: null })}
-        slotProps={{ paper: { sx: { borderRadius: 4, p: 1, minWidth: 280 } } }}
-      >
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pb: 1 }}>
-          <Box sx={{ p: 1, borderRadius: 2, bgcolor: 'error.lighter', color: 'error.main', display: 'flex' }}>
-            <IconAlertTriangle size={24} />
-          </Box>
-          <Typography variant="h4" sx={{ fontWeight: 800 }}>
-            Xác nhận kết thúc ngập
-          </Typography>
-        </DialogTitle>
-        <DialogContent>
-          <Typography variant="body1" sx={{ py: 1 }}>
-            Bạn có chắc chắn muốn kết thúc nhanh tình trạng ngập tại điểm:
-          </Typography>
-          <Typography variant="h5" sx={{ fontWeight: 900, color: 'primary.main', mb: 1 }}>
-            {confirmFinish.point?.name}
-          </Typography>
-          <Typography variant="caption" color="textSecondary">
-            * Thao tác này sẽ đưa độ sâu về 0, cập nhật trạng thái trạm về Bình thường và đóng đợt ngập ngay lập tức.
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ p: 2, pt: 1 }}>
-          <Button onClick={() => setConfirmFinish({ open: false, point: null })} color="inherit" sx={{ fontWeight: 600 }}>
-            Hủy bỏ
-          </Button>
-          <Button onClick={handleConfirmQuickFinish} variant="contained" color="error" sx={{ borderRadius: 2, px: 3, fontWeight: 700 }}>
-            Xác nhận kết thúc
-          </Button>
-        </DialogActions>
-      </Dialog>
+        point={confirmFinish.point}
+        onConfirm={handleConfirmQuickFinish}
+      />
     </MainCard>
   );
 };

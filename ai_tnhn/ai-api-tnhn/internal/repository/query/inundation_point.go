@@ -48,6 +48,16 @@ func (r *inundationStationRepo) GetByID(ctx context.Context, id string) (*models
 	return &point, err
 }
 
+func (r *inundationStationRepo) GetByIDs(ctx context.Context, ids []string) ([]models.InundationStation, error) {
+	var points []models.InundationStation
+	if len(ids) == 0 {
+		return points, nil
+	}
+	f := bson.M{"_id": bson.M{"$in": ids}, "active": true}
+	err := r.R_SelectMany(ctx, f, &points)
+	return points, err
+}
+
 func (r *inundationStationRepo) Create(ctx context.Context, point *models.InundationStation) (string, error) {
 	err := r.R_Create(ctx, point)
 	return point.ID, err

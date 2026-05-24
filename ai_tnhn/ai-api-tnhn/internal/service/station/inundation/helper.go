@@ -157,6 +157,18 @@ func (s *service) calculateFloodLevel(ctx context.Context, depth float64) *model
 	return nil
 }
 
+// calculateFloodLevelFromSetting uses a pre-loaded FloodLevels slice to avoid repeated DB queries.
+// This is used in batch operations like GetPointsStatus where the setting is loaded once.
+func calculateFloodLevelFromSetting(depth float64, levels []models.FloodLevel) *models.FloodLevel {
+	for i := range levels {
+		level := levels[i]
+		if depth >= level.MinDepth && depth < level.MaxDepth {
+			return &level
+		}
+	}
+	return nil
+}
+
 func (s *service) createNewResolvedNormalReport(ctx context.Context, station *models.InundationStation, endTime int64) (string, error) {
 	newNormReportID := "inrep" + xid.New().String()
 	newNormReport := &models.InundationReport{

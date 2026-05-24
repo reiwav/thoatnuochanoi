@@ -11,6 +11,7 @@ type InundationReport interface {
 	mgo.BaseTable
 	Create(ctx context.Context, report *models.InundationReport) error
 	GetByID(ctx context.Context, id string) (*models.InundationReport, error)
+	GetByIDs(ctx context.Context, ids []string) ([]*models.InundationReport, error)
 	List(ctx context.Context, filter filter.Filter) ([]*models.InundationReport, int64, error)
 	//UpdateStatus(ctx context.Context, id string, status string) error
 	Resolve(ctx context.Context, id string, endTime int64) error

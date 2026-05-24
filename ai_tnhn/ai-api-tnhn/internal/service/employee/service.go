@@ -6,6 +6,7 @@ import (
 	"ai-api-tnhn/internal/repository"
 	"ai-api-tnhn/internal/service/google/googledrive"
 	"context"
+	"sync"
 )
 
 type Service interface {
@@ -14,13 +15,16 @@ type Service interface {
 	Delete(ctx context.Context, id string) error
 	GetByID(ctx context.Context, id string) (*models.User, error)
 	List(ctx context.Context, f filter.Filter, currentGroup string) ([]*models.User, int64, error)
+	RegisterOnUserUpdate(cb func(userID string))
 }
 
 type service struct {
-	userRepo repository.User
-	orgRepo  repository.Organization
-	roleRepo repository.Role
-	driveSvc googledrive.Service
+	userRepo     repository.User
+	orgRepo      repository.Organization
+	roleRepo     repository.Role
+	driveSvc     googledrive.Service
+	onUserUpdate []func(userID string)
+	mu           sync.Mutex
 }
 
 func NewService(userRepo repository.User, orgRepo repository.Organization, roleRepo repository.Role, driveSvc googledrive.Service) Service {

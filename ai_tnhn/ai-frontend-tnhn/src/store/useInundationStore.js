@@ -4,6 +4,7 @@ import organizationApi from 'api/organization';
 import settingApi from 'api/setting';
 import { toast } from 'react-hot-toast';
 import { getDataArray } from 'utils/apiHelper';
+import useAuthStore from './useAuthStore';
 
 const useInundationStore = create((set, get) => ({
     points: [],
@@ -213,6 +214,23 @@ const useInundationStore = create((set, get) => ({
         es.addEventListener('points_updated', (e) => {
             console.log('SSE: points_updated event received');
             debouncedFetch();
+        });
+
+        es.addEventListener('user_updated', async (e) => {
+            console.log('SSE: user_updated event received. Refreshing permissions...');
+            try {
+                // Clear the loaded state guard in authStore so that it fetches from API
+                useAuthStore.setState({ permissionsLoaded: false });
+                await useAuthStore.getState().fetchPermissions();
+                
+                // Disconnect and reconnect SSE so that backend Hub gets updated Role & AssignedIDs
+                get().disconnectSSE();
+                get().connectSSE();
+                
+                toast.success('Quyền hạn của bạn đã được cập nhật!');
+            } catch (err) {
+                console.error('SSE user_updated handler failed', err);
+            }
         });
 
         es.addEventListener('connected', () => {

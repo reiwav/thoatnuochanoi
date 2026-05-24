@@ -74,7 +74,21 @@ func (s *service) Update(ctx context.Context, id string, input *models.User, cur
 		return err
 	}
 
-	return s.userRepo.Update(ctx, id, existing)
+	err = s.userRepo.Update(ctx, id, existing)
+	if err != nil {
+		return err
+	}
+
+	// Trigger callbacks to notify subscribers (like inundation SSE hub) that user profile has changed
+	s.mu.Lock()
+	callbacks := make([]func(userID string), len(s.onUserUpdate))
+	copy(callbacks, s.onUserUpdate)
+	s.mu.Unlock()
+	for _, cb := range callbacks {
+		cb(id)
+	}
+
+	return nil
 }
 
 func (s *service) Delete(ctx context.Context, id string) error {
@@ -103,4 +117,10 @@ func (s *service) List(ctx context.Context, f filter.Filter, currentGroup string
 		}
 	}
 	return s.userRepo.List(ctx, f)
+}
+
+func (s *service) RegisterOnUserUpdate(cb func(userID string)) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.onUserUpdate = append(s.onUserUpdate, cb)
 }

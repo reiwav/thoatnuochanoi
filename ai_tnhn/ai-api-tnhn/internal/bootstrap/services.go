@@ -121,6 +121,11 @@ func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log log
 	s.Water = water.NewService(log, repos.Lake, repos.River, s.Station, s.Weather)
 	s.Email = email.NewService(cfg.EmailConfig)
 	s.Inundation = inundation.NewService(repos.InundationReport, repos.InundationHistory, repos.InundationStation, repos.Organization, s.Drive, s.Setting)
+	s.Employee.RegisterOnUserUpdate(func(userID string) {
+		if hub := s.Inundation.GetHub(); hub != nil {
+			hub.NotifyUserUpdate(userID)
+		}
+	})
 
 	s.Wastewater = wastewater_treatment.NewService(repos.WastewaterStation)
 	s.PumpingStation = pumpingstation.NewService(repos.PumpingStation, repos.User, repos.Organization)

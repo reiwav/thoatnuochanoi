@@ -203,10 +203,10 @@ const InundationReportPanel = ({
 
     // ─── Dynamic labels dựa trên mode ──────────────────────
     const modeConfig = {
-        enterprise: { noteLabel: 'Mô tả diễn biến ngập', notePlaceholder: 'Nhập mô tả diễn biến...', dLabel: 'Dài', rLabel: 'Rộng', sLabel: 'Sâu', submitColor: 'secondary' },
-        ktcl:       { noteLabel: 'Nhận xét KT-CL',        notePlaceholder: 'Nhập nhận xét KT-CL...',   dLabel: 'D (Sâu)', rLabel: 'R (Rộng)', sLabel: 'S (Dài)', submitColor: 'warning' },
-        survey:     { noteLabel: 'Ghi chú TK Giám sát',  notePlaceholder: 'Nhập ghi chú giám sát...', dLabel: 'D (Sâu)', rLabel: 'R (Rộng)', sLabel: 'S (Dài)', submitColor: 'primary' },
-        mech:       { noteLabel: 'Ghi chú Cơ giới',      notePlaceholder: 'Nhập ghi chú cơ giới...',  dLabel: 'D (Sâu)', rLabel: 'R (Rộng)', sLabel: 'S (Dài)', submitColor: 'deepPurple' }
+        enterprise: { noteLabel: 'Mô tả diễn biến ngập', notePlaceholder: 'Nhập mô tả diễn biến...', dLabel: 'Sâu', rLabel: 'Rộng', sLabel: 'Dài', submitColor: 'secondary' },
+        ktcl:       { noteLabel: 'Nhận xét KT-CL',        notePlaceholder: 'Nhập nhận xét KT-CL...',   dLabel: 'Sâu', rLabel: 'Rộng', sLabel: 'Dài', submitColor: 'warning' },
+        survey:     { noteLabel: 'Ghi chú TK Giám sát',  notePlaceholder: 'Nhập ghi chú giám sát...', dLabel: 'Sâu', rLabel: 'Rộng', sLabel: 'Dài', submitColor: 'primary' },
+        mech:       { noteLabel: 'Ghi chú Cơ giới',      notePlaceholder: 'Nhập ghi chú cơ giới...',  dLabel: 'Sâu', rLabel: 'Rộng', sLabel: 'Dài', submitColor: 'deepPurple' }
     };
     const cfg = modeConfig[apiMode] || modeConfig.enterprise;
 

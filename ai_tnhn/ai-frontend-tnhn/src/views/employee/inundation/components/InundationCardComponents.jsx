@@ -231,11 +231,17 @@ export const CardActions = ({ onOpenDetail, isHighPriority, point, latest, openT
                 <Button
                     size="small"
                     color="inherit"
-                    startIcon={<IconEye size={18} />}
+                    startIcon={<IconEye size={16} />}
                     onClick={() => onOpenDetail(point)}
                     sx={{
-                        fontWeight: 800, borderRadius: 2.5, textTransform: 'none',
-                        color: 'text.secondary', px: 1.5, '&:hover': { bgcolor: 'grey.100' }
+                        height: 32,
+                        borderRadius: 2,
+                        fontWeight: 900,
+                        fontSize: '0.675rem',
+                        textTransform: 'none',
+                        color: 'text.secondary',
+                        px: 1.5,
+                        '&:hover': { bgcolor: 'grey.100' }
                     }}
                 >
                     Chi tiết
@@ -247,11 +253,13 @@ export const CardActions = ({ onOpenDetail, isHighPriority, point, latest, openT
                             variant="contained"
                             size="small"
                             color="secondary"
-                            startIcon={<IconSend size={16} />}
+                            startIcon={<IconSend size={14} />}
                             onClick={() => openTask('REPORT', point)}
                             sx={{
-                                borderRadius: 2.5,
+                                height: 32,
+                                borderRadius: 2,
                                 fontWeight: 900,
+                                fontSize: '0.675rem',
                                 px: 1.5
                             }}
                         >
@@ -264,11 +272,13 @@ export const CardActions = ({ onOpenDetail, isHighPriority, point, latest, openT
                             variant="contained"
                             size="small"
                             color={isCorrection ? 'warning' : 'primary'}
-                            startIcon={isCorrection ? <IconAlertTriangle size={16} /> : <IconSend size={16} />}
+                            startIcon={isCorrection ? <IconAlertTriangle size={14} /> : <IconSend size={14} />}
                             onClick={() => openTask('REPORT_ENTERPRISE', point)}
                             sx={{
-                                borderRadius: 2.5,
+                                height: 32,
+                                borderRadius: 2,
                                 fontWeight: 900,
+                                fontSize: '0.675rem',
                                 px: 1.5,
                                 animation: isCorrection ? 'aggressiveBlinkButton 1s infinite alternate' : 'none',
                                 '@keyframes aggressiveBlinkButton': {
@@ -283,10 +293,18 @@ export const CardActions = ({ onOpenDetail, isHighPriority, point, latest, openT
 
                     <PermissionGuard permission="inundation:survey">
                         <Button
-                            variant="contained" size="small" color="primary"
-                            startIcon={<IconClipboardCheck size={16} />}
+                            variant="contained"
+                            size="small"
+                            color="primary"
+                            startIcon={<IconClipboardCheck size={14} />}
                             onClick={() => openTask('SURVEY', point)}
-                            sx={{ borderRadius: 2.5, fontWeight: 800, px: 1.5 }}
+                            sx={{
+                                height: 32,
+                                borderRadius: 2,
+                                fontWeight: 900,
+                                fontSize: '0.675rem',
+                                px: 1.5
+                            }}
                         >
                             TK Giám sát
                         </Button>
@@ -294,10 +312,18 @@ export const CardActions = ({ onOpenDetail, isHighPriority, point, latest, openT
 
                     <PermissionGuard permission="inundation:mechanic">
                         <Button
-                            variant="contained" size="small" color="info"
-                            startIcon={<IconEngine size={16} />}
+                            variant="contained"
+                            size="small"
+                            color="info"
+                            startIcon={<IconEngine size={14} />}
                             onClick={() => openTask('MECH', point)}
-                            sx={{ borderRadius: 2.5, fontWeight: 800, px: 1.5 }}
+                            sx={{
+                                height: 32,
+                                borderRadius: 2,
+                                fontWeight: 900,
+                                fontSize: '0.675rem',
+                                px: 1.5
+                            }}
                         >
                             Xí nghiệp Cơ giới
                         </Button>
@@ -306,10 +332,18 @@ export const CardActions = ({ onOpenDetail, isHighPriority, point, latest, openT
                     {isHighPriority && (
                         <PermissionGuard permission="inundation:review">
                             <Button
-                                variant="contained" size="small" color="error"
-                                startIcon={<IconChecklist size={16} />}
+                                variant="contained"
+                                size="small"
+                                color="error"
+                                startIcon={<IconChecklist size={14} />}
                                 onClick={() => openTask('REVIEW', point)}
-                                sx={{ borderRadius: 2.5, fontWeight: 800, px: 1.5 }}
+                                sx={{
+                                    height: 32,
+                                    borderRadius: 2,
+                                    fontWeight: 900,
+                                    fontSize: '0.675rem',
+                                    px: 1.5
+                                }}
                             >
                                 Nhận xét
                             </Button>

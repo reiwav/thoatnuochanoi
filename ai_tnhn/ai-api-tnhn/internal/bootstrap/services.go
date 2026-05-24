@@ -4,6 +4,7 @@ import (
 	"ai-api-tnhn/config"
 	"ai-api-tnhn/internal/base/logger"
 	"ai-api-tnhn/internal/base/mgo/db"
+	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/integration/forecast"
 	"ai-api-tnhn/internal/integration/thoatnuoc"
 	"ai-api-tnhn/internal/service/auth"
@@ -121,6 +122,9 @@ func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log log
 	s.Water = water.NewService(log, repos.Lake, repos.River, s.Station, s.Weather)
 	s.Email = email.NewService(cfg.EmailConfig)
 	s.Inundation = inundation.NewService(repos.InundationReport, repos.InundationHistory, repos.InundationStation, repos.Organization, s.Drive, repos.AppSetting)
+	s.Setting.RegisterOnFloodLevelsUpdate(func(levels []models.FloodLevel) {
+		s.Inundation.UpdateFloodLevelCache(levels)
+	})
 
 	s.Wastewater = wastewater_treatment.NewService(repos.WastewaterStation)
 	s.PumpingStation = pumpingstation.NewService(repos.PumpingStation, repos.User, repos.Organization)

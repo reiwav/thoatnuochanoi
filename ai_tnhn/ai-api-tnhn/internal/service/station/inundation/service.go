@@ -8,6 +8,7 @@ import (
 	"ai-api-tnhn/internal/service/google/googledrive"
 	"context"
 	"sync"
+	"time"
 )
 
 type Service interface {
@@ -47,6 +48,9 @@ type Service interface {
 
 	// SSE Hub
 	GetHub() *Hub
+
+	// Cache management
+	UpdateFloodLevelCache(levels []models.FloodLevel)
 }
 
 type service struct {
@@ -60,6 +64,11 @@ type service struct {
 	syncWorker            *SyncWorker
 	settingSvc            repository.AppSetting
 	hub                   *Hub
+
+	// In-memory cache for FloodLevel settings (TTL-based)
+	floodLevelCache    []models.FloodLevel
+	floodLevelCacheAt  time.Time
+	floodLevelCacheTTL time.Duration
 }
 
 func NewService(
@@ -79,6 +88,7 @@ func NewService(
 		settingSvc:            settingRepo,
 		folderCache:           make(map[string]string),
 		hub:                   NewHub(),
+		floodLevelCacheTTL:    5 * time.Minute,
 	}
 
 	svc.syncWorker = NewSyncWorker(inundationRepo, inundationHistoryRepo, orgRepo, driveSvc, svc.resolveUploadFolder)

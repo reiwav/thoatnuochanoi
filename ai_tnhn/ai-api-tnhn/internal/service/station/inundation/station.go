@@ -125,11 +125,8 @@ func (s *service) GetPointsStatus(ctx context.Context, user *models.User, isAllo
 		}
 	}
 
-	// 3. Pre-load FloodLevel setting once instead of querying DB for each point
-	var floodLevels []models.FloodLevel
-	if floodSetting, err := s.settingSvc.GetByCode(ctx, "FloodLevel"); err == nil && floodSetting != nil {
-		floodLevels = floodSetting.FloodLevels
-	}
+	// 3. Use cached FloodLevel settings (auto-refresh with TTL, no per-request DB query)
+	floodLevels := s.getFloodLevels(ctx)
 
 	// 4. Build merged result
 	result := make([]PointStatus, len(finalPoints))
@@ -142,8 +139,8 @@ func (s *service) GetPointsStatus(ctx context.Context, user *models.User, isAllo
 		// Use pre-fetched LastReport from batch map
 		if p.LastReportID != "" {
 			if lastReport, ok := lastReportMap[p.LastReportID]; ok {
-				// Use pre-loaded flood levels instead of querying DB
-				level := calculateFloodLevelFromSetting(lastReport.Depth, floodLevels)
+				// Use cached flood levels (pure in-memory calculation)
+				level := calculateFloodLevelFromLevels(lastReport.Depth, floodLevels)
 				if level != nil {
 					lastReport.FloodLevelName = level.Name
 					lastReport.FloodLevelColor = level.Color

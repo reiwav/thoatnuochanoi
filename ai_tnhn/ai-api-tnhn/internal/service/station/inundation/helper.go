@@ -142,24 +142,44 @@ func (s *service) saveAndGetImages(images []ImageContent, reportID string) ([]st
 	return nil, nil
 }
 
-func (s *service) calculateFloodLevel(ctx context.Context, depth float64) *models.FloodLevel {
+// getFloodLevels returns cached FloodLevel settings, refreshing from DB if expired or empty.
+func (s *service) getFloodLevels(ctx context.Context) []models.FloodLevel {
+	s.cacheMu.RLock()
+	if len(s.floodLevelCache) > 0 && time.Since(s.floodLevelCacheAt) < s.floodLevelCacheTTL {
+		defer s.cacheMu.RUnlock()
+		return s.floodLevelCache
+	}
+	s.cacheMu.RUnlock()
+
+	// Cache miss or expired — reload from DB
 	setting, err := s.settingSvc.GetByCode(ctx, "FloodLevel")
 	if err != nil || setting == nil {
 		return nil
 	}
 
-	for i := range setting.FloodLevels {
-		level := setting.FloodLevels[i]
-		if depth >= level.MinDepth && depth < level.MaxDepth {
-			return &level
-		}
-	}
-	return nil
+	s.cacheMu.Lock()
+	s.floodLevelCache = setting.FloodLevels
+	s.floodLevelCacheAt = time.Now()
+	s.cacheMu.Unlock()
+
+	return setting.FloodLevels
 }
 
-// calculateFloodLevelFromSetting uses a pre-loaded FloodLevels slice to avoid repeated DB queries.
-// This is used in batch operations like GetPointsStatus where the setting is loaded once.
-func calculateFloodLevelFromSetting(depth float64, levels []models.FloodLevel) *models.FloodLevel {
+// UpdateFloodLevelCache updates the in-memory cache directly with new levels and resets the TTL timer.
+func (s *service) UpdateFloodLevelCache(levels []models.FloodLevel) {
+	s.cacheMu.Lock()
+	defer s.cacheMu.Unlock()
+	s.floodLevelCache = levels
+	s.floodLevelCacheAt = time.Now()
+}
+
+func (s *service) calculateFloodLevel(ctx context.Context, depth float64) *models.FloodLevel {
+	levels := s.getFloodLevels(ctx)
+	return calculateFloodLevelFromLevels(depth, levels)
+}
+
+// calculateFloodLevelFromLevels uses a pre-loaded FloodLevels slice (pure in-memory, no DB).
+func calculateFloodLevelFromLevels(depth float64, levels []models.FloodLevel) *models.FloodLevel {
 	for i := range levels {
 		level := levels[i]
 		if depth >= level.MinDepth && depth < level.MaxDepth {

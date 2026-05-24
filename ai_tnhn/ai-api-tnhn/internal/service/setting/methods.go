@@ -18,6 +18,12 @@ func (s *service) GetFloodLevels(ctx context.Context) ([]models.FloodLevel, erro
 	return setting.FloodLevels, nil
 }
 
+func (s *service) RegisterOnFloodLevelsUpdate(cb func(levels []models.FloodLevel)) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.onFloodLevelsUpdate = append(s.onFloodLevelsUpdate, cb)
+}
+
 func (s *service) UpdateFloodLevels(ctx context.Context, levels []models.FloodLevel) error {
 	setting, err := s.repo.GetByCode(ctx, "FloodLevel")
 	if err != nil {
@@ -34,7 +40,21 @@ func (s *service) UpdateFloodLevels(ctx context.Context, levels []models.FloodLe
 	}
 
 	setting.FloodLevels = levels
-	return s.repo.Save(ctx, setting)
+	err = s.repo.Save(ctx, setting)
+	if err != nil {
+		return err
+	}
+
+	// Trigger callbacks to notify interested services (like inundation) to update/invalidate their caches
+	s.mu.Lock()
+	handlers := make([]func(levels []models.FloodLevel), len(s.onFloodLevelsUpdate))
+	copy(handlers, s.onFloodLevelsUpdate)
+	s.mu.Unlock()
+	for _, cb := range handlers {
+		cb(levels)
+	}
+
+	return nil
 }
 
 func (s *service) GetRainSetting(ctx context.Context) (*models.RainSetting, error) {

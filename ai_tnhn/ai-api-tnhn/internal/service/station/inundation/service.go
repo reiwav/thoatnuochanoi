@@ -6,9 +6,9 @@ import (
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/repository"
 	"ai-api-tnhn/internal/service/google/googledrive"
+	"ai-api-tnhn/internal/service/setting"
 	"context"
 	"sync"
-	"time"
 )
 
 type Service interface {
@@ -48,9 +48,6 @@ type Service interface {
 
 	// SSE Hub
 	GetHub() *Hub
-
-	// Cache management
-	UpdateFloodLevelCache(levels []models.FloodLevel)
 }
 
 type service struct {
@@ -62,13 +59,8 @@ type service struct {
 	folderCache           map[string]string
 	cacheMu               sync.RWMutex
 	syncWorker            *SyncWorker
-	settingSvc            repository.AppSetting
+	settingSvc            setting.Service
 	hub                   *Hub
-
-	// In-memory cache for FloodLevel settings (TTL-based)
-	floodLevelCache    []models.FloodLevel
-	floodLevelCacheAt  time.Time
-	floodLevelCacheTTL time.Duration
 }
 
 func NewService(
@@ -77,7 +69,7 @@ func NewService(
 	inundationStationRepo repository.InundationStation,
 	orgRepo repository.Organization,
 	driveSvc googledrive.Service,
-	settingRepo repository.AppSetting,
+	settingSvc setting.Service,
 ) Service {
 	svc := &service{
 		InundationReportRepo:  inundationRepo,
@@ -85,10 +77,9 @@ func NewService(
 		inundationStationRepo: inundationStationRepo,
 		orgRepo:               orgRepo,
 		driveSvc:              driveSvc,
-		settingSvc:            settingRepo,
+		settingSvc:            settingSvc,
 		folderCache:           make(map[string]string),
 		hub:                   NewHub(),
-		floodLevelCacheTTL:    5 * time.Minute,
 	}
 
 	svc.syncWorker = NewSyncWorker(inundationRepo, inundationHistoryRepo, orgRepo, driveSvc, svc.resolveUploadFolder)

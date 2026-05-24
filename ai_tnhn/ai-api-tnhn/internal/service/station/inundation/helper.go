@@ -144,33 +144,11 @@ func (s *service) saveAndGetImages(images []ImageContent, reportID string) ([]st
 
 // getFloodLevels returns cached FloodLevel settings, refreshing from DB if expired or empty.
 func (s *service) getFloodLevels(ctx context.Context) []models.FloodLevel {
-	s.cacheMu.RLock()
-	if len(s.floodLevelCache) > 0 && time.Since(s.floodLevelCacheAt) < s.floodLevelCacheTTL {
-		defer s.cacheMu.RUnlock()
-		return s.floodLevelCache
-	}
-	s.cacheMu.RUnlock()
-
-	// Cache miss or expired — reload from DB
-	setting, err := s.settingSvc.GetByCode(ctx, "FloodLevel")
-	if err != nil || setting == nil {
+	levels, err := s.settingSvc.GetFloodLevels(ctx)
+	if err != nil {
 		return nil
 	}
-
-	s.cacheMu.Lock()
-	s.floodLevelCache = setting.FloodLevels
-	s.floodLevelCacheAt = time.Now()
-	s.cacheMu.Unlock()
-
-	return setting.FloodLevels
-}
-
-// UpdateFloodLevelCache updates the in-memory cache directly with new levels and resets the TTL timer.
-func (s *service) UpdateFloodLevelCache(levels []models.FloodLevel) {
-	s.cacheMu.Lock()
-	defer s.cacheMu.Unlock()
-	s.floodLevelCache = levels
-	s.floodLevelCacheAt = time.Now()
+	return levels
 }
 
 func (s *service) calculateFloodLevel(ctx context.Context, depth float64) *models.FloodLevel {

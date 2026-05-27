@@ -289,3 +289,14 @@ func (s *service) getUserPermission(ctx context.Context, defaultPerm string) str
 	}
 	return defaultPerm
 }
+
+func (s *service) getOrgName(ctx context.Context, orgID string) string {
+	if orgID == "" {
+		return ""
+	}
+	org, err := s.orgRepo.GetByID(ctx, orgID)
+	if err != nil || org == nil {
+		return ""
+	}
+	return org.Name
+}

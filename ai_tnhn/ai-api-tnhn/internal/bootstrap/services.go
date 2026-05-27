@@ -181,36 +181,47 @@ func (s *Services) PostInit(log logger.Logger, repos *Repositories) {
 		go func() {
 			log.GetLogger().Info("Starting automated Google Drive storage initialization for all organizations...")
 			ctx := context.Background()
-			orgs, _, err := s.Organization.FindAll(ctx, 1, 1000)
+			orgs, err := s.Organization.GetAll(ctx)
 			if err != nil {
 				log.GetLogger().Errorf("Failed to fetch organizations for drive init: %v", err)
 				return
 			}
-
+			
 			for _, org := range orgs {
+				if org.DriveFolderID != "" {
+					continue
+				}
+
 				folderID, err := s.Drive.InitOrgFolders(ctx, org.Name, org.DriveFolderID)
 				if err != nil {
 					log.GetLogger().Errorf("Failed to init folders for org %s: %v", org.Name, err)
 					continue
 				}
 
-				if org.DriveFolderID != folderID {
-					err = repos.Organization.UpdateDriveFolderID(ctx, org.ID, folderID)
-					if err != nil {
-						log.GetLogger().Errorf("Failed to update DriveFolderID in DB for org %s: %v", org.Name, err)
-					} else {
-						log.GetLogger().Infof("Successfully initialized and synced Drive folders for org: %s", org.Name)
-					}
+				err = repos.Organization.UpdateDriveFolderID(ctx, org.ID, folderID)
+				if err != nil {
+					log.GetLogger().Errorf("Failed to update DriveFolderID in DB for org %s: %v", org.Name, err)
+				} else {
+					log.GetLogger().Infof("Successfully initialized and synced Drive folders for org: %s", org.Name)
 				}
+
 			}
 			log.GetLogger().Info("Google Drive automated storage initialization complete.")
+			
+			// Trigger automated background syncs now that Drive folders are safely initialized
+			if s.Inundation != nil {
+				s.Inundation.TriggerInitialSync()
+			}
+			if s.Contract != nil {
+				s.Contract.TriggerInitialSync()
+			}
 		}()
 	}
 	if s.GoogleApi != nil {
 		go func() {
 			log.GetLogger().Info("Starting automated Google Email OCR polling...")
 			ctx := context.Background()
-			
+
 			// Initial fetch on startup
 			s.GoogleApi.GetLatestOCRText(ctx)
 

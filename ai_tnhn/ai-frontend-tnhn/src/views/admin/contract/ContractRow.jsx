@@ -9,6 +9,24 @@ import {
 import dayjs from 'dayjs';
 import PermissionGuard from 'ui-component/PermissionGuard';
 
+const getFileUrl = (file) => {
+    if (!file) return '#';
+    let link = file.link;
+    if (!link) {
+        if (file.id && file.id.startsWith('local:')) {
+            link = '/api/storage/file/' + file.id.substring(6);
+        } else {
+            return `https://drive.google.com/open?id=${file.id}`;
+        }
+    }
+    if (link.startsWith('/') || link.startsWith('local:')) {
+        const relativeLink = link.startsWith('local:') ? '/api/storage/file/' + link.substring(6) : link;
+        const apiBase = import.meta.env?.VITE_APP_API_URL || '';
+        return `${apiBase}${relativeLink}`;
+    }
+    return link;
+};
+
 const ContractRow = ({ row, appendices, handleOpenEdit, handleDelete, handleAddAppendix, isMobile, formatPrice, getTotalPrice, hasPermission }) => {
     const [open, setOpen] = useState(false);
 
@@ -142,7 +160,7 @@ const ContractRow = ({ row, appendices, handleOpenEdit, handleDelete, handleAddA
                                                 variant="outlined"
                                                 size="small"
                                                 startIcon={<IconFileText size={14} />}
-                                                href={file.link || `https://drive.google.com/open?id=${file.id}`}
+                                                href={getFileUrl(file)}
                                                 target="_blank"
                                                 sx={{ 
                                                     textTransform: 'none', 
@@ -198,7 +216,7 @@ const ContractRow = ({ row, appendices, handleOpenEdit, handleDelete, handleAddA
                                                                         variant="text"
                                                                         size="small"
                                                                         startIcon={<IconFileText size={12} />}
-                                                                        href={file.link || `https://drive.google.com/open?id=${file.id}`}
+                                                                        href={getFileUrl(file)}
                                                                         target="_blank"
                                                                         sx={{ 
                                                                             textTransform: 'none', 

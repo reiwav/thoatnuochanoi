@@ -73,14 +73,17 @@ func (s *service) uploadImages(ctx context.Context, userID string, constructionI
 
 func (s *service) resolveUploadFolder(ctx context.Context, org *models.Organization, dataType string, constructionID string) (string, error) {
 	orgFolderID := org.DriveFolderID
-	if orgFolderID == "" || orgFolderID == "." {
-		newFolderID, err := s.driveSvc.CreateOrgFolder(ctx, org.Name)
+	if orgFolderID == "" {
+		var err error
+		orgFolderID, err = s.driveSvc.InitOrgFolders(ctx, org.Name, org.DriveFolderID)
 		if err != nil {
 			return "", err
 		}
-		orgFolderID = newFolderID
-		org.DriveFolderID = newFolderID
-		_ = s.orgRepo.Upsert(ctx, org)
+
+		if orgFolderID != org.DriveFolderID {
+			org.DriveFolderID = orgFolderID
+			_ = s.orgRepo.Upsert(ctx, org)
+		}
 	}
 
 	// 1. Get/Create Type Folder (e.g., CONSTRUCTION)

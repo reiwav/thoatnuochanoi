@@ -57,6 +57,11 @@ func (r *orgRepo) UpdateDriveFolderID(ctx context.Context, id, folderID string) 
 	return r.R_UnsafeUpdateByID(ctx, id, update)
 }
 
+func (r *orgRepo) UpdateDriveFolderIDByCode(ctx context.Context, code, folderID string) error {
+	update := bson.M{"$set": bson.M{"drive_folder_id": folderID}}
+	return r.R_UpdateForce(ctx, bson.M{"code": code}, update)
+}
+
 func (r *orgRepo) GetAll(ctx context.Context) ([]*models.Organization, error) {
 	var orgs []*models.Organization
 	err := r.R_SelectManyWithSort(ctx, bson.M{}, bson.M{"Name": 1}, &orgs)

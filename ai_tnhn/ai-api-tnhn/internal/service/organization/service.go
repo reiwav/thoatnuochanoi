@@ -12,6 +12,7 @@ type Service interface {
 	Create(ctx context.Context, org *models.Organization) error
 	Update(ctx context.Context, id string, org *models.Organization) error
 	Delete(ctx context.Context, id string) error
+	GetAll(ctx context.Context) ([]models.Organization, error)
 	GetByID(ctx context.Context, id string) (*models.Organization, error)
 	List(ctx context.Context, filter filter.Filter) ([]*models.Organization, int64, error)
 	FindAll(ctx context.Context, page, limit int) ([]*models.Organization, int64, error)

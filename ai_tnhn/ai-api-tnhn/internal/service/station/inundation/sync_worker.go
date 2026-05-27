@@ -5,6 +5,7 @@ import (
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/repository"
 	"ai-api-tnhn/internal/service/google/googledrive"
+	"ai-api-tnhn/utils"
 	"context"
 	"fmt"
 	"os"
@@ -12,8 +13,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"mime"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -82,9 +81,6 @@ func (w *SyncWorker) Enqueue(id string, taskType TaskType) {
 }
 
 func (w *SyncWorker) Start() {
-	// 1. Startup Scan: Process any existing leftover local images
-	w.syncLocalImages()
-
 	// 2. Start Worker Pool
 	for i := 0; i < w.workerCount; i++ {
 		go w.workerLoop(i)
@@ -390,10 +386,9 @@ func (w *SyncWorker) uploadImageSlice(ctx context.Context, folderID string, imag
 			}
 
 			fileName := filepath.Base(relPath)
-			ext := filepath.Ext(fileName)
-			mimeType := mime.TypeByExtension(ext)
-			if mimeType == "" {
-				mimeType = "image/jpeg" // Fallback
+			mimeType := utils.GetMimeType(fileName)
+			if mimeType == "application/octet-stream" {
+				mimeType = "image/jpeg" // Fallback for inundation images
 			}
 
 			driveID, err := w.driveSvc.UploadFileSimple(ctx, folderID, fileName, mimeType, file)

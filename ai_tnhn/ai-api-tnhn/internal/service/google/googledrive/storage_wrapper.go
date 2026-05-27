@@ -46,15 +46,32 @@ func (w *storageWrapper) CreateOrgFolder(ctx context.Context, n string) (string,
 }
 
 func (w *storageWrapper) InitOrgFolders(ctx context.Context, n string, folderID string) (string, error) {
+	if folderID != "" {
+		return folderID, nil
+	}
 	var dID string
+	var err error
 	if w.driveSvc != nil {
-		dID, _ = w.driveSvc.InitOrgFolders(ctx, n, folderID)
+		dID, err = w.driveSvc.InitOrgFolders(ctx, n, folderID)
+		if err != nil {
+			return "", err
+		}
+		if w.storageSvc == w.driveSvc {
+			return dID, nil
+		}
 	}
 	oID, _ := w.storageSvc.CreateFolder(ctx, ".", n)
 	if w.driveSvc != nil {
 		return dID, nil
 	}
 	return oID, nil
+}
+
+func (w *storageWrapper) IsValidDriveID(id string) bool {
+	if w.driveSvc != nil {
+		return w.driveSvc.IsValidDriveID(id)
+	}
+	return false
 }
 
 func (w *storageWrapper) FindOrCreateFolder(ctx context.Context, pID, n string) (string, error) {

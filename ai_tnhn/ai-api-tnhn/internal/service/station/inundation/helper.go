@@ -11,17 +11,18 @@ import (
 )
 
 func (s *service) getOrgFolderID(ctx context.Context, org *models.Organization) (string, error) {
-	folderID := org.DriveFolderID
-	if folderID == "" || folderID == "." {
-		fmt.Printf("Org %s has invalid DriveFolderID '%s'. Attempting to create/find a valid one...\n", org.Name, folderID)
-		newFolderID, err := s.driveSvc.CreateOrgFolder(ctx, org.Name)
-		if err != nil {
-			return "", fmt.Errorf("failed to ensure org folder for '%s': %w", org.Name, err)
-		}
+	if org.DriveFolderID != "" {
+		return org.DriveFolderID, nil
+	}
 
-		org.DriveFolderID = newFolderID
+	folderID, err := s.driveSvc.InitOrgFolders(ctx, org.Name, org.DriveFolderID)
+	if err != nil {
+		return "", fmt.Errorf("failed to ensure org folder for '%s': %w", org.Name, err)
+	}
+
+	if folderID != org.DriveFolderID {
+		org.DriveFolderID = folderID
 		_ = s.orgRepo.Upsert(ctx, org)
-		return newFolderID, nil
 	}
 	return folderID, nil
 }

@@ -40,6 +40,29 @@ const ContractList = () => {
         fetchContracts();
     }, [fetchContracts]);
 
+    // Automatically poll and refresh contracts list if any contract has local files currently syncing to Google Drive
+    useEffect(() => {
+        const hasLocalFiles = contracts.some(c => 
+            c.files && c.files.some(file => 
+                (file.id && file.id.startsWith('local:')) ||
+                (file.link && (file.link.startsWith('/') || file.link.startsWith('local:')))
+            )
+        );
+        
+        let intervalId = null;
+        if (hasLocalFiles && !loading) {
+            intervalId = setInterval(() => {
+                fetchContracts();
+            }, 4000);
+        }
+        
+        return () => {
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
+        };
+    }, [contracts, loading, fetchContracts]);
+
     const handleSearch = () => {
         setFilters({ name: filterInput });
         fetchContracts();
@@ -90,6 +113,7 @@ const ContractList = () => {
             setDialogOpen(false);
         } catch (err) {
             toast.error(err.response?.data?.error || 'Đã có lỗi xảy ra');
+            throw err;
         }
     };
 

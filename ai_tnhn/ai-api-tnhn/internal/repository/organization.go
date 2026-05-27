@@ -17,4 +17,5 @@ type Organization interface {
 	GetByCode(ctx context.Context, code string) (*models.Organization, error)
 	List(ctx context.Context, filter filter.Filter) ([]*models.Organization, int64, error)
 	UpdateDriveFolderID(ctx context.Context, id, folderID string) error
+	UpdateDriveFolderIDByCode(ctx context.Context, code, folderID string) error
 }

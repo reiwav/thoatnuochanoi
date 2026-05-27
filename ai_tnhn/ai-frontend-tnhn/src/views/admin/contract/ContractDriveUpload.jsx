@@ -3,6 +3,24 @@ import { IconBrandGoogleDrive, IconExternalLink, IconTrash, IconUpload } from '@
 import contractApi from 'api/contract';
 import { toast } from 'react-hot-toast';
 
+const getFileUrl = (file) => {
+    if (!file) return '#';
+    let link = file.link;
+    if (!link) {
+        if (file.id && file.id.startsWith('local:')) {
+            link = '/api/storage/file/' + file.id.substring(6);
+        } else {
+            return `https://drive.google.com/open?id=${file.id}`;
+        }
+    }
+    if (link.startsWith('/') || link.startsWith('local:')) {
+        const relativeLink = link.startsWith('local:') ? '/api/storage/file/' + link.substring(6) : link;
+        const apiBase = import.meta.env?.VITE_APP_API_URL || '';
+        return `${apiBase}${relativeLink}`;
+    }
+    return link;
+};
+
 const ContractDriveUpload = ({ values, setValues, uploading, setUploading }) => {
     return (
         <Box sx={{ p: 2, border: '1px dashed', borderColor: values.category_id ? 'secondary.main' : 'grey.400', borderRadius: '12px', bgcolor: values.category_id ? 'secondary.light' : 'grey.50', opacity: 0.9 }}>
@@ -28,7 +46,7 @@ const ContractDriveUpload = ({ values, setValues, uploading, setUploading }) => 
                                     variant="outlined"
                                     size="small"
                                     startIcon={<IconExternalLink size={16} />}
-                                    href={file.link || `https://drive.google.com/open?id=${file.id}`}
+                                    href={getFileUrl(file)}
                                     target="_blank"
                                     sx={{ 
                                         flex: 1,
@@ -51,14 +69,12 @@ const ContractDriveUpload = ({ values, setValues, uploading, setUploading }) => 
                                     onClick={async () => {
                                         if (!window.confirm(`Xoá tệp "${file.name}"?`)) return;
                                         try {
-                                            const res = await contractApi.deleteFile(file.id);
-                                            if (res.data?.status === 'success') {
-                                                toast.success('Đã xoá tệp');
-                                                setValues(prev => ({
-                                                    ...prev,
-                                                    files: prev.files.filter((_, i) => i !== idx)
-                                                }));
-                                            }
+                                            await contractApi.deleteFile(file.id);
+                                            toast.success('Đã xoá tệp');
+                                            setValues(prev => ({
+                                                ...prev,
+                                                files: prev.files.filter((_, i) => i !== idx)
+                                            }));
                                         } catch (err) {
                                             toast.error('Lỗi khi xoá tệp');
                                         }
@@ -92,9 +108,9 @@ const ContractDriveUpload = ({ values, setValues, uploading, setUploading }) => 
                                     const prepRes = await contractApi.prepareFolder({
                                         category_id: values.category_id
                                     });
-                                    if (prepRes.data?.status === 'success') {
-                                        currentFolderId = prepRes.data.data.drive_folder_id;
-                                        currentFolderLink = prepRes.data.data.drive_folder_link;
+                                    if (prepRes && prepRes.drive_folder_id) {
+                                        currentFolderId = prepRes.drive_folder_id;
+                                        currentFolderLink = prepRes.drive_folder_link;
                                         setValues(prev => ({
                                             ...prev,
                                             drive_folder_id: currentFolderId,
@@ -111,11 +127,11 @@ const ContractDriveUpload = ({ values, setValues, uploading, setUploading }) => 
                                     formData.append('file', file);
                                     
                                     const res = await contractApi.uploadToFolder(currentFolderId, formData);
-                                    if (res.data?.status === 'success') {
+                                    if (res && res.file_id) {
                                         newUploadedFiles.push({
-                                            id: res.data.data.file_id,
-                                            name: res.data.data.name,
-                                            link: res.data.data.link
+                                            id: res.file_id,
+                                            name: res.name,
+                                            link: res.link
                                         });
                                     }
                                 }

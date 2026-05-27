@@ -11,14 +11,22 @@ import (
 	"time"
 
 	"google.golang.org/api/drive/v3"
+	"google.golang.org/api/googleapi"
 )
 
 func (s *service) UploadFile(ctx context.Context, folderID, name, mimeType string, content io.Reader, convert bool) (string, error) {
 	f := &drive.File{Name: name, Parents: []string{folderID}}
 	if convert {
 		f.MimeType = "application/vnd.google-apps.document"
+	} else if mimeType != "" {
+		f.MimeType = mimeType
 	}
-	res, err := s.driveSvc.Files.Create(f).Media(content).SupportsAllDrives(true).Do()
+	
+	var mediaOpts []googleapi.MediaOption
+	if mimeType != "" {
+		mediaOpts = append(mediaOpts, googleapi.ContentType(mimeType))
+	}
+	res, err := s.driveSvc.Files.Create(f).Media(content, mediaOpts...).SupportsAllDrives(true).Do()
 	if err != nil {
 		return "", fmt.Errorf("failed to upload file: %w", err)
 	}
@@ -49,17 +57,23 @@ func (s *service) CreateOrgFolder(ctx context.Context, orgName string) (string, 
 	return s.CreateFolder(ctx, s.cfg.RootFolderID, orgName)
 }
 
-func (s *service) InitOrgFolders(ctx context.Context, orgName string, folderID string) (string, error) {
-	orgID := folderID
-	var err error
-	if orgID == "" || orgID == "." {
-		orgID, err = s.FindOrCreateFolder(ctx, s.cfg.RootFolderID, orgName)
-		if err != nil {
-			return "", err
+func (s *service) IsValidDriveID(id string) bool {
+	if len(id) < 15 || len(id) > 50 {
+		return false
+	}
+	for _, r := range id {
+		if !((r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '_' || r == '-') {
+			return false
 		}
 	}
+	return true
+}
 
-	return orgID, nil
+func (s *service) InitOrgFolders(ctx context.Context, orgName string, folderID string) (string, error) {
+	if folderID != "" {
+		return folderID, nil
+	}
+	return s.FindOrCreateFolder(ctx, s.cfg.RootFolderID, orgName)
 }
 
 func (s *service) FindOrCreateFolder(ctx context.Context, parentID, folderName string) (string, error) {
@@ -72,7 +86,10 @@ func (s *service) FindOrCreateFolder(ctx context.Context, parentID, folderName s
 	}
 	q := fmt.Sprintf("name = '%s' and mimeType = 'application/vnd.google-apps.folder' and '%s' in parents and trashed = false", folderName, pID)
 	res, err := s.driveSvc.Files.List().Q(q).SupportsAllDrives(true).IncludeItemsFromAllDrives(true).Do()
-	if err == nil && len(res.Files) > 0 {
+	if err != nil {
+		return "", fmt.Errorf("failed to search for folder '%s': %w", folderName, err)
+	}
+	if len(res.Files) > 0 {
 		return res.Files[0].Id, nil
 	}
 	return s.CreateFolder(ctx, pID, folderName)

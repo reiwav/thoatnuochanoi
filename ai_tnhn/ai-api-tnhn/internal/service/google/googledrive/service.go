@@ -29,6 +29,7 @@ type Service interface {
 	GetFolderLink(ctx context.Context, folderID string) string
 	ListFiles(ctx context.Context, folderID string) ([]FileInfo, error)
 	DeleteFile(ctx context.Context, fileID string) error
+	IsValidDriveID(id string) bool
 }
 
 type service struct {

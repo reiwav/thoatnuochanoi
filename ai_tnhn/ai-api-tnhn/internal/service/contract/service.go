@@ -27,6 +27,8 @@ type Service interface {
 	GetStagesDueSoon(ctx context.Context, days int) ([]*StageQueryResult, error)
 	GetStagesPassed(ctx context.Context) ([]*StageQueryResult, error)
 	SearchContracts(ctx context.Context, keyword string) ([]*ContractQueryResult, error)
+
+	TriggerInitialSync()
 }
 
 type service struct {
@@ -47,4 +49,10 @@ func NewService(repo repository.Contract, catRepo repository.ContractCategory, o
 	svc.syncWorker = NewSyncWorker(repo, orgRepo, driveSvc, svc.ensureDriveFolder)
 	svc.syncWorker.Start()
 	return svc
+}
+
+func (s *service) TriggerInitialSync() {
+	if s.syncWorker != nil {
+		go s.syncWorker.syncLocalFiles()
+	}
 }

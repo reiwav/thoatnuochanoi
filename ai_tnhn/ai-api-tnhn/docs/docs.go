@@ -7185,6 +7185,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "60f121212121"
                 },
+                "contract_number": {
+                    "type": "string",
+                    "example": "HD/2026/001"
+                },
                 "created_at": {
                     "type": "integer"
                 },
@@ -7212,6 +7216,14 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
+                "investor_name": {
+                    "type": "string",
+                    "example": "Công ty Thoát nước"
+                },
+                "jv_members": {
+                    "type": "string",
+                    "example": "Thành viên A, Thành viên B"
+                },
                 "name": {
                     "type": "string",
                     "example": "Hợp đồng Duy trì hệ thống thoát nước 2023"
@@ -7221,6 +7233,10 @@ const docTemplate = `{
                     "example": "Hợp đồng trọng điểm"
                 },
                 "org_id": {
+                    "type": "string",
+                    "example": "60f123456789"
+                },
+                "parent_id": {
                     "type": "string",
                     "example": "60f123456789"
                 },
@@ -8095,7 +8111,6 @@ const docTemplate = `{
                     "example": "Xí nghiệp Thoát nước số 1"
                 },
                 "order": {
-                    "description": "RainStationIDs  []string ` + "`" + `bson:\"rain_station_ids\" json:\"rain_station_ids\"` + "`" + `\nLakeStationIDs  []string ` + "`" + `bson:\"lake_station_ids\" json:\"lake_station_ids\"` + "`" + `\nRiverStationIDs           []string ` + "`" + `bson:\"river_station_ids\" json:\"river_station_ids\"` + "`" + `\nInundationIDs             []string ` + "`" + `bson:\"inundation_ids\" json:\"inundation_ids\"` + "`" + `\nEmergencyConstructionIDs  []string ` + "`" + `bson:\"emergency_construction_ids\" json:\"emergency_construction_ids\"` + "`" + `\nPumpingStationIDs         []string ` + "`" + `bson:\"pumping_station_ids\" json:\"pumping_station_ids\"` + "`" + `",
                     "type": "string"
                 },
                 "phone_number": {

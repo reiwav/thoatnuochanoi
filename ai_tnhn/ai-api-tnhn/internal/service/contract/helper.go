@@ -13,22 +13,21 @@ func (s *service) ensureDriveFolder(ctx context.Context, contract *models.Contra
 		return nil
 	}
 
-	parentDriveID := ""
+	if contract.DriveFolderID != "" && !strings.Contains(contract.DriveFolderID, "/") {
+		return nil
+	}
+
+	// Get org's Drive folder as the parent
+	orgFolderID := ""
 	if orgID != "" && s.orgRepo != nil {
 		org, err := s.orgRepo.GetByID(ctx, orgID)
 		if err == nil && org != nil {
-			if org.DriveFolderID != "" {
-				parentDriveID = org.DriveFolderID
-			} else if org.Name != "" {
-				parentDriveID, _ = s.driveSvc.InitOrgFolders(ctx, org.Name, org.DriveFolderID)
-				if parentDriveID != "" {
-					_ = s.orgRepo.UpdateDriveFolderID(ctx, orgID, parentDriveID)
-				}
-			}
+			orgFolderID = org.DriveFolderID
 		}
 	}
 
-	contractsRootID, err := s.driveSvc.FindOrCreateFolder(ctx, parentDriveID, "CONTRACTS")
+	// Create "contracts" folder inside the org folder (or root if no org folder)
+	contractsRootID, err := s.driveSvc.FindOrCreateFolder(ctx, orgFolderID, "contracts")
 	if err != nil {
 		return fmt.Errorf("failed to ensure CONTRACTS root folder: %w", err)
 	}
@@ -46,11 +45,20 @@ func (s *service) ensureDriveFolder(ctx context.Context, contract *models.Contra
 		return fmt.Errorf("failed to ensure month folder: %w", err)
 	}
 
-	isPath := strings.Contains(contract.DriveFolderID, "/")
-	if contract.DriveFolderID == "" || isPath {
-		contract.DriveFolderID = monthID
-		contract.DriveFolderLink = s.driveSvc.GetFolderLink(ctx, monthID)
+	folderName := contract.ContractNumber
+	if folderName == "" {
+		folderName = contract.Name
 	}
+	if folderName == "" {
+		folderName = "No_Name_Contract"
+	}
+	folderName = strings.ReplaceAll(folderName, "/", "_")
+	contractFolderID, err := s.driveSvc.FindOrCreateFolder(ctx, monthID, folderName)
+	if err != nil {
+		return fmt.Errorf("failed to ensure contract specific folder: %w", err)
+	}
+	contract.DriveFolderID = contractFolderID
+	contract.DriveFolderLink = s.driveSvc.GetFolderLink(ctx, contractFolderID)
 
 	return nil
 }

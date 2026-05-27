@@ -3,16 +3,19 @@ package contract
 import (
 	"context"
 	"fmt"
-	"mime"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 
+	"ai-api-tnhn/internal/base/mgo/filter"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/repository"
 	"ai-api-tnhn/internal/service/google/googledrive"
+	"ai-api-tnhn/utils"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type SyncWorker struct {
@@ -63,9 +66,6 @@ func (w *SyncWorker) Enqueue(id string) {
 }
 
 func (w *SyncWorker) Start() {
-	// Sync all on startup
-	w.syncLocalFiles()
-
 	// Start workers
 	for i := 0; i < w.workerCount; i++ {
 		go w.workerLoop(i)
@@ -138,9 +138,19 @@ func (w *SyncWorker) processTask(taskID string) {
 }
 
 func (w *SyncWorker) syncLocalFiles() {
-	// Implementation to find contracts with local: files and process them
-	// For simplicity, we just rely on Enqueue during normal operations
-	// Or we could implement a MongoDB scan here similar to inundation worker
+	ctx := context.Background()
+
+	// Scan Contracts for local files
+	f := filter.NewPaginationFilter()
+	f.PerPage = 500
+	f.AddWhere("files.id", "files.id", bson.M{"$regex": "^local:"})
+
+	contracts, _, err := w.repo.List(ctx, f)
+	if err == nil {
+		for _, c := range contracts {
+			w.processContractSync(ctx, c)
+		}
+	}
 }
 
 func (w *SyncWorker) processContractSync(ctx context.Context, contract *models.Contract) {
@@ -181,13 +191,23 @@ func (w *SyncWorker) processContractSync(ctx context.Context, contract *models.C
 				continue
 			}
 
-			ext := filepath.Ext(fileInfo.Name)
-			mimeType := mime.TypeByExtension(ext)
-			if mimeType == "" {
-				mimeType = "application/octet-stream"
-			}
+			mimeType := utils.GetMimeType(fileInfo.Name)
 
 			driveID, err := w.driveSvc.UploadFileSimple(ctx, contract.DriveFolderID, fileInfo.Name, mimeType, file)
+			
+			// If upload failed with 404 (folder deleted/not found), recreate folder and retry
+			if err != nil && (strings.Contains(err.Error(), "404") || strings.Contains(err.Error(), "notFound")) {
+				fmt.Printf("Contract SyncWorker: Folder %s not found (404), recreating...\n", contract.DriveFolderID)
+				contract.DriveFolderID = ""
+				_ = w.ensureDriveFolder(ctx, contract, contract.OrgID)
+				_ = w.repo.Upsert(ctx, contract)
+				
+				if contract.DriveFolderID != "" {
+					// Re-seek or re-open file since it might have been partially read
+					_, _ = file.Seek(0, 0)
+					driveID, err = w.driveSvc.UploadFileSimple(ctx, contract.DriveFolderID, fileInfo.Name, mimeType, file)
+				}
+			}
 			file.Close()
 
 			if err != nil {

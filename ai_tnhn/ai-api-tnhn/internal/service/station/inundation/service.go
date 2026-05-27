@@ -46,6 +46,8 @@ type Service interface {
 
 	// SSE Hub
 	GetHub() *Hub
+
+	TriggerInitialSync()
 }
 
 type service struct {
@@ -108,4 +110,10 @@ func (s *service) notifyPointChange(pointID string) {
 		SharedOrgIDs: point.SharedOrgIDs,
 		ShareAll:     point.ShareAll,
 	})
+}
+
+func (s *service) TriggerInitialSync() {
+	if s.syncWorker != nil {
+		go s.syncWorker.syncLocalImages()
+	}
 }

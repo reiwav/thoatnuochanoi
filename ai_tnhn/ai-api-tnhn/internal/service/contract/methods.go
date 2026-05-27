@@ -12,11 +12,50 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func (s *service) Create(ctx context.Context, contract *models.Contract) error {
 	_ = s.ensureDriveFolder(ctx, contract, contract.OrgID)
+
 	err := s.repo.Upsert(ctx, contract)
+	if err != nil {
+		return err
+	}
+
+	var tempFolderRelPath string
+	for _, file := range contract.Files {
+		if strings.HasPrefix(file.ID, "local:contracts/") && strings.Contains(file.ID, "/temp_") {
+			parts := strings.Split(strings.TrimPrefix(file.ID, "local:"), "/")
+			if len(parts) >= 3 {
+				tempFolderRelPath = filepath.Join(parts[0], parts[1], parts[2])
+				break
+			}
+		}
+	}
+
+	if tempFolderRelPath != "" {
+		oldDir := filepath.Join("uploads", tempFolderRelPath)
+		newFolderRelPath := fmt.Sprintf("contracts/%s/%s", contract.OrgID, contract.ID)
+		newDir := filepath.Join("uploads", newFolderRelPath)
+
+		if _, err := os.Stat(oldDir); err == nil {
+			_ = os.MkdirAll(filepath.Dir(newDir), 0755)
+			if err := os.Rename(oldDir, newDir); err == nil {
+				for i, file := range contract.Files {
+					if strings.HasPrefix(file.ID, "local:"+tempFolderRelPath) {
+						filename := filepath.Base(file.ID)
+						newID := "local:" + newFolderRelPath + "/" + filename
+						contract.Files[i].ID = newID
+						contract.Files[i].Link = "/api/storage/file/" + newFolderRelPath + "/" + filename
+					}
+				}
+				err = s.repo.Upsert(ctx, contract)
+			}
+		}
+	}
+
 	if err == nil && s.syncWorker != nil {
 		s.syncWorker.Enqueue(contract.ID)
 	}
@@ -73,11 +112,6 @@ func (s *service) GetByID(ctx context.Context, id string) (*models.Contract, err
 	if strings.Contains(contract.DriveFolderID, "/") {
 		_ = s.ensureDriveFolder(ctx, contract, contract.OrgID)
 		_ = s.repo.Upsert(ctx, contract)
-	}
-
-	if contract.DriveFolderID != "" && s.driveSvc != nil {
-		files, _ := s.driveSvc.ListFiles(ctx, contract.DriveFolderID)
-		contract.Files = files
 	}
 
 	return contract, nil
@@ -179,9 +213,23 @@ func (s *service) UploadFile(ctx context.Context, id string, name, mimeType stri
 }
 
 func (s *service) UploadToFolder(ctx context.Context, folderID, name, mimeType string, content io.Reader) (string, error) {
-	tmpDir := "uploads/contract_tmp"
+	var relPath string
+
+	if strings.HasPrefix(folderID, "local:") {
+		relPath = strings.TrimPrefix(folderID, "local:")
+	} else {
+		var contract models.Contract
+		err := s.repo.R_SelectOne(ctx, bson.M{"drive_folder_id": folderID}, &contract)
+		if err == nil && contract.ID != "" {
+			relPath = fmt.Sprintf("contracts/%s/%s", contract.OrgID, contract.ID)
+		} else {
+			relPath = fmt.Sprintf("contracts/unknown/%s", folderID)
+		}
+	}
+
+	tmpDir := filepath.Join("uploads", relPath)
 	if err := os.MkdirAll(tmpDir, 0755); err != nil {
-		return "", fmt.Errorf("failed to create temp directory: %w", err)
+		return "", fmt.Errorf("failed to create directory: %w", err)
 	}
 
 	ext := filepath.Ext(name)
@@ -199,10 +247,23 @@ func (s *service) UploadToFolder(ctx context.Context, folderID, name, mimeType s
 		return "", fmt.Errorf("failed to save file locally: %w", err)
 	}
 
-	return "local:contract_tmp/" + uniqueName, nil
+	return "local:" + relPath + "/" + uniqueName, nil
 }
 
 func (s *service) DeleteDriveFile(ctx context.Context, fileID string) error {
+	if strings.HasPrefix(fileID, "local:") {
+		relPath := strings.TrimPrefix(fileID, "local:")
+		relPath = filepath.Clean(relPath)
+		if strings.HasPrefix(relPath, "..") || filepath.IsAbs(relPath) {
+			return fmt.Errorf("invalid file path")
+		}
+		filePath := filepath.Join("uploads", relPath)
+		if err := os.Remove(filePath); err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("failed to delete local file: %w", err)
+		}
+		return nil
+	}
+
 	if s.driveSvc == nil {
 		return fmt.Errorf("google drive service not available")
 	}
@@ -210,8 +271,6 @@ func (s *service) DeleteDriveFile(ctx context.Context, fileID string) error {
 }
 
 func (s *service) PrepareDriveFolder(ctx context.Context, orgID, categoryID, name string) (string, string, error) {
-	// Simply return a temporary local path identifier.
-	// The background sync worker will create the actual Google Drive folder later.
-	tempID := fmt.Sprintf("local:contract_tmp/%s_%d", categoryID, time.Now().UnixNano())
+	tempID := fmt.Sprintf("local:contracts/%s/temp_%d", orgID, time.Now().UnixNano())
 	return tempID, "/api/storage/file/" + strings.TrimPrefix(tempID, "local:"), nil
 }

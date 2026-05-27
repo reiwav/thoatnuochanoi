@@ -32,6 +32,7 @@ const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit, parentContr
         files: []
     });
     const [uploading, setUploading] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
     const [categories, setCategories] = useState([]);
 
     useEffect(() => {
@@ -100,8 +101,8 @@ const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit, parentContr
             console.log("loadCategories res:", res);
             if (Array.isArray(res)) {
                 setCategories(res);
-            } else if (res?.data?.status === 'success') {
-                setCategories(res.data.data || []);
+            } else if (res && res.data) {
+                setCategories(res.data || []);
             }
         } catch (err) {
             console.error('Failed to load categories', err);
@@ -112,8 +113,8 @@ const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit, parentContr
         if (!isEdit || !contract?.id) return;
         try {
             const res = await contractApi.getById(contract.id);
-            if (res.data?.status === 'success') {
-                const refreshedFiles = res.data.data.files || [];
+            if (res && res.id) {
+                const refreshedFiles = res.files || [];
                 setValues(prev => ({
                     ...prev,
                     files: refreshedFiles
@@ -123,6 +124,28 @@ const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit, parentContr
             console.error('Failed to refresh files', err);
         }
     };
+
+    // Automatically poll and refresh files list if there are any local files waiting to be synced to Drive
+    useEffect(() => {
+        let intervalId = null;
+        
+        const hasLocalFiles = values.files && values.files.some(file => 
+            (file.id && file.id.startsWith('local:')) || 
+            (file.link && (file.link.startsWith('/') || file.link.startsWith('local:')))
+        );
+        
+        if (open && isEdit && contract?.id && hasLocalFiles) {
+            intervalId = setInterval(() => {
+                refreshFiles();
+            }, 3000);
+        }
+        
+        return () => {
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
+        };
+    }, [open, isEdit, contract?.id, values.files]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -147,7 +170,7 @@ const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit, parentContr
         setValues({ ...values, stages: newStages });
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (!values.name) return;
 
         // Validate stage constraints
@@ -173,7 +196,15 @@ const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit, parentContr
             start_date: values.start_date ? values.start_date.toISOString() : null,
             end_date: values.end_date ? values.end_date.toISOString() : null,
         };
-        onSubmit(data);
+        
+        setSubmitting(true);
+        try {
+            await onSubmit(data);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     return (
@@ -304,15 +335,16 @@ const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit, parentContr
                     </Grid>
                 </DialogContent>
                 <DialogActions sx={{ p: 3, pt: 1 }}>
-                    <Button onClick={onClose} color="inherit">Hủy bỏ</Button>
+                    <Button onClick={onClose} color="inherit" disabled={submitting || uploading}>Hủy bỏ</Button>
                     <Button 
                         onClick={handleSave} 
                         variant="contained" 
                         color="secondary"
-                        disabled={!values.name}
+                        disabled={!values.name || submitting || uploading}
+                        startIcon={submitting ? <CircularProgress size={18} color="inherit" /> : null}
                         sx={{ borderRadius: '10px', px: 4, fontWeight: 700 }}
                     >
-                        {isEdit ? 'Cập nhật' : 'Thêm mới'}
+                        {submitting ? 'Đang lưu...' : (isEdit ? 'Cập nhật' : 'Thêm mới')}
                     </Button>
                 </DialogActions>
             </Dialog>

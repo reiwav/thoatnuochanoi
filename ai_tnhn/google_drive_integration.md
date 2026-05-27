@@ -7,7 +7,7 @@ Tài liệu này mô tả chi tiết quá trình tích hợp Google Drive để 
 Các thông số cấu hình Google Drive hiện được định nghĩa trong file `ai-api-tnhn/config/env.go`. Ứng dụng sử dụng cơ chế `envDefault` (giá trị mặc định) trong Go nếu không tìm thấy các biến môi trường tương ứng trong file `.env` hoặc hệ thống.
 
 **Các biến quan trọng (trong `env.go`):**
-- `REIWAYGOOGLE_DRIVE_ROOT_FOLDER_ID`: ID của thư mục gốc trên Drive để chứa tất cả dữ liệu (Hiện tại: `1L_woTCeU-nEaO2iyd5sV8xlbOndHKb6T`).
+- `REIWAYGOOGLE_DRIVE_ROOT_FOLDER_ID`: ID của thư mục gốc trên Drive để chứa tất cả dữ liệu 
 - `REIWAYGOOGLE_CREDENTIALS`: JSON chứa thông tin Service Account để xác thực.
 
 **Tại sao không có trong `.env`?**

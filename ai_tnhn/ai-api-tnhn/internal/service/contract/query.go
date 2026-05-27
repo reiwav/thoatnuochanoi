@@ -2,7 +2,6 @@ package contract
 
 import (
 	"ai-api-tnhn/internal/base/mgo/filter"
-	"ai-api-tnhn/internal/service/google/googledrive"
 	"context"
 	"math"
 	"strings"
@@ -61,11 +60,7 @@ func (s *service) getAllContracts(ctx context.Context) ([]*ContractQueryResult, 
 			_ = s.repo.Upsert(ctx, c)
 		}
 
-		// Dynamic file listing
-		var files []googledrive.FileInfo
-		if c.DriveFolderID != "" && s.driveSvc != nil {
-			files, _ = s.driveSvc.ListFiles(ctx, c.DriveFolderID)
-		}
+		files := c.Files
 
 		totalValue := 0.0
 		for _, stage := range c.Stages {

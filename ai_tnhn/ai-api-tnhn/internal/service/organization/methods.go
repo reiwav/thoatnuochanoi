@@ -103,3 +103,9 @@ func (s *service) GetPrimaryAndShared(ctx context.Context, user *models.User) (p
 
 	return primaryOrgs, sharedOrgs, nil
 }
+
+func (s *service) GetAll(ctx context.Context) ([]models.Organization, error) {
+	var orgs []models.Organization
+	err := s.orgRepo.R_SelectManyWithSort(ctx, bson.M{}, bson.M{"Name": 1}, &orgs)
+	return orgs, err
+}

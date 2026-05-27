@@ -31,7 +31,7 @@ type syncTask struct {
 
 type SyncWorker struct {
 	InundationReportRepo repository.InundationReport
-	inundationUpdateRepo repository.InundationUpdate
+	inundationHistoryRepo repository.InundationHistory
 	orgRepo              repository.Organization
 	driveSvc             googledrive.Service
 
@@ -48,14 +48,14 @@ type SyncWorker struct {
 
 func NewSyncWorker(
 	InundationReportRepo repository.InundationReport,
-	inundationUpdateRepo repository.InundationUpdate,
+	inundationHistoryRepo repository.InundationHistory,
 	orgRepo repository.Organization,
 	driveSvc googledrive.Service,
 	resolveUploadFolder func(ctx context.Context, org *models.Organization, dataType string, pointID string) (string, error),
 ) *SyncWorker {
 	w := &SyncWorker{
 		InundationReportRepo: InundationReportRepo,
-		inundationUpdateRepo: inundationUpdateRepo,
+		inundationHistoryRepo: inundationHistoryRepo,
 		orgRepo:              orgRepo,
 		driveSvc:             driveSvc,
 		resolveUploadFolder:  resolveUploadFolder,
@@ -161,9 +161,9 @@ func (w *SyncWorker) processTask(task syncTask) {
 			w.processReportSync(ctx, report)
 		}
 	} else if task.Type == TaskTypeUpdate {
-		update, err := w.inundationUpdateRepo.GetByID(ctx, task.ID)
-		if err == nil && update != nil {
-			w.processUpdateSync(ctx, update)
+		history, err := w.inundationHistoryRepo.GetByID(ctx, task.ID)
+		if err == nil && history != nil {
+			w.processHistorySync(ctx, history)
 		}
 	}
 }
@@ -246,25 +246,15 @@ func (w *SyncWorker) getActiveLocalPaths(ctx context.Context) (map[string]bool, 
 		}
 	}
 
-	// 2. Scan Updates for local paths
+	// 2. Scan History for local paths
 	uf := filter.NewPaginationFilter()
 	uf.PerPage = 1000
 	uf.AddWhere("images", "images", bson.M{"$regex": "^local:"})
 
-	updates, _, err := w.inundationUpdateRepo.List(ctx, uf)
+	histories, _, err := w.inundationHistoryRepo.List(ctx, uf)
 	if err == nil {
-		for _, u := range updates {
-			for _, img := range u.Images {
-				if strings.HasPrefix(img, "local:") {
-					activePaths[strings.TrimPrefix(img, "local:")] = true
-				}
-			}
-			for _, img := range u.SurveyImages {
-				if strings.HasPrefix(img, "local:") {
-					activePaths[strings.TrimPrefix(img, "local:")] = true
-				}
-			}
-			for _, img := range u.MechImages {
+		for _, h := range histories {
+			for _, img := range h.Images {
 				if strings.HasPrefix(img, "local:") {
 					activePaths[strings.TrimPrefix(img, "local:")] = true
 				}
@@ -294,19 +284,15 @@ func (w *SyncWorker) syncLocalImages() {
 		}
 	}
 
-	// 2. Scan Updates
+	// 2. Scan History
 	uf := filter.NewPaginationFilter()
 	uf.PerPage = 500
-	uf.AddWhere("$or", "$or", []bson.M{
-		{"images": bson.M{"$regex": "^local:"}},
-		{"survey_images": bson.M{"$regex": "^local:"}},
-		{"mech_images": bson.M{"$regex": "^local:"}},
-	})
+	uf.AddWhere("images", "images", bson.M{"$regex": "^local:"})
 
-	updates, _, err := w.inundationUpdateRepo.List(ctx, uf)
+	histories, _, err := w.inundationHistoryRepo.List(ctx, uf)
 	if err == nil {
-		for _, u := range updates {
-			w.processUpdateSync(ctx, u)
+		for _, h := range histories {
+			w.processHistorySync(ctx, h)
 		}
 	}
 }
@@ -335,8 +321,12 @@ func (w *SyncWorker) processReportSync(ctx context.Context, report *models.Inund
 	}
 }
 
-func (w *SyncWorker) processUpdateSync(ctx context.Context, update *models.InundationUpdate) {
-	report, err := w.InundationReportRepo.GetByID(ctx, update.ReportID)
+func (w *SyncWorker) processHistorySync(ctx context.Context, history *models.InundationHistory) {
+	reportID := history.ReportId
+	if reportID == "" {
+		reportID = history.InundationId
+	}
+	report, err := w.InundationReportRepo.GetByID(ctx, reportID)
 	if err != nil {
 		return
 	}
@@ -351,16 +341,12 @@ func (w *SyncWorker) processUpdateSync(ctx context.Context, update *models.Inund
 		return
 	}
 
-	newImages, modified := w.uploadImageSlice(ctx, folderID, update.Images)
-	newSurveyImages, surveyMod := w.uploadImageSlice(ctx, folderID, update.SurveyImages)
-	newMechImages, mechMod := w.uploadImageSlice(ctx, folderID, update.MechImages)
+	newImages, modified := w.uploadImageSlice(ctx, folderID, history.Images)
 
-	if modified || surveyMod || mechMod {
-		update.Images = newImages
-		update.SurveyImages = newSurveyImages
-		update.MechImages = newMechImages
-		_ = w.inundationUpdateRepo.Update(ctx, update)
-		fmt.Printf("SyncWorker: Successfully synced/cleaned images for update %s\n", update.ID)
+	if modified {
+		history.Images = newImages
+		_ = w.inundationHistoryRepo.Update(ctx, history)
+		fmt.Printf("SyncWorker: Successfully synced/cleaned images for history %s\n", history.ID)
 	}
 }
 

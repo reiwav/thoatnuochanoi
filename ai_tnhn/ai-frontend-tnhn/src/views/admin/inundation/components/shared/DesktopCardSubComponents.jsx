@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Typography, Stack, Grid, IconButton, Tooltip, useTheme, alpha } from '@mui/material';
-import { IconClock, IconUser, IconCircleCheck, IconMessageDots, IconEngine, IconClipboardCheck, IconChevronUp, IconChevronDown } from '@tabler/icons-react';
+import { IconClock, IconUser, IconCircleCheck, IconMessageDots, IconEngine, IconClipboardCheck, IconChevronUp, IconChevronDown, IconEye } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import PermissionGuard from 'ui-component/PermissionGuard';
 import AdminInundationActionMenu from '../AdminInundationActionMenu';
@@ -44,26 +44,28 @@ export const DesktopCardMetrics = ({ lastReport, isFlooded, displayColor, onOpen
                 </Grid>
                 {(isFlooded || lastReport) && (
                     <Stack spacing={0.75} sx={{ mt: 1, pt: 1, borderTop: '1px solid', borderColor: 'divider' }}>
-                        <Stack direction="row" justifyContent="space-between">
-                            <Stack direction="row" spacing={0.5} alignItems="center">
-                                <IconClock size={13} color={isFlooded ? "#D32F2F" : displayColor} />
-                                <Typography variant="caption" sx={{ fontWeight: 900, color: isFlooded ? "#D32F2F" : displayColor }}>
-                                    BC: {lastReport?.updated_at ? dayjs(lastReport.updated_at * 1000).format('HH:mm') : '...'}
-                                </Typography>
+                        {lastReport?.enterprise_history_id && (
+                            <Stack direction="row" justifyContent="space-between">
+                                <Stack direction="row" spacing={0.5} alignItems="center">
+                                    <IconClock size={13} color={isFlooded ? "#D32F2F" : displayColor} />
+                                    <Typography variant="caption" sx={{ fontWeight: 900, color: isFlooded ? "#D32F2F" : displayColor }}>
+                                        BC: {lastReport?.ent_updated_at ? dayjs(lastReport.ent_updated_at * 1000).format('HH:mm') : 'Đã BC'}
+                                    </Typography>
+                                </Stack>
+                                <Stack direction="row" spacing={0.5} alignItems="center">
+                                    <IconUser size={13} color={isFlooded ? "#D32F2F" : displayColor} />
+                                    <Typography variant="caption" sx={{ fontWeight: 900, color: isFlooded ? "#D32F2F" : displayColor }} noWrap>
+                                        {lastReport?.user_name || 'N/A'}
+                                    </Typography>
+                                </Stack>
                             </Stack>
-                            <Stack direction="row" spacing={0.5} alignItems="center">
-                                <IconUser size={13} color={isFlooded ? "#D32F2F" : displayColor} />
-                                <Typography variant="caption" sx={{ fontWeight: 900, color: isFlooded ? "#D32F2F" : displayColor }} noWrap>
-                                    {lastReport?.user_name || 'N/A'}
-                                </Typography>
-                            </Stack>
-                        </Stack>
-                        {(lastReport?.mech_checked || lastReport?.mech_images?.length > 0) && (
+                        )}
+                        {lastReport?.mech_history_id && (
                             <Stack direction="row" justifyContent="space-between">
                                 <Stack direction="row" spacing={0.5} alignItems="center">
                                     <IconEngine size={13} color="#7B1FA2" />
                                     <Typography variant="caption" sx={{ fontWeight: 900, color: '#7B1FA2' }}>
-                                        CG: {lastReport?.mech_updated_at ? dayjs(lastReport.mech_updated_at * 1000).format('HH:mm') : (lastReport?.mech_checked ? 'Đã trực' : '...')}
+                                        CG: {lastReport?.mech_updated_at ? dayjs(lastReport.mech_updated_at * 1000).format('HH:mm') : 'Đã trực'}
                                     </Typography>
                                 </Stack>
                                 <Stack direction="row" spacing={0.5} alignItems="center">
@@ -74,12 +76,12 @@ export const DesktopCardMetrics = ({ lastReport, isFlooded, displayColor, onOpen
                                 </Stack>
                             </Stack>
                         )}
-                        {(lastReport?.survey_checked || lastReport?.survey_images?.length > 0) && (
+                        {lastReport?.survey_history_id && (
                             <Stack direction="row" justifyContent="space-between">
                                 <Stack direction="row" spacing={0.5} alignItems="center">
                                     <IconClipboardCheck size={13} color="#1976D2" />
                                     <Typography variant="caption" sx={{ fontWeight: 900, color: '#1976D2' }}>
-                                        KS: {lastReport?.survey_updated_at ? dayjs(lastReport.survey_updated_at * 1000).format('HH:mm') : (lastReport?.survey_checked ? 'Đã KS' : '...')}
+                                        KS: {lastReport?.survey_updated_at ? dayjs(lastReport.survey_updated_at * 1000).format('HH:mm') : 'Đã KS'}
                                     </Typography>
                                 </Stack>
                                 <Stack direction="row" spacing={0.5} alignItems="center">
@@ -90,12 +92,28 @@ export const DesktopCardMetrics = ({ lastReport, isFlooded, displayColor, onOpen
                                 </Stack>
                             </Stack>
                         )}
-                        {lastReport?.review_comment && (
+                        {lastReport?.ktcl_history_id && (
+                            <Stack direction="row" justifyContent="space-between">
+                                <Stack direction="row" spacing={0.5} alignItems="center">
+                                    <IconClipboardCheck size={13} color="#F57C00" />
+                                    <Typography variant="caption" sx={{ fontWeight: 900, color: '#F57C00' }}>
+                                        CL: {lastReport?.ktcl_updated_at ? dayjs(lastReport.ktcl_updated_at * 1000).format('HH:mm') : 'Đã BC'}
+                                    </Typography>
+                                </Stack>
+                                <Stack direction="row" spacing={0.5} alignItems="center">
+                                    <IconUser size={13} color="#F57C00" />
+                                    <Typography variant="caption" sx={{ fontWeight: 900, color: '#F57C00' }} noWrap>
+                                        {lastReport?.ktcl_user_name || 'Đã báo cáo'}
+                                    </Typography>
+                                </Stack>
+                            </Stack>
+                        )}
+                        {lastReport?.review_history_id && (
                             <Stack direction="row" justifyContent="space-between">
                                 <Stack direction="row" spacing={0.5} alignItems="center">
                                     <IconMessageDots size={13} color={theme.palette.error.main} />
                                     <Typography variant="caption" sx={{ fontWeight: 900, color: 'error.main' }}>
-                                        P. KT-CL: Đã nhận xét
+                                        RS: {lastReport?.review_updated_at ? dayjs(lastReport.review_updated_at * 1000).format('HH:mm') : 'Đã nhận xét'}
                                     </Typography>
                                 </Stack>
                                 <Stack direction="row" spacing={0.5} alignItems="center">
@@ -134,18 +152,18 @@ export const DesktopCardMetrics = ({ lastReport, isFlooded, displayColor, onOpen
     );
 };
 
-export const DesktopCardFooterActions = ({ point, expanded, setExpanded, onAction, onOpenHistory, isFlooded }) => {
+export const DesktopCardFooterActions = ({ point, onOpenDetail, onAction, onOpenHistory, isFlooded }) => {
     const theme = useTheme();
     return (
         <Stack direction="row" spacing={0.5} alignItems="center" sx={{ pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
             <Tooltip title="Chi tiết">
                 <span>
                     <IconButton
-                        size="small" color={expanded ? "primary" : "inherit"}
-                        onClick={() => setExpanded(!expanded)}
-                        sx={{ width: 30, height: 30, bgcolor: expanded ? alpha(theme.palette.primary.main, 0.1) : 'grey.100' }}
+                        size="small" color="inherit"
+                        onClick={() => onOpenDetail(point)}
+                        sx={{ width: 30, height: 30, bgcolor: 'grey.100' }}
                     >
-                        {expanded ? <IconChevronUp size={18} /> : <IconChevronDown size={18} />}
+                        <IconEye size={18} />
                     </IconButton>
                 </span>
             </Tooltip>

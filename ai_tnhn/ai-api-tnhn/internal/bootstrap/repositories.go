@@ -15,7 +15,7 @@ type Repositories struct {
 	Lake                          repository.Lake
 	River                         repository.River
 	InundationReport              repository.InundationReport
-	InundationUpdate              repository.InundationUpdate
+	InundationHistory             repository.InundationHistory
 	InundationStation             repository.InundationStation
 	AiUsage                       repository.AiUsage
 	AiChatLog                     repository.AiChatLog
@@ -46,7 +46,7 @@ func InitRepositories(db *db.Mongo, log logger.Logger) *Repositories {
 		Lake:                          query.NewLakeRepo(db.DB, "lake_records", "lake", log),
 		River:                         query.NewRiverRepo(db.DB, "river_records", "river", log),
 		InundationReport:              query.NewInundationRepository(db.DB, "inundation_reports", "inu", log),
-		InundationUpdate:              query.NewInundationUpdateRepository(db.DB, "inundation_updates", "inuup", log),
+		InundationHistory:             query.NewInundationHistoryRepository(db.DB, "inundation_histories", "inuhis", log),
 		InundationStation:             query.NewInundationStationRepository(db.DB, "inundation_stations", "inpt", log),
 		AiUsage:                       query.NewAiUsageRepo(db.DB, "ai_usage_records", "aiu", log),
 		AiChatLog:                     query.NewAiChatLogRepo(db.DB, "ai_chat_logs", "ach", log),

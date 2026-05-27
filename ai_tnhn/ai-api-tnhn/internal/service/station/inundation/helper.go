@@ -1,13 +1,17 @@
 package inundation
 
 import (
+	"ai-api-tnhn/internal/base/model"
 	"ai-api-tnhn/internal/models"
+	"ai-api-tnhn/utils/web"
 	"context"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/rs/xid"
 )
 
 func (s *service) getOrgFolderID(ctx context.Context, org *models.Organization) (string, error) {
@@ -139,17 +143,149 @@ func (s *service) saveAndGetImages(images []ImageContent, reportID string) ([]st
 	return nil, nil
 }
 
-func (s *service) calculateFloodLevel(ctx context.Context, depth float64) *models.FloodLevel {
-	setting, err := s.settingSvc.GetByCode(ctx, "FloodLevel")
-	if err != nil || setting == nil {
+// getFloodLevels returns cached FloodLevel settings, refreshing from DB if expired or empty.
+func (s *service) getFloodLevels(ctx context.Context) []models.FloodLevel {
+	levels, err := s.settingSvc.GetFloodLevels(ctx)
+	if err != nil {
 		return nil
 	}
+	return levels
+}
 
-	for i := range setting.FloodLevels {
-		level := setting.FloodLevels[i]
+func (s *service) calculateFloodLevel(ctx context.Context, depth float64) *models.FloodLevel {
+	levels := s.getFloodLevels(ctx)
+	return calculateFloodLevelFromLevels(depth, levels)
+}
+
+// calculateFloodLevelFromLevels uses a pre-loaded FloodLevels slice (pure in-memory, no DB).
+func calculateFloodLevelFromLevels(depth float64, levels []models.FloodLevel) *models.FloodLevel {
+	for i := range levels {
+		level := levels[i]
 		if depth >= level.MinDepth && depth < level.MaxDepth {
 			return &level
 		}
 	}
 	return nil
+}
+
+func (s *service) createNewResolvedNormalReport(ctx context.Context, station *models.InundationStation, endTime int64) (string, error) {
+	newNormReportID := "inrep" + xid.New().String()
+	newNormReport := &models.InundationReport{
+		BaseModel: model.BaseModel{
+			ID: newNormReportID,
+		},
+		PointID:      station.ID,
+		StreetName:   station.Name,
+		OrgID:      station.OrgID,
+		Status:     "resolved",
+		HasFlooded:   false,
+		EndTime:      endTime,
+	}
+	newNormReport.IsFlooding = false
+	err := s.InundationReportRepo.R_Create(ctx, newNormReport)
+	if err != nil {
+		return "", err
+	}
+	return newNormReportID, nil
+}
+
+func (s *service) checkReportAccessPermission(ctx context.Context, user *models.User, report *models.InundationReport, checkAssignment bool) error {
+	isAllowedAll := user.Role == "super_admin" || user.IsCompany
+	if isAllowedAll {
+		return nil
+	}
+
+	isAuthorized := report.OrgID == user.OrgID
+	if !isAuthorized {
+		point, err := s.inundationStationRepo.GetByID(ctx, report.PointID)
+		if err == nil && point != nil {
+			if user.OrgID != "" {
+				for _, sid := range point.SharedOrgIDs {
+					if sid == user.OrgID {
+						isAuthorized = true
+						break
+					}
+				}
+			}
+			if !isAuthorized && checkAssignment && user.IsEmployee {
+				for _, pid := range user.AssignedInundationStationIDs {
+					if pid == point.ID {
+						isAuthorized = true
+						break
+					}
+				}
+			}
+		}
+	}
+
+	if !isAuthorized {
+		return web.Unauthorized("Bạn không có quyền truy cập hoặc chỉnh sửa báo cáo này!")
+	}
+	return nil
+}
+
+func (s *service) createHistoryAndEnqueueSync(ctx context.Context, reportID string, user *models.User, rolePermission string, depth float64, width, length string, note string, images []string) (*models.InundationHistory, error) {
+	report, err := s.InundationReportRepo.GetByID(ctx, reportID)
+	if err != nil {
+		return nil, err
+	}
+
+	history := &models.InundationHistory{
+		BaseModel: model.BaseModel{
+			ID: "repup" + xid.New().String(),
+		},
+		InundationId:   report.PointID,
+		ReportId:       reportID,
+		UserId:         user.ID,
+		UserName:       user.Name,
+		UserEmail:      user.Email,
+		OrgId:          user.OrgID,
+		OrgName:        s.getOrgName(ctx, user.OrgID),
+		RolePermission: rolePermission,
+		Depth:          depth,
+		Width:          width,
+		Length:         length,
+		Note:           note,
+		Images:         images,
+	}
+
+	level := s.calculateFloodLevel(ctx, depth)
+	if level != nil {
+		history.FloodLevelName = level.Name
+		history.FloodLevelColor = level.Color
+		history.TrafficStatus = level.Name
+	} else if depth == 0 {
+		history.FloodLevelName = "Bình thường"
+		history.FloodLevelColor = "#10b981"
+		history.TrafficStatus = "Bình thường"
+	}
+
+	err = s.inundationHistoryRepo.Create(ctx, history)
+	if err != nil {
+		return nil, err
+	}
+
+	if s.syncWorker != nil {
+		s.syncWorker.Enqueue(reportID, TaskTypeReport)
+		s.syncWorker.Enqueue(history.ID, TaskTypeUpdate)
+	}
+
+	return history, nil
+}
+
+func (s *service) getUserPermission(ctx context.Context, defaultPerm string) string {
+	if perms, ok := ctx.Value("permissions").([]string); ok {
+		// Ưu tiên check enterprise_report trước
+		for _, p := range perms {
+			if p == "inundation:enterprise_report" {
+				return "inundation:enterprise_report"
+			}
+		}
+		for _, p := range perms {
+			if p == "inundation:report" {
+				return "inundation:report"
+			}
+		}
+	}
+	return defaultPerm
 }

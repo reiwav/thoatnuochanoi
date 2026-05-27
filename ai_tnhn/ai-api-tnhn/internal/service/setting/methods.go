@@ -10,8 +10,33 @@ func (s *service) GetSetting(ctx context.Context) (*models.AppSetting, error) {
 	return s.repo.Get(ctx)
 }
 
+func (s *service) GetByCode(ctx context.Context, code string) (*models.AppSetting, error) {
+	s.mu.RLock()
+	item, exists := s.cache[code]
+	if exists && time.Now().Before(item.expiredAt) {
+		s.mu.RUnlock()
+		return item.setting, nil
+	}
+	s.mu.RUnlock()
+
+	// Cache miss or expired - query database
+	setting, err := s.repo.GetByCode(ctx, code)
+	if err != nil {
+		return nil, err
+	}
+
+	s.mu.Lock()
+	s.cache[code] = &cacheItem{
+		setting:   setting,
+		expiredAt: time.Now().Add(s.cacheTTL),
+	}
+	s.mu.Unlock()
+
+	return setting, nil
+}
+
 func (s *service) GetFloodLevels(ctx context.Context) ([]models.FloodLevel, error) {
-	setting, err := s.repo.GetByCode(ctx, "FloodLevel")
+	setting, err := s.GetByCode(ctx, "FloodLevel")
 	if err != nil {
 		return nil, err
 	}
@@ -34,11 +59,24 @@ func (s *service) UpdateFloodLevels(ctx context.Context, levels []models.FloodLe
 	}
 
 	setting.FloodLevels = levels
-	return s.repo.Save(ctx, setting)
+	err = s.repo.Save(ctx, setting)
+	if err != nil {
+		return err
+	}
+
+	// Update cache directly with new settings and refresh TTL
+	s.mu.Lock()
+	s.cache["FloodLevel"] = &cacheItem{
+		setting:   setting,
+		expiredAt: time.Now().Add(s.cacheTTL),
+	}
+	s.mu.Unlock()
+
+	return nil
 }
 
 func (s *service) GetRainSetting(ctx context.Context) (*models.RainSetting, error) {
-	setting, err := s.repo.GetByCode(ctx, "RainSetting")
+	setting, err := s.GetByCode(ctx, "RainSetting")
 	if err != nil {
 		return nil, err
 	}
@@ -55,5 +93,18 @@ func (s *service) UpdateRainSetting(ctx context.Context, rainSetting *models.Rai
 	}
 	setting.Code = "RainSetting"
 	setting.RainSetting = rainSetting
-	return s.repo.Save(ctx, setting)
+	err = s.repo.Save(ctx, setting)
+	if err != nil {
+		return err
+	}
+
+	// Update cache directly with new settings and refresh TTL
+	s.mu.Lock()
+	s.cache["RainSetting"] = &cacheItem{
+		setting:   setting,
+		expiredAt: time.Now().Add(s.cacheTTL),
+	}
+	s.mu.Unlock()
+
+	return nil
 }

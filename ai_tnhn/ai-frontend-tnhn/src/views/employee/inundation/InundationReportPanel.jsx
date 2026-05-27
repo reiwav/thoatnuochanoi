@@ -1,26 +1,31 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import {
-    Box, Button, TextField, Typography,
-    Stack, IconButton, CircularProgress,
-    InputAdornment, FormControlLabel, Checkbox,
-    MenuItem, Chip
+    TextField, Typography, InputAdornment, FormControlLabel, Checkbox, MenuItem
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import {
-    IconCloudUpload, IconX, IconSend,
-    IconMapPin, IconRuler, IconClock
-} from '@tabler/icons-react';
+import { IconMapPin } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 
 import inundationApi from 'api/inundation';
-import settingApi from 'api/setting';
-import { processAndWatermark } from 'utils/imageProcessor';
-import useAuthStore from 'store/useAuthStore';
-import PermissionGuard from 'ui-component/PermissionGuard';
+import InundationCommonForm from './components/InundationCommonForm';
 
-const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onSuccess, isCorrectionMode = false }) => {
+/**
+ * apiMode:
+ *  - 'enterprise'  → Báo cáo Địa bàn   (reportEnterprise / reportEnterpriseSituation)
+ *  - 'ktcl'         → Báo cáo KT-CL      (reportEnterprise / reportEnterpriseSituation - cùng API)
+ *  - 'survey'       → TK Giám sát        (reportSurvey)
+ *  - 'mech'         → XN Cơ giới         (reportMech)
+ */
+const InundationReportPanel = ({
+    selectedReport,
+    pointId,
+    initialStreetName,
+    onSuccess,
+    isCorrectionMode = false,
+    permission = 'inundation:enterprise_report',
+    apiMode = 'enterprise'
+}) => {
     const theme = useTheme();
-    const { hasPermission } = useAuthStore();
     const [loading, setLoading] = useState(false);
     const [values, setValues] = useState({
         street_name: initialStreetName || '',
@@ -28,111 +33,98 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
         width: '',
         depth: '',
         description: '',
-        traffic_status: 'Đi lại bình thường'
+        traffic_status: 'Đi lại bình thường',
+        point_id: ''
     });
-    const [images, setImages] = useState([]);
-    const [previews, setPreviews] = useState([]);
     const [resolveOnUpdate, setResolveOnUpdate] = useState(false);
     const [points, setPoints] = useState([]);
-    const [fetchingPoints, setFetchingPoints] = useState(false);
-    const [floodLevelSettings, setFloodLevelSettings] = useState([]);
+
+    // Chỉ fetch danh sách điểm khi ở chế độ enterprise và không có pointId
+    const isEnterpriseMode = apiMode === 'enterprise';
 
     useEffect(() => {
-        const fetchLevels = async () => {
-            try {
-                const res = await settingApi.getFloodLevels();
-                setFloodLevelSettings(res || []);
-            } catch (err) {
-                console.error('Lỗi tải cấu hình mức độ ngập:', err);
-            }
-        };
-        fetchLevels();
-    }, []);
-
-    const currentLevel = useMemo(() => {
-        const d = parseFloat(values.depth);
-        if (isNaN(d)) return null;
-        return floodLevelSettings.find(l => d >= l.min_depth && d < l.max_depth);
-    }, [values.depth, floodLevelSettings]);
-
-    useEffect(() => {
-        if (!pointId && !selectedReport) {
+        if (isEnterpriseMode && !pointId && !selectedReport) {
             fetchPoints();
         }
-    }, [pointId, selectedReport]);
+    }, [pointId, selectedReport, isEnterpriseMode]);
 
     const fetchPoints = async () => {
-        setFetchingPoints(true);
         try {
             const res = await inundationApi.getPointsStatus({ per_page: 1000 });
             setPoints(res || []);
         } catch (err) {
             console.error('Lỗi tải danh sách điểm ngập:', err);
-        } finally {
-            setFetchingPoints(false);
         }
     };
 
+    // Load dữ liệu cũ từ selectedReport (chỉ cho enterprise)
     useEffect(() => {
-        if (selectedReport) {
+        if (selectedReport && isEnterpriseMode) {
             setValues({
                 street_name: selectedReport.street_name || '',
                 length: selectedReport.length || '',
                 width: selectedReport.width || '',
                 depth: selectedReport.depth || '',
                 description: selectedReport.description || '',
-                traffic_status: selectedReport.traffic_status || selectedReport.trafficStatus || 'Đi lại bình thường'
+                traffic_status: selectedReport.traffic_status || selectedReport.trafficStatus || 'Đi lại bình thường',
+                point_id: selectedReport.point_id || ''
             });
         }
-    }, [selectedReport]);
+    }, [selectedReport, isEnterpriseMode]);
 
-    const handleChange = (e) => {
-        let { name, value } = e.target;
-        if (['length', 'width', 'depth'].includes(name)) {
-            value = value.replace(/,/g, '.');
-            // Optionally, prevent entering multiple dots or non-numeric chars
-            if (value && !/^\d*\.?\d*$/.test(value)) return;
-        }
-        setValues({ ...values, [name]: value });
-    };
 
-    const handleImageChange = async (e) => {
-        const pickedFiles = Array.from(e.target.files);
-        console.log('Files picked:', pickedFiles.length, 'Existing:', images.length);
-        if (pickedFiles.length === 0) return;
 
-        const currentCount = images.length;
-        const newCount = pickedFiles.length;
-        const totalCount = currentCount + newCount;
-
-        if (totalCount > 10) {
-            const errorMsg = `Vượt quá giới hạn 10 ảnh (Hiện có ${currentCount}, bạn chọn thêm ${newCount})`;
-            console.error(errorMsg);
-            toast.error(errorMsg);
-            e.target.value = '';
-            return;
-        }
-
+    // ─── API submit cho Survey / Mech / KTCL ────────────────
+    const handleTechnicalSubmit = async (images, clearImagesCallback) => {
+        const pId = pointId || values.point_id;
+        if (!pId) { toast.error('Thiếu điểm ngập'); return; }
+        setLoading(true);
         try {
-            const watermarkText = values.street_name || (points.find(p => p.id === values.point_id)?.street_name) || '';
-            const processedFiles = await Promise.all(pickedFiles.map(file => processAndWatermark(file, watermarkText)));
-            setImages(prev => [...prev, ...processedFiles]);
-            setPreviews(prev => [...prev, ...processedFiles.map(file => URL.createObjectURL(file))]);
-        } catch (error) {
-            console.error('Error resizing images:', error);
-            toast.error('Lỗi khi xử lý ảnh, vui lòng thử lại');
-            setImages(prev => [...prev, ...pickedFiles]);
-            setPreviews(prev => [...prev, ...pickedFiles.map(file => URL.createObjectURL(file))]);
+            const fd = new FormData();
+            if (apiMode === 'survey') {
+                fd.append('survey_checked', 'true');
+                fd.append('survey_note', values.description);
+                if (values.depth) fd.append('survey_d', parseFloat(values.depth) || 0);
+                if (values.width) fd.append('survey_r', values.width);
+                if (values.length) fd.append('survey_s', values.length);
+            } else if (apiMode === 'mech') {
+                fd.append('mech_checked', 'true');
+                fd.append('mech_note', values.description);
+                if (values.depth) fd.append('mech_d', parseFloat(values.depth) || 0);
+                if (values.width) fd.append('mech_r', values.width);
+                if (values.length) fd.append('mech_s', values.length);
+            } else if (apiMode === 'ktcl') {
+                fd.append('ktcl_checked', 'true');
+                fd.append('ktcl_note', values.description);
+                if (values.depth) fd.append('ktcl_d', parseFloat(values.depth) || 0);
+                if (values.width) fd.append('ktcl_r', values.width);
+                if (values.length) fd.append('ktcl_s', values.length);
+            }
+            images.forEach(img => fd.append('images', img));
+
+            if (apiMode === 'survey') {
+                await inundationApi.reportSurvey(pId, fd);
+                toast.success('Cập nhật TK Giám sát thành công');
+            } else if (apiMode === 'mech') {
+                await inundationApi.reportMech(pId, fd);
+                toast.success('Cập nhật XN Cơ giới thành công');
+            } else if (apiMode === 'ktcl') {
+                await inundationApi.reportKTCL(pId, fd);
+                toast.success('Cập nhật KT-CL thành công');
+            }
+
+            setValues(v => ({ ...v, description: '' }));
+            if (clearImagesCallback) clearImagesCallback();
+            if (onSuccess) onSuccess();
+        } catch (err) {
+            toast.error(err.response?.data?.error || 'Đã có lỗi xảy ra');
         } finally {
-            e.target.value = '';
+            setLoading(false);
         }
     };
-    const removeImage = (i) => {
-        const ni = [...images]; ni.splice(i, 1); setImages(ni);
-        const np = [...previews]; URL.revokeObjectURL(np[i]); np.splice(i, 1); setPreviews(np);
-    };
 
-    const handleUpdate = async () => {
+    // ─── API submit cho Enterprise (update) ─────────────────
+    const handleEnterpriseUpdate = async (images, clearImagesCallback) => {
         setLoading(true);
         try {
             const fd = new FormData();
@@ -143,37 +135,36 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
             if (values.traffic_status) fd.append('traffic_status', values.traffic_status);
 
             if (resolveOnUpdate) fd.append('resolve', 'true');
-            if (currentLevel) {
-                fd.append('flood_level_name', currentLevel.name);
-                fd.append('flood_level_color', currentLevel.color);
-            }
             images.forEach(img => fd.append('images', img));
+
+            const pId = pointId || selectedReport?.point_id || values.point_id;
 
             if (isCorrectionMode) {
                 if (selectedReport.type === 'start' && !selectedReport.is_update_record) {
-                    // Editing the MAIN report record (used when no updates exist yet)
-                    await inundationApi.updateReport(selectedReport.id, fd);
+                    await inundationApi.correctEnterpriseReport(pId, fd);
                     toast.success('Đã lưu thay đổi báo cáo chính');
                 } else {
-                    // Editing an EXISTING UPDATE record (including the start update if it exists)
-                    await inundationApi.updateUpdateContent(selectedReport.id, fd);
+                    await inundationApi.correctEnterpriseSituation(pId, fd);
                     toast.success('Đã lưu thay đổi chỉnh sửa');
                 }
             } else {
-                // Normal update (adding a new record to the history)
-                await inundationApi.updateSituation(selectedReport.id, fd);
+                await inundationApi.reportEnterpriseSituation(pId, fd);
                 toast.success(resolveOnUpdate ? 'Đã kết thúc đợt ngập' : 'Cập nhật thành công');
             }
 
             setValues(v => ({ ...v, description: '', traffic_status: 'Đi lại bình thường' }));
-            setImages([]); setPreviews([]); setResolveOnUpdate(false);
+            setResolveOnUpdate(false);
+            if (clearImagesCallback) clearImagesCallback();
             if (onSuccess) onSuccess();
-        } catch (err) { toast.error(err.response?.data?.error || 'Đã có lỗi xảy ra'); }
-        finally { setLoading(false); }
+        } catch (err) {
+            toast.error(err.response?.data?.error || 'Đã có lỗi xảy ra');
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const handleSubmit = async () => {
-        if (selectedReport) return handleUpdate();
+    // ─── API submit cho Enterprise (create) ─────────────────
+    const handleEnterpriseCreate = async (images, clearImagesCallback) => {
         if (!values.street_name) { toast.error('Vui lòng nhập tên tuyến đường'); return; }
         setLoading(true);
         try {
@@ -186,27 +177,90 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
             if (values.traffic_status) fd.append('traffic_status', values.traffic_status);
             const pId = pointId || values.point_id;
             if (pId) fd.append('point_id', pId);
-            if (currentLevel) {
-                fd.append('flood_level_name', currentLevel.name);
-                fd.append('flood_level_color', currentLevel.color);
-            }
             images.forEach(img => fd.append('images', img));
-            await inundationApi.createReport(fd);
+            await inundationApi.reportEnterprise(pId, fd);
             toast.success('Gửi báo cáo thành công');
             setValues({ ...values, length: '', width: '', depth: '', description: '', traffic_status: 'Đi lại bình thường' });
-            setImages([]); setPreviews([]);
+            if (clearImagesCallback) clearImagesCallback();
             if (onSuccess) onSuccess();
-        } catch (err) { toast.error(err.response?.data?.error || 'Đã có lỗi xảy ra'); }
-        finally { setLoading(false); }
+        } catch (err) {
+            toast.error(err.response?.data?.error || 'Đã có lỗi xảy ra');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // ─── Unified submit handler ─────────────────────────────
+    const handleSubmit = async (images, clearImagesCallback) => {
+        if (!isEnterpriseMode) {
+            return handleTechnicalSubmit(images, clearImagesCallback);
+        }
+        if (selectedReport) {
+            return handleEnterpriseUpdate(images, clearImagesCallback);
+        }
+        return handleEnterpriseCreate(images, clearImagesCallback);
+    };
+
+    // ─── Dynamic labels dựa trên mode ──────────────────────
+    const modeConfig = {
+        enterprise: { noteLabel: 'Mô tả diễn biến ngập', notePlaceholder: 'Nhập mô tả diễn biến...', dLabel: 'Sâu', rLabel: 'Rộng', sLabel: 'Dài', submitColor: 'secondary' },
+        ktcl:       { noteLabel: 'Nhận xét KT-CL',        notePlaceholder: 'Nhập nhận xét KT-CL...',   dLabel: 'Sâu', rLabel: 'Rộng', sLabel: 'Dài', submitColor: 'warning' },
+        survey:     { noteLabel: 'Ghi chú TK Giám sát',  notePlaceholder: 'Nhập ghi chú giám sát...', dLabel: 'Sâu', rLabel: 'Rộng', sLabel: 'Dài', submitColor: 'primary' },
+        mech:       { noteLabel: 'Ghi chú Cơ giới',      notePlaceholder: 'Nhập ghi chú cơ giới...',  dLabel: 'Sâu', rLabel: 'Rộng', sLabel: 'Dài', submitColor: 'deepPurple' }
+    };
+    const cfg = modeConfig[apiMode] || modeConfig.enterprise;
+
+    const watermarkText = values.street_name || (points.find(p => p.id === values.point_id)?.street_name) || initialStreetName || '';
+
+    // Old images
+    const oldImages = isCorrectionMode ? (selectedReport?.images || []) : [];
+
+    // Submit text
+    const getSubmitText = () => {
+        if (!isEnterpriseMode) {
+            if (apiMode === 'survey') return 'Gửi cập nhật TK Giám sát';
+            if (apiMode === 'mech') return 'Gửi cập nhật Cơ giới';
+            if (apiMode === 'ktcl') return 'Gửi cập nhật KT-CL';
+        }
+        if (isCorrectionMode) return 'Lưu thay đổi chỉnh sửa';
+        if (resolveOnUpdate) return 'Xác nhận Kết thúc đợt ngập';
+        if (selectedReport) return 'Cập nhật tình hình';
+        return 'Gửi báo cáo';
+    };
+
+    const getSubmitColor = () => {
+        if (!isEnterpriseMode) return cfg.submitColor;
+        if (isCorrectionMode) return 'error';
+        if (resolveOnUpdate) return 'error';
+        return 'secondary';
     };
 
     return (
-        <Stack spacing={2} sx={{
-            '& .MuiInputLabel-root': { fontSize: '1rem' },
-            '& .MuiInputBase-input': { fontSize: '1rem' },
-            '& .MuiFormHelperText-root': { fontSize: '0.875rem' },
-        }}>
-            {!pointId && !selectedReport && (
+        <InundationCommonForm
+            watermarkText={watermarkText}
+            oldImages={oldImages}
+            onSubmit={handleSubmit}
+            submitText={getSubmitText()}
+            submitColor={getSubmitColor()}
+            loading={loading}
+            noteValue={values.description}
+            onNoteChange={(e) => setValues(prev => ({ ...prev, description: e.target.value }))}
+            noteLabel={cfg.noteLabel}
+            notePlaceholder={cfg.notePlaceholder}
+            noteRows={3}
+            depth={values.depth}
+            onDepthChange={(val) => setValues(prev => ({ ...prev, depth: val }))}
+            depthLabel={cfg.dLabel}
+            width={values.width}
+            onWidthChange={(val) => setValues(prev => ({ ...prev, width: val }))}
+            widthLabel={cfg.rLabel}
+            length={values.length}
+            onLengthChange={(val) => setValues(prev => ({ ...prev, length: val }))}
+            lengthLabel={cfg.sLabel}
+            permission={permission}
+        >
+            {/* Chọn điểm ngập - chỉ ở chế độ enterprise/ktcl khi không truyền pointId */}
+            {isEnterpriseMode && !pointId && !selectedReport && (
                 points.length > 0 ? (
                     <TextField
                         select
@@ -234,7 +288,7 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
                 ) : (
                     <TextField
                         fullWidth label="Tên tuyến đường / Vị trí" name="street_name"
-                        value={values.street_name} onChange={handleChange} required
+                        value={values.street_name} onChange={(e) => setValues(prev => ({ ...prev, street_name: e.target.value }))} required
                         slotProps={{
                             input: {
                                 startAdornment: <InputAdornment position="start"><IconMapPin size={17} color={theme.palette.text.secondary} /></InputAdornment>
@@ -244,7 +298,8 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
                 )
             )}
 
-            {selectedReport && (
+            {/* Checkbox kết thúc ngập - chỉ enterprise/ktcl khi có selectedReport */}
+            {isEnterpriseMode && selectedReport && (
                 <FormControlLabel
                     control={
                         <Checkbox
@@ -269,93 +324,7 @@ const InundationReportPanel = ({ selectedReport, pointId, initialStreetName, onS
                     sx={{ mt: -1, mb: 1 }}
                 />
             )}
-
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                <TextField
-                    fullWidth label="Dài" name="length" value={values.length} onChange={handleChange}
-                    type="text" placeholder="VD: 50"
-                    slotProps={{ htmlInput: { inputMode: 'decimal' }, input: { startAdornment: <InputAdornment position="start"><IconRuler size={15} color={theme.palette.text.secondary} /></InputAdornment> } }}
-                />
-                <TextField
-                    fullWidth label="Rộng" name="width" value={values.width} onChange={handleChange}
-                    type="text" placeholder="VD: 3"
-                    slotProps={{ htmlInput: { inputMode: 'decimal' }, input: { startAdornment: <InputAdornment position="start"><IconRuler size={15} color={theme.palette.text.secondary} /></InputAdornment> } }}
-                />
-                <TextField
-                    fullWidth label="Sâu" name="depth" value={values.depth} onChange={handleChange}
-                    type="text" placeholder="VD: 0.2"
-                    slotProps={{
-                        htmlInput: { inputMode: 'decimal' },
-                        input: {
-                            startAdornment: <InputAdornment position="start"><IconRuler size={15} color={theme.palette.text.secondary} /></InputAdornment>,
-                            endAdornment: currentLevel && (
-                                <InputAdornment position="end">
-                                    <Chip
-                                        label={currentLevel.name}
-                                        size="small"
-                                        sx={{
-                                            bgcolor: currentLevel.color,
-                                            color: '#fff',
-                                            fontWeight: 800,
-                                            fontSize: '0.75rem',
-                                            height: 24
-                                        }}
-                                    />
-                                </InputAdornment>
-                            )
-                        }
-                    }}
-                    helperText={currentLevel ? `Mức độ xác định: ${currentLevel.name}` : 'Nhập độ sâu để tự động xác định mức độ'}
-                />
-            </Stack>
-
-            <Box>
-                <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1, display: 'block' }}>Ảnh hiện trường</Typography>
-                <Box>
-                    <Box component="label" sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5, border: '2px dashed', borderColor: 'divider', borderRadius: 2, p: 2, cursor: 'pointer', bgcolor: 'grey.50', transition: 'all .2s', '&:hover': { borderColor: 'secondary.main', bgcolor: 'secondary.lighter' } }}>
-                        <input type="file" hidden multiple accept="image/*" onChange={handleImageChange} />
-                        <IconCloudUpload size={26} color={theme.palette.secondary.main} />
-                        <Typography variant="body2" color="text.secondary">Chọn ảnh</Typography>
-                    </Box>
-                    {previews.length > 0 && (
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1.5 }}>
-                            {previews.map((src, i) => (
-                                <Box key={i} sx={{ position: 'relative', width: 68, height: 68 }}>
-                                    <Box component="img" src={src} alt="" sx={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 1.5, border: '1px solid', borderColor: 'divider' }} />
-                                    <IconButton size="small" onClick={() => removeImage(i)} sx={{ position: 'absolute', top: -6, right: -6, bgcolor: 'error.main', color: '#fff', p: 0.3, '&:hover': { bgcolor: 'error.dark' } }}>
-                                        <IconX size={11} />
-                                    </IconButton>
-                                </Box>
-                            ))}
-                        </Box>
-                    )}
-                </Box>
-            </Box>
-
-            <PermissionGuard
-                permission="inundation:report"
-                fallback={
-                    <Button fullWidth size="large" variant="contained" disabled sx={{ borderRadius: 100, py: 1.4, fontWeight: 700, mt: 1 }}>
-                        Không có quyền thực hiện
-                    </Button>
-                }
-            >
-                <Button
-                    fullWidth size="large" variant="contained"
-                    color={isCorrectionMode ? 'error' : (resolveOnUpdate ? 'error' : 'secondary')}
-                    onClick={handleSubmit}
-                    disabled={loading}
-                    startIcon={loading ? <CircularProgress size={17} color="inherit" /> : <IconSend size={17} />}
-                    sx={{ borderRadius: 100, py: 1.4, fontWeight: 700, mt: 1 }}
-                >
-                    {loading ? 'Đang xử lý...' : (
-                        isCorrectionMode
-                            ? 'Lưu thay đổi chỉnh sửa'
-                            : (resolveOnUpdate ? 'Xác nhận Kết thúc đợt ngập' : (selectedReport ? 'Cập nhật tình hình' : 'Gửi báo cáo'))
-                    )}
-                </Button>
-            </PermissionGuard>
-        </Stack>
+        </InundationCommonForm>
     );
 };
 

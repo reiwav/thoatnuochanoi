@@ -18,7 +18,7 @@ import { getTrafficStatusColor } from 'utils/trafficStatusHelper';
 import { getInundationImageUrl } from 'utils/imageHelper';
 
 // Shared Components
-import { SurveyInfoSection, MechInfoSection, ReviewCommentSection } from './components/TechnicalSections';
+import { SurveyInfoSection, MechInfoSection, ReviewCommentSection, KtclInfoSection, ReportInfoSection } from './components/TechnicalSections';
 import ImageViewer from './components/ImageViewer';
 
 const InundationDetail = ({ selectedReport, loadingReport, user, hideHeader = false }) => {
@@ -57,9 +57,9 @@ const InundationDetail = ({ selectedReport, loadingReport, user, hideHeader = fa
         return updates.map((u, i) => ({
             ...u,
             id: u.id,
-            type: u.description === 'Bắt đầu đợt ngập' ? 'start' : 'update',
-            title: (u.status === 'resolved') ? 'Kết thúc đợt ngập' : (u.description || `Cập nhật #${i + 1}`),
-            ts: u.timestamp,
+            type: (u.note || u.description) === 'Bắt đầu đợt ngập' ? 'start' : 'update',
+            title: (u.status === 'resolved') ? 'Kết thúc đợt ngập' : (u.note || u.description || `Cập nhật #${i + 1}`),
+            ts: u.created_at || u.timestamp,
             images: u.images || []
         })).reverse();
     }, [selectedReport]);
@@ -102,8 +102,7 @@ const InundationDetail = ({ selectedReport, loadingReport, user, hideHeader = fa
         </Box>
     );
 
-    const latest = timelineData[0] || {};
-    const trafficColor = getTrafficStatusColor(latest.traffic_status || latest.trafficStatus || selectedReport.traffic_status);
+    const trafficColor = getTrafficStatusColor(selectedReport.traffic_status);
 
     return (
         <Box>
@@ -123,62 +122,63 @@ const InundationDetail = ({ selectedReport, loadingReport, user, hideHeader = fa
                                 <IconClock size={16} /> {new Date((selectedReport.created_at || selectedReport.start_time) * 1000).toLocaleString('vi-VN')}
                             </Typography>
                             <Typography variant="body2" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                <IconRuler size={16} /> {latest.length || 0} x {latest.width || 0} x {latest.depth || 0}
+                                <IconRuler size={16} /> {selectedReport.length || 0} x {selectedReport.width || 0} x {selectedReport.depth || 0}
                             </Typography>
-                            {trafficColor && (
-                                <Chip label={latest.traffic_status || latest.trafficStatus} size="small" color={trafficColor} sx={{ fontWeight: 700 }} />
+                            {selectedReport.traffic_status && (
+                                <Chip label={selectedReport.traffic_status} size="small" color={trafficColor} sx={{ fontWeight: 700 }} />
                             )}
                         </Stack>
                     </Stack>
                 </Paper>
             )}
 
-            {!hideHeader && <Typography variant="h4" sx={{ mb: 2, fontWeight: 800, px: 1 }}>Lịch sử cập nhật</Typography>}
+            {selectedReport.review_comment && (
+                <Box sx={{ mb: 2.5, px: 1 }}>
+                    <ReviewCommentSection latest={selectedReport} />
+                </Box>
+            )}
 
             <Box sx={{ px: 1 }}>
-                {timelineData.map((item, idx) => (
-                    <Box key={idx} sx={{ display: 'flex', gap: 2, position: 'relative', p: 1.5, mb: 1, borderRadius: 3, bgcolor: item.needs_correction ? 'error.lighter' : 'transparent', border: item.needs_correction ? '1px dashed' : 'none', borderColor: 'error.light' }}>
-                        {idx < timelineData.length - 1 && <Box sx={{ position: 'absolute', left: 21, top: 40, width: 2, height: 'calc(100% - 20px)', bgcolor: 'grey.200' }} />}
-                        <Box sx={{ width: 14, height: 14, borderRadius: '50%', mt: 1, zIndex: 1, bgcolor: item.type === 'start' ? 'primary.main' : 'success.main', border: '3px solid white', boxShadow: '0 0 0 1px #ddd' }} />
+                <Grid container spacing={2.5}>
+                    {/* Row 1: Báo cáo Địa bàn & Báo cáo KT-CL */}
+                    <Grid item xs={12} md={6}>
+                        <ReportInfoSection latest={selectedReport} handleOpenViewer={handleOpenViewer} showPlaceholder={true} />
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                        <KtclInfoSection latest={selectedReport} handleOpenViewer={handleOpenViewer} showPlaceholder={true} />
+                    </Grid>
 
-                        <Box sx={{ flex: 1, pb: 2 }}>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                                <Typography variant="h6" sx={{ fontWeight: 800 }}>{item.title}</Typography>
-                                <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700 }}>
-                                    {new Date(item.ts * 1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} • {new Date(item.ts * 1000).toLocaleDateString('vi-VN')}
-                                </Typography>
-                            </Box>
-                            <Typography variant="body2" sx={{ mb: 1.5 }}>{item.desc || item.description}</Typography>
+                    {/* Row 2: TK Giám sát & XN Cơ giới */}
+                    <Grid item xs={12} md={6}>
+                        <SurveyInfoSection latest={selectedReport} handleOpenViewer={handleOpenViewer} showPlaceholder={true} />
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                        <MechInfoSection latest={selectedReport} handleOpenViewer={handleOpenViewer} showPlaceholder={true} />
+                    </Grid>
+                </Grid>
 
-                            <ReviewCommentSection latest={item} />
-                            <SurveyInfoSection latest={{ ...item, survey_images: item.survey_images || [] }} handleOpenViewer={handleOpenViewer} />
-                            <MechInfoSection latest={{ ...item, mech_images: item.mech_images || [] }} handleOpenViewer={handleOpenViewer} />
-
-                            <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-                                {canReview && !item.needs_correction && (
-                                    <Button size="small" variant="outlined" color="error" onClick={() => setReviewDialog({ open: true, itemId: item.id, type: item.type, comment: item.review_comment || '' })}>
-                                        Nhận xét
-                                    </Button>
-                                )}
-                                {(isEmployee || hasPermission('inundation:edit')) && item.needs_correction && (
-                                    <Button size="small" variant="contained" color="error" onClick={() => setEditMode({ open: true, item })}>Chỉnh sửa lại</Button>
-                                )}
-                            </Stack>
-
-                            {item.images?.length > 0 && (
-                                <Box sx={{ display: 'flex', gap: 1, mt: 1.5, overflowX: 'auto', pb: 1 }}>
-                                    {item.images.map((img, i) => (
-                                        <Box
-                                            key={i} component="img" src={getInundationImageUrl(img)}
-                                            onClick={() => handleOpenViewer(item.images, i)}
-                                            sx={{ width: 80, height: 80, borderRadius: 2, objectFit: 'cover', cursor: 'zoom-in', border: '1px solid', borderColor: 'divider' }}
-                                        />
-                                    ))}
-                                </Box>
-                            )}
-                        </Box>
-                    </Box>
-                ))}
+                <Stack direction="row" spacing={1.5} sx={{ mt: 3, px: 0.5 }}>
+                    {canReview && !selectedReport.needs_correction && (
+                        <Button
+                            variant="contained"
+                            color="error"
+                            onClick={() => setReviewDialog({ open: true, itemId: selectedReport.id, type: 'start', comment: selectedReport.review_comment || '' })}
+                            sx={{ borderRadius: 2, fontWeight: 700 }}
+                        >
+                            Gửi nhận xét yêu cầu sửa đổi
+                        </Button>
+                    )}
+                    {(isEmployee || hasPermission('inundation:edit')) && selectedReport.needs_correction && (
+                        <Button
+                            variant="contained"
+                            color="error"
+                            onClick={() => setEditMode({ open: true, item: selectedReport })}
+                            sx={{ borderRadius: 2, fontWeight: 700 }}
+                        >
+                            Chỉnh sửa lại thông tin điểm ngập
+                        </Button>
+                    )}
+                </Stack>
             </Box>
 
             <ImageViewer viewer={viewer} onClose={() => setViewer({ ...viewer, open: false })} onPrev={() => setViewer(v => ({ ...v, index: (v.index - 1 + v.images.length) % v.images.length }))} onNext={() => setViewer(v => ({ ...v, index: (v.index + 1) % v.images.length }))} />

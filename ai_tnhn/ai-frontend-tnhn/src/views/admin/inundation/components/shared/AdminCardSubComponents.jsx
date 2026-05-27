@@ -165,14 +165,35 @@ export const AdminCardActionButtons = ({ point, onAction, isFlooded, isCorrectio
     return (
         <Stack direction="row" spacing={0.5}>
             <PermissionGuard permission="inundation:report">
-                <Tooltip title="Gửi báo cáo hiện trường">
+                <Tooltip title="Báo cáo KT-CL">
                     <span>
                         <IconButton
-                            size="small" color={isCorrection ? 'warning' : 'secondary'}
+                            size="small" color="secondary"
                             onClick={() => onAction('report', point)}
                             sx={{
-                                bgcolor: isCorrection ? 'warning.lighter' : 'secondary.lighter',
-                                '&:hover': { bgcolor: isCorrection ? 'warning.light' : 'secondary.light' }
+                                bgcolor: 'secondary.lighter',
+                                '&:hover': { bgcolor: 'secondary.light' }
+                            }}
+                        >
+                            <IconSend size={18} />
+                        </IconButton>
+                    </span>
+                </Tooltip>
+            </PermissionGuard>
+            <PermissionGuard permission="inundation:enterprise_report">
+                <Tooltip title={isCorrection ? 'Chỉnh sửa lại điểm ngập' : 'Báo cáo địa bàn'}>
+                    <span>
+                        <IconButton
+                            size="small" color={isCorrection ? 'warning' : 'primary'}
+                            onClick={() => onAction('report_enterprise', point)}
+                            sx={{
+                                bgcolor: isCorrection ? 'warning.lighter' : 'primary.lighter',
+                                '&:hover': { bgcolor: isCorrection ? 'warning.light' : 'primary.light' },
+                                animation: isCorrection ? 'aggressiveBlinkButton 1s infinite alternate' : 'none',
+                                '@keyframes aggressiveBlinkButton': {
+                                    '0%': { transform: 'scale(1)', boxShadow: `0 0 0px #ed6c02` },
+                                    '100%': { transform: 'scale(1.05)', boxShadow: `0 0 8px #ed6c02` }
+                                }
                             }}
                         >
                             <IconSend size={18} />

@@ -11,11 +11,11 @@ const PermissionGuard = ({ permission, children, fallback = null }) => {
     // Explicitly subscribe to permissions to trigger re-renders when they load
     useAuthStore((state) => state.permissions);
     const hasPermission = useAuthStore((state) => state.hasPermission);
-    
+
     if (hasPermission(permission)) {
         return <>{children}</>;
     }
-    
+
     return <>{fallback}</>;
 };
 

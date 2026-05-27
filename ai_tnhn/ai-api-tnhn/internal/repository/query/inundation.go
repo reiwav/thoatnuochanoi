@@ -33,6 +33,16 @@ func (r *inundationRepo) GetByID(ctx context.Context, id string) (*models.Inunda
 	return &report, err
 }
 
+func (r *inundationRepo) GetByIDs(ctx context.Context, ids []string) ([]*models.InundationReport, error) {
+	var reports []*models.InundationReport
+	if len(ids) == 0 {
+		return reports, nil
+	}
+	f := bson.M{"_id": bson.M{"$in": ids}}
+	err := r.R_SelectMany(ctx, f, &reports)
+	return reports, err
+}
+
 func (r *inundationRepo) List(ctx context.Context, filter filter.Filter) ([]*models.InundationReport, int64, error) {
 	var reports []*models.InundationReport
 	total, err := r.R_SearchAndCount(ctx, filter, &reports)
@@ -62,7 +72,8 @@ func (r *inundationRepo) ListByYear(ctx context.Context, orgID string, year int)
 			"$gte": startOfYear,
 			"$lte": endOfYear,
 		},
-		"deleted_at": 0,
+		"deleted_at":  0,
+		"has_flooded": true,
 	}
 
 	if orgID != "" {

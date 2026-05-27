@@ -1,14 +1,15 @@
 import React from 'react';
+import dayjs from 'dayjs';
 import {
     Box, Typography, Stack, Avatar, Button, Tooltip, alpha, Chip, Divider, Collapse, CircularProgress
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import {
     IconChevronDown, IconChevronUp, IconSend, IconEngine, IconChecklist,
-    IconMapPin, IconAlertTriangle, IconClock, IconClipboardCheck
+    IconMapPin, IconAlertTriangle, IconClock, IconClipboardCheck, IconEye
 } from '@tabler/icons-react';
 import PermissionGuard from 'ui-component/PermissionGuard';
-import { SurveyInfoSection, MechInfoSection, ReviewCommentSection, ReportInfoSection } from './TechnicalSections';
+import { SurveyInfoSection, MechInfoSection, ReviewCommentSection, ReportInfoSection, KtclInfoSection } from './TechnicalSections';
 import { formatDuration } from 'utils/dataHelper';
 
 export const MetricItem = ({ icon: Icon, label, value, color }) => (
@@ -174,20 +175,38 @@ export const CardMetrics = ({ isHighPriority, latest, theme }) => (
                     />
                 </Stack>
 
-                {latest.survey_checked && (
+                {latest.enterprise_history_id && (
                     <Stack direction="row" spacing={1} alignItems="center" sx={{ px: 1 }}>
-                        <IconClipboardCheck size={14} color={theme.palette.primary.main} />
-                        <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.dark' }}>
-                            TK Giám sát: Đã nhận xét
+                        <IconMapPin size={14} color={theme.palette.secondary.main} />
+                        <Typography variant="caption" sx={{ fontWeight: 800, color: 'secondary.dark' }}>
+                            Địa bàn: Đã báo cáo {latest.ent_updated_at ? `(${dayjs(latest.ent_updated_at * 1000).format('HH:mm')})` : ''}
                         </Typography>
                     </Stack>
                 )}
 
-                {latest.mech_checked && (
+                {latest.ktcl_history_id && (
                     <Stack direction="row" spacing={1} alignItems="center" sx={{ px: 1 }}>
-                        <IconEngine size={14} color={theme.palette.secondary.main} />
-                        <Typography variant="caption" sx={{ fontWeight: 800, color: 'secondary.dark' }}>
-                            XN cơ giới: Đã xử lý
+                        <IconClipboardCheck size={14} color="#F57C00" />
+                        <Typography variant="caption" sx={{ fontWeight: 800, color: '#F57C00' }}>
+                            KT-CL: Đã báo cáo {latest.ktcl_updated_at ? `(${dayjs(latest.ktcl_updated_at * 1000).format('HH:mm')})` : ''}
+                        </Typography>
+                    </Stack>
+                )}
+
+                {latest.survey_history_id && (
+                    <Stack direction="row" spacing={1} alignItems="center" sx={{ px: 1 }}>
+                        <IconClipboardCheck size={14} color={theme.palette.primary.main} />
+                        <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.dark' }}>
+                            TK Giám sát: Đã kiểm tra {latest.survey_updated_at ? `(${dayjs(latest.survey_updated_at * 1000).format('HH:mm')})` : ''}
+                        </Typography>
+                    </Stack>
+                )}
+
+                {latest.mech_history_id && (
+                    <Stack direction="row" spacing={1} alignItems="center" sx={{ px: 1 }}>
+                        <IconEngine size={14} color="#7B1FA2" />
+                        <Typography variant="caption" sx={{ fontWeight: 800, color: '#7B1FA2' }}>
+                            XN cơ giới: Đã ứng trực {latest.mech_updated_at ? `(${dayjs(latest.mech_updated_at * 1000).format('HH:mm')})` : ''}
                         </Typography>
                     </Stack>
                 )}
@@ -201,7 +220,7 @@ export const CardMetrics = ({ isHighPriority, latest, theme }) => (
     </>
 );
 
-export const CardActions = ({ expanded, setExpanded, isHighPriority, point, latest, openTask }) => {
+export const CardActions = ({ onOpenDetail, isHighPriority, point, latest, openTask }) => {
     const theme = useTheme();
     const isCorrection = isHighPriority && latest?.needs_correction && !latest?.is_review_updated;
 
@@ -212,14 +231,20 @@ export const CardActions = ({ expanded, setExpanded, isHighPriority, point, late
                 <Button
                     size="small"
                     color="inherit"
-                    startIcon={expanded ? <IconChevronUp size={18} /> : <IconChevronDown size={18} />}
-                    onClick={() => setExpanded(!expanded)}
+                    startIcon={<IconEye size={16} />}
+                    onClick={() => onOpenDetail(point)}
                     sx={{
-                        fontWeight: 800, borderRadius: 2.5, textTransform: 'none',
-                        color: 'text.secondary', px: 1.5, '&:hover': { bgcolor: 'grey.100' }
+                        height: 32,
+                        borderRadius: 2,
+                        fontWeight: 900,
+                        fontSize: '0.675rem',
+                        textTransform: 'none',
+                        color: 'text.secondary',
+                        px: 1.5,
+                        '&:hover': { bgcolor: 'grey.100' }
                     }}
                 >
-                    {expanded ? 'Thu gọn' : 'Chi tiết'}
+                    Chi tiết
                 </Button>
 
                 <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ gap: 1 }}>
@@ -227,12 +252,33 @@ export const CardActions = ({ expanded, setExpanded, isHighPriority, point, late
                         <Button
                             variant="contained"
                             size="small"
-                            color={isCorrection ? 'warning' : 'secondary'}
-                            startIcon={isCorrection ? <IconAlertTriangle size={16} /> : <IconSend size={16} />}
+                            color="secondary"
+                            startIcon={<IconSend size={14} />}
                             onClick={() => openTask('REPORT', point)}
                             sx={{
-                                borderRadius: 2.5,
+                                height: 32,
+                                borderRadius: 2,
                                 fontWeight: 900,
+                                fontSize: '0.675rem',
+                                px: 1.5
+                            }}
+                        >
+                            Báo cáo KT-CL
+                        </Button>
+                    </PermissionGuard>
+
+                    <PermissionGuard permission="inundation:enterprise_report">
+                        <Button
+                            variant="contained"
+                            size="small"
+                            color={isCorrection ? 'warning' : 'primary'}
+                            startIcon={isCorrection ? <IconAlertTriangle size={14} /> : <IconSend size={14} />}
+                            onClick={() => openTask('REPORT_ENTERPRISE', point)}
+                            sx={{
+                                height: 32,
+                                borderRadius: 2,
+                                fontWeight: 900,
+                                fontSize: '0.675rem',
                                 px: 1.5,
                                 animation: isCorrection ? 'aggressiveBlinkButton 1s infinite alternate' : 'none',
                                 '@keyframes aggressiveBlinkButton': {
@@ -241,66 +287,70 @@ export const CardActions = ({ expanded, setExpanded, isHighPriority, point, late
                                 }
                             }}
                         >
-                            {isCorrection ? 'Chỉnh sửa lại điểm ngập' : 'Báo cáo'}
+                            {isCorrection ? 'Chỉnh sửa lại điểm ngập' : 'Báo cáo Địa bàn'}
+                        </Button>
+                    </PermissionGuard>
+
+                    <PermissionGuard permission="inundation:survey">
+                        <Button
+                            variant="contained"
+                            size="small"
+                            color="primary"
+                            startIcon={<IconClipboardCheck size={14} />}
+                            onClick={() => openTask('SURVEY', point)}
+                            sx={{
+                                height: 32,
+                                borderRadius: 2,
+                                fontWeight: 900,
+                                fontSize: '0.675rem',
+                                px: 1.5
+                            }}
+                        >
+                            TK Giám sát
+                        </Button>
+                    </PermissionGuard>
+
+                    <PermissionGuard permission="inundation:mechanic">
+                        <Button
+                            variant="contained"
+                            size="small"
+                            color="info"
+                            startIcon={<IconEngine size={14} />}
+                            onClick={() => openTask('MECH', point)}
+                            sx={{
+                                height: 32,
+                                borderRadius: 2,
+                                fontWeight: 900,
+                                fontSize: '0.675rem',
+                                px: 1.5
+                            }}
+                        >
+                            Xí nghiệp Cơ giới
                         </Button>
                     </PermissionGuard>
 
                     {isHighPriority && (
-                        <>
-                            <PermissionGuard permission="inundation:survey">
-                                <Button
-                                    variant="contained" size="small" color="primary"
-                                    startIcon={<IconClipboardCheck size={16} />}
-                                    onClick={() => openTask('SURVEY', point)}
-                                    sx={{ borderRadius: 2.5, fontWeight: 800, px: 1.5 }}
-                                >
-                                    TK Giám sát
-                                </Button>
-                            </PermissionGuard>
-
-                            <PermissionGuard permission="inundation:mechanic">
-                                <Button
-                                    variant="contained" size="small" color="info"
-                                    startIcon={<IconEngine size={16} />}
-                                    onClick={() => openTask('MECH', point)}
-                                    sx={{ borderRadius: 2.5, fontWeight: 800, px: 1.5 }}
-                                >
-                                    Xí nghiệp Cơ giới
-                                </Button>
-                            </PermissionGuard>
-
-                            <PermissionGuard permission="inundation:review">
-                                <Button
-                                    variant="contained" size="small" color="error"
-                                    startIcon={<IconChecklist size={16} />}
-                                    onClick={() => openTask('REVIEW', point)}
-                                    sx={{ borderRadius: 2.5, fontWeight: 800, px: 1.5 }}
-                                >
-                                    Nhận xét
-                                </Button>
-                            </PermissionGuard>
-                        </>
+                        <PermissionGuard permission="inundation:review">
+                            <Button
+                                variant="contained"
+                                size="small"
+                                color="error"
+                                startIcon={<IconChecklist size={14} />}
+                                onClick={() => openTask('REVIEW', point)}
+                                sx={{
+                                    height: 32,
+                                    borderRadius: 2,
+                                    fontWeight: 900,
+                                    fontSize: '0.675rem',
+                                    px: 1.5
+                                }}
+                            >
+                                Nhận xét
+                            </Button>
+                        </PermissionGuard>
                     )}
                 </Stack>
             </Stack>
         </>
     );
 };
-
-export const CardExpandedContent = ({ expanded, latest, isHighPriority, handleOpenViewer }) => (
-    <Collapse in={expanded} timeout="auto" unmountOnExit>
-        <Box sx={{ mt: 2.5, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-            {latest ? (
-                <Stack spacing={1.5}>
-                    {isHighPriority && <ReportInfoSection latest={latest} handleOpenViewer={handleOpenViewer} />}
-                    <SurveyInfoSection latest={latest} handleOpenViewer={handleOpenViewer} />
-                    <MechInfoSection latest={latest} handleOpenViewer={handleOpenViewer} />
-                </Stack>
-            ) : (
-                <Typography variant="body2" color="textSecondary" align="center" sx={{ py: 3, fontStyle: 'italic' }}>
-                    Chưa có dữ liệu vận hành gần nhất
-                </Typography>
-            )}
-        </Box>
-    </Collapse>
-);

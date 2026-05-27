@@ -6,6 +6,7 @@ import (
 	"ai-api-tnhn/internal/repository"
 	"ai-api-tnhn/internal/service/permission"
 	"ai-api-tnhn/utils/web"
+	"context"
 	"fmt"
 	"net/http"
 	"runtime/debug"
@@ -106,6 +107,13 @@ func (m mid) MidBasicType(roles ...string) gin.HandlerFunc {
 			user.OrgID = tok.OrgID // fix de filter theo token company
 		}
 		m.SetUser(ctx, user)
+
+		// Fetch permissions and attach to request context
+		perms, err := m.permService.GetPermissionsByRole(ctx, tok.Role)
+		if err == nil {
+			reqCtx := context.WithValue(ctx.Request.Context(), "permissions", perms)
+			ctx.Request = ctx.Request.WithContext(reqCtx)
+		}
 
 		ctx.Next()
 	}

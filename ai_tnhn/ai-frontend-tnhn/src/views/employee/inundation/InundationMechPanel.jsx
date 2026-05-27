@@ -1,45 +1,22 @@
 import React, { useState } from 'react';
 import {
-    Box, Typography, TextField, Grid, Checkbox, FormControlLabel,
-    Button, Stack, CircularProgress
+    Box, Typography, Checkbox, FormControlLabel
 } from '@mui/material';
-import { IconSend, IconCloudUpload } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 import inundationApi from 'api/inundation';
-import { processAndWatermark } from 'utils/imageProcessor';
-import { getInundationImageUrl } from 'utils/imageHelper';
+import InundationCommonForm from './components/InundationCommonForm';
 
 const InundationMechPanel = ({ report, pointId, onSuccess }) => {
     const [submitting, setSubmitting] = useState(false);
-    const [processing, setProcessing] = useState(false);
     const [mechData, setMechData] = useState({
         mech_checked: !!(report?.mech_checked || report?.mechChecked),
         mech_d: report?.mech_d || report?.mechD || '',
         mech_r: report?.mech_r || report?.mechR || '',
         mech_s: report?.mech_s || report?.mechS || '',
-        mech_note: report?.mech_note || report?.mechNote || '',
-        images: []
+        mech_note: report?.mech_note || report?.mechNote || ''
     });
 
-    const handleFileChange = async (e) => {
-        const files = Array.from(e.target.files);
-        if (files.length === 0) return;
-
-        setProcessing(true);
-        try {
-            const watermarkText = report?.street_name || new URLSearchParams(window.location.search).get('name') || '';
-            const processedFiles = await Promise.all(files.map(file => processAndWatermark(file, watermarkText)));
-            setMechData(prev => ({ ...prev, images: [...prev.images, ...processedFiles] }));
-        } catch (error) {
-            console.error('Lỗi xử lý ảnh:', error);
-            toast.error('Không thể xử lý ảnh, vui lòng thử lại');
-        } finally {
-            setProcessing(false);
-            e.target.value = '';
-        }
-    };
-
-    // Sync state when report changes
+    // Đồng bộ state khi report thay đổi
     React.useEffect(() => {
         if (report) {
             setMechData(prev => ({
@@ -53,7 +30,12 @@ const InundationMechPanel = ({ report, pointId, onSuccess }) => {
         }
     }, [report]);
 
-    const handleSubmit = async () => {
+    const handleSubmit = async (images, clearImagesCallback) => {
+        const pId = pointId || report?.point_id || report?.pointID;
+        if (!pId) {
+            toast.error('Không xác định được điểm ngập');
+            return;
+        }
         setSubmitting(true);
         try {
             const formData = new FormData();
@@ -62,27 +44,14 @@ const InundationMechPanel = ({ report, pointId, onSuccess }) => {
             formData.append('mech_r', mechData.mech_r || '');
             formData.append('mech_s', mechData.mech_s || '');
             formData.append('mech_note', mechData.mech_note || '');
-            mechData.images.forEach(img => {
+            images.forEach(img => {
                 formData.append('images', img);
             });
 
-            if (report?.id) {
-                await inundationApi.updateMech(report.id, formData);
-                toast.success('Cập nhật dữ liệu cơ giới thành công');
-            } else if (pointId) {
-                // If no report exists, create a new one with mech data
-                formData.append('point_id', pointId);
-                formData.append('status', 'active');
-                // Also add required fields for new report
-                formData.append('street_name', new URLSearchParams(window.location.search).get('name') || '');
-                
+            await inundationApi.reportMech(pId, formData);
+            toast.success('Cập nhật dữ liệu cơ giới thành công');
 
-                await inundationApi.createReport(formData);
-                toast.success('Đã tạo báo cáo và gửi dữ liệu cơ giới');
-            } else {
-                toast.error('Không xác định được điểm ngập');
-                return;
-            }
+            if (clearImagesCallback) clearImagesCallback();
             if (onSuccess) onSuccess();
         } catch (error) {
             console.error('Update mech error:', error);
@@ -92,117 +61,41 @@ const InundationMechPanel = ({ report, pointId, onSuccess }) => {
         }
     };
 
+    const watermarkText = report?.street_name || new URLSearchParams(window.location.search).get('name') || '';
+    const oldImages = report?.mech_images || report?.mechImages || [];
+
     return (
         <Box sx={{ p: 2 }}>
-            <Stack spacing={3}>
+            <InundationCommonForm
+                watermarkText={watermarkText}
+                oldImages={oldImages}
+                onSubmit={handleSubmit}
+                submitText="GỬI CẬP NHẬT"
+                submitColor="deepPurple"
+                loading={submitting}
+                noteValue={mechData.mech_note}
+                onNoteChange={(e) => setMechData(prev => ({ ...prev, mech_note: e.target.value }))}
+                noteLabel="Thông tin khác"
+                notePlaceholder="Nhập ghi chú thêm..."
+                noteRows={3}
+                depth={mechData.mech_d}
+                onDepthChange={(val) => setMechData(prev => ({ ...prev, mech_d: val }))}
+                width={mechData.mech_r}
+                onWidthChange={(val) => setMechData(prev => ({ ...prev, mech_r: val }))}
+                length={mechData.mech_s}
+                onLengthChange={(val) => setMechData(prev => ({ ...prev, mech_s: val }))}
+                permission="inundation:mechanic"
+            >
                 <FormControlLabel
-                    control={<Checkbox checked={mechData.mech_checked} onChange={(e) => setMechData(prev => ({ ...prev, mech_checked: e.target.checked }))} />}
+                    control={
+                        <Checkbox
+                            checked={mechData.mech_checked}
+                            onChange={(e) => setMechData(prev => ({ ...prev, mech_checked: e.target.checked }))}
+                        />
+                    }
                     label={<Typography sx={{ fontWeight: 700 }}>Đã ứng trực</Typography>}
                 />
-
-                <Grid container spacing={2}>
-                    <Grid item xs={4}>
-                        <TextField
-                            fullWidth
-                            label="Sâu (D)"
-                            size="small"
-                            value={mechData.mech_d}
-                            onChange={(e) => setMechData(prev => ({ ...prev, mech_d: e.target.value }))}
-                            placeholder="mm"
-                            sx={{ '& .MuiInputLabel-root': { fontWeight: 800 } }}
-                        />
-                    </Grid>
-                    <Grid item xs={4}>
-                        <TextField
-                            fullWidth
-                            label="Chiều rộng (R)"
-                            size="small"
-                            value={mechData.mech_r}
-                            onChange={(e) => setMechData(prev => ({ ...prev, mech_r: e.target.value }))}
-                            placeholder="mm"
-                            sx={{ '& .MuiInputLabel-root': { fontWeight: 800 } }}
-                        />
-                    </Grid>
-                    <Grid item xs={4}>
-                        <TextField
-                            fullWidth
-                            label="Sâu (S)"
-                            size="small"
-                            value={mechData.mech_s}
-                            onChange={(e) => setMechData(prev => ({ ...prev, mech_s: e.target.value }))}
-                            placeholder="mm"
-                            sx={{ '& .MuiInputLabel-root': { fontWeight: 800 } }}
-                        />
-                    </Grid>
-                </Grid>
-
-                <Box>
-                    <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', display: 'block', mb: 1, textTransform: 'uppercase' }}>
-                        Ảnh hiện trường:
-                    </Typography>
-                    <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
-                        <Button
-                            component="label"
-                            variant="outlined"
-                            disabled={processing}
-                            sx={{
-                                width: 80, height: 80, borderRadius: 2,
-                                border: '2px dashed', borderColor: 'divider',
-                                display: 'flex', flexDirection: 'column', gap: 0.5
-                            }}
-                        >
-                            {processing ? <CircularProgress size={20} color="secondary" /> : <IconCloudUpload size={24} color="#2196f3" />}
-                            <input type="file" hidden multiple accept="image/*" onChange={handleFileChange} />
-                        </Button>
-
-                        {mechData.images.map((file, idx) => (
-                            <Box
-                                key={idx}
-                                component="img"
-                                src={URL.createObjectURL(file)}
-                                sx={{ width: 80, height: 80, borderRadius: 2, objectFit: 'cover', border: '1px solid', borderColor: 'divider' }}
-                            />
-                        ))}
-
-                        {/* Hiển thị ảnh cũ nếu có */}
-                        {!mechData.images.length && (report?.mech_images || report?.mechImages)?.map((img, idx) => (
-                            <Box
-                                key={`old-${idx}`}
-                                component="img"
-                                src={getInundationImageUrl(img)}
-                                sx={{ width: 80, height: 80, borderRadius: 2, objectFit: 'cover', border: '1px solid', borderColor: 'divider', opacity: 0.8 }}
-                            />
-                        ))}
-                    </Stack>
-                </Box>
-
-                <TextField
-                    fullWidth
-                    multiline
-                    rows={3}
-                    label="Thông tin khác"
-                    placeholder="Nhập ghi chú thêm..."
-                    value={mechData.mech_note}
-                    onChange={(e) => setMechData(prev => ({ ...prev, mech_note: e.target.value }))}
-                />
-
-                <Button
-                    variant="contained"
-                    size="large"
-                    disabled={submitting}
-                    onClick={handleSubmit}
-                    startIcon={submitting ? <CircularProgress size={20} color="inherit" /> : <IconSend size={20} />}
-                    sx={{
-                        borderRadius: 2,
-                        py: 1.5,
-                        fontWeight: 700,
-                        bgcolor: '#673ab7', // Deep Purple matches the image
-                        '&:hover': { bgcolor: '#5e35b1' }
-                    }}
-                >
-                    GỬI CẬP NHẬT
-                </Button>
-            </Stack>
+            </InundationCommonForm>
         </Box>
     );
 };

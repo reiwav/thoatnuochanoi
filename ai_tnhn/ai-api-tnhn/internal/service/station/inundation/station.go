@@ -1,7 +1,6 @@
 package inundation
 
 import (
-	"ai-api-tnhn/internal/base/mgo/filter"
 	"ai-api-tnhn/internal/models"
 	"context"
 	"sort"
@@ -69,12 +68,19 @@ func (s *service) GetPointsStatus(ctx context.Context, user *models.User, isAllo
 		allPointsMap[p.ID] = p
 	}
 
+	// Batch fetch employee assigned points instead of N individual GetByID calls
 	if len(pointIDs) > 0 {
+		var missingIDs []string
 		for _, pid := range pointIDs {
 			if _, exists := allPointsMap[pid]; !exists {
-				p, err := s.inundationStationRepo.GetByID(ctx, pid)
-				if err == nil && p != nil && p.Active {
-					allPointsMap[p.ID] = *p
+				missingIDs = append(missingIDs, pid)
+			}
+		}
+		if len(missingIDs) > 0 {
+			batchPoints, err := s.inundationStationRepo.GetByIDs(ctx, missingIDs)
+			if err == nil {
+				for _, p := range batchPoints {
+					allPointsMap[p.ID] = p
 				}
 			}
 		}
@@ -91,11 +97,36 @@ func (s *service) GetPointsStatus(ctx context.Context, user *models.User, isAllo
 	}
 
 	// 1.5 Get organization mapping
-	orgs, _, _ := s.orgRepo.List(ctx, filter.NewPaginationFilter())
+	orgs, _ := s.orgRepo.GetAll(ctx)
 	orgMap := make(map[string]string)
 	for _, o := range orgs {
 		orgMap[o.ID] = o.Name
 	}
+
+	// 2. Batch fetch all LastReports in a single query instead of N individual GetByID calls
+	var lastReportIDs []string
+	for _, p := range finalPoints {
+		if p.LastReportID != "" {
+			lastReportIDs = append(lastReportIDs, p.LastReportID)
+		}
+	}
+
+	lastReportMap := make(map[string]*models.InundationReport)
+	if len(lastReportIDs) > 0 {
+		batchReports, err := s.InundationReportRepo.GetByIDs(ctx, lastReportIDs)
+		if err == nil {
+			// fillReportBases for all reports in a single batch (1 history query instead of N)
+			if len(batchReports) > 0 {
+				_ = s.fillReportBases(ctx, batchReports...)
+			}
+			for _, r := range batchReports {
+				lastReportMap[r.ID] = r
+			}
+		}
+	}
+
+	// 3. Use cached FloodLevel settings (auto-refresh with TTL, no per-request DB query)
+	floodLevels := s.getFloodLevels(ctx)
 
 	// 4. Build merged result
 	result := make([]PointStatus, len(finalPoints))
@@ -105,11 +136,11 @@ func (s *service) GetPointsStatus(ctx context.Context, user *models.User, isAllo
 			Status:            "normal",
 		}
 
-		// Recalculate color for LastReport to ensure it matches current config
+		// Use pre-fetched LastReport from batch map
 		if p.LastReportID != "" {
-			lastReport, _ := s.InundationReportRepo.GetByID(ctx, p.LastReportID)
-			if lastReport != nil {
-				level := s.calculateFloodLevel(ctx, lastReport.Depth)
+			if lastReport, ok := lastReportMap[p.LastReportID]; ok {
+				// Use cached flood levels (pure in-memory calculation)
+				level := calculateFloodLevelFromLevels(lastReport.Depth, floodLevels)
 				if level != nil {
 					lastReport.FloodLevelName = level.Name
 					lastReport.FloodLevelColor = level.Color

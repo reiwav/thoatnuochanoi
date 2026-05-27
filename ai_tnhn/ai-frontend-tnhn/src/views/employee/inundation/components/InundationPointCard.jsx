@@ -11,15 +11,13 @@ import { formatDuration } from 'utils/dataHelper';
 import { 
     CardHeader, 
     CardMetrics, 
-    CardActions, 
-    CardExpandedContent 
+    CardActions 
 } from './InundationCardComponents';
 import ConfirmDialog from 'ui-component/ConfirmDialog';
 
 const InundationPointCard = ({ point, openTask, handleOpenViewer, onOpenDetail, onRefresh }) => {
     const theme = useTheme();
     const navigate = useNavigate();
-    const [expanded, setExpanded] = useState(false);
     const [finishing, setFinishing] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -136,19 +134,11 @@ const InundationPointCard = ({ point, openTask, handleOpenViewer, onOpenDetail, 
             />
 
             <CardActions 
-                expanded={expanded} 
-                setExpanded={setExpanded} 
+                onOpenDetail={onOpenDetail}
                 isHighPriority={isHighPriority} 
                 point={point} 
                 latest={activeData}
                 openTask={openTask} 
-            />
-
-            <CardExpandedContent 
-                expanded={expanded} 
-                latest={activeData} 
-                isHighPriority={isHighPriority} 
-                handleOpenViewer={handleOpenViewer} 
             />
 
             <style>{`

@@ -124,6 +124,10 @@ const StationHistory = ({ type }) => {
         },
         dataLabels: { enabled: false },
         stroke: { curve: 'smooth', width: 3 },
+        markers: {
+            size: 4,
+            hover: { size: 6 }
+        },
         xaxis: {
             type: 'datetime',
             labels: {
@@ -141,13 +145,34 @@ const StationHistory = ({ type }) => {
         colors: [theme.palette.primary.main]
     };
 
-    const chartSeries = [{
-        name: getValueLabel(),
-        data: activeData.map(item => ({
+    const chartSeries = React.useMemo(() => {
+        let data = activeData.map(item => ({
             x: new Date(item.timestamp).getTime(),
             y: item.value || 0
-        }))
-    }];
+        }));
+
+        if (type === 'rain' && data.length === 1 && selectedDate) {
+            // Thêm điểm 0mm lúc 7:00 AM của ngày đó để vẽ được biểu đồ line
+            const startDate = selectedDate.startOf('day').add(7, 'hour');
+            // Đảm bảo điểm 7:00 AM nằm trước điểm mưa thực tế
+            if (startDate.toDate().getTime() < data[0].x) {
+                data.unshift({
+                    x: startDate.toDate().getTime(),
+                    y: 0
+                });
+            } else {
+                data.push({
+                    x: startDate.toDate().getTime(),
+                    y: 0
+                });
+            }
+        }
+
+        return [{
+            name: getValueLabel(),
+            data: data
+        }];
+    }, [activeData, type, selectedDate]);
 
     return (
         <MainCard title={getTitle()}>

@@ -5,68 +5,70 @@ import (
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/utils/web"
 	"context"
-	"time"
 )
 
-// Cập nhật/thêm mới trong timeline ngập
-func (s *service) UpdateUpdateSitution(ctx context.Context, user *models.User, reportID string, update dto.AddUpdateSitutionRequest, images []ImageContent) (*models.InundationReport, error) {
-	report, err := s.InundationReportRepo.GetByID(ctx, reportID)
+// ReportEnterpriseSituation adds a new timeline update (Enterprise history) to an active report by pointID
+func (s *service) ReportEnterpriseSituation(ctx context.Context, user *models.User, pointID string, update dto.AddUpdateSitutionRequest, images []ImageContent) (*models.InundationReport, error) {
+	if pointID == "" {
+		return nil, web.BadRequest("Point ID is required")
+	}
+
+	if update.Resolve { // Hết ngập nhanh
+		return nil, s.QuickFinishV2(ctx, user, pointID)
+	}
+
+	// 1. Get or create active report
+	report, err := s.getOrCreateActiveReport(ctx, pointID, update.Depth)
 	if err != nil {
 		return nil, err
 	}
-	if update.Resolve { // hết ngập
-		return nil, s.QuickFinishV2(ctx, user, report.PointID)
-	}
-	update.PointID = report.PointID
-	err = s.getSettingAndSetBase(ctx, reportID, &update.InundationReportBase, user, images)
+
+	// 2. Validate and calculate flood settings
+	err = s.getSettingAndSetBase(ctx, report.ID, pointID, &update.ReportEnterpriseBase, user, images)
 	if err != nil {
 		return nil, err
 	}
-	report.InundationReportBase = update.InundationReportBase
+	report.ReportEnterpriseBase = update.ReportEnterpriseBase
+
+	// 3. Create a new history log (InundationHistory)
+	newHistory, err := s.createHistoryAndEnqueueSync(ctx, report.ID, user, s.getUserPermission(ctx, "inundation:enterprise_report"), report.ReportEnterpriseBase.Depth, report.ReportEnterpriseBase.Width, report.ReportEnterpriseBase.Length, report.ReportEnterpriseBase.Description, report.ReportEnterpriseBase.Images)
+	if err != nil {
+		return nil, err
+	}
+
+	// Update reference IDs in report
+	report.EnterpriseHistoryID = newHistory.ID
 	err = s.InundationReportRepo.Update(ctx, report)
-	//tạo bản ghi phụ
-	newUpdate := &models.InundationUpdate{
-		InundationReportBase: report.InundationReportBase,
-		ReportID:             report.ID,
-		Timestamp:            time.Now().Unix(),
-	}
-	_ = s.inundationUpdateRepo.Create(ctx, newUpdate)
-
-	// Enqueue for Drive Sync
-	if s.syncWorker != nil {
-		s.syncWorker.Enqueue(report.ID, TaskTypeReport)
-		s.syncWorker.Enqueue(newUpdate.ID, TaskTypeUpdate)
+	if err != nil {
+		return nil, err
 	}
 
-	// Notify SSE subscribers about the change
-	go s.notifyPointChange(report.PointID)
+	// Notify SSE
+	go s.notifyPointChange(pointID)
 
-	return report, err
+	return report, nil
 }
 
-// Chỉnh sửa theo yêu cầu người rà soát
-func (s *service) UpdateReport(ctx context.Context, user *models.User, id string, report *models.InundationReportBase, images []ImageContent) error {
-	existing, err := s.InundationReportRepo.GetByID(ctx, id)
+// CorrectEnterpriseReport corrects report details (NeedsCorrection mode) by pointID
+func (s *service) CorrectEnterpriseReport(ctx context.Context, user *models.User, pointID string, report *models.ReportEnterpriseBase, images []ImageContent) error {
+	if pointID == "" {
+		return web.BadRequest("Point ID is required")
+	}
+
+	// 1. Get active report
+	existing, err := s.getOrCreateActiveReport(ctx, pointID, report.Depth)
 	if err != nil {
 		return err
 	}
 
 	// Permission Checks
-	isAllowedAll := user.IsCompany
 	if user.IsEmployee {
-		// Employees can ONLY edit if NeedsCorrection is true AND it belongs to their org
 		if !existing.NeedsCorrection {
 			return web.Forbidden("Chỉ được phép sửa thông tin khi có yêu cầu (nhận xét) từ người rà soát")
 		}
-		if existing.OrgID != user.OrgID {
-			return web.Unauthorized("Bạn không có quyền chỉnh sửa báo cáo của đơn vị khác")
-		}
-	} else if !isAllowedAll {
-		// Non-employee manager check (Ownership or Shared)
-		err := s.validatePermission(ctx, user, existing)
-		if err != nil {
-			return err
-		}
+	}
+	if err := s.checkReportAccessPermission(ctx, user, existing, true); err != nil {
+		return err
 	}
 
 	existing.Depth = report.Depth
@@ -85,11 +87,10 @@ func (s *service) UpdateReport(ctx context.Context, user *models.User, id string
 	existing.NeedsCorrection = false
 	existing.NeedsCorrectionUpdateID = ""
 
-	// If updated to a non-flooding level, we should clear point status and resolve later
 	shouldResolve := level != nil && !level.IsFlooding
 
 	if len(images) > 0 {
-		imagesSave, err := s.saveAndGetImages(images, id)
+		imagesSave, err := s.saveAndGetImages(images, existing.ID)
 		if err != nil {
 			return err
 		}
@@ -101,43 +102,23 @@ func (s *service) UpdateReport(ctx context.Context, user *models.User, id string
 		return err
 	}
 
-	// Create a new update for history (Timeline)
-	newUpdate := &models.InundationUpdate{
-		ReportID:  id,
-		Timestamp: time.Now().Unix(),
-		InundationReportBase: models.InundationReportBase{
-			Description: "Chỉnh sửa thông tin báo cáo (theo yêu cầu rà soát)",
-			Depth:       existing.Depth,
-			Length:      existing.Length,
-			Width:       existing.Width,
-			ReportBase: models.ReportBase{
-				FloodLevelName:  existing.FloodLevelName,
-				FloodLevelColor: existing.FloodLevelColor,
-				UserID:          user.ID,
-				UserEmail:       user.Email,
-				UserName:        user.Name,
-				TrafficStatus:   existing.TrafficStatus,
-				Images:          existing.Images,
-				IsFlooding:      existing.IsFlooding,
-			},
-		},
-		ReportReviewBase: models.ReportReviewBase{
-			IsReviewUpdated: true,
-		},
+	// Create a new history log (Timeline)
+	newHistory, err := s.createHistoryAndEnqueueSync(ctx, existing.ID, user, s.getUserPermission(ctx, "inundation:enterprise_report"), existing.Depth, existing.Width, existing.Length, "Chỉnh sửa thông tin báo cáo (theo yêu cầu rà soát)", existing.Images)
+	if err != nil {
+		return err
 	}
-	_ = s.inundationUpdateRepo.Create(ctx, newUpdate)
 
-	// Enqueue for Drive Sync
-	if s.syncWorker != nil {
-		s.syncWorker.Enqueue(id, TaskTypeReport)
-		s.syncWorker.Enqueue(newUpdate.ID, TaskTypeUpdate)
+	existing.EnterpriseHistoryID = newHistory.ID
+	err = s.InundationReportRepo.Update(ctx, existing)
+	if err != nil {
+		return err
 	}
 
 	if shouldResolve {
-		_ = s.QuickFinishV2(ctx, user, id)
+		_ = s.QuickFinishV2(ctx, user, pointID)
 	}
 
-	// Notify SSE subscribers about the change
+	// Notify SSE
 	go s.notifyPointChange(existing.PointID)
 
 	return nil

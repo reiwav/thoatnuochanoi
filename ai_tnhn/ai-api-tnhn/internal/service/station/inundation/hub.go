@@ -80,10 +80,24 @@ func (h *Hub) NotifyPointChange(info PointChangeInfo) {
 	}
 }
 
+// NotifyUserUpdate sends a targeted event to the specific user indicating their profile/role has been updated
+func (h *Hub) NotifyUserUpdate(userID string) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	if sub, ok := h.subscribers[userID]; ok {
+		select {
+		case sub.Ch <- "user_updated":
+		default:
+			// Channel full, skip
+		}
+	}
+}
+
 // shouldNotify determines if a subscriber should receive the event
 func shouldNotify(sub *Subscriber, info PointChangeInfo) bool {
-	// Company users and super admins always receive all events
-	if sub.IsCompany || sub.Role == "super_admin" {
+	// Company users, super admins, and phong_kt_cl (Quality Control) always receive all events
+	if sub.IsCompany || sub.Role == "super_admin" || sub.Role == "phong_kt_cl" {
 		return true
 	}
 

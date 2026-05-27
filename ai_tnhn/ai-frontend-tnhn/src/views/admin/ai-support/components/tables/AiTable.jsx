@@ -30,6 +30,8 @@ const TITLE_VI = {
     lakes: 'Mực nước hồ',
     rivers: 'Mực nước sông',
     inundations: 'Điểm ngập',
+    'inundations_-_ongoing_points': 'Điểm ngập đang diễn ra',
+    ongoing_points: 'Điểm ngập đang diễn ra',
     pumping_stations: 'Trạm bơm',
     wastewater: 'Trạm XLNT',
     wastewater_stations: 'Trạm XLNT',

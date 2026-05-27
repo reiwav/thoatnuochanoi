@@ -16,7 +16,10 @@ import (
 // @Router /admin/google/weather/forecast [get]
 func (h *handler) GetWeatherForecast(c *gin.Context) {
 	forecast, err := h.weatherSvc.GetForecast(c.Request.Context())
-	web.AssertNil(err)
+	if err != nil {
+		web.AssertNil(web.InternalServerError("Không thể tải thông tin dự báo thời tiết: " + err.Error()))
+		return
+	}
 	h.SendData(c, forecast)
 }
 
@@ -30,6 +33,9 @@ func (h *handler) GetWeatherForecast(c *gin.Context) {
 // @Router /admin/google/weather/forecast/gemini [get]
 func (h *handler) GetGeminiWeatherForecast(c *gin.Context) {
 	forecast, err := h.weatherSvc.GetGeminiForecast(c.Request.Context())
-	web.AssertNil(err)
+	if err != nil {
+		web.AssertNil(web.InternalServerError("Không thể kết nối đến máy chủ AI để phân tích thời tiết: " + err.Error()))
+		return
+	}
 	h.SendData(c, forecast)
 }

@@ -36,7 +36,10 @@ func (h *handler) ChatContract(c *gin.Context) {
 
 	token := h.contextWith.GetTokenFromContext(c)
 	response, err := h.geminiSvc.ChatContract(c.Request.Context(), body.Prompt, body.History, token.UserID, token.IsCompany, "")
-	web.AssertNil(err)
+	if err != nil {
+		web.AssertNil(web.InternalServerError("Không thể kết nối đến máy chủ AI: " + err.Error()))
+		return
+	}
 	h.SendData(c, response)
 }
 
@@ -51,6 +54,11 @@ func (h *handler) ChatContract(c *gin.Context) {
 // @Success 200 {object} web.Response{data=string}
 // @Router /admin/google/chat [post]
 func (h *handler) Chat(c *gin.Context) {
+	if h.geminiSvc == nil {
+		web.AssertNil(web.InternalServerError("Gemini AI service is not initialized. Please check GEMINI_API_KEY."))
+		return
+	}
+
 	var body struct {
 		Prompt  string                  `json:"prompt"`
 		History []googleapi.ChatMessage `json:"history"`
@@ -63,7 +71,10 @@ func (h *handler) Chat(c *gin.Context) {
 	token := h.contextWith.GetTokenFromContext(c)
 	fmt.Printf(" [Chat Handler] UserID: %s, Prompt length: %d\n", token.UserID, len(body.Prompt))
 	response, err := h.geminiSvc.Chat(c.Request.Context(), body.Prompt, body.History, token.UserID, token.IsCompany, "")
-	web.AssertNil(err)
+	if err != nil {
+		web.AssertNil(web.InternalServerError("Không thể kết nối đến máy chủ AI: " + err.Error()))
+		return
+	}
 	h.SendData(c, response)
 }
 
@@ -104,7 +115,10 @@ func (h *handler) GetChatHistory(c *gin.Context) {
 
 	fmt.Printf(" [Chat History Handler] UserID: %s, ChatType: %s, Limit: %d, Before: %v\n", userID, chatType, limit, before)
 	logs, err := h.aiChatLogRepo.FindByUser(c.Request.Context(), userID, chatType, limit, before)
-	web.AssertNil(err)
+	if err != nil {
+		web.AssertNil(web.InternalServerError("Không thể lấy lịch sử chat: " + err.Error()))
+		return
+	}
 
 	// Reverse to send oldest first for the frontend to render sequentially
 	for i, j := 0, len(logs)-1; i < j; i, j = i+1, j-1 {

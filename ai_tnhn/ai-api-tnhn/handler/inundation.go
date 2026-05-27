@@ -34,23 +34,21 @@ func NewInundationHandler(service inundation.Service, contextWith web.ContextWit
 	}
 }
 
-// CreateReport godoc
-// @Summary Tạo báo cáo ngập lụt mới (nhân viên xí nghiệp tạo)
-// @Description Tạo một báo cáo ngập lụt mới với tùy chọn đính kèm hình ảnh
+// ReportEnterprise godoc
+// @Summary Địa bàn báo cáo ngập lụt
+// @Description Tạo hoặc cập nhật báo cáo chính của Địa bàn
 // @Tags Ngập lụt
 // @Accept multipart/form-data
 // @Produce json
 // @Security BearerAuth
-// @Param report formData dto.CreateReportRequest true "Dữ liệu báo cáo"
+// @Param point_id path string true "ID điểm ngập"
+// @Param report formData models.ReportEnterpriseBase true "Dữ liệu báo cáo"
 // @Param images formData file false "Hình ảnh hiện trường"
 // @Success 200 {object} models.InundationReport
-// @Failure 401 {object} web.ErrorResponse
-// @Failure 400 {object} web.ErrorResponse
-// @Router /inundation/report [post]
-func (h *InundationHandler) CreateReport(c *gin.Context) {
-
-	// 2. Bind Request DTO
-	var req models.InundationReportBase
+// @Router /inundation/point/{point_id}/enterprise [put]
+func (h *InundationHandler) ReportEnterprise(c *gin.Context) {
+	pointID := c.Param("point_id")
+	var req models.ReportEnterpriseBase
 	if err := c.ShouldBind(&req); err != nil {
 		h.SendError(c, web.BadRequest("Invalid request data: "+err.Error()))
 		return
@@ -62,10 +60,9 @@ func (h *InundationHandler) CreateReport(c *gin.Context) {
 		return
 	}
 
-	// 3. Parse Multipart Form for images
 	images := h.getImages(c)
 
-	report, err := h.service.CreateReport(c.Request.Context(), user, req, images)
+	report, err := h.service.ReportEnterprise(c.Request.Context(), user, pointID, req, images)
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -74,8 +71,20 @@ func (h *InundationHandler) CreateReport(c *gin.Context) {
 	h.SendData(c, report)
 }
 
-func (h *InundationHandler) AddUpdateSituation2(c *gin.Context) {
-	id := c.Param("id")
+// ReportEnterpriseSituation godoc
+// @Summary Địa bàn cập nhật diễn biến
+// @Description Thêm bản diễn biến mới cho điểm ngập
+// @Tags Ngập lụt
+// @Accept multipart/form-data
+// @Produce json
+// @Security BearerAuth
+// @Param point_id path string true "ID điểm ngập"
+// @Param update formData dto.AddUpdateSitutionRequest true "Dữ liệu cập nhật"
+// @Param images formData file false "Hình ảnh"
+// @Success 200 {object} models.InundationReport
+// @Router /inundation/point/{point_id}/update [post]
+func (h *InundationHandler) ReportEnterpriseSituation(c *gin.Context) {
+	pointID := c.Param("point_id")
 	var req dto.AddUpdateSitutionRequest
 	if err := c.ShouldBind(&req); err != nil {
 		h.SendError(c, web.BadRequest("Invalid request data: "+err.Error()))
@@ -85,7 +94,7 @@ func (h *InundationHandler) AddUpdateSituation2(c *gin.Context) {
 	images := h.getImages(c)
 	user, err := h.contextWith.GetUser(c)
 	web.AssertNil(err)
-	report, err := h.service.UpdateUpdateSitution(c.Request.Context(), user, id, req, images)
+	report, err := h.service.ReportEnterpriseSituation(c.Request.Context(), user, pointID, req, images)
 	web.AssertNil(err)
 	h.SendData(c, report)
 }
@@ -126,13 +135,13 @@ func (h *InundationHandler) GetReport(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "ID báo cáo"
-// @Success 200 {array} models.InundationUpdate
+// @Success 200 {array} models.InundationHistory
 // @Failure 401 {object} web.ErrorResponse
 // @Failure 404 {object} web.ErrorResponse
 // @Router /inundation/report/{id}/updates [get]
 func (h *InundationHandler) ListReportUpdates(c *gin.Context) {
 	id := c.Param("id")
-	updates, err := h.service.ListReportUpdates(c.Request.Context(), id)
+	updates, err := h.service.ListReportHistory(c.Request.Context(), id)
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -205,6 +214,51 @@ func (h *InundationHandler) ListReports(c *gin.Context) {
 
 	isAllowedAll := user.IsCompany
 	reports, total, err := h.service.ListReportsWithFilter(c.Request.Context(), user, isAllowedAll, req.OrgID, req)
+	if err != nil {
+		h.SendError(c, err)
+		return
+	}
+
+	h.SendData(c, gin.H{
+		"data":  reports,
+		"total": total,
+	})
+}
+
+// GetPointHistory godoc
+// @Summary Lấy lịch sử báo cáo của một điểm ngập
+// @Description Lấy lịch sử báo cáo ngập lụt của trạm/điểm ngập, có phân trang theo last_report_id
+// @Tags Ngập lụt
+// @Produce json
+// @Security BearerAuth
+// @Param point_id query string true "ID điểm ngập"
+// @Param last_report_id query string false "ID báo cáo cuối cùng của trang trước"
+// @Param size query int false "Số bản ghi mỗi trang"
+// @Success 200 {object} object{data=[]models.InundationReport,total=int}
+// @Router /inundation/history [get]
+func (h *InundationHandler) GetPointHistory(c *gin.Context) {
+	user, err := h.contextWith.GetUser(c)
+	if err != nil || user == nil {
+		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
+		return
+	}
+
+	pointID := c.Query("point_id")
+	if pointID == "" {
+		h.SendError(c, web.BadRequest("point_id is required"))
+		return
+	}
+
+	lastReportID := c.Query("last_report_id")
+	sizeStr := c.Query("size")
+	size := 5
+	if sizeStr != "" {
+		if s, err := strconv.Atoi(sizeStr); err == nil && s > 0 {
+			size = s
+		}
+	}
+
+	reports, total, err := h.service.GetPointHistory(c.Request.Context(), pointID, lastReportID, size)
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -505,28 +559,27 @@ func (h *InundationHandler) ReviewReport(c *gin.Context) {
 	h.SendData(c, gin.H{"status": "success"})
 }
 
-// UpdateReport godoc
-// @Summary Cập nhật báo cáo ngập lụt
-// @Description Cập nhật thông tin chi tiết của báo cáo hiện có với tùy chọn hình ảnh
+// CorrectEnterpriseReport godoc
+// @Summary Hiệu chỉnh báo cáo ngập lụt chính của Địa bàn
+// @Description Hiệu chỉnh thông tin chi tiết của báo cáo chính hiện có khi có yêu cầu rà soát
 // @Tags Ngập lụt
 // @Accept multipart/form-data
 // @Produce json
 // @Security BearerAuth
-// @Param id path string true "ID báo cáo"
-// @Param report formData dto.UpdateReportRequest true "Dữ liệu báo cáo"
-// @Param images formData file false "Hình ảnh cập nhật"
+// @Param point_id path string true "ID điểm ngập"
+// @Param report formData models.ReportEnterpriseBase true "Dữ liệu báo cáo"
+// @Param images formData file false "Hình ảnh"
 // @Success 200 {boolean} bool
-// @Failure 401 {object} web.ErrorResponse
-// @Router /inundation/report/{id} [put]
-func (h *InundationHandler) UpdateReport(c *gin.Context) {
+// @Router /inundation/point/{point_id}/correct [put]
+func (h *InundationHandler) CorrectEnterpriseReport(c *gin.Context) {
 	user, err := h.contextWith.GetUser(c)
 	if err != nil || user == nil {
 		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
 		return
 	}
 
-	id := c.Param("id")
-	var req models.InundationReportBase
+	pointID := c.Param("point_id")
+	var req models.ReportEnterpriseBase
 	if err := c.ShouldBind(&req); err != nil {
 		h.SendError(c, web.BadRequest("Invalid request data: "+err.Error()))
 		return
@@ -534,7 +587,7 @@ func (h *InundationHandler) UpdateReport(c *gin.Context) {
 
 	images := h.getImages(c)
 
-	err = h.service.UpdateReport(c.Request.Context(), user, id, &req, images)
+	err = h.service.CorrectEnterpriseReport(c.Request.Context(), user, pointID, &req, images)
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -543,27 +596,26 @@ func (h *InundationHandler) UpdateReport(c *gin.Context) {
 	h.SendData(c, true)
 }
 
-// UpdateSituationUpdateContent godoc
-// @Summary Cập nhật nội dung cập nhật tình hình
-// @Description Cập nhật nội dung của một bản cập nhật tình hình hiện có
+// CorrectEnterpriseSituation godoc
+// @Summary Hiệu chỉnh bản cập nhật diễn biến của Địa bàn
+// @Description Hiệu chỉnh nội dung của bản cập nhật diễn biến mới nhất khi có yêu cầu rà soát
 // @Tags Ngập lụt
 // @Accept multipart/form-data
 // @Produce json
 // @Security BearerAuth
-// @Param id path string true "ID bản cập nhật"
+// @Param point_id path string true "ID điểm ngập"
 // @Param update formData dto.AddUpdateSitutionRequest true "Dữ liệu cập nhật"
-// @Param images formData file false "Hình ảnh cập nhật"
+// @Param images formData file false "Hình ảnh"
 // @Success 200 {boolean} bool
-// @Failure 401 {object} web.ErrorResponse
-// @Router /inundation/update/{id} [put]
-func (h *InundationHandler) UpdateSituationUpdateContent(c *gin.Context) {
+// @Router /inundation/point/{point_id}/correct-update [put]
+func (h *InundationHandler) CorrectEnterpriseSituation(c *gin.Context) {
 	user, err := h.contextWith.GetUser(c)
 	if err != nil || user == nil {
 		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
 		return
 	}
 
-	reportID := c.Param("id")
+	pointID := c.Param("point_id")
 	var req dto.AddUpdateSitutionRequest
 	if err := c.ShouldBind(&req); err != nil {
 		h.SendError(c, web.BadRequest("Invalid request data: "+err.Error()))
@@ -572,20 +624,7 @@ func (h *InundationHandler) UpdateSituationUpdateContent(c *gin.Context) {
 
 	images := h.getImages(c)
 
-	// updatedUpdate := &models.InundationUpdate{
-	// 	ReportID: id,
-	// 	InundationReportBase: models.InundationReportBase{
-	// 		Description: req.Description,
-	// 		Depth:       req.Depth,
-	// 		Length:      req.Length,
-	// 		Width:       req.Width,
-	// 		ReportBase: models.ReportBase{
-	// 			TrafficStatus: req.TrafficStatus,
-	// 		},
-	// 	},
-	// }
-
-	err = h.service.UpdateUpdateContent2(c.Request.Context(), user, reportID, req, images)
+	err = h.service.CorrectEnterpriseSituation(c.Request.Context(), user, pointID, req, images)
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -593,27 +632,26 @@ func (h *InundationHandler) UpdateSituationUpdateContent(c *gin.Context) {
 	h.SendData(c, true)
 }
 
-// UpdateSurvey godoc
-// @Summary Cập nhật trạng thái khảo sát
-// @Description Cập nhật trạng thái đã kiểm tra và ghi chú khảo sát của báo cáo
+// ReportSurvey godoc
+// @Summary Khảo sát báo cáo ngập lụt
+// @Description Cập nhật trạng thái đã kiểm tra và ghi chú khảo sát của Khảo sát Thiết kế
 // @Tags Ngập lụt
 // @Accept multipart/form-data
 // @Produce json
 // @Security BearerAuth
-// @Param id path string true "ID báo cáo"
-// @Param request formData dto.CreateReportRequest true "Dữ liệu khảo sát"
-// @Param images formData file false "Hình ảnh khảo sát"
+// @Param point_id path string true "ID điểm ngập"
+// @Param request formData models.ReportSurveyBase true "Dữ liệu khảo sát"
+// @Param images formData file false "Hình ảnh"
 // @Success 200 {boolean} bool
-// @Failure 401 {object} web.ErrorResponse
-// @Router /inundation/report/{id}/survey [put]
-func (h *InundationHandler) UpdateSurvey(c *gin.Context) {
+// @Router /inundation/point/{point_id}/survey [put]
+func (h *InundationHandler) ReportSurvey(c *gin.Context) {
 	user, err := h.contextWith.GetUser(c)
 	if err != nil || user == nil {
 		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
 		return
 	}
 
-	id := c.Param("id")
+	pointID := c.Param("point_id")
 	var req models.ReportSurveyBase
 	if err := c.ShouldBind(&req); err != nil {
 		h.SendError(c, web.BadRequest("Invalid request data: "+err.Error()))
@@ -621,7 +659,7 @@ func (h *InundationHandler) UpdateSurvey(c *gin.Context) {
 	}
 	images := h.getImages(c)
 
-	err = h.service.UpdateSurvey(c.Request.Context(), user, id, &req, images)
+	err = h.service.ReportSurvey(c.Request.Context(), user, pointID, &req, images)
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -629,34 +667,67 @@ func (h *InundationHandler) UpdateSurvey(c *gin.Context) {
 	h.SendData(c, true)
 }
 
-// UpdateMech godoc
-// @Summary Cập nhật trạng thái cơ giới hóa
-// @Description Cập nhật trạng thái kiểm tra cơ giới, ghi chú và các giá trị D/R/S
+// ReportMech godoc
+// @Summary Cơ giới báo cáo ngập lụt
+// @Description Cập nhật trạng thái kiểm tra cơ giới, ghi chú và các giá trị D/R/S của Cơ giới
 // @Tags Ngập lụt
 // @Accept multipart/form-data
 // @Produce json
 // @Security BearerAuth
-// @Param id path string true "ID báo cáo"
-// @Param request formData dto.CreateReportRequest true "Dữ liệu cơ giới"
-// @Param images formData file false "Hình ảnh cơ giới"
+// @Param point_id path string true "ID điểm ngập"
+// @Param request formData models.ReportMechBase true "Dữ liệu cơ giới"
+// @Param images formData file false "Hình ảnh"
 // @Success 200 {boolean} bool
-// @Failure 401 {object} web.ErrorResponse
-// @Router /inundation/report/{id}/mech [put]
-func (h *InundationHandler) UpdateMech(c *gin.Context) {
+// @Router /inundation/point/{point_id}/mech [put]
+func (h *InundationHandler) ReportMech(c *gin.Context) {
 	user, err := h.contextWith.GetUser(c)
 	if err != nil || user == nil {
 		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
 		return
 	}
 
-	id := c.Param("id")
+	pointID := c.Param("point_id")
 	var req models.ReportMechBase
 	if err := c.ShouldBind(&req); err != nil {
 		h.SendError(c, web.BadRequest("Invalid request data: "+err.Error()))
 		return
 	}
 	images := h.getImages(c)
-	err = h.service.UpdateMech(c.Request.Context(), user, id, &req, images)
+	err = h.service.ReportMech(c.Request.Context(), user, pointID, &req, images)
+	if err != nil {
+		h.SendError(c, err)
+		return
+	}
+	h.SendData(c, true)
+}
+
+// ReportKTCL godoc
+// @Summary KTCL báo cáo ngập lụt
+// @Description Cập nhật trạng thái kiểm tra KTCL, ghi chú và các giá trị D/R/S của KTCL
+// @Tags Ngập lụt
+// @Accept multipart/form-data
+// @Produce json
+// @Security BearerAuth
+// @Param point_id path string true "ID điểm ngập"
+// @Param request formData models.ReportKTCLBase true "Dữ liệu KTCL"
+// @Param images formData file false "Hình ảnh"
+// @Success 200 {boolean} bool
+// @Router /inundation/point/{point_id}/ktcl [put]
+func (h *InundationHandler) ReportKTCL(c *gin.Context) {
+	user, err := h.contextWith.GetUser(c)
+	if err != nil || user == nil {
+		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
+		return
+	}
+
+	pointID := c.Param("point_id")
+	var req models.ReportKTCLBase
+	if err := c.ShouldBind(&req); err != nil {
+		h.SendError(c, web.BadRequest("Invalid request data: "+err.Error()))
+		return
+	}
+	images := h.getImages(c)
+	err = h.service.ReportKTCL(c.Request.Context(), user, pointID, &req, images)
 	if err != nil {
 		h.SendError(c, err)
 		return

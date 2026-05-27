@@ -2,12 +2,11 @@ import React, { useState } from 'react';
 import { Box, Typography, Card, CardContent, alpha, Stack, Divider, Collapse } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { formatDuration } from 'utils/dataHelper';
-import { SurveyInfoSection, MechInfoSection, ReviewCommentSection, ReportInfoSection } from '../../../employee/inundation/components/TechnicalSections';
+import { SurveyInfoSection, MechInfoSection, ReviewCommentSection, ReportInfoSection, KtclInfoSection } from '../../../employee/inundation/components/TechnicalSections';
 import { DesktopCardMetrics, DesktopCardFooterActions } from './shared/DesktopCardSubComponents';
 
 const InundationDesktopStatCard = ({ point, onAction, onOpenViewer, onOpenDetail, onOpenHistory, navigate, basePath }) => {
     const theme = useTheme();
-    const [expanded, setExpanded] = useState(false);
     const isFlooded = !!point.report_id;
     const lastReport = point.last_report; // Báo cáo mới nhất (luôn có)
     const displayColor = isFlooded ? (lastReport?.flood_level_color || theme.palette.error.main) : (lastReport?.flood_level_color || theme.palette.success.main);
@@ -86,28 +85,10 @@ const InundationDesktopStatCard = ({ point, onAction, onOpenViewer, onOpenDetail
 
                 {/* Footer Quick Actions */}
                 <DesktopCardFooterActions
-                    point={point} expanded={expanded} setExpanded={setExpanded}
+                    point={point} onOpenDetail={onOpenDetail}
                     onAction={onAction} onOpenHistory={onOpenHistory} isFlooded={isFlooded}
                 />
             </CardContent>
-
-            <Collapse in={expanded} timeout="auto" unmountOnExit>
-                <Divider sx={{ borderStyle: 'dashed' }} />
-                <Box sx={{ p: 1.5, bgcolor: 'grey.50', textAlign: 'left' }}>
-                    {isFlooded && lastReport ? (
-                        <Stack spacing={1.5}>
-                            <ReportInfoSection latest={lastReport} handleOpenViewer={onOpenViewer} />
-                            <ReviewCommentSection report={lastReport} />
-                            <MechInfoSection latest={lastReport} />
-                            <SurveyInfoSection latest={lastReport} />
-                        </Stack>
-                    ) : (
-                        <Typography variant="caption" color="text.disabled" sx={{ display: 'block', textAlign: 'center' }}>
-                            {lastReport ? 'Trạng thái bình thường. Xem chi tiết đợt ngập trong phần Lịch sử.' : 'Không có dữ liệu chi tiết'}
-                        </Typography>
-                    )}
-                </Box>
-            </Collapse>
 
             <style>
                 {`

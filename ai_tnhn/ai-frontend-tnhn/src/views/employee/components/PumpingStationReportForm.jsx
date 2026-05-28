@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React from 'react';
 import {
     Box,
     Grid,
@@ -6,67 +6,30 @@ import {
     Button,
     Stack,
     Typography,
-    Paper,
-    MenuItem,
-    Divider,
-    IconButton,
-    Avatar,
-    Box as MuiBox
+    IconButton
 } from '@mui/material';
 import { useTheme, alpha } from '@mui/material/styles';
 import {
-    IconEngine,
     IconAlertTriangle,
-    IconHistory,
     IconCheck,
-    IconClock,
-    IconTool
+    IconClock
 } from '@tabler/icons-react';
 import PermissionGuard from 'ui-component/PermissionGuard';
-import pumpingStationApi from 'api/pumpingStation';
-import { toast } from 'react-hot-toast';
-import PumpingStationHistoryDialog from './PumpingStationHistoryDialog';
+
+// Hook
+import usePumpingStationReport from './hooks/usePumpingStationReport';
 
 const PumpingStationReport = ({ station, onSuccess, onClose }) => {
     const theme = useTheme();
-    const [openHistory, setOpenHistory] = useState(false);
-    const [formData, setFormData] = useState({
-        operating_count: station.last_report?.operating_count || 0,
-        closed_count: station.last_report?.closed_count || 0,
-        maintenance_count: station.last_report?.maintenance_count || 0,
-        no_signal_count: station.last_report?.no_signal_count || 0,
-        note: station.last_report?.note || ''
-    });
 
-    // Cập nhật formData khi station thay đổi (ví dụ sau khi reload dữ liệu)
-    useEffect(() => {
-        if (station?.last_report) {
-            setFormData({
-                operating_count: station.last_report.operating_count || 0,
-                closed_count: station.last_report.closed_count || 0,
-                maintenance_count: station.last_report.maintenance_count || 0,
-                no_signal_count: station.last_report.no_signal_count || 0,
-                note: station.last_report.note || ''
-            });
-        }
-    }, [station]);
-
-    const totalPumped = useMemo(() => {
-        return Number(formData.operating_count) + Number(formData.closed_count) + Number(formData.maintenance_count) + Number(formData.no_signal_count);
-    }, [formData]);
-
-    const remainingCount = station.pump_count - totalPumped;
-
-    const handleAdjust = (name, delta) => {
-        const newValue = Math.max(0, (formData[name] || 0) + delta);
-        // Validation: total cannot exceed pump_count
-        const othersSum = totalPumped - (formData[name] || 0);
-        if (othersSum + newValue > station.pump_count) {
-            toast.error(`Tổng số máy bơm không thể vượt quá định mức ${station.pump_count} máy`);
-            return;
-        }
-        setFormData({ ...formData, [name]: newValue });
-    };
+    const {
+        formData,
+        setFormData,
+        totalPumped,
+        remainingCount,
+        handleAdjust,
+        handleSubmit
+    } = usePumpingStationReport({ station });
 
     const renderCounter = (label, name, color) => (
         <Grid item xs={12}>
@@ -138,33 +101,6 @@ const PumpingStationReport = ({ station, onSuccess, onClose }) => {
         </Grid>
     );
 
-    const handleSubmit = async () => {
-        try {
-            const payload = {
-                station_id: station.id,
-                operating_count: formData.operating_count,
-                closed_count: formData.closed_count,
-                maintenance_count: formData.maintenance_count,
-                no_signal_count: formData.no_signal_count,
-                note: formData.note
-            };
-
-            if (totalPumped !== station.pump_count) {
-                toast.error(`Tổng số máy bơm (${totalPumped}) phải bằng định mức (${station.pump_count})`);
-                return;
-            }
-
-            await pumpingStationApi.report(payload);
-            toast.success('Gửi báo cáo thành công');
-
-            if (onSuccess) {
-                onSuccess();
-            }
-        } catch (error) {
-            toast.error(error.response?.data?.message || 'Báo cáo thất bại');
-        }
-    };
-
     return (
         <Box sx={{ width: '100%', mx: 'auto' }}>
             <Box sx={{ pb: 1 }}>
@@ -234,7 +170,7 @@ const PumpingStationReport = ({ station, onSuccess, onClose }) => {
                             variant="contained"
                             fullWidth
                             startIcon={<IconCheck />}
-                            onClick={handleSubmit}
+                            onClick={() => handleSubmit(onSuccess)}
                             disabled={totalPumped === 0}
                             sx={{
                                 borderRadius: 2,

@@ -1,55 +1,23 @@
-import { useState, useEffect } from 'react';
+import React from 'react';
 import {
     Button, Grid, TextField, CircularProgress, Typography, Box, useTheme, Stack
 } from '@mui/material';
 import { IconCloudRain, IconDeviceFloppy } from '@tabler/icons-react';
-import { toast } from 'react-hot-toast';
 
 // project imports
 import MainCard from 'ui-component/cards/MainCard';
 import AnimateButton from 'ui-component/extended/AnimateButton';
-import settingApi from 'api/setting';
+import useRainSetting from './hooks/useRainSetting';
 
 const RainSetting = () => {
     const theme = useTheme();
-    const [loading, setLoading] = useState(false);
-    const [saving, setSaving] = useState(false);
-    const [sessionID, setSessionID] = useState('');
-
-    const fetchRainSetting = async () => {
-        setLoading(true);
-        try {
-            const response = await settingApi.getRainSetting();
-            if (response && response.session_id) {
-                setSessionID(response.session_id);
-            }
-        } catch (err) {
-            toast.error('Lỗi lấy dữ liệu cấu hình lượng mưa');
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchRainSetting();
-    }, []);
-
-    const handleSave = async () => {
-        if (!sessionID) {
-            toast.error('Vui lòng nhập Session ID');
-            return;
-        }
-        setSaving(true);
-        try {
-            await settingApi.updateRainSetting({ session_id: sessionID });
-            toast.success('Lưu cấu hình thành công');
-        } catch (err) {
-            toast.error(err.response?.data?.error || err.message || 'Lỗi lưu cấu hình');
-        } finally {
-            setSaving(false);
-        }
-    };
+    const {
+        loading,
+        saving,
+        sessionID,
+        setSessionID,
+        handleSave
+    } = useRainSetting();
 
     return (
         <MainCard

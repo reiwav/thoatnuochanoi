@@ -1,88 +1,34 @@
-import { useState, useEffect } from 'react';
+import React from 'react';
 import {
-    Button, Grid, Table, TableBody,
+    Button, Table, TableBody,
     TableCell, TableContainer, TableHead, TableRow, Paper,
-    IconButton, CircularProgress, Typography, Tooltip, Box, useTheme, Stack, Chip
+    CircularProgress, Typography, Box, useTheme, Stack
 } from '@mui/material';
-import { IconTrash, IconPlus, IconEdit, IconClipboardCheck } from '@tabler/icons-react';
-import { toast } from 'react-hot-toast';
+import { IconPlus, IconClipboardCheck } from '@tabler/icons-react';
 
 // project imports
 import MainCard from 'ui-component/cards/MainCard';
 import AnimateButton from 'ui-component/extended/AnimateButton';
 import FloodLevelDialog from './FloodLevelDialog';
-import settingApi from 'api/setting';
+import useFloodLevelList from './hooks/useFloodLevelList';
+import FloodLevelRow from './components/FloodLevelRow';
 
 const FloodLevelSetting = () => {
     const theme = useTheme();
-    const [loading, setLoading] = useState(false);
-    const [saving, setSaving] = useState(false);
-    const [floodLevels, setFloodLevels] = useState([]);
-    const [dialogOpen, setDialogOpen] = useState(false);
-    const [editingIndex, setEditingIndex] = useState(-1);
-    const [editingLevel, setEditingLevel] = useState(null);
-
-    const fetchFloodLevels = async () => {
-        setLoading(true);
-        try {
-            const response = await settingApi.getFloodLevels();
-            setFloodLevels(response || []);
-        } catch (err) {
-            toast.error('Lỗi lấy dữ liệu cấu hình');
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchFloodLevels();
-    }, []);
-
-    const handleOpenCreate = () => {
-        setEditingIndex(-1);
-        setEditingLevel(null);
-        setDialogOpen(true);
-    };
-
-    const handleOpenEdit = (level, index) => {
-        setEditingIndex(index);
-        setEditingLevel(level);
-        setDialogOpen(true);
-    };
-
-    const saveToServer = async (newList) => {
-        setSaving(true);
-        try {
-            await settingApi.updateFloodLevels(newList);
-            toast.success('Lưu cấu hình thành công');
-            setFloodLevels(newList);
-        } catch (err) {
-            toast.error(err.response?.data?.error || err.message || 'Lỗi lưu cấu hình');
-            // Re-fetch to sync with server if failed?
-            fetchFloodLevels();
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    const handleDelete = async (index) => {
-        if (!window.confirm('Bạn có chắc chắn muốn xóa mức độ này?')) return;
-        const newList = [...floodLevels];
-        newList.splice(index, 1);
-        await saveToServer(newList);
-    };
-
-    const handleDialogSubmit = async (values) => {
-        const newList = [...floodLevels];
-        if (editingIndex > -1) {
-            newList[editingIndex] = values;
-        } else {
-            newList.push(values);
-        }
-        await saveToServer(newList);
-        setDialogOpen(false);
-    };
+    
+    const {
+        loading,
+        saving,
+        floodLevels,
+        dialogOpen,
+        setDialogOpen,
+        editingIndex,
+        editingLevel,
+        handleOpenCreate,
+        handleOpenEdit,
+        handleDelete,
+        handleDialogSubmit
+    } = useFloodLevelList();
 
     return (
         <MainCard
@@ -118,55 +64,18 @@ const FloodLevelSetting = () => {
                     </TableHead>
                     <TableBody>
                         {loading ? (
-                            <TableRow><TableCell colSpan={7} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
+                            <TableRow><TableCell colSpan={8} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
                         ) : floodLevels.length === 0 ? (
-                            <TableRow><TableCell colSpan={7} align="center" sx={{ py: 3 }}>Chưa có cấu hình mức độ ngập nào</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={8} align="center" sx={{ py: 3 }}>Chưa có cấu hình mức độ ngập nào</TableCell></TableRow>
                         ) : (
                             floodLevels.map((row, index) => (
-                                <TableRow key={index} hover>
-                                    <TableCell sx={{ fontWeight: 600, pl: 3 }}>
-                                        <Chip label={row.code} size="small" variant="outlined" color="primary" sx={{ fontWeight: 700, borderRadius: '8px' }} />
-                                    </TableCell>
-                                    <TableCell sx={{ fontWeight: 700 }}>{row.name}</TableCell>
-                                    <TableCell>
-                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                            {row.min_depth} - {row.max_depth}
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            <Box sx={{ width: 24, height: 24, bgcolor: row.color, borderRadius: '4px', border: '1px solid #ddd' }} />
-                                            <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{row.color}</Typography>
-                                        </Box>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Chip
-                                            label={row.is_flooding ? 'Đang ngập' : 'Bình thường'}
-                                            color={row.is_flooding ? 'error' : 'success'}
-                                            size="small"
-                                            variant="light"
-                                            sx={{ fontWeight: 700 }}
-                                        />
-                                    </TableCell>
-                                    <TableCell>{row.user || '-'}</TableCell>
-                                    <TableCell>
-                                        {row.ctime ? new Date(row.ctime).toLocaleString('vi-VN') : '-'}
-                                    </TableCell>
-                                    <TableCell align="right" sx={{ pr: 3 }}>
-                                        <Stack direction="row" spacing={0.5} justifyContent="flex-end">
-                                            <Tooltip title="Chỉnh sửa">
-                                                <IconButton color="primary" onClick={() => handleOpenEdit(row, index)}>
-                                                    <IconEdit size={20} />
-                                                </IconButton>
-                                            </Tooltip>
-                                            <Tooltip title="Xóa">
-                                                <IconButton color="error" onClick={() => handleDelete(index)}>
-                                                    <IconTrash size={20} />
-                                                </IconButton>
-                                            </Tooltip>
-                                        </Stack>
-                                    </TableCell>
-                                </TableRow>
+                                <FloodLevelRow
+                                    key={index}
+                                    row={row}
+                                    index={index}
+                                    handleOpenEdit={handleOpenEdit}
+                                    handleDelete={handleDelete}
+                                />
                             ))
                         )}
                     </TableBody>
@@ -184,5 +93,4 @@ const FloodLevelSetting = () => {
         </MainCard>
     );
 };
-
 export default FloodLevelSetting;

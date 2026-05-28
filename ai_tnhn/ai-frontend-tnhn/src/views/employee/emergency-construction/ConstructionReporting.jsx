@@ -1,24 +1,23 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
 import {
     Box, Typography, Paper, Table, TableBody,
     TableCell, TableContainer, TableHead, TableRow,
     Button, CircularProgress, Chip, Grid,
-    Stack, useMediaQuery, Card, CardContent, Divider,
+    Stack, useMediaQuery, Card, CardContent,
     Avatar, List, ListItem, ListItemIcon, ListItemText, TextField, IconButton, Dialog, DialogContent, Autocomplete, Checkbox,
     TablePagination, Collapse
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { IconChevronRight, IconUser, IconLogout, IconSearch, IconX, IconRefresh, IconMapPin, IconChevronLeft, IconChevronDown, IconSquare, IconCheckbox, IconChevronUp } from '@tabler/icons-react';
-import { toast } from 'react-hot-toast';
-import emergencyConstructionApi from 'api/emergencyConstruction';
-import useAuthStore from 'store/useAuthStore';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import 'dayjs/locale/vi';
 import dayjs from 'dayjs';
 import { getInundationImageUrl } from 'utils/imageHelper';
+
+// Hook
+import useConstructionReporting from './hooks/useConstructionReporting';
 
 const CollapsibleProgressRow = ({ h, isMobile, handleOpenViewer, theme }) => {
     const [open, setOpen] = useState(false);
@@ -103,138 +102,39 @@ const CollapsibleProgressRow = ({ h, isMobile, handleOpenViewer, theme }) => {
 const ConstructionReporting = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-    const navigate = useNavigate();
-    const { search } = useLocation();
-    
-    // Get auth state from Zustand
-    const { role: userRole, user: userInfo, hasPermission, logout } = useAuthStore();
 
-    // Read activeTab from URL query (for mobile bottom nav)
-    const params = new URLSearchParams(search);
-    const activeTab = parseInt(params.get('activeTab') || '0');
-
-    const [loading, setLoading] = useState(false);
-    const [historyLoading, setHistoryLoading] = useState(false);
-    const [constructions, setConstructions] = useState([]);
-    const [history, setHistory] = useState([]);
-    const [historyDateFilter, setHistoryDateFilter] = useState(null);
-    const [historyConstructionFilter, setHistoryConstructionFilter] = useState([]);
-    const [userOrgId, setUserOrgId] = useState('');
-    const [searchQuery, setSearchQuery] = useState('');
-    const [viewer, setViewer] = useState({ open: false, images: [], index: 0 });
-    const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
-
-    const isEmployee = userRole === 'employee' || userRole === 'technician';
-    const basePath = isEmployee ? '/company' : '/admin';
-
-    useEffect(() => {
-        if (userInfo?.org_id) {
-            setUserOrgId(userInfo.org_id);
-        }
-    }, [userInfo]);
-
-    const loadConstructions = async () => {
-        if (!userOrgId) return;
-        setLoading(true);
-        try {
-            const res = await emergencyConstructionApi.getAll({ org_id: userOrgId, per_page: 100 });
-            // Interceptor đã bóc tách dữ liệu
-            const dataArray = res?.data || (Array.isArray(res) ? res : []);
-            setConstructions(dataArray);
-        } catch (err) {
-            toast.error('Lỗi tải danh sách công trình');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const loadAllHistory = async () => {
-        if (!userOrgId) return;
-        setHistoryLoading(true);
-        try {
-            const allHistory = [];
-            for (const c of constructions) {
-                const data = await emergencyConstructionApi.getProgressHistory(c.id);
-                // Interceptor đã trả về data (mảng) trực tiếp
-                if (Array.isArray(data)) {
-                    allHistory.push(...data.map(h => ({ ...h, construction_name: c.name })));
-                }
-            }
-            allHistory.sort((a, b) => b.report_date - a.report_date);
-            setHistory(allHistory);
-        } catch (err) {
-            console.error('Lỗi tải lịch sử chung', err);
-        } finally {
-            setHistoryLoading(false);
-        }
-    };
-
-    const handleOpenViewer = (imgs, idx = 0) => {
-        if (!imgs || imgs.length === 0) return;
-        setViewer({ open: true, images: imgs, index: idx });
-    };
-    const handleCloseViewer = () => setViewer({ ...viewer, open: false });
-    const handlePrev = (e) => {
-        e?.stopPropagation();
-        setViewer((v) => ({ ...v, index: (v.index - 1 + v.images.length) % v.images.length }));
-    };
-    const handleNext = (e) => {
-        e?.stopPropagation();
-        setViewer((v) => ({ ...v, index: (v.index + 1) % v.images.length }));
-    };
-
-
-    useEffect(() => {
-        if (userOrgId) loadConstructions();
-    }, [userOrgId]);
-
-    useEffect(() => {
-        if (activeTab === 2 && constructions.length > 0) {
-            loadAllHistory();
-        }
-    }, [activeTab, constructions]);
-
-    const getStatusChip = (status) => {
-        const config = {
-            planned: { label: 'Dự kiến', color: 'default' },
-            ongoing: { label: 'Đang thi công', color: 'warning' },
-            completed: { label: 'Hoàn thành', color: 'success' },
-            suspended: { label: 'Tạm dừng', color: 'error' }
-        };
-        const s = config[status] || config.planned;
-        return <Chip label={s.label} color={s.color} size="small" variant="outlined" sx={{ fontWeight: 600 }} />;
-    };
-
-    const filteredConstructions = useMemo(() => {
-        let result = activeTab === 1 ? constructions.filter(c => c.status !== 'completed') : constructions;
-        if (searchQuery.trim()) {
-            const q = searchQuery.toLowerCase();
-            result = result.filter(c => c.name?.toLowerCase().includes(q) || c.location?.toLowerCase().includes(q));
-        }
-        return result;
-    }, [constructions, activeTab, searchQuery]);
-
-    const stats = useMemo(() => {
-        const total = constructions.length;
-        const ongoing = constructions.filter(c => c.status !== 'completed').length;
-        return { total, ongoing };
-    }, [constructions]);
-
-    const handleCardClick = (row) => {
-        if (!hasPermission('emergency:edit')) {
-            toast.error('Bạn không có quyền báo cáo tiến độ');
-            return;
-        }
-        navigate(`${basePath}/emergency-construction/form?id=${row.id}&name=${encodeURIComponent(row.name)}`);
-    };
-
-    const handleLogout = () => {
-        logout();
-        navigate('/pages/login');
-    };
-
-    // ─── Render Logic ─────────────────────────────────────────────────────────
+    const {
+        navigate,
+        basePath,
+        activeTab,
+        userInfo,
+        isEmployee,
+        hasPermission,
+        loading,
+        historyLoading,
+        constructions,
+        filteredConstructions,
+        filteredHistory,
+        stats,
+        historyDateFilter,
+        setHistoryDateFilter,
+        historyConstructionFilter,
+        setHistoryConstructionFilter,
+        searchQuery,
+        setSearchQuery,
+        page,
+        setPage,
+        rowsPerPage,
+        setRowsPerPage,
+        viewer,
+        handleOpenViewer,
+        handleCloseViewer,
+        handlePrev,
+        handleNext,
+        handleCardClick,
+        handleLogout,
+        getStatusChip
+    } = useConstructionReporting();
 
     return (
         <>
@@ -313,7 +213,7 @@ const ConstructionReporting = () => {
 
                     {historyLoading ? (
                         <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>
-                    ) : (history.length === 0) ? (
+                    ) : (filteredHistory.length === 0) ? (
                         <Typography color="textSecondary" align="center" sx={{ py: 4, fontStyle: 'italic' }}>Chưa có báo cáo nào được ghi nhận.</Typography>
                     ) : !isEmployee ? (
                         /* Admin View: Table based */
@@ -332,11 +232,7 @@ const ConstructionReporting = () => {
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
-                                        {history
-                                            .filter(h =>
-                                                (historyConstructionFilter.length === 0 || historyConstructionFilter.includes(h.construction_id)) &&
-                                                (!historyDateFilter || (h.report_date >= historyDateFilter.startOf('day').unix() && h.report_date <= historyDateFilter.endOf('day').unix()))
-                                            )
+                                        {filteredHistory
                                             .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                                             .map((h, idx) => (
                                                 <CollapsibleProgressRow
@@ -350,10 +246,7 @@ const ConstructionReporting = () => {
                                 <TablePagination
                                     rowsPerPageOptions={[10, 25, 50]}
                                     component="div"
-                                    count={history.filter(h =>
-                                        (historyConstructionFilter.length === 0 || historyConstructionFilter.includes(h.construction_id)) &&
-                                        (!historyDateFilter || (h.report_date >= historyDateFilter.startOf('day').unix() && h.report_date <= historyDateFilter.endOf('day').unix()))
-                                    ).length}
+                                    count={filteredHistory.length}
                                     rowsPerPage={rowsPerPage}
                                     page={page}
                                     onPageChange={(_, newPage) => setPage(newPage)}
@@ -365,10 +258,7 @@ const ConstructionReporting = () => {
                     ) : (
                         /* Employee View: Timeline based */
                         <Box sx={{ px: 1 }}>
-                            {history.filter(h =>
-                                (historyConstructionFilter.length === 0 || historyConstructionFilter.includes(h.construction_id)) &&
-                                (!historyDateFilter || (h.report_date >= historyDateFilter.startOf('day').unix() && h.report_date <= historyDateFilter.endOf('day').unix()))
-                            ).map((h, idx, array) => (
+                            {filteredHistory.map((h, idx, array) => (
                                 <Box key={idx} sx={{ display: 'flex', gap: isMobile ? 1.5 : 2, position: 'relative' }}>
                                     {idx < array.length - 1 && (
                                         <Box sx={{ position: 'absolute', left: 11, top: 32, width: 2, height: 'calc(100% - 20px)', bgcolor: 'grey.200' }} />
@@ -511,7 +401,7 @@ const ConstructionReporting = () => {
                                     <CardContent sx={{ p: '16px !important' }}>
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1, alignItems: 'flex-start' }}>
                                             <Typography variant="subtitle1" fontWeight={800} sx={{ lineHeight: 1.3, pr: 1, fontSize: '1.2rem' }}>{row.name}</Typography>
-                                            {getStatusChip(row.status)}
+                                            <Chip label={getStatusChip(row.status).label} color={getStatusChip(row.status).color} size="small" variant="outlined" sx={{ fontWeight: 600 }} />
                                         </Box>
                                         <Typography variant="body2" color="textSecondary" sx={{ mb: 1, fontSize: '1rem' }}>📍 {row.location}</Typography>
                                         <Typography variant="body2" display="block" color="textSecondary" sx={{ mb: 2, fontSize: '0.95rem' }}>📅 Dự kiến: {new Date(row.end_date * 1000).toLocaleDateString('vi-VN')}</Typography>
@@ -546,7 +436,9 @@ const ConstructionReporting = () => {
                                             <TableCell>
                                                 <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'primary.dark' }}>{row.organization_name}</Typography>
                                             </TableCell>
-                                            <TableCell>{getStatusChip(row.status)}</TableCell>
+                                            <TableCell>
+                                                <Chip label={getStatusChip(row.status).label} color={getStatusChip(row.status).color} size="small" variant="outlined" sx={{ fontWeight: 600 }} />
+                                            </TableCell>
                                             <TableCell align="right">
                                                 {hasPermission('emergency:edit') && (
                                                     <Button size="small" variant="contained" color="secondary" endIcon={<IconChevronRight size={16} />} sx={{ borderRadius: '8px', boxShadow: 'none', fontWeight: 700, px: 2, bgcolor: 'secondary.light', color: 'secondary.dark', '&:hover': { bgcolor: 'secondary.main', color: '#fff' } }}>

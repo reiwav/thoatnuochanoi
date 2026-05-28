@@ -1,21 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import React, { useState } from 'react';
 import {
-    Box, Button, Grid, TextField, Table, TableBody,
+    Box, Button, TextField, Table, TableBody,
     TableCell, TableContainer, TableHead, TableRow, Paper,
     IconButton, CircularProgress, TablePagination, Typography, Chip, Tooltip, Stack,
     Collapse, useTheme, useMediaQuery, MenuItem
 } from '@mui/material';
-import { IconTrash, IconPlus, IconEdit, IconSearch, IconChevronDown, IconChevronUp, IconMapPin, IconCalendar, IconUser, IconAlertTriangle } from '@tabler/icons-react';
-import { toast } from 'react-hot-toast';
+import { IconTrash, IconPlus, IconEdit, IconChevronDown, IconChevronUp, IconMapPin, IconCalendar, IconUser, IconAlertTriangle } from '@tabler/icons-react';
 import ConstructionDialog from './ConstructionDialog';
-import useAuthStore from 'store/useAuthStore';
-import useEmergencyStore from 'store/useEmergencyStore';
-import useOrganizationStore from 'store/useOrganizationStore';
 import OrganizationSelect from 'ui-component/filter/OrganizationSelect';
 import PermissionGuard from 'ui-component/PermissionGuard';
 
-const CollapsibleConstructionRow = ({ row, handleOpenEdit, handleDelete, orgs, getStatusChip, isMobile, userRole, navigate, hasPermission }) => {
+// Hook
+import useConstructionList from './hooks/useConstructionList';
+
+const CollapsibleConstructionRow = ({ row, handleOpenEdit, handleDelete, orgs, getStatusChip, isMobile, navigate, hasPermission }) => {
     const [open, setOpen] = useState(false);
 
     if (isMobile) {
@@ -57,7 +55,6 @@ const CollapsibleConstructionRow = ({ row, handleOpenEdit, handleDelete, orgs, g
                                     </Box>
                                 </Stack>
                             </Box>
-
 
                             <Stack direction="row" justifyContent="flex-end" spacing={1} sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
                                 <PermissionGuard permission="emergency:edit">
@@ -123,82 +120,33 @@ const CollapsibleConstructionRow = ({ row, handleOpenEdit, handleDelete, orgs, g
 };
 
 const ConstructionList = () => {
-    const navigate = useNavigate();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-    
-    // Get auth state from Zustand
-    const { role: userRole, user: userInfo, hasPermission } = useAuthStore();
-    const userOrgId = userInfo?.org_id || '';
-    
-    const { 
-        items, loading, totalItems, page, rowsPerPage, filters,
-        fetchItems, setPage, setRowsPerPage, setFilters,
-        createItem, updateItem, deleteItem
-    } = useEmergencyStore();
 
-    const [searchParams] = useSearchParams();
-    const initialOrgId = searchParams.get('org_id') || filters.org_id || '';
-    const [filterInputs, setFilterInputs] = useState({ ...filters, org_id: initialOrgId });
-
-    const [dialogOpen, setDialogOpen] = useState(false);
-    const [editingItem, setEditingItem] = useState(null);
-    const { fetchSelectionList } = useOrganizationStore();
-    const [orgs, setOrgs] = useState({ primary: [], shared: [] });
-
-    const fetchOrgs = async () => {
-        try {
-            const res = await fetchSelectionList();
-            setOrgs(res || { primary: [], shared: [] });
-        } catch (err) {
-            console.error('Lỗi tải danh sách công ty:', err);
-        }
-    };
-
-    const orgNamesMap = (orgs.shared || []).reduce((acc, o) => {
-        acc[o.id] = o.name;
-        return acc;
-    }, {});
-
-    useEffect(() => {
-        fetchOrgs();
-    }, [fetchSelectionList]);
-
-    useEffect(() => {
-        fetchItems();
-    }, [page, rowsPerPage, filters, fetchItems]);
-
-    const handleSearch = () => {
-        setFilters(filterInputs);
-        fetchItems();
-    };
-
-    const handleOpenCreate = () => { setEditingItem(null); setDialogOpen(true); };
-    const handleOpenEdit = (item) => { setEditingItem(item); setDialogOpen(true); };
-
-    const handleDelete = async (id) => {
-        if (!window.confirm('Bạn có chắc chắn muốn xóa công trình này?')) return;
-        try {
-            await deleteItem(id);
-            toast.success('Xóa thành công');
-        } catch (err) {
-            toast.error(err.response?.data?.error || 'Lỗi xóa công trình');
-        }
-    };
-
-    const handleSubmit = async (values) => {
-        try {
-            if (editingItem) {
-                await updateItem(editingItem.id, values);
-            } else {
-                await createItem(values);
-            }
-            toast.success(editingItem ? 'Cập nhật thành công' : 'Thêm mới thành công');
-            setDialogOpen(false);
-        } catch (err) {
-            toast.error(err.response?.data?.error || 'Đã có lỗi xảy ra');
-        }
-    };
+    const {
+        navigate,
+        userOrgId,
+        items,
+        loading,
+        totalItems,
+        page,
+        rowsPerPage,
+        filterInputs,
+        setFilterInputs,
+        dialogOpen,
+        setDialogOpen,
+        editingItem,
+        orgs,
+        orgNamesMap,
+        setPage,
+        setRowsPerPage,
+        handleSearch,
+        handleOpenCreate,
+        handleOpenEdit,
+        handleDelete,
+        handleSubmit,
+        hasPermission
+    } = useConstructionList();
 
     const getStatusChip = (status) => {
         const config = {
@@ -275,7 +223,6 @@ const ConstructionList = () => {
                                     orgs={orgNamesMap}
                                     getStatusChip={getStatusChip}
                                     isMobile={isMobile}
-                                    userRole={userRole}
                                     navigate={navigate}
                                     hasPermission={hasPermission}
                                 />
@@ -307,7 +254,7 @@ const ConstructionList = () => {
                                         row={row}
                                         handleOpenEdit={handleOpenEdit}
                                         handleDelete={handleDelete}
-                                        orgs={orgs}
+                                        orgs={orgNamesMap}
                                         getStatusChip={getStatusChip}
                                         isMobile={isMobile}
                                         navigate={navigate}
@@ -319,6 +266,17 @@ const ConstructionList = () => {
                     </Table>
                 </TableContainer>
             )}
+
+            <TablePagination
+                rowsPerPageOptions={[10, 25, 50]}
+                component="div"
+                count={totalItems}
+                rowsPerPage={rowsPerPage}
+                page={page}
+                onPageChange={(e, newPage) => setPage(newPage)}
+                onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+                labelRowsPerPage="Số dòng:"
+            />
 
             <ConstructionDialog
                 open={dialogOpen} onClose={() => setDialogOpen(false)}

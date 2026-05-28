@@ -1,73 +1,18 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React from 'react';
 import {
     Dialog, DialogTitle, DialogContent, DialogActions,
     TextField, Button, Grid, IconButton, Stack, FormControlLabel, Switch,
-    Typography, Box, Checkbox, Divider, Table, TableBody,
-    TableCell, TableContainer, TableHead, TableRow, Paper, InputAdornment, MenuItem
+    Typography, Box, Divider, InputAdornment, MenuItem
 } from '@mui/material';
-import { IconX, IconSearch, IconChevronRight, IconClipboardCheck } from '@tabler/icons-react';
-import { toast } from 'react-hot-toast';
-import stationApi from 'api/station';
+import { IconX, IconClipboardCheck } from '@tabler/icons-react';
+import useOrganizationDialog from './hooks/useOrganizationDialog';
 
-// Sub-component for station selection in a table
 const OrganizationDialog = ({ open, onClose, onSubmit, organization, isEdit }) => {
-    const [formData, setFormData] = useState({
-        name: '',
-        code: '',
-        description: '',
-        status: true,
-        address: '',
-        phone_number: '',
-        email: '',
-        representative: '',
-        order: ''
-    });
-
-    useEffect(() => {
-        if (open) {
-            if (isEdit && organization) {
-                setFormData({
-                    name: organization.name || '',
-                    code: organization.code || '',
-                    description: organization.description || '',
-                    status: organization.status !== undefined ? organization.status : true,
-                    address: organization.address || '',
-                    phone_number: organization.phone_number || '',
-                    email: organization.email || '',
-                    representative: organization.representative || '',
-                    order: organization.order || ''
-                });
-            } else {
-                setFormData({
-                    name: '',
-                    code: '',
-                    description: '',
-                    status: true,
-                    address: '',
-                    phone_number: '',
-                    email: '',
-                    representative: '',
-                    order: ''
-                });
-            }
-        }
-    }, [open, isEdit, organization]);
-
-    const handleChange = (field, value) => {
-        setFormData(prev => ({
-            ...prev,
-            [field]: value
-        }));
-    };
-
-    const handleSave = () => {
-        if (!formData.name) return toast.error("Vui lòng nhập Tên đơn vị");
-        if (!formData.code) return toast.error("Vui lòng nhập mã đơn vị");
-        if (!formData.phone_number) return toast.error("Vui lòng nhập số điện thoại");
-        if (!formData.email) return toast.error("Vui lòng nhập email");
-
-        onSubmit(formData);
-    };
+    const {
+        formData,
+        handleChange,
+        handleSave
+    } = useOrganizationDialog({ open, organization, isEdit, onSubmit, onClose });
 
     return (
         <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>

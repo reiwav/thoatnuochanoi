@@ -1,131 +1,33 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React from 'react';
 import {
     Dialog, DialogTitle, DialogContent, DialogActions,
-    TextField, Button, Grid, IconButton, Stack, FormControlLabel, Switch,
-    FormControl, InputLabel, Select, MenuItem, CircularProgress, Box, Chip, Typography, ListSubheader
+    TextField, Button, IconButton, Stack, FormControlLabel, Switch,
+    FormControl, InputLabel, Select, MenuItem, CircularProgress, Box, Chip, Typography
 } from '@mui/material';
 import { IconX } from '@tabler/icons-react';
-import { toast } from 'react-hot-toast';
-import inundationApi from 'api/inundation';
-import emergencyConstructionApi from 'api/emergencyConstruction';
-import pumpingStationApi from 'api/pumpingStation';
-import wastewaterTreatmentApi from 'api/wastewaterTreatment';
-import sluiceGateApi from 'api/sluiceGate';
-import SelectionDialog from './SelectionDialog';
-import useAuthStore from 'store/useAuthStore';
-import axiosClient from 'api/axiosClient';
-import * as ROLES from 'constants/role';
+import SelectionDialog from './components/SelectionDialog';
+import useEmployeeDialog from './hooks/useEmployeeDialog';
 
 const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizations = [], defaultOrgId = '', canSelectOrg }) => {
-    const { hasPermission, role: userRole } = useAuthStore();
-    const [points, setPoints] = useState([]);
-    const [constructions, setConstructions] = useState([]);
-    const [pumpingStations, setPumpingStations] = useState([]);
-    const [wastewaterStations, setWastewaterStations] = useState([]);
-    const [sluiceGates, setSluiceGates] = useState([]);
-    const [roles, setRoles] = useState([]);
-    const [fetchingData, setFetchingData] = useState(false);
-    const [pointSelectionOpen, setPointSelectionOpen] = useState(false);
-    const [constructionSelectionOpen, setConstructionSelectionOpen] = useState(false);
-    const [formData, setFormData] = useState({
-        name: '',
-        email: '',
-        password: '',
-        role: ROLES.ROLE_CONG_NHAN_CTY,
-        org_id: '',
-        assigned_inundation_station_ids: [],
-        assigned_emergency_construction_ids: [],
-        assigned_pumping_station_id: '',
-        assigned_wastewater_station_id: '',
-        assigned_sluice_gate_id: '',
-        active: true
-    });
-
-    useEffect(() => {
-        if (open) {
-            if (isEdit && employee) {
-                setFormData({
-                    name: employee.name || '',
-                    email: employee.email || '',
-                    password: '',
-                    role: employee.role || ROLES.ROLE_CONG_NHAN_CTY,
-                    org_id: employee.org_id || defaultOrgId,
-                    assigned_inundation_station_ids: employee.assigned_inundation_station_ids || [],
-                    assigned_emergency_construction_ids: employee.assigned_emergency_construction_ids || [],
-                    assigned_pumping_station_id: employee.assigned_pumping_station_id || '',
-                    assigned_wastewater_station_id: employee.assigned_wastewater_station_id || '',
-                    assigned_sluice_gate_id: employee.assigned_sluice_gate_id || '',
-                    active: employee.active !== undefined ? employee.active : true
-                });
-            } else {
-                setFormData({
-                    name: '',
-                    email: '',
-                    password: '',
-                    role: ROLES.ROLE_CONG_NHAN_CTY,
-                    org_id: defaultOrgId,
-                    assigned_inundation_station_ids: [],
-                    assigned_emergency_construction_ids: [],
-                    assigned_pumping_station_id: '',
-                    assigned_wastewater_station_id: '',
-                    assigned_sluice_gate_id: '',
-                    active: true
-                });
-            }
-        }
-    }, [open, isEdit, employee, defaultOrgId]);
-
-    useEffect(() => {
-        const fetchLocationData = async () => {
-            if (!open) return;
-            setFetchingData(true);
-            try {
-                const [pointsRes, consRes, pumpRes, wastewaterRes, sluiceRes, rolesRes] = await Promise.all([
-                    inundationApi.getPointsList({ per_page: 1000 }),
-                    emergencyConstructionApi.getAll({ per_page: 1000 }),
-                    pumpingStationApi.list({ per_page: 1000 }),
-                    wastewaterTreatmentApi.list({ per_page: 1000 }),
-                    sluiceGateApi.list({ per_page: 1000 }),
-                    axiosClient.get('/admin/roles')
-                ]);
-
-                // Interceptor đã bóc tách dữ liệu, nên chúng ta nhận được payload trực tiếp
-                setPoints(Array.isArray(pointsRes) ? pointsRes : (pointsRes?.data || []));
-                setConstructions(Array.isArray(consRes?.data) ? consRes.data : (Array.isArray(consRes) ? consRes : []));
-                setPumpingStations(Array.isArray(pumpRes?.data) ? pumpRes.data : (Array.isArray(pumpRes) ? pumpRes : []));
-                setWastewaterStations(Array.isArray(wastewaterRes?.data) ? wastewaterRes.data : (Array.isArray(wastewaterRes) ? wastewaterRes : []));
-                setSluiceGates(Array.isArray(sluiceRes?.data) ? sluiceRes.data : (Array.isArray(sluiceRes) ? sluiceRes : []));
-                setRoles(Array.isArray(rolesRes) ? rolesRes : []);
-            } catch (err) {
-                console.error('Lỗi tải dữ liệu:', err);
-            } finally {
-                setFetchingData(false);
-            }
-        };
-
-        fetchLocationData();
-    }, [open]);
-
-    const handleChange = (field, value) => {
-        setFormData(prev => {
-            const newData = { ...prev, [field]: value };
-
-            // Nếu không có quyền chọn đơn vị, luôn giữ org_id theo mặc định
-            if (field === 'org_id' && !canSelectOrg) {
-                newData.org_id = defaultOrgId;
-            }
-
-            return newData;
-        });
-    };
-
-    const handleSave = () => {
-        if (!formData.name) return toast.error('Vui lòng nhập tên');
-        if (!formData.email) return toast.error('Vui lòng nhập email');
-        if (userRole !== 'admin_org' && !formData.org_id) return toast.error('Vui lòng chọn công ty');
-        if (!isEdit && !formData.password) return toast.error('Vui lòng nhập mật khẩu');
-        onSubmit(formData);
-    };
+    const {
+        hasPermission,
+        userRole,
+        formData,
+        handleChange,
+        handleSave,
+        points,
+        constructions,
+        pumpingStations,
+        wastewaterStations,
+        sluiceGates,
+        roles,
+        fetchingData,
+        pointSelectionOpen,
+        setPointSelectionOpen,
+        constructionSelectionOpen,
+        setConstructionSelectionOpen,
+        isEmployeeRole
+    } = useEmployeeDialog({ open, employee, isEdit, defaultOrgId, canSelectOrg });
 
     const filteredRoles = roles;
 
@@ -192,7 +94,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
                         </FormControl>
                     )}
 
-                    {roles.find(r => r.code === formData.role)?.is_employee && (
+                    {isEmployeeRole && (
                         <>
                             <Box>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
@@ -351,7 +253,7 @@ const EmployeeDialog = ({ open, onClose, onSubmit, employee, isEdit, organizatio
             </DialogContent>
             <DialogActions sx={{ p: 2 }}>
                 <Button onClick={onClose} color="inherit" sx={{ borderRadius: 3 }}>Hủy</Button>
-                <Button variant="contained" onClick={handleSave} color="primary" sx={{ borderRadius: 3, fontWeight: 700 }}>
+                <Button variant="contained" onClick={() => handleSave(onSubmit)} color="primary" sx={{ borderRadius: 3, fontWeight: 700 }}>
                     {isEdit ? 'Cập nhật' : 'Thêm mới'}
                 </Button>
             </DialogActions>

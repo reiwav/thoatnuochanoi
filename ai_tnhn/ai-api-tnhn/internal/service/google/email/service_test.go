@@ -2,6 +2,7 @@ package email
 
 import (
 	"ai-api-tnhn/config"
+	"ai-api-tnhn/constant"
 	"context"
 	"fmt"
 	"strings"
@@ -128,7 +129,7 @@ func TestGetLatestEmailAttachmentRaw_Real(t *testing.T) {
 	}
 	defer client.Close()
 
-	model := client.GenerativeModel("gemini-2.5-flash")
+	model := client.GenerativeModel(constant.ModelAIVersion)
 	prompt := "Hãy trích xuất nội dung văn bản TRANG ĐẦU TIÊN (Trang 1) của file PDF này. Tuyệt đối không đọc các trang sau. Hãy trả về văn bản thuần túy, chính xác theo nội dung trong file."
 
 	resp, err := model.GenerateContent(ctx,

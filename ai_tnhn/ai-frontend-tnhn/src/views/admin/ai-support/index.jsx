@@ -36,6 +36,7 @@ const AiSupport = () => {
         exporting,
         showScrollBottom,
         rainChart,
+        setRainChart,
         inundationDetail,
         setInundationDetail,
         scrollRef,

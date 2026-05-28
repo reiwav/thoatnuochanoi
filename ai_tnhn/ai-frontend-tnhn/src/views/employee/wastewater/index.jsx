@@ -1,35 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Box, CircularProgress, Typography, Container } from '@mui/material';
-import useAuthStore from 'store/useAuthStore';
-import wastewaterTreatmentApi from 'api/wastewaterTreatment';
 import WastewaterTreatmentReport from 'views/admin/wastewater-treatment/WastewaterTreatmentReport';
 import MainCard from 'ui-component/cards/MainCard';
 
+// Hook
+import useEmployeeWastewater from './hooks/useEmployeeWastewater';
+
 const EmployeeWastewaterPage = () => {
-    const { user } = useAuthStore();
-    const [station, setStation] = useState(null);
-    const [loading, setLoading] = useState(true);
-
-    const fetchAssignedStation = async () => {
-        if (!user?.assigned_wastewater_station_id) {
-            setLoading(false);
-            return;
-        }
-
-        try {
-            setLoading(true);
-            const res = await wastewaterTreatmentApi.get(user.assigned_wastewater_station_id);
-            setStation(res || null);
-        } catch (error) {
-            console.error('Failed to fetch assigned station', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchAssignedStation();
-    }, [user?.assigned_wastewater_station_id]);
+    const {
+        user,
+        station,
+        loading,
+        fetchAssignedStation
+    } = useEmployeeWastewater();
 
     if (loading) {
         return (

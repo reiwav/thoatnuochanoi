@@ -16,11 +16,21 @@ const InundationCard = ({ point, onClick }) => {
         dimension += (dimension ? ' x ' : '') + point['Độ sâu'];
     }
 
-    // Extract thoiGian part (HH:mm)
+    // Extract thoiGian part (HH:mm) and optionally date part (DD/MM)
     let displayTime = '-';
     if (time) {
-        const match = time.match(/\d{2}:\d{2}/);
-        if (match) displayTime = match[0];
+        const timeMatch = time.match(/\d{2}:\d{2}/);
+        const dateMatch = time.match(/\d{2}\/\d{2}(?:\/\d{4})?/);
+        if (timeMatch) {
+            displayTime = timeMatch[0];
+            if (dateMatch) {
+                // Keep only DD/MM for clean space-saving visual
+                const cleanDate = dateMatch[0].length > 5 ? dateMatch[0].substring(0, 5) : dateMatch[0];
+                displayTime = `${timeMatch[0]} • ${cleanDate}`;
+            }
+        } else {
+            displayTime = time;
+        }
     }
 
     const systemColor = point['color'] || point['Color'];

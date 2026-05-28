@@ -1,74 +1,35 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
 import {
     Box, Typography, Stack, Avatar, Skeleton, CircularProgress,
-    Alert, AlertTitle, Paper, Button, useMediaQuery, Grid, TextField
+    Alert, AlertTitle, Grid, TextField
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { IconEngine, IconEdit, IconCheck, IconSearch } from '@tabler/icons-react';
+import { IconEngine, IconCheck, IconSearch } from '@tabler/icons-react';
 
-import useAuthStore from 'store/useAuthStore';
-import usePumpingStationStore from 'store/usePumpingStationStore';
-import pumpingStationApi from 'api/pumpingStation';
-
-// Components
 import EmployeeActionDialog from '../components/EmployeeActionDialog';
 import PumpingStationCard from './components/PumpingStationCard';
+import PumpingStationHistoryDialog from '../components/PumpingStationHistoryDialog';
+
+// Hook
+import useEmployeePumpingDashboard from './hooks/useEmployeePumpingDashboard';
 
 const EmployeePumpingStationDashboard = () => {
     const theme = useTheme();
-    const navigate = useNavigate();
-    const { user } = useAuthStore();
-    const { pumpingStations, loading, fetchPumpingStations } = usePumpingStationStore();
-    
-    const [searchQuery, setSearchQuery] = useState('');
-    const [assignedStation, setAssignedStation] = useState(null);
-    const [fetchingAssigned, setFetchingAssigned] = useState(false);
-    const [taskDialog, setTaskDialog] = useState({ open: false, data: null });
 
-    // 1. Fetch Assigned Station if any
-    useEffect(() => {
-        const fetchAssigned = async () => {
-            if (user?.assigned_pumping_station_id) {
-                setFetchingAssigned(true);
-                try {
-                    const res = await pumpingStationApi.get(user.assigned_pumping_station_id);
-                    setAssignedStation(res);
-                } catch (err) {
-                    console.error('Failed to fetch assigned station:', err);
-                } finally {
-                    setFetchingAssigned(false);
-                }
-            } else {
-                fetchPumpingStations();
-            }
-        };
-        fetchAssigned();
-    }, [user?.assigned_pumping_station_id]);
-
-    // Polling
-    useEffect(() => {
-        if (!user?.assigned_pumping_station_id) {
-            const interval = setInterval(() => {
-                fetchPumpingStations();
-            }, 10000);
-            return () => clearInterval(interval);
-        }
-    }, [user?.assigned_pumping_station_id]);
-
-    const handleRefresh = () => {
-        if (user?.assigned_pumping_station_id) {
-            pumpingStationApi.get(user.assigned_pumping_station_id).then(setAssignedStation);
-        } else {
-            fetchPumpingStations();
-        }
-    };
-
-    const filteredStations = useMemo(() => {
-        if (!searchQuery.trim()) return pumpingStations;
-        const q = searchQuery.toLowerCase();
-        return pumpingStations.filter(s => s.name?.toLowerCase().includes(q) || s.address?.toLowerCase().includes(q));
-    }, [pumpingStations, searchQuery]);
+    const {
+        user,
+        loading,
+        assignedStation,
+        fetchingAssigned,
+        filteredStations,
+        searchQuery,
+        setSearchQuery,
+        taskDialog,
+        setTaskDialog,
+        historyDialog,
+        setHistoryDialog,
+        handleRefresh
+    } = useEmployeePumpingDashboard();
 
     if (fetchingAssigned) {
         return (
@@ -118,7 +79,11 @@ const EmployeePumpingStationDashboard = () => {
                     <Alert severity="success" icon={<IconCheck size={20} />} sx={{ borderRadius: 3, fontWeight: 700 }}>
                         Trạm bơm phụ trách cố định
                     </Alert>
-                    <PumpingStationCard station={assignedStation} onUpdate={(s) => setTaskDialog({ open: true, data: s })} />
+                    <PumpingStationCard 
+                        station={assignedStation} 
+                        onUpdate={(s) => setTaskDialog({ open: true, data: s })} 
+                        onViewHistory={(s) => setHistoryDialog({ open: true, data: s })}
+                    />
                 </Stack>
             ) : (
                 <Box>
@@ -147,6 +112,7 @@ const EmployeePumpingStationDashboard = () => {
                                     <PumpingStationCard 
                                         station={station} 
                                         onUpdate={(s) => setTaskDialog({ open: true, data: s })} 
+                                        onViewHistory={(s) => setHistoryDialog({ open: true, data: s })}
                                     />
                                 </Grid>
                             ))}
@@ -164,6 +130,12 @@ const EmployeePumpingStationDashboard = () => {
                     setTaskDialog({ ...taskDialog, open: false });
                     handleRefresh();
                 }}
+            />
+
+            <PumpingStationHistoryDialog 
+                open={historyDialog.open}
+                handleClose={() => setHistoryDialog({ ...historyDialog, open: false })}
+                station={historyDialog.data}
             />
         </Box>
     );

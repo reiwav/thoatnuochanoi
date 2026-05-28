@@ -1,36 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { 
     Dialog, DialogActions, DialogContent, DialogTitle, Button, Table, TableBody, TableCell, 
-    TableContainer, TableHead, TableRow, Paper, useMediaQuery, Stack, Box, Typography, Divider, IconButton
+    TableContainer, TableHead, TableRow, Paper, useMediaQuery, Stack, Box, Typography, IconButton
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
-import { IconX, IconClock, IconUser, IconDroplets } from '@tabler/icons-react';
-import wastewaterTreatmentApi from 'api/wastewaterTreatment';
+import { IconX, IconClock, IconUser } from '@tabler/icons-react';
 import dayjs from 'dayjs';
+import useWastewaterTreatmentHistory from './hooks/useWastewaterTreatmentHistory';
 
 const WastewaterTreatmentHistoryDialog = ({ open, handleClose, item }) => {
-    const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-    const [history, setHistory] = useState([]);
-    const [loading, setLoading] = useState(false);
-
-    useEffect(() => {
-        if (open && item) {
-            loadHistory();
-        }
-    }, [open, item]);
-
-    const loadHistory = async () => {
-        setLoading(true);
-        try {
-            const response = await wastewaterTreatmentApi.getHistory(item.id);
-            setHistory(response.data || response || []);
-        } catch (error) {
-            console.error('Failed to load history', error);
-        } finally {
-            setHistory(false);
-        }
-    };
+    const isMobile = useMediaQuery((theme) => theme.breakpoints.down('sm'));
+    const { history, loading } = useWastewaterTreatmentHistory({ item, open });
 
     return (
         <Dialog 
@@ -67,7 +46,7 @@ const WastewaterTreatmentHistoryDialog = ({ open, handleClose, item }) => {
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {history.length > 0 ? (
+                            {history && history.length > 0 ? (
                                 history.map((row) => (
                                     <TableRow key={row.id} hover>
                                         <TableCell>{dayjs(row.timestamp * 1000).format('DD/MM/YYYY HH:mm')}</TableCell>
@@ -93,7 +72,7 @@ const WastewaterTreatmentHistoryDialog = ({ open, handleClose, item }) => {
 
                 {/* Mobile Card View */}
                 <Stack spacing={2} sx={{ display: { xs: 'flex', md: 'none' } }}>
-                    {history.length > 0 ? (
+                    {history && history.length > 0 ? (
                         history.map((row) => (
                             <Paper key={row.id} variant="outlined" sx={{ p: 2, borderRadius: 3 }}>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5 }}>

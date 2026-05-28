@@ -1,175 +1,43 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
 import {
-    Button, Grid, TextField, Table, TableBody, Stack,
+    Button, Grid, TextField, Table, TableBody,
     TableCell, TableContainer, TableHead, TableRow, Paper,
-    IconButton, CircularProgress, TablePagination, Typography, Chip, Tooltip,
-    Collapse, Box, useTheme, useMediaQuery
+    CircularProgress, TablePagination, useTheme, useMediaQuery
 } from '@mui/material';
-import { IconTrash, IconPlus, IconEdit, IconSearch, IconUsers, IconChevronDown, IconChevronUp, IconClipboardCheck } from '@tabler/icons-react';
-import { toast } from 'react-hot-toast';
+import { IconPlus, IconSearch } from '@tabler/icons-react';
 
 // project imports
 import MainCard from 'ui-component/cards/MainCard';
 import AnimateButton from 'ui-component/extended/AnimateButton';
 import OrganizationDialog from './OrganizationDialog';
-import useAuthStore from 'store/useAuthStore';
-import useOrganizationStore from 'store/useOrganizationStore';
-
-const OrgRow = ({ row, handleManageUsers, handleOpenEdit, handleDelete, isMobile, hasPermission }) => {
-    const [open, setOpen] = useState(false);
-
-    return (
-        <>
-            <TableRow hover>
-                {isMobile && (
-                    <TableCell padding="checkbox">
-                        <IconButton size="small" onClick={() => setOpen(!open)}>
-                            {open ? <IconChevronUp /> : <IconChevronDown />}
-                        </IconButton>
-                    </TableCell>
-                )}
-                <TableCell sx={{ fontWeight: 600 }}>{row.name}</TableCell>
-                {!isMobile && <TableCell>{row.code}</TableCell>}
-                {!isMobile && (
-                    <TableCell>
-                        <Stack direction="row" alignItems="center" spacing={0.5}>
-                            <IconClipboardCheck size={16} style={{ color: '#64748b' }} />
-                            <Typography variant="body2" sx={{ fontWeight: 600 }}>{row.order || '-'}</Typography>
-                        </Stack>
-                    </TableCell>
-                )}
-                {!isMobile && (
-                    <TableCell>
-                        <Typography variant="body2" sx={{ fontWeight: 500 }}>{row.phone_number}</Typography>
-                        <Typography variant="caption" color="textSecondary" sx={{ display: 'block' }}>{row.email}</Typography>
-                    </TableCell>
-                )}
-                {!isMobile && (
-                    <TableCell>
-                        <Chip label={row.status ? 'Hoạt động' : 'Ngừng hoạt động'} color={row.status ? 'success' : 'default'} size="small" variant="outlined" />
-                    </TableCell>
-                )}
-                <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                    {hasPermission('employee:view') && (
-                        <Tooltip title="Quản lý người dùng">
-                            <IconButton color="secondary" size="small" onClick={() => handleManageUsers(row)}>
-                                <IconUsers size={20} />
-                            </IconButton>
-                        </Tooltip>
-                    )}
-                    {hasPermission('organization:edit') && (
-                        <Tooltip title="Chỉnh sửa">
-                            <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>
-                                <IconEdit size={20} />
-                            </IconButton>
-                        </Tooltip>
-                    )}
-                    {hasPermission('organization:delete') && (
-                        <Tooltip title="Xóa">
-                            <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}>
-                                <IconTrash size={20} />
-                            </IconButton>
-                        </Tooltip>
-                    )}
-                </TableCell>
-            </TableRow>
-            {isMobile && (
-                <TableRow>
-                    <TableCell style={{ padding: 0 }} colSpan={3}>
-                        <Collapse in={open} timeout="auto" unmountOnExit>
-                            <Box sx={{ margin: 0, backgroundColor: 'grey.50', p: 2 }}>
-                                <Typography variant="subtitle2" gutterBottom component="div" sx={{ color: 'primary.main', fontWeight: 600 }}>
-                                    Chi tiết đơn vị
-                                </Typography>
-                                <Table size="small" aria-label="details">
-                                    <TableBody>
-                                        <TableRow>
-                                            <TableCell component="th" scope="row" sx={{ fontWeight: 600, width: '40%', borderBottom: 'none' }}>Mã</TableCell>
-                                            <TableCell sx={{ borderBottom: 'none' }}>{row.code}</TableCell>
-                                        </TableRow>
-                                        <TableRow>
-                                            <TableCell component="th" scope="row" sx={{ fontWeight: 600, borderBottom: 'none' }}>Lệnh số</TableCell>
-                                            <TableCell sx={{ borderBottom: 'none' }}>{row.order || '-'}</TableCell>
-                                        </TableRow>
-                                        <TableRow>
-                                            <TableCell component="th" scope="row" sx={{ fontWeight: 600, borderBottom: 'none' }}>Liên hệ</TableCell>
-                                            <TableCell sx={{ borderBottom: 'none' }}>
-                                                <Typography variant="body2">{row.phone_number}</Typography>
-                                                <Typography variant="caption" color="textSecondary">{row.email}</Typography>
-                                            </TableCell>
-                                        </TableRow>
-                                        <TableRow>
-                                            <TableCell component="th" scope="row" sx={{ fontWeight: 600, borderBottom: 'none' }}>Trạng thái</TableCell>
-                                            <TableCell sx={{ borderBottom: 'none' }}>
-                                                <Chip label={row.status ? 'Hoạt động' : 'Ngừng hoạt động'} color={row.status ? 'success' : 'default'} size="small" variant="outlined" />
-                                            </TableCell>
-                                        </TableRow>
-                                    </TableBody>
-                                </Table>
-                            </Box>
-                        </Collapse>
-                    </TableCell>
-                </TableRow >
-            )}
-        </>
-    );
-};
+import useOrganizationList from './hooks/useOrganizationList';
+import OrgRow from './components/OrgRow';
 
 const OrganizationList = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-    const navigate = useNavigate();
-    const { hasPermission } = useAuthStore();
     
     const {
-        organizations, loading, totalItems, page, rowsPerPage, filters,
-        fetchOrganizations, setPage, setRowsPerPage, setFilters,
-        createOrganization, updateOrganization, deleteOrganization
-    } = useOrganizationStore();
-
-    const [filterInputs, setFilterInputs] = useState(filters);
-    const [dialogOpen, setDialogOpen] = useState(false);
-    const [editingOrg, setEditingOrg] = useState(null);
-
-    useEffect(() => {
-        fetchOrganizations();
-    }, [page, rowsPerPage, fetchOrganizations]);
-
-    const handleSearch = () => {
-        setFilters(filterInputs);
-        fetchOrganizations();
-    };
-
-    const handleOpenCreate = () => { setEditingOrg(null); setDialogOpen(true); };
-    const handleOpenEdit = (org) => { setEditingOrg(org); setDialogOpen(true); };
-    const handleManageUsers = (org) => {
-        navigate(`/admin/employee?org_id=${org.id}&org_name=${encodeURIComponent(org.name)}`);
-    };
-
-    const handleDelete = async (id) => {
-        if (!window.confirm('Bạn có chắc chắn muốn xóa công ty này?')) return;
-        try {
-            await deleteOrganization(id);
-            toast.success('Xóa thành công');
-        } catch (err) {
-            toast.error(err.response?.data?.error || 'Lỗi xóa công ty');
-        }
-    };
-
-    const handleSubmit = async (values) => {
-        try {
-            if (editingOrg) {
-                await updateOrganization(editingOrg.id, values);
-            } else {
-                await createOrganization(values);
-            }
-            toast.success(editingOrg ? 'Cập nhật thành công' : 'Thêm mới thành công');
-            setDialogOpen(false);
-        } catch (err) {
-            toast.error(err.response?.data?.error || 'Đã có lỗi xảy ra');
-        }
-    };
+        hasPermission,
+        organizations,
+        loading,
+        totalItems,
+        page,
+        rowsPerPage,
+        setPage,
+        setRowsPerPage,
+        filterInputs,
+        setFilterInputs,
+        dialogOpen,
+        setDialogOpen,
+        editingOrg,
+        handleSearch,
+        handleOpenCreate,
+        handleOpenEdit,
+        handleManageUsers,
+        handleDelete,
+        handleSubmit
+    } = useOrganizationList();
 
     return (
         <MainCard
@@ -186,12 +54,12 @@ const OrganizationList = () => {
         >
             <Grid container spacing={2} sx={{ mb: 3 }} alignItems="center">
                 <Grid item xs={12} sm={4}>
-                    <TextField fullWidth label="Tên đơn vị" value={filterInputs.name}
+                    <TextField fullWidth label="Tên đơn vị" value={filterInputs.name || ''}
                         onChange={(e) => setFilterInputs({ ...filterInputs, name: e.target.value })}
                         size="small" sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }} />
                 </Grid>
                 <Grid item xs={12} sm={4}>
-                    <TextField fullWidth label="Mã công ty" value={filterInputs.code}
+                    <TextField fullWidth label="Mã công ty" value={filterInputs.code || ''}
                         onChange={(e) => setFilterInputs({ ...filterInputs, code: e.target.value })}
                         size="small" sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }} />
                 </Grid>

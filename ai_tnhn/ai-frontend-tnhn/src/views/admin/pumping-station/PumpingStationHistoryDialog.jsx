@@ -1,36 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
     Dialog, DialogActions, DialogContent, DialogTitle, Button, Table, TableBody, TableCell,
     TableContainer, TableHead, TableRow, Paper, useMediaQuery, Stack, Box, Typography, Divider, IconButton, Grid
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { IconX, IconClock, IconUser, IconEngine } from '@tabler/icons-react';
-import pumpingStationApi from 'api/pumpingStation';
+import { IconX, IconClock, IconUser } from '@tabler/icons-react';
 import dayjs from 'dayjs';
+
+// Hook
+import { usePumpingStationHistory } from './hooks/usePumpingStationHistory';
 
 const PumpingStationHistoryDialog = ({ open, handleClose, item }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-    const [history, setHistory] = useState([]);
-    const [loading, setLoading] = useState(false);
-
-    useEffect(() => {
-        if (open && item) {
-            loadHistory();
-        }
-    }, [open, item]);
-
-    const loadHistory = async () => {
-        setLoading(true);
-        try {
-            const response = await pumpingStationApi.getHistory(item.id);
-            setHistory(response.data || response || []);
-        } catch (error) {
-            console.error('Failed to load history', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    
+    const {
+        history,
+        loading
+    } = usePumpingStationHistory({ open, item });
 
     return (
         <Dialog

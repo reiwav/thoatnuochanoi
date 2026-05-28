@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import {
     Grid, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
     CircularProgress, Typography, FormControl, InputLabel, Select, MenuItem, Stack, Box, TextField
@@ -20,6 +20,9 @@ const getStationId = (s) => s?.OldId ?? s?.old_id ?? s?.OldID ?? s?.Id ?? s?.id 
 
 const StationHistory = ({ type }) => {
     const theme = useTheme();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const stationIdParam = searchParams.get('id');
+
     const [loading, setLoading] = useState(false);
     const [stations, setStations] = useState([]);
     const [selectedStation, setSelectedStation] = useState('');
@@ -38,13 +41,20 @@ const StationHistory = ({ type }) => {
                 const data = res.tram || res.data || (Array.isArray(res) ? res : []);
                 setStations(data);
                 if (data.length > 0) {
-                    setSelectedStation(getStationId(data[0]));
+                    const initialId = stationIdParam || getStationId(data[0]);
+                    setSelectedStation(initialId);
                 }
             }
         } catch (err) {
             console.error('Failed to load stations:', err);
         }
-    }, [type]);
+    }, [type, stationIdParam]);
+
+    const handleStationChange = (e) => {
+        const val = e.target.value;
+        setSelectedStation(val);
+        setSearchParams({ id: val });
+    };
 
     const loadHistory = useCallback(async () => {
         if (!selectedStation) return;
@@ -107,14 +117,14 @@ const StationHistory = ({ type }) => {
                 lastIndex = i;
             }
         }
-        if (firstIndex === -1) return [];
+        if (firstIndex === -1) return sorted; // Fallback to all sorted data (0mm) so the line chart renders a flat line instead of disappearing
 
         const start = Math.max(0, firstIndex - 1);
         const end = Math.min(sorted.length - 1, lastIndex + 1);
         return sorted.slice(start, end + 1);
     }, [history, type]);
 
-    const chartOptions = {
+    const chartOptions = React.useMemo(() => ({
         chart: {
             type: 'line',
             height: 350,
@@ -125,8 +135,11 @@ const StationHistory = ({ type }) => {
         dataLabels: { enabled: false },
         stroke: { curve: 'smooth', width: 3 },
         markers: {
-            size: 4,
+            size: 0,
             hover: { size: 6 }
+        },
+        fill: {
+            type: 'solid'
         },
         xaxis: {
             type: 'datetime',
@@ -143,7 +156,7 @@ const StationHistory = ({ type }) => {
             x: { format: 'dd/MM/yyyy HH:mm' }
         },
         colors: [theme.palette.primary.main]
-    };
+    }), [theme, type]);
 
     const chartSeries = React.useMemo(() => {
         let data = activeData.map(item => ({
@@ -184,7 +197,7 @@ const StationHistory = ({ type }) => {
                             <Select
                                 value={selectedStation}
                                 label="Chọn trạm đo"
-                                onChange={(e) => setSelectedStation(e.target.value)}
+                                onChange={handleStationChange}
                                 sx={{ fontSize: '1rem' }}
                             >
                                 {stations.map((s) => {

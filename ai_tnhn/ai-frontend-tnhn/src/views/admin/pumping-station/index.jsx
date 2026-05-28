@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React from 'react';
 import MainCard from 'ui-component/cards/MainCard';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -6,26 +6,15 @@ import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
-import IconButton from '@mui/material/IconButton';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
-import Tooltip from '@mui/material/Tooltip';
 import { 
-    IconEdit, IconTrash, IconPlus, IconHistory, IconChevronDown, 
-    IconChevronUp, IconEngine, IconClock, IconUser, IconSearch,
-    IconDroplets, IconArrowLeft
+    IconPlus, IconEngine, IconSearch, IconDroplets
 } from '@tabler/icons-react';
-import dayjs from 'dayjs';
 import { 
-    CircularProgress, Box, Typography, Collapse, Grid, Divider, Paper, 
-    useTheme, Chip, useMediaQuery, Card, CardContent, TextField, 
-    Tabs, Tab, alpha, Pagination, List, ListItem, ListItemText, TableSortLabel 
+    CircularProgress, Box, Typography, Paper, 
+    useTheme, useMediaQuery, TextField, Tabs, Tab, TableSortLabel 
 } from '@mui/material';
-
-// APIs
-import pumpingStationApi from 'api/pumpingStation';
-import wastewaterTreatmentApi from 'api/wastewaterTreatment';
-import organizationApi from 'api/organization';
 
 // Dialogs
 import PumpingStationDialog from './PumpingStationDialog';
@@ -33,8 +22,6 @@ import PumpingStationHistoryDialog from './PumpingStationHistoryDialog';
 import WastewaterTreatmentDialog from '../wastewater-treatment/WastewaterTreatmentDialog';
 import WastewaterTreatmentHistoryDialog from '../wastewater-treatment/WastewaterTreatmentHistoryDialog';
 
-import { toast } from 'react-hot-toast';
-import useAuthStore from 'store/useAuthStore';
 import OrganizationSelect from 'ui-component/filter/OrganizationSelect';
 import PermissionGuard from 'ui-component/PermissionGuard';
 import ConfirmDialog from 'ui-component/ConfirmDialog';
@@ -47,115 +34,49 @@ import WastewaterDesktopRow from './components/WastewaterDesktopRow';
 import WastewaterMobileCard from './components/WastewaterMobileCard';
 import WastewaterHistoryView from './components/WastewaterHistoryView';
 
+// Hook
+import { useAdminPumping } from './hooks/useAdminPumping';
+
 // --- MAIN PAGE COMPONENT ---
 const PumpingStationPage = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-    const { user, isCompany, hasPermission } = useAuthStore();
     
-    const [activeTab, setActiveTab] = useState(0); // 0: Pumping, 1: Wastewater
-    const [drillDownStation, setDrillDownStation] = useState(null);
-
-    const [pumpingData, setPumpingData] = useState([]);
-    const [wasteData, setWasteData] = useState([]);
-    const [loading, setLoading] = useState(true);
-    
-    // Dialog states
-    const [openPumping, setOpenPumping] = useState(false);
-    const [openWaste, setOpenWaste] = useState(false);
-    const [openHistory, setOpenHistory] = useState(false);
-    const [selected, setSelected] = useState(null);
-    const [confirmOpen, setConfirmOpen] = useState(false);
-    const [deletingItem, setDeletingItem] = useState(null);
-    
-    const [orgs, setOrgs] = useState({ primary: [], shared: [] });
-    const [orgFilter, setOrgFilter] = useState((!isCompany && user?.org_id) ? user.org_id : '');
-    const [searchFilter, setSearchFilter] = useState('');
-    const [sortOrder, setSortOrder] = useState('default');
-
-    const currentData = activeTab === 0 ? pumpingData : wasteData;
-
-    const filteredData = useMemo(() => {
-        if (!Array.isArray(currentData)) return [];
-        const q = searchFilter.toLowerCase();
-        const filtered = currentData.filter(item =>
-            item.name?.toLowerCase().includes(q) ||
-            item.address?.toLowerCase().includes(q)
-        );
-        if (sortOrder === 'default' || !sortOrder) return filtered;
-        return filtered.sort((a, b) => {
-            const valA = a.priority || 0;
-            const valB = b.priority || 0;
-            return sortOrder === 'asc' ? valA - valB : valB - valA;
-        });
-    }, [currentData, searchFilter, sortOrder]);
-
-    const loadData = async () => {
-        setLoading(true);
-        try {
-            const [pRes, wRes, oRes] = await Promise.all([
-                pumpingStationApi.list({ per_page: 1000, org_id: orgFilter }),
-                wastewaterTreatmentApi.list({ per_page: 1000, org_id: orgFilter }),
-                organizationApi.getSelectionList()
-            ]);
-            setPumpingData(pRes?.data || (Array.isArray(pRes) ? pRes : []));
-            setWasteData(wRes?.data || (Array.isArray(wRes) ? wRes : []));
-            setOrgs(oRes || { primary: [], shared: [] });
-        } catch (error) {
-            console.error('Failed to load data', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        loadData();
-    }, [orgFilter]);
-
-    const handleAdd = () => {
-        setSelected(null);
-        if (activeTab === 0) setOpenPumping(true);
-        else setOpenWaste(true);
-    };
-
-    const handleEdit = (item) => {
-        setSelected(item);
-        if (activeTab === 0) setOpenPumping(true);
-        else setOpenWaste(true);
-    };
-
-    const handleHistory = (item) => {
-        setSelected(item);
-        setOpenHistory(true);
-    };
-
-    const handleDelete = (item) => {
-        setDeletingItem(item);
-        setConfirmOpen(true);
-    };
-
-    const handleConfirmDelete = async () => {
-        if (!deletingItem) return;
-        setLoading(true);
-        try {
-            if (activeTab === 0) await pumpingStationApi.delete(deletingItem.id);
-            else await wastewaterTreatmentApi.delete(deletingItem.id);
-            toast.success('Xóa thành công');
-            loadData();
-        } catch (error) {
-            toast.error('Xóa thất bại');
-        } finally {
-            setConfirmOpen(false);
-            setLoading(false);
-        }
-    };
-
-    const getOrgNames = (ids) => {
-        if (!ids) return '';
-        const idList = Array.isArray(ids) ? ids : [ids];
-        const allOrgs = [...(orgs.primary || []), ...(orgs.shared || [])];
-        return idList.map(id => allOrgs.find(o => o.id === id)?.name).filter(Boolean).join(', ');
-    };
+    const {
+        user,
+        isCompany,
+        hasPermission,
+        activeTab,
+        setActiveTab,
+        drillDownStation,
+        setDrillDownStation,
+        loading,
+        openPumping,
+        setOpenPumping,
+        openWaste,
+        setOpenWaste,
+        openHistory,
+        setOpenHistory,
+        selected,
+        confirmOpen,
+        setConfirmOpen,
+        deletingItem,
+        orgs,
+        orgFilter,
+        setOrgFilter,
+        searchFilter,
+        setSearchFilter,
+        sortOrder,
+        setSortOrder,
+        filteredData,
+        loadData,
+        handleAdd,
+        handleEdit,
+        handleHistory,
+        handleDelete,
+        handleConfirmDelete,
+        getOrgNames
+    } = useAdminPumping();
 
     return (
         <MainCard

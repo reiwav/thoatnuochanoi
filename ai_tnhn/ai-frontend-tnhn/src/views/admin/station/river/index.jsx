@@ -1,157 +1,65 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import React from 'react';
 import {
-    Button, Grid, TextField, Table, TableBody,
+    Button, Table, TableBody,
     TableCell, TableContainer, TableHead, TableRow, Paper,
-    IconButton, CircularProgress, TablePagination, Typography, Chip, Tooltip,
-    useTheme, useMediaQuery, Box, Stack, Card, CardContent, Divider, TableSortLabel
+    CircularProgress, TablePagination, Typography,
+    useTheme, useMediaQuery, Box, Stack, TextField, TableSortLabel
 } from '@mui/material';
-import { IconTrash, IconPlus, IconEdit, IconSearch } from '@tabler/icons-react';
-import { toast } from 'react-hot-toast';
+import PermissionGuard from 'ui-component/PermissionGuard';
+import { IconPlus } from '@tabler/icons-react';
 import ConfirmDialog from 'ui-component/ConfirmDialog';
 
 // project imports
 import MainCard from 'ui-component/cards/MainCard';
 import AnimateButton from 'ui-component/extended/AnimateButton';
-import stationApi from 'api/station';
-import organizationApi from 'api/organization';
 import OrganizationSelect from 'ui-component/filter/OrganizationSelect';
 import RiverDialog from './RiverDialog';
-import useAuthStore from 'store/useAuthStore';
-import { getDataArray } from 'utils/apiHelper';
-import PermissionGuard from 'ui-component/PermissionGuard';
 
 // Sub-components
 import StationMobileCard from './components/StationMobileCard';
 import StationDesktopRow from './components/StationDesktopRow';
 
+// custom hook
+import useRiverList from './hooks/useRiverList';
+
 const StationRiverList = () => {
-    const { user, isCompany, isSuperAdmin, hasPermission, permissions } = useAuthStore();
-    const canCreate = hasPermission('water:create');
-    const canEdit = hasPermission('water:edit');
-    const canDelete = hasPermission('water:delete');
-
-    const [loading, setLoading] = useState(false);
-    const [stations, setStations] = useState([]);
-    const [organizations, setOrganizations] = useState({ primary: [], shared: [] });
-    const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
-    const [totalItems, setTotalItems] = useState(0);
-    const [sortOrder, setSortOrder] = useState('default');
-
-    // Khởi tạo bộ lọc đơn vị thông minh: Tránh việc gọi API 2 lần (1 lần không có org_id, 1 lần có org_id do OrganizationSelect ép vào)
-    const isCompanyLevel = isCompany || user?.role === 'super_admin';
-    const initialOrgId = '';
-
-    const [filterInputs, setFilterInputs] = useState({ search: '', active: '', org_id: initialOrgId });
-    const [params, setParams] = useState({ search: '', active: '', org_id: initialOrgId });
-
-    const [dialogOpen, setDialogOpen] = useState(false);
-    const [editingStation, setEditingStation] = useState(null);
-    const [confirmOpen, setConfirmOpen] = useState(false);
-    const [deletingItem, setDeletingItem] = useState(null);
-
-    const loadData = async () => {
-        setLoading(true);
-        try {
-            const [stRes, orgRes] = await Promise.all([
-                stationApi.river.getAll({ ...params, page: page + 1, per_page: rowsPerPage }),
-                organizationApi.getSelectionList()
-            ]);
-
-            if (stRes) {
-                const stationList = stRes.tram || getDataArray(stRes);
-                setStations(stationList);
-                setTotalItems(stRes.total || stationList.length);
-            }
-
-            if (orgRes) {
-                setOrganizations(orgRes || { primary: [], shared: [] });
-            }
-        } catch (err) {
-            console.error('Lỗi tải dữ liệu:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const isFirstRender = useRef(true);
-    useEffect(() => {
-        if (isFirstRender.current) {
-            isFirstRender.current = false;
-            return;
-        }
-        const timer = setTimeout(() => {
-            setParams(filterInputs);
-            setPage(0);
-        }, 500);
-        return () => clearTimeout(timer);
-    }, [filterInputs]);
-
-    useEffect(() => {
-        loadData();
-    }, [page, rowsPerPage, params]);
-
-    const handleOpenCreate = () => { setEditingStation(null); setDialogOpen(true); };
-    const handleOpenEdit = (station) => { setEditingStation(station); setDialogOpen(true); };
-
-    const handleDelete = (item) => {
-        setDeletingItem(item);
-        setConfirmOpen(true);
-    };
-
-    const handleConfirmDelete = async () => {
-        if (!deletingItem) return;
-        setLoading(true);
-        try {
-            await stationApi.river.delete(deletingItem.id);
-            toast.success('Xóa thành công');
-            setConfirmOpen(false);
-            setDeletingItem(null);
-            loadData();
-        } catch (err) {
-            toast.error(err.response?.data?.error || 'Lỗi xóa trạm');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleSubmit = async (values) => {
-        try {
-            const res = editingStation
-                ? await stationApi.river.update(editingStation.id, values)
-                : await stationApi.river.create(values);
-
-            if (res) {
-                toast.success(editingStation ? 'Cập nhật thành công' : 'Thêm mới thành công');
-                setDialogOpen(false);
-                loadData();
-            }
-        } catch (err) {
-            toast.error(err.response?.data?.error || 'Đã có lỗi xảy ra');
-        }
-    };
-
-    const getOrgName = (orgId) => {
-        const org = organizations.shared?.find(o => o.id === orgId);
-        return org ? org.name : '';
-    };
-
-    const organizationNamesMap = (organizations.shared || []).reduce((acc, org) => {
-        acc[org.id] = org.name;
-        return acc;
-    }, {});
-
-    const sortedStations = useMemo(() => {
-        if (sortOrder === 'default' || !sortOrder) return stations;
-        return [...stations].sort((a, b) => {
-            const weightA = a.TrongSoBaoCao || 0;
-            const weightB = b.TrongSoBaoCao || 0;
-            return sortOrder === 'asc' ? weightA - weightB : weightB - weightA;
-        });
-    }, [stations, sortOrder]);
-
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+    const {
+        user,
+        isCompanyLevel,
+        isSuperAdmin,
+        canCreate,
+        canEdit,
+        canDelete,
+        loading,
+        stations,
+        organizations,
+        page,
+        setPage,
+        rowsPerPage,
+        setRowsPerPage,
+        totalItems,
+        sortOrder,
+        setSortOrder,
+        filterInputs,
+        setFilterInputs,
+        dialogOpen,
+        setDialogOpen,
+        editingStation,
+        confirmOpen,
+        setConfirmOpen,
+        deletingItem,
+        handleOpenCreate,
+        handleOpenEdit,
+        handleDelete,
+        handleConfirmDelete,
+        handleSubmit,
+        organizationNamesMap,
+        getOrgName,
+        sortedStations
+    } = useRiverList();
 
     return (
         <PermissionGuard permission="water:view" fallback={<Box sx={{ p: 3, textAlign: 'center' }}><Typography color="error" variant="h4">Bạn không có quyền truy cập vùng dữ liệu này.</Typography></Box>}>
@@ -219,8 +127,8 @@ const StationRiverList = () => {
                                 row={row}
                                 handleOpenEdit={handleOpenEdit}
                                 handleDelete={() => handleDelete(row)}
-                                canEdit={canEdit && (isSuperAdmin || isCompany || user?.org_id === row.org_id)}
-                                canDelete={canDelete && (isSuperAdmin || isCompany || user?.org_id === row.org_id)}
+                                canEdit={canEdit && (isSuperAdmin || isCompanyLevel || user?.org_id === row.org_id)}
+                                canDelete={canDelete && (isSuperAdmin || isCompanyLevel || user?.org_id === row.org_id)}
                                 organizationName={getOrgName(row.org_id)}
                             />
                         ))
@@ -274,8 +182,8 @@ const StationRiverList = () => {
                                         row={row}
                                         handleOpenEdit={handleOpenEdit}
                                         handleDelete={() => handleDelete(row)}
-                                        canEdit={canEdit && (isSuperAdmin || isCompany || user?.org_id === row.org_id)}
-                                        canDelete={canDelete && (isSuperAdmin || isCompany || user?.org_id === row.org_id)}
+                                        canEdit={canEdit && (isSuperAdmin || isCompanyLevel || user?.org_id === row.org_id)}
+                                        canDelete={canDelete && (isSuperAdmin || isCompanyLevel || user?.org_id === row.org_id)}
                                         organizationName={getOrgName(row.org_id)}
                                         organizationNamesMap={organizationNamesMap}
                                     />

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React from 'react';
 import {
     Dialog, DialogTitle, DialogContent, DialogActions,
     Button, TextField, Grid, Typography, Box, useTheme,
@@ -6,68 +6,16 @@ import {
 } from '@mui/material';
 import { IconShieldCheck } from '@tabler/icons-react';
 import * as ROLES from 'constants/role';
+import useRoleDialog from './hooks/useRoleDialog';
 
 const RoleDialog = ({ open, onClose, onSubmit, role, isEdit }) => {
     const theme = useTheme();
-    const [values, setValues] = useState({
-        name: '',
-        code: '',
-        description: '',
-        level: 0,
-        group: '',
-        is_company: false,
-        is_employee: false
-    });
-    const [errors, setErrors] = useState({});
-
-    useEffect(() => {
-        if (role) {
-            setValues({
-                name: role.name || '',
-                code: role.code || '',
-                description: role.description || '',
-                level: role.level || 0,
-                group: role.group || '',
-                is_company: role.is_company || false,
-                is_employee: role.is_employee || false
-            });
-        } else {
-            setValues({
-                name: '',
-                code: '',
-                description: '',
-                level: 0,
-                group: '',
-                is_company: false,
-                is_employee: false
-            });
-        }
-        setErrors({});
-    }, [role, open]);
-
-    const handleChange = (e) => {
-        const { name, value, checked, type } = e.target;
-        let finalValue = type === 'checkbox' ? checked : value;
-        if (name === 'level') finalValue = parseInt(value, 10) || 0;
-        setValues({ ...values, [name]: finalValue });
-        if (errors[name]) {
-            setErrors({ ...errors, [name]: '' });
-        }
-    };
-
-    const validate = () => {
-        const newErrors = {};
-        if (!values.name) newErrors.name = 'Vui lòng nhập tên vai trò';
-        if (!values.code) newErrors.code = 'Vui lòng nhập mã vai trò';
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
-
-    const handleFormSubmit = () => {
-        if (validate()) {
-            onSubmit(values);
-        }
-    };
+    const {
+        values,
+        errors,
+        handleChange,
+        handleFormSubmit
+    } = useRoleDialog({ open, role, onSubmit });
 
     return (
         <Dialog 
@@ -189,7 +137,7 @@ const RoleDialog = ({ open, onClose, onSubmit, role, isEdit }) => {
                                 border: '1px solid', 
                                 borderColor: values.is_company ? 'primary.main' : 'divider',
                                 bgcolor: values.is_company ? 'primary.lighter' : 'transparent',
-                            }}
+                             }}
                         />
                     </Grid>
                     <Grid item xs={12}>
@@ -204,7 +152,7 @@ const RoleDialog = ({ open, onClose, onSubmit, role, isEdit }) => {
                             }
                             label={
                                 <Box>
-                                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Cấu hình Nhân viên / Công nhân</Typography>
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Vai trò Nhân viên / Công nhân</Typography>
                                     <Typography variant="caption" color="textSecondary">
                                         Bật nếu vai trò này thuộc khối thực thi (Nhân viên, Công nhân). Tắt nếu là vai trò Quản lý.
                                     </Typography>

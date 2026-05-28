@@ -1,6 +1,7 @@
 package gemini
 
 import (
+	"ai-api-tnhn/constant"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/service/google/gemini/promt"
 	"ai-api-tnhn/internal/service/google/googleapi"
@@ -49,7 +50,7 @@ func (s *service) Chat(ctx context.Context, prompt string, history []googleapi.C
 	}
 
 	cl := s.getClient()
-	m := cl.GenerativeModel("gemini-2.5-flash")
+	m := cl.GenerativeModel(constant.ModelAIVersion)
 	m.SystemInstruction = &genai.Content{Parts: []genai.Part{genai.Text(promt.Get("chat_system"))}}
 	m.Tools = []*genai.Tool{{FunctionDeclarations: s.getChatTools()}}
 	sess := m.StartChat()
@@ -221,7 +222,7 @@ func (s *service) transformPumpingStations(raw interface{}) interface{} {
 func (s *service) ChatContract(ctx context.Context, prompt string, history []googleapi.ChatMessage, userID string, isCompany bool, logPrompt string) (*googleapi.ChatResponse, error) {
 	raw := prompt
 	cl := s.getContractClient()
-	m := cl.GenerativeModel("gemini-2.5-flash")
+	m := cl.GenerativeModel(constant.ModelAIVersion)
 	m.SystemInstruction = &genai.Content{Parts: []genai.Part{genai.Text(promt.Get("contract_system"))}}
 	m.Tools = []*genai.Tool{{FunctionDeclarations: s.getContractTools()}}
 	aug := fmt.Sprintf("[Hệ thống]: %s\n\n[Câu hỏi]: %s", time.Now().Format("2006-01-02 15:04:05"), prompt)
@@ -299,7 +300,7 @@ func (s *service) ChatContract(ctx context.Context, prompt string, history []goo
 
 func (s *service) ExtractTextFromPDF(ctx context.Context, b []byte) (string, error) {
 	cl := s.getClient()
-	m := cl.GenerativeModel("gemini-2.5-flash")
+	m := cl.GenerativeModel(constant.ModelAIVersion)
 	resp, err := m.GenerateContent(ctx, genai.Blob{MIMEType: "application/pdf", Data: b}, genai.Text(promt.Get("pdf_extraction")))
 	if err != nil {
 		return "", err
@@ -319,7 +320,7 @@ func (s *service) recordUsage(ctx context.Context, u *genai.UsageMetadata) {
 		return
 	}
 	go func() {
-		_ = s.aiUsageRepo.Save(context.Background(), &models.AiUsage{ModelName: "gemini-2.5-flash", PromptTokens: int(u.PromptTokenCount), CandidateTokens: int(u.CandidatesTokenCount), TotalTokens: int(u.TotalTokenCount), Timestamp: time.Now()})
+		_ = s.aiUsageRepo.Save(context.Background(), &models.AiUsage{ModelName: constant.ModelAIVersion, PromptTokens: int(u.PromptTokenCount), CandidateTokens: int(u.CandidatesTokenCount), TotalTokens: int(u.TotalTokenCount), Timestamp: time.Now()})
 	}()
 }
 

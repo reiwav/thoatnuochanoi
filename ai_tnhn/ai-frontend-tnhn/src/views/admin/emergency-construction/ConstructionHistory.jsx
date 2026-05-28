@@ -1,51 +1,30 @@
-import { useState, useEffect } from 'react';
+import React from 'react';
 import {
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
-    CircularProgress, TablePagination, Typography, Chip, Box, TextField, InputAdornment, IconButton, Grid
+    CircularProgress, TablePagination, Typography, Chip, Box, TextField, InputAdornment, IconButton
 } from '@mui/material';
 import { IconSearch, IconX } from '@tabler/icons-react';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import emergencyConstructionApi from 'api/emergencyConstruction';
+
+// Hook
+import useConstructionHistory from './hooks/useConstructionHistory';
 
 const ConstructionHistory = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-    const [loading, setLoading] = useState(false);
-    const [items, setItems] = useState([]);
-    const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
-    const [totalItems, setTotalItems] = useState(0);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [debouncedSearch, setDebouncedSearch] = useState('');
 
-    const loadHistory = async () => {
-        setLoading(true);
-        try {
-            const res = await emergencyConstructionApi.getGlobalHistory({ 
-                page: page + 1, 
-                per_page: rowsPerPage,
-                query: debouncedSearch 
-            });
-            if (res.data?.status === 'success') {
-                setItems(res.data.data?.data || []);
-                setTotalItems(res.data.data?.total || 0);
-            }
-        } catch (err) {
-            console.error('Lỗi tải lịch sử:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        const handler = setTimeout(() => setDebouncedSearch(searchQuery), 500);
-        return () => clearTimeout(handler);
-    }, [searchQuery]);
-
-    useEffect(() => {
-        loadHistory();
-    }, [page, rowsPerPage, debouncedSearch]);
+    const {
+        loading,
+        items,
+        page,
+        setPage,
+        rowsPerPage,
+        setRowsPerPage,
+        totalItems,
+        searchQuery,
+        setSearchQuery
+    } = useConstructionHistory();
 
     const getActionChip = (action) => {
         const config = {

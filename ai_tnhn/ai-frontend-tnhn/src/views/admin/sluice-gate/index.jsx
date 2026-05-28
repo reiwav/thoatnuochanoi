@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import MainCard from 'ui-component/cards/MainCard';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -6,245 +6,53 @@ import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
-import IconButton from '@mui/material/IconButton';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
-import Tooltip from '@mui/material/Tooltip';
-import { IconEdit, IconTrash, IconPlus, IconHistory, IconClock, IconUser, IconDoorEnter } from '@tabler/icons-react';
-import dayjs from 'dayjs';
-import { CircularProgress, Box, Typography, Grid, Paper, useTheme, useMediaQuery, Card, CardContent, TextField, Divider, alpha } from '@mui/material';
-import sluiceGateApi from 'api/sluiceGate';
-import organizationApi from 'api/organization';
+import { IconPlus, IconDoorEnter } from '@tabler/icons-react';
+import { CircularProgress, Box, Typography, Paper, useTheme, useMediaQuery, TextField } from '@mui/material';
 import SluiceGateDialog from './SluiceGateDialog';
 import SluiceGateHistoryDialog from './SluiceGateHistoryDialog';
-import { toast } from 'react-hot-toast';
-import useAuthStore from 'store/useAuthStore';
 import OrganizationSelect from 'ui-component/filter/OrganizationSelect';
 import PermissionGuard from 'ui-component/PermissionGuard';
 import ConfirmDialog from 'ui-component/ConfirmDialog';
 import AnimateButton from 'ui-component/extended/AnimateButton';
 
-const ActionButtons = ({ item, hasPermission, isCompany, user, handleHistory, handleEdit, handleDelete }) => (
-    <Stack direction="row" spacing={0.5} justifyContent="flex-end">
-        <Tooltip title="Lịch sử báo cáo">
-            <IconButton color="info" size="small" onClick={() => handleHistory(item)}>
-                <IconHistory size={20} />
-            </IconButton>
-        </Tooltip>
-        {hasPermission('sluice-gate:edit') && (isCompany || user?.org_id === item.org_id) && (
-            <Tooltip title="Chỉnh sửa">
-                <IconButton color="primary" size="small" onClick={() => handleEdit(item)}>
-                    <IconEdit size={20} />
-                </IconButton>
-            </Tooltip>
-        )}
-        {hasPermission('sluice-gate:delete') && (isCompany || user?.org_id === item.org_id) && (
-            <Tooltip title="Xóa">
-                <IconButton color="error" size="small" onClick={() => handleDelete(item)}>
-                    <IconTrash size={20} />
-                </IconButton>
-            </Tooltip>
-        )}
-    </Stack>
-);
-
-const ReportSummary = ({ lastReport }) => {
-    if (!lastReport) return null;
-    return (
-        <Stack spacing={1}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <IconClock size={14} color="gray" />
-                <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                    {dayjs(lastReport.timestamp * 1000).format('DD/MM/YYYY HH:mm')}
-                </Typography>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <IconUser size={14} color="gray" />
-                <Typography variant="caption" sx={{ fontWeight: 600 }}>{lastReport.user_name}</Typography>
-            </Box>
-            <Typography variant="body2" sx={{ mt: 1, p: 1, bgcolor: 'white', borderRadius: 1, border: '1px solid', borderColor: 'divider', fontStyle: 'italic' }}>
-                {lastReport.note}
-            </Typography>
-        </Stack>
-    );
-};
-
-const SluiceGateMobileCard = ({ item, getOrgNames, handleHistory, handleEdit, handleDelete, hasPermission, isCompany, user }) => {
-    const lastReport = item.last_report;
-    return (
-        <Card sx={{ mb: 2, borderRadius: '16px', border: '1px solid', borderColor: 'divider', boxShadow: '0 2px 12px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
-            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                <Stack spacing={1.5}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <Typography variant="h5" sx={{ fontWeight: 800, color: 'primary.dark' }}>{item.name}</Typography>
-                    </Box>
-                    <Box>
-                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>ĐƠN VỊ QUẢN LÝ</Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: 'secondary.main' }}>{getOrgNames(item.org_id) || '-'}</Typography>
-                    </Box>
-                    <Box>
-                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>TRẠNG THÁI GẦN NHẤT</Typography>
-                        {lastReport ? (
-                            <Box sx={{ p: 1.5, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider', mt: 0.5 }}>
-                                <ReportSummary lastReport={lastReport} />
-                            </Box>
-                        ) : (
-                            <Typography variant="caption" color="text.disabled">Chưa có báo cáo</Typography>
-                        )}
-                    </Box>
-                    <Divider sx={{ borderStyle: 'dashed' }} />
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Typography variant="caption" color="text.secondary" sx={{ maxWidth: '60%' }}>{item.address}</Typography>
-                        <ActionButtons
-                            item={item} hasPermission={hasPermission} isCompany={isCompany} user={user}
-                            handleHistory={handleHistory} handleEdit={handleEdit} handleDelete={handleDelete}
-                        />
-                    </Box>
-                </Stack>
-            </CardContent>
-        </Card>
-    );
-};
-
-const SluiceGateDesktopRow = ({ item, index, getOrgNames, handleHistory, handleEdit, handleDelete, hasPermission, isCompany, user }) => {
-    const theme = useTheme();
-    const lastReport = item.last_report;
-    return (
-        <React.Fragment>
-            <TableRow hover sx={{ '& > *': { borderBottom: lastReport ? 'none' : '1px solid', borderColor: 'divider' } }}>
-                <TableCell sx={{ width: 40 }} />
-                <TableCell>{index + 1}</TableCell>
-                <TableCell>
-                    <Typography variant="body2" sx={{ fontWeight: 800, color: 'primary.dark' }}>{item.name}</Typography>
-                </TableCell>
-                <TableCell>
-                    <Typography variant="body2" color="textSecondary">{item.address || '-'}</Typography>
-                </TableCell>
-                <TableCell>
-                    <Typography variant="body2" color="primary" sx={{ fontWeight: 600 }}>{getOrgNames(item.org_id)}</Typography>
-                </TableCell>
-                <TableCell align="center">
-                    <Typography variant="body2" sx={{ fontWeight: 700 }}>{item.priority || 0}</Typography>
-                </TableCell>
-                <TableCell align="right">
-                    <ActionButtons
-                        item={item} hasPermission={hasPermission} isCompany={isCompany} user={user}
-                        handleHistory={handleHistory} handleEdit={handleEdit} handleDelete={handleDelete}
-                    />
-                </TableCell>
-            </TableRow>
-            {lastReport && (
-                <TableRow sx={{ bgcolor: alpha(theme.palette.primary.main, 0.02) }}>
-                    <TableCell sx={{ py: 0, borderBottom: '1px solid', borderColor: 'divider' }} colSpan={7}>
-                        <Box sx={{ mb: 1.5, mx: 1, p: 2, bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-                            <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 800, color: 'primary.main', mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <IconClock size={16} /> Nhận xét vận hành mới nhất
-                            </Typography>
-                            <Grid container spacing={2} alignItems="center">
-                                <Grid item xs={12} md={9}>
-                                    <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', fontStyle: 'italic', bgcolor: 'grey.50', p: 1.5, borderRadius: 1.5, borderLeft: '3px solid', borderColor: 'primary.main' }}>
-                                        "{lastReport.note}"
-                                    </Typography>
-                                </Grid>
-                                <Grid item xs={12} md={3}>
-                                    <Stack spacing={0.5}>
-                                        <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                            <IconUser size={12} /> {lastReport.user_name}
-                                        </Typography>
-                                        <Typography variant="caption" color="text.disabled" sx={{ fontWeight: 600 }}>
-                                            {dayjs(lastReport.timestamp * 1000).format('DD/MM/YYYY HH:mm')}
-                                        </Typography>
-                                    </Stack>
-                                </Grid>
-                            </Grid>
-                        </Box>
-                    </TableCell>
-                </TableRow>
-            )}
-        </React.Fragment>
-    );
-};
+// custom hooks and components
+import useSluiceGateList from './hooks/useSluiceGateList';
+import SluiceGateDesktopRow from './components/SluiceGateDesktopRow';
+import SluiceGateMobileCard from './components/SluiceGateMobileCard';
 
 const SluiceGatePage = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-    const { user, isCompany, hasPermission } = useAuthStore();
-    const [data, setData] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [open, setOpen] = useState(false);
-    const [openHistory, setOpenHistory] = useState(false);
-    const [selected, setSelected] = useState(null);
-    const [confirmOpen, setConfirmOpen] = useState(false);
-    const [deletingItem, setDeletingItem] = useState(null);
-    const [orgs, setOrgs] = useState({ primary: [], shared: [] });
-    const [orgFilter, setOrgFilter] = useState((!isCompany && user?.org_id) ? user.org_id : '');
-    const [searchFilter, setSearchFilter] = useState('');
-    const [filteredData, setFilteredData] = useState([]);
-
-    const fetchStations = async (silent = false) => {
-        try {
-            if (!silent) setLoading(true);
-            const res = await sluiceGateApi.list({ per_page: 1000, org_id: orgFilter });
-            setData(res?.data || []);
-        } catch (error) {
-            console.error('Failed to fetch sluice gates', error);
-        } finally {
-            if (!silent) setLoading(false);
-        }
-    };
-
-    const fetchOrgs = async () => {
-        try {
-            const res = await organizationApi.getSelectionList();
-            setOrgs(res || { primary: [], shared: [] });
-        } catch (error) {
-            console.error('Failed to fetch orgs', error);
-        }
-    };
-
-    const loadData = async () => {
-        setLoading(true);
-        await Promise.all([fetchStations(true), fetchOrgs()]);
-        setLoading(false);
-    };
-
-    useEffect(() => { loadData(); }, [orgFilter]);
-
-    useEffect(() => {
-        if (!Array.isArray(data)) { setFilteredData([]); return; }
-        const q = searchFilter.toLowerCase();
-        setFilteredData(data.filter(item =>
-            item.name?.toLowerCase().includes(q) || item.address?.toLowerCase().includes(q)
-        ));
-    }, [data, searchFilter]);
-
-    const handleAdd = () => { setSelected(null); setOpen(true); };
-    const handleEdit = (item) => { setSelected(item); setOpen(true); };
-    const handleHistory = (item) => { setSelected(item); setOpenHistory(true); };
-    const handleDelete = (item) => { setDeletingItem(item); setConfirmOpen(true); };
-
-    const handleConfirmDelete = async () => {
-        if (!deletingItem) return;
-        setLoading(true);
-        try {
-            await sluiceGateApi.delete(deletingItem.id);
-            setConfirmOpen(false);
-            setDeletingItem(null);
-            loadData();
-            toast.success('Xóa thành công');
-        } catch (error) {
-            toast.error('Xóa thất bại');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const getOrgNames = (ids) => {
-        if (!ids) return '';
-        const idList = Array.isArray(ids) ? ids : [ids];
-        const allOrgs = [...(orgs.primary || []), ...(orgs.shared || [])];
-        return idList.map((id) => allOrgs.find((o) => o.id === id)?.name).filter(Boolean).join(', ');
-    };
+    
+    const {
+        user,
+        isCompany,
+        hasPermission,
+        loading,
+        open,
+        setOpen,
+        openHistory,
+        setOpenHistory,
+        selected,
+        confirmOpen,
+        setConfirmOpen,
+        deletingItem,
+        orgs,
+        orgFilter,
+        setOrgFilter,
+        searchFilter,
+        setSearchFilter,
+        filteredData,
+        loadData,
+        handleAdd,
+        handleEdit,
+        handleHistory,
+        handleDelete,
+        handleConfirmDelete,
+        getOrgNames
+    } = useSluiceGateList();
 
     if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 5 }}><CircularProgress /></Box>;
     if (!hasPermission(['sluice-gate:view', 'sluice-gate:edit', 'sluice-gate:control'])) return null;
@@ -296,9 +104,15 @@ const SluiceGatePage = () => {
             <Box sx={{ display: { xs: 'block', sm: 'none' } }}>
                 {filteredData.map((item) => (
                     <SluiceGateMobileCard
-                        key={item.id} item={item} getOrgNames={getOrgNames}
-                        handleHistory={handleHistory} handleEdit={handleEdit} handleDelete={handleDelete}
-                        hasPermission={hasPermission} isCompany={isCompany} user={user}
+                        key={item.id}
+                        item={item}
+                        getOrgNames={getOrgNames}
+                        handleHistory={handleHistory}
+                        handleEdit={handleEdit}
+                        handleDelete={handleDelete}
+                        hasPermission={hasPermission}
+                        isCompany={isCompany}
+                        user={user}
                     />
                 ))}
             </Box>
@@ -325,9 +139,16 @@ const SluiceGatePage = () => {
                         ) : (
                             filteredData.map((item, index) => (
                                 <SluiceGateDesktopRow
-                                    key={item.id} item={item} index={index} getOrgNames={getOrgNames}
-                                    handleHistory={handleHistory} handleEdit={handleEdit} handleDelete={handleDelete}
-                                    hasPermission={hasPermission} isCompany={isCompany} user={user}
+                                    key={item.id}
+                                    item={item}
+                                    index={index}
+                                    getOrgNames={getOrgNames}
+                                    handleHistory={handleHistory}
+                                    handleEdit={handleEdit}
+                                    handleDelete={handleDelete}
+                                    hasPermission={hasPermission}
+                                    isCompany={isCompany}
+                                    user={user}
                                 />
                             ))
                         )}

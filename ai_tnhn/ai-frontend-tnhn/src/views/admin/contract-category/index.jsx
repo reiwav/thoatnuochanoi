@@ -1,19 +1,19 @@
-import { useState, useEffect } from 'react';
+import React from 'react';
 import {
-    Button, Grid, Table, TableBody,
+    Button, Table, TableBody,
     TableCell, TableContainer, TableHead, TableRow, Paper,
     IconButton, CircularProgress, Typography, Chip, Tooltip,
     Box, useTheme, useMediaQuery
 } from '@mui/material';
 import { IconTrash, IconPlus, IconEdit, IconRefresh, IconCategory } from '@tabler/icons-react';
-import { toast } from 'react-hot-toast';
 
 // project imports
 import MainCard from 'ui-component/cards/MainCard';
 import AnimateButton from 'ui-component/extended/AnimateButton';
-import contractCategoryApi from 'api/contractCategory';
 import ContractCategoryDialog from './ContractCategoryDialog';
-import useAuthStore from 'store/useAuthStore';
+
+// Hook
+import { useContractCategoryList } from './hooks/useContractCategoryList';
 
 const CategoryRow = ({ row, handleOpenEdit, handleDelete, isMobile, hasPermission }) => {
     return (
@@ -74,68 +74,20 @@ const CategoryRow = ({ row, handleOpenEdit, handleDelete, isMobile, hasPermissio
 const ContractCategoryList = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-    const { hasPermission } = useAuthStore();
-    const [loading, setLoading] = useState(false);
-    const [categories, setCategories] = useState([]);
-    const [dialogOpen, setDialogOpen] = useState(false);
-    const [editingCategory, setEditingCategory] = useState(null);
-
-    const loadCategories = async () => {
-        setLoading(true);
-        try {
-            const data = await contractCategoryApi.getTree();
-            // Interceptor đã bóc tách dữ liệu
-            if (data) {
-                setCategories(Array.isArray(data) ? data : []);
-            }
-        } catch (err) {
-            console.error('Lỗi tải danh mục:', err);
-            toast.error('Không thể tải danh sách danh mục');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        loadCategories();
-    }, []);
-
-    const handleOpenCreate = () => {
-        setEditingCategory(null);
-        setDialogOpen(true);
-    };
-
-    const handleOpenEdit = (category) => {
-        setEditingCategory(category);
-        setDialogOpen(true);
-    };
-
-    const handleDelete = async (id) => {
-        if (!window.confirm('Bạn có chắc chắn muốn xóa danh mục này? Các danh mục con có thể bị ảnh hưởng.')) return;
-        try {
-            await contractCategoryApi.delete(id);
-            toast.success('Xóa thành công');
-            loadCategories();
-        } catch (err) {
-            toast.error(err.response?.data?.error || 'Lỗi xóa danh mục');
-        }
-    };
-
-    const handleSubmit = async (values) => {
-        try {
-            const res = editingCategory
-                ? await contractCategoryApi.update(editingCategory.id, values)
-                : await contractCategoryApi.create(values);
-            
-            if (res) {
-                toast.success(editingCategory ? 'Cập nhật thành công' : 'Thêm mới thành công');
-                setDialogOpen(false);
-                loadCategories();
-            }
-        } catch (err) {
-            toast.error(err.response?.data?.error || 'Đã có lỗi xảy ra');
-        }
-    };
+    
+    const {
+        loading,
+        categories,
+        dialogOpen,
+        setDialogOpen,
+        editingCategory,
+        hasPermission,
+        loadCategories,
+        handleOpenCreate,
+        handleOpenEdit,
+        handleDelete,
+        handleSubmit
+    } = useContractCategoryList();
 
     return (
         <MainCard

@@ -1,75 +1,21 @@
-import { useState, useEffect } from 'react';
+import React from 'react';
 import {
     Dialog, DialogTitle, DialogContent, DialogActions,
-    Button, Grid, TextField, FormControl, InputLabel,
+    Button, TextField, FormControl, InputLabel,
     Select, MenuItem, Switch, FormControlLabel, CircularProgress,
     Box, Typography
 } from '@mui/material';
-import contractCategoryApi from 'api/contractCategory';
+
+// Hook
+import { useContractCategoryDialog } from './hooks/useContractCategoryDialog';
 
 const ContractCategoryDialog = ({ open, onClose, onSubmit, category, isEdit }) => {
-    const [values, setValues] = useState({
-        name: '',
-        code: '',
-        description: '',
-        parent_id: '',
-        status: true,
-        order: 0
-    });
-    const [parents, setParents] = useState([]);
-    const [loading, setLoading] = useState(false);
-
-    useEffect(() => {
-        if (open) {
-            if (isEdit && category) {
-                setValues({
-                    name: category.name || '',
-                    code: category.code || '',
-                    description: category.description || '',
-                    parent_id: category.parent_id || '',
-                    status: category.status !== false,
-                    order: category.order || 0
-                });
-            } else {
-                setValues({
-                    name: '',
-                    code: '',
-                    description: '',
-                    parent_id: '',
-                    status: true,
-                    order: 0
-                });
-            }
-            loadParents();
-        }
-    }, [open, isEdit, category]);
-
-    const loadParents = async () => {
-        setLoading(true);
-        try {
-            const res = await contractCategoryApi.getTree();
-            if (res.data?.status === 'success') {
-                // Filter out current category and its descendants if editing to prevent cycles
-                let list = res.data.data || [];
-                if (isEdit && category) {
-                    list = list.filter(c => c.id !== category.id && !c.path.includes(`,${category.id},`));
-                }
-                setParents(list);
-            }
-        } catch (err) {
-            console.error('Failed to load categories:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleChange = (e) => {
-        const { name, value, checked, type } = e.target;
-        setValues({
-            ...values,
-            [name]: type === 'checkbox' ? checked : value
-        });
-    };
+    const {
+        values,
+        parents,
+        loading,
+        handleChange
+    } = useContractCategoryDialog({ open, category, isEdit });
 
     const handleSave = () => {
         if (!values.name || !values.code) {

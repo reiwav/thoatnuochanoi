@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Box, Typography, Table, TableBody, TableCell, TableContainer,
-    TableHead, TableRow, Paper, Chip, Stack, TextField, MenuItem,
+    TableHead, TableRow, Paper, Stack, TextField, MenuItem,
     CircularProgress, Button, TablePagination,
     IconButton, Collapse, useTheme, useMediaQuery, Grid,
     Dialog, DialogContent
@@ -10,13 +10,10 @@ import {
 import MultiSelectCheckboxes from 'ui-component/MultiSelectCheckboxes';
 import MainCard from 'ui-component/cards/MainCard';
 import {
-    IconSearch, IconAlertTriangle, IconX, IconChevronUp, IconChevronDown,
-    IconMapPin, IconCalendar, IconUser, IconClipboardList,
-    IconChevronLeft, IconChevronRight, IconEdit
+    IconSearch, IconX, IconChevronUp, IconChevronDown,
+    IconMapPin, IconClipboardList, IconChevronLeft, IconChevronRight, IconEdit
 } from '@tabler/icons-react';
-import emergencyConstructionApi from 'api/emergencyConstruction';
 import { getInundationImageUrl } from 'utils/imageHelper';
-import { toast } from 'react-hot-toast';
 import useAuthStore from 'store/useAuthStore';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -24,7 +21,10 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 
-const CollapsibleProgressRow = ({ row, handleOpenViewer, isMobile }) => {
+// Hook
+import useConstructionProgressHistory from './hooks/useConstructionProgressHistory';
+
+const CollapsibleProgressRow = ({ row, handleOpenViewer }) => {
     const { hasPermission } = useAuthStore();
     const [open, setOpen] = useState(true);
     const navigate = useNavigate();
@@ -137,85 +137,28 @@ const CollapsibleProgressRow = ({ row, handleOpenViewer, isMobile }) => {
 const ConstructionProgressHistory = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-    const navigate = useNavigate();
-    
-    // Get auth state from Zustand
-    const { role: userRole } = useAuthStore();
 
-    const [loading, setLoading] = useState(false);
-    const [reports, setReports] = useState([]);
-    const [constructions, setConstructions] = useState([]);
-    const [totalReports, setTotalReports] = useState(0);
-    const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
-
-    // Filters
-    const [dateFilter, setDateFilter] = useState(null);
-    const [constructionFilter, setConstructionFilter] = useState([]);
-    const [searchQuery, setSearchQuery] = useState('');
-
-    const [viewer, setViewer] = useState({ open: false, images: [], index: 0 });
-
-    const fetchConstructions = async () => {
-        try {
-            const res = await emergencyConstructionApi.getAll({ per_page: 1000 });
-            if (res.data?.status === 'success') {
-                setConstructions(res.data.data?.data || []);
-            }
-        } catch (err) {
-            console.error('Lỗi tải danh sách công trình:', err);
-        }
-    };
-
-    const fetchReports = async () => {
-        setLoading(true);
-        try {
-            const params = {
-                page: page + 1,
-                per_page: rowsPerPage,
-                query: searchQuery
-            };
-
-            if (dateFilter) {
-                params.date = dateFilter.format('YYYY-MM-DD');
-            }
-
-            if (constructionFilter.length > 0) {
-                params.construction_ids = constructionFilter.join(',');
-            }
-
-            const res = await emergencyConstructionApi.getGlobalHistory(params);
-            if (res.data?.status === 'success') {
-                setReports(res.data.data?.data || []);
-                setTotalReports(res.data.data?.total || 0);
-            }
-        } catch (err) {
-            toast.error('Lỗi tải lịch sử báo cáo');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchConstructions();
-    }, []);
-
-    useEffect(() => {
-        fetchReports();
-    }, [page, rowsPerPage, dateFilter, constructionFilter]);
-
-    const handleSearch = (e) => {
-        if (e.key === 'Enter') {
-            setPage(0);
-            fetchReports();
-        }
-    };
-
-    const handleOpenViewer = (images, index = 0) => {
-        setViewer({ open: true, images, index });
-    };
-
-    const handleCloseViewer = () => setViewer({ ...viewer, open: false });
+    const {
+        loading,
+        reports,
+        constructions,
+        totalReports,
+        page,
+        setPage,
+        rowsPerPage,
+        setRowsPerPage,
+        dateFilter,
+        setDateFilter,
+        constructionFilter,
+        setConstructionFilter,
+        searchQuery,
+        setSearchQuery,
+        viewer,
+        setViewer,
+        handleSearch,
+        handleOpenViewer,
+        handleCloseViewer
+    } = useConstructionProgressHistory();
 
     return (
         <MainCard
@@ -327,8 +270,6 @@ const ConstructionProgressHistory = () => {
                                     <CollapsibleProgressRow
                                         key={row.id}
                                         row={row}
-                                        isMobile={isMobile}
-                                        userRole={userRole}
                                         handleOpenViewer={handleOpenViewer}
                                     />
                                 ))}

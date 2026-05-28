@@ -1,34 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Box, CircularProgress, Typography, Container } from '@mui/material';
-import useAuthStore from 'store/useAuthStore';
-import sluiceGateApi from 'api/sluiceGate';
 import SluiceGateReport from 'views/admin/sluice-gate/SluiceGateReport';
 import MainCard from 'ui-component/cards/MainCard';
 
+// Hook
+import useEmployeeSluiceGate from './hooks/useEmployeeSluiceGate';
+
 const EmployeeSluiceGatePage = () => {
-    const { user } = useAuthStore();
-    const [station, setStation] = useState(null);
-    const [loading, setLoading] = useState(true);
-
-    const fetchAssignedStation = async () => {
-        if (!user?.assigned_sluice_gate_id) {
-            setLoading(false);
-            return;
-        }
-        try {
-            setLoading(true);
-            const res = await sluiceGateApi.get(user.assigned_sluice_gate_id);
-            setStation(res || null);
-        } catch (error) {
-            console.error('Failed to fetch assigned sluice gate', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchAssignedStation();
-    }, [user?.assigned_sluice_gate_id]);
+    const {
+        user,
+        station,
+        loading,
+        fetchAssignedStation
+    } = useEmployeeSluiceGate();
 
     if (loading) {
         return (

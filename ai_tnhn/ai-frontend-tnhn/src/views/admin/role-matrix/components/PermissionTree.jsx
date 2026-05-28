@@ -10,7 +10,6 @@ import {
     Tooltip
 } from '@mui/material';
 import { IconSquare, IconCheckbox, IconMinus } from '@tabler/icons-react';
-import * as ROLES from 'constants/role';
 
 // Thứ tự groups theo menu sidebar (không sort A-Z)
 const GROUP_ORDER = [
@@ -37,7 +36,7 @@ const MODULE_LABELS = {
     'contract-ai': 'AI Trợ lý',
 };
 
-const PermissionTree = ({ permissions, selectedPermissions = [], onToggle, disabled, userRole }) => {
+const PermissionTree = ({ permissions, selectedPermissions = [], onToggle, disabled }) => {
     const groupedData = useMemo(() => {
         const groups = {};
 

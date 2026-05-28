@@ -339,6 +339,7 @@ export const useChatIntegrations = ({ setMessages, setLoading, shouldScrollToBot
         setOpenReportDialog,
         exporting,
         rainChart,
+        setRainChart,
         inundationDetail,
         setInundationDetail,
         handleRainSummary,

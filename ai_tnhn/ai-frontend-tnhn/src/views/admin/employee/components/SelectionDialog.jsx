@@ -1,60 +1,23 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React from 'react';
 import {
     Dialog, DialogTitle, DialogContent, DialogActions,
     TextField, Button, List, ListItem, ListItemButton,
     ListItemIcon, ListItemText, Checkbox, IconButton,
-    InputAdornment, Box, Typography, Chip, Stack
+    InputAdornment, Box, Typography, Stack
 } from '@mui/material';
-import { IconSearch, IconX, IconCheck, IconSquare, IconCheckbox } from '@tabler/icons-react';
+import { IconSearch, IconX, IconSquare, IconCheckbox } from '@tabler/icons-react';
+import useSelectionDialog from '../hooks/useSelectionDialog';
 
 const SelectionDialog = ({ open, onClose, onConfirm, title, items = [], initialSelectedIds = [], labelField = 'name', singleSelect = false }) => {
-    const [searchTerm, setSearchTerm] = useState('');
-    const [selectedIds, setSelectedIds] = useState([]);
-
-    useEffect(() => {
-        if (open) {
-            setSelectedIds(initialSelectedIds);
-            setSearchTerm('');
-        }
-    }, [open, initialSelectedIds]);
-
-    const filteredItems = useMemo(() => {
-        if (!searchTerm) return items;
-        const lowerSearch = searchTerm.toLowerCase();
-        return items.filter(item => 
-            (item[labelField] || '').toLowerCase().includes(lowerSearch)
-        );
-    }, [items, searchTerm, labelField]);
-
-    const handleToggle = (id) => {
-        if (singleSelect) {
-            setSelectedIds(prev => prev.includes(id) ? [] : [id]);
-            return;
-        }
-        const currentIndex = selectedIds.indexOf(id);
-        const newSelected = [...selectedIds];
-
-        if (currentIndex === -1) {
-            newSelected.push(id);
-        } else {
-            newSelected.splice(currentIndex, 1);
-        }
-
-        setSelectedIds(newSelected);
-    };
-
-    const handleSelectAll = () => {
-        if (selectedIds.length === items.length) {
-            setSelectedIds([]);
-        } else {
-            setSelectedIds(items.map(i => i.id));
-        }
-    };
-
-    const handleConfirm = () => {
-        onConfirm(selectedIds);
-        onClose();
-    };
+    const {
+        searchTerm,
+        setSearchTerm,
+        selectedIds,
+        filteredItems,
+        handleToggle,
+        handleSelectAll,
+        handleConfirm
+    } = useSelectionDialog({ open, items, initialSelectedIds, labelField, singleSelect, onConfirm, onClose });
 
     return (
         <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth scroll="paper">

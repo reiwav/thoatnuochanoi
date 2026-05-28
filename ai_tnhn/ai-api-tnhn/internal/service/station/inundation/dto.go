@@ -12,6 +12,8 @@ type InundationUpdateStat struct {
 }
 
 type InundationStationStat struct {
+	PointID        string                 `json:"point_id"`
+	ReportID       string                 `json:"report_id"`
 	StreetName     string                 `json:"street_name"`
 	OrgName        string                 `json:"org_name"`
 	Depth          float64                `json:"depth"`

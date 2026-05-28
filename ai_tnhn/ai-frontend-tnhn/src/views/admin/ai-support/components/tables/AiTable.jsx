@@ -44,13 +44,13 @@ const translateTitle = (title) => {
     return TITLE_VI[key] || title;
 };
 
-const AiTable = ({ title, data, tableKey, handleRainChart }) => {
+const AiTable = ({ title, data, tableKey, handleRainChart, handleInundationClick }) => {
     if (!data || !Array.isArray(data) || data.length === 0) return null;
 
     const normalizedKey = String(tableKey).toLowerCase();
     const TableComponent = TABLE_COMPONENTS[normalizedKey] || DefaultTable;
     const viTitle = translateTitle(title);
-    return <TableComponent title={viTitle} data={data} handleRainChart={handleRainChart} />;
+    return <TableComponent title={viTitle} data={data} handleRainChart={handleRainChart} handleInundationClick={handleInundationClick} />;
 };
 
 export default AiTable;

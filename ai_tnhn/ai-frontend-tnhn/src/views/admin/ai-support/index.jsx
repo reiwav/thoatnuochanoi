@@ -21,6 +21,8 @@ import ChatHeader from './components/ChatHeader';
 import SuggestedQuestions from './components/SuggestedQuestions';
 import StatsContent from './components/StatsContent';
 import RainChartDialog from './components/RainChartDialog';
+import InundationDetailDialog from '../../shared/inundation/InundationDetailDialog';
+import useInundationStore from 'store/useInundationStore';
 import stationApi from 'api/station';
 
 dayjs.extend(relativeTime);
@@ -33,6 +35,15 @@ const AiSupport = () => {
 
     // Safety guard: if no ai:chat permission, don't render.
     if (!hasPermission('ai:chat')) return null;
+
+    const { points, fetchInitialData } = useInundationStore();
+    const [inundationDetail, setInundationDetail] = useState({ open: false, point: null });
+
+    useEffect(() => {
+        if (points.length === 0) {
+            fetchInitialData();
+        }
+    }, [points, fetchInitialData]);
 
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
@@ -482,6 +493,37 @@ const AiSupport = () => {
         }
     }, []);
 
+    const handleInundationClick = useCallback((pointData) => {
+        const pointName = pointData['Tên điểm ngập'] || pointData['Vị trí ngập'] || pointData['street_name'] || '';
+        const pointId = pointData['point_id'] || pointData['id'];
+        const reportId = pointData['report_id'] || null;
+
+        let matchedPoint = null;
+        if (pointId) {
+            matchedPoint = points.find(p => p.id === pointId);
+        }
+        if (!matchedPoint && pointName) {
+            const cleanName = pointName.toLowerCase().trim();
+            matchedPoint = points.find(p => {
+                const pName = p.name?.toLowerCase().trim();
+                return pName === cleanName || pName?.includes(cleanName) || cleanName.includes(pName);
+            });
+        }
+
+        if (matchedPoint) {
+            setInundationDetail({ open: true, point: matchedPoint });
+        } else {
+            setInundationDetail({
+                open: true,
+                point: {
+                    id: pointId || `dummy-${Date.now()}`,
+                    name: pointName,
+                    report_id: reportId
+                }
+            });
+        }
+    }, [points]);
+
     const formatBytes = (bytes) => {
         if (!bytes) return '0 B';
         const k = 1024, sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -554,6 +596,7 @@ const AiSupport = () => {
                         handleEmailDetail={handleEmailDetail}
                         handleEmcHistory={handleEmcHistory}
                         handleRainChart={handleRainChart}
+                        handleInundationClick={handleInundationClick}
                     />
                 ))}
                 {loading && (
@@ -685,6 +728,12 @@ const AiSupport = () => {
                 date={rainChart.date}
                 data={rainChart.data}
                 loading={rainChart.loading}
+            />
+
+            <InundationDetailDialog
+                open={inundationDetail.open}
+                onClose={() => setInundationDetail({ open: false, point: null })}
+                point={inundationDetail.point}
             />
         </Box>
     );

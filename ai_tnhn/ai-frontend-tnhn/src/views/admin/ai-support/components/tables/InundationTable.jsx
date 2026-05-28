@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Typography, useTheme } from '@mui/material';
 
-const InundationCard = ({ point }) => {
+const InundationCard = ({ point, onClick }) => {
     const theme = useTheme();
     const name = point['Tên điểm ngập'] || point['Vị trí ngập'] || point['street_name'] || '';
     const org = point['Đơn vị quản lý'] || point['Đơn vị trực'] || point['org_name'] || '';
@@ -28,12 +28,31 @@ const InundationCard = ({ point }) => {
     const warningBg = systemColor ? `${systemColor}15` : (theme.palette.orange?.light || theme.palette.error.light);
 
     return (
-        <Box sx={{
-            p: '8px 10px', borderRadius: '10px',
-            border: '1px solid', borderColor: systemColor ? `${systemColor}40` : warningBg,
-            bgcolor: 'background.paper', minWidth: 0,
-            display: 'flex', flexDirection: 'column', gap: '4px'
-        }}>
+        <Box 
+            onClick={onClick}
+            sx={{
+                p: '8px 10px', 
+                borderRadius: '10px',
+                border: '1px solid', 
+                borderColor: systemColor ? `${systemColor}40` : warningBg,
+                bgcolor: 'background.paper', 
+                minWidth: 0,
+                display: 'flex', 
+                flexDirection: 'column', 
+                gap: '4px',
+                cursor: 'pointer',
+                transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: theme.shadows[3] || '0px 3px 10px rgba(0,0,0,0.08)',
+                    borderColor: warningColor,
+                    bgcolor: systemColor ? `${systemColor}05` : 'background.paper'
+                },
+                '&:active': {
+                    transform: 'translateY(0)',
+                }
+            }}
+        >
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1 }}>
                 <Typography sx={{ fontWeight: 700, fontSize: '13px', lineHeight: 1.3, color: warningColor, flex: 1 }}>
                     {name}
@@ -76,7 +95,7 @@ const InundationCard = ({ point }) => {
     );
 };
 
-const InundationTable = ({ title, data }) => {
+const InundationTable = ({ title, data, handleInundationClick }) => {
     const theme = useTheme();
     if (!data || !Array.isArray(data) || data.length === 0) return null;
 
@@ -99,7 +118,7 @@ const InundationTable = ({ title, data }) => {
                 {rows.map((group, ri) => (
                     <Box key={ri} sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: '8px' }}>
                         {group.map((point, pi) => (
-                            <InundationCard key={pi} point={point} />
+                            <InundationCard key={pi} point={point} onClick={() => handleInundationClick && handleInundationClick(point)} />
                         ))}
                     </Box>
                 ))}

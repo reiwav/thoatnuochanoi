@@ -93,6 +93,8 @@ type InundationTableRow struct {
 	KichThuoc string `json:"Kích thước (DxRxS)"`
 	TrangThai string `json:"Trạng thái"`
 	Color     string `json:"color"`
+	PointID   string `json:"point_id"`
+	ReportID  string `json:"report_id"`
 }
 
 func (s *service) populateRainTable(res *ChatResponse, status *CityStatus) {
@@ -173,6 +175,8 @@ func (s *service) populateInundationTable(res *ChatResponse, status *CityStatus)
 			KichThuoc: fmt.Sprintf("%v x %v x %v", m.Length, m.Width, fmt.Sprintf("%.2f", m.Depth)),
 			TrangThai: m.CurrentStatus,
 			Color:     m.Color,
+			PointID:   m.PointID,
+			ReportID:  m.ReportID,
 		})
 	}
 	res.Tables["inundations"] = inundations

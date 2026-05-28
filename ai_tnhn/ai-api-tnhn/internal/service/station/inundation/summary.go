@@ -57,6 +57,8 @@ func (s *service) GetInundationSummary(ctx context.Context, orgID string, isAllo
 		}
 
 		stat := InundationStationStat{
+			PointID:        r.PointID,
+			ReportID:       r.ID,
 			StreetName:     streetName,
 			OrgName:        orgMap[r.OrgID],
 			Depth:          r.Depth,

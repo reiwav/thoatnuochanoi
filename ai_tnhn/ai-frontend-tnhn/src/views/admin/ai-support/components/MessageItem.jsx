@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import AiTable from './tables/AiTable';
 // ... (giữ nguyên các phần import)
 
-const MessageItem = memo(({ msg, userInfo, handleEmailDetail, handleEmcHistory, handleRainChart }) => {
+const MessageItem = memo(({ msg, userInfo, handleEmailDetail, handleEmcHistory, handleRainChart, handleInundationClick }) => {
     const isUser = msg.role === 'user';
 
     return (
@@ -76,12 +76,12 @@ const MessageItem = memo(({ msg, userInfo, handleEmailDetail, handleEmcHistory, 
                                 renderedKeys.add(key);
                                 const data = msg.tables[key];
                                 if (Array.isArray(data)) {
-                                    return <AiTable key={key} title={key} data={data} tableKey={key} handleRainChart={handleRainChart} />;
+                                    return <AiTable key={key} title={key} data={data} tableKey={key} handleRainChart={handleRainChart} handleInundationClick={handleInundationClick} />;
                                 }
                                 if (typeof data === 'object' && data !== null) {
                                     return Object.entries(data).map(([subKey, subData]) => {
                                         if (Array.isArray(subData)) {
-                                            return <AiTable key={`${key}-${subKey}`} title={`${key} - ${subKey}`} data={subData} tableKey={key} handleRainChart={handleRainChart} />;
+                                            return <AiTable key={`${key}-${subKey}`} title={`${key} - ${subKey}`} data={subData} tableKey={key} handleRainChart={handleRainChart} handleInundationClick={handleInundationClick} />;
                                         }
                                         return null;
                                     });

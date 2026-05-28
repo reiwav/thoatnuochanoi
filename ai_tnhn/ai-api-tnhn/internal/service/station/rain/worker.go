@@ -59,7 +59,6 @@ func (w *worker) run(ctx context.Context) {
 	loc, _ := time.LoadLocation("Asia/Ho_Chi_Minh")
 
 	// Initial sync on startup
-	w.logger.GetLogger().Info("RainWorker: Performing initial sync on startup...")
 	w.sync(ctx)
 
 	for {
@@ -69,13 +68,11 @@ func (w *worker) run(ctx context.Context) {
 			next = next.AddDate(0, 0, 1)
 		}
 		duration := next.Sub(now)
-		w.logger.GetLogger().Infof("RainWorker: Next daily sync scheduled exactly at %v (in %v)", next.Format("2006-01-02 15:04:05"), duration.Round(time.Second))
 
 		select {
 		case <-ctx.Done():
 			return
 		case <-time.After(duration):
-			w.logger.GetLogger().Info("RainWorker: Executing daily 07:01 AM cronjob...")
 			w.sync(ctx)
 		}
 	}
@@ -149,7 +146,14 @@ func (w *worker) fetchAndSave(ctx context.Context, s *models.RainStation, date t
 		return 0
 	}
 
-	//w.logger.GetLogger().Infof("RainWorker: [DEBUG] Received %d points for station %s on %s", len(dataPoints), s.TenTram, dateStr)
+	// Find the maximum rain value
+	maxRain := 0.0
+	for _, dp := range dataPoints {
+		if dp.LuongMua > maxRain {
+			maxRain = dp.LuongMua
+		}
+	}
+	w.logger.GetLogger().Infof("RainWorker: Trạm %s (%s) - Lượng mưa lớn nhất: %.1f mm", s.TenTram, dateStr, maxRain)
 
 	inserted := 0
 	skipped := 0

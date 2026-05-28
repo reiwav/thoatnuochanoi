@@ -152,7 +152,42 @@ const RainTable = ({ title, data, handleRainChart }) => {
         // Comprehensive search for station ID across all known variants
         const id = s.old_id || s.oldId || s.OldId || s.OldID;
         const name = s.name || s.phuong || s['Trạm'] || s['Tên'] || s['TenTram'] || s['tram'];
-        const date = s.date || new Date().toISOString().split('T')[0];
+
+        // Robust extraction of date from various possible fields
+        let dateVal = s.date || s.ngay || s.Ngay || s.ThoiGian || s['Thời gian'] || s['thoi_gian'] || s.time || s.timestamp || s.ThoiGian_BD || s.ThoiGian_HT || s.ThoiGian_Tr;
+        if (!dateVal) {
+            const dateKey = Object.keys(s).find(k => {
+                const kl = k.toLowerCase();
+                return kl.includes('date') || kl.includes('ngay') || kl.includes('time') || kl.includes('timestamp');
+            });
+            if (dateKey) dateVal = s[dateKey];
+        }
+
+        let formattedDate = new Date().toISOString().split('T')[0];
+        if (dateVal) {
+            const valStr = String(dateVal).trim();
+            // Match YYYY-MM-DD
+            const ymdMatch = valStr.match(/^(\d{4})[-/](\d{2})[-/](\d{2})/);
+            if (ymdMatch) {
+                formattedDate = `${ymdMatch[1]}-${ymdMatch[2]}-${ymdMatch[3]}`;
+            } else {
+                // Match DD/MM/YYYY
+                const dmyMatch = valStr.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})/);
+                if (dmyMatch) {
+                    const day = dmyMatch[1].padStart(2, '0');
+                    const month = dmyMatch[2].padStart(2, '0');
+                    const year = dmyMatch[3];
+                    formattedDate = `${year}-${month}-${day}`;
+                } else {
+                    try {
+                        const d = new Date(valStr);
+                        if (!isNaN(d.getTime())) {
+                            formattedDate = d.toISOString().split('T')[0];
+                        }
+                    } catch (e) {}
+                }
+            }
+        }
 
         if (!id) {
             console.error("RainTable: Missing station ID. Object data:", s);
@@ -160,13 +195,13 @@ const RainTable = ({ title, data, handleRainChart }) => {
             const numericalKey = Object.keys(s).find(k => k.toLowerCase().includes('id') && (typeof s[k] === 'number' || !isNaN(s[k])));
             if (numericalKey) {
                 console.warn(`RainTable: Using fallback key '${numericalKey}' for ID`);
-                handleRainChart(s[numericalKey], date, name);
+                handleRainChart(s[numericalKey], formattedDate, name);
                 return;
             }
             return;
         }
 
-        handleRainChart(id, date, name);
+        handleRainChart(id, formattedDate, name);
     };
 
     // Phân loại: Ưu tiên s.type, nếu không có thì dựa vào tên/phường

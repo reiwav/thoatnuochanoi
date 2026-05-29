@@ -8,6 +8,8 @@ import (
 	"io"
 	"net/http"
 	"time"
+
+	"github.com/go-resty/resty/v2"
 )
 
 type RainDataResponse struct {
@@ -74,14 +76,17 @@ type Service interface {
 }
 
 type service struct {
-	client *http.Client
+	client      *http.Client
+	restyClient *resty.Client
 }
 
 func NewService() Service {
+	httpClient := &http.Client{
+		Timeout: 15 * time.Second,
+	}
 	return &service{
-		client: &http.Client{
-			Timeout: 15 * time.Second,
-		},
+		client:      httpClient,
+		restyClient: resty.NewWithClient(httpClient),
 	}
 }
 
@@ -144,38 +149,35 @@ func (s *service) GetRawWaterData(ctx context.Context) (*WaterDataResponse, erro
 
 func (s *service) GetRainChartData(ctx context.Context, sessionID string, stationOldID int, date string) ([]RainChartDataPoint, error) {
 	url := fmt.Sprintf("https://thoatnuochanoi.vn/qlnl/Contains/ajax/phai.ashx?type=solieumua&tram=%d&ngay=%s", stationOldID, date)
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Accept", "application/json, text/javascript, */*; q=0.01")
-	req.Header.Set("Accept-Language", "vi-VN,vi;q=0.9")
-	req.Header.Set("Cache-Control", "no-cache")
-	req.Header.Set("Connection", "keep-alive")
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	req.Header.Set("Cookie", "ASP.NET_SessionId="+sessionID)
-	req.Header.Set("Pragma", "no-cache")
-	req.Header.Set("Referer", "https://thoatnuochanoi.vn/qlnl/bieu-do-mua")
-	req.Header.Set("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1")
-	req.Header.Set("X-Requested-With", "XMLHttpRequest")
 
-	resp, err := s.client.Do(req)
+	resp, err := s.restyClient.R().
+		SetContext(ctx).
+		SetHeaders(map[string]string{
+			"Accept":           "application/json, text/javascript, */*; q=0.01",
+			"Accept-Language":  "vi-VN,vi;q=0.9",
+			"Cache-Control":    "no-cache",
+			"Connection":       "keep-alive",
+			"Content-Type":     "application/json; charset=utf-8",
+			"Cookie":           "ASP.NET_SessionId=" + sessionID,
+			"Pragma":           "no-cache",
+			"Referer":          "https://thoatnuochanoi.vn/qlnl/bieu-do-mua",
+			"X-Requested-With": "XMLHttpRequest",
+			"User-Agent":       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+		}).
+		Get(url)
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to call rain chart API: %w", err)
 	}
-	defer resp.Body.Close()
 
-	bodyBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	if string(bodyBytes) == "{}" || string(bodyBytes) == "{\"Data\":\"[]\"}" {
+	body := resp.Body()
+	fmt.Println("====== StationID", stationOldID, sessionID, "==== data", string(body))
+	if string(body) == "{}" || string(body) == "{\"Data\":\"[]\"}" {
 		return nil, nil
 	}
 
 	var apiResponse RainChartDataResponse
-	if err := json.Unmarshal(bodyBytes, &apiResponse); err != nil {
+	if err := json.Unmarshal(body, &apiResponse); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal rain chart response: %w", err)
 	}
 

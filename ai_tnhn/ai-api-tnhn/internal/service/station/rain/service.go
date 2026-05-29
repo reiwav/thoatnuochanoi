@@ -72,9 +72,7 @@ func (s *service) GetRainDataByStation(ctx context.Context, stationID int64, dat
 		// The external API uses the date to return data for 7h(D-1) → 7h(D)
 		records, err := s.fetchFromExternal(ctx, stationID, date)
 		if err == nil && len(records) > 0 {
-			for _, r := range records {
-				res = append(res, *r)
-			}
+			res = append(res, records...)
 		}
 	} else {
 		// For historical rain days, query DB with correct 7h window
@@ -89,9 +87,7 @@ func (s *service) GetRainDataByStation(ctx context.Context, stationID int64, dat
 		if len(res) == 0 {
 			records, err := s.fetchFromExternal(ctx, stationID, date)
 			if err == nil && len(records) > 0 {
-				for _, r := range records {
-					res = append(res, *r)
-				}
+				res = append(res, records...)
 			}
 		}
 	}
@@ -139,25 +135,24 @@ func (s *service) GetRainChart(ctx context.Context, stationOldID int64, date str
 	return records, nil
 }
 
-func (s *service) fetchFromExternal(ctx context.Context, stationOldID int64, date string) ([]*models.RainRecord, error) {
-	sessionID := "kzela2aw0gdvzxvrthicl14n" // Default session ID
-	st, _ := s.settingSvc.GetRainSetting(ctx)
-	if st != nil && st.SessionID != "" {
-		sessionID = st.SessionID
-	}
-
-	dataPoints, err := s.thoatnuocSvc.GetRainChartData(ctx, sessionID, int(stationOldID), date)
+func (s *service) fetchFromExternal(ctx context.Context, stationOldID int64, date string) ([]models.RainRecord, error) {
+	st, err := s.settingSvc.GetRainSetting(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	var res []*models.RainRecord
+	dataPoints, err := s.thoatnuocSvc.GetRainChartData(ctx, st.SessionID, int(stationOldID), date)
+	if err != nil {
+		return nil, err
+	}
+
+	var res []models.RainRecord
 	for _, dp := range dataPoints {
 		ts, err := time.ParseInLocation("2006-01-02T15:04:05", dp.ThoiGian, time.Local)
 		if err != nil {
 			continue
 		}
-		res = append(res, &models.RainRecord{
+		res = append(res, models.RainRecord{
 			StationID: stationOldID,
 			Date:      ts.Format("2006-01-02"),
 			Timestamp: ts,

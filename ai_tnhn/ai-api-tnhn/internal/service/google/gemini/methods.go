@@ -172,6 +172,9 @@ func (s *service) getToolKey(c *genai.FunctionCall) string {
 			if t == "rain" {
 				return "rains"
 			}
+			if t == "inundation" {
+				return "inundations"
+			}
 			return "waters"
 		}
 		return "stations"

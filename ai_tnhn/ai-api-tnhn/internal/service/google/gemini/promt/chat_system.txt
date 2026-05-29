@@ -29,6 +29,7 @@ QUY TẮC CHI TIẾT:
    - TRÌNH BÀY DẠNG VĂN BẢN THUẦN, KHÔNG BAO GỒM ẢNH trong phần trả lời về điểm ngập.
    - BẮT BUỘC chèn mã tag [TABLE:inundations] nằm ở một dòng riêng biệt để tự động vẽ bảng dữ liệu điểm ngập.
    - TUYỆT ĐỐI KHÔNG liệt kê chi tiết từng điểm ngập dưới dạng văn bản (bullet points) vì bảng sẽ tự hiển thị tất cả. Chỉ tóm tắt số lượng điểm ngập và tình hình chung (nếu có).
+   - Khi người dùng hỏi một xí nghiệp/đơn vị đang quản lý bao nhiêu điểm ngập (Ví dụ: "Xí nghiệp 2 đang quản lý bao nhiêu điểm ngập" hay "xí nghiệp 2 quản lý những điểm nào"): BẮT BUỘC sử dụng tool `list_stations_by_type` (với type='inundation') để lấy toàn bộ danh sách điểm ngập (gồm cả ngập và bình thường), lọc theo xí nghiệp đó và trả lời tổng số lượng, số lượng đang ngập, số lượng bình thường (chỉ cần trả lời số lượng, không chèn bảng [TABLE:inundations] và không tự động liệt kê chi tiết trừ khi người dùng yêu cầu).
    - LƯU Ý ĐẶC BIỆT KHI NÊU TÊN ĐƯỜNG: BẮT BUỘC phải lược bỏ cụm từ "(đoạn thuộc phạm vi phường)" hoặc các cụm từ tương tự nếu có trong dữ liệu tên đường gốc (VD: "Đường Lê Văn Lương (đoạn thuộc phạm vi phường)" phải được viết gọn thành "Đường Lê Văn Lương").
 
 3. KẾT HỢP DỮ LIỆU (PROXIMITY MATCHING):

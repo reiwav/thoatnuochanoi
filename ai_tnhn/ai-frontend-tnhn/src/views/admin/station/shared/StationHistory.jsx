@@ -128,14 +128,14 @@ const StationHistory = ({ type }) => {
         chart: {
             type: 'line',
             height: 350,
-            toolbar: { show: true },
-            zoom: { enabled: true },
+            toolbar: { show: false },
+            zoom: { enabled: false },
             fontFamily: theme.typography.fontFamily
         },
         dataLabels: { enabled: false },
         stroke: { curve: 'smooth', width: 3 },
         markers: {
-            size: 4,
+            size: activeData.length <= 1 ? 5 : 0,
             strokeWidth: 2,
             hover: { size: 6 }
         },
@@ -157,7 +157,7 @@ const StationHistory = ({ type }) => {
             x: { format: 'dd/MM/yyyy HH:mm' }
         },
         colors: [theme.palette.primary.main]
-    }), [theme, type]);
+    }), [theme, type, activeData.length]);
 
     const chartSeries = React.useMemo(() => {
         let data = activeData.map(item => ({
@@ -165,22 +165,7 @@ const StationHistory = ({ type }) => {
             y: item.value || 0
         }));
 
-        if (type === 'rain' && data.length === 1 && selectedDate) {
-            // Thêm điểm 0mm lúc 7:00 AM của ngày đó để vẽ được biểu đồ line
-            const startDate = selectedDate.startOf('day').add(7, 'hour');
-            // Đảm bảo điểm 7:00 AM nằm trước điểm mưa thực tế
-            if (startDate.toDate().getTime() < data[0].x) {
-                data.unshift({
-                    x: startDate.toDate().getTime(),
-                    y: 0
-                });
-            } else {
-                data.push({
-                    x: startDate.toDate().getTime(),
-                    y: 0
-                });
-            }
-        }
+
 
         return [{
             name: getValueLabel(),

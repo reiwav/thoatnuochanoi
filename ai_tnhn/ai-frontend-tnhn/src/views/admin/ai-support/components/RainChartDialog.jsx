@@ -33,8 +33,8 @@ const RainChartDialog = ({ open, onClose, stationName, date, data, loading }) =>
         chart: {
             type: 'line',
             height: 350,
-            toolbar: { show: true },
-            zoom: { enabled: true },
+            toolbar: { show: false },
+            zoom: { enabled: false },
             fontFamily: theme.typography.fontFamily
         },
         stroke: {
@@ -42,7 +42,7 @@ const RainChartDialog = ({ open, onClose, stationName, date, data, loading }) =>
             width: 3
         },
         markers: {
-            size: 5,
+            size: rainData.length <= 1 ? 5 : 0,
             strokeWidth: 2,
             hover: {
                 size: 7

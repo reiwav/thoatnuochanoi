@@ -1,5 +1,5 @@
 package constant
 
 const (
-	ModelAIVersion = "gemini-3.5-flash"
+	ModelAIVersion = "gemini-2.5-flash"
 )

@@ -25,6 +25,10 @@ func (s *service) GetInundationSummary(ctx context.Context, orgID string, isAllo
 	return s.inuSvc.GetInundationSummary(ctx, orgID, isAllowedAll, assignedInuIDs)
 }
 
+func (s *service) GetInundationSummaryByDate(ctx context.Context, orgID string, isAllowedAll bool, assignedInuIDs []string, dateStr string) (*inundation.InundationSummaryData, error) {
+	return s.inuSvc.GetInundationSummaryByDate(ctx, orgID, isAllowedAll, assignedInuIDs, dateStr)
+}
+
 func (s *service) SetGeminiService(svc interface {
 	ExtractTextFromPDF(ctx context.Context, pdfBytes []byte) (string, error)
 	Chat(ctx context.Context, prompt string, history []ChatMessage, userID string, isCompany bool, logPrompt string) (*ChatResponse, error)

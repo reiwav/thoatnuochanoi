@@ -43,6 +43,7 @@ type Service interface {
 
 	// Summary for external consumers
 	GetInundationSummary(ctx context.Context, orgID string, isAllowedAll bool, assignedInuIDs []string) (*InundationSummaryData, error)
+	GetInundationSummaryByDate(ctx context.Context, orgID string, isAllowedAll bool, assignedInuIDs []string, dateStr string) (*InundationSummaryData, error)
 
 	// SSE Hub
 	GetHub() *Hub

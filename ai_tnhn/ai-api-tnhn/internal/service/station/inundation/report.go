@@ -85,10 +85,24 @@ func (s *service) ListReportsWithFilter(ctx context.Context, user *models.User, 
 			f.AddWhere("point_ids", "point_id", bson.M{"$in": pointIDs})
 		}
 	} else if orgID != "" {
-		f.AddWhere("org_id_or_shared", "$or", []bson.M{
+		existingWhere := f.GetWhere()
+		newOr := []bson.M{
 			{"org_id": orgID},
 			{"shared_org_ids": orgID},
-		})
+		}
+		if existingOr, ok := existingWhere["$or"]; ok {
+			if existingAnd, ok2 := existingWhere["$and"].([]bson.M); ok2 {
+				existingWhere["$and"] = append(existingAnd, bson.M{"$or": existingOr}, bson.M{"$or": newOr})
+			} else {
+				existingWhere["$and"] = []bson.M{
+					{"$or": existingOr},
+					{"$or": newOr},
+				}
+			}
+			delete(existingWhere, "$or")
+		} else {
+			f.AddWhere("org_id_or_shared", "$or", newOr)
+		}
 	}
 
 	reports, total, err := s.InundationReportRepo.List(ctx, f)

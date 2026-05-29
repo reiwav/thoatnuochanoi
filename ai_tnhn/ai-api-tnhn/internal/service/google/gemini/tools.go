@@ -28,7 +28,10 @@ func (s *service) getChatTools() []*genai.FunctionDeclaration {
 		{Name: constant.ToolCoveredWards, Description: constant.ToolDescriptions[constant.ToolCoveredWards]},
 		{Name: constant.ToolWeatherForecast, Description: constant.ToolDescriptions[constant.ToolWeatherForecast]},
 		{Name: constant.ToolLiveWaterSummary, Description: constant.ToolDescriptions[constant.ToolLiveWaterSummary]},
-		{Name: constant.ToolLiveInundationSummary, Description: constant.ToolDescriptions[constant.ToolLiveInundationSummary]},
+		{Name: constant.ToolLiveInundationSummary, Description: "Tình hình ngập úng hiện tại hoặc theo ngày cụ thể (YYYY-MM-DD).",
+			Parameters: &genai.Schema{Type: genai.TypeObject, Properties: map[string]*genai.Schema{
+				"date": {Type: genai.TypeString, Description: "Định dạng YYYY-MM-DD. Tùy chọn, dùng để xem các điểm ngập trong ngày được chỉ định."},
+			}}},
 		{Name: constant.ToolLivePumpingSummary, Description: constant.ToolDescriptions[constant.ToolLivePumpingSummary]},
 		{Name: constant.ToolRainSummaryByWard, Description: constant.ToolDescriptions[constant.ToolRainSummaryByWard],
 			Parameters: &genai.Schema{Type: genai.TypeObject, Properties: map[string]*genai.Schema{"year": {Type: genai.TypeInteger}, "month": {Type: genai.TypeInteger}, "start_date": {Type: genai.TypeString}, "end_date": {Type: genai.TypeString}}}},
@@ -110,6 +113,9 @@ func (s *service) handleToolCall(ctx context.Context, c *genai.FunctionCall, uID
 		r := isC
 		if u != nil {
 			r = r || u.Role == "Super Admin" || u.Role == "Manager"
+		}
+		if dateVal, ok := c.Args["date"].(string); ok && dateVal != "" {
+			return s.inuSvc.GetInundationSummaryByDate(ctx, orgID, r, aInu, dateVal)
 		}
 		return s.inuSvc.GetInundationSummary(ctx, orgID, r, aInu)
 	case constant.ToolLivePumpingSummary:

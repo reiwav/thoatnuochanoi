@@ -1,0 +1,85 @@
+# CẤU TRÚC CƠ SỞ DỮ LIỆU MONGODB (DATABASE SCHEMA DESCRIPTIONS)
+Dưới đây là chi tiết các bộ sưu tập (collections) khả dụng trong hệ thống MongoDB để phục vụ việc tạo câu lệnh truy vấn tối ưu (Aggregation Pipeline hoặc Find Filter).
+
+## 1. Bộ sưu tập: `inundation_reports` (Báo cáo điểm ngập úng)
+*Lưu ý: Luôn bắt buộc lọc kèm điều kiện `{"has_flooded": true}`.*
+- `_id` (string): ID báo cáo ngập.
+- `point_id` (string): ID của điểm ngập (liên kết với `inundation_stations._id`).
+- `org_id` (string): ID của đơn vị quản lý trực tiếp (liên kết với `organizations._id`).
+- `street_name` (string): Tên tuyến đường/điểm ngập (Ví dụ: "Đường Thiên Hiền", "Nguyễn Xuân Khoát").
+- `status` (string): Trạng thái ngập ("active" là đang ngập, "resolved" là đã rút).
+- `depth` (float64): Độ sâu ngập (đơn vị: mét. Ví dụ: 0.1, 0.2, 0.9. Nếu chưa rõ độ sâu sẽ bằng 0).
+- `length` (string): Chiều dài khu vực ngập.
+- `width` (string): Chiều rộng khu vực ngập.
+- `flood_level_name` (string): Tên cấp độ ngập theo cấu hình ("Ứ đọng", "Ngập nhẹ", "Ngập ahgt", "úng ngập").
+- `ctime` (int64, unix timestamp): Thời điểm bắt đầu ngập (Ví dụ: 1779986351).
+- `end_time` (int64, unix timestamp): Thời điểm rút ngập (bằng 0 nếu status là "active", lớn hơn 0 nếu status là "resolved").
+- `has_flooded` (bool): Đánh dấu có ngập hay không (luôn lọc `true`).
+
+## 2. Bộ sưu tập: `inundation_stations` (Thông tin trạm/điểm ngập)
+- `_id` (string): ID của điểm ngập.
+- `name` (string): Tên điểm ngập.
+- `org_id` (string): ID của đơn vị quản lý (liên kết với `organizations._id`).
+- `active` (bool): Trạng thái hoạt động (`true`/`false`).
+
+## 3. Bộ sưu tập: `organizations` (Thông tin đơn vị/xí nghiệp thoát nước)
+- `_id` (string): ID đơn vị.
+- `name` (string): Tên đơn vị quản lý (Ví dụ: "Xí nghiệp thoát nước số 1", "Xí nghiệp thoát nước số 2",...).
+- `code` (string): Mã viết tắt của đơn vị (Ví dụ: "xn1", "xn2", "xn3").
+
+## 4. Bộ sưu tập: `rain_records` (Dữ liệu lượng mưa đo được theo thời gian)
+- `station_id` (int): ID cũ của trạm mưa (liên kết với `rain_stations.old_id`).
+- `date` (string, định dạng YYYY-MM-DD): Ngày ghi nhận lượng mưa (Ví dụ: "2026-05-29").
+- `value` (float64): Lượng mưa đo được (đơn vị: mm. Ví dụ: 1.5, 24.5).
+- `timestamp` (time.Time / ISODate): Thời gian đo chi tiết.
+
+## 5. Bộ sưu tập: `rain_stations` (Thông tin trạm đo mưa)
+- `_id` (string): ID trạm mưa.
+- `old_id` (int): ID số của trạm đo (dùng liên kết với `rain_records.station_id`).
+- `tentram` (string): Tên trạm đo mưa (Ví dụ: "Trạm Thanh Xuân", "Trạm Hoàn Kiếm").
+- `diachi` (string): Địa chỉ của trạm.
+- `tenphuong` (string): Tên phường/xã nơi đặt trạm.
+- `tenquan` (string): Tên quận/huyện nơi đặt trạm (Ví dụ: "Thanh Xuân", "Đống Đa").
+
+## 6. Bộ sưu tập: `lake_stations` (Thông tin trạm mực nước hồ)
+- `_id` (string): ID trạm hồ.
+- `old_id` (int): ID số của trạm (liên kết với `lake_records.station_id`).
+- `tentram` (string): Tên hồ quản lý.
+- `tenphuong` (string): Tên phường.
+- `tenquan` (string): Tên quận.
+
+## 7. Bộ sưu tập: `lake_records` (Dữ liệu mực nước hồ đo được)
+- `station_id` (int): ID số của trạm hồ (liên kết với `lake_stations.old_id`).
+- `date` (string, định dạng YYYY-MM-DD): Ngày ghi nhận.
+- `value` (float64): Mực nước hồ đo được (đơn vị: mét).
+- `timestamp` (time.Time / ISODate): Thời gian đo chi tiết.
+
+## 8. Bộ sưu tập: `river_stations` (Thông tin trạm mực nước sông)
+- `_id` (string): ID trạm sông.
+- `old_id` (int): ID số của trạm (liên kết với `river_records.station_id`).
+- `tentram` (string): Tên sông/vị trí đo.
+- `tenphuong` (string): Tên phường.
+- `tenquan` (string): Tên quận.
+
+## 9. Bộ sưu tập: `river_records` (Dữ liệu mực nước sông đo được)
+- `station_id` (int): ID số của trạm sông (liên kết với `river_stations.old_id`).
+- `date` (string, định dạng YYYY-MM-DD): Ngày ghi nhận.
+- `value` (float64): Mực nước sông đo được (đơn vị: mét).
+- `timestamp` (time.Time / ISODate): Thời gian đo chi tiết.
+
+## 10. Bộ sưu tập: `pumping_stations` (Trạm bơm)
+- `_id` (string): ID trạm bơm.
+- `name` (string): Tên trạm bơm (Ví dụ: "Trạm bơm Yên Sở").
+- `org_id` (string): ID đơn vị quản lý (liên kết với `organizations._id`).
+- `pump_count` (int): Tổng số máy bơm tại trạm.
+- `operating_pump_count` (int): Số máy bơm hiện tại đang hoạt động.
+
+## 11. Bộ sưu tập: `wastewater_stations` (Trạm xử lý nước thải)
+- `_id` (string): ID trạm.
+- `name` (string): Tên trạm xử lý nước thải.
+- `org_id` (string): ID đơn vị quản lý.
+
+## 12. Bộ sưu tập: `sluice_gates` (Cống thoát nước/cống điều tiết)
+- `_id` (string): ID cống.
+- `name` (string): Tên cống thoát nước.
+- `org_id` (string): ID đơn vị quản lý.

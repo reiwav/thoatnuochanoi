@@ -51,7 +51,7 @@ func (s *service) Chat(ctx context.Context, prompt string, history []googleapi.C
 
 	cl := s.getClient()
 	m := cl.GenerativeModel(constant.ModelAIVersion)
-	m.SystemInstruction = &genai.Content{Parts: []genai.Part{genai.Text(promt.Get("chat_system"))}}
+	m.SystemInstruction = &genai.Content{Parts: []genai.Part{genai.Text(promt.Get("chat_system") + "\n\n" + promt.Get("database_schema"))}}
 	m.Tools = []*genai.Tool{{FunctionDeclarations: s.getChatTools()}}
 	sess := m.StartChat()
 	resp, err := sess.SendMessage(ctx, genai.Text(aug))

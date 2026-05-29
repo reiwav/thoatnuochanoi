@@ -16,6 +16,7 @@ const (
 	ToolLivePumpingSummary         = "get_live_pumping_summary"
 	ToolRainSummaryByWard          = "get_rain_summary_by_ward"
 	ToolDatabaseQuery              = "database_query"
+	ToolDatabaseAggregate          = "database_aggregate"
 	ToolReadEmailByTitle           = "read_email_by_title"
 	ToolReadEmailByID              = "read_email_by_id"
 	ToolReportEmergencyProgress    = "report_emergency_work_progress"
@@ -57,6 +58,7 @@ var ToolDescriptions = map[string]string{
 	ToolLivePumpingSummary:         "Tình hình trạm bơm và trạm xử lý nước thải hiện tại.",
 	ToolRainSummaryByWard:          "Tổng hợp mưa theo phường.",
 	ToolDatabaseQuery:              "Truy vấn MongoDB.",
+	ToolDatabaseAggregate:          "Truy vấn tổng hợp MongoDB (Aggregation Pipeline).",
 	ToolReadEmailByTitle:           "Đọc email theo tiêu đề.",
 	ToolReadEmailByID:              "Đọc email theo ID.",
 	ToolReportEmergencyProgress:    "Báo cáo tiến độ công trình khẩn.",

@@ -8,6 +8,7 @@ import (
 
 type Service interface {
 	Query(ctx context.Context, collectionName string, filter map[string]interface{}, limit int64) ([]map[string]interface{}, error)
+	Aggregate(ctx context.Context, collectionName string, pipeline interface{}) ([]map[string]interface{}, error)
 }
 
 type service struct {

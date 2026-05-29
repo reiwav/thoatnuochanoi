@@ -4,10 +4,12 @@ import (
 	"ai-api-tnhn/internal/constant"
 	"ai-api-tnhn/internal/service/station/inundation"
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/google/generative-ai-go/genai"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func (s *service) getChatTools() []*genai.FunctionDeclaration {
@@ -40,6 +42,11 @@ func (s *service) getChatTools() []*genai.FunctionDeclaration {
 			Parameters: &genai.Schema{Type: genai.TypeObject, Properties: map[string]*genai.Schema{"year": {Type: genai.TypeInteger}, "month": {Type: genai.TypeInteger}, "start_date": {Type: genai.TypeString}, "end_date": {Type: genai.TypeString}}}},
 		{Name: constant.ToolDatabaseQuery, Description: constant.ToolDescriptions[constant.ToolDatabaseQuery],
 			Parameters: &genai.Schema{Type: genai.TypeObject, Properties: map[string]*genai.Schema{"collection": {Type: genai.TypeString}, "filter": {Type: genai.TypeObject}}, Required: []string{"collection"}}},
+		{Name: constant.ToolDatabaseAggregate, Description: "Thực hiện truy vấn tổng hợp MongoDB (Aggregation Pipeline) để đếm, cộng, nhóm số liệu. Dùng cho các câu hỏi thống kê lịch sử/phức tạp.",
+			Parameters: &genai.Schema{Type: genai.TypeObject, Properties: map[string]*genai.Schema{
+				"collection": {Type: genai.TypeString, Description: "Tên bộ sưu tập cần truy vấn tổng hợp (inundation_reports, rain_records, v.v.)."},
+				"pipeline": {Type: genai.TypeArray, Items: &genai.Schema{Type: genai.TypeObject}, Description: "Mảng các bước pipeline MongoDB (ví dụ: [ { '$match': ... }, { '$group': ... } ])."},
+			}, Required: []string{"collection", "pipeline"}}},
 		{Name: constant.ToolReadEmailByTitle, Description: constant.ToolDescriptions[constant.ToolReadEmailByTitle],
 			Parameters: &genai.Schema{Type: genai.TypeObject, Properties: map[string]*genai.Schema{"title": {Type: genai.TypeString}}, Required: []string{"title"}}},
 		{Name: constant.ToolReadEmailByID, Description: constant.ToolDescriptions[constant.ToolReadEmailByID],
@@ -171,6 +178,37 @@ func (s *service) handleToolCall(ctx context.Context, c *genai.FunctionCall, uID
 		return s.handleCT(ctx, c, uID)
 	case constant.ToolDatabaseQuery:
 		return s.querySvc.Query(ctx, c.Args["collection"].(string), c.Args["filter"].(map[string]interface{}), 0)
+	case constant.ToolDatabaseAggregate:
+		collectionVal := c.Args["collection"].(string)
+		
+		pipelineBytes, err := json.Marshal(c.Args["pipeline"])
+		if err != nil {
+			return nil, fmt.Errorf("lỗi khi mã hóa pipeline: %w", err)
+		}
+		
+		var pipeline []bson.M
+		if err := bson.UnmarshalExtJSON(pipelineBytes, true, &pipeline); err != nil {
+			if err := json.Unmarshal(pipelineBytes, &pipeline); err != nil {
+				return nil, fmt.Errorf("lỗi khi giải mã pipeline: %w", err)
+			}
+		}
+		
+		if collectionVal == "inundation_reports" {
+			hasMatch := false
+			for i, stage := range pipeline {
+				if match, ok := stage["$match"].(bson.M); ok {
+					match["has_flooded"] = true
+					pipeline[i]["$match"] = match
+					hasMatch = true
+					break
+				}
+			}
+			if !hasMatch {
+				pipeline = append([]bson.M{{"$match": bson.M{"has_flooded": true}}}, pipeline...)
+			}
+		}
+		
+		return s.querySvc.Aggregate(ctx, collectionVal, pipeline)
 	default:
 		return nil, fmt.Errorf("unknown tool: %s", c.Name)
 	}

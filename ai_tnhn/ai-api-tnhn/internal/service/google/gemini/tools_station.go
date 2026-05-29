@@ -173,6 +173,23 @@ func (s *service) handleLS(ctx context.Context, c *genai.FunctionCall, o string,
 			res = append(res, map[string]interface{}{"id": st.ID, "old_id": st.OldID, "name": st.TenTram, "phuong": st.TenPhuong, "loai": st.Loai})
 		}
 		return res, e
+	case "inundation":
+		dummyUser := &models.User{}
+		sts, err := s.inuSvc.GetPointsStatus(ctx, dummyUser, true, "")
+		if err != nil {
+			return nil, err
+		}
+		var res []map[string]interface{}
+		for _, st := range sts {
+			res = append(res, map[string]interface{}{
+				"id":          st.ID,
+				"name":        st.Name,
+				"org_name":    st.OrgName,
+				"status":      st.Status, // "flooded" or "normal"
+				"street_name": st.Name,
+			})
+		}
+		return res, nil
 	}
 	return nil, fmt.Errorf("invalid type")
 }

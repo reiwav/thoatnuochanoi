@@ -2,8 +2,10 @@ package gemini
 
 import (
 	"ai-api-tnhn/internal/constant"
+	"ai-api-tnhn/internal/service/station/inundation"
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/google/generative-ai-go/genai"
 )
@@ -19,7 +21,7 @@ func (s *service) getChatTools() []*genai.FunctionDeclaration {
 		{Name: constant.ToolSystemOverview, Description: constant.ToolDescriptions[constant.ToolSystemOverview]},
 		{Name: constant.ToolListStations, Description: constant.ToolDescriptions[constant.ToolListStations],
 			Parameters: &genai.Schema{Type: genai.TypeObject, Properties: map[string]*genai.Schema{
-				"type": {Type: genai.TypeString, Description: "rain/lake/river"},
+				"type": {Type: genai.TypeString, Description: "rain/lake/river/inundation"},
 				"date": {Type: genai.TypeString, Description: "YYYY-MM-DD. MUST extract the exact date mentioned by user (do not adjust). Optional, used to filter stations."},
 				"time": {Type: genai.TypeString, Description: "HH:mm:ss. MUST extract EXACTLY if user asks for a specific time (e.g., 0h -> 00:00:00)"},
 			}, Required: []string{"type"}}},
@@ -28,9 +30,10 @@ func (s *service) getChatTools() []*genai.FunctionDeclaration {
 		{Name: constant.ToolCoveredWards, Description: constant.ToolDescriptions[constant.ToolCoveredWards]},
 		{Name: constant.ToolWeatherForecast, Description: constant.ToolDescriptions[constant.ToolWeatherForecast]},
 		{Name: constant.ToolLiveWaterSummary, Description: constant.ToolDescriptions[constant.ToolLiveWaterSummary]},
-		{Name: constant.ToolLiveInundationSummary, Description: "Tình hình ngập úng hiện tại hoặc theo ngày cụ thể (YYYY-MM-DD).",
+		{Name: constant.ToolLiveInundationSummary, Description: "Tình hình ngập úng hiện tại hoặc theo ngày cụ thể (YYYY-MM-DD). Hỗ trợ lọc theo xí nghiệp/đơn vị quản lý.",
 			Parameters: &genai.Schema{Type: genai.TypeObject, Properties: map[string]*genai.Schema{
 				"date": {Type: genai.TypeString, Description: "Định dạng YYYY-MM-DD. Tùy chọn, dùng để xem các điểm ngập trong ngày được chỉ định."},
+				"org_name": {Type: genai.TypeString, Description: "Tên xí nghiệp/đơn vị quản lý (ví dụ: 'Xí nghiệp 2', 'Xí nghiệp thoát nước số 2'). Tùy chọn, dùng để lọc kết quả."},
 			}}},
 		{Name: constant.ToolLivePumpingSummary, Description: constant.ToolDescriptions[constant.ToolLivePumpingSummary]},
 		{Name: constant.ToolRainSummaryByWard, Description: constant.ToolDescriptions[constant.ToolRainSummaryByWard],
@@ -114,10 +117,42 @@ func (s *service) handleToolCall(ctx context.Context, c *genai.FunctionCall, uID
 		if u != nil {
 			r = r || u.Role == "Super Admin" || u.Role == "Manager"
 		}
+		var summary *inundation.InundationSummaryData
+		var err error
 		if dateVal, ok := c.Args["date"].(string); ok && dateVal != "" {
-			return s.inuSvc.GetInundationSummaryByDate(ctx, orgID, r, aInu, dateVal)
+			summary, err = s.inuSvc.GetInundationSummaryByDate(ctx, orgID, r, aInu, dateVal)
+		} else {
+			summary, err = s.inuSvc.GetInundationSummary(ctx, orgID, r, aInu)
 		}
-		return s.inuSvc.GetInundationSummary(ctx, orgID, r, aInu)
+		if err != nil {
+			return nil, err
+		}
+		if orgNameVal, ok := c.Args["org_name"].(string); ok && orgNameVal != "" {
+			orgNameValLower := strings.ToLower(orgNameVal)
+			var filtered []inundation.InundationStationStat
+			var filteredDetails []string
+			for _, pt := range summary.OngoingPoints {
+				ptOrgLower := strings.ToLower(pt.OrgName)
+				if matchesOrg(ptOrgLower, orgNameValLower) {
+					filtered = append(filtered, pt)
+					filteredDetails = append(filteredDetails, fmt.Sprintf("%s (%s, %s)", pt.StreetName, pt.FloodLevelName, pt.FormattedDepth))
+				}
+			}
+			summary.OngoingPoints = filtered
+			summary.ActivePoints = len(filtered)
+			summary.FullSummary = strings.Join(filteredDetails, ", ")
+			
+			dateStr := "hiện tại"
+			if dateVal, ok := c.Args["date"].(string); ok && dateVal != "" {
+				dateStr = "ngày " + dateVal
+			}
+			if len(filtered) > 0 {
+				summary.SummaryText = fmt.Sprintf("%s, đơn vị %s có %d điểm úng ngập", dateStr, orgNameVal, len(filtered))
+			} else {
+				summary.SummaryText = fmt.Sprintf("%s, đơn vị %s không xuất hiện điểm úng ngập", dateStr, orgNameVal)
+			}
+		}
+		return summary, nil
 	case constant.ToolLivePumpingSummary:
 		var aPump []string
 		if u != nil && u.AssignedPumpingStationID != "" {
@@ -166,4 +201,21 @@ func (s *service) handleContractToolCall(ctx context.Context, c *genai.FunctionC
 	default:
 		return nil, fmt.Errorf("unknown tool: %s", c.Name)
 	}
+}
+
+func matchesOrg(target, query string) bool {
+	if strings.Contains(target, query) {
+		return true
+	}
+	
+	simplify := func(s string) string {
+		s = strings.ToLower(s)
+		s = strings.ReplaceAll(s, "xí nghiệp", "xn")
+		s = strings.ReplaceAll(s, "thoát nước", "")
+		s = strings.ReplaceAll(s, "số", "")
+		s = strings.ReplaceAll(s, " ", "")
+		return s
+	}
+	
+	return strings.Contains(simplify(target), simplify(query)) || strings.Contains(simplify(query), simplify(target))
 }

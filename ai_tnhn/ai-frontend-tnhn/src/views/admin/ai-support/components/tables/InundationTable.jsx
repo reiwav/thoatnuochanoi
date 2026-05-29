@@ -6,6 +6,8 @@ const InundationCard = ({ point, onClick }) => {
     const name = point['Tên điểm ngập'] || point['Vị trí ngập'] || point['street_name'] || '';
     const org = point['Đơn vị quản lý'] || point['Đơn vị trực'] || point['org_name'] || '';
     const time = point['Thời gian'] || point['Giờ bắt đầu'] || point['start_time'] || '';
+    const duration = point['Tổng thời gian'] || point['Thời gian ngập'] || point['duration'] || point['Duration'] || '';
+    const currentStatus = point['Trạng thái'] || point['current_status'] || point['CurrentStatus'] || '';
     
     let dimension = point['Kích thước (DxRxS)'] || point['formatted_depth'] || point['Kích thước'] || '';
     // Clean "ngập " prefix if exists
@@ -36,6 +38,11 @@ const InundationCard = ({ point, onClick }) => {
     const systemColor = point['color'] || point['Color'];
     const warningColor = systemColor || theme.palette.orange?.dark || theme.palette.error.main;
     const warningBg = systemColor ? `${systemColor}15` : (theme.palette.orange?.light || theme.palette.error.light);
+
+    const isResolved = currentStatus.toLowerCase().includes('rút') || 
+                       currentStatus.toLowerCase().includes('resolved') || 
+                       currentStatus.toLowerCase().includes('bình thường') || 
+                       currentStatus.toLowerCase().includes('tải');
 
     return (
         <Box 
@@ -101,6 +108,30 @@ const InundationCard = ({ point, onClick }) => {
                     </Typography>
                 </Box>
             </Box>
+
+            {(currentStatus || duration) && (
+                <Box sx={{ 
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
+                    mt: '4px', pt: '4px', borderTop: '1px dashed', borderColor: 'rgba(0, 0, 0, 0.08)'
+                }}>
+                    {currentStatus && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <Typography sx={{ fontSize: '11px', lineHeight: 1 }}>{isResolved ? '✅' : '🚨'}</Typography>
+                            <Typography sx={{ fontSize: '11px', color: isResolved ? 'success.main' : warningColor, fontWeight: 700 }}>
+                                {currentStatus}
+                            </Typography>
+                        </Box>
+                    )}
+                    {duration && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <Typography sx={{ fontSize: '11px', lineHeight: 1 }}>{isResolved ? '⏱️' : '⏳'}</Typography>
+                            <Typography sx={{ fontSize: '11px', color: 'text.secondary', fontWeight: 600 }}>
+                                {duration}
+                            </Typography>
+                        </Box>
+                    )}
+                </Box>
+            )}
         </Box>
     );
 };

@@ -69,9 +69,10 @@ func (s *service) GetInundationSummary(ctx context.Context, orgID string, isAllo
 			Length:         r.Length,
 			FormattedDepth: depthInfo,
 			StartTime:      time.Unix(r.CTime, 0).Format("15:04 02/01/2006"),
+			Duration:       formatDuration(r.CTime, r.EndTime),
 			Description:    r.Description,
 			Color:          r.FloodLevelColor,
-			CurrentStatus:  "Đang ngập",
+			CurrentStatus:  fmt.Sprintf("Đang %s", levelName),
 			FloodLevelName: levelName,
 		}
 		ongoing = append(ongoing, stat)
@@ -164,7 +165,7 @@ func (s *service) GetInundationSummaryByDate(ctx context.Context, orgID string, 
 			levelName = "úng ngập"
 		}
 
-		statusText := "Đang ngập"
+		statusText := fmt.Sprintf("Đang %s", levelName)
 		if r.EndTime > 0 && r.EndTime <= endOfDay {
 			statusText = fmt.Sprintf("Đã rút lúc %s", time.Unix(r.EndTime, 0).In(loc).Format("15:04"))
 		}
@@ -179,6 +180,7 @@ func (s *service) GetInundationSummaryByDate(ctx context.Context, orgID string, 
 			Length:         r.Length,
 			FormattedDepth: depthInfo,
 			StartTime:      time.Unix(r.CTime, 0).In(loc).Format("15:04 02/01/2006"),
+			Duration:       formatDuration(r.CTime, r.EndTime),
 			Description:    r.Description,
 			Color:          r.FloodLevelColor,
 			CurrentStatus:  statusText,
@@ -186,7 +188,7 @@ func (s *service) GetInundationSummaryByDate(ctx context.Context, orgID string, 
 		}
 		ongoing = append(ongoing, stat)
 		
-		statusDetail := "Đang ngập"
+		statusDetail := fmt.Sprintf("Đang %s", levelName)
 		if r.EndTime > 0 && r.EndTime <= endOfDay {
 			statusDetail = fmt.Sprintf("đã rút lúc %s", time.Unix(r.EndTime, 0).In(loc).Format("15:04"))
 		}
@@ -210,4 +212,43 @@ func (s *service) GetInundationSummaryByDate(ctx context.Context, orgID string, 
 		FullSummary:   strings.Join(detailStrings, ", "),
 		OngoingPoints: ongoing,
 	}, nil
+}
+
+func formatDuration(cTime, endTime int64) string {
+	if cTime <= 0 {
+		return ""
+	}
+	var diff int64
+	if endTime > 0 {
+		diff = endTime - cTime
+	} else {
+		diff = time.Now().Unix() - cTime
+	}
+	if diff < 0 {
+		diff = 0
+	}
+
+	hours := diff / 3600
+	minutes := (diff % 3600) / 60
+	days := hours / 24
+
+	if days > 0 {
+		remainingHours := hours % 24
+		if remainingHours > 0 {
+			return fmt.Sprintf("%d ngày %d giờ", days, remainingHours)
+		}
+		return fmt.Sprintf("%d ngày", days)
+	}
+
+	if hours > 0 {
+		if minutes > 0 {
+			return fmt.Sprintf("%d giờ %d phút", hours, minutes)
+		}
+		return fmt.Sprintf("%d giờ", hours)
+	}
+
+	if minutes > 0 {
+		return fmt.Sprintf("%d phút", minutes)
+	}
+	return "0 phút"
 }

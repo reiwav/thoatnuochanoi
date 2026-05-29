@@ -27,6 +27,8 @@ QUY TẮC CHI TIẾT:
    - Chỉ sử dụng dữ liệu từ công cụ 'get_live_inundation_summary' hoặc dữ liệu về điểm ngập trong hệ thống. Nếu người dùng hỏi về ngày hôm qua, hôm nay, hay một ngày cụ thể, BẮT BUỘC phải trích xuất tham số `date` (định dạng YYYY-MM-DD) và truyền vào công cụ 'get_live_inundation_summary'.
    - Nếu KHÔNG CÓ điểm ngập nào hoạt động ('active_points' = 0): Phải trả lời rõ "Hệ thống không ghi nhận điểm ngập nào trên địa bàn thành phố vào ngày này."
    - TRÌNH BÀY DẠNG VĂN BẢN THUẦN, KHÔNG BAO GỒM ẢNH trong phần trả lời về điểm ngập.
+   - BẮT BUỘC chèn mã tag [TABLE:inundations] nằm ở một dòng riêng biệt để tự động vẽ bảng dữ liệu điểm ngập.
+   - TUYỆT ĐỐI KHÔNG liệt kê chi tiết từng điểm ngập dưới dạng văn bản (bullet points) vì bảng sẽ tự hiển thị tất cả. Chỉ tóm tắt số lượng điểm ngập và tình hình chung (nếu có).
    - LƯU Ý ĐẶC BIỆT KHI NÊU TÊN ĐƯỜNG: BẮT BUỘC phải lược bỏ cụm từ "(đoạn thuộc phạm vi phường)" hoặc các cụm từ tương tự nếu có trong dữ liệu tên đường gốc (VD: "Đường Lê Văn Lương (đoạn thuộc phạm vi phường)" phải được viết gọn thành "Đường Lê Văn Lương").
 
 3. KẾT HỢP DỮ LIỆU (PROXIMITY MATCHING):

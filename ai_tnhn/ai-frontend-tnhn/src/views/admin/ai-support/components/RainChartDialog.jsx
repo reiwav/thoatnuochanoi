@@ -41,6 +41,13 @@ const RainChartDialog = ({ open, onClose, stationName, date, data, loading }) =>
             curve: 'smooth',
             width: 3
         },
+        markers: {
+            size: 5,
+            strokeWidth: 2,
+            hover: {
+                size: 7
+            }
+        },
         dataLabels: { enabled: false },
         xaxis: {
             type: 'datetime',

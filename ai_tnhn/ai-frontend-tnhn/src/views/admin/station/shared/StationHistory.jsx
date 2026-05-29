@@ -135,7 +135,8 @@ const StationHistory = ({ type }) => {
         dataLabels: { enabled: false },
         stroke: { curve: 'smooth', width: 3 },
         markers: {
-            size: 0,
+            size: 4,
+            strokeWidth: 2,
             hover: { size: 6 }
         },
         fill: {

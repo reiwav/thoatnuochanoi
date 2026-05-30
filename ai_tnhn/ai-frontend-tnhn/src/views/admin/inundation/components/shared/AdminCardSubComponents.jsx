@@ -165,7 +165,7 @@ export const AdminCardActionButtons = ({ point, onAction, isFlooded, isCorrectio
     return (
         <Stack direction="row" spacing={0.5}>
             <PermissionGuard permission="inundation:report">
-                <Tooltip title="Báo cáo KT-CL">
+                <Tooltip title="Báo cáo của P.KT-CL">
                     <span>
                         <IconButton
                             size="small" color="secondary"

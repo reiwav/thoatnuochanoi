@@ -197,7 +197,7 @@ export const CardMetrics = ({ isHighPriority, latest, theme }) => (
                     <Stack direction="row" spacing={1} alignItems="center" sx={{ px: 1 }}>
                         <IconClipboardCheck size={14} color={theme.palette.primary.main} />
                         <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.dark' }}>
-                            TK Giám sát: Đã kiểm tra {latest.survey_updated_at ? `(${dayjs(latest.survey_updated_at * 1000).format('HH:mm')})` : ''}
+                            XN.KSTK báo cáo: Đã kiểm tra {latest.survey_updated_at ? `(${dayjs(latest.survey_updated_at * 1000).format('HH:mm')})` : ''}
                         </Typography>
                     </Stack>
                 )}
@@ -263,7 +263,7 @@ export const CardActions = ({ onOpenDetail, isHighPriority, point, latest, openT
                                 px: 1.5
                             }}
                         >
-                            Báo cáo KT-CL
+                            Báo cáo của P.KT-CL
                         </Button>
                     </PermissionGuard>
 
@@ -306,7 +306,7 @@ export const CardActions = ({ onOpenDetail, isHighPriority, point, latest, openT
                                 px: 1.5
                             }}
                         >
-                            TK Giám sát
+                            XN.KSTK báo cáo
                         </Button>
                     </PermissionGuard>
 

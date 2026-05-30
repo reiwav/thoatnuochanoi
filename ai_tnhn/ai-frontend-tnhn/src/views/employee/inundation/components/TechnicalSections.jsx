@@ -149,7 +149,7 @@ export const SurveyInfoSection = ({ latest, handleOpenViewer, showPlaceholder })
 		return (
 			<Box sx={{ p: 2.5, border: '1.5px dashed', borderColor: 'divider', borderRadius: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 140, bgcolor: 'grey.50', textAlign: 'center', height: '100%' }}>
 				<Typography variant="caption" sx={{ fontWeight: 800, color: 'text.disabled', textTransform: 'uppercase', mb: 1 }}>
-					⚡️ TK Giám sát / KSTK
+					⚡️ XN.KSTK báo cáo / KSTK
 				</Typography>
 				<Typography variant="body2" color="text.secondary" sx={{ fontWeight: 700 }}>Chưa có báo cáo</Typography>
 			</Box>
@@ -162,7 +162,7 @@ export const SurveyInfoSection = ({ latest, handleOpenViewer, showPlaceholder })
 		<Box sx={{ p: 1.5, bgcolor: 'primary.lighter', borderRadius: 2, border: '1px solid', borderColor: 'primary.main', mb: 1 }}>
 			<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
 				<Typography variant="caption" sx={{ fontWeight: 900, color: 'primary.main', textTransform: 'uppercase' }}>
-					⚡️ TK Giám sát:
+					⚡️ XN.KSTK báo cáo:
 				</Typography>
 				<Stack direction="row" spacing={0.5} alignItems="center">
 					{latest.survey_updated_at && (
@@ -380,7 +380,7 @@ export const KtclInfoSection = ({ latest, handleOpenViewer, showPlaceholder }) =
 		return (
 			<Box sx={{ p: 2.5, border: '1.5px dashed', borderColor: 'divider', borderRadius: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 140, bgcolor: 'grey.50', textAlign: 'center', height: '100%' }}>
 				<Typography variant="caption" sx={{ fontWeight: 800, color: 'text.disabled', textTransform: 'uppercase', mb: 1 }}>
-					📋 Báo cáo KT-CL / KTCL
+					📋 Báo cáo của P.KT-CL / KTCL
 				</Typography>
 				<Typography variant="body2" color="text.secondary" sx={{ fontWeight: 700 }}>Chưa có báo cáo</Typography>
 			</Box>
@@ -393,7 +393,7 @@ export const KtclInfoSection = ({ latest, handleOpenViewer, showPlaceholder }) =
 		<Box sx={{ p: 1.5, bgcolor: 'warning.lighter', borderRadius: 2, border: '1px solid', borderColor: 'warning.main', mb: 1 }}>
 			<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
 				<Typography variant="caption" sx={{ fontWeight: 900, color: 'warning.main', textTransform: 'uppercase' }}>
-					📋 Báo cáo KT-CL:
+					📋 Báo cáo của P.KT-CL:
 				</Typography>
 				<Stack direction="row" spacing={0.5} alignItems="center">
 					{latest.ktcl_updated_at && (

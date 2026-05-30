@@ -46,7 +46,7 @@ const InundationHistoryView = ({ pointId: propPointId, hideHeader = false }) => 
         try {
             const limit = 5;
             const response = await inundationApi.getPointHistory(pointId, lastHistoryId, limit);
-            
+
             let dataArr = [];
             let totalCount = 0;
             if (response) {
@@ -64,7 +64,7 @@ const InundationHistoryView = ({ pointId: propPointId, hideHeader = false }) => 
                         merged.push(item);
                     }
                 }
-                
+
                 setHasMore(merged.length < totalCount);
                 return merged;
             });
@@ -165,19 +165,19 @@ const InundationHistoryView = ({ pointId: propPointId, hideHeader = false }) => 
 
                 {history.map((item, idx) => {
                     const trafficColor = getTrafficStatusColor(item.traffic_status);
-                    
+
                     let title = "Cập nhật diễn biến";
                     let badgeColor = "primary";
                     let badgeLabel = "Diễn biến";
-                    
+
                     if (item.role_permission === "inundation:enterprise_report") {
-                        title = "Báo cáo Địa bàn";
+                        title = "Báo cáo XN của địa bàn";
                         badgeColor = "info";
                         badgeLabel = "Địa bàn";
                     } else if (item.role_permission === "inundation:report") {
-                        title = "Khởi tạo bản tin";
+                        title = "P.KT-CL báo cáo";
                         badgeColor = "secondary";
-                        badgeLabel = "Khởi tạo";
+                        badgeLabel = "P.KT-CL";
                     } else if (item.role_permission === "inundation:survey") {
                         title = "Xí nghiệp Khảo sát thiết kế";
                         badgeColor = "success";
@@ -189,7 +189,7 @@ const InundationHistoryView = ({ pointId: propPointId, hideHeader = false }) => 
                     } else if (item.role_permission === "inundation:review") {
                         title = "Nhận xét KT-CL";
                         badgeColor = "error";
-                        badgeLabel = "Phê duyệt";
+                        badgeLabel = "P.KT-CL";
                     }
 
                     const isReview = item.role_permission === "inundation:review";
@@ -284,10 +284,10 @@ const InundationHistoryView = ({ pointId: propPointId, hideHeader = false }) => 
                                                                 <Grid item xs={6}>
                                                                     <Paper variant="outlined" sx={{ p: 1, textAlign: 'center', borderRadius: 2, bgcolor: alpha(item.depth > 0 ? theme.palette.error.main : theme.palette.success.main, 0.05), height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                                                                         <Typography variant="caption" color="textSecondary" display="block" sx={{ fontWeight: 700, fontSize: '0.65rem', mb: 0.25 }}>🌊 Trạng thái</Typography>
-                                                                        <Chip 
+                                                                        <Chip
                                                                             size="small"
                                                                             label={item.flood_level_name || (item.depth > 0 ? "Ngập" : "Bình thường")}
-                                                                            sx={{ 
+                                                                            sx={{
                                                                                 fontWeight: 900,
                                                                                 bgcolor: item.flood_level_color || (item.depth > 0 ? 'error.main' : 'success.main'),
                                                                                 color: 'white',
@@ -312,7 +312,7 @@ const InundationHistoryView = ({ pointId: propPointId, hideHeader = false }) => 
                                                             {item.images.slice(0, 6).map((img, imgIdx) => {
                                                                 const count = item.images.length;
                                                                 const isLastToShow = imgIdx === 5 && count > 6;
-                                                                
+
                                                                 return (
                                                                     <Box key={imgIdx} sx={{ position: 'relative', width: 56, height: 56, flexShrink: 0 }}>
                                                                         <Box

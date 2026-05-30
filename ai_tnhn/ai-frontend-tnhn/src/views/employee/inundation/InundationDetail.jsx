@@ -82,7 +82,7 @@ const InundationDetail = ({ selectedReport, loadingReport, user, hideHeader = fa
 
             <Box sx={{ px: 1 }}>
                 <Grid container spacing={2.5}>
-                    {/* Row 1: Báo cáo Địa bàn & Báo cáo KT-CL */}
+                    {/* Row 1: Báo cáo Địa bàn & Báo cáo của P.KT-CL */}
                     <Grid item xs={12} md={6}>
                         <ReportInfoSection latest={selectedReport} handleOpenViewer={handleOpenViewer} showPlaceholder={true} />
                     </Grid>
@@ -90,7 +90,7 @@ const InundationDetail = ({ selectedReport, loadingReport, user, hideHeader = fa
                         <KtclInfoSection latest={selectedReport} handleOpenViewer={handleOpenViewer} showPlaceholder={true} />
                     </Grid>
 
-                    {/* Row 2: TK Giám sát & XN Cơ giới */}
+                    {/* Row 2: XN.KSTK báo cáo & XN Cơ giới */}
                     <Grid item xs={12} md={6}>
                         <SurveyInfoSection latest={selectedReport} handleOpenViewer={handleOpenViewer} showPlaceholder={true} />
                     </Grid>

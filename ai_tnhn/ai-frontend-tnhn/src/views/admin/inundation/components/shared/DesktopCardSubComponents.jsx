@@ -65,7 +65,7 @@ export const DesktopCardMetrics = ({ lastReport, isFlooded, displayColor, onOpen
                                 <Stack direction="row" spacing={0.5} alignItems="center">
                                     <IconEngine size={13} color="#7B1FA2" />
                                     <Typography variant="caption" sx={{ fontWeight: 900, color: '#7B1FA2' }}>
-                                        CG: {lastReport?.mech_updated_at ? dayjs(lastReport.mech_updated_at * 1000).format('HH:mm') : 'Đã trực'}
+                                        XN CG: {lastReport?.mech_updated_at ? dayjs(lastReport.mech_updated_at * 1000).format('HH:mm') : 'Đã trực'}
                                     </Typography>
                                 </Stack>
                                 <Stack direction="row" spacing={0.5} alignItems="center">
@@ -81,7 +81,7 @@ export const DesktopCardMetrics = ({ lastReport, isFlooded, displayColor, onOpen
                                 <Stack direction="row" spacing={0.5} alignItems="center">
                                     <IconClipboardCheck size={13} color="#1976D2" />
                                     <Typography variant="caption" sx={{ fontWeight: 900, color: '#1976D2' }}>
-                                        KS: {lastReport?.survey_updated_at ? dayjs(lastReport.survey_updated_at * 1000).format('HH:mm') : 'Đã KS'}
+                                        XN KSTK: {lastReport?.survey_updated_at ? dayjs(lastReport.survey_updated_at * 1000).format('HH:mm') : 'Đã KS'}
                                     </Typography>
                                 </Stack>
                                 <Stack direction="row" spacing={0.5} alignItems="center">
@@ -97,7 +97,7 @@ export const DesktopCardMetrics = ({ lastReport, isFlooded, displayColor, onOpen
                                 <Stack direction="row" spacing={0.5} alignItems="center">
                                     <IconClipboardCheck size={13} color="#F57C00" />
                                     <Typography variant="caption" sx={{ fontWeight: 900, color: '#F57C00' }}>
-                                        CL: {lastReport?.ktcl_updated_at ? dayjs(lastReport.ktcl_updated_at * 1000).format('HH:mm') : 'Đã BC'}
+                                        P KT-CL: {lastReport?.ktcl_updated_at ? dayjs(lastReport.ktcl_updated_at * 1000).format('HH:mm') : 'Đã BC'}
                                     </Typography>
                                 </Stack>
                                 <Stack direction="row" spacing={0.5} alignItems="center">
@@ -113,7 +113,7 @@ export const DesktopCardMetrics = ({ lastReport, isFlooded, displayColor, onOpen
                                 <Stack direction="row" spacing={0.5} alignItems="center">
                                     <IconMessageDots size={13} color={theme.palette.error.main} />
                                     <Typography variant="caption" sx={{ fontWeight: 900, color: 'error.main' }}>
-                                        RS: {lastReport?.review_updated_at ? dayjs(lastReport.review_updated_at * 1000).format('HH:mm') : 'Đã nhận xét'}
+                                        Nhận xét: {lastReport?.review_updated_at ? dayjs(lastReport.review_updated_at * 1000).format('HH:mm') : 'Đã nhận xét'}
                                     </Typography>
                                 </Stack>
                                 <Stack direction="row" spacing={0.5} alignItems="center">

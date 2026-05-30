@@ -101,7 +101,7 @@ const AdminInundationActionMenu = ({
                         <ListItemText
                             primary={
                                 <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'secondary.main' }}>
-                                    Báo cáo KT-CL
+                                    Báo cáo của P.KT-CL
                                 </Typography>
                             }
                         />

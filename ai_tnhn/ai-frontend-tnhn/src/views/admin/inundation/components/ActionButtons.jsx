@@ -7,7 +7,7 @@ import AdminInundationActionMenu from './AdminInundationActionMenu';
 const ActionButtons = ({ point, onAction, navigate, basePath }) => (
     <Stack direction="row" spacing={0.5} justifyContent="flex-end">
         <PermissionGuard permission="inundation:report">
-            <Tooltip title="Báo cáo KT-CL">
+            <Tooltip title="Báo cáo của P.KT-CL">
                 <IconButton size="small" color="secondary" onClick={() => onAction('report', point)} sx={{ bgcolor: 'secondary.lighter' }}>
                     <IconSend size={18} />
                 </IconButton>
@@ -17,7 +17,7 @@ const ActionButtons = ({ point, onAction, navigate, basePath }) => (
             {(() => {
                 const isCorrection = point.report_id && point.last_report?.needs_correction && !point.last_report?.is_review_updated;
                 return (
-                    <Tooltip title={isCorrection ? "Chỉnh sửa lại điểm ngập" : "Báo cáo địa bàn"}>
+                    <Tooltip title={isCorrection ? "Chỉnh sửa lại điểm ngập" : "Báo cáo XN của địa bàn"}>
                         <IconButton
                             size="small"
                             color={isCorrection ? 'warning' : 'primary'}

@@ -48,11 +48,11 @@ const EmployeeActionDialog = ({ open, onClose, mode, data, onFinished }) => {
     const getTitle = () => {
         switch (mode) {
             case 'REPORT':
-                return `Nhập báo cáo KT-CL: ${data?.name}`;
+                return `Nhập Báo cáo của P.KT-CL: ${data?.name}`;
             case 'REPORT_ENTERPRISE':
                 return `Nhập báo cáo Địa bàn: ${data?.name}`;
             case 'SURVEY':
-                return `TK Giám sát: ${data?.name}`;
+                return `XN.KSTK báo cáo: ${data?.name}`;
             case 'MECH':
                 return `Xí Nghiệp cơ giới: ${data?.name}`;
             case 'REVIEW':
@@ -62,7 +62,7 @@ const EmployeeActionDialog = ({ open, onClose, mode, data, onFinished }) => {
             case 'WASTEWATER':
                 return `Nhập báo cáo Trạm XLNT: ${data?.name}`;
             default:
-                return 'Nhập báo cáo KT-CL';
+                return 'Nhập Báo cáo của P.KT-CL';
         }
     };
 

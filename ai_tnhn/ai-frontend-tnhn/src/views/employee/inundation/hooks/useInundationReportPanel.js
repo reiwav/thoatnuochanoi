@@ -87,7 +87,7 @@ const useInundationReportPanel = ({
 
             if (apiMode === 'survey') {
                 await inundationApi.reportSurvey(pId, fd);
-                toast.success('Cập nhật TK Giám sát thành công');
+                toast.success('Cập nhật XN.KSTK báo cáo thành công');
             } else if (apiMode === 'mech') {
                 await inundationApi.reportMech(pId, fd);
                 toast.success('Cập nhật XN Cơ giới thành công');
@@ -187,9 +187,9 @@ const useInundationReportPanel = ({
     // ─── Dynamic labels dựa trên mode ──────────────────────
     const modeConfig = {
         enterprise: { noteLabel: 'Mô tả diễn biến ngập', notePlaceholder: 'Nhập mô tả diễn biến...', dLabel: 'Sâu', rLabel: 'Rộng', sLabel: 'Dài', submitColor: 'secondary' },
-        ktcl:       { noteLabel: 'Nhận xét KT-CL',        notePlaceholder: 'Nhập nhận xét KT-CL...',   dLabel: 'Sâu', rLabel: 'Rộng', sLabel: 'Dài', submitColor: 'warning' },
-        survey:     { noteLabel: 'Ghi chú TK Giám sát',  notePlaceholder: 'Nhập ghi chú giám sát...', dLabel: 'Sâu', rLabel: 'Rộng', sLabel: 'Dài', submitColor: 'primary' },
-        mech:       { noteLabel: 'Ghi chú Cơ giới',      notePlaceholder: 'Nhập ghi chú cơ giới...',  dLabel: 'Sâu', rLabel: 'Rộng', sLabel: 'Dài', submitColor: 'deepPurple' }
+        ktcl: { noteLabel: 'Nhận xét KT-CL', notePlaceholder: 'Nhập nhận xét KT-CL...', dLabel: 'Sâu', rLabel: 'Rộng', sLabel: 'Dài', submitColor: 'warning' },
+        survey: { noteLabel: 'Ghi chú XN.KSTK báo cáo', notePlaceholder: 'Nhập ghi chú giám sát...', dLabel: 'Sâu', rLabel: 'Rộng', sLabel: 'Dài', submitColor: 'primary' },
+        mech: { noteLabel: 'Ghi chú Cơ giới', notePlaceholder: 'Nhập ghi chú cơ giới...', dLabel: 'Sâu', rLabel: 'Rộng', sLabel: 'Dài', submitColor: 'deepPurple' }
     };
     const cfg = modeConfig[apiMode] || modeConfig.enterprise;
 
@@ -201,7 +201,7 @@ const useInundationReportPanel = ({
     // Submit text
     const getSubmitText = () => {
         if (!isEnterpriseMode) {
-            if (apiMode === 'survey') return 'Gửi cập nhật TK Giám sát';
+            if (apiMode === 'survey') return 'Gửi cập nhật XN.KSTK báo cáo';
             if (apiMode === 'mech') return 'Gửi cập nhật Cơ giới';
             if (apiMode === 'ktcl') return 'Gửi cập nhật KT-CL';
         }

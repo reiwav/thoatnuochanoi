@@ -12,8 +12,8 @@ import useInundationReportPanel from './hooks/useInundationReportPanel';
 /**
  * apiMode:
  *  - 'enterprise'  → Báo cáo Địa bàn   (reportEnterprise / reportEnterpriseSituation)
- *  - 'ktcl'         → Báo cáo KT-CL      (reportEnterprise / reportEnterpriseSituation - cùng API)
- *  - 'survey'       → TK Giám sát        (reportSurvey)
+ *  - 'ktcl'         → Báo cáo của P.KT-CL      (reportEnterprise / reportEnterpriseSituation - cùng API)
+ *  - 'survey'       → XN.KSTK báo cáo        (reportSurvey)
  *  - 'mech'         → XN Cơ giới         (reportMech)
  */
 const InundationReportPanel = ({

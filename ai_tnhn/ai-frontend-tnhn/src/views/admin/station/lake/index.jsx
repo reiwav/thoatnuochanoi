@@ -228,8 +228,8 @@ const StationLakeList = () => {
                     open={dialogOpen}
                     onClose={() => setDialogOpen(false)}
                     onSubmit={handleSubmit}
-                    station={editingPoint}
-                    isEdit={!!editingPoint}
+                    station={editingStation}
+                    isEdit={!!editingStation}
                     organizations={organizations}
                 />
 

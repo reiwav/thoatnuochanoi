@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/google/generative-ai-go/genai"
@@ -177,7 +178,12 @@ func (s *service) handleToolCall(ctx context.Context, c *genai.FunctionCall, uID
 	case constant.ToolEmergencyList, constant.ToolEmergencyHistory, constant.ToolUnfinishedEmergencyHistory, constant.ToolRecentEmergencyReports, constant.ToolReportEmergencyProgress:
 		return s.handleCT(ctx, c, uID)
 	case constant.ToolDatabaseQuery:
-		return s.querySvc.Query(ctx, c.Args["collection"].(string), c.Args["filter"].(map[string]interface{}), 0)
+		collectionVal := c.Args["collection"].(string)
+		filterVal, _ := c.Args["filter"].(map[string]interface{})
+		if collectionVal == "rain_records" {
+			s.ensureRainDataLoaded(ctx, filterVal)
+		}
+		return s.querySvc.Query(ctx, collectionVal, filterVal, 0)
 	case constant.ToolDatabaseAggregate:
 		collectionVal := c.Args["collection"].(string)
 		
@@ -191,6 +197,10 @@ func (s *service) handleToolCall(ctx context.Context, c *genai.FunctionCall, uID
 			if err := json.Unmarshal(pipelineBytes, &pipeline); err != nil {
 				return nil, fmt.Errorf("lỗi khi giải mã pipeline: %w", err)
 			}
+		}
+		
+		if collectionVal == "rain_records" {
+			s.ensureRainDataLoaded(ctx, pipeline)
 		}
 		
 		if collectionVal == "inundation_reports" {
@@ -256,4 +266,78 @@ func matchesOrg(target, query string) bool {
 	}
 	
 	return strings.Contains(simplify(target), simplify(query)) || strings.Contains(simplify(query), simplify(target))
+}
+
+func extractDates(v interface{}) []string {
+	var dates []string
+	seen := make(map[string]bool)
+	var walk func(x interface{})
+	walk = func(x interface{}) {
+		if x == nil {
+			return
+		}
+		switch val := x.(type) {
+		case string:
+			if len(val) >= 10 {
+				for i := 0; i <= len(val)-10; i++ {
+					sub := val[i : i+10]
+					if sub[4] == '-' && sub[7] == '-' {
+						isDate := true
+						for j := 0; j < 10; j++ {
+							if j == 4 || j == 7 {
+								continue
+							}
+							if sub[j] < '0' || sub[j] > '9' {
+								isDate = false
+								break
+							}
+						}
+						if isDate {
+							if !seen[sub] {
+								seen[sub] = true
+								dates = append(dates, sub)
+							}
+						}
+					}
+				}
+			}
+		case map[string]interface{}:
+			for _, item := range val {
+				walk(item)
+			}
+		case []interface{}:
+			for _, item := range val {
+				walk(item)
+			}
+		case bson.M:
+			for _, item := range val {
+				walk(item)
+			}
+		case []bson.M:
+			for _, item := range val {
+				walk(item)
+			}
+		case bson.D:
+			for _, elem := range val {
+				walk(elem.Value)
+			}
+		case []bson.D:
+			for _, item := range val {
+				walk(item)
+			}
+		}
+	}
+	walk(v)
+	return dates
+}
+
+func (s *service) ensureRainDataLoaded(ctx context.Context, filterOrPipeline interface{}) {
+	dates := extractDates(filterOrPipeline)
+	for _, date := range dates {
+		log.Printf("[ensureRainDataLoaded] pre-fetching rain records for date %s", date)
+		_, err := s.rainSvc.GetRainDataByDate(ctx, date)
+		if err != nil {
+			log.Printf("[ensureRainDataLoaded] error pre-fetching rain records for date %s: %v", date, err)
+		}
+	}
 }

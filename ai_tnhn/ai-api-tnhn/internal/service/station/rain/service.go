@@ -6,6 +6,7 @@ import (
 	"ai-api-tnhn/internal/repository"
 	"ai-api-tnhn/internal/service/setting"
 	"context"
+	"sync"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -19,16 +20,18 @@ type Service interface {
 }
 
 type service struct {
-	rainRepo     repository.Rain
-	thoatnuocSvc thoatnuoc.Service
-	settingSvc   setting.Service
+	rainRepo        repository.Rain
+	rainStationRepo repository.RainStation
+	thoatnuocSvc    thoatnuoc.Service
+	settingSvc      setting.Service
 }
 
-func NewService(rainRepo repository.Rain, thoatnuocSvc thoatnuoc.Service, settingSvc setting.Service) Service {
+func NewService(rainRepo repository.Rain, rainStationRepo repository.RainStation, thoatnuocSvc thoatnuoc.Service, settingSvc setting.Service) Service {
 	return &service{
-		rainRepo:     rainRepo,
-		thoatnuocSvc: thoatnuocSvc,
-		settingSvc:   settingSvc,
+		rainRepo:        rainRepo,
+		rainStationRepo: rainStationRepo,
+		thoatnuocSvc:    thoatnuocSvc,
+		settingSvc:      settingSvc,
 	}
 }
 
@@ -104,7 +107,58 @@ func (s *service) GetRainDataByStation(ctx context.Context, stationID int64, dat
 func (s *service) GetRainDataByDate(ctx context.Context, date string) ([]*models.RainRecord, error) {
 	// Use rain day range (7h D-1 → 7h D) instead of simple date string match
 	startTime, endTime := rainDayRange(date)
-	return s.rainRepo.GetByDateRange(ctx, startTime, endTime)
+	records, err := s.rainRepo.GetByDateRange(ctx, startTime, endTime)
+	if err != nil {
+		return nil, err
+	}
+
+	// Fallback: If no records are found in the DB, fetch them from the external API for all stations on that date
+	if len(records) == 0 {
+		stations, err := s.rainStationRepo.ListFiltered(ctx, "", nil)
+		if err == nil && len(stations) > 0 {
+			setting, err := s.settingSvc.GetRainSetting(ctx)
+			if err == nil {
+				var wg sync.WaitGroup
+				sem := make(chan struct{}, 15) // limit concurrency
+
+				for _, st := range stations {
+					wg.Add(1)
+					go func(stStation *models.RainStation) {
+						defer wg.Done()
+						sem <- struct{}{}
+						defer func() { <-sem }()
+
+						dps, err := s.thoatnuocSvc.GetRainChartData(ctx, setting.SessionID, int(stStation.OldID), date)
+						if err == nil && len(dps) > 0 {
+							for _, dp := range dps {
+								ts, err := time.ParseInLocation("2006-01-02T15:04:05", dp.ThoiGian, time.Local)
+								if err != nil {
+									continue
+								}
+								record := &models.RainRecord{
+									StationID:   int64(stStation.OldID),
+									StationName: stStation.TenTram,
+									Date:        ts.Format("2006-01-02"),
+									Timestamp:   ts,
+									Value:       dp.LuongMua,
+								}
+								_ = s.rainRepo.Create(ctx, record)
+							}
+						}
+					}(st)
+				}
+				wg.Wait()
+
+				// Query the DB again to load the newly fetched records
+				records, err = s.rainRepo.GetByDateRange(ctx, startTime, endTime)
+				if err != nil {
+					return nil, err
+				}
+			}
+		}
+	}
+
+	return records, nil
 }
 
 func (s *service) GetRainAggregateStats(ctx context.Context, stationID int64, startDate, endDate string, groupBy string) ([]map[string]interface{}, error) {

@@ -455,6 +455,12 @@ definitions:
       length:
         example: 100m
         type: string
+      max_depth:
+        type: number
+      max_length:
+        type: string
+      max_width:
+        type: string
       mech_checked:
         example: true
         type: boolean

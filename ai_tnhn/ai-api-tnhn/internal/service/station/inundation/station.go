@@ -175,7 +175,18 @@ func (s *service) UpdatePoint(ctx context.Context, id string, point *models.Inun
 	return s.inundationStationRepo.Update(ctx, point)
 }
 func (s *service) DeletePoint(ctx context.Context, id string) error {
-	return s.inundationStationRepo.Delete(ctx, id)
+	err := s.inundationStationRepo.Delete(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	// Automatically pull this deleted point ID from all users' assigned list
+	_, _ = s.userRepo.GetCollection().UpdateMany(ctx,
+		bson.M{"assigned_inundation_station_ids": id},
+		bson.M{"$pull": bson.M{"assigned_inundation_station_ids": id}},
+	)
+
+	return nil
 }
 
 func (s *service) ListPointsByOrg(ctx context.Context, orgID string) ([]models.InundationStation, error) {

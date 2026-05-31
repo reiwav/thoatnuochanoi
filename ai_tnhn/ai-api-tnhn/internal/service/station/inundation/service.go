@@ -57,6 +57,7 @@ type service struct {
 	inundationHistoryRepo repository.InundationHistory
 	inundationStationRepo repository.InundationStation
 	orgRepo               repository.Organization
+	userRepo              repository.User
 	driveSvc              googledrive.Service
 	folderCache           map[string]string
 	cacheMu               sync.RWMutex
@@ -70,6 +71,7 @@ func NewService(
 	inundationHistoryRepo repository.InundationHistory,
 	inundationStationRepo repository.InundationStation,
 	orgRepo repository.Organization,
+	userRepo repository.User,
 	driveSvc googledrive.Service,
 	settingSvc setting.Service,
 ) Service {
@@ -78,6 +80,7 @@ func NewService(
 		inundationHistoryRepo: inundationHistoryRepo,
 		inundationStationRepo: inundationStationRepo,
 		orgRepo:               orgRepo,
+		userRepo:              userRepo,
 		driveSvc:              driveSvc,
 		settingSvc:            settingSvc,
 		folderCache:           make(map[string]string),

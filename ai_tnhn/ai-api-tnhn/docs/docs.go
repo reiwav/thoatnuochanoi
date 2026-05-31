@@ -7987,6 +7987,15 @@ const docTemplate = `{
                     "type": "string",
                     "example": "100m"
                 },
+                "max_depth": {
+                    "type": "number"
+                },
+                "max_length": {
+                    "type": "string"
+                },
+                "max_width": {
+                    "type": "string"
+                },
                 "mech_checked": {
                     "type": "boolean",
                     "example": true

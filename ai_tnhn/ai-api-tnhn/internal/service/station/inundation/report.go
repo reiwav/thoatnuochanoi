@@ -196,7 +196,14 @@ func (s *service) Resolve(ctx context.Context, reportID string, endTime int64) e
 		}
 	}
 
-	err = s.InundationReportRepo.Resolve(ctx, reportID, endTime)
+	report.Status = "resolved"
+	report.EndTime = endTime
+	report.IsFlooding = false
+	report.TrafficStatus = ""
+
+	_ = s.updateMaxFloodDepth(ctx, report)
+
+	err = s.InundationReportRepo.Update(ctx, report)
 	if err == nil {
 		go s.notifyPointChange(report.PointID)
 	}

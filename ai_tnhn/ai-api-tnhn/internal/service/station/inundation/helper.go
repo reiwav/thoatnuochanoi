@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/rs/xid"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func (s *service) getOrgFolderID(ctx context.Context, org *models.Organization) (string, error) {
@@ -174,12 +175,12 @@ func (s *service) createNewResolvedNormalReport(ctx context.Context, station *mo
 		BaseModel: model.BaseModel{
 			ID: newNormReportID,
 		},
-		PointID:      station.ID,
-		StreetName:   station.Name,
+		PointID:    station.ID,
+		StreetName: station.Name,
 		OrgID:      station.OrgID,
 		Status:     "resolved",
-		HasFlooded:   false,
-		EndTime:      endTime,
+		HasFlooded: false,
+		EndTime:    endTime,
 	}
 	newNormReport.IsFlooding = false
 	err := s.InundationReportRepo.R_Create(ctx, newNormReport)
@@ -299,4 +300,31 @@ func (s *service) getOrgName(ctx context.Context, orgID string) string {
 		return ""
 	}
 	return org.Name
+}
+
+func (s *service) updateMaxFloodDepth(ctx context.Context, report *models.InundationReport) error {
+	var histories []models.InundationHistory
+
+	filterVal := bson.M{
+		"report_id":       report.ID,
+		"role_permission": "inundation:enterprise_report",
+	}
+
+	// Query DB directly to find the deepest record
+	err := s.inundationHistoryRepo.R_SelectAndSort(ctx, filterVal, bson.M{"depth": -1}, 0, 1, &histories)
+	if err != nil {
+		return err
+	}
+
+	if len(histories) > 0 {
+		report.MaxDepth = histories[0].Depth
+		report.MaxLength = histories[0].Length
+		report.MaxWidth = histories[0].Width
+	} else {
+		report.MaxDepth = 0
+		report.MaxLength = ""
+		report.MaxWidth = ""
+	}
+
+	return nil
 }

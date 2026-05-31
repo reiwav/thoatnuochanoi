@@ -44,6 +44,9 @@ type InundationReport struct {
 	MechHistoryID       string `bson:"mech_history_id" json:"mech_history_id"`
 	EnterpriseHistoryID string `bson:"enterprise_history_id" json:"enterprise_history_id"`
 	KtclHistoryID       string `bson:"ktcl_history_id" json:"ktcl_history_id"`
+	MaxDepth            float64 `bson:"max_depth" json:"max_depth"`
+	MaxLength           string  `bson:"max_length" json:"max_length"`
+	MaxWidth            string  `bson:"max_width" json:"max_width"`
 
 	ReportReviewBase `bson:"-" json:",inline"`
 	// Design Survey Data

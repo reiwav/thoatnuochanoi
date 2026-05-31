@@ -54,6 +54,9 @@ func (s *service) ReportEnterprise(ctx context.Context, user *models.User, point
 
 	// Update reference IDs in report
 	report.EnterpriseHistoryID = history.ID
+	if report.Status == constant.InundationStatusResolved {
+		_ = s.updateMaxFloodDepth(ctx, report)
+	}
 	err = s.InundationReportRepo.Update(ctx, report)
 	if err != nil {
 		return nil, err

@@ -37,6 +37,8 @@ func (s *service) QuickFinishV2(ctx context.Context, user *models.User, pointID 
 
 	existing.EnterpriseHistoryID = newHistory.ID
 
+	_ = s.updateMaxFloodDepth(ctx, existing)
+
 	err = s.InundationReportRepo.Update(ctx, existing)
 	if err != nil {
 		return err

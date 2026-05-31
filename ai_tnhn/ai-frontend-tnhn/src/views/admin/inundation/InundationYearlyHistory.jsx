@@ -149,6 +149,7 @@ const InundationYearlyHistory = () => {
       <InundationHistoryDialog
         open={detailOpen}
         onClose={() => setDetailOpen(false)}
+        year={year}
         point={
           selectedPoint
             ? {

@@ -96,6 +96,11 @@ const inundationApi = {
     },
     quickFinish: (pointId) => {
         return axiosClient.post('/inundation/quick-finish', { point_id: pointId });
+    },
+    getHistoryByDateRange: (startDate, endDate, pointId) => {
+        let url = `/inundation/by-date?start_date=${startDate}&end_date=${endDate}`;
+        if (pointId) url += `&point_id=${pointId}`;
+        return axiosClient.get(url);
     }
 };
 

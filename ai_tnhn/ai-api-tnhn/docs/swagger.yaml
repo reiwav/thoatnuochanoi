@@ -4634,6 +4634,47 @@ paths:
       summary: Cập nhật thông tin cá nhân
       tags:
       - Xác thực
+  /inundation/by-date:
+    get:
+      description: Truy xuất lịch sử các báo cáo ngập lụt trong khoảng thời gian,
+        có thể lọc theo điểm ngập
+      parameters:
+      - description: Ngày bắt đầu (YYYY-MM-DD)
+        in: query
+        name: start_date
+        required: true
+        type: string
+      - description: Ngày kết thúc (YYYY-MM-DD)
+        in: query
+        name: end_date
+        required: true
+        type: string
+      - description: ID điểm ngập
+        in: query
+        name: point_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.InundationReport'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Lấy lịch sử ngập lụt theo khoảng ngày
+      tags:
+      - Ngập lụt
   /inundation/history:
     get:
       description: Lấy lịch sử báo cáo ngập lụt của trạm/điểm ngập, có phân trang

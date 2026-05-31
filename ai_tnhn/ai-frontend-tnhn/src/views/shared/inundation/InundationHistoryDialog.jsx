@@ -28,7 +28,7 @@ import dayjs from 'dayjs';
 import inundationApi from 'api/inundation';
 import InundationDetailDialog from './InundationDetailDialog';
 
-const InundationHistoryDialog = ({ open, onClose, point }) => {
+const InundationHistoryDialog = ({ open, onClose, point, year, fromTime, toTime }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [loading, setLoading] = useState(false);
@@ -44,24 +44,33 @@ const InundationHistoryDialog = ({ open, onClose, point }) => {
 
     setLoading(true);
     try {
-      const currentYear = dayjs().year();
       const now = dayjs().unix();
+      let rawReports = [];
 
-      // Gọi yearly history - đây là nguồn dữ liệu đáng tin cậy nhất
-      const res = await inundationApi.getYearlyHistory(currentYear);
-      const rawReports = Array.isArray(res) ? res : res?.data?.data || [];
+      if (fromTime && toTime) {
+        // Chatbot flow: use dedicated date-range API with point_id filter
+        const startDate = dayjs.unix(fromTime).format('YYYY-MM-DD');
+        const endDate = dayjs.unix(toTime).format('YYYY-MM-DD');
+        const res = await inundationApi.getHistoryByDateRange(startDate, endDate, pid);
+        rawReports = Array.isArray(res) ? res : res?.data?.data || res?.data || [];
+      } else {
+        // Admin yearly page flow: use yearly history and filter client-side
+        const currentYear = year || dayjs().year();
+        const res = await inundationApi.getYearlyHistory(currentYear);
+        const allReports = Array.isArray(res) ? res : res?.data?.data || [];
 
-      // Lọc các đợt ngập theo point_id
-      let filtered = rawReports.filter((r) => r.point_id === pid);
+        // Lọc các đợt ngập theo point_id
+        rawReports = allReports.filter((r) => r.point_id === pid);
 
-      // Fallback: tìm theo tên đường nếu không có kết quả
-      if (filtered.length === 0) {
-        const name = point.street_name || point.name;
-        if (name) filtered = rawReports.filter((r) => r.street_name === name);
+        // Fallback: tìm theo tên đường nếu không có kết quả
+        if (rawReports.length === 0) {
+          const name = point.street_name || point.name;
+          if (name) rawReports = allReports.filter((r) => r.street_name === name);
+        }
       }
 
       // Tính duration và sắp xếp mới nhất lên trên
-      const processed = filtered
+      const processed = rawReports
         .map((item) => {
           const startTime = item.created_at || item.start_time;
           const endTime = item.end_time > 0 ? item.end_time : now;
@@ -75,7 +84,7 @@ const InundationHistoryDialog = ({ open, onClose, point }) => {
     } finally {
       setLoading(false);
     }
-  }, [point, open]);
+  }, [point, open, year, fromTime, toTime]);
 
   useEffect(() => {
     setHistory([]);

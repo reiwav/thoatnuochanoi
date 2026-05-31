@@ -11,14 +11,14 @@ import (
 
 func (s *service) Query(ctx context.Context, collectionName string, filter map[string]interface{}, limit int64) ([]map[string]interface{}, error) {
 	restrictedCollections := map[string]bool{
-		"tokens":           true,
-		"users":            true,
-		"settings":         true,
-		"role_permissions": true,
-		"permissions":      true,
-		"roles":            true,
-		"ai_usage_records": true,
-		"ai_chat_logs":     true,
+		"tokens":            true,
+		"users":             true,
+		"settings":          true,
+		"role_permissions":  true,
+		"permissions":       true,
+		"roles":             true,
+		"ai_usage_records":  true,
+		"ai_chat_logs":      true,
 	}
 
 	if restrictedCollections[collectionName] {
@@ -62,14 +62,14 @@ func (s *service) Query(ctx context.Context, collectionName string, filter map[s
 
 func (s *service) Aggregate(ctx context.Context, collectionName string, pipeline interface{}) ([]map[string]interface{}, error) {
 	restrictedCollections := map[string]bool{
-		"tokens":           true,
-		"users":            true,
-		"settings":         true,
-		"role_permissions": true,
-		"permissions":      true,
-		"roles":            true,
-		"ai_usage_records": true,
-		"ai_chat_logs":     true,
+		"tokens":            true,
+		"users":             true,
+		"settings":          true,
+		"role_permissions":  true,
+		"permissions":       true,
+		"roles":             true,
+		"ai_usage_records":  true,
+		"ai_chat_logs":      true,
 	}
 
 	if restrictedCollections[collectionName] {

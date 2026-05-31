@@ -775,6 +775,44 @@ func (h *InundationHandler) GetYearlyHistory(c *gin.Context) {
 	h.SendData(c, reports)
 }
 
+// GetHistoryByDateRange godoc
+// @Summary Lấy lịch sử ngập lụt theo khoảng ngày
+// @Description Truy xuất lịch sử các báo cáo ngập lụt trong khoảng thời gian, có thể lọc theo điểm ngập
+// @Tags Ngập lụt
+// @Produce json
+// @Security BearerAuth
+// @Param start_date query string true "Ngày bắt đầu (YYYY-MM-DD)"
+// @Param end_date query string true "Ngày kết thúc (YYYY-MM-DD)"
+// @Param point_id query string false "ID điểm ngập"
+// @Success 200 {array} models.InundationReport
+// @Failure 401 {object} web.ErrorResponse
+// @Failure 400 {object} web.ErrorResponse
+// @Router /inundation/by-date [get]
+func (h *InundationHandler) GetHistoryByDateRange(c *gin.Context) {
+	_, err := h.contextWith.GetUser(c)
+	if err != nil {
+		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
+		return
+	}
+
+	startDate := c.Query("start_date")
+	endDate := c.Query("end_date")
+	pointID := c.Query("point_id")
+
+	if startDate == "" || endDate == "" {
+		h.SendError(c, web.BadRequest("start_date và end_date là bắt buộc (YYYY-MM-DD)"))
+		return
+	}
+
+	reports, err := h.service.GetHistoryByDateRange(c.Request.Context(), startDate, endDate, pointID)
+	if err != nil {
+		h.SendError(c, err)
+		return
+	}
+
+	h.SendData(c, reports)
+}
+
 // ExportYearlyHistory godoc
 // @Summary Xuất lịch sử ngập lụt theo năm ra Excel
 // @Description Xuất lịch sử báo cáo ngập lụt của một năm cụ thể ra tệp Excel

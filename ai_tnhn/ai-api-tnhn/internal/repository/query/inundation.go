@@ -84,3 +84,39 @@ func (r *inundationRepo) ListByYear(ctx context.Context, orgID string, year int)
 	err := r.R_SelectAndSort(ctx, filter, bson.D{{Key: "created_at", Value: 1}}, 0, 0, &reports)
 	return reports, err
 }
+
+func (r *inundationRepo) ListByDateRange(ctx context.Context, startDate, endDate string, pointID string) ([]*models.InundationReport, error) {
+	loc, err := time.LoadLocation("Asia/Ho_Chi_Minh")
+	if err != nil {
+		loc = time.FixedZone("GMT+7", 7*60*60)
+	}
+
+	tStart, err := time.ParseInLocation("2006-01-02", startDate, loc)
+	if err != nil {
+		return nil, err
+	}
+	tEnd, err := time.ParseInLocation("2006-01-02", endDate, loc)
+	if err != nil {
+		return nil, err
+	}
+
+	startUnix := time.Date(tStart.Year(), tStart.Month(), tStart.Day(), 0, 0, 0, 0, loc).Unix()
+	endUnix := time.Date(tEnd.Year(), tEnd.Month(), tEnd.Day(), 23, 59, 59, 999999999, loc).Unix()
+
+	filter := bson.M{
+		"created_at": bson.M{
+			"$gte": startUnix,
+			"$lte": endUnix,
+		},
+		"deleted_at":  0,
+		"has_flooded": true,
+	}
+
+	if pointID != "" {
+		filter["point_id"] = pointID
+	}
+
+	var reports []*models.InundationReport
+	err = r.R_SelectAndSort(ctx, filter, bson.D{{Key: "created_at", Value: 1}}, 0, 0, &reports)
+	return reports, err
+}

@@ -5733,6 +5733,68 @@ const docTemplate = `{
                 }
             }
         },
+        "/inundation/by-date": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Truy xuất lịch sử các báo cáo ngập lụt trong khoảng thời gian, có thể lọc theo điểm ngập",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Ngập lụt"
+                ],
+                "summary": "Lấy lịch sử ngập lụt theo khoảng ngày",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Ngày bắt đầu (YYYY-MM-DD)",
+                        "name": "start_date",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Ngày kết thúc (YYYY-MM-DD)",
+                        "name": "end_date",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID điểm ngập",
+                        "name": "point_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.InundationReport"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/web.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/web.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/inundation/history": {
             "get": {
                 "security": [

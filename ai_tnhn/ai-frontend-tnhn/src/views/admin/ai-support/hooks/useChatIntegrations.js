@@ -2,10 +2,12 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import axiosClient from 'api/axiosClient';
 import useInundationStore from 'store/useInundationStore';
 import stationApi from 'api/station';
+import dayjs from 'dayjs';
 
 export const useChatIntegrations = ({ setMessages, setLoading, shouldScrollToBottom }) => {
     const { points, fetchInitialData } = useInundationStore();
     const [inundationDetail, setInundationDetail] = useState({ open: false, point: null });
+    const [inundationHistory, setInundationHistory] = useState({ open: false, point: null, year: null, fromTime: null, toTime: null });
 
     useEffect(() => {
         if (points.length === 0) {
@@ -291,6 +293,12 @@ export const useChatIntegrations = ({ setMessages, setLoading, shouldScrollToBot
         const pointId = pointData['point_id'] || pointData['id'];
         const reportId = pointData['report_id'] || null;
 
+        const count = pointData['count'] || pointData['Count'];
+        const duration = pointData['duration'] || pointData['Duration'] || pointData['Tổng thời gian'] || pointData['Thời gian ngập'] || '';
+        const currentStatus = pointData['Trạng thái'] || pointData['current_status'] || pointData['CurrentStatus'] || '';
+        
+        const isHistory = count !== undefined || duration.includes('lần') || currentStatus.includes('lần');
+
         let matchedPoint = null;
         if (pointId) {
             matchedPoint = points.find(p => p.id === pointId);
@@ -303,17 +311,61 @@ export const useChatIntegrations = ({ setMessages, setLoading, shouldScrollToBot
             });
         }
 
-        if (matchedPoint) {
-            setInundationDetail({ open: true, point: matchedPoint });
-        } else {
-            setInundationDetail({
-                open: true,
-                point: {
-                    id: pointId || `dummy-${Date.now()}`,
-                    name: pointName,
-                    report_id: reportId
+        // Try to parse year from start_time/time
+        let extractedYear = null;
+        const timeVal = pointData['Thời gian'] || pointData['Giờ bắt đầu'] || pointData['start_time'] || '';
+        if (timeVal && timeVal.includes('/')) {
+            const parts = timeVal.split(' ').pop().split('/');
+            if (parts.length === 3) {
+                const y = parseInt(parts[2], 10);
+                if (!isNaN(y) && y >= 2000) {
+                    extractedYear = y;
                 }
-            });
+            }
+        }
+
+        // Parse query dates if present
+        const queryStartDate = pointData['query_start_date'];
+        const queryEndDate = pointData['query_end_date'];
+        let fromTime = null;
+        let toTime = null;
+        if (queryStartDate && queryEndDate) {
+            const startDay = dayjs(queryStartDate, 'YYYY-MM-DD');
+            const endDay = dayjs(queryEndDate, 'YYYY-MM-DD');
+            if (startDay.isValid() && endDay.isValid()) {
+                fromTime = startDay.startOf('day').unix();
+                toTime = endDay.endOf('day').unix();
+            }
+        }
+
+        const pointToUse = matchedPoint ? {
+            id: matchedPoint.id,
+            name: matchedPoint.name,
+            address: matchedPoint.address || matchedPoint.street_name || matchedPoint.name,
+            org_code: matchedPoint.org_code,
+            org_name: matchedPoint.org_name,
+            count: count
+        } : {
+            id: pointId || `dummy-${Date.now()}`,
+            name: pointName,
+            address: pointData['address'] || pointData['Địa chỉ'] || pointName,
+            org_code: pointData['org_code'] || '',
+            org_name: pointData['org_name'] || pointData['Đơn vị quản lý'] || '',
+            count: count,
+            report_id: reportId
+        };
+
+        if (isHistory) {
+            setInundationHistory({ open: true, point: pointToUse, year: extractedYear, fromTime: fromTime, toTime: toTime });
+        } else {
+            if (matchedPoint) {
+                setInundationDetail({ open: true, point: matchedPoint });
+            } else {
+                setInundationDetail({
+                    open: true,
+                    point: pointToUse
+                });
+            }
         }
     }, [points]);
 
@@ -342,6 +394,8 @@ export const useChatIntegrations = ({ setMessages, setLoading, shouldScrollToBot
         setRainChart,
         inundationDetail,
         setInundationDetail,
+        inundationHistory,
+        setInundationHistory,
         handleRainSummary,
         handleShowRainCharts,
         handleEmailDetail,

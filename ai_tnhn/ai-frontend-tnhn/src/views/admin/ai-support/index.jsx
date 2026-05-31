@@ -9,6 +9,7 @@ import ChatInput from './components/ChatInput';
 import StatsContent from './components/StatsContent';
 import RainChartDialog from './components/RainChartDialog';
 import InundationDetailDialog from '../../shared/inundation/InundationDetailDialog';
+import InundationHistoryDialog from '../../shared/inundation/InundationHistoryDialog';
 import ConstructionReportDialog from './components/ConstructionReportDialog';
 
 // custom hook
@@ -39,6 +40,8 @@ const AiSupport = () => {
         setRainChart,
         inundationDetail,
         setInundationDetail,
+        inundationHistory,
+        setInundationHistory,
         scrollRef,
         handleScroll,
         scrollToBottom,
@@ -212,6 +215,15 @@ const AiSupport = () => {
                 open={inundationDetail.open}
                 onClose={() => setInundationDetail({ open: false, point: null })}
                 point={inundationDetail.point}
+            />
+
+            <InundationHistoryDialog
+                open={inundationHistory.open}
+                onClose={() => setInundationHistory({ open: false, point: null, year: null, fromTime: null, toTime: null })}
+                point={inundationHistory.point}
+                year={inundationHistory.year}
+                fromTime={inundationHistory.fromTime}
+                toTime={inundationHistory.toTime}
             />
         </Box>
     );

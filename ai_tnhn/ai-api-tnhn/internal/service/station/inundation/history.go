@@ -51,6 +51,41 @@ func (s *service) GetYearlyHistory(ctx context.Context, orgID string, year int) 
 	return reports, nil
 }
 
+func (s *service) GetHistoryByDateRange(ctx context.Context, startDate, endDate, pointID string) ([]*models.InundationReport, error) {
+	reports, err := s.InundationReportRepo.ListByDateRange(ctx, startDate, endDate, pointID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Enrich reports with station names and org names (same as GetYearlyHistory)
+	orgs, _, _ := s.orgRepo.List(ctx, filter.NewPaginationFilter())
+	orgNameMap := make(map[string]string)
+	orgCodeMap := make(map[string]string)
+	for _, o := range orgs {
+		orgNameMap[o.ID] = o.Name
+		orgCodeMap[o.ID] = o.Code
+	}
+
+	for _, r := range reports {
+		r.OrgName = orgNameMap[r.OrgID]
+		r.OrgCode = orgCodeMap[r.OrgID]
+		if r.PointID != "" {
+			point, _ := s.inundationStationRepo.GetByID(ctx, r.PointID)
+			if point != nil {
+				r.StreetName = point.Name
+				r.Address = point.Address
+				if r.OrgID == "" {
+					r.OrgID = point.OrgID
+					r.OrgName = orgNameMap[point.OrgID]
+					r.OrgCode = orgCodeMap[point.OrgID]
+				}
+			}
+		}
+	}
+
+	return reports, nil
+}
+
 func (s *service) ExportYearlyHistory(ctx context.Context, orgID string, year int) (string, error) {
 	reports, err := s.GetYearlyHistory(ctx, orgID, year)
 	if err != nil {

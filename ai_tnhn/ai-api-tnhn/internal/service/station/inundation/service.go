@@ -39,6 +39,7 @@ type Service interface {
 
 	// Yearly history reporting
 	GetYearlyHistory(ctx context.Context, orgID string, year int) ([]*models.InundationReport, error)
+	GetHistoryByDateRange(ctx context.Context, startDate, endDate, pointID string) ([]*models.InundationReport, error)
 	ExportYearlyHistory(ctx context.Context, orgID string, year int) (string, error)
 
 	// Summary for external consumers

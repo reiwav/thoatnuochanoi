@@ -87,7 +87,7 @@ func (s *service) Chat(ctx context.Context, prompt string, history []googleapi.C
 					trs = append(trs, genai.FunctionResponse{Name: c.Name, Response: map[string]interface{}{"error": te.Error()}})
 				} else {
 					if res != nil {
-						k := s.getToolKey(c)
+						k := s.getToolKey(c, res)
 						log.Printf("[Chat] tool=%s, key=%s, res_type=%T, res_nil=%v", c.Name, k, res, res == nil)
 						if k != "" {
 							switch k {
@@ -151,7 +151,7 @@ func (s *service) Chat(ctx context.Context, prompt string, history []googleapi.C
 	return chatRes, nil
 }
 
-func (s *service) getToolKey(c *genai.FunctionCall) string {
+func (s *service) getToolKey(c *genai.FunctionCall, res interface{}) string {
 	switch c.Name {
 	case "get_live_rain_summary", "get_rain_data_by_date", "get_rain_analytics", "get_rain_summary_by_ward":
 		return "rains"
@@ -161,7 +161,7 @@ func (s *service) getToolKey(c *genai.FunctionCall) string {
 		return "lakes"
 	case "get_river_data_by_date":
 		return "rivers"
-	case "get_live_inundation_summary":
+	case "get_live_inundation_summary", "get_inundation_history_by_range":
 		return "inundations"
 	case "get_live_pumping_summary":
 		return "pumping_summary" // special case handled above
@@ -264,7 +264,7 @@ func (s *service) ChatContract(ctx context.Context, prompt string, history []goo
 					trs = append(trs, genai.FunctionResponse{Name: c.Name, Response: map[string]interface{}{"error": te.Error()}})
 				} else {
 					if res != nil {
-						k := s.getToolKey(c)
+						k := s.getToolKey(c, res)
 						if k != "" {
 							tables[k] = res
 						}

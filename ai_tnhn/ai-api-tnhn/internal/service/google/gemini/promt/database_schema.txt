@@ -20,6 +20,15 @@ Dưới đây là chi tiết các bộ sưu tập (collections) khả dụng tro
 Để kiểm tra xem một điểm có bị ngập vào ngày đó hay không (tức là ngày được kiểm tra nằm trong khoảng thời gian từ khi bắt đầu ngập đến khi kết thúc/rút ngập), bạn BẮT BUỘC phải sử dụng điều kiện lọc:
 `{"has_flooded": true, "created_at": {"$lte": EndOfDay}, "$or": [{"status": "active"}, {"end_time": {"$gte": StartOfDay}}]}`
 
+*Lưu ý quan trọng khi truy vấn điểm ngập hoặc dữ liệu theo năm (định dạng Unix Timestamp múi giờ GMT+7 Việt Nam):*
+Khi lọc các trường lưu dưới dạng unix timestamp (giây) như `created_at` theo một năm cụ thể, hãy sử dụng bảng tra cứu nhanh sau:
+- Năm 2024: Từ 1704042000 (2024-01-01T00:00:00+07:00) đến 1735664399 (2024-12-31T23:59:59+07:00)
+- Năm 2025: Từ 1735664400 (2025-01-01T00:00:00+07:00) đến 1767200399 (2025-12-31T23:59:59+07:00)
+- Năm 2026: Từ 1767200400 (2026-01-01T00:00:00+07:00) đến 1798736399 (2026-12-31T23:59:59+07:00)
+- Năm 2027: Từ 1798736400 (2027-01-01T00:00:00+07:00) đến 1830272399 (2027-12-31T23:59:59+07:00)
+- Năm 2028: Từ 1830272400 (2028-01-01T00:00:00+07:00) đến 1861894799 (2028-12-31T23:59:59+07:00)
+
+
 ## 2. Bộ sưu tập: `inundation_stations` (Thông tin trạm/điểm ngập)
 - `_id` (string): ID của điểm ngập.
 - `name` (string): Tên điểm ngập.

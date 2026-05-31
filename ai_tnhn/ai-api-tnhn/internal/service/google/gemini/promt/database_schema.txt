@@ -12,9 +12,13 @@ Dưới đây là chi tiết các bộ sưu tập (collections) khả dụng tro
 - `length` (string): Chiều dài khu vực ngập.
 - `width` (string): Chiều rộng khu vực ngập.
 - `flood_level_name` (string): Tên cấp độ ngập theo cấu hình ("Ứ đọng", "Ngập nhẹ", "Ngập ahgt", "úng ngập").
-- `ctime` (int64, unix timestamp): Thời điểm bắt đầu ngập (Ví dụ: 1779986351).
+- `created_at` (int64, unix timestamp): Thời điểm bắt đầu ngập (Ví dụ: 1779986351).
 - `end_time` (int64, unix timestamp): Thời điểm rút ngập (bằng 0 nếu status là "active", lớn hơn 0 nếu status là "resolved").
 - `has_flooded` (bool): Đánh dấu có ngập hay không (luôn lọc `true`).
+
+*Lưu ý quan trọng khi truy vấn điểm ngập theo một ngày cụ thể (từ StartOfDay đến EndOfDay):*
+Để kiểm tra xem một điểm có bị ngập vào ngày đó hay không (tức là ngày được kiểm tra nằm trong khoảng thời gian từ khi bắt đầu ngập đến khi kết thúc/rút ngập), bạn BẮT BUỘC phải sử dụng điều kiện lọc:
+`{"has_flooded": true, "created_at": {"$lte": EndOfDay}, "$or": [{"status": "active"}, {"end_time": {"$gte": StartOfDay}}]}`
 
 ## 2. Bộ sưu tập: `inundation_stations` (Thông tin trạm/điểm ngập)
 - `_id` (string): ID của điểm ngập.
@@ -32,6 +36,13 @@ Dưới đây là chi tiết các bộ sưu tập (collections) khả dụng tro
 - `date` (string, định dạng YYYY-MM-DD): Ngày ghi nhận lượng mưa (Ví dụ: "2026-05-29").
 - `value` (float64): Lượng mưa đo được (đơn vị: mm. Ví dụ: 1.5, 24.5).
 - `timestamp` (time.Time / ISODate): Thời gian đo chi tiết.
+
+*Lưu ý quan trọng khi truy vấn lượng mưa:*
+- Một ngày mưa (rain day) của ngày D được tính từ 07:00:00 ngày D đến 07:00:00 ngày D+1. 
+  Do đó, khi truy vấn lượng mưa của một ngày cụ thể (ví dụ: ngày 25/05/2026), bạn BẮT BUỘC phải lọc theo trường `timestamp` với khoảng thời gian từ 7h sáng ngày hôm đó đến 7h sáng ngày hôm sau:
+  `{"timestamp": {"$gte": ISODate("2026-05-25T07:00:00+07:00"), "$lt": ISODate("2026-05-26T07:00:00+07:00")}}`
+- Khi bạn thực hiện truy vấn (database_query hoặc database_aggregate) trên bộ sưu tập `rain_records` kèm theo điều kiện lọc ngày/giờ, hệ thống backend sẽ tự động nhận diện ngày và kích hoạt cơ chế tải/cập nhật dữ liệu từ API bên ngoài nếu trong DB chưa có. Do đó, bạn hãy yên tâm truy vấn trực tiếp mà không sợ thiếu dữ liệu lịch sử.
+
 
 ## 5. Bộ sưu tập: `rain_stations` (Thông tin trạm đo mưa)
 - `_id` (string): ID trạm mưa.

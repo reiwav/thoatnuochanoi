@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/generative-ai-go/genai"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func (s *service) getChatTools() []*genai.FunctionDeclaration {
@@ -323,6 +324,27 @@ func extractDates(v interface{}) []string {
 					}
 				}
 			}
+		case time.Time:
+			loc, err := time.LoadLocation("Asia/Ho_Chi_Minh")
+			if err != nil {
+				loc = time.FixedZone("GMT+7", 7*60*60)
+			}
+			dStr := val.In(loc).Format("2006-01-02")
+			if !seen[dStr] {
+				seen[dStr] = true
+				dates = append(dates, dStr)
+			}
+		case primitive.DateTime:
+			loc, err := time.LoadLocation("Asia/Ho_Chi_Minh")
+			if err != nil {
+				loc = time.FixedZone("GMT+7", 7*60*60)
+			}
+			t := val.Time().In(loc)
+			dStr := t.Format("2006-01-02")
+			if !seen[dStr] {
+				seen[dStr] = true
+				dates = append(dates, dStr)
+			}
 		case map[string]interface{}:
 			for _, item := range val {
 				walk(item)
@@ -331,22 +353,28 @@ func extractDates(v interface{}) []string {
 			for _, item := range val {
 				walk(item)
 			}
-		case bson.M:
+		case primitive.A:
 			for _, item := range val {
 				walk(item)
 			}
-		case []bson.M:
+		case primitive.M:
 			for _, item := range val {
 				walk(item)
 			}
-		case bson.D:
+		case primitive.D:
 			for _, elem := range val {
 				walk(elem.Value)
 			}
-		case []bson.D:
+		case []primitive.M:
 			for _, item := range val {
 				walk(item)
 			}
+		case []primitive.D:
+			for _, item := range val {
+				walk(item)
+			}
+		case primitive.E:
+			walk(val.Value)
 		}
 	}
 	walk(v)

@@ -45,7 +45,7 @@ func InitRepositories(db *db.Mongo, log logger.Logger) *Repositories {
 		Rain:                          query.NewRainRepo(db.DB, "rain_records", "rain", log),
 		Lake:                          query.NewLakeRepo(db.DB, "lake_records", "lake", log),
 		River:                         query.NewRiverRepo(db.DB, "river_records", "river", log),
-		InundationReport:              query.NewInundationRepository(db.DB, "inundation_reports_v2", "inu", log),
+		InundationReport:              query.NewInundationRepository(db.DB, "inundation_reports", "inu", log),
 		InundationHistory:             query.NewInundationHistoryRepository(db.DB, "inundation_histories", "inuhis", log),
 		InundationStation:             query.NewInundationStationRepository(db.DB, "inundation_stations", "inpt", log),
 		AiUsage:                       query.NewAiUsageRepo(db.DB, "ai_usage_records", "aiu", log),

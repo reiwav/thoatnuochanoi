@@ -35,7 +35,7 @@ func (s *service) getChatTools() []*genai.FunctionDeclaration {
 		{Name: constant.ToolLiveWaterSummary, Description: constant.ToolDescriptions[constant.ToolLiveWaterSummary]},
 		{Name: constant.ToolLiveInundationSummary, Description: "Tình hình ngập úng hiện tại hoặc theo ngày cụ thể (YYYY-MM-DD). Hỗ trợ lọc theo xí nghiệp/đơn vị quản lý.",
 			Parameters: &genai.Schema{Type: genai.TypeObject, Properties: map[string]*genai.Schema{
-				"date": {Type: genai.TypeString, Description: "Định dạng YYYY-MM-DD. Tùy chọn, dùng để xem các điểm ngập trong ngày được chỉ định."},
+				"date":     {Type: genai.TypeString, Description: "Định dạng YYYY-MM-DD. Tùy chọn, dùng để xem các điểm ngập trong ngày được chỉ định."},
 				"org_name": {Type: genai.TypeString, Description: "Tên xí nghiệp/đơn vị quản lý (ví dụ: 'Xí nghiệp 2', 'Xí nghiệp thoát nước số 2'). Tùy chọn, dùng để lọc kết quả."},
 			}}},
 		{Name: constant.ToolLivePumpingSummary, Description: constant.ToolDescriptions[constant.ToolLivePumpingSummary]},
@@ -46,7 +46,7 @@ func (s *service) getChatTools() []*genai.FunctionDeclaration {
 		{Name: constant.ToolDatabaseAggregate, Description: "Thực hiện truy vấn tổng hợp MongoDB (Aggregation Pipeline) để đếm, cộng, nhóm số liệu. Dùng cho các câu hỏi thống kê lịch sử/phức tạp.",
 			Parameters: &genai.Schema{Type: genai.TypeObject, Properties: map[string]*genai.Schema{
 				"collection": {Type: genai.TypeString, Description: "Tên bộ sưu tập cần truy vấn tổng hợp (inundation_reports, rain_records, v.v.)."},
-				"pipeline": {Type: genai.TypeArray, Items: &genai.Schema{Type: genai.TypeObject}, Description: "Mảng các bước pipeline MongoDB (ví dụ: [ { '$match': ... }, { '$group': ... } ])."},
+				"pipeline":   {Type: genai.TypeArray, Items: &genai.Schema{Type: genai.TypeObject}, Description: "Mảng các bước pipeline MongoDB (ví dụ: [ { '$match': ... }, { '$group': ... } ])."},
 			}, Required: []string{"collection", "pipeline"}}},
 		{Name: constant.ToolReadEmailByTitle, Description: constant.ToolDescriptions[constant.ToolReadEmailByTitle],
 			Parameters: &genai.Schema{Type: genai.TypeObject, Properties: map[string]*genai.Schema{"title": {Type: genai.TypeString}}, Required: []string{"title"}}},
@@ -73,8 +73,6 @@ func (s *service) getContractTools() []*genai.FunctionDeclaration {
 		{Name: constant.ToolSearchContracts, Description: constant.ToolDescriptions[constant.ToolSearchContracts], Parameters: &genai.Schema{Type: genai.TypeObject, Properties: map[string]*genai.Schema{"keyword": {Type: genai.TypeString}}, Required: []string{"keyword"}}},
 	}
 }
-
-
 
 func (s *service) handleToolCall(ctx context.Context, c *genai.FunctionCall, uID string, isC bool) (interface{}, error) {
 	u, _ := s.userRepo.GetByID(ctx, uID)
@@ -149,7 +147,7 @@ func (s *service) handleToolCall(ctx context.Context, c *genai.FunctionCall, uID
 			summary.OngoingPoints = filtered
 			summary.ActivePoints = len(filtered)
 			summary.FullSummary = strings.Join(filteredDetails, ", ")
-			
+
 			dateStr := "hiện tại"
 			if dateVal, ok := c.Args["date"].(string); ok && dateVal != "" {
 				dateStr = "ngày " + dateVal
@@ -172,7 +170,7 @@ func (s *service) handleToolCall(ctx context.Context, c *genai.FunctionCall, uID
 			ww, _ = s.wastewaterSvc.ListFiltered(ctx, orgID, nil)
 		}
 		return map[string]interface{}{
-			"pumping_stations": p,
+			"pumping_stations":    p,
 			"wastewater_stations": ww,
 		}, err
 	case constant.ToolEmergencyList, constant.ToolEmergencyHistory, constant.ToolUnfinishedEmergencyHistory, constant.ToolRecentEmergencyReports, constant.ToolReportEmergencyProgress:
@@ -186,23 +184,23 @@ func (s *service) handleToolCall(ctx context.Context, c *genai.FunctionCall, uID
 		return s.querySvc.Query(ctx, collectionVal, filterVal, 0)
 	case constant.ToolDatabaseAggregate:
 		collectionVal := c.Args["collection"].(string)
-		
+
 		pipelineBytes, err := json.Marshal(c.Args["pipeline"])
 		if err != nil {
 			return nil, fmt.Errorf("lỗi khi mã hóa pipeline: %w", err)
 		}
-		
+
 		var pipeline []bson.M
 		if err := bson.UnmarshalExtJSON(pipelineBytes, true, &pipeline); err != nil {
 			if err := json.Unmarshal(pipelineBytes, &pipeline); err != nil {
 				return nil, fmt.Errorf("lỗi khi giải mã pipeline: %w", err)
 			}
 		}
-		
+
 		if collectionVal == "rain_records" {
 			s.ensureRainDataLoaded(ctx, pipeline)
 		}
-		
+
 		if collectionVal == "inundation_reports" {
 			hasMatch := false
 			for i, stage := range pipeline {
@@ -217,7 +215,7 @@ func (s *service) handleToolCall(ctx context.Context, c *genai.FunctionCall, uID
 				pipeline = append([]bson.M{{"$match": bson.M{"has_flooded": true}}}, pipeline...)
 			}
 		}
-		
+
 		return s.querySvc.Aggregate(ctx, collectionVal, pipeline)
 	default:
 		return nil, fmt.Errorf("unknown tool: %s", c.Name)
@@ -255,7 +253,7 @@ func matchesOrg(target, query string) bool {
 	if strings.Contains(target, query) {
 		return true
 	}
-	
+
 	simplify := func(s string) string {
 		s = strings.ToLower(s)
 		s = strings.ReplaceAll(s, "xí nghiệp", "xn")
@@ -264,7 +262,7 @@ func matchesOrg(target, query string) bool {
 		s = strings.ReplaceAll(s, " ", "")
 		return s
 	}
-	
+
 	return strings.Contains(simplify(target), simplify(query)) || strings.Contains(simplify(query), simplify(target))
 }
 

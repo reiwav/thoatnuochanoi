@@ -3,7 +3,7 @@ import {
     Box, Button, TextField, Table, TableBody,
     TableCell, TableContainer, TableHead, TableRow, Paper,
     IconButton, CircularProgress, TablePagination, Typography, Chip, Tooltip, Stack,
-    Collapse, useTheme, useMediaQuery, MenuItem
+    Collapse, useTheme, useMediaQuery, MenuItem, Grid
 } from '@mui/material';
 import { IconTrash, IconPlus, IconEdit, IconChevronDown, IconChevronUp, IconMapPin, IconCalendar, IconUser, IconAlertTriangle } from '@tabler/icons-react';
 import ConstructionDialog from './ConstructionDialog';

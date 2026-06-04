@@ -90,6 +90,8 @@ func NewService(
 	svc.syncWorker = NewSyncWorker(inundationRepo, inundationHistoryRepo, orgRepo, driveSvc, svc.resolveUploadFolder)
 	svc.syncWorker.Start()
 
+	svc.startResetWorker()
+
 	return svc
 }
 

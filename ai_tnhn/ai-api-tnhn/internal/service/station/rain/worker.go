@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	"github.com/robfig/cron/v3"
 )
 
 type Worker interface {
@@ -54,30 +56,29 @@ func (w *worker) SetSessionID(sessionID string) {
 
 func (w *worker) Start(ctx context.Context) {
 	w.logger.GetLogger().Info(">>> Rain Station Data Worker is STARTING...")
-	go w.run(ctx)
-}
-
-func (w *worker) run(ctx context.Context) {
-	loc, _ := time.LoadLocation("Asia/Ho_Chi_Minh")
 
 	// Initial sync on startup
-	w.sync(ctx)
+	go w.sync(ctx)
 
-	for {
-		now := time.Now().In(loc)
-		next := time.Date(now.Year(), now.Month(), now.Day(), 7, 1, 0, 0, loc)
-		if !now.Before(next) {
-			next = next.AddDate(0, 0, 1)
-		}
-		duration := next.Sub(now)
-
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(duration):
-			w.sync(ctx)
-		}
+	loc, err := time.LoadLocation("Asia/Ho_Chi_Minh")
+	if err != nil {
+		loc = time.FixedZone("GMT+7", 7*60*60)
 	}
+
+	c := cron.New(cron.WithLocation(loc))
+	_, err = c.AddFunc("1 7 * * *", func() {
+		w.sync(ctx)
+	})
+	if err != nil {
+		w.logger.GetLogger().Errorf("RainWorker: Failed to schedule cron: %v", err)
+	}
+	c.Start()
+
+	// Stop scheduler when context is cancelled
+	go func() {
+		<-ctx.Done()
+		c.Stop()
+	}()
 }
 
 func (w *worker) sync(ctx context.Context) {

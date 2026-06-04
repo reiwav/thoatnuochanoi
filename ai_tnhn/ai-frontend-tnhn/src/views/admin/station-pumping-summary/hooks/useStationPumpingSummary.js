@@ -12,6 +12,7 @@ const useStationPumpingSummary = () => {
 
     const [selectedOrg, setSelectedOrg] = useState('all');
     const [searchQuery, setSearchQuery] = useState('');
+    const [selectedStatus, setSelectedStatus] = useState('all');
     const [taskDialog, setTaskDialog] = useState({ open: false, data: null, mode: 'PUMPING' });
 
     const fetchWasteStations = async () => {
@@ -57,6 +58,34 @@ const useStationPumpingSummary = () => {
         return result;
     }, [activeList, searchQuery, selectedOrg]);
 
+    const statusCounts = useMemo(() => {
+        const counts = { all: filteredStations.length, operating: 0, closed: 0, maintenance: 0, no_signal: 0 };
+        filteredStations.forEach(s => {
+            const r = s.last_report || {};
+            if ((r.operating_count || 0) > 0) counts.operating++;
+            if ((r.closed_count || 0) > 0) counts.closed++;
+            if ((r.maintenance_count || 0) > 0) counts.maintenance++;
+            if ((r.no_signal_count || 0) > 0) counts.no_signal++;
+        });
+        return counts;
+    }, [filteredStations]);
+
+    const displayedStations = useMemo(() => {
+        if (selectedStatus === 'all' || !selectedStatus) return filteredStations;
+        const statusFieldMap = {
+            operating: 'operating_count',
+            closed: 'closed_count',
+            maintenance: 'maintenance_count',
+            no_signal: 'no_signal_count'
+        };
+        const field = statusFieldMap[selectedStatus];
+        if (!field) return filteredStations;
+        return filteredStations.filter(s => {
+            const report = s.last_report || {};
+            return (report[field] || 0) > 0;
+        });
+    }, [filteredStations, selectedStatus]);
+
     const handleUpdate = (station) => {
         setTaskDialog({ 
             open: true, 
@@ -80,10 +109,13 @@ const useStationPumpingSummary = () => {
         setSelectedOrg,
         searchQuery,
         setSearchQuery,
+        selectedStatus,
+        setSelectedStatus,
         taskDialog,
         setTaskDialog,
         isLoading,
-        filteredStations,
+        filteredStations: displayedStations,
+        statusCounts,
         handleUpdate,
         handleViewHistory,
         fetchPumpingStations,

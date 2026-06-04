@@ -1,9 +1,9 @@
 import React from 'react';
 import { 
     Box, Typography, Stack, Avatar, Grid, TextField, 
-    useTheme, Tabs, Tab 
+    useTheme, Tabs, Tab, Chip, alpha 
 } from '@mui/material';
-import { IconEngine, IconSearch, IconDroplets } from '@tabler/icons-react';
+import { IconEngine, IconSearch, IconDroplets, IconFilter } from '@tabler/icons-react';
 
 import OrganizationSelect from 'ui-component/filter/OrganizationSelect';
 import EmployeeActionDialog from '../../employee/components/EmployeeActionDialog';
@@ -25,15 +25,26 @@ const StationPumpingSummary = () => {
         setSelectedOrg,
         searchQuery,
         setSearchQuery,
+        selectedStatus,
+        setSelectedStatus,
         taskDialog,
         setTaskDialog,
         isLoading,
         filteredStations,
+        statusCounts,
         handleUpdate,
         handleViewHistory,
         fetchPumpingStations,
         fetchWasteStations
     } = useStationPumpingSummary();
+
+    const statusOptions = [
+        { key: 'all', label: 'Tất cả', color: theme.palette.primary.main },
+        { key: 'operating', label: 'Đang vận hành', color: theme.palette.error.main },
+        { key: 'closed', label: 'Không vận hành', color: theme.palette.success.main },
+        { key: 'maintenance', label: 'Bảo dưỡng', color: '#FBC02D' },
+        { key: 'no_signal', label: 'Mất tín hiệu', color: theme.palette.text.secondary }
+    ];
 
     return (
         <Box sx={{ px: { xs: 1, md: 3 }, pt: { xs: 1.5, md: 3 }, pb: 10 }}>
@@ -78,7 +89,7 @@ const StationPumpingSummary = () => {
                         />
                     </Tabs>
 
-                    <Grid container spacing={1.5} sx={{ mb: 2 }}>
+                    <Grid container spacing={1.5} sx={{ mb: 1 }}>
                         <Grid size={{ xs: 12, md: 8 }}>
                             <TextField
                                 fullWidth
@@ -106,6 +117,44 @@ const StationPumpingSummary = () => {
                             />
                         </Grid>
                     </Grid>
+
+                    {activeTab === 0 && (
+                        <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: 'wrap', gap: 0.5 }} alignItems="center">
+                            <IconFilter size={16} color={theme.palette.text.secondary} style={{ marginRight: 4 }} />
+                            {statusOptions.map(opt => (
+                                <Chip
+                                    key={opt.key}
+                                    label={<span>{opt.label} <span style={{ color: opt.color, fontWeight: 900 }}>({statusCounts[opt.key] ?? 0})</span></span>}
+                                    size="small"
+                                    onClick={() => setSelectedStatus(opt.key)}
+                                    sx={{
+                                        fontWeight: 800,
+                                        fontSize: '0.75rem',
+                                        borderRadius: 2,
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                        ...(selectedStatus === opt.key ? {
+                                            bgcolor: alpha(opt.color, 0.15),
+                                            color: opt.color,
+                                            border: '1.5px solid',
+                                            borderColor: alpha(opt.color, 0.5),
+                                            boxShadow: `0 2px 8px ${alpha(opt.color, 0.2)}`
+                                        } : {
+                                            bgcolor: 'grey.50',
+                                            color: 'text.secondary',
+                                            border: '1px solid',
+                                            borderColor: 'divider',
+                                            '&:hover': {
+                                                bgcolor: alpha(opt.color, 0.08),
+                                                borderColor: alpha(opt.color, 0.3),
+                                                color: opt.color
+                                            }
+                                        })
+                                    }}
+                                />
+                            ))}
+                        </Stack>
+                    )}
                 </Box>
             )}
 

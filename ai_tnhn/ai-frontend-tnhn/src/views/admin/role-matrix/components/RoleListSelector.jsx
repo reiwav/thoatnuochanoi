@@ -9,13 +9,14 @@ const RoleListSelector = ({ roles, selectedRole, setSelectedRole }) => {
 
     return (
         <Box sx={{
-            width: 320,
-            minWidth: 320,
-            borderRight: '1px solid',
+            width: { xs: '100%', md: 320 },
+            minWidth: { xs: '100%', md: 320 },
+            borderRight: { xs: 'none', md: '1px solid' },
             borderColor: 'divider',
             bgcolor: 'grey.50',
             display: 'flex',
-            flexDirection: 'column'
+            flexDirection: 'column',
+            height: '100%'
         }}>
             <Box sx={{ p: 3, flexShrink: 0 }}>
                 <Typography variant="h4" sx={{ fontWeight: 800, mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>

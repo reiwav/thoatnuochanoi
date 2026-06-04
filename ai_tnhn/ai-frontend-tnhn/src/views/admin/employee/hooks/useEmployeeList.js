@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 
@@ -132,6 +132,25 @@ const useEmployeeList = () => {
         return org ? org.name : orgId;
     };
 
+    const sortedEmployees = useMemo(() => {
+        if (!employees) return [];
+        return [...employees].sort((a, b) => {
+            const orgA = orgName(a.org_id) || '';
+            const orgB = orgName(b.org_id) || '';
+            const orgCompare = orgA.localeCompare(orgB, 'vi', { sensitivity: 'base' });
+            if (orgCompare !== 0) return orgCompare;
+
+            const roleA = roleLabel(a.role) || '';
+            const roleB = roleLabel(b.role) || '';
+            const roleCompare = roleA.localeCompare(roleB, 'vi', { sensitivity: 'base' });
+            if (roleCompare !== 0) return roleCompare;
+
+            const nameA = a.name || '';
+            const nameB = b.name || '';
+            return nameA.localeCompare(nameB, 'vi', { sensitivity: 'base' });
+        });
+    }, [employees, organizations, roles]);
+
     return {
         // Auth / context
         userRole,
@@ -141,7 +160,7 @@ const useEmployeeList = () => {
         initialOrgId,
 
         // Data
-        employees,
+        employees: sortedEmployees,
         loading,
         totalItems,
         organizations,

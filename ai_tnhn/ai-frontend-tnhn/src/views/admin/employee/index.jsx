@@ -3,7 +3,7 @@ import {
     Button, Grid, TextField, Table, TableBody,
     TableCell, TableContainer, TableHead, TableRow, Paper, Stack,
     IconButton, CircularProgress, TablePagination, Box, Alert,
-    useTheme, useMediaQuery
+    useTheme, useMediaQuery, Chip, Divider, Typography
 } from '@mui/material';
 import { IconPlus, IconBuilding } from '@tabler/icons-react';
 
@@ -15,10 +15,11 @@ import ConfirmDialog from 'ui-component/ConfirmDialog';
 import EmployeeDialog from './EmployeeDialog';
 import useEmployeeList from './hooks/useEmployeeList';
 import EmployeeRow from './components/EmployeeRow';
+import EmployeeCard from './components/EmployeeCard';
 
 const EmployeeList = () => {
     const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
     const {
         userRole,
@@ -109,57 +110,91 @@ const EmployeeList = () => {
                 </Stack>
             </Box>
 
-            <TableContainer component={Paper} sx={{ border: '1px solid', borderColor: 'divider', boxShadow: 'none', borderRadius: '12px' }}>
-                <Table>
-                    <TableHead sx={{ bgcolor: 'grey.50' }}>
-                        <TableRow>
-                            {isMobile && <TableCell width="40px" />}
-                            <TableCell sx={{ fontWeight: 700 }}>Tên</TableCell>
-                            {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>}
-                            {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Công ty</TableCell>}
-                            {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Vai trò</TableCell>}
-                            {!isMobile && <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>}
-                            <TableCell align="right" sx={{
-                                fontWeight: 700,
-                                position: 'sticky',
-                                right: 0,
-                                bgcolor: 'grey.50',
-                                zIndex: 2,
-                                borderLeft: '1px solid',
-                                borderColor: 'divider'
-                            }}>Thao tác</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {loading ? (
-                            <TableRow><TableCell colSpan={isMobile ? 3 : (hasPermission('organization:view') ? 6 : 5)} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
-                        ) : employees.length === 0 ? (
-                            <TableRow><TableCell colSpan={isMobile ? 3 : (hasPermission('organization:view') ? 6 : 5)} align="center" sx={{ py: 3 }}>Không tìm thấy người dùng</TableCell></TableRow>
-                        ) : (
-                            employees.map((row) => (
-                                <EmployeeRow
-                                    key={row.id}
-                                    row={row}
-                                    handleOpenEdit={handleOpenEdit}
-                                    handleDelete={() => handleDelete(row)}
-                                    roleLabel={roleLabel}
-                                    orgName={orgName}
-                                    userRole={userRole}
-                                    isMobile={isMobile}
-                                    hasPermission={hasPermission}
-                                />
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
-                <TablePagination
-                    rowsPerPageOptions={[10, 25, 50]} component="div" count={totalItems}
-                    rowsPerPage={rowsPerPage} page={page}
-                    onPageChange={(e, newPage) => setPage(newPage)}
-                    onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
-                    labelRowsPerPage="Số dòng:"
-                />
-            </TableContainer>
+            {isMobile ? (
+                loading ? (
+                    <Box display="flex" justifyContent="center" py={5}>
+                        <CircularProgress size={24} color="secondary" />
+                    </Box>
+                ) : employees.length === 0 ? (
+                    <Box textAlign="center" py={5}>
+                        <Typography color="textSecondary">Không tìm thấy người dùng</Typography>
+                    </Box>
+                ) : (
+                    <Stack spacing={2}>
+                        {employees.map((row) => (
+                            <EmployeeCard
+                                key={row.id}
+                                row={row}
+                                handleOpenEdit={handleOpenEdit}
+                                handleDelete={handleDelete}
+                                roleLabel={roleLabel}
+                                orgName={orgName}
+                                userRole={userRole}
+                                hasPermission={hasPermission}
+                            />
+                        ))}
+                        
+                        <TablePagination
+                            rowsPerPageOptions={[10, 25, 50]} component="div" count={totalItems}
+                            rowsPerPage={rowsPerPage} page={page}
+                            onPageChange={(e, newPage) => setPage(newPage)}
+                            onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+                            labelRowsPerPage="Số dòng:"
+                        />
+                    </Stack>
+                )
+            ) : (
+                <TableContainer component={Paper} sx={{ border: '1px solid', borderColor: 'divider', boxShadow: 'none', borderRadius: '12px' }}>
+                    <Table>
+                        <TableHead sx={{ bgcolor: 'grey.50' }}>
+                            <TableRow>
+                                <TableCell sx={{ fontWeight: 700 }}>Tên</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>
+                                {userRole !== 'admin_org' && <TableCell sx={{ fontWeight: 700 }}>Công ty</TableCell>}
+                                <TableCell sx={{ fontWeight: 700 }}>Vai trò</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>
+                                <TableCell align="right" sx={{
+                                    fontWeight: 700,
+                                    position: 'sticky',
+                                    right: 0,
+                                    bgcolor: 'grey.50',
+                                    zIndex: 2,
+                                    borderLeft: '1px solid',
+                                    borderColor: 'divider'
+                                }}>Thao tác</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {loading ? (
+                                <TableRow><TableCell colSpan={userRole === 'admin_org' ? 5 : 6} align="center" sx={{ py: 3 }}><CircularProgress size={24} color="secondary" /></TableCell></TableRow>
+                            ) : employees.length === 0 ? (
+                                <TableRow><TableCell colSpan={userRole === 'admin_org' ? 5 : 6} align="center" sx={{ py: 3 }}>Không tìm thấy người dùng</TableCell></TableRow>
+                            ) : (
+                                employees.map((row) => (
+                                    <EmployeeRow
+                                        key={row.id}
+                                        row={row}
+                                        handleOpenEdit={handleOpenEdit}
+                                        handleDelete={() => handleDelete(row)}
+                                        roleLabel={roleLabel}
+                                        orgName={orgName}
+                                        userRole={userRole}
+                                        isMobile={false}
+                                        hasPermission={hasPermission}
+                                    />
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
+                    <TablePagination
+                        rowsPerPageOptions={[10, 25, 50]} component="div" count={totalItems}
+                        rowsPerPage={rowsPerPage} page={page}
+                        onPageChange={(e, newPage) => setPage(newPage)}
+                        onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+                        labelRowsPerPage="Số dòng:"
+                    />
+                </TableContainer>
+            )}
 
             <EmployeeDialog
                 open={dialogOpen}

@@ -3248,6 +3248,40 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/settings/rain/sync": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Bắt đầu tiến trình đồng bộ dữ liệu lượng mưa từ Vrain và stream log kết quả",
+                "produces": [
+                    "text/event-stream"
+                ],
+                "tags": [
+                    "Cấu hình"
+                ],
+                "summary": "Đồng bộ dữ liệu các trạm mưa thủ công",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Access token",
+                        "name": "access_token",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "SSE stream",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/stations/lake": {
             "get": {
                 "security": [

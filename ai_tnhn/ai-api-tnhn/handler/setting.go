@@ -5,6 +5,7 @@ import (
 	"ai-api-tnhn/internal/service/setting"
 	"ai-api-tnhn/internal/service/station/rain"
 	"ai-api-tnhn/utils/web"
+	"context"
 
 	"github.com/gin-gonic/gin"
 )
@@ -145,4 +146,52 @@ func (h *SettingHandler) UpdateRainSetting(c *gin.Context) {
 	}
 
 	h.SendData(c, true)
+}
+
+// SyncRainStations godoc
+// @Summary Đồng bộ dữ liệu các trạm mưa thủ công
+// @Description Bắt đầu tiến trình đồng bộ dữ liệu lượng mưa từ Vrain và stream log kết quả
+// @Tags Cấu hình
+// @Produce text/event-stream
+// @Security BearerAuth
+// @Param access_token query string true "Access token"
+// @Success 200 {string} string "SSE stream"
+// @Router /admin/settings/rain/sync [get]
+func (h *SettingHandler) SyncRainStations(c *gin.Context) {
+	isAdmin, _ := h.checkAdmin(c)
+	if !isAdmin {
+		h.SendError(c, web.Unauthorized("Bạn không có quyền thực hiện"))
+		return
+	}
+
+	c.Writer.Header().Set("Content-Type", "text/event-stream")
+	c.Writer.Header().Set("Cache-Control", "no-cache")
+	c.Writer.Header().Set("Connection", "keep-alive")
+	c.Writer.Header().Set("X-Accel-Buffering", "no")
+	c.Writer.Flush()
+
+	// Khởi tạo kênh nhận tiến trình
+	progressChan := make(chan string, 100)
+	ctx, cancel := context.WithCancel(c.Request.Context())
+	defer cancel()
+
+	// Chạy đồng bộ trong goroutine
+	go func() {
+		defer close(progressChan)
+		h.worker.SyncWithProgress(ctx, progressChan)
+	}()
+
+	// Nhận log và stream về client
+	for {
+		select {
+		case <-c.Request.Context().Done():
+			return
+		case msg, ok := <-progressChan:
+			if !ok {
+				return
+			}
+			c.SSEvent("message", msg)
+			c.Writer.Flush()
+		}
+	}
 }

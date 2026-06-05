@@ -16,6 +16,9 @@ const SluiceGateDesktopRow = ({ item, index, getOrgNames, handleHistory, handleE
                 <TableCell>
                     <Typography variant="body2" sx={{ fontWeight: 800, color: 'primary.dark' }}>{item.name}</Typography>
                 </TableCell>
+                <TableCell align="center">
+                    <Typography variant="body2" sx={{ fontWeight: 700 }}>{item.quantity || 0}</Typography>
+                </TableCell>
                 <TableCell>
                     <Typography variant="body2" color="textSecondary">{item.address || '-'}</Typography>
                 </TableCell>
@@ -34,7 +37,7 @@ const SluiceGateDesktopRow = ({ item, index, getOrgNames, handleHistory, handleE
             </TableRow>
             {lastReport && (
                 <TableRow sx={{ bgcolor: alpha(theme.palette.primary.main, 0.02) }}>
-                    <TableCell sx={{ py: 0, borderBottom: '1px solid', borderColor: 'divider' }} colSpan={7}>
+                    <TableCell sx={{ py: 0, borderBottom: '1px solid', borderColor: 'divider' }} colSpan={8}>
                         <Box sx={{ mb: 1.5, mx: 1, p: 2, bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
                             <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 800, color: 'primary.main', mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
                                 <IconClock size={16} /> Nhận xét vận hành mới nhất

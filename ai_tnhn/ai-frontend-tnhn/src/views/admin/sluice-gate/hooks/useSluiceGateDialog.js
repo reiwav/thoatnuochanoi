@@ -12,7 +12,8 @@ const useSluiceGateDialog = ({ open, item, handleClose, refresh }) => {
         org_id: '',
         shared_org_ids: [],
         share_all: false,
-        priority: 0
+        priority: 0,
+        quantity: 0
     });
 
     useEffect(() => {
@@ -21,7 +22,8 @@ const useSluiceGateDialog = ({ open, item, handleClose, refresh }) => {
                 setFormData({
                     ...item,
                     shared_org_ids: item.shared_org_ids || [],
-                    share_all: item.share_all || false
+                    share_all: item.share_all || false,
+                    quantity: item.quantity || 0
                 });
             } else {
                 setFormData({
@@ -31,7 +33,8 @@ const useSluiceGateDialog = ({ open, item, handleClose, refresh }) => {
                     org_id: isCompany ? '' : (user?.org_id || ''),
                     shared_org_ids: [],
                     share_all: false,
-                    priority: 0
+                    priority: 0,
+                    quantity: 0
                 });
             }
         }
@@ -49,7 +52,11 @@ const useSluiceGateDialog = ({ open, item, handleClose, refresh }) => {
         if (!formData.name) return toast.error('Vui lòng nhập tên cửa phai');
         if (!formData.org_id) return toast.error('Vui lòng chọn đơn vị quản lý');
         try {
-            const payload = { ...formData, priority: parseInt(formData.priority) || 0 };
+            const payload = { 
+                ...formData, 
+                priority: parseInt(formData.priority) || 0,
+                quantity: parseInt(formData.quantity) || 0
+            };
             if (item) {
                 await sluiceGateApi.update(item.id, payload);
                 toast.success('Cập nhật thành công');

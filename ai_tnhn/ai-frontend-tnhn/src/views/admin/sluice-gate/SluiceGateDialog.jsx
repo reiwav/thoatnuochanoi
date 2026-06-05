@@ -44,7 +44,15 @@ const SluiceGateDialog = ({ open, handleClose, item, refresh, organizations = { 
                         sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
                     />
                     <Grid container spacing={2}>
-                        <Grid item xs={12} sm={6}>
+                        <Grid item xs={12} sm={4}>
+                            <TextField
+                                fullWidth label="Số lượng" type="number"
+                                value={formData.quantity}
+                                onChange={(e) => handleChange('quantity', e.target.value)}
+                                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={4}>
                             <TextField
                                 fullWidth label="Trọng số BC" type="number"
                                 value={formData.priority}
@@ -53,7 +61,7 @@ const SluiceGateDialog = ({ open, handleClose, item, refresh, organizations = { 
                                 sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
                             />
                         </Grid>
-                        <Grid item xs={12} sm={6} sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Grid item xs={12} sm={4} sx={{ display: 'flex', alignItems: 'center', pl: { sm: 2 } }}>
                             <FormControlLabel
                                 control={
                                     <Checkbox

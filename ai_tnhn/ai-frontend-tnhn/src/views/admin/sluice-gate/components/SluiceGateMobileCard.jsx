@@ -12,10 +12,16 @@ const SluiceGateMobileCard = ({ item, getOrgNames, handleHistory, handleEdit, ha
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <Typography variant="h5" sx={{ fontWeight: 800, color: 'primary.dark' }}>{item.name}</Typography>
                     </Box>
-                    <Box>
-                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>ĐƠN VỊ QUẢN LÝ</Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: 'secondary.main' }}>{getOrgNames(item.org_id) || '-'}</Typography>
-                    </Box>
+                    <Stack direction="row" spacing={4}>
+                        <Box>
+                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>ĐƠN VỊ QUẢN LÝ</Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 700, color: 'secondary.main' }}>{getOrgNames(item.org_id) || '-'}</Typography>
+                        </Box>
+                        <Box>
+                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>SỐ LƯỢNG</Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 700 }}>{item.quantity || 0}</Typography>
+                        </Box>
+                    </Stack>
                     <Box>
                         <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>TRẠNG THÁI GẦN NHẤT</Typography>
                         {lastReport ? (

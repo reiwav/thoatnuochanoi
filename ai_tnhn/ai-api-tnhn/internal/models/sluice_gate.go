@@ -12,6 +12,7 @@ type SluiceGate struct {
 	SharedOrgIDs    []string `bson:"shared_org_ids" json:"shared_org_ids"`
 	ShareAll        bool     `bson:"share_all" json:"share_all"`
 	Priority        int      `bson:"priority" json:"priority" example:"1"`
+	Quantity        int      `bson:"quantity" json:"quantity" example:"5"`
 	Active          bool     `bson:"active" json:"active" example:"true"`
 }
 

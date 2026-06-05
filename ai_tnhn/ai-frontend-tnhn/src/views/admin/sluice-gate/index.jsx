@@ -125,6 +125,7 @@ const SluiceGatePage = () => {
                             <TableCell sx={{ width: 40 }} />
                             <TableCell sx={{ fontWeight: 800 }}>STT</TableCell>
                             <TableCell sx={{ fontWeight: 800 }}>Tên cửa phai</TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 800 }}>Số lượng</TableCell>
                             <TableCell sx={{ fontWeight: 800 }}>Địa chỉ</TableCell>
                             <TableCell sx={{ fontWeight: 800 }}>Đơn vị quản lý</TableCell>
                             <TableCell align="center" sx={{ fontWeight: 800 }}>Ưu tiên</TableCell>
@@ -134,7 +135,7 @@ const SluiceGatePage = () => {
                     <TableBody>
                         {filteredData.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={7} align="center" sx={{ py: 3 }}>Không có dữ liệu cửa phai</TableCell>
+                                <TableCell colSpan={8} align="center" sx={{ py: 3 }}>Không có dữ liệu cửa phai</TableCell>
                             </TableRow>
                         ) : (
                             filteredData.map((item, index) => (

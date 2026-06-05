@@ -236,7 +236,8 @@ export default function MainLayout() {
     }
   }, [isChecking, permissionsLoaded, userInfo, pathname, navigate, isEmployee, availableTabs, basePath, hasPermission]);
 
-  const showMobileAppLayout = isEmployee && (isInundationPath || isConstructionPath || isPumpingPath || isWastewaterPath);
+  const isSluiceGatePath = pathname.includes('/cua-phai');
+  const showMobileAppLayout = isEmployee && (isInundationPath || isConstructionPath || isPumpingPath || isWastewaterPath || isSluiceGatePath);
 
   // Global Bottom Navigation items for Employee
   const employeeNavItems = useMemo(() => {

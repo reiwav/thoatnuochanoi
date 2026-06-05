@@ -6,22 +6,27 @@ import (
 
 type SluiceGate struct {
 	model.BaseModel `bson:",inline"`
-	Name            string   `bson:"name" json:"name" example:"Cửa phai A"`
-	Address         string   `bson:"address" json:"address" example:"Số 1, đường X"`
-	OrgID           string   `bson:"org_id" json:"org_id" example:"tnhn"`
-	SharedOrgIDs    []string `bson:"shared_org_ids" json:"shared_org_ids"`
-	ShareAll        bool     `bson:"share_all" json:"share_all"`
-	Priority        int      `bson:"priority" json:"priority" example:"1"`
-	Quantity        int      `bson:"quantity" json:"quantity" example:"5"`
-	Active          bool     `bson:"active" json:"active" example:"true"`
+	Name            string             `bson:"name" json:"name" example:"Cửa phai A"`
+	Address         string             `bson:"address" json:"address" example:"Số 1, đường X"`
+	OrgID           string             `bson:"org_id" json:"org_id" example:"tnhn"`
+	SharedOrgIDs    []string           `bson:"shared_org_ids" json:"shared_org_ids"`
+	ShareAll        bool               `bson:"share_all" json:"share_all"`
+	Priority        int                `bson:"priority" json:"priority" example:"1"`
+	Quantity        int                `bson:"quantity" json:"quantity" example:"5"`
+	Active          bool               `bson:"active" json:"active" example:"true"`
+	Doors           []bool             `bson:"doors" json:"doors"`
+	LastReport      *SluiceGateHistory `bson:"last_report" json:"last_report"`
 }
 
 type SluiceGateHistory struct {
 	model.BaseModel `bson:",inline"`
-	SluiceGateID    string `bson:"sluice_gate_id" json:"sluice_gate_id"`
-	UserID          string `bson:"user_id" json:"user_id"`
-	Username        string `bson:"username" json:"username"`
-	Fullname        string `bson:"fullname" json:"fullname"`
-	Action          string `bson:"action" json:"action" example:"open"` // open, close, maintain
-	Note            string `bson:"note" json:"note"`
+	SluiceGateID    string   `bson:"sluice_gate_id" json:"sluice_gate_id"`
+	UserID          string   `bson:"user_id" json:"user_id"`
+	Username        string   `bson:"username" json:"username"`
+	Fullname        string   `bson:"fullname" json:"fullname"`
+	UserName        string   `bson:"user_name" json:"user_name"`
+	Action          string   `bson:"action" json:"action" example:"open"` // open, close, maintain
+	Note            string   `bson:"note" json:"note"`
+	Doors           []bool   `bson:"doors" json:"doors"`
+	Timestamp       int64    `bson:"timestamp" json:"timestamp"`
 }

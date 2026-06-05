@@ -4,7 +4,7 @@ import {
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
     Paper, useMediaQuery, Stack, Box, Typography, IconButton
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import { useTheme, alpha } from '@mui/material/styles';
 import { IconX, IconClock, IconUser } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import useSluiceGateHistory from './hooks/useSluiceGateHistory';
@@ -61,7 +61,17 @@ const SluiceGateHistoryDialog = ({ open, handleClose, item }) => {
                                                 <Typography variant="body2">{row.user_name}</Typography>
                                             </Stack>
                                         </TableCell>
-                                        <TableCell sx={{ fontSize: '0.9rem', color: 'text.primary', whiteSpace: 'pre-wrap' }}>
+                                        <TableCell sx={{ fontSize: '0.9rem', color: 'text.primary', whiteSpace: 'pre-wrap', py: 1.5 }}>
+                                            {row.doors && row.doors.length > 0 && (
+                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1.5 }}>
+                                                    {row.doors.map((doorState, idx) => (
+                                                        <Box key={idx} sx={{ px: 1, py: 0.25, bgcolor: doorState ? alpha(theme.palette.success.main, 0.08) : alpha(theme.palette.grey[200], 0.5), color: doorState ? theme.palette.success.dark : theme.palette.text.secondary, borderRadius: 1, display: 'flex', gap: 1, border: '1px solid', borderColor: doorState ? alpha(theme.palette.success.main, 0.2) : theme.palette.grey[300], fontSize: '0.75rem' }}>
+                                                            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.75rem' }}>Cửa số {idx + 1}:</Typography>
+                                                            <Typography variant="caption" sx={{ fontWeight: 800, fontSize: '0.75rem', color: doorState ? 'success.main' : 'text.disabled' }}>{doorState ? "MỞ" : "ĐÓNG"}</Typography>
+                                                        </Box>
+                                                    ))}
+                                                </Box>
+                                            )}
                                             {row.note}
                                         </TableCell>
                                     </TableRow>
@@ -94,6 +104,16 @@ const SluiceGateHistoryDialog = ({ open, handleClose, item }) => {
                                     </Typography>
                                 </Box>
                                 <Box sx={{ p: 1.5, bgcolor: 'grey.50', borderRadius: 2 }}>
+                                    {row.doors && row.doors.length > 0 && (
+                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1.5 }}>
+                                            {row.doors.map((doorState, idx) => (
+                                                <Box key={idx} sx={{ px: 1, py: 0.25, bgcolor: doorState ? alpha(theme.palette.success.main, 0.08) : alpha(theme.palette.grey[200], 0.5), color: doorState ? theme.palette.success.dark : theme.palette.text.secondary, borderRadius: 1, display: 'flex', gap: 1, border: '1px solid', borderColor: doorState ? alpha(theme.palette.success.main, 0.2) : theme.palette.grey[300], fontSize: '0.75rem' }}>
+                                                    <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.75rem' }}>Cửa số {idx + 1}:</Typography>
+                                                    <Typography variant="caption" sx={{ fontWeight: 800, fontSize: '0.75rem', color: doorState ? 'success.main' : 'text.disabled' }}>{doorState ? "MỞ" : "ĐÓNG"}</Typography>
+                                                </Box>
+                                            ))}
+                                        </Box>
+                                    )}
                                     <Typography variant="body2" sx={{ color: 'text.primary', fontStyle: row.note ? 'normal' : 'italic', whiteSpace: 'pre-wrap' }}>
                                         {row.note || 'Không có ghi chú'}
                                     </Typography>

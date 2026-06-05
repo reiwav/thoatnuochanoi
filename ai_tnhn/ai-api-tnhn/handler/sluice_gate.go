@@ -5,6 +5,7 @@ import (
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/service/station/sluice_gate"
 	"ai-api-tnhn/utils/web"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
@@ -198,6 +199,8 @@ func (h *SluiceGateHandler) Report(c *gin.Context) {
 	req.UserID = user.ID
 	req.Username = user.Username
 	req.Fullname = user.Name
+	req.UserName = user.Name
+	req.Timestamp = time.Now().Unix()
 
 	err = h.service.Report(c.Request.Context(), id, &req)
 	if err != nil {

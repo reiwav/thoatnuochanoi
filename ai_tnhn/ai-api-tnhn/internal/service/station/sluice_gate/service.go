@@ -48,10 +48,21 @@ func (s *service) List(ctx context.Context, f filter.Filter) ([]*models.SluiceGa
 
 func (s *service) Report(ctx context.Context, id string, m *models.SluiceGateHistory) error {
 	m.SluiceGateID = id
-	return s.repo.CreateHistory(ctx, m)
+	err := s.repo.CreateHistory(ctx, m)
+	if err != nil {
+		return err
+	}
+	
+	gate, err := s.repo.Get(ctx, id)
+	if err == nil && gate != nil {
+		gate.Doors = m.Doors
+		gate.LastReport = m
+		_ = s.repo.Update(ctx, id, gate)
+	}
+	return nil
 }
 
 func (s *service) ListHistory(ctx context.Context, id string, f filter.Filter) ([]*models.SluiceGateHistory, int64, error) {
-	f.AddWhere("sluice_gate_id", "=", id)
+	f.AddWhere("sluice_gate_id", "sluice_gate_id", id)
 	return s.repo.ListHistory(ctx, f)
 }

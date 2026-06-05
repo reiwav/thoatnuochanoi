@@ -3,12 +3,27 @@ import sluiceGateApi from 'api/sluiceGate';
 import { toast } from 'react-hot-toast';
 
 const useSluiceGateReport = ({ station, onSuccess }) => {
-    const [formData, setFormData] = useState({ note: '' });
+    const [formData, setFormData] = useState({ note: '', doors: [] });
     const [history, setHistory] = useState([]);
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(1);
     const [loadingHistory, setLoadingHistory] = useState(false);
     const perPage = 10;
+
+    useEffect(() => {
+        if (station) {
+            const numDoors = station.quantity || 0;
+            const initialDoors = [];
+            for (let i = 0; i < numDoors; i++) {
+                const existingState = station.doors?.[i];
+                initialDoors.push(existingState !== undefined ? existingState : false);
+            }
+            setFormData({
+                note: station.last_report?.note || '',
+                doors: initialDoors
+            });
+        }
+    }, [station]);
 
     const fetchHistory = async () => {
         setLoadingHistory(true);
@@ -38,9 +53,19 @@ const useSluiceGateReport = ({ station, onSuccess }) => {
             return;
         }
         try {
-            await sluiceGateApi.report(station.id, { note: formData.note });
+            await sluiceGateApi.report(station.id, { 
+                note: formData.note,
+                doors: formData.doors
+            });
             toast.success('Gửi báo cáo thành công');
-            setFormData({ note: '' });
+            
+            const numDoors = station.quantity || 0;
+            const resetDoors = [];
+            for (let i = 0; i < numDoors; i++) {
+                const existingState = formData.doors?.[i];
+                resetDoors.push(existingState !== undefined ? existingState : false);
+            }
+            setFormData({ note: '', doors: resetDoors });
             if (page === 1) {
                 fetchHistory();
             } else {

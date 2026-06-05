@@ -18,6 +18,9 @@ import HistoryIcon from '@mui/icons-material/History';
 import EngineeringIcon from '@mui/icons-material/Engineering';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import WaterDropIcon from '@mui/icons-material/WaterDrop';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 
 import Footer from './Footer';
 import Header from './Header';
@@ -45,6 +48,7 @@ export default function MainLayout() {
 
   const [isChecking, setIsChecking] = useState(true);
   const [activeFloodCount, setActiveFloodCount] = useState(0);
+  const [otherMenuAnchor, setOtherMenuAnchor] = useState(null);
 
   const { state: { borderRadius } } = useConfig();
   const { menuMaster, menuMasterLoading } = useGetMenuMaster();
@@ -264,30 +268,20 @@ export default function MainLayout() {
         show: !isEmployee || (userInfo?.assigned_pumping_station_id && userInfo.assigned_pumping_station_id.trim() !== "")
       },
       {
-        id: 'construction',
-        label: 'Công trình',
-        icon: <DashboardIcon sx={{ fontSize: '1.6rem' }} />,
-        path: `${basePath}/emergency-construction/dashboard`,
-        active: isConstructionPath,
-        show: !isEmployee || (userInfo?.assigned_emergency_construction_ids?.filter(id => id && id.trim() !== "").length > 0)
-      },
-      {
-        id: 'wastewater',
-        label: 'Trạm XLNT',
-        icon: <WaterDropIcon sx={{ fontSize: '1.6rem' }} />,
-        path: `${basePath}/wastewater-treatment`,
-        active: isWastewaterPath,
-        show: !isEmployee || (userInfo?.assigned_wastewater_station_id && userInfo.assigned_wastewater_station_id.trim() !== "")
+        id: 'other',
+        label: 'Tác vụ khác',
+        icon: <MoreHorizIcon sx={{ fontSize: '1.6rem' }} />,
+        active: isWastewaterPath || isSluiceGatePath
       },
       {
         id: 'profile',
-        label: 'Cá nhân',
+        label: 'Tôi',
         icon: <PersonIcon sx={{ fontSize: '1.6rem' }} />,
         path: `${basePath}/inundation?activeTab=3`,
         active: pathname.includes('activeTab=3')
       }
     ].filter(item => item.show !== false);
-  }, [isEmployee, userInfo, activeFloodCount, isInundationPath, isPumpingPath, isConstructionPath, pathname, basePath]);
+  }, [isEmployee, userInfo, activeFloodCount, isInundationPath, isPumpingPath, isWastewaterPath, isSluiceGatePath, pathname, basePath]);
 
   // Auto-collapse sidebar on AI Support page (only for mobile)
   useEffect(() => {
@@ -354,10 +348,6 @@ export default function MainLayout() {
             <BottomNavigation
               showLabels
               value={employeeNavItems.findIndex(item => item.active)}
-              onChange={(_, newValue) => {
-                const target = employeeNavItems[newValue];
-                if (target) navigate(target.path);
-              }}
               sx={{
                 height: 80,
                 bgcolor: 'transparent',
@@ -379,9 +369,62 @@ export default function MainLayout() {
                   key={item.id} 
                   label={item.label} 
                   icon={item.icon} 
+                  onClick={(event) => {
+                    if (item.id === 'other') {
+                      setOtherMenuAnchor(event.currentTarget);
+                    } else {
+                      navigate(item.path);
+                    }
+                  }}
                 />
               ))}
             </BottomNavigation>
+            <Menu
+              anchorEl={otherMenuAnchor}
+              open={Boolean(otherMenuAnchor)}
+              onClose={() => setOtherMenuAnchor(null)}
+              anchorOrigin={{
+                vertical: 'top',
+                horizontal: 'center',
+              }}
+              transformOrigin={{
+                vertical: 'bottom',
+                horizontal: 'center',
+              }}
+              slotProps={{
+                paper: {
+                  sx: {
+                    borderRadius: '12px',
+                    boxShadow: '0 -4px 20px rgba(0,0,0,0.15), 0 4px 20px rgba(0,0,0,0.15)',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    mb: 1.5,
+                    minWidth: 150
+                  }
+                }
+              }}
+            >
+              <MenuItem 
+                onClick={() => {
+                  setOtherMenuAnchor(null);
+                  navigate(`${basePath}/wastewater-treatment`);
+                }}
+                selected={isWastewaterPath}
+                sx={{ fontWeight: 600, py: 1.5 }}
+              >
+                Trạm XLNT
+              </MenuItem>
+              <MenuItem 
+                onClick={() => {
+                  setOtherMenuAnchor(null);
+                  navigate(`${basePath}/cua-phai`);
+                }}
+                selected={isSluiceGatePath}
+                sx={{ fontWeight: 600, py: 1.5 }}
+              >
+                Cửa phai
+              </MenuItem>
+            </Menu>
           </Paper>
         </Box>
       ) : (

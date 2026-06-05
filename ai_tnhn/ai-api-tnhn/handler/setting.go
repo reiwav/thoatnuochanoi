@@ -195,3 +195,41 @@ func (h *SettingHandler) SyncRainStations(c *gin.Context) {
 		}
 	}
 }
+
+// AutoGetRainSession godoc
+// @Summary Tự động lấy Session ID từ Vrain
+// @Description Tự động đăng nhập và lấy Session ID mới từ thoatnuochanoi.vn
+// @Tags Cấu hình
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} map[string]string
+// @Router /admin/settings/rain/auto-session [post]
+func (h *SettingHandler) AutoGetRainSession(c *gin.Context) {
+	isAdmin, _ := h.checkAdmin(c)
+	if !isAdmin {
+		h.SendError(c, web.Unauthorized("Bạn không có quyền thực hiện"))
+		return
+	}
+
+	sessionID, err := h.worker.AutoLoginVrain(c.Request.Context())
+	if err != nil {
+		h.SendError(c, web.InternalServerError("Không thể lấy Session ID tự động: "+err.Error()))
+		return
+	}
+
+	// Tự động lưu cấu hình vào database
+	err = h.service.UpdateRainSetting(c.Request.Context(), &models.RainSetting{SessionID: sessionID})
+	if err != nil {
+		h.SendError(c, web.InternalServerError("Không thể tự động lưu Session ID vào Database: "+err.Error()))
+		return
+	}
+
+	// Áp dụng ngay cho worker đang chạy
+	if h.worker != nil {
+		h.worker.SetSessionID(sessionID)
+	}
+
+	h.SendData(c, gin.H{
+		"session_id": sessionID,
+	})
+}

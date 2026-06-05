@@ -2,7 +2,7 @@ import React from 'react';
 import {
     Button, Grid, TextField, CircularProgress, Typography, Box, useTheme, Stack
 } from '@mui/material';
-import { IconCloudRain, IconDeviceFloppy, IconTrash } from '@tabler/icons-react';
+import { IconCloudRain, IconTrash } from '@tabler/icons-react';
 
 // project imports
 import MainCard from 'ui-component/cards/MainCard';
@@ -14,14 +14,14 @@ const RainSetting = () => {
     const consoleRef = React.useRef(null);
     const {
         loading,
-        saving,
         sessionID,
         setSessionID,
-        handleSave,
         isSyncing,
         logs,
         handleSync,
-        clearLogs
+        clearLogs,
+        autoFetching,
+        handleAutoGetSession
     } = useRainSetting();
 
     React.useEffect(() => {
@@ -51,31 +51,28 @@ const RainSetting = () => {
                             <Stack spacing={2.5}>
                                 <Stack spacing={1}>
                                     <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Session ID (Vrain)</Typography>
-                                    <TextField
-                                        fullWidth
-                                        placeholder="Nhập Session ID lấy từ Vrain"
-                                        value={sessionID}
-                                        onChange={(e) => setSessionID(e.target.value)}
-                                        disabled={saving || isSyncing}
-                                    />
+                                    <Stack direction="row" spacing={1}>
+                                        <TextField
+                                            fullWidth
+                                            placeholder="Session ID từ Vrain (Đọc và Gia hạn tự động)"
+                                            value={sessionID}
+                                            InputProps={{ readOnly: true }}
+                                            disabled={isSyncing || autoFetching}
+                                        />
+                                        <Button
+                                            variant="outlined"
+                                            color="secondary"
+                                            onClick={handleAutoGetSession}
+                                            disabled={isSyncing || autoFetching}
+                                            sx={{ whiteSpace: 'nowrap', borderRadius: '8px', fontWeight: 700, px: 2 }}
+                                        >
+                                            {autoFetching ? <CircularProgress size={20} color="inherit" /> : 'Lấy tự động'}
+                                        </Button>
+                                    </Stack>
                                     <Typography variant="caption" color="textSecondary">
-                                        * Session ID dùng để xác thực khi lấy dữ liệu lượng mưa từ API Vrain.
+                                        * Session ID dùng để xác thực khi lấy dữ liệu lượng mưa từ API Vrain. Hệ thống sẽ tự động đăng nhập và gia hạn khi session hết hạn.
                                     </Typography>
                                 </Stack>
-                                <Box sx={{ display: 'flex' }}>
-                                    <AnimateButton>
-                                        <Button
-                                            variant="contained"
-                                            color="primary"
-                                            startIcon={saving ? <CircularProgress size={18} color="inherit" /> : <IconDeviceFloppy size={18} />}
-                                            onClick={handleSave}
-                                            disabled={saving || isSyncing}
-                                            sx={{ px: 3, py: 1.2, borderRadius: '8px', fontWeight: 700 }}
-                                        >
-                                            {saving ? 'Đang lưu...' : 'Lưu cấu hình'}
-                                        </Button>
-                                    </AnimateButton>
-                                </Box>
                             </Stack>
                         </MainCard>
                     </Grid>
@@ -110,7 +107,7 @@ const RainSetting = () => {
                                             size="small"
                                             startIcon={isSyncing ? <CircularProgress size={14} color="inherit" /> : <IconCloudRain size={16} />}
                                             onClick={handleSync}
-                                            disabled={saving || isSyncing}
+                                            disabled={isSyncing}
                                             sx={{ px: 1.5, py: 0.8, borderRadius: '8px', fontWeight: 700, whiteSpace: 'nowrap' }}
                                         >
                                             {isSyncing ? 'Đang chạy...' : 'Đồng bộ'}

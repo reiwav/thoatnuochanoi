@@ -3173,6 +3173,23 @@ paths:
       summary: Cập nhật cấu hình worker mưa
       tags:
       - Cấu hình
+  /admin/settings/rain/auto-session:
+    post:
+      description: Tự động đăng nhập và lấy Session ID mới từ thoatnuochanoi.vn
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Tự động lấy Session ID từ Vrain
+      tags:
+      - Cấu hình
   /admin/settings/rain/sync:
     get:
       description: Bắt đầu tiến trình đồng bộ dữ liệu lượng mưa từ Vrain và stream

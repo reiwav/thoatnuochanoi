@@ -9,7 +9,6 @@ import (
 	"ai-api-tnhn/internal/service/station"
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/robfig/cron/v3"
@@ -19,39 +18,34 @@ type Worker interface {
 	Start(ctx context.Context)
 	SetSessionID(sessionID string)
 	SyncWithProgress(ctx context.Context, progressChan chan<- string)
+	AutoLoginVrain(ctx context.Context) (string, error)
 }
 
 type worker struct {
 	logger       logger.Logger
+	settingSvc   setting.Service
 	rainRepo     repository.Rain
 	stationSvc   station.Service
 	thoatnuocSvc thoatnuoc.Service
-	sessionID    string
-	mu           sync.RWMutex
 }
 
 // ASP.NET_SessionId=kzela2aw0gdvzxvrthicl14n
 func NewWorker(l logger.Logger, settingSvc setting.Service, rain repository.Rain, stationSvc station.Service, thoatnuocSvc thoatnuoc.Service) Worker {
-	ctx := context.Background()
-	sessionID := "kzela2aw0gdvzxvrthicl14n"
-	setting, _ := settingSvc.GetRainSetting(ctx)
-	if setting != nil {
-		sessionID = setting.SessionID
-	}
 	return &worker{
 		logger:       l,
+		settingSvc:   settingSvc,
 		rainRepo:     rain,
 		stationSvc:   stationSvc,
 		thoatnuocSvc: thoatnuocSvc,
-		sessionID:    sessionID,
 	}
 }
 
 func (w *worker) SetSessionID(sessionID string) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	w.sessionID = sessionID
-	w.logger.GetLogger().Infof("RainWorker: SessionID updated to %s", sessionID)
+	w.logger.GetLogger().Infof("RainWorker: SetSessionID called with %s (no-op)", sessionID)
+}
+
+func (w *worker) AutoLoginVrain(ctx context.Context) (string, error) {
+	return w.thoatnuocSvc.LoginAndGetSessionID(ctx)
 }
 
 func (w *worker) Start(ctx context.Context) {
@@ -242,10 +236,7 @@ func (w *worker) fetchAndSave(ctx context.Context, s *models.RainStation, date t
 	dateStr := date.Format("2006-01-02")
 	//w.logger.GetLogger().Infof("RainWorker: [DEBUG] Fetching data for station %s (%d) on %s", s.TenTram, s.OldID, dateStr)
 
-	w.mu.RLock()
-	sid := w.sessionID
-	w.mu.RUnlock()
-	dataPoints, err := w.thoatnuocSvc.GetRainChartData(ctx, sid, s.OldID, dateStr)
+	dataPoints, err := w.thoatnuocSvc.GetRainChartData(ctx, s.OldID, dateStr)
 	if err != nil {
 		//w.logger.GetLogger().Errorf("RainWorker: Failed to fetch data for station %s on %s: %v", s.TenTram, dateStr, err)
 		return 0, 0, err

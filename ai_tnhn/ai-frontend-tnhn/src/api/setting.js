@@ -12,6 +12,9 @@ const settingApi = {
     },
     updateRainSetting: (data) => {
         return axiosClient.put('/admin/settings/rain', data);
+    },
+    autoGetRainSession: () => {
+        return axiosClient.post('/admin/settings/rain/auto-session');
     }
 };
 

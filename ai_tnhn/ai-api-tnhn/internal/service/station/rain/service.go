@@ -116,44 +116,41 @@ func (s *service) GetRainDataByDate(ctx context.Context, date string) ([]*models
 	if len(records) == 0 {
 		stations, err := s.rainStationRepo.ListFiltered(ctx, "", nil)
 		if err == nil && len(stations) > 0 {
-			setting, err := s.settingSvc.GetRainSetting(ctx)
-			if err == nil {
-				var wg sync.WaitGroup
-				sem := make(chan struct{}, 15) // limit concurrency
+			var wg sync.WaitGroup
+			sem := make(chan struct{}, 15) // limit concurrency
 
-				for _, st := range stations {
-					wg.Add(1)
-					go func(stStation *models.RainStation) {
-						defer wg.Done()
-						sem <- struct{}{}
-						defer func() { <-sem }()
+			for _, st := range stations {
+				wg.Add(1)
+				go func(stStation *models.RainStation) {
+					defer wg.Done()
+					sem <- struct{}{}
+					defer func() { <-sem }()
 
-						dps, err := s.thoatnuocSvc.GetRainChartData(ctx, setting.SessionID, int(stStation.OldID), date)
-						if err == nil && len(dps) > 0 {
-							for _, dp := range dps {
-								ts, err := time.ParseInLocation("2006-01-02T15:04:05", dp.ThoiGian, time.Local)
-								if err != nil {
-									continue
-								}
-								record := &models.RainRecord{
-									StationID:   int64(stStation.OldID),
-									StationName: stStation.TenTram,
-									Date:        ts.Format("2006-01-02"),
-									Timestamp:   ts,
-									Value:       dp.LuongMua,
-								}
-								_ = s.rainRepo.Create(ctx, record)
+					dps, err := s.thoatnuocSvc.GetRainChartData(ctx, int(stStation.OldID), date)
+					if err == nil && len(dps) > 0 {
+						for _, dp := range dps {
+							ts, err := time.ParseInLocation("2006-01-02T15:04:05", dp.ThoiGian, time.Local)
+							if err != nil {
+								continue
 							}
+							record := &models.RainRecord{
+								StationID:   int64(stStation.OldID),
+								StationName: stStation.TenTram,
+								Date:        ts.Format("2006-01-02"),
+								Timestamp:   ts,
+								Value:       dp.LuongMua,
+							}
+							_ = s.rainRepo.Create(ctx, record)
 						}
-					}(st)
-				}
-				wg.Wait()
+					}
+				}(st)
+			}
+			wg.Wait()
 
-				// Query the DB again to load the newly fetched records
-				records, err = s.rainRepo.GetByDateRange(ctx, startTime, endTime)
-				if err != nil {
-					return nil, err
-				}
+			// Query the DB again to load the newly fetched records
+			records, err = s.rainRepo.GetByDateRange(ctx, startTime, endTime)
+			if err != nil {
+				return nil, err
 			}
 		}
 	}
@@ -190,12 +187,7 @@ func (s *service) GetRainChart(ctx context.Context, stationOldID int64, date str
 }
 
 func (s *service) fetchFromExternal(ctx context.Context, stationOldID int64, date string) ([]models.RainRecord, error) {
-	st, err := s.settingSvc.GetRainSetting(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	dataPoints, err := s.thoatnuocSvc.GetRainChartData(ctx, st.SessionID, int(stationOldID), date)
+	dataPoints, err := s.thoatnuocSvc.GetRainChartData(ctx, int(stationOldID), date)
 	if err != nil {
 		return nil, err
 	}

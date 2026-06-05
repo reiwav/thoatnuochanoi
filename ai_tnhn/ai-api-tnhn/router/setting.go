@@ -16,5 +16,6 @@ func (h HandlerFuncs) SettingRoutes(apiAdmin *gin.RouterGroup, mid middleware.Mi
 		group.GET("/rain", settingHandler.GetRainSetting)
 		group.PUT("/rain", settingHandler.UpdateRainSetting)
 		group.GET("/rain/sync", settingHandler.SyncRainStations)
+		group.POST("/rain/auto-session", settingHandler.AutoGetRainSession)
 	}
 }

@@ -4,10 +4,10 @@ import settingApi from 'api/setting';
 
 const useRainSetting = () => {
     const [loading, setLoading] = useState(false);
-    const [saving, setSaving] = useState(false);
     const [sessionID, setSessionID] = useState('');
     const [isSyncing, setIsSyncing] = useState(false);
     const [logs, setLogs] = useState([]);
+    const [autoFetching, setAutoFetching] = useState(false);
 
     const fetchRainSetting = async () => {
         setLoading(true);
@@ -27,22 +27,6 @@ const useRainSetting = () => {
     useEffect(() => {
         fetchRainSetting();
     }, []);
-
-    const handleSave = async () => {
-        if (!sessionID) {
-            toast.error('Vui lòng nhập Session ID');
-            return;
-        }
-        setSaving(true);
-        try {
-            await settingApi.updateRainSetting({ session_id: sessionID });
-            toast.success('Lưu cấu hình thành công');
-        } catch (err) {
-            toast.error(err.response?.data?.error || err.message || 'Lỗi lưu cấu hình');
-        } finally {
-            setSaving(false);
-        }
-    };
 
     const handleSync = () => {
         if (isSyncing) return;
@@ -99,16 +83,34 @@ const useRainSetting = () => {
         setLogs([]);
     };
 
+    const handleAutoGetSession = async () => {
+        setAutoFetching(true);
+        try {
+            const response = await settingApi.autoGetRainSession();
+            if (response && response.session_id) {
+                setSessionID(response.session_id);
+                toast.success('Lấy Session ID tự động thành công!');
+            } else {
+                toast.error('Không tìm thấy Session ID trong phản hồi');
+            }
+        } catch (err) {
+            toast.error(err.response?.data?.error || err.message || 'Lỗi lấy Session ID tự động');
+            console.error(err);
+        } finally {
+            setAutoFetching(false);
+        }
+    };
+
     return {
         loading,
-        saving,
         sessionID,
         setSessionID,
-        handleSave,
         isSyncing,
         logs,
         handleSync,
-        clearLogs
+        clearLogs,
+        autoFetching,
+        handleAutoGetSession
     };
 };
 

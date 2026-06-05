@@ -3248,6 +3248,34 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/settings/rain/auto-session": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Tự động đăng nhập và lấy Session ID mới từ thoatnuochanoi.vn",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Cấu hình"
+                ],
+                "summary": "Tự động lấy Session ID từ Vrain",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/admin/settings/rain/sync": {
             "get": {
                 "security": [

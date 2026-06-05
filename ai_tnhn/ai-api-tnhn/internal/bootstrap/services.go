@@ -109,9 +109,9 @@ func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log log
 	s.Organization = organization.NewService(repos.Organization, repos.User, driveService)
 	s.Employee = employee.NewService(repos.User, repos.Organization, repos.Role, driveService)
 	s.Station = station.NewService(repos.RainStation, repos.LakeStation, repos.RiverStation, repos.Organization)
-	thoatnuocSvc := thoatnuoc.NewService()
-	forecastSvc := forecast.NewService()
 	s.Setting = setting.NewService(repos.AppSetting)
+	thoatnuocSvc := thoatnuoc.NewService(s.Setting)
+	forecastSvc := forecast.NewService()
 	s.Rain = rain.NewService(repos.Rain, repos.RainStation, thoatnuocSvc, s.Setting)
 	rainWorker := rain.NewWorker(log, s.Setting, repos.Rain, s.Station, thoatnuocSvc)
 	s.RainWorker = rainWorker

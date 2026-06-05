@@ -34,6 +34,7 @@ const AdminInundationDashboard = () => {
     navigate,
     isMobile,
     basePath,
+    points,
     floodLevels,
     loading,
     fetchPoints,
@@ -81,6 +82,9 @@ const AdminInundationDashboard = () => {
             floodedCount={floodedCount}
             normalCount={normalCount}
             theme={theme}
+            selectedStatus={filters.statusFilter}
+            onStatusChange={(status) => setFilters({ statusFilter: status })}
+            totalCount={points.length}
           />
           <Tooltip title="Làm mới dữ liệu">
             <IconButton

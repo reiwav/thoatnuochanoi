@@ -5,7 +5,7 @@ import {
     ListItem, ListItemText, Grid, Switch, FormControlLabel
 } from '@mui/material';
 import { useTheme, alpha } from '@mui/material/styles';
-import { IconDoorEnter, IconClock, IconCheck, IconHistory, IconUser } from '@tabler/icons-react';
+import { IconDoorEnter, IconClock, IconCheck, IconHistory, IconUser, IconDoor } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import PermissionGuard from 'ui-component/PermissionGuard';
 import useSluiceGateReport from './hooks/useSluiceGateReport';
@@ -73,32 +73,84 @@ const SluiceGateReport = ({ station, onSuccess }) => {
                 
                 {formData.doors && formData.doors.length > 0 && (
                     <Box sx={{ mb: 3.5 }}>
-                        <Typography variant="h4" sx={{ fontWeight: 800, mb: 2, color: 'primary.dark' }}>
-                            Trạng thái các cửa phai (Bật/Tắt)
+                        <Typography variant="h4" sx={{ fontWeight: 800, mb: 1.5, color: 'primary.dark' }}>
+                            Trạng thái các cửa phai
                         </Typography>
-                        <Grid container spacing={2}>
+                        <Grid container spacing={1.5}>
                             {formData.doors.map((doorState, idx) => (
-                                <Grid item xs={12} sm={4} key={idx}>
-                                    <Box sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 3, bgcolor: alpha(theme.palette.primary.main, 0.01), display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                        <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary' }}>
-                                            Cửa số {idx + 1}
-                                        </Typography>
-                                        <FormControlLabel
-                                            control={
-                                                <Switch
-                                                    checked={!!doorState}
-                                                    onChange={(e) => {
-                                                        const nextDoors = [...formData.doors];
-                                                        nextDoors[idx] = e.target.checked;
-                                                        setFormData(prev => ({ ...prev, doors: nextDoors }));
-                                                    }}
-                                                    color="primary"
-                                                />
-                                            }
-                                            label={doorState ? "MỞ" : "ĐÓNG"}
-                                            labelPlacement="start"
-                                            sx={{ mr: 0, '& .MuiTypography-root': { fontWeight: 900, fontSize: '0.875rem', color: doorState ? 'success.main' : 'text.disabled' } }}
-                                        />
+                                <Grid item xs={6} sm={3} key={idx}>
+                                    <Box
+                                        sx={{
+                                            py: 0.75,
+                                            px: 1.25,
+                                            borderRadius: '16px',
+                                            bgcolor: doorState ? alpha(theme.palette.success.main, 0.03) : alpha(theme.palette.grey[500], 0.03),
+                                            border: '1px solid',
+                                            borderColor: doorState ? alpha(theme.palette.success.main, 0.2) : alpha(theme.palette.grey[500], 0.12),
+                                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.01)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            transition: 'all 0.2s ease',
+                                            minHeight: '44px',
+                                            overflow: 'hidden'
+                                        }}
+                                    >
+                                        {/* Icon + Name */}
+                                        <Stack direction="row" alignItems="center" spacing={0.75} sx={{ minWidth: 0, flexShrink: 0 }}>
+                                            <IconDoor
+                                                size={18}
+                                                color={doorState ? theme.palette.success.main : theme.palette.text.disabled}
+                                                style={{ flexShrink: 0 }}
+                                            />
+                                            <Typography
+                                                variant="subtitle2"
+                                                sx={{
+                                                    fontWeight: 700,
+                                                    color: doorState ? 'success.dark' : 'text.secondary',
+                                                    whiteSpace: 'nowrap'
+                                                }}
+                                            >
+                                                Cửa {idx + 1}
+                                            </Typography>
+                                        </Stack>
+
+                                        {/* Divider */}
+                                        <Box sx={{ width: '1px', height: '16px', bgcolor: doorState ? alpha(theme.palette.success.main, 0.2) : alpha(theme.palette.grey[300], 0.8), mx: 0.75, flexShrink: 0 }} />
+
+                                        {/* Status + Switch */}
+                                        <Stack direction="row" alignItems="center" spacing={0.25} sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}>
+                                            <Typography
+                                                variant="caption"
+                                                sx={{
+                                                    fontWeight: 900,
+                                                    fontSize: '0.75rem',
+                                                    color: doorState ? 'success.main' : 'text.disabled',
+                                                    minWidth: '38px',
+                                                    textAlign: 'center'
+                                                }}
+                                            >
+                                                {doorState ? "MỞ" : "ĐÓNG"}
+                                            </Typography>
+                                            <Switch
+                                                size="small"
+                                                checked={!!doorState}
+                                                onChange={(e) => {
+                                                    const nextDoors = [...formData.doors];
+                                                    nextDoors[idx] = e.target.checked;
+                                                    setFormData(prev => ({ ...prev, doors: nextDoors }));
+                                                }}
+                                                color="success"
+                                                sx={{
+                                                    '& .MuiSwitch-switchBase.Mui-checked': {
+                                                        color: theme.palette.success.main,
+                                                    },
+                                                    '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                                                        backgroundColor: theme.palette.success.main,
+                                                    }
+                                                }}
+                                            />
+                                        </Stack>
                                     </Box>
                                 </Grid>
                             ))}

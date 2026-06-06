@@ -79,8 +79,8 @@ export default function MainLayout() {
         }).catch((err) => {
           console.error('Background profile refresh failed:', err);
           if (err.response?.status === 401) {
-             storeLogout();
-             navigate('/pages/login', { replace: true });
+            storeLogout();
+            navigate('/pages/login', { replace: true });
           }
         });
         return;
@@ -246,7 +246,7 @@ export default function MainLayout() {
   // Global Bottom Navigation items for Employee
   const employeeNavItems = useMemo(() => {
     if (!isEmployee || !userInfo) return [];
-    
+
     return [
       {
         id: 'inundation',
@@ -269,7 +269,7 @@ export default function MainLayout() {
       },
       {
         id: 'other',
-        label: 'Tác vụ khác',
+        label: 'Mục khác',
         icon: <MoreHorizIcon sx={{ fontSize: '1.6rem' }} />,
         active: isWastewaterPath || isSluiceGatePath
       },
@@ -329,7 +329,7 @@ export default function MainLayout() {
       {showMobileAppLayout ? (
         <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'background.paper', display: 'flex', flexDirection: 'column', pb: 10 }}>
           <Box sx={{ flexGrow: 1, p: 0 }}>
-             <Outlet context={{ userInfo }} />
+            <Outlet context={{ userInfo }} />
           </Box>
 
           {/* New Global Mobile Bottom Navigation */}
@@ -351,24 +351,24 @@ export default function MainLayout() {
               sx={{
                 height: 80,
                 bgcolor: 'transparent',
-                '& .MuiBottomNavigationAction-root': { 
+                '& .MuiBottomNavigationAction-root': {
                   minWidth: 'auto',
                   color: 'text.secondary',
                   '&.Mui-selected': { color: 'primary.main' }
                 },
-                '& .MuiBottomNavigationAction-label': { 
-                  fontWeight: 800, 
-                  fontSize: '0.75rem', 
+                '& .MuiBottomNavigationAction-label': {
+                  fontWeight: 800,
+                  fontSize: '0.75rem',
                   mt: 0.5,
                   '&.Mui-selected': { fontSize: '0.8rem' }
                 }
               }}
             >
               {employeeNavItems.map((item) => (
-                <BottomNavigationAction 
-                  key={item.id} 
-                  label={item.label} 
-                  icon={item.icon} 
+                <BottomNavigationAction
+                  key={item.id}
+                  label={item.label}
+                  icon={item.icon}
                   onClick={(event) => {
                     if (item.id === 'other') {
                       setOtherMenuAnchor(event.currentTarget);
@@ -404,7 +404,7 @@ export default function MainLayout() {
                 }
               }}
             >
-              <MenuItem 
+              <MenuItem
                 onClick={() => {
                   setOtherMenuAnchor(null);
                   navigate(`${basePath}/wastewater-treatment`);
@@ -414,7 +414,7 @@ export default function MainLayout() {
               >
                 Trạm XLNT
               </MenuItem>
-              <MenuItem 
+              <MenuItem
                 onClick={() => {
                   setOtherMenuAnchor(null);
                   navigate(`${basePath}/cua-phai`);

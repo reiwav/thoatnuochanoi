@@ -17,7 +17,8 @@ const stationApi = {
         create: (data) => axiosClient.post('/admin/stations/lake', data),
         update: (id, data) => axiosClient.put(`/admin/stations/lake/${id}`, data),
         delete: (id) => axiosClient.delete(`/admin/stations/lake/${id}`),
-        getHistory: (id, params) => axiosClient.get(`/admin/water/lake/${id}/history`, { params })
+        getHistory: (id, params) => axiosClient.get(`/admin/water/lake/${id}/history`, { params }),
+        report: (id, data) => axiosClient.post(`/admin/water/lake/${id}/report`, data)
     },
     // River Stations
     river: {
@@ -26,7 +27,8 @@ const stationApi = {
         create: (data) => axiosClient.post('/admin/stations/river', data),
         update: (id, data) => axiosClient.put(`/admin/stations/river/${id}`, data),
         delete: (id) => axiosClient.delete(`/admin/stations/river/${id}`),
-        getHistory: (id, params) => axiosClient.get(`/admin/water/river/${id}/history`, { params })
+        getHistory: (id, params) => axiosClient.get(`/admin/water/river/${id}/history`, { params }),
+        report: (id, data) => axiosClient.post(`/admin/water/river/${id}/report`, data)
     },
     // Inundation Points
     inundation: {

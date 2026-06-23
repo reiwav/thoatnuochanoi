@@ -22,11 +22,6 @@ const useAuthStore = create(
       login: (userData, token, role, isEmployee = false, isCompany = false, roleLevel = -1) => {
         const { token: currentToken, user: currentUser } = get();
         
-        // Prevent redundant state reset if token and user ID are identical
-        if (currentToken === token && currentUser?.id === userData?.id) {
-          return;
-        }
-
         // Robust normalization
         const level = parseInt(roleLevel !== undefined ? roleLevel : -1, 10);
         let normalizedRole = (role || '').toLowerCase().trim().replace(/\s+/g, '_');
@@ -35,6 +30,19 @@ const useAuthStore = create(
         const isSuper = level === 0 || normalizedRole.includes('super_admin') || normalizedRole.includes('supper_admin');
         if (isSuper) {
           normalizedRole = 'super_admin';
+        }
+
+        // Prevent redundant state reset if token and user ID are identical, but still update profile details
+        if (currentToken === token && currentUser?.id === userData?.id) {
+          set({
+            user: userData,
+            role: normalizedRole,
+            roleLevel: level,
+            isSuperAdmin: isSuper,
+            isEmployee: !!isEmployee,
+            isCompany: !!isCompany || isSuper,
+          });
+          return;
         }
 
         set({
@@ -82,6 +90,30 @@ const useAuthStore = create(
           } else {
             set({ permissionsLoading: false });
           }
+        }
+      },
+
+      refreshProfile: async () => {
+        try {
+          const user = await axiosClient.get('/auth/profile');
+          if (user && user.id) {
+            const level = parseInt(user.role_level !== undefined ? user.role_level : -1, 10);
+            let normalizedRole = (user.role || '').toLowerCase().trim().replace(/\s+/g, '_');
+            const isSuper = level === 0 || normalizedRole.includes('super_admin') || normalizedRole.includes('supper_admin');
+            if (isSuper) {
+              normalizedRole = 'super_admin';
+            }
+            set({
+              user,
+              role: normalizedRole,
+              roleLevel: level,
+              isSuperAdmin: isSuper,
+              isEmployee: !!user.is_employee,
+              isCompany: !!user.is_company || isSuper,
+            });
+          }
+        } catch (error) {
+          console.error('Failed to refresh profile', error);
         }
       },
 

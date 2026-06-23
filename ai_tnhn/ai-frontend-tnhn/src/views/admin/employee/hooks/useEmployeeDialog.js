@@ -6,6 +6,7 @@ import emergencyConstructionApi from 'api/emergencyConstruction';
 import pumpingStationApi from 'api/pumpingStation';
 import wastewaterTreatmentApi from 'api/wastewaterTreatment';
 import sluiceGateApi from 'api/sluiceGate';
+import stationApi from 'api/station';
 import useAuthStore from 'store/useAuthStore';
 import axiosClient from 'api/axiosClient';
 import * as ROLES from 'constants/role';
@@ -21,6 +22,8 @@ const initialFormData = {
     assigned_pumping_station_id: '',
     assigned_wastewater_station_id: '',
     assigned_sluice_gate_id: '',
+    assigned_lake_station_ids: [],
+    assigned_river_station_ids: [],
     active: true
 };
 
@@ -32,10 +35,10 @@ const useEmployeeDialog = ({ open, employee, isEdit, defaultOrgId, canSelectOrg 
     const [pumpingStations, setPumpingStations] = useState([]);
     const [wastewaterStations, setWastewaterStations] = useState([]);
     const [sluiceGates, setSluiceGates] = useState([]);
+    const [lakes, setLakes] = useState([]);
+    const [rivers, setRivers] = useState([]);
     const [roles, setRoles] = useState([]);
     const [fetchingData, setFetchingData] = useState(false);
-    const [pointSelectionOpen, setPointSelectionOpen] = useState(false);
-    const [constructionSelectionOpen, setConstructionSelectionOpen] = useState(false);
     const [formData, setFormData] = useState({ ...initialFormData });
 
     useEffect(() => {
@@ -52,6 +55,8 @@ const useEmployeeDialog = ({ open, employee, isEdit, defaultOrgId, canSelectOrg 
                     assigned_pumping_station_id: employee.assigned_pumping_station_id || '',
                     assigned_wastewater_station_id: employee.assigned_wastewater_station_id || '',
                     assigned_sluice_gate_id: employee.assigned_sluice_gate_id || '',
+                    assigned_lake_station_ids: employee.assigned_lake_station_ids || [],
+                    assigned_river_station_ids: employee.assigned_river_station_ids || [],
                     active: employee.active !== undefined ? employee.active : true
                 });
             } else {
@@ -65,13 +70,15 @@ const useEmployeeDialog = ({ open, employee, isEdit, defaultOrgId, canSelectOrg 
             if (!open) return;
             setFetchingData(true);
             try {
-                const [pointsRes, consRes, pumpRes, wastewaterRes, sluiceRes, rolesRes] = await Promise.all([
+                const [pointsRes, consRes, pumpRes, wastewaterRes, sluiceRes, rolesRes, lakesRes, riversRes] = await Promise.all([
                     inundationApi.getPointsList({ per_page: 1000 }),
                     emergencyConstructionApi.getAll({ per_page: 1000 }),
                     pumpingStationApi.list({ per_page: 1000 }),
                     wastewaterTreatmentApi.list({ per_page: 1000 }),
                     sluiceGateApi.list({ per_page: 1000 }),
-                    axiosClient.get('/admin/roles')
+                    axiosClient.get('/admin/roles'),
+                    stationApi.lake.getAll({ per_page: 1000 }),
+                    stationApi.river.getAll({ per_page: 1000 })
                 ]);
 
                 // Interceptor đã bóc tách dữ liệu, nên chúng ta nhận được payload trực tiếp
@@ -81,6 +88,8 @@ const useEmployeeDialog = ({ open, employee, isEdit, defaultOrgId, canSelectOrg 
                 setWastewaterStations(Array.isArray(wastewaterRes?.data) ? wastewaterRes.data : (Array.isArray(wastewaterRes) ? wastewaterRes : []));
                 setSluiceGates(Array.isArray(sluiceRes?.data) ? sluiceRes.data : (Array.isArray(sluiceRes) ? sluiceRes : []));
                 setRoles(Array.isArray(rolesRes) ? rolesRes : []);
+                setLakes(Array.isArray(lakesRes) ? lakesRes : (lakesRes?.data || []));
+                setRivers(Array.isArray(riversRes) ? riversRes : (riversRes?.data || []));
             } catch (err) {
                 console.error('Lỗi tải dữ liệu:', err);
             } finally {
@@ -130,14 +139,12 @@ const useEmployeeDialog = ({ open, employee, isEdit, defaultOrgId, canSelectOrg 
         pumpingStations,
         wastewaterStations,
         sluiceGates,
+        lakes,
+        rivers,
         roles,
         fetchingData,
 
-        // Selection dialogs
-        pointSelectionOpen,
-        setPointSelectionOpen,
-        constructionSelectionOpen,
-        setConstructionSelectionOpen,
+
 
         // Derived
         isEmployeeRole,

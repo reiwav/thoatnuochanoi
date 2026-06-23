@@ -350,12 +350,21 @@ func (h *StationHandler) ListLake(c *gin.Context) {
 	}
 
 	if !user.IsCompany {
-		// UNION logic: Owned by Org OR in SharedOrgIDs list
-		req.AddWhere("org_id_or_shared", "$or", []bson.M{
-			{"org_id": user.OrgID},
-			{"shared_org_ids": user.OrgID},
-			{"share_all": true},
-		})
+		if user.IsEmployee {
+			if len(user.AssignedLakeStationIDs) > 0 {
+				req.AddWhere("id", "_id", bson.M{"$in": user.AssignedLakeStationIDs})
+			} else {
+				h.SendData(c, gin.H{"data": []interface{}{}, "total": 0})
+				return
+			}
+		} else {
+			// UNION logic: Owned by Org OR in SharedOrgIDs list
+			req.AddWhere("org_id_or_shared", "$or", []bson.M{
+				{"org_id": user.OrgID},
+				{"shared_org_ids": user.OrgID},
+				{"share_all": true},
+			})
+		}
 	}
 
 	items, total, err := h.service.ListLakeStations(c.Request.Context(), req)
@@ -525,12 +534,21 @@ func (h *StationHandler) ListRiver(c *gin.Context) {
 	}
 
 	if !user.IsCompany {
-		// UNION logic: Owned by Org OR in SharedOrgIDs list
-		req.AddWhere("org_id_or_shared", "$or", []bson.M{
-			{"org_id": user.OrgID},
-			{"shared_org_ids": user.OrgID},
-			{"share_all": true},
-		})
+		if user.IsEmployee {
+			if len(user.AssignedRiverStationIDs) > 0 {
+				req.AddWhere("id", "_id", bson.M{"$in": user.AssignedRiverStationIDs})
+			} else {
+				h.SendData(c, gin.H{"data": []interface{}{}, "total": 0})
+				return
+			}
+		} else {
+			// UNION logic: Owned by Org OR in SharedOrgIDs list
+			req.AddWhere("org_id_or_shared", "$or", []bson.M{
+				{"org_id": user.OrgID},
+				{"shared_org_ids": user.OrgID},
+				{"share_all": true},
+			})
+		}
 	}
 
 	items, total, err := h.service.ListRiverStations(c.Request.Context(), req)

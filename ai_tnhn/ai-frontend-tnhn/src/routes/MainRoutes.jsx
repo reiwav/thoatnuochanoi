@@ -42,6 +42,7 @@ const FloodLevelSetting = Loadable(lazy(() => import('views/admin/setting/FloodL
 const RainSetting = Loadable(lazy(() => import('views/admin/setting/RainSetting')));
 const WastewaterTreatmentPage = Loadable(lazy(() => import('views/admin/wastewater-treatment')));
 const EmployeeWastewaterPage = Loadable(lazy(() => import('views/employee/wastewater')));
+const EmployeeWaterPage = Loadable(lazy(() => import('views/employee/water')));
 const UnderDevelopment = Loadable(lazy(() => import('views/pages/under-development')));
 
 // ==============================|| MAIN ROUTING ||============================== //
@@ -109,7 +110,8 @@ const MainRoutes = {
         { path: 'station/inundation/history', element: <InundationHistoryDetail /> },
         { path: 'tram-bom', element: <EmployeePumpingStationDashboard /> },
         { path: 'wastewater-treatment', element: <EmployeeWastewaterPage /> },
-        { path: 'cua-phai', element: <EmployeeSluiceGatePage /> }
+        { path: 'cua-phai', element: <EmployeeSluiceGatePage /> },
+        { path: 'song-ho', element: <EmployeeWaterPage /> }
       ]
     }
   ]

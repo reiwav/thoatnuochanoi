@@ -12,5 +12,7 @@ func (h HandlerFuncs) WaterRoutes(api *gin.RouterGroup, mid middleware.Middlewar
 	water.Use(mid.MidBasicType())
 
 	water.GET("/lake/:id/history", waterHandler.GetLakeHistory)
+	water.POST("/lake/:id/report", waterHandler.ReportLake)
 	water.GET("/river/:id/history", waterHandler.GetRiverHistory)
+	water.POST("/river/:id/report", waterHandler.ReportRiver)
 }

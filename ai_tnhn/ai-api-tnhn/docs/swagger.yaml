@@ -1021,8 +1021,14 @@ definitions:
         type: integer
       deleted_at:
         type: integer
+      doors:
+        items:
+          type: boolean
+        type: array
       id:
         type: string
+      last_report:
+        $ref: '#/definitions/models.SluiceGateHistory'
       name:
         example: Cửa phai A
         type: string
@@ -1031,6 +1037,9 @@ definitions:
         type: string
       priority:
         example: 1
+        type: integer
+      quantity:
+        example: 5
         type: integer
       share_all:
         type: boolean
@@ -1051,6 +1060,10 @@ definitions:
         type: integer
       deleted_at:
         type: integer
+      doors:
+        items:
+          type: boolean
+        type: array
       fullname:
         type: string
       id:
@@ -1059,9 +1072,13 @@ definitions:
         type: string
       sluice_gate_id:
         type: string
+      timestamp:
+        type: integer
       updated_at:
         type: integer
       user_id:
+        type: string
+      user_name:
         type: string
       username:
         type: string
@@ -4341,6 +4358,34 @@ paths:
       summary: Lấy lịch sử dữ liệu trạm hồ
       tags:
       - Thủy văn
+  /admin/water/lake/{id}/report:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID trạm hồ
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Giá trị mực nước
+        in: body
+        name: report
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: boolean
+      security:
+      - BearerAuth: []
+      summary: Nhân viên cập nhật mực nước hồ
+      tags:
+      - Thủy văn
   /admin/water/rain/{id}/history:
     get:
       description: Truy xuất dữ liệu mưa lịch sử của một trạm cụ thể
@@ -4441,6 +4486,34 @@ paths:
       security:
       - BearerAuth: []
       summary: Lấy lịch sử dữ liệu trạm sông
+      tags:
+      - Thủy văn
+  /admin/water/river/{id}/report:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID trạm sông
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Giá trị mực nước
+        in: body
+        name: report
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: boolean
+      security:
+      - BearerAuth: []
+      summary: Nhân viên cập nhật mực nước sông
       tags:
       - Thủy văn
   /admin/weather/rain:

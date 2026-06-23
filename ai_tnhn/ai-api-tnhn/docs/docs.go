@@ -5220,6 +5220,51 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/water/lake/{id}/report": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Thủy văn"
+                ],
+                "summary": "Nhân viên cập nhật mực nước hồ",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID trạm hồ",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Giá trị mực nước",
+                        "name": "report",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/water/rain/by-date": {
             "get": {
                 "security": [
@@ -5388,6 +5433,51 @@ const docTemplate = `{
                                     }
                                 }
                             ]
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/water/river/{id}/report": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Thủy văn"
+                ],
+                "summary": "Nhân viên cập nhật mực nước sông",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID trạm sông",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Giá trị mực nước",
+                        "name": "report",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "boolean"
                         }
                     }
                 }
@@ -8842,8 +8932,17 @@ const docTemplate = `{
                 "deleted_at": {
                     "type": "integer"
                 },
+                "doors": {
+                    "type": "array",
+                    "items": {
+                        "type": "boolean"
+                    }
+                },
                 "id": {
                     "type": "string"
+                },
+                "last_report": {
+                    "$ref": "#/definitions/models.SluiceGateHistory"
                 },
                 "name": {
                     "type": "string",
@@ -8856,6 +8955,10 @@ const docTemplate = `{
                 "priority": {
                     "type": "integer",
                     "example": 1
+                },
+                "quantity": {
+                    "type": "integer",
+                    "example": 5
                 },
                 "share_all": {
                     "type": "boolean"
@@ -8885,6 +8988,12 @@ const docTemplate = `{
                 "deleted_at": {
                     "type": "integer"
                 },
+                "doors": {
+                    "type": "array",
+                    "items": {
+                        "type": "boolean"
+                    }
+                },
                 "fullname": {
                     "type": "string"
                 },
@@ -8897,10 +9006,16 @@ const docTemplate = `{
                 "sluice_gate_id": {
                     "type": "string"
                 },
+                "timestamp": {
+                    "type": "integer"
+                },
                 "updated_at": {
                     "type": "integer"
                 },
                 "user_id": {
+                    "type": "string"
+                },
+                "user_name": {
                     "type": "string"
                 },
                 "username": {

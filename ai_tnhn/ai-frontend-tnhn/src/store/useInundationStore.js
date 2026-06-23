@@ -217,8 +217,11 @@ const useInundationStore = create((set, get) => ({
         });
 
         es.addEventListener('user_updated', async (e) => {
-            console.log('SSE: user_updated event received. Refreshing permissions...');
+            console.log('SSE: user_updated event received. Refreshing profile and permissions...');
             try {
+                // Refresh profile data (such as station assignments)
+                await useAuthStore.getState().refreshProfile();
+
                 // Clear the loaded state guard in authStore so that it fetches from API
                 useAuthStore.setState({ permissionsLoaded: false });
                 await useAuthStore.getState().fetchPermissions();
@@ -227,7 +230,7 @@ const useInundationStore = create((set, get) => ({
                 get().disconnectSSE();
                 get().connectSSE();
                 
-                toast.success('Quyền hạn của bạn đã được cập nhật!');
+                toast.success('Quyền hạn và trạm phân công của bạn đã được cập nhật!');
             } catch (err) {
                 console.error('SSE user_updated handler failed', err);
             }

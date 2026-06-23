@@ -41,10 +41,8 @@ const useEmployeeInundationDashboard = () => {
         fetchPermissions();
     }, []);
 
-    // SSE + fallback polling (60s)
+    // Fallback polling (60s) if SSE is down
     useEffect(() => {
-        const { connectSSE, disconnectSSE } = useInundationStore.getState();
-        connectSSE();
         const interval = setInterval(() => {
             const isSseConnected = useInundationStore.getState().sseConnected;
             if (!isSseConnected && activeTab <= 1) {
@@ -52,7 +50,6 @@ const useEmployeeInundationDashboard = () => {
             }
         }, 60000);
         return () => {
-            disconnectSSE();
             clearInterval(interval);
         };
     }, [activeTab]);

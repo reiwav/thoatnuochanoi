@@ -24,10 +24,8 @@ const useAdminInundation = () => {
     fetchInitialData();
   }, []);
 
-  // SSE + fallback polling (60s)
+  // Fallback polling (60s) if SSE is down
   useEffect(() => {
-    const { connectSSE, disconnectSSE } = useInundationStore.getState();
-    connectSSE();
     const interval = setInterval(() => {
       const isSseConnected = useInundationStore.getState().sseConnected;
       if (!isSseConnected) {
@@ -35,7 +33,6 @@ const useAdminInundation = () => {
       }
     }, 60000);
     return () => {
-      disconnectSSE();
       clearInterval(interval);
     };
   }, []);

@@ -19,6 +19,7 @@ type Service interface {
 	// Lake Station
 	CreateLakeStation(ctx context.Context, input *models.LakeStation) (*models.LakeStation, error)
 	GetLakeStation(ctx context.Context, id string) (*models.LakeStation, error)
+	GetLakeStationByOldID(ctx context.Context, oldID int) (*models.LakeStation, error)
 	UpdateLakeStation(ctx context.Context, id string, input *models.LakeStation) error
 	DeleteLakeStation(ctx context.Context, id string) error
 	ListLakeStations(ctx context.Context, filter filter.Filter) ([]*models.LakeStation, int64, error)
@@ -27,6 +28,7 @@ type Service interface {
 	// River Station
 	CreateRiverStation(ctx context.Context, input *models.RiverStation) (*models.RiverStation, error)
 	GetRiverStation(ctx context.Context, id string) (*models.RiverStation, error)
+	GetRiverStationByOldID(ctx context.Context, oldID int) (*models.RiverStation, error)
 	UpdateRiverStation(ctx context.Context, id string, input *models.RiverStation) error
 	DeleteRiverStation(ctx context.Context, id string) error
 	ListRiverStations(ctx context.Context, filter filter.Filter) ([]*models.RiverStation, int64, error)

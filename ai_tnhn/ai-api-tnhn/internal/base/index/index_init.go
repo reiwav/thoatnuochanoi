@@ -90,14 +90,17 @@ func ensureIndexes(ctx context.Context, db *mongo.Database) error {
 		},
 		"rain_stations": {
 			{Keys: bson.D{{Key: "code", Value: 1}}, Options: options.Index().SetUnique(true).SetPartialFilterExpression(partialFilter)},
+			{Keys: bson.D{{Key: "old_id", Value: 1}}, Options: options.Index().SetUnique(true).SetPartialFilterExpression(partialFilter)},
 			{Keys: bson.D{{Key: "org_id", Value: 1}}},
 		},
 		"lake_stations": {
 			{Keys: bson.D{{Key: "code", Value: 1}}, Options: options.Index().SetUnique(true).SetPartialFilterExpression(partialFilter)},
+			{Keys: bson.D{{Key: "old_id", Value: 1}}, Options: options.Index().SetUnique(true).SetPartialFilterExpression(partialFilter)},
 			{Keys: bson.D{{Key: "org_id", Value: 1}}},
 		},
 		"river_stations": {
 			{Keys: bson.D{{Key: "code", Value: 1}}, Options: options.Index().SetUnique(true).SetPartialFilterExpression(partialFilter)},
+			{Keys: bson.D{{Key: "old_id", Value: 1}}, Options: options.Index().SetUnique(true).SetPartialFilterExpression(partialFilter)},
 			{Keys: bson.D{{Key: "org_id", Value: 1}}},
 		},
 		"rain_records": {

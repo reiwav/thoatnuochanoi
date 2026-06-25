@@ -5483,6 +5483,43 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/water/summary-v2": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Truy xuất dữ liệu mực nước hiện tại được báo cáo bởi nhân viên từ database",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Thủy văn"
+                ],
+                "summary": "Lấy tổng hợp mực nước sông hồ V2 từ DB",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/web.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/admin/weather/rain": {
             "get": {
                 "security": [
@@ -8430,6 +8467,9 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
+                "latest_record": {
+                    "$ref": "#/definitions/models.LatestWaterRecord"
+                },
                 "org_id": {
                     "type": "string",
                     "example": "60f123456789"
@@ -8449,6 +8489,29 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "integer"
+                }
+            }
+        },
+        "models.LatestWaterRecord": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string"
+                },
+                "record_id": {
+                    "type": "string"
+                },
+                "station_id": {
+                    "type": "integer"
+                },
+                "station_name": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "number"
                 }
             }
         },
@@ -8847,6 +8910,9 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "string"
+                },
+                "latest_record": {
+                    "$ref": "#/definitions/models.LatestWaterRecord"
                 },
                 "org_id": {
                     "type": "string",

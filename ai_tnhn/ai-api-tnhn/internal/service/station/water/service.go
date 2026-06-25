@@ -17,6 +17,7 @@ type Service interface {
 
 	// Summary for external consumers
 	GetWaterSummary(ctx context.Context, orgID string, assignedIDs []string) (*WaterSummaryData, error)
+	GetWaterSummaryV2(ctx context.Context) ([]WaterStationV2, error)
 
 	CreateLakeRecord(ctx context.Context, record *models.LakeRecord, user *models.User) error
 	CreateRiverRecord(ctx context.Context, record *models.RiverRecord, user *models.User) error

@@ -141,3 +141,20 @@ func (h *WaterHandler) ReportRiver(c *gin.Context) {
 	}
 	h.SendData(c, true)
 }
+
+// GetWaterSummaryV2 godoc
+// @Summary Lấy tổng hợp mực nước sông hồ V2 từ DB
+// @Description Truy xuất dữ liệu mực nước hiện tại được báo cáo bởi nhân viên từ database
+// @Tags Thủy văn
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} web.Response{data=object}
+// @Router /admin/water/summary-v2 [get]
+func (h *WaterHandler) GetWaterSummaryV2(c *gin.Context) {
+	res, err := h.service.GetWaterSummaryV2(c.Request.Context())
+	if err != nil {
+		h.SendError(c, err)
+		return
+	}
+	h.SendData(c, res)
+}

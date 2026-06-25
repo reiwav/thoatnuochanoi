@@ -134,6 +134,15 @@ const adminPages = {
           breadcrumbs: false
         },
         {
+          id: 'water:summary-v2',
+          permission: 'water:view',
+          title: 'Bảng sông hồ V2',
+          type: 'item',
+          url: '/admin/station/water/summary-v2',
+          icon: icons.IconTable,
+          breadcrumbs: false
+        },
+        {
           id: 'lake',
           permission: 'water:view',
           title: 'Mực nước hồ',

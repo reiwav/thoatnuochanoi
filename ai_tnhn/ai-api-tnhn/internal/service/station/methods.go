@@ -3,9 +3,11 @@ package station
 import (
 	"ai-api-tnhn/internal/base/mgo/filter"
 	"ai-api-tnhn/internal/models"
+	"ai-api-tnhn/utils/web"
 	"context"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // Rain Station Implementation
@@ -27,12 +29,34 @@ func (s *service) ListRainStations(ctx context.Context, filter filter.Filter) ([
 
 // Lake Station Implementation
 func (s *service) CreateLakeStation(ctx context.Context, input *models.LakeStation) (*models.LakeStation, error) {
+	if input.OldID <= 0 {
+		return nil, web.BadRequest("Mã trạm (OldID) không hợp lệ")
+	}
+	existing, err := s.GetLakeStationByOldID(ctx, input.OldID)
+	if err == nil && existing != nil {
+		return nil, web.BadRequest("Mã trạm (OldID) đã tồn tại")
+	}
 	return s.lakeRepo.Create(ctx, input)
 }
 func (s *service) GetLakeStation(ctx context.Context, id string) (*models.LakeStation, error) {
 	return s.lakeRepo.GetByID(ctx, id)
 }
+func (s *service) GetLakeStationByOldID(ctx context.Context, oldID int) (*models.LakeStation, error) {
+	var station *models.LakeStation
+	err := s.lakeRepo.R_SelectOne(ctx, bson.M{"old_id": oldID}, &station)
+	if err == mongo.ErrNoDocuments {
+		return nil, nil
+	}
+	return station, err
+}
 func (s *service) UpdateLakeStation(ctx context.Context, id string, input *models.LakeStation) error {
+	if input.OldID <= 0 {
+		return web.BadRequest("Mã trạm (OldID) không hợp lệ")
+	}
+	existing, err := s.GetLakeStationByOldID(ctx, input.OldID)
+	if err == nil && existing != nil && existing.ID != id {
+		return web.BadRequest("Mã trạm (OldID) đã được sử dụng bởi trạm khác")
+	}
 	return s.lakeRepo.Update(ctx, id, input)
 }
 func (s *service) DeleteLakeStation(ctx context.Context, id string) error {
@@ -44,12 +68,34 @@ func (s *service) ListLakeStations(ctx context.Context, filter filter.Filter) ([
 
 // River Station Implementation
 func (s *service) CreateRiverStation(ctx context.Context, input *models.RiverStation) (*models.RiverStation, error) {
+	if input.OldID <= 0 {
+		return nil, web.BadRequest("Mã trạm (OldID) không hợp lệ")
+	}
+	existing, err := s.GetRiverStationByOldID(ctx, input.OldID)
+	if err == nil && existing != nil {
+		return nil, web.BadRequest("Mã trạm (OldID) đã tồn tại")
+	}
 	return s.riverRepo.Create(ctx, input)
 }
 func (s *service) GetRiverStation(ctx context.Context, id string) (*models.RiverStation, error) {
 	return s.riverRepo.GetByID(ctx, id)
 }
+func (s *service) GetRiverStationByOldID(ctx context.Context, oldID int) (*models.RiverStation, error) {
+	var station *models.RiverStation
+	err := s.riverRepo.R_SelectOne(ctx, bson.M{"old_id": oldID}, &station)
+	if err == mongo.ErrNoDocuments {
+		return nil, nil
+	}
+	return station, err
+}
 func (s *service) UpdateRiverStation(ctx context.Context, id string, input *models.RiverStation) error {
+	if input.OldID <= 0 {
+		return web.BadRequest("Mã trạm (OldID) không hợp lệ")
+	}
+	existing, err := s.GetRiverStationByOldID(ctx, input.OldID)
+	if err == nil && existing != nil && existing.ID != id {
+		return web.BadRequest("Mã trạm (OldID) đã được sử dụng bởi trạm khác")
+	}
 	return s.riverRepo.Update(ctx, id, input)
 }
 func (s *service) DeleteRiverStation(ctx context.Context, id string) error {

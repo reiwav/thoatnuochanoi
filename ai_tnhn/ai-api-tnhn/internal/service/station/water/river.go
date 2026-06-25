@@ -1,7 +1,6 @@
 package water
 
 import (
-	"ai-api-tnhn/internal/base/mgo/filter"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/utils/web"
 	"context"
@@ -19,12 +18,10 @@ func (s *service) GetRiverDataByDate(ctx context.Context, date string) ([]*model
 func (s *service) CreateRiverRecord(ctx context.Context, record *models.RiverRecord, user *models.User) error {
 	var stationName string
 	var stationHexID string
-	f := filter.NewBasicFilter()
-	f.AddWhere("old_id", "old_id", record.StationID)
-	stations, _, err := s.stationSvc.ListRiverStations(ctx, f)
-	if err == nil && len(stations) > 0 {
-		stationName = stations[0].TenTram
-		stationHexID = stations[0].ID
+	station, err := s.stationSvc.GetRiverStationByOldID(ctx, int(record.StationID))
+	if err == nil && station != nil {
+		stationName = station.TenTram
+		stationHexID = station.ID
 	}
 
 	if user.IsEmployee && !user.IsCompany && user.Role != "super_admin" {
@@ -48,5 +45,24 @@ func (s *service) CreateRiverRecord(ctx context.Context, record *models.RiverRec
 		record.Date = record.Timestamp.Format("2006-01-02")
 	}
 
-	return s.riverRepo.Create(ctx, record)
+	err = s.riverRepo.Create(ctx, record)
+	if err != nil {
+		return err
+	}
+
+	if station != nil {
+		station.LatestRecord = &models.LatestWaterRecord{
+			RecordID:    record.ID,
+			StationID:   record.StationID,
+			StationName: record.StationName,
+			Value:       record.Value,
+			Timestamp:   record.Timestamp,
+			Date:        record.Date,
+		}
+		if updateErr := s.stationSvc.UpdateRiverStation(ctx, station.ID, station); updateErr != nil {
+			s.logger.GetLogger().Errorf("Failed to update latest record for river station %d: %v", record.StationID, updateErr)
+		}
+	}
+
+	return nil
 }

@@ -53,7 +53,7 @@ func (h *WeatherHandler) GetRainSummary(c *gin.Context) {
 	}
 
 	today := time.Now().Format("2006-01-02")
-	var items []googleapi.RainTableRow
+	items := []googleapi.RainTableRow{}
 	for i, m := range summary.Measurements {
 		items = append(items, googleapi.NewRainTableRow(i+1, m.ID, m.OldID, m.Name, m.Address, m.Type, m.Priority, m.TotalRain, m.IsRaining, m.StartTime, m.EndTime, today))
 	}

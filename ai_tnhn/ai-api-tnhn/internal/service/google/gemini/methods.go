@@ -140,12 +140,23 @@ func (s *service) Chat(ctx context.Context, prompt string, history []googleapi.C
 		s.recordUsage(ctx, resp.UsageMetadata)
 	}
 	fr := ""
-	for _, p := range resp.Candidates[0].Content.Parts {
-		fr += fmt.Sprintf("%v", p)
+	if len(resp.Candidates) > 0 && resp.Candidates[0].Content != nil {
+		for _, p := range resp.Candidates[0].Content.Parts {
+			fr += fmt.Sprintf("%v", p)
+		}
+	}
+
+	textResult := strings.TrimSpace(fr)
+	if textResult == "" {
+		if len(tables) > 0 {
+			textResult = "Dưới đây là thông tin chi tiết được phản hồi từ hệ thống:"
+		} else {
+			textResult = "Hiện tại hệ thống không ghi nhận dữ liệu nào phù hợp với yêu cầu của bạn."
+		}
 	}
 
 	chatRes := &googleapi.ChatResponse{
-		Text:   strings.TrimSpace(fr),
+		Text:   textResult,
 		Tables: tables,
 	}
 	resBytes, _ := json.Marshal(chatRes)
@@ -321,12 +332,23 @@ func (s *service) ChatContract(ctx context.Context, prompt string, history []goo
 		s.recordUsage(ctx, resp.UsageMetadata)
 	}
 	fr := ""
-	for _, p := range resp.Candidates[0].Content.Parts {
-		fr += fmt.Sprintf("%v", p)
+	if len(resp.Candidates) > 0 && resp.Candidates[0].Content != nil {
+		for _, p := range resp.Candidates[0].Content.Parts {
+			fr += fmt.Sprintf("%v", p)
+		}
+	}
+
+	textResult := strings.TrimSpace(fr)
+	if textResult == "" {
+		if len(tables) > 0 {
+			textResult = "Dưới đây là thông tin chi tiết được phản hồi từ hệ thống:"
+		} else {
+			textResult = "Hiện tại hệ thống không ghi nhận dữ liệu nào phù hợp với yêu cầu của bạn."
+		}
 	}
 
 	chatRes := &googleapi.ChatResponse{
-		Text:   strings.TrimSpace(fr),
+		Text:   textResult,
 		Tables: tables,
 	}
 	resBytes, _ := json.Marshal(chatRes)

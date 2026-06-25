@@ -59,7 +59,7 @@ export const useChatIntegrations = ({ setMessages, setLoading, shouldScrollToBot
         setLoading(true);
         try {
             const res = await axiosClient.get('/admin/google/rain-summary-text');
-            if (res && typeof res === 'object' && res.text) {
+            if (res && typeof res === 'object' && typeof res.text === 'string') {
                 setMessages(prev => [...prev, { id: Date.now() + 1, role: 'ai', text: res.text, tables: res.tables }]);
             } else {
                 setMessages(prev => [...prev, { id: Date.now() + 1, role: 'ai', text: res || 'Không thể lấy dữ liệu mưa.' }]);
@@ -78,16 +78,17 @@ export const useChatIntegrations = ({ setMessages, setLoading, shouldScrollToBot
         setLoading(true);
         try {
             const res = await axiosClient.get('/admin/weather/rain');
-            if (res && res.items) {
-                if (res.items.length === 0) {
+            if (res) {
+                const items = res.items || [];
+                if (items.length === 0) {
                     setMessages(prev => [...prev, { id: Date.now() + 1, role: 'ai', text: res.summary || 'Hiện tại hệ thống không ghi nhận trạm nào có mưa trong ngày hôm nay.' }]);
                 } else {
                     setMessages(prev => [...prev, {
                         id: Date.now() + 1,
                         role: 'ai',
-                        text: `${res.summary || `Hệ thống ghi nhận ${res.items.length} trạm đang có mưa trong ngày.`} Click vào trạm để xem biểu đồ chi tiết:\n\n[TABLE:rains]`,
+                        text: `${res.summary || `Hệ thống ghi nhận ${items.length} trạm đang có mưa trong ngày.`} Click vào trạm để xem biểu đồ chi tiết:\n\n[TABLE:rains]`,
                         tables: {
-                            rains: res.items
+                            rains: items
                         },
                         timestamp: new Date()
                     }]);
@@ -194,7 +195,7 @@ export const useChatIntegrations = ({ setMessages, setLoading, shouldScrollToBot
             if (res) {
                 let text = res;
                 let tables = null;
-                if (typeof res === 'object' && res.text) {
+                if (typeof res === 'object' && typeof res.text === 'string') {
                     text = res.text;
                     tables = res.tables;
                 }
@@ -217,7 +218,7 @@ export const useChatIntegrations = ({ setMessages, setLoading, shouldScrollToBot
             if (res) {
                 let text = res;
                 let tables = null;
-                if (typeof res === 'object' && res.text) {
+                if (typeof res === 'object' && typeof res.text === 'string') {
                     text = res.text;
                     tables = res.tables;
                 }
@@ -296,7 +297,7 @@ export const useChatIntegrations = ({ setMessages, setLoading, shouldScrollToBot
         const count = pointData['count'] || pointData['Count'];
         const duration = pointData['duration'] || pointData['Duration'] || pointData['Tổng thời gian'] || pointData['Thời gian ngập'] || '';
         const currentStatus = pointData['Trạng thái'] || pointData['current_status'] || pointData['CurrentStatus'] || '';
-        
+
         const isHistory = count !== undefined || duration.includes('lần') || currentStatus.includes('lần');
 
         let matchedPoint = null;

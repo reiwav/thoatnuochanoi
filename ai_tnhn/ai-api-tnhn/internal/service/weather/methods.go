@@ -311,7 +311,10 @@ func (s *service) GetRainSummary(ctx context.Context, orgID string, assignedIDs 
 		})
 	}
 	if len(measurements) == 0 {
-		return &RainSummaryData{TotalStations: len(rainData.Content.Tram)}, nil
+		return &RainSummaryData{
+			TotalStations: len(rainData.Content.Tram),
+			SummaryText:   "Hiện tại không mưa",
+		}, nil
 	}
 	sort.Slice(measurements, func(i, j int) bool { return measurements[i].TotalRain > measurements[j].TotalRain })
 	intensity, spread := "nhỏ", "diện hẹp"

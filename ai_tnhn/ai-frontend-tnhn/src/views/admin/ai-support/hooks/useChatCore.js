@@ -33,7 +33,7 @@ export const useChatCore = () => {
                     if (log.role === 'model') {
                         try {
                             const parsed = JSON.parse(log.content);
-                            if (parsed && typeof parsed === 'object' && parsed.text) {
+                            if (parsed && typeof parsed === 'object' && typeof parsed.text === 'string') {
                                 text = parsed.text;
                                 tables = parsed.tables;
                             }
@@ -143,13 +143,13 @@ export const useChatCore = () => {
             });
             let text = 'Xin lỗi, tôi gặp trục trặc khi xử lý câu hỏi này.';
             let tables = null;
-            if (res && typeof res === 'object' && res.text) {
+            if (res && typeof res === 'object' && typeof res.text === 'string') {
                 text = res.text;
                 tables = res.tables;
             } else if (typeof res === 'string') {
                 try {
                     const parsed = JSON.parse(res);
-                    if (parsed && parsed.text) {
+                    if (parsed && typeof parsed.text === 'string') {
                         text = parsed.text;
                         tables = parsed.tables;
                     } else {

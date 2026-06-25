@@ -233,13 +233,31 @@ const adminPages = {
       ]
     },
     {
-      id: 'sluice-gate:view',
+      id: 'sluice-gate:collapse',
       permission: ['sluice-gate:view', 'sluice-gate:edit', 'sluice-gate:control'],
       title: 'Cửa phai',
-      type: 'item',
-      url: '/admin/cua-phai',
+      type: 'collapse',
       icon: icons.IconDoor,
-      breadcrumbs: false
+      children: [
+        {
+          id: 'sluice-gate:summary',
+          permission: ['sluice-gate:view'],
+          title: 'Bảng cửa phai',
+          type: 'item',
+          url: '/admin/station/sluice-gate/summary',
+          icon: icons.IconDoor,
+          breadcrumbs: false
+        },
+        {
+          id: 'sluice-gate:manage',
+          permission: ['sluice-gate:view', 'sluice-gate:edit', 'sluice-gate:control'],
+          title: 'Quản lý cửa phai',
+          type: 'item',
+          url: '/admin/cua-phai',
+          icon: icons.IconList,
+          breadcrumbs: false
+        }
+      ]
     },
     {
       id: 'admin:pumping-wastewater',

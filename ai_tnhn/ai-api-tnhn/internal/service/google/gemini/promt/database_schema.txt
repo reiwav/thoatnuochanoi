@@ -99,7 +99,9 @@ Khi lọc các trường lưu dưới dạng unix timestamp (giây) như `create
 - `name` (string): Tên trạm xử lý nước thải.
 - `org_id` (string): ID đơn vị quản lý.
 
-## 12. Bộ sưu tập: `sluice_gates` (Cống thoát nước/cống điều tiết)
-- `_id` (string): ID cống.
-- `name` (string): Tên cống thoát nước.
+## 12. Bộ sưu tập: `sluice_gates` (Cửa phai)
+- `_id` (string): ID cửa phai.
+- `name` (string): Tên cửa phai.
 - `org_id` (string): ID đơn vị quản lý.
+- `quantity` (int): Số lượng cửa/phai.
+- `doors` (array bool): Trạng thái đóng/mở của các cửa (true = mở, false = đóng).

@@ -47,6 +47,7 @@ func (s *service) getChatTools() []*genai.FunctionDeclaration {
 				"org_name":   {Type: genai.TypeString, Description: "Tên xí nghiệp/đơn vị quản lý (ví dụ: 'Xí nghiệp 1'). Tùy chọn, dùng để lọc kết quả."},
 			}, Required: []string{"start_date", "end_date"}}},
 		{Name: constant.ToolLivePumpingSummary, Description: constant.ToolDescriptions[constant.ToolLivePumpingSummary]},
+		{Name: constant.ToolLiveSluiceGateSummary, Description: constant.ToolDescriptions[constant.ToolLiveSluiceGateSummary]},
 		{Name: constant.ToolRainSummaryByWard, Description: constant.ToolDescriptions[constant.ToolRainSummaryByWard],
 			Parameters: &genai.Schema{Type: genai.TypeObject, Properties: map[string]*genai.Schema{"year": {Type: genai.TypeInteger}, "month": {Type: genai.TypeInteger}, "start_date": {Type: genai.TypeString}, "end_date": {Type: genai.TypeString}}}},
 		{Name: constant.ToolDatabaseQuery, Description: constant.ToolDescriptions[constant.ToolDatabaseQuery],
@@ -188,6 +189,12 @@ func (s *service) handleToolCall(ctx context.Context, c *genai.FunctionCall, uID
 			"pumping_stations": p,
 			"wastewater_stations": ww,
 		}, err
+	case constant.ToolLiveSluiceGateSummary:
+		var aGate []string
+		if u != nil && u.AssignedSluiceGateID != "" {
+			aGate = []string{u.AssignedSluiceGateID}
+		}
+		return s.sluiceGateSvc.GetSluiceGateSummary(ctx, orgID, aGate)
 	case constant.ToolEmergencyList, constant.ToolEmergencyHistory, constant.ToolUnfinishedEmergencyHistory, constant.ToolRecentEmergencyReports, constant.ToolReportEmergencyProgress:
 		return s.handleCT(ctx, c, uID)
 	case constant.ToolDatabaseQuery:

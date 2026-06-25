@@ -14,6 +14,7 @@ const (
 	ToolLiveWaterSummary           = "get_live_water_summary"
 	ToolLiveInundationSummary      = "get_live_inundation_summary"
 	ToolLivePumpingSummary         = "get_live_pumping_summary"
+	ToolLiveSluiceGateSummary      = "get_live_sluice_gate_summary"
 	ToolRainSummaryByWard          = "get_rain_summary_by_ward"
 	ToolDatabaseQuery              = "database_query"
 	ToolDatabaseAggregate          = "database_aggregate"
@@ -56,6 +57,7 @@ var ToolDescriptions = map[string]string{
 	ToolLiveWaterSummary:           "Lấy mực nước hiện tại hố/sông.",
 	ToolLiveInundationSummary:      "Tình hình ngập hiện tại.",
 	ToolLivePumpingSummary:         "Tình hình trạm bơm và trạm xử lý nước thải hiện tại.",
+	ToolLiveSluiceGateSummary:      "Tình hình cửa phai hiện tại.",
 	ToolRainSummaryByWard:          "Tổng hợp mưa theo phường.",
 	ToolDatabaseQuery:              "Truy vấn MongoDB.",
 	ToolDatabaseAggregate:          "Truy vấn tổng hợp MongoDB (Aggregation Pipeline).",

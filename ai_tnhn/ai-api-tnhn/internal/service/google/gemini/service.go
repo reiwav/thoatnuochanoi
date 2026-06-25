@@ -11,6 +11,7 @@ import (
 	pumpingstation "ai-api-tnhn/internal/service/station/pumping_station"
 	"ai-api-tnhn/internal/service/station/rain"
 	"ai-api-tnhn/internal/service/station/stationdata"
+	"ai-api-tnhn/internal/service/station/sluice_gate"
 	"ai-api-tnhn/internal/service/station/wastewater_treatment"
 	"ai-api-tnhn/internal/service/station/water"
 	"ai-api-tnhn/internal/service/weather"
@@ -45,6 +46,7 @@ type service struct {
 	stationSvc            station.Service
 	pumpingSvc            pumpingstation.Service
 	wastewaterSvc         wastewater_treatment.Service
+	sluiceGateSvc         sluice_gate.Service
 	rainSvc               rain.Service
 	weatherSvc            weather.Service
 	aiUsageRepo           repository.AiUsage
@@ -52,7 +54,7 @@ type service struct {
 	userRepo              repository.User
 }
 
-func NewService(k, kc string, w water.Service, r rain.Service, g googleapi.Service, i inundation.Service, q query.Service, sd stationdata.Service, e emergency_construction.Service, c contract.Service, s station.Service, p pumpingstation.Service, we weather.Service, ww wastewater_treatment.Service, ar repository.AiUsage, al repository.AiChatLog, ur repository.User) (Service, error) {
+func NewService(k, kc string, w water.Service, r rain.Service, g googleapi.Service, i inundation.Service, q query.Service, sd stationdata.Service, e emergency_construction.Service, c contract.Service, s station.Service, p pumpingstation.Service, we weather.Service, ww wastewater_treatment.Service, sg sluice_gate.Service, ar repository.AiUsage, al repository.AiChatLog, ur repository.User) (Service, error) {
 	if k == "" {
 		return nil, fmt.Errorf("gemini api key is required")
 	}
@@ -79,5 +81,5 @@ func NewService(k, kc string, w water.Service, r rain.Service, g googleapi.Servi
 	if len(cl) == 0 {
 		return nil, fmt.Errorf("failed to create any valid gemini client")
 	}
-	return &service{clients: cl, contractClients: ccl, waterSvc: w, rainSvc: r, googleApiSvc: g, inuSvc: i, querySvc: q, stationDataSvc: sd, emcSvc: e, contractSvc: c, stationSvc: s, pumpingSvc: p, wastewaterSvc: ww, weatherSvc: we, aiUsageRepo: ar, aiChatLogRepo: al, userRepo: ur}, nil
+	return &service{clients: cl, contractClients: ccl, waterSvc: w, rainSvc: r, googleApiSvc: g, inuSvc: i, querySvc: q, stationDataSvc: sd, emcSvc: e, contractSvc: c, stationSvc: s, pumpingSvc: p, wastewaterSvc: ww, sluiceGateSvc: sg, weatherSvc: we, aiUsageRepo: ar, aiChatLogRepo: al, userRepo: ur}, nil
 }

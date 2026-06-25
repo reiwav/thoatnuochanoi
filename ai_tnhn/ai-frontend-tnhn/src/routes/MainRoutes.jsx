@@ -16,6 +16,7 @@ const StationRainSummary = Loadable(lazy(() => import('views/admin/station-rain-
 const StationWaterSummary = Loadable(lazy(() => import('views/admin/station-water-summary')));
 const StationWaterSummaryV2 = Loadable(lazy(() => import('views/admin/station-water-summary-v2')));
 const StationPumpingSummary = Loadable(lazy(() => import('views/admin/station-pumping-summary')));
+const StationSluiceGateSummary = Loadable(lazy(() => import('views/admin/station-sluice-gate-summary')));
 const StationRainCompare = Loadable(lazy(() => import('views/admin/station-rain-compare')));
 const StationRiverList = Loadable(lazy(() => import('views/admin/station/river')));
 const StationLakeList = Loadable(lazy(() => import('views/admin/station/lake')));
@@ -73,6 +74,7 @@ const MainRoutes = {
         { path: 'station/water/summary', element: <StationWaterSummary /> },
         { path: 'station/water/summary-v2', element: <StationWaterSummaryV2 /> },
         { path: 'station/pumping/summary', element: <StationPumpingSummary /> },
+        { path: 'station/sluice-gate/summary', element: <StationSluiceGateSummary /> },
         { path: 'station/rain/compare', element: <StationRainCompare /> },
         { path: 'station/rain/list', element: <StationRainList /> },
         { path: 'station/rain/history', element: <StationHistory type="rain" /> },

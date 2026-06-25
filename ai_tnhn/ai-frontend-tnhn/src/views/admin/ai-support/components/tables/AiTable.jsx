@@ -5,6 +5,7 @@ import RainTable from './RainTable';
 import WaterTable from './WaterTable';
 import InundationTable from './InundationTable';
 import WastewaterTable from './WastewaterTable';
+import SluiceGateTable from './SluiceGateTable';
 
 /**
  * AiTable - Router component that delegates rendering to the appropriate
@@ -16,6 +17,7 @@ import WastewaterTable from './WastewaterTable';
  */
 const TABLE_COMPONENTS = {
     pumping_stations: PumpingStationTable,
+    sluice_gates: SluiceGateTable,
     wastewater: WastewaterTable,
     wastewater_stations: WastewaterTable,
     inundations: InundationTable,
@@ -33,6 +35,7 @@ const TITLE_VI = {
     'inundations_-_ongoing_points': 'Điểm ngập đang diễn ra',
     ongoing_points: 'Điểm ngập đang diễn ra',
     pumping_stations: 'Trạm bơm',
+    sluice_gates: 'Cửa phai',
     wastewater: 'Trạm XLNT',
     wastewater_stations: 'Trạm XLNT',
     list_stations_by_type: 'Danh sách trạm',

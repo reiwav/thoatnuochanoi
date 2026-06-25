@@ -129,6 +129,7 @@ func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log log
 
 	s.Wastewater = wastewater_treatment.NewService(repos.WastewaterStation)
 	s.PumpingStation = pumpingstation.NewService(repos.PumpingStation, repos.User, repos.Organization)
+	s.SluiceGate = sluice_gate.NewService(repos.SluiceGate, repos.Organization)
 	s.GoogleApi, _ = googleapi.NewService(cfg.GoogleDriveConfig, cfg.OAuthConfig, repos.AiUsage, s.Inundation, s.Weather, s.Station, s.PumpingStation, s.Water, s.Wastewater)
 	if s.GoogleApi != nil {
 		s.GoogleApi.SetEmailService(s.Email)
@@ -147,7 +148,7 @@ func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log log
 
 	s.Query = query.NewService(db.DB)
 	s.StationData = stationdata.NewService(s.Station, s.Water, s.Rain)
-	s.Gemini, _ = gemini.NewService(cfg.GeminiAPIKey, cfg.GeminiAPIKeyContract, s.Water, s.Rain, s.GoogleApi, s.Inundation, s.Query, s.StationData, s.EmConstruction, s.Contract, s.Station, s.PumpingStation, s.Weather, s.Wastewater, repos.AiUsage, repos.AiChatLog, repos.User)
+	s.Gemini, _ = gemini.NewService(cfg.GeminiAPIKey, cfg.GeminiAPIKeyContract, s.Water, s.Rain, s.GoogleApi, s.Inundation, s.Query, s.StationData, s.EmConstruction, s.Contract, s.Station, s.PumpingStation, s.Weather, s.Wastewater, s.SluiceGate, repos.AiUsage, repos.AiChatLog, repos.User)
 	if s.GoogleApi != nil && s.Gemini != nil {
 		s.GoogleApi.SetGeminiService(s.Gemini)
 	}
@@ -157,7 +158,7 @@ func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log log
 	if s.Gemini != nil {
 		targetWeatherSvc := s.Gemini
 		if cfg.GeminiAPIKeyWeather != "" {
-			weatherGeminiSvc, err := gemini.NewService(cfg.GeminiAPIKeyWeather, cfg.GeminiAPIKeyWeather, s.Water, s.Rain, s.GoogleApi, s.Inundation, s.Query, s.StationData, s.EmConstruction, s.Contract, s.Station, s.PumpingStation, s.Weather, s.Wastewater, repos.AiUsage, repos.AiChatLog, repos.User)
+			weatherGeminiSvc, err := gemini.NewService(cfg.GeminiAPIKeyWeather, cfg.GeminiAPIKeyWeather, s.Water, s.Rain, s.GoogleApi, s.Inundation, s.Query, s.StationData, s.EmConstruction, s.Contract, s.Station, s.PumpingStation, s.Weather, s.Wastewater, s.SluiceGate, repos.AiUsage, repos.AiChatLog, repos.User)
 			if err == nil {
 				targetWeatherSvc = weatherGeminiSvc
 			}
@@ -175,9 +176,6 @@ func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log log
 			})
 		}
 	}
-
-	s.SluiceGate = sluice_gate.NewService(repos.SluiceGate)
-
 	return s
 }
 

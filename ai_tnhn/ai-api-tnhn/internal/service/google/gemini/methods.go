@@ -6,6 +6,7 @@ import (
 	"ai-api-tnhn/internal/service/google/gemini/promt"
 	"ai-api-tnhn/internal/service/google/googleapi"
 	pumpingstation "ai-api-tnhn/internal/service/station/pumping_station"
+	"ai-api-tnhn/internal/service/station/sluice_gate"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -101,6 +102,8 @@ func (s *service) Chat(ctx context.Context, prompt string, history []googleapi.C
 										}
 									}
 								}
+							case "sluice_gates":
+								tables["sluice_gates"] = s.transformSluiceGates(res)
 							case "water_summary":
 								if wsd, ok := res.(*water.WaterSummaryData); ok {
 									tables["lakes"] = wsd.LakeStations
@@ -165,6 +168,8 @@ func (s *service) getToolKey(c *genai.FunctionCall, res interface{}) string {
 		return "inundations"
 	case "get_live_pumping_summary":
 		return "pumping_summary" // special case handled above
+	case "get_live_sluice_gate_summary":
+		return "sluice_gates"
 	case "get_weather_forecast":
 		return "weather_forecasts"
 	case "list_stations", "list_stations_by_type":
@@ -215,6 +220,35 @@ func (s *service) transformPumpingStations(raw interface{}) interface{} {
 				TongSoBom:  st.PumpCount,
 				CapNhat:    st.LastUpdate,
 				Priority:   st.Priority,
+			})
+		}
+		return rows
+	}
+	return raw
+}
+
+func (s *service) transformSluiceGates(raw interface{}) interface{} {
+	type gateRow struct {
+		Ten       string `json:"Tên cửa phai"`
+		Mo        int    `json:"Mở"`
+		Dong      int    `json:"Đóng"`
+		TongSoCua int    `json:"Tổng số cửa"`
+		CapNhat   string `json:"Cập nhật"`
+		Note      string `json:"Ghi chú"`
+		Priority  int    `json:"priority"`
+	}
+
+	if summary, ok := raw.(*sluice_gate.SluiceGateSummaryData); ok && summary != nil {
+		var rows []gateRow
+		for _, st := range summary.Gates {
+			rows = append(rows, gateRow{
+				Ten:       st.Name,
+				Mo:        st.OpenCount,
+				Dong:      st.ClosedCount,
+				TongSoCua: st.Quantity,
+				CapNhat:   st.LastUpdate,
+				Note:      st.Note,
+				Priority:  st.Priority,
 			})
 		}
 		return rows

@@ -6,14 +6,19 @@ import (
 )
 
 type AppSetting struct {
-	model.BaseModel `bson:",inline"`
-	Code            string       `json:"code" bson:"code"` // FloodLevel, etc.
-	FloodLevels     []FloodLevel `json:"flood_levels,omitempty" bson:"flood_levels,omitempty"`
-	RainSetting     *RainSetting `json:"rain_setting,omitempty" bson:"rain_setting,omitempty"`
+	model.BaseModel    `bson:",inline"`
+	Code               string              `json:"code" bson:"code"` // FloodLevel, etc.
+	FloodLevels        []FloodLevel        `json:"flood_levels,omitempty" bson:"flood_levels,omitempty"`
+	RainSetting        *RainSetting        `json:"rain_setting,omitempty" bson:"rain_setting,omitempty"`
+	WaterSourceSetting *WaterSourceSetting `json:"water_source_setting,omitempty" bson:"water_source_setting,omitempty"`
 }
 
 type RainSetting struct {
 	SessionID string `json:"session_id" bson:"session_id"`
+}
+
+type WaterSourceSetting struct {
+	Source string `json:"source" bson:"source" example:"api"` // api or db
 }
 
 type FloodLevel struct {

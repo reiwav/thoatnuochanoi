@@ -42,6 +42,7 @@ const SluiceGatePage = Loadable(lazy(() => import('views/admin/sluice-gate')));
 const EmployeeSluiceGatePage = Loadable(lazy(() => import('views/employee/sluice-gate')));
 const FloodLevelSetting = Loadable(lazy(() => import('views/admin/setting/FloodLevelSetting')));
 const RainSetting = Loadable(lazy(() => import('views/admin/setting/RainSetting')));
+const SystemSetting = Loadable(lazy(() => import('views/admin/setting/SystemSetting')));
 const WastewaterTreatmentPage = Loadable(lazy(() => import('views/admin/wastewater-treatment')));
 const EmployeeWastewaterPage = Loadable(lazy(() => import('views/employee/wastewater')));
 const EmployeeWaterPage = Loadable(lazy(() => import('views/employee/water')));
@@ -96,7 +97,8 @@ const MainRoutes = {
         { path: 'role-matrix', element: <RoleMatrixPage /> },
         { path: 'role', element: <RoleListPage /> },
         { path: 'setting/flood-levels', element: <FloodLevelSetting /> },
-        { path: 'setting/rain', element: <RainSetting /> }
+        { path: 'setting/rain', element: <RainSetting /> },
+        { path: 'setting/system', element: <SystemSetting /> }
       ]
     },
     {

@@ -117,7 +117,7 @@ func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log log
 	s.RainWorker = rainWorker
 	rainWorker.Start(context.Background())
 
-	s.Weather = weather.NewService(repos.HistoricalRain, s.Station, thoatnuocSvc, forecastSvc)
+	s.Weather = weather.NewService(repos.HistoricalRain, s.Station, thoatnuocSvc, forecastSvc, s.Setting)
 	s.Water = water.NewService(log, repos.Lake, repos.River, s.Station, s.Weather)
 	s.Email = email.NewService(cfg.EmailConfig)
 	s.Inundation = inundation.NewService(repos.InundationReport, repos.InundationHistory, repos.InundationStation, repos.Organization, repos.User, s.Drive, s.Setting)

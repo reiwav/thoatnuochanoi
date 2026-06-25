@@ -15,6 +15,98 @@ func (s *service) GetRawRainData(ctx context.Context) (*RainDataResponse, error)
 }
 
 func (s *service) GetRawWaterData(ctx context.Context) (*WaterDataResponse, error) {
+	source := "api" // default
+	if s.settingSvc != nil {
+		setting, err := s.settingSvc.GetWaterSourceSetting(ctx)
+		if err == nil && setting != nil {
+			source = setting.Source
+		}
+	}
+
+	if source == "db" {
+		lakeStations, err := s.stationSvc.GetAllLakeStations(ctx)
+		if err != nil {
+			return nil, err
+		}
+		riverStations, err := s.stationSvc.GetAllRiverStations(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		resp := &WaterDataResponse{}
+		resp.Code = 200
+
+		// Add lake stations
+		for _, lake := range lakeStations {
+			if !lake.Active || lake.OldID <= 0 {
+				continue
+			}
+			resp.Content.Tram = append(resp.Content.Tram, struct {
+				Id          string `json:"Id"`
+				TenTram     string `json:"TenTram"`
+				TenTramHTML string `json:"TenTramHTML"`
+				Loai        string `json:"Loai"`
+				ThuTu       int    `json:"ThuTu"`
+			}{
+				Id:      fmt.Sprintf("%d", lake.OldID),
+				TenTram: lake.TenTram,
+				Loai:    "2",
+				ThuTu:   lake.ThuTu,
+			})
+
+			if lake.LatestRecord != nil {
+				timeStr := lake.LatestRecord.Timestamp.Format("2006-01-02 15:04:05")
+				resp.Content.Data = append(resp.Content.Data, struct {
+					TramId       string  `json:"TramId"`
+					ThuongLuu_HT float64 `json:"ThuongLuu_HT"`
+					ThoiGian_HT  string  `json:"ThoiGian_HT"`
+					Loai         int     `json:"Loai"`
+				}{
+					TramId:       fmt.Sprintf("%d", lake.OldID),
+					ThuongLuu_HT: lake.LatestRecord.Value,
+					ThoiGian_HT:  timeStr,
+					Loai:         2,
+				})
+			}
+		}
+
+		// Add river stations
+		for _, river := range riverStations {
+			if !river.Active || river.OldID <= 0 {
+				continue
+			}
+			resp.Content.Tram = append(resp.Content.Tram, struct {
+				Id          string `json:"Id"`
+				TenTram     string `json:"TenTram"`
+				TenTramHTML string `json:"TenTramHTML"`
+				Loai        string `json:"Loai"`
+				ThuTu       int    `json:"ThuTu"`
+			}{
+				Id:      fmt.Sprintf("%d", river.OldID),
+				TenTram: river.TenTram,
+				Loai:    "1",
+				ThuTu:   river.ThuTu,
+			})
+
+			if river.LatestRecord != nil {
+				timeStr := river.LatestRecord.Timestamp.Format("2006-01-02 15:04:05")
+				resp.Content.Data = append(resp.Content.Data, struct {
+					TramId       string  `json:"TramId"`
+					ThuongLuu_HT float64 `json:"ThuongLuu_HT"`
+					ThoiGian_HT  string  `json:"ThoiGian_HT"`
+					Loai         int     `json:"Loai"`
+				}{
+					TramId:       fmt.Sprintf("%d", river.OldID),
+					ThuongLuu_HT: river.LatestRecord.Value,
+					ThoiGian_HT:  timeStr,
+					Loai:         1,
+				})
+			}
+		}
+
+		return resp, nil
+	}
+
 	return s.thoatnuocSvc.GetRawWaterData(ctx)
 }
 

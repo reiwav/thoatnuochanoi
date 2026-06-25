@@ -15,6 +15,8 @@ type Service interface {
 	GetRainSetting(ctx context.Context) (*models.RainSetting, error)
 	UpdateRainSetting(ctx context.Context, rainSetting *models.RainSetting) error
 	GetByCode(ctx context.Context, code string) (*models.AppSetting, error)
+	GetWaterSourceSetting(ctx context.Context) (*models.WaterSourceSetting, error)
+	UpdateWaterSourceSetting(ctx context.Context, waterSourceSetting *models.WaterSourceSetting) error
 }
 
 type cacheItem struct {

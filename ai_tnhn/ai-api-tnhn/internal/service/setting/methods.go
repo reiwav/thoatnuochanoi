@@ -108,3 +108,37 @@ func (s *service) UpdateRainSetting(ctx context.Context, rainSetting *models.Rai
 
 	return nil
 }
+
+func (s *service) GetWaterSourceSetting(ctx context.Context) (*models.WaterSourceSetting, error) {
+	setting, err := s.GetByCode(ctx, "WaterSourceSetting")
+	if err != nil {
+		return nil, err
+	}
+	if setting.WaterSourceSetting == nil {
+		return &models.WaterSourceSetting{Source: "api"}, nil
+	}
+	return setting.WaterSourceSetting, nil
+}
+
+func (s *service) UpdateWaterSourceSetting(ctx context.Context, waterSourceSetting *models.WaterSourceSetting) error {
+	setting, err := s.repo.GetByCode(ctx, "WaterSourceSetting")
+	if err != nil {
+		return err
+	}
+	setting.Code = "WaterSourceSetting"
+	setting.WaterSourceSetting = waterSourceSetting
+	err = s.repo.Save(ctx, setting)
+	if err != nil {
+		return err
+	}
+
+	// Update cache directly with new settings and refresh TTL
+	s.mu.Lock()
+	s.cache["WaterSourceSetting"] = &cacheItem{
+		setting:   setting,
+		expiredAt: time.Now().Add(s.cacheTTL),
+	}
+	s.mu.Unlock()
+
+	return nil
+}

@@ -233,3 +233,59 @@ func (h *SettingHandler) AutoGetRainSession(c *gin.Context) {
 		"session_id": sessionID,
 	})
 }
+
+// GetWaterSourceSetting godoc
+// @Summary Lấy cấu hình nguồn dữ liệu sông hồ
+// @Description Lấy thông tin nguồn dữ liệu hiện tại (api hoặc db)
+// @Tags Cấu hình
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} models.WaterSourceSetting
+// @Router /admin/settings/water-source [get]
+func (h *SettingHandler) GetWaterSourceSetting(c *gin.Context) {
+	setting, err := h.service.GetWaterSourceSetting(c.Request.Context())
+	if err != nil {
+		h.SendError(c, err)
+		return
+	}
+
+	h.SendData(c, setting)
+}
+
+// UpdateWaterSourceSetting godoc
+// @Summary Cập nhật cấu hình nguồn dữ liệu sông hồ
+// @Description Cập nhật nguồn dữ liệu mực nước sông hồ hiện tại (api hoặc db)
+// @Tags Cấu hình
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param setting body models.WaterSourceSetting true "Cấu hình nguồn dữ liệu"
+// @Success 200 {boolean} bool
+// @Router /admin/settings/water-source [put]
+func (h *SettingHandler) UpdateWaterSourceSetting(c *gin.Context) {
+	isAdmin, _ := h.checkAdmin(c)
+	if !isAdmin {
+		h.SendError(c, web.Unauthorized("Bạn không có quyền thực hiện"))
+		return
+	}
+
+	var req models.WaterSourceSetting
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.SendError(c, web.BadRequest("Invalid request data: "+err.Error()))
+		return
+	}
+
+	// Validate source values
+	if req.Source != "api" && req.Source != "db" {
+		h.SendError(c, web.BadRequest("Invalid source type: must be 'api' or 'db'"))
+		return
+	}
+
+	err := h.service.UpdateWaterSourceSetting(c.Request.Context(), &req)
+	if err != nil {
+		h.SendError(c, err)
+		return
+	}
+
+	h.SendData(c, true)
+}

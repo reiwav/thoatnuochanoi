@@ -1267,6 +1267,13 @@ definitions:
         example: Nguyễn Văn A
         type: string
     type: object
+  models.WaterSourceSetting:
+    properties:
+      source:
+        description: api or db
+        example: api
+        type: string
+    type: object
   wastewater_treatment.SubmitReportRequest:
     properties:
       note:
@@ -3246,6 +3253,44 @@ paths:
       security:
       - BearerAuth: []
       summary: Đồng bộ dữ liệu các trạm mưa thủ công
+      tags:
+      - Cấu hình
+  /admin/settings/water-source:
+    get:
+      description: Lấy thông tin nguồn dữ liệu hiện tại (api hoặc db)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.WaterSourceSetting'
+      security:
+      - BearerAuth: []
+      summary: Lấy cấu hình nguồn dữ liệu sông hồ
+      tags:
+      - Cấu hình
+    put:
+      consumes:
+      - application/json
+      description: Cập nhật nguồn dữ liệu mực nước sông hồ hiện tại (api hoặc db)
+      parameters:
+      - description: Cấu hình nguồn dữ liệu
+        in: body
+        name: setting
+        required: true
+        schema:
+          $ref: '#/definitions/models.WaterSourceSetting'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: boolean
+      security:
+      - BearerAuth: []
+      summary: Cập nhật cấu hình nguồn dữ liệu sông hồ
       tags:
       - Cấu hình
   /admin/stations/lake:

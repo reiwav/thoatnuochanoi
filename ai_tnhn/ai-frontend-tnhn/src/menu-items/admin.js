@@ -1,13 +1,13 @@
 import {
   IconFaceId, IconUser, IconCloudRain, IconRipple, IconTable, IconChartBar,
   IconDroplets, IconMapPin, IconBuilding, IconUsers, IconList, IconHistory, IconAlertTriangle, IconMessageChatbot, IconClipboardList,
-  IconDoor, IconEngine, IconMap, IconTornado, IconClipboardCheck
+  IconDoor, IconEngine, IconMap, IconTornado, IconClipboardCheck, IconSettings
 } from '@tabler/icons-react';
 
 const icons = {
   IconFaceId, IconUser, IconCloudRain, IconRipple, IconTable, IconChartBar,
   IconDroplets, IconMapPin, IconBuilding, IconUsers, IconList, IconHistory, IconAlertTriangle, IconMessageChatbot, IconClipboardList,
-  IconDoor, IconEngine, IconMap, IconTornado, IconClipboardCheck
+  IconDoor, IconEngine, IconMap, IconTornado, IconClipboardCheck, IconSettings
 };
 
 const adminPages = {
@@ -362,6 +362,15 @@ const adminPages = {
           type: 'item',
           url: '/admin/setting/rain',
           icon: icons.IconCloudRain,
+          breadcrumbs: false
+        },
+        {
+          id: 'setting:system',
+          permission: 'settings:view',
+          title: 'Cấu hình hệ thống',
+          type: 'item',
+          url: '/admin/setting/system',
+          icon: icons.IconSettings,
           breadcrumbs: false
         },
       ]

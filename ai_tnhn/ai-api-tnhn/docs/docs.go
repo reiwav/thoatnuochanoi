@@ -3310,6 +3310,68 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/settings/water-source": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Lấy thông tin nguồn dữ liệu hiện tại (api hoặc db)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Cấu hình"
+                ],
+                "summary": "Lấy cấu hình nguồn dữ liệu sông hồ",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.WaterSourceSetting"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Cập nhật nguồn dữ liệu mực nước sông hồ hiện tại (api hoặc db)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Cấu hình"
+                ],
+                "summary": "Cập nhật cấu hình nguồn dữ liệu sông hồ",
+                "parameters": [
+                    {
+                        "description": "Cấu hình nguồn dữ liệu",
+                        "name": "setting",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.WaterSourceSetting"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/stations/lake": {
             "get": {
                 "security": [
@@ -9322,6 +9384,16 @@ const docTemplate = `{
                 "user_name": {
                     "type": "string",
                     "example": "Nguyễn Văn A"
+                }
+            }
+        },
+        "models.WaterSourceSetting": {
+            "type": "object",
+            "properties": {
+                "source": {
+                    "description": "api or db",
+                    "type": "string",
+                    "example": "api"
                 }
             }
         },

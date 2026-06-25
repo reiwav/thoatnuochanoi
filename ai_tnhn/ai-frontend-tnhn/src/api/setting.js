@@ -15,6 +15,12 @@ const settingApi = {
     },
     autoGetRainSession: () => {
         return axiosClient.post('/admin/settings/rain/auto-session');
+    },
+    getWaterSourceSetting: () => {
+        return axiosClient.get('/admin/settings/water-source');
+    },
+    updateWaterSourceSetting: (data) => {
+        return axiosClient.put('/admin/settings/water-source', data);
     }
 };
 

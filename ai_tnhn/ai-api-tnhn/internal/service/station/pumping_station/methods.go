@@ -205,7 +205,13 @@ func (s *service) GetPumpingStationSummary(ctx context.Context, orgID string, as
 	})
 	summaryText := "Hiện tại không ghi nhận trạm bơm nào đang vận hành."
 	if totalOperatingStations > 0 {
-		summaryText = fmt.Sprintf("Hiện tại có %d trạm bơm đang vận hành để đảm bảo công tác thoát nước.", totalOperatingStations)
+		var operatingNames []string
+		for _, st := range stationStats {
+			if st.OperatingCount > 0 {
+				operatingNames = append(operatingNames, st.Name)
+			}
+		}
+		summaryText = fmt.Sprintf("Hiện tại có %d trạm bơm đang vận hành để đảm bảo công tác thoát nước (gồm: %s).", totalOperatingStations, strings.Join(operatingNames, ", "))
 	}
 
 	summaryPriorityText := "Hiện tại không ghi nhận trạm bơm nào đang vận hành."

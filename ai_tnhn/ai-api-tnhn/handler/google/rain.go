@@ -4,6 +4,7 @@ import (
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/service/google/googleapi"
 	"ai-api-tnhn/internal/service/weather"
+	"ai-api-tnhn/internal/utils"
 	"ai-api-tnhn/utils/web"
 	"encoding/json"
 	"fmt"
@@ -124,31 +125,13 @@ func (h *handler) formatRainSummaryHeader(summary *weather.RainSummaryData) stri
 // buildRainTableRows converts summary measurements to structured RainTableRow slice
 func (h *handler) buildRainTableRows(summary *weather.RainSummaryData) []googleapi.RainTableRow {
 	var rows []googleapi.RainTableRow
+	rainDate := utils.CurrentRainDate()
+
 	for i, m := range summary.Measurements {
-		statusStr := "✅ Đã tạnh"
-		if m.IsRaining {
-			statusStr = "🌧️ Đang mưa"
-		}
-		timeStr := ""
-		if m.StartTime != "" && m.EndTime != "" {
-			timeStr = fmt.Sprintf("%s - %s", m.StartTime, m.EndTime)
-		} else if m.EndTime != "" {
-			timeStr = m.EndTime
-		}
-		rows = append(rows, googleapi.RainTableRow{
-			STT:       i + 1,
-			Tram:      m.Name,
-			DiaChi:    m.Address,
-			LuongMua:  fmt.Sprintf("%.1fmm", m.TotalRain),
-			ThoiGian:  timeStr,
-			TrangThai: statusStr,
-			Type:      m.Type,
-			Priority:  m.Priority,
-			TotalRain: m.TotalRain,
-			ID:        m.ID,
-			OldID:     m.OldID,
-			IsRaining: m.IsRaining,
-		})
+		rows = append(rows, googleapi.NewRainTableRow(
+			i+1, m.ID, m.OldID, m.Name, m.Address, m.Type, m.Priority,
+			m.TotalRain, m.IsRaining, m.StartTime, m.EndTime, rainDate,
+		))
 	}
 	return rows
 }

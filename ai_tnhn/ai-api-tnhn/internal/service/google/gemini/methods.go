@@ -7,6 +7,7 @@ import (
 	"ai-api-tnhn/internal/service/google/googleapi"
 	pumpingstation "ai-api-tnhn/internal/service/station/pumping_station"
 	"ai-api-tnhn/internal/service/station/sluice_gate"
+	"ai-api-tnhn/internal/utils"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -113,7 +114,16 @@ func (s *service) Chat(ctx context.Context, prompt string, history []googleapi.C
 								}
 							case "rains":
 								if rsd, ok := res.(*weather.RainSummaryData); ok {
-									tables["rains"] = rsd.Measurements
+									rainDate := utils.CurrentRainDate()
+
+									var rows []googleapi.RainTableRow
+									for i, m := range rsd.Measurements {
+										rows = append(rows, googleapi.NewRainTableRow(
+											i+1, m.ID, m.OldID, m.Name, m.Address, m.Type, m.Priority,
+											m.TotalRain, m.IsRaining, m.StartTime, m.EndTime, rainDate,
+										))
+									}
+									tables["rains"] = rows
 								} else {
 									tables["rains"] = res
 								}

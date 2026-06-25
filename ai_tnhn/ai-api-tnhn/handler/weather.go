@@ -5,6 +5,7 @@ import (
 	"ai-api-tnhn/internal/repository"
 	"ai-api-tnhn/internal/service/google/googleapi"
 	"ai-api-tnhn/internal/service/weather"
+	"ai-api-tnhn/internal/utils"
 	"ai-api-tnhn/utils/web"
 	"context"
 	"encoding/json"
@@ -52,10 +53,11 @@ func (h *WeatherHandler) GetRainSummary(c *gin.Context) {
 		return
 	}
 
-	today := time.Now().Format("2006-01-02")
+	rainDate := utils.CurrentRainDate()
+
 	items := []googleapi.RainTableRow{}
 	for i, m := range summary.Measurements {
-		items = append(items, googleapi.NewRainTableRow(i+1, m.ID, m.OldID, m.Name, m.Address, m.Type, m.Priority, m.TotalRain, m.IsRaining, m.StartTime, m.EndTime, today))
+		items = append(items, googleapi.NewRainTableRow(i+1, m.ID, m.OldID, m.Name, m.Address, m.Type, m.Priority, m.TotalRain, m.IsRaining, m.StartTime, m.EndTime, rainDate))
 	}
 
 	if h.aiChatLogRepo != nil && h.contextWith != nil {

@@ -37,3 +37,18 @@ func ParseTime(s string) (time.Time, error) {
 	}
 	return time.Time{}, web.BadRequest("unable to parse time: " + s)
 }
+
+// GetRainDate returns the rain day date string (YYYY-MM-DD) for a given time based on the 7 AM cutoff.
+func GetRainDate(t time.Time) string {
+	tLocal := t.In(VietnamTZ)
+	cutoff := time.Date(tLocal.Year(), tLocal.Month(), tLocal.Day(), 7, 0, 0, 0, VietnamTZ)
+	if tLocal.Before(cutoff) {
+		return tLocal.AddDate(0, 0, -1).Format("2006-01-02")
+	}
+	return tLocal.Format("2006-01-02")
+}
+
+// CurrentRainDate returns the current active rain day date string (YYYY-MM-DD).
+func CurrentRainDate() string {
+	return GetRainDate(time.Now())
+}

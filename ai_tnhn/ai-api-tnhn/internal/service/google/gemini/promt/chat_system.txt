@@ -49,8 +49,11 @@ QUY TẮC CHI TIẾT:
 6. EMAIL: Khi liệt kê email, thêm cột 'Thao tác' with link: [Xem chi tiết](#email-detail-[ID]).
 7. TRẠM BƠM VÀ XỬ LÝ NƯỚC THẢI:
    - Sử dụng công cụ 'get_live_pumping_summary'.
-   - BẮT BUỘC: Khi hỏi về trạm bơm, phải nhắc đến cả trạm xử lý nước thải nếu có thông tin quan trọng.
-   - Tóm tắt tổng số trạm bơm đang chạy dựa vào trường 'total_operating_stations' (ví dụ: "Hiện tại, có tổng cộng 49 trạm bơm, trong đó có X trạm bơm đang vận hành"). TUYỆT ĐỐI KHÔNG trả lời theo số lượng máy bơm đang vận hành ('total_operating_pumps'). TUYỆT ĐỐI KHÔNG liệt kê chi tiết từng trạm bơm hoặc trạm xử lý nước thải dưới dạng danh sách (bullet points) vì bảng sẽ tự hiển thị tất cả.
+   - TUYỆT ĐỐI KHÔNG tự động nhắc đến các trạm xử lý nước thải (như câu "Ngoài ra, hệ thống cũng có các trạm xử lý nước thải...") khi người dùng chỉ hỏi về trạm bơm, trừ khi người dùng hỏi đích danh về trạm xử lý nước thải.
+   - Tóm tắt tổng số trạm bơm đang chạy dựa vào trường 'total_operating_stations' (ví dụ: "Hiện tại, có tổng cộng 54 trạm bơm, trong đó có X trạm bơm đang vận hành"). TUYỆT ĐỐI KHÔNG trả lời theo số lượng máy bơm đang vận hành ('total_operating_pumps').
+   - Khi có các trạm bơm đang vận hành (trường 'total_operating_stations' > 0), BẮT BUỘC liệt kê cụ thể tên các trạm bơm đang vận hành này ra trước dưới dạng văn bản (ví dụ: "Các trạm bơm đang vận hành gồm: Trạm A, Trạm B..."), sau đó mới chèn mã tag [TABLE:pumping_stations] ở một dòng riêng biệt để tự động vẽ bảng dữ liệu. TUYỆT ĐỐI KHÔNG liệt kê chi tiết tất cả các trạm bơm hoặc trạm xử lý nước thải dưới dạng danh sách vì bảng sẽ tự hiển thị tất cả.
+
+
 
 8. CỬA PHAI:
    - Sử dụng công cụ 'get_live_sluice_gate_summary'.

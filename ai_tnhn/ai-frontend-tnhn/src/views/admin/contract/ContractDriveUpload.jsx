@@ -2,6 +2,19 @@ import { Box, Typography, Button, Stack, IconButton, CircularProgress } from '@m
 import { IconBrandGoogleDrive, IconExternalLink, IconTrash, IconUpload } from '@tabler/icons-react';
 import contractApi from 'api/contract';
 import { toast } from 'react-hot-toast';
+import dayjs from 'dayjs';
+
+const formatSaveData = (vals) => {
+    return {
+        ...vals,
+        stages: vals.stages ? vals.stages.map(s => ({
+            ...s,
+            date: s.date ? dayjs(s.date).toISOString() : null
+        })) : [],
+        start_date: vals.start_date ? dayjs(vals.start_date).toISOString() : null,
+        end_date: vals.end_date ? dayjs(vals.end_date).toISOString() : null,
+    };
+};
 
 const getFileUrl = (file) => {
     if (!file) return '#';
@@ -71,10 +84,20 @@ const ContractDriveUpload = ({ values, setValues, uploading, setUploading }) => 
                                         try {
                                             await contractApi.deleteFile(file.id);
                                             toast.success('Đã xoá tệp');
+                                            const updatedFiles = values.files.filter((_, i) => i !== idx);
                                             setValues(prev => ({
                                                 ...prev,
-                                                files: prev.files.filter((_, i) => i !== idx)
+                                                files: updatedFiles
                                             }));
+                                            
+                                            // Auto-save if in edit mode
+                                            if (values.id) {
+                                                const updatedValues = {
+                                                    ...values,
+                                                    files: updatedFiles
+                                                };
+                                                await contractApi.update(values.id, formatSaveData(updatedValues));
+                                            }
                                         } catch (err) {
                                             toast.error('Lỗi khi xoá tệp');
                                         }
@@ -138,10 +161,22 @@ const ContractDriveUpload = ({ values, setValues, uploading, setUploading }) => 
                                 
                                 if (newUploadedFiles.length > 0) {
                                     toast.success(`Đã tải lên ${newUploadedFiles.length} tệp thành công`);
+                                    const updatedFiles = [...(values.files || []), ...newUploadedFiles];
                                     setValues(prev => ({
                                         ...prev,
-                                        files: [...(prev.files || []), ...newUploadedFiles]
+                                        files: updatedFiles
                                     }));
+                                    
+                                    // Auto-save if in edit mode
+                                    if (values.id) {
+                                        const updatedValues = {
+                                            ...values,
+                                            files: updatedFiles,
+                                            drive_folder_id: currentFolderId,
+                                            drive_folder_link: currentFolderLink
+                                        };
+                                        await contractApi.update(values.id, formatSaveData(updatedValues));
+                                    }
                                 }
                             } catch (err) {
                                 console.error(err);

@@ -95,7 +95,6 @@ const ContractRow = ({
                     <Collapse in={open} timeout="auto" unmountOnExit>
                         <ContractExpandedDetails
                             row={row}
-                            appendices={appendices}
                             formatPrice={formatPrice}
                             getTotalPrice={getTotalPrice}
                         />

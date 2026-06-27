@@ -6,6 +6,7 @@ import dayjs from 'dayjs';
 
 export const useContractDialog = ({ open, onClose, onSubmit, contract, isEdit }) => {
     const [values, setValues] = useState({
+        id: '',
         name: '',
         contract_number: '',
         investor_name: '',
@@ -44,10 +45,16 @@ export const useContractDialog = ({ open, onClose, onSubmit, contract, isEdit })
         try {
             const res = await contractApi.getById(contract.id);
             if (res && res.id) {
-                const refreshedFiles = res.files || [];
                 setValues(prev => ({
                     ...prev,
-                    files: refreshedFiles
+                    files: res.files || [],
+                    stages: res.stages ? res.stages.map(s => ({
+                        ...s,
+                        date: s.date ? dayjs(s.date) : null,
+                        acceptance_records: s.acceptance_records || [],
+                        payment_records: s.payment_records || [],
+                        appendices: s.appendices || []
+                    })) : prev.stages
                 }));
             }
         } catch (err) {
@@ -60,6 +67,7 @@ export const useContractDialog = ({ open, onClose, onSubmit, contract, isEdit })
             loadCategories();
             if (isEdit && contract) {
                 setValues({
+                    id: contract.id || '',
                     name: contract.name || '',
                     contract_number: contract.contract_number || '',
                     investor_name: contract.investor_name || '',
@@ -83,6 +91,7 @@ export const useContractDialog = ({ open, onClose, onSubmit, contract, isEdit })
                 });
             } else {
                 setValues({
+                    id: '',
                     name: '',
                     contract_number: '',
                     investor_name: '',
@@ -105,10 +114,20 @@ export const useContractDialog = ({ open, onClose, onSubmit, contract, isEdit })
     useEffect(() => {
         let intervalId = null;
         
-        const hasLocalFiles = values.files && values.files.some(file => 
+        const hasLocalFiles = (values.files && values.files.some(file => 
             (file.id && file.id.startsWith('local:')) || 
             (file.link && (file.link.startsWith('/') || file.link.startsWith('local:')))
-        );
+        )) || (values.stages && values.stages.some(stage => 
+            (stage.appendices && stage.appendices.some(app => 
+                app.files && app.files.some(f => f.id && f.id.startsWith('local:'))
+            )) ||
+            (stage.acceptance_records && stage.acceptance_records.some(rec => 
+                rec.scan_files && rec.scan_files.some(link => link.startsWith('local:'))
+            )) ||
+            (stage.payment_records && stage.payment_records.some(rec => 
+                rec.scan_files && rec.scan_files.some(link => link.startsWith('local:'))
+            ))
+        ));
         
         if (open && isEdit && contract?.id && hasLocalFiles) {
             intervalId = setInterval(() => {
@@ -121,7 +140,7 @@ export const useContractDialog = ({ open, onClose, onSubmit, contract, isEdit })
                 clearInterval(intervalId);
             }
         };
-    }, [open, isEdit, contract?.id, values.files]);
+    }, [open, isEdit, contract?.id, values.files, values.stages]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;

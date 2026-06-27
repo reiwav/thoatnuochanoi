@@ -4,6 +4,19 @@ import contractApi from 'api/contract';
 import { toast } from 'react-hot-toast';
 import StageExplorer from './components/StageExplorer';
 import StageWorkspace from './components/StageWorkspace';
+import dayjs from 'dayjs';
+
+const formatSaveData = (vals) => {
+    return {
+        ...vals,
+        stages: vals.stages ? vals.stages.map(s => ({
+            ...s,
+            date: s.date ? dayjs(s.date).toISOString() : null
+        })) : [],
+        start_date: vals.start_date ? dayjs(vals.start_date).toISOString() : null,
+        end_date: vals.end_date ? dayjs(vals.end_date).toISOString() : null,
+    };
+};
 
 const ContractStages = ({ 
     values, 
@@ -85,7 +98,19 @@ const ContractStages = ({
                     list[recordIndex].scan_files = [...(list[recordIndex].scan_files || []), ...uploadedLinks];
                     stagesList[stageIndex].payment_records = list;
                 }
+                
                 setValues(prev => ({ ...prev, stages: stagesList }));
+
+                // Auto-save if in edit mode
+                if (values.id) {
+                    const updatedValues = {
+                        ...values,
+                        stages: stagesList,
+                        drive_folder_id: currentFolderId,
+                        drive_folder_link: currentFolderLink
+                    };
+                    await contractApi.update(values.id, formatSaveData(updatedValues));
+                }
             }
         } catch (err) {
             console.error(err);
@@ -96,7 +121,7 @@ const ContractStages = ({
         }
     };
 
-    const handleRemoveRecordFile = (stageIndex, recordType, recordIndex, fileIndex) => {
+    const handleRemoveRecordFile = async (stageIndex, recordType, recordIndex, fileIndex) => {
         const stagesList = [...values.stages];
         if (recordType === 'acceptance') {
             const list = [...(stagesList[stageIndex].acceptance_records || [])];
@@ -108,6 +133,20 @@ const ContractStages = ({
             stagesList[stageIndex].payment_records = list;
         }
         setValues({ ...values, stages: stagesList });
+
+        // Auto-save if in edit mode
+        if (values.id) {
+            try {
+                const updatedValues = {
+                    ...values,
+                    stages: stagesList
+                };
+                await contractApi.update(values.id, formatSaveData(updatedValues));
+            } catch (err) {
+                console.error(err);
+                toast.error('Lỗi khi cập nhật danh sách tệp');
+            }
+        }
     };
 
     const handleAppendixFileUpload = async (e, stageIndex, appendixIndex) => {
@@ -158,6 +197,17 @@ const ContractStages = ({
                 list[appendixIndex].files = [...(list[appendixIndex].files || []), ...newUploadedFiles];
                 stagesList[stageIndex].appendices = list;
                 setValues(prev => ({ ...prev, stages: stagesList }));
+
+                // Auto-save if in edit mode
+                if (values.id) {
+                    const updatedValues = {
+                        ...values,
+                        stages: stagesList,
+                        drive_folder_id: currentFolderId,
+                        drive_folder_link: currentFolderLink
+                    };
+                    await contractApi.update(values.id, formatSaveData(updatedValues));
+                }
             }
         } catch (err) {
             console.error(err);
@@ -168,12 +218,26 @@ const ContractStages = ({
         }
     };
 
-    const handleRemoveAppendixFile = (stageIndex, appendixIndex, fileIndex) => {
+    const handleRemoveAppendixFile = async (stageIndex, appendixIndex, fileIndex) => {
         const stagesList = [...values.stages];
         const list = [...(stagesList[stageIndex].appendices || [])];
         list[appendixIndex].files = list[appendixIndex].files.filter((_, idx) => idx !== fileIndex);
         stagesList[stageIndex].appendices = list;
         setValues({ ...values, stages: stagesList });
+
+        // Auto-save if in edit mode
+        if (values.id) {
+            try {
+                const updatedValues = {
+                    ...values,
+                    stages: stagesList
+                };
+                await contractApi.update(values.id, formatSaveData(updatedValues));
+            } catch (err) {
+                console.error(err);
+                toast.error('Lỗi khi cập nhật danh sách tệp');
+            }
+        }
     };
 
     const activeStage = stages[activeStageIdx] || stages[0];

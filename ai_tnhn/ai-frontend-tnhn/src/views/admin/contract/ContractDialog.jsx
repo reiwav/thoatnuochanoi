@@ -1,19 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Dialog, DialogTitle, DialogContent, DialogActions,
-    Button, TextField, Typography, 
-    Stack, FormControl, InputLabel, Select, MenuItem, CircularProgress, Grid
+    Button, Typography, CircularProgress, Tabs, Tab, Box
 } from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { IconInfoCircle, IconTimeline } from '@tabler/icons-react';
 import ContractStages from './ContractStages';
-import ContractDriveUpload from './ContractDriveUpload';
+import ContractGeneralTab from './components/ContractGeneralTab';
 
 // Hook
 import { useContractDialog } from './hooks/useContractDialog';
 
-const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit, parentContract }) => {
+const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit }) => {
     const {
         values,
         setValues,
@@ -26,7 +25,13 @@ const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit, parentContr
         addStage,
         removeStage,
         handleSave
-    } = useContractDialog({ open, onClose, onSubmit, contract, isEdit, parentContract });
+    } = useContractDialog({ open, onClose, onSubmit, contract, isEdit });
+
+    const [tabValue, setTabValue] = useState(0);
+
+    const handleTabChange = (event, newValue) => {
+        setTabValue(newValue);
+    };
 
     return (
         <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -38,132 +43,102 @@ const ContractDialog = ({ open, onClose, onSubmit, contract, isEdit, parentContr
                 }}
                 maxWidth="lg" 
                 fullWidth
-                slotProps={{ paper: { sx: { borderRadius: '16px' } } }}
+                scroll="paper"
+                slotProps={{ 
+                    paper: { 
+                        sx: { 
+                            borderRadius: '16px', 
+                            boxShadow: '0 20px 40px -8px rgba(0, 0, 0, 0.12)',
+                            border: '1px solid rgba(226, 232, 240, 0.8)',
+                            maxHeight: '90vh'
+                        } 
+                    } 
+                }}
             >
-                <DialogTitle sx={{ p: 3, pb: 2 }}>
-                    <Typography variant="h3" component="div" sx={{ fontWeight: 700 }}>
-                        {values.parent_id ? (isEdit ? 'Chỉnh sửa phụ lục hợp đồng' : 'Thêm phụ lục hợp đồng mới') : (isEdit ? 'Chỉnh sửa hợp đồng' : 'Thêm hợp đồng mới')}
+                <DialogTitle sx={{ p: 2, pb: 0.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Typography variant="h3" component="div" sx={{ fontWeight: 800, letterSpacing: '-0.5px', color: '#1e293b' }}>
+                        {isEdit ? 'Chỉnh sửa hợp đồng' : 'Thêm hợp đồng mới'}
                     </Typography>
                 </DialogTitle>
-                <DialogContent dividers sx={{ p: 4 }}>
-                    <Grid container spacing={4}>
-                        {/* Left Column: General Info & Upload */}
-                        <Grid item xs={12} md={6}>
-                            <Stack spacing={3}>
-                                <TextField
-                                    fullWidth
-                                    label="Số hợp đồng / Phụ lục"
-                                    name="contract_number"
-                                    value={values.contract_number}
-                                    onChange={handleChange}
-                                    required
-                                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
-                                />
+                
+                {/* Top-level Navigation Tabs */}
+                <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 2 }}>
+                    <Tabs 
+                        value={tabValue} 
+                        onChange={handleTabChange} 
+                        textColor="secondary" 
+                        indicatorColor="secondary"
+                        sx={{
+                            minHeight: '40px',
+                            '& .MuiTab-root': {
+                                fontWeight: 700,
+                                textTransform: 'none',
+                                fontSize: '0.9rem',
+                                minHeight: '40px',
+                                py: 1,
+                                gap: 1,
+                                px: 0.5,
+                                mr: 2,
+                                color: '#64748b',
+                                '&.Mui-selected': {
+                                    color: '#7c4dff'
+                                }
+                            },
+                            '& .MuiTabs-indicator': {
+                                height: '3px',
+                                borderRadius: '3px',
+                                bgcolor: '#7c4dff'
+                            }
+                        }}
+                    >
+                        <Tab icon={<IconInfoCircle size={16} />} iconPosition="start" label="Thông tin chung" />
+                        <Tab icon={<IconTimeline size={16} />} iconPosition="start" label="Kế hoạch & Giai đoạn" />
+                    </Tabs>
+                </Box>
 
-                                <TextField
-                                    fullWidth
-                                    label="Tên hợp đồng"
-                                    name="name"
-                                    value={values.name}
-                                    onChange={handleChange}
-                                    required
-                                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
-                                />
+                <DialogContent dividers sx={{ p: 2, bgcolor: '#fafafa' }}>
+                    {/* Tab 0: General Info */}
+                    {tabValue === 0 && (
+                        <ContractGeneralTab
+                            values={values}
+                            setValues={setValues}
+                            categories={categories}
+                            handleChange={handleChange}
+                            uploading={uploading}
+                            setUploading={setUploading}
+                        />
+                    )}
 
-                                <FormControl fullWidth sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}>
-                                    <InputLabel>Danh mục</InputLabel>
-                                    <Select
-                                        name="category_id"
-                                        value={values.category_id}
-                                        onChange={handleChange}
-                                        label="Danh mục"
-                                        disabled={!!values.parent_id}
-                                    >
-                                        {categories.map((c) => (
-                                            <MenuItem key={c.id} value={c.id}>
-                                                {'\u00A0'.repeat(c.level * 4)}
-                                                {c.level > 0 ? '└── ' : ''}
-                                                {c.name}
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
-
-                                <TextField
-                                    fullWidth
-                                    label="Tên chủ đầu tư"
-                                    name="investor_name"
-                                    value={values.investor_name}
-                                    onChange={handleChange}
-                                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
-                                />
-
-                                <TextField
-                                    fullWidth
-                                    label="Thành viên liên danh (nếu có)"
-                                    name="jv_members"
-                                    value={values.jv_members}
-                                    onChange={handleChange}
-                                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
-                                />
-
-                                <Stack direction="row" spacing={2}>
-                                    <DatePicker
-                                        label="Ngày bắt đầu"
-                                        value={values.start_date}
-                                        onChange={(val) => setValues({ ...values, start_date: val })}
-                                        format="DD/MM/YYYY"
-                                        slotProps={{ textField: { fullWidth: true, sx: { '& .MuiOutlinedInput-root': { borderRadius: '12px' } } } }}
-                                    />
-                                    <DatePicker
-                                        label="Ngày hết hạn"
-                                        value={values.end_date}
-                                        onChange={(val) => setValues({ ...values, end_date: val })}
-                                        format="DD/MM/YYYY"
-                                        slotProps={{ textField: { fullWidth: true, sx: { '& .MuiOutlinedInput-root': { borderRadius: '12px' } } } }}
-                                    />
-                                </Stack>
-
-                                <TextField
-                                    fullWidth
-                                    label="Ghi chú"
-                                    name="note"
-                                    multiline
-                                    rows={3}
-                                    value={values.note}
-                                    onChange={handleChange}
-                                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
-                                />
-
-                                <ContractDriveUpload 
-                                    values={values} 
-                                    setValues={setValues} 
-                                    uploading={uploading} 
-                                    setUploading={setUploading} 
-                                />
-                            </Stack>
-                        </Grid>
-
-                        {/* Right Column: Stages */}
-                        <Grid item xs={12} md={6}>
-                            <ContractStages 
-                                stages={values.stages}
-                                handleStageChange={handleStageChange}
-                                addStage={addStage}
-                                removeStage={removeStage}
-                            />
-                        </Grid>
-                    </Grid>
+                    {/* Tab 1: Stages & Milestones */}
+                    {tabValue === 1 && (
+                        <ContractStages 
+                            values={values}
+                            setValues={setValues}
+                            uploading={uploading}
+                            setUploading={setUploading}
+                            stages={values.stages}
+                            handleStageChange={handleStageChange}
+                            addStage={addStage}
+                            removeStage={removeStage}
+                        />
+                    )}
                 </DialogContent>
-                <DialogActions sx={{ p: 3, pt: 1 }}>
-                    <Button onClick={onClose} color="inherit" disabled={submitting || uploading}>Hủy bỏ</Button>
+
+                <DialogActions sx={{ p: 1.5, px: 3 }}>
+                    <Button onClick={onClose} color="inherit" disabled={submitting || uploading} sx={{ textTransform: 'none', fontWeight: 600 }}>Hủy bỏ</Button>
                     <Button 
                         onClick={handleSave} 
                         variant="contained" 
                         color="secondary"
                         disabled={!values.name || submitting || uploading}
-                        startIcon={submitting ? <CircularProgress size={18} color="inherit" /> : null}
-                        sx={{ borderRadius: '10px', px: 4, fontWeight: 700 }}
+                        startIcon={submitting ? <CircularProgress size={16} color="inherit" /> : null}
+                        sx={{ 
+                            borderRadius: '8px', 
+                            px: 4, 
+                            fontWeight: 700,
+                            textTransform: 'none',
+                            boxShadow: '0 2px 8px rgba(124, 77, 255, 0.15)'
+                        }}
                     >
                         {submitting ? 'Đang lưu...' : (isEdit ? 'Cập nhật' : 'Thêm mới')}
                     </Button>

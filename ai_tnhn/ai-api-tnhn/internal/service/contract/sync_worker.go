@@ -16,6 +16,7 @@ import (
 	"ai-api-tnhn/utils"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"net/url"
 )
 
 type SyncWorker struct {
@@ -239,7 +240,7 @@ func (w *SyncWorker) uploadLocalFileToDrive(ctx context.Context, localID string,
 	// Remove local file after successful upload
 	_ = os.Remove(fullPath)
 
-	driveLink := "https://drive.google.com/open?id=" + driveID
+	driveLink := "https://drive.google.com/open?id=" + driveID + "&name=" + url.QueryEscape(fileName)
 	return driveID, driveLink, nil
 }
 

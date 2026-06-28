@@ -2,6 +2,7 @@ import React from 'react';
 import { Table, TableHead, TableBody, TableRow, TableCell, Box, Button, Stack, Menu, MenuItem, Typography } from '@mui/material';
 import { IconFileText } from '@tabler/icons-react';
 import dayjs from 'dayjs';
+import { getScanFileName } from '../utils';
 
 const StageAcceptancesTable = ({ 
     stage, 
@@ -99,7 +100,7 @@ const StageAcceptancesTable = ({
                                                      '&:hover': { bgcolor: '#dbeafe' }
                                                  }}
                                              >
-                                                 Scan #{fileIdx + 1}
+                                                 {getScanFileName(link, `Scan #${fileIdx + 1}`)}
                                              </Button>
                                          ))}
                                      </Stack>

@@ -81,7 +81,10 @@ const ContractStages = ({
                 
                 const res = await contractApi.uploadToFolder(currentFolderId, formData);
                 if (res && res.link) {
-                    uploadedLinks.push(res.link);
+                    const cleanLink = res.link.includes('?') 
+                        ? `${res.link}&name=${encodeURIComponent(file.name)}`
+                        : `${res.link}?name=${encodeURIComponent(file.name)}`;
+                    uploadedLinks.push(cleanLink);
                 }
             }
             

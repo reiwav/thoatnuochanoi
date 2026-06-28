@@ -2,6 +2,7 @@ import React from 'react';
 import { Table, TableHead, TableBody, TableRow, TableCell, Box, Button, Stack, Typography } from '@mui/material';
 import { IconFileText } from '@tabler/icons-react';
 import dayjs from 'dayjs';
+import { getScanFileName } from '../utils';
 
 const StagePaymentsTable = ({ stage }) => {
     if (!stage.payment_records || stage.payment_records.length === 0) {
@@ -54,9 +55,9 @@ const StagePaymentsTable = ({ stage }) => {
                                                  '&:hover': { bgcolor: '#dcfce7' }
                                              }}
                                          >
-                                             Scan #{fileIdx + 1}
-                                         </Button>
-                                     ))}
+                                                 {getScanFileName(link, `Scan #${fileIdx + 1}`)}
+                                             </Button>
+                                         ))}
                                  </Stack>
                              </TableCell>
                         </TableRow>

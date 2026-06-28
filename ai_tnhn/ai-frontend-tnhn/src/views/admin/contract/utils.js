@@ -46,3 +46,40 @@ export const getStageStatus = (stage) => {
     }
     return { label: 'Chưa thực hiện', color: 'default', bgColor: '#f1f5f9', textColor: '#64748b', border: '1px solid #cbd5e1' };
 };
+
+export const getScanFileName = (link, fallbackName) => {
+    if (!link) return fallbackName;
+    try {
+        const url = new URL(link, window.location.origin);
+        const nameParam = url.searchParams.get('name');
+        if (nameParam) {
+            return decodeURIComponent(nameParam);
+        }
+    } catch (e) {
+        // ignore url parsing error and fall back to path parsing
+    }
+
+    const parts = link.split('/');
+    const lastPart = parts[parts.length - 1];
+    if (lastPart) {
+        // Strip out the nano timestamp unique suffix if it has one: e.g. filename_1782562109.pdf
+        const extIndex = lastPart.lastIndexOf('.');
+        const ext = extIndex !== -1 ? lastPart.substring(extIndex) : '';
+        let base = extIndex !== -1 ? lastPart.substring(0, extIndex) : lastPart;
+        
+        // Match timestamp suffix _\d{10,}
+        const regex = /_\d{10,}$/;
+        if (regex.test(base)) {
+            base = base.replace(regex, '');
+            return base + ext;
+        }
+        // Clean out any extra search params if present in plain string splitting
+        const queryIndex = lastPart.indexOf('?');
+        if (queryIndex !== -1) {
+            return lastPart.substring(0, queryIndex);
+        }
+        return lastPart;
+    }
+    return fallbackName;
+};
+

@@ -3,6 +3,7 @@ import { Box, Typography, Button, Stack, TextField, IconButton, Grid } from '@mu
 import { IconPlus, IconTrash, IconFileText, IconUpload } from '@tabler/icons-react';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from 'dayjs';
+import { getScanFileName } from '../utils';
 
 const PaymentTab = ({
     activeStage,
@@ -119,7 +120,7 @@ const PaymentTab = ({
                                     {record.scan_files?.map((link, fileIdx) => (
                                         <Box key={fileIdx} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                             <Button variant="outlined" size="small" startIcon={<IconFileText size={12} />} href={link.startsWith('http') ? link : (import.meta.env?.VITE_APP_API_URL || '') + (link.startsWith('local:') ? '/api/storage/file/' + link.substring(6) : link)} target="_blank" sx={{ flex: 1, textTransform: 'none', justifyContent: 'flex-start', py: 0.25, bgcolor: '#ffffff', borderColor: '#e2e8f0', borderRadius: '6px' }}>
-                                                <Typography variant="caption" noWrap sx={{ fontSize: '0.75rem' }}>Bản scan #{(fileIdx + 1)}</Typography>
+                                                <Typography variant="caption" noWrap sx={{ fontSize: '0.75rem' }}>{getScanFileName(link, `Bản scan #${fileIdx + 1}`)}</Typography>
                                             </Button>
                                             <IconButton size="small" color="error" onClick={() => handleRemoveRecordFile(activeStageIdx, 'payment', recIdx, fileIdx)} sx={{ p: 0.5 }}>
                                                 <IconTrash size={12} />

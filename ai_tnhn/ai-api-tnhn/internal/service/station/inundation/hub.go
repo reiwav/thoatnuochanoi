@@ -94,6 +94,22 @@ func (h *Hub) NotifyUserUpdate(userID string) {
 	}
 }
 
+// NotifyRoleUpdate sends a targeted event to all subscribers who have the specified role, indicating their permissions have been updated
+func (h *Hub) NotifyRoleUpdate(role string) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	for _, sub := range h.subscribers {
+		if sub.Role == role {
+			select {
+			case sub.Ch <- "user_updated":
+			default:
+				// Channel full, skip
+			}
+		}
+	}
+}
+
 // shouldNotify determines if a subscriber should receive the event
 func shouldNotify(sub *Subscriber, info PointChangeInfo) bool {
 	// Company users, super admins, and phong_kt_cl (Quality Control) always receive all events

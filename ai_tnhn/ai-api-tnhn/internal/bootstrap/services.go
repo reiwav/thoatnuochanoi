@@ -126,6 +126,11 @@ func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log log
 			hub.NotifyUserUpdate(userID)
 		}
 	})
+	s.Permission.RegisterOnRoleUpdate(func(role string) {
+		if hub := s.Inundation.GetHub(); hub != nil {
+			hub.NotifyRoleUpdate(role)
+		}
+	})
 
 	s.Wastewater = wastewater_treatment.NewService(repos.WastewaterStation)
 	s.PumpingStation = pumpingstation.NewService(repos.PumpingStation, repos.User, repos.Organization)

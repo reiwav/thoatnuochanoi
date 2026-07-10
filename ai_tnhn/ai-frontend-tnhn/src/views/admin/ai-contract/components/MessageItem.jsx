@@ -4,6 +4,8 @@ import { IconRobot, IconUser, IconEye } from '@tabler/icons-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+dayjs.extend(relativeTime);
 import AiTable from './AiTable';
 
 const MessageItem = ({ msg, userInfo, navigate }) => {

@@ -4,21 +4,23 @@ import contractCategoryApi from 'api/contractCategory';
 import { toast } from 'react-hot-toast';
 import dayjs from 'dayjs';
 
-export const useContractDialog = ({ open, onClose, onSubmit, contract, isEdit, parentContract }) => {
+export const useContractDialog = ({ open, onClose, onSubmit, contract, isEdit }) => {
     const [values, setValues] = useState({
+        id: '',
         name: '',
         contract_number: '',
         investor_name: '',
         jv_members: '',
-        parent_id: '',
         category_id: '',
         start_date: null,
         end_date: null,
-        stages: [{ name: '', amount: 0, date: null }],
+        stages: [{ name: '', amount: 0, date: null, acceptance_records: [], payment_records: [], appendices: [] }],
         note: '',
         drive_folder_id: '',
         drive_folder_link: '',
-        files: []
+        files: [],
+        content: '',
+        joint_venture_members: []
     });
     const [uploading, setUploading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
@@ -43,10 +45,16 @@ export const useContractDialog = ({ open, onClose, onSubmit, contract, isEdit, p
         try {
             const res = await contractApi.getById(contract.id);
             if (res && res.id) {
-                const refreshedFiles = res.files || [];
                 setValues(prev => ({
                     ...prev,
-                    files: refreshedFiles
+                    files: res.files || [],
+                    stages: res.stages ? res.stages.map(s => ({
+                        ...s,
+                        date: s.date ? dayjs(s.date) : null,
+                        acceptance_records: s.acceptance_records || [],
+                        payment_records: s.payment_records || [],
+                        appendices: s.appendices || []
+                    })) : prev.stages
                 }));
             }
         } catch (err) {
@@ -59,67 +67,67 @@ export const useContractDialog = ({ open, onClose, onSubmit, contract, isEdit, p
             loadCategories();
             if (isEdit && contract) {
                 setValues({
+                    id: contract.id || '',
                     name: contract.name || '',
                     contract_number: contract.contract_number || '',
                     investor_name: contract.investor_name || '',
                     jv_members: contract.jv_members || '',
-                    parent_id: contract.parent_id || '',
                     category_id: contract.category_id || '',
                     start_date: contract.start_date ? dayjs(contract.start_date) : null,
                     end_date: contract.end_date ? dayjs(contract.end_date) : null,
                     stages: contract.stages ? contract.stages.map(s => ({
                         ...s,
-                        date: s.date ? dayjs(s.date) : null
-                    })) : [{ name: '', amount: 0, date: null }],
+                        date: s.date ? dayjs(s.date) : null,
+                        acceptance_records: s.acceptance_records || [],
+                        payment_records: s.payment_records || [],
+                        appendices: s.appendices || []
+                    })) : [{ name: '', amount: 0, date: null, acceptance_records: [], payment_records: [], appendices: [] }],
                     note: contract.note || '',
                     drive_folder_id: contract.drive_folder_id || '',
                     drive_folder_link: contract.drive_folder_link || '',
-                    files: contract.files || []
-                });
-            } else if (parentContract) {
-                setValues({
-                    name: '',
-                    contract_number: '',
-                    investor_name: parentContract.investor_name || '',
-                    jv_members: parentContract.jv_members || '',
-                    parent_id: parentContract.id || '',
-                    category_id: parentContract.category_id || '',
-                    start_date: null,
-                    end_date: null,
-                    stages: [{ name: '', amount: 0, date: null }],
-                    note: '',
-                    drive_folder_id: '',
-                    drive_folder_link: '',
-                    files: []
+                    files: contract.files || [],
+                    content: contract.content || '',
+                    joint_venture_members: contract.joint_venture_members || []
                 });
             } else {
                 setValues({
+                    id: '',
                     name: '',
                     contract_number: '',
                     investor_name: '',
                     jv_members: '',
-                    parent_id: '',
                     category_id: '',
                     start_date: null,
                     end_date: null,
-                    stages: [{ name: '', amount: 0, date: null }],
+                    stages: [{ name: '', amount: 0, date: null, acceptance_records: [], payment_records: [], appendices: [] }],
                     note: '',
                     drive_folder_id: '',
                     drive_folder_link: '',
-                    files: []
+                    files: [],
+                    content: '',
+                    joint_venture_members: []
                 });
             }
         }
-    }, [open, isEdit, contract, parentContract]);
+    }, [open, isEdit, contract]);
 
-    // Automatically poll and refresh files list if there are any local files waiting to be synced to Drive
     useEffect(() => {
         let intervalId = null;
         
-        const hasLocalFiles = values.files && values.files.some(file => 
+        const hasLocalFiles = (values.files && values.files.some(file => 
             (file.id && file.id.startsWith('local:')) || 
             (file.link && (file.link.startsWith('/') || file.link.startsWith('local:')))
-        );
+        )) || (values.stages && values.stages.some(stage => 
+            (stage.appendices && stage.appendices.some(app => 
+                app.files && app.files.some(f => f.id && f.id.startsWith('local:'))
+            )) ||
+            (stage.acceptance_records && stage.acceptance_records.some(rec => 
+                rec.scan_files && rec.scan_files.some(link => link.startsWith('local:'))
+            )) ||
+            (stage.payment_records && stage.payment_records.some(rec => 
+                rec.scan_files && rec.scan_files.some(link => link.startsWith('local:'))
+            ))
+        ));
         
         if (open && isEdit && contract?.id && hasLocalFiles) {
             intervalId = setInterval(() => {
@@ -132,7 +140,7 @@ export const useContractDialog = ({ open, onClose, onSubmit, contract, isEdit, p
                 clearInterval(intervalId);
             }
         };
-    }, [open, isEdit, contract?.id, values.files]);
+    }, [open, isEdit, contract?.id, values.files, values.stages]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -148,7 +156,7 @@ export const useContractDialog = ({ open, onClose, onSubmit, contract, isEdit, p
     const addStage = () => {
         setValues(prev => ({
             ...prev,
-            stages: [...prev.stages, { name: '', amount: 0, date: null }]
+            stages: [...prev.stages, { name: '', amount: 0, date: null, acceptance_records: [], payment_records: [], appendices: [] }]
         }));
     };
 
@@ -160,7 +168,6 @@ export const useContractDialog = ({ open, onClose, onSubmit, contract, isEdit, p
     const handleSave = async () => {
         if (!values.name) return;
 
-        // Validate stage constraints
         if (values.start_date && values.end_date) {
             for (let i = 0; i < values.stages.length; i++) {
                 const stage = values.stages[i];
@@ -168,7 +175,7 @@ export const useContractDialog = ({ open, onClose, onSubmit, contract, isEdit, p
                     const stDate = dayjs(stage.date);
                     if (stDate.isBefore(values.start_date, 'day') || stDate.isAfter(values.end_date, 'day')) {
                         toast.error(`Ngày của giai đoạn "${stage.name || `Giai đoạn ${i + 1}`}" phải nằm trong thời gian hợp đồng (${values.start_date.format('DD/MM/YYYY')} - ${values.end_date.format('DD/MM/YYYY')}).`);
-                        return; // Stop explicitly on error
+                        return;
                     }
                 }
             }

@@ -140,6 +140,11 @@ func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log log
 	s.Contract = contract.NewService(repos.Contract, repos.ContractCategory, repos.Organization, driveService)
 
 	s.Permission = permission.NewService(repos.Permission, repos.RolePermission)
+	s.Permission.RegisterOnRoleUpdate(func(role string) {
+		if hub := s.Inundation.GetHub(); hub != nil {
+			hub.NotifyRoleUpdate(role)
+		}
+	})
 	s.Role = role.NewService(repos.Role)
 
 	pumpWorker := pump.NewWorker(log, s.PumpingStation)

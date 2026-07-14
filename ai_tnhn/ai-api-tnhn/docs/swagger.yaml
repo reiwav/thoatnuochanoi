@@ -55,6 +55,26 @@ definitions:
       name:
         type: string
     type: object
+  models.AcceptanceRecord:
+    properties:
+      content:
+        type: string
+      created_at:
+        type: string
+      date:
+        type: string
+      id:
+        type: string
+      scan_files:
+        items:
+          type: string
+        type: array
+      status:
+        example: Chưa ký
+        type: string
+      title:
+        type: string
+    type: object
   models.AiChatLog:
     properties:
       chat_type:
@@ -83,6 +103,8 @@ definitions:
       category_id:
         example: 60f121212121
         type: string
+      content:
+        type: string
       contract_number:
         example: HD/2026/001
         type: string
@@ -108,6 +130,10 @@ definitions:
       investor_name:
         example: Công ty Thoát nước
         type: string
+      joint_venture_members:
+        items:
+          type: string
+        type: array
       jv_members:
         example: Thành viên A, Thành viên B
         type: string
@@ -120,9 +146,6 @@ definitions:
       org_id:
         example: 60f123456789
         type: string
-      parent_id:
-        example: 60f123456789
-        type: string
       stages:
         items:
           $ref: '#/definitions/models.ContractStage'
@@ -131,6 +154,28 @@ definitions:
         example: "2023-01-01"
         type: string
       updated_at:
+        type: integer
+    type: object
+  models.ContractAppendix:
+    properties:
+      appendix_number:
+        type: string
+      content:
+        type: string
+      created_at:
+        type: string
+      files:
+        items:
+          $ref: '#/definitions/googledrive.FileInfo'
+        type: array
+      id:
+        type: string
+      name:
+        type: string
+      status:
+        example: Đã ký
+        type: string
+      year:
         type: integer
     type: object
   models.ContractCategory:
@@ -177,14 +222,29 @@ definitions:
     type: object
   models.ContractStage:
     properties:
+      acceptance_records:
+        items:
+          $ref: '#/definitions/models.AcceptanceRecord'
+        type: array
       amount:
         example: 500000000
         type: number
+      appendices:
+        items:
+          $ref: '#/definitions/models.ContractAppendix'
+        type: array
       date:
         example: "2023-01-01"
         type: string
       name:
         example: 'Giai đoạn 1: Khảo sát'
+        type: string
+      payment_records:
+        items:
+          $ref: '#/definitions/models.PaymentRecord'
+        type: array
+      status:
+        example: Chưa thực hiện
         type: string
     type: object
   models.EmergencyConstruction:
@@ -740,6 +800,23 @@ definitions:
         type: boolean
       updated_at:
         type: integer
+    type: object
+  models.PaymentRecord:
+    properties:
+      content:
+        type: string
+      created_at:
+        type: string
+      date:
+        type: string
+      id:
+        type: string
+      scan_files:
+        items:
+          type: string
+        type: array
+      title:
+        type: string
     type: object
   models.Permission:
     properties:

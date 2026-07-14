@@ -7674,6 +7674,36 @@ const docTemplate = `{
                 }
             }
         },
+        "models.AcceptanceRecord": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "date": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "scan_files": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "status": {
+                    "type": "string",
+                    "example": "Chưa ký"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
         "models.AiChatLog": {
             "type": "object",
             "properties": {
@@ -7715,6 +7745,9 @@ const docTemplate = `{
                     "type": "string",
                     "example": "60f121212121"
                 },
+                "content": {
+                    "type": "string"
+                },
                 "contract_number": {
                     "type": "string",
                     "example": "HD/2026/001"
@@ -7750,6 +7783,12 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Công ty Thoát nước"
                 },
+                "joint_venture_members": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "jv_members": {
                     "type": "string",
                     "example": "Thành viên A, Thành viên B"
@@ -7766,10 +7805,6 @@ const docTemplate = `{
                     "type": "string",
                     "example": "60f123456789"
                 },
-                "parent_id": {
-                    "type": "string",
-                    "example": "60f123456789"
-                },
                 "stages": {
                     "type": "array",
                     "items": {
@@ -7781,6 +7816,39 @@ const docTemplate = `{
                     "example": "2023-01-01"
                 },
                 "updated_at": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.ContractAppendix": {
+            "type": "object",
+            "properties": {
+                "appendix_number": {
+                    "type": "string"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "files": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/googledrive.FileInfo"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "Đã ký"
+                },
+                "year": {
                     "type": "integer"
                 }
             }
@@ -7845,9 +7913,21 @@ const docTemplate = `{
         "models.ContractStage": {
             "type": "object",
             "properties": {
+                "acceptance_records": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.AcceptanceRecord"
+                    }
+                },
                 "amount": {
                     "type": "number",
                     "example": 500000000
+                },
+                "appendices": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ContractAppendix"
+                    }
                 },
                 "date": {
                     "type": "string",
@@ -7856,6 +7936,16 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "example": "Giai đoạn 1: Khảo sát"
+                },
+                "payment_records": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.PaymentRecord"
+                    }
+                },
+                "status": {
+                    "type": "string",
+                    "example": "Chưa thực hiện"
                 }
             }
         },
@@ -8635,6 +8725,32 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "integer"
+                }
+            }
+        },
+        "models.PaymentRecord": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "date": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "scan_files": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "title": {
+                    "type": "string"
                 }
             }
         },

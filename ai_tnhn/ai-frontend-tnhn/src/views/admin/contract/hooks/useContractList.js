@@ -14,7 +14,6 @@ export const useContractList = () => {
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingContract, setEditingContract] = useState(null);
-    const [parentContract, setParentContract] = useState(null);
     const [filterInput, setFilterInput] = useState(filters.name);
 
     useEffect(() => {
@@ -56,20 +55,12 @@ export const useContractList = () => {
     };
 
     const handleOpenCreate = () => {
-        setParentContract(null);
         setEditingContract(null);
         setDialogOpen(true);
     };
 
     const handleOpenEdit = (contract) => {
-        setParentContract(null);
         setEditingContract(contract);
-        setDialogOpen(true);
-    };
-
-    const handleAddAppendix = (parent) => {
-        setParentContract(parent);
-        setEditingContract(null);
         setDialogOpen(true);
     };
 
@@ -113,8 +104,6 @@ export const useContractList = () => {
         setDialogOpen,
         editingContract,
         setEditingContract,
-        parentContract,
-        setParentContract,
         filterInput,
         setFilterInput,
         hasPermission,
@@ -122,7 +111,6 @@ export const useContractList = () => {
         handleKeyDown,
         handleOpenCreate,
         handleOpenEdit,
-        handleAddAppendix,
         handleDelete,
         handleSubmit,
         formatPrice,

@@ -1,7 +1,6 @@
 package contract
 
 import (
-	"ai-api-tnhn/handler/filters"
 	"ai-api-tnhn/internal/base/mgo/filter"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/service/google/googledrive"
@@ -72,7 +71,6 @@ func (s *service) Update(ctx context.Context, id string, contract *models.Contra
 	existing.ContractNumber = contract.ContractNumber
 	existing.InvestorName = contract.InvestorName
 	existing.JVMembers = contract.JVMembers
-	existing.ParentID = contract.ParentID
 	existing.CategoryID = contract.CategoryID
 	existing.StartDate = contract.StartDate
 	existing.EndDate = contract.EndDate
@@ -81,6 +79,8 @@ func (s *service) Update(ctx context.Context, id string, contract *models.Contra
 	existing.DriveFolderID = contract.DriveFolderID
 	existing.DriveFolderLink = contract.DriveFolderLink
 	existing.Files = contract.Files
+	existing.Content = contract.Content
+	existing.JointVentureMembers = contract.JointVentureMembers
 
 	if categoryChanged && existing.DriveFolderID != "" {
 		if contract.CategoryID != "" {
@@ -121,59 +121,6 @@ func (s *service) List(ctx context.Context, f filter.Filter) ([]*models.Contract
 	contracts, total, err := s.repo.List(ctx, f)
 	if err != nil {
 		return nil, 0, err
-	}
-
-	// Bidirectional parent-child expansion
-	var searchKeyword string
-	if listReq, ok := f.(*filters.ContractListRequest); ok {
-		searchKeyword = listReq.Name
-	}
-
-	if searchKeyword != "" && len(contracts) > 0 {
-		existingIDs := make(map[string]bool)
-		for _, c := range contracts {
-			existingIDs[c.ID] = true
-		}
-
-		// 1. Fetch parent contracts of any matched appendices
-		var parentIDsToFetch []string
-		for _, c := range contracts {
-			if c.ParentID != "" && !existingIDs[c.ParentID] {
-				parentIDsToFetch = append(parentIDsToFetch, c.ParentID)
-				existingIDs[c.ParentID] = true // prevent duplicate fetching
-			}
-		}
-
-		for _, pID := range parentIDsToFetch {
-			parentContract, err := s.repo.GetByID(ctx, pID)
-			if err == nil && parentContract != nil && parentContract.ID != "" {
-				contracts = append(contracts, parentContract)
-			}
-		}
-
-		// 2. Fetch all appendices of matched primary contracts
-		var primaryIDs []string
-		for _, c := range contracts {
-			if c.ParentID == "" {
-				primaryIDs = append(primaryIDs, c.ID)
-			}
-		}
-
-		for _, pID := range primaryIDs {
-			req := filters.NewContractListRequest()
-			req.ParentID = pID
-			req.PerPage = 1000 // Get all appendices
-			apps, _, err := s.repo.List(ctx, req)
-			if err == nil {
-				for _, app := range apps {
-					if !existingIDs[app.ID] {
-						contracts = append(contracts, app)
-						existingIDs[app.ID] = true
-					}
-				}
-			}
-		}
-		total = int64(len(contracts))
 	}
 
 	for _, contract := range contracts {

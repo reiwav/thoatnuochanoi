@@ -8,7 +8,6 @@ type ContractQueryResult struct {
 	ContractNumber  string                 `json:"contract_number"`
 	InvestorName    string                 `json:"investor_name"`
 	JVMembers       string                 `json:"jv_members"`
-	ParentID        string                 `json:"parent_id"`
 	CategoryName    string                 `json:"category_name"`
 	StartDate       string                 `json:"start_date"`
 	EndDate         string                 `json:"end_date"`

@@ -18,7 +18,26 @@ func (s *service) GetMatrix(ctx context.Context) ([]*models.RolePermission, []*m
 }
 
 func (s *service) UpdateMatrix(ctx context.Context, role string, permissions []string) error {
-	return s.rolePermRepo.Update(ctx, role, permissions)
+	err := s.rolePermRepo.Update(ctx, role, permissions)
+	if err != nil {
+		return err
+	}
+
+	s.mu.Lock()
+	callbacks := make([]func(role string), len(s.onRoleUpdate))
+	copy(callbacks, s.onRoleUpdate)
+	s.mu.Unlock()
+	for _, cb := range callbacks {
+		cb(role)
+	}
+
+	return nil
+}
+
+func (s *service) RegisterOnRoleUpdate(cb func(role string)) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.onRoleUpdate = append(s.onRoleUpdate, cb)
 }
 
 func (s *service) GetPermissionsByRole(ctx context.Context, role string) ([]string, error) {

@@ -95,7 +95,13 @@ func (s *service) GetInundationSummary(ctx context.Context, orgID string, isAllo
 			FloodLevelName: levelName,
 		}
 		ongoing = append(ongoing, stat)
-		detailStrings = append(detailStrings, fmt.Sprintf("%s (%s, %s)", streetName, levelName, depthInfo))
+		var detailStr string
+		if r.EndTime > 0 && r.EndTime <= endOfDay {
+			detailStr = fmt.Sprintf("%s (%s)", streetName, statusText)
+		} else {
+			detailStr = fmt.Sprintf("%s (%s) (%s, %s)", streetName, statusText, levelName, depthInfo)
+		}
+		detailStrings = append(detailStrings, detailStr)
 	}
 
 	sort.Slice(ongoing, func(i, j int) bool {
@@ -208,10 +214,14 @@ func (s *service) GetInundationSummaryByDate(ctx context.Context, orgID string, 
 		ongoing = append(ongoing, stat)
 
 		statusDetail := fmt.Sprintf("Đang %s", levelName)
+		var detailStr string
 		if r.EndTime > 0 && r.EndTime <= endOfDay {
 			statusDetail = fmt.Sprintf("đã rút lúc %s", time.Unix(r.EndTime, 0).In(loc).Format("15:04"))
+			detailStr = fmt.Sprintf("%s (%s)", streetName, statusDetail)
+		} else {
+			detailStr = fmt.Sprintf("%s (%s) (%s, %s)", streetName, statusDetail, levelName, depthInfo)
 		}
-		detailStrings = append(detailStrings, fmt.Sprintf("%s (%s, %s, %s)", streetName, levelName, depthInfo, statusDetail))
+		detailStrings = append(detailStrings, detailStr)
 	}
 
 	sort.Slice(ongoing, func(i, j int) bool {

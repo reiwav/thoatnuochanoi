@@ -41,9 +41,16 @@ func (s *service) ReportKTCL(ctx context.Context, user *models.User, pointID str
 
 	existing.KtclHistoryID = newHistory.ID
 
+	level := s.calculateFloodLevel(ctx, input.KtclD)
+	shouldResolve := (level != nil && !level.IsFlooding) || (level == nil && input.KtclD == 0)
+
 	err = s.InundationReportRepo.Update(ctx, existing)
 	if err != nil {
 		return err
+	}
+
+	if shouldResolve {
+		_ = s.subFinish(ctx, pointID, existing, time.Now().Unix())
 	}
 
 	// Notify SSE subscribers about the change

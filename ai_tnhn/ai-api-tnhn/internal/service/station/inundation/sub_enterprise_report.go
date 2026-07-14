@@ -90,22 +90,29 @@ func (s *service) setAndUpdateReport(ctx context.Context, user *models.User,
 	report.ReportEnterpriseBase = input
 
 	// If resolved, mark report resolved
+	// Nếu mức độ ngập mới là không ngập (đợt ngập đã kết thúc)
 	if !level.IsFlooding {
+		// Đóng băng và đánh dấu báo cáo đợt ngập hiện tại thành "đã kết thúc" (resolved) để lưu trữ lịch sử
 		report.Status = constant.InundationStatusResolved
 		report.EndTime = time.Now().Unix()
 
+		// Cập nhật báo cáo đợt ngập đã kết thúc vào database
 		err := s.InundationReportRepo.R_Update(ctx, report)
 		if err != nil {
 			return nil, err
 		}
 
-		// Also clear station's active report reference and create a new resolved normal report
+		// Lấy thông tin điểm ngập tương ứng để cập nhật trạng thái hết ngập
 		station, _ := s.inundationStationRepo.GetByID(ctx, report.PointID)
 		if station != nil {
+			// Tạo mới một báo cáo trạng thái bình thường sạch (resolved, HasFlooded = false) làm mốc hiện tại cho trạm
 			newNormReportID, err := s.createNewResolvedNormalReport(ctx, station, time.Now().Unix())
 			if err == nil {
+				// Xóa ReportID active để báo hiệu điểm này không còn ngập nữa
 				station.ReportID = ""
+				// Trỏ LastReportID sang báo cáo bình thường mới tạo để UI hiển thị trạng thái sạch (độ sâu 0, màu xanh)
 				station.LastReportID = newNormReportID
+				// Cập nhật thông tin điểm ngập vào database
 				_ = s.inundationStationRepo.Update(ctx, station)
 			}
 		}

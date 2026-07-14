@@ -41,9 +41,16 @@ func (s *service) ReportMech(ctx context.Context, user *models.User, pointID str
 
 	existing.MechHistoryID = newHistory.ID
 
+	level := s.calculateFloodLevel(ctx, input.MechD)
+	shouldResolve := (level != nil && !level.IsFlooding) || (level == nil && input.MechD == 0)
+
 	err = s.InundationReportRepo.Update(ctx, existing)
 	if err != nil {
 		return err
+	}
+
+	if shouldResolve {
+		_ = s.subFinish(ctx, pointID, existing, time.Now().Unix())
 	}
 
 	// Notify SSE subscribers about the change

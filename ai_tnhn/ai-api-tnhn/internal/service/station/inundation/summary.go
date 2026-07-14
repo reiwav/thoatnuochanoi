@@ -18,11 +18,25 @@ func (s *service) GetInundationSummary(ctx context.Context, orgID string, isAllo
 		AssignedInundationStationIDs: assignedInuIDs,
 		IsEmployee:                   !isAllowedAll && len(assignedInuIDs) > 0,
 	}
+
+	loc, _ := time.LoadLocation("Asia/Ho_Chi_Minh")
+	if loc == nil {
+		loc = time.Local
+	}
+	t := time.Now().In(loc)
+	startOfDay := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, loc).Unix()
+	endOfDay := time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 999999999, loc).Unix()
+
 	f := filter.NewPaginationFilter()
 	f.Page = 1
 	f.PerPage = 1000
-	f.AddWhere("status", "status", "active")
+
+	f.AddWhere("ctime_filter", "created_at", bson.M{"$lte": endOfDay})
 	f.AddWhere("has_flooded", "has_flooded", true)
+	f.AddWhere("status_or_endtime", "$or", []bson.M{
+		{"status": "active"},
+		{"end_time": bson.M{"$gte": startOfDay}},
+	})
 
 	reports, _, err := s.ListReportsWithFilter(ctx, dummyUser, isAllowedAll, orgID, f)
 	if err != nil {
@@ -59,6 +73,11 @@ func (s *service) GetInundationSummary(ctx context.Context, orgID string, isAllo
 			levelName = "úng ngập"
 		}
 
+		statusText := fmt.Sprintf("Đang %s", levelName)
+		if r.EndTime > 0 && r.EndTime <= endOfDay {
+			statusText = fmt.Sprintf("Đã rút lúc %s", time.Unix(r.EndTime, 0).In(loc).Format("15:04"))
+		}
+
 		stat := InundationStationStat{
 			PointID:        r.PointID,
 			ReportID:       r.ID,
@@ -68,11 +87,11 @@ func (s *service) GetInundationSummary(ctx context.Context, orgID string, isAllo
 			Width:          r.Width,
 			Length:         r.Length,
 			FormattedDepth: depthInfo,
-			StartTime:      time.Unix(r.CTime, 0).Format("15:04 02/01/2006"),
+			StartTime:      time.Unix(r.CTime, 0).In(loc).Format("15:04 02/01/2006"),
 			Duration:       formatDuration(r.CTime, r.EndTime),
 			Description:    r.Description,
 			Color:          r.FloodLevelColor,
-			CurrentStatus:  fmt.Sprintf("Đang %s", levelName),
+			CurrentStatus:  statusText,
 			FloodLevelName: levelName,
 		}
 		ongoing = append(ongoing, stat)
@@ -117,7 +136,7 @@ func (s *service) GetInundationSummaryByDate(ctx context.Context, orgID string, 
 		AssignedInundationStationIDs: assignedInuIDs,
 		IsEmployee:                   !isAllowedAll && len(assignedInuIDs) > 0,
 	}
-	
+
 	f := filter.NewPaginationFilter()
 	f.Page = 1
 	f.PerPage = 1000
@@ -187,7 +206,7 @@ func (s *service) GetInundationSummaryByDate(ctx context.Context, orgID string, 
 			FloodLevelName: levelName,
 		}
 		ongoing = append(ongoing, stat)
-		
+
 		statusDetail := fmt.Sprintf("Đang %s", levelName)
 		if r.EndTime > 0 && r.EndTime <= endOfDay {
 			statusDetail = fmt.Sprintf("đã rút lúc %s", time.Unix(r.EndTime, 0).In(loc).Format("15:04"))

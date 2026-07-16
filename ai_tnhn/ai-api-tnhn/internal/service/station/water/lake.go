@@ -39,7 +39,9 @@ func (s *service) CreateLakeRecord(ctx context.Context, record *models.LakeRecor
 
 	record.StationName = stationName
 	if record.Timestamp.IsZero() {
-		record.Timestamp = time.Now()
+		loc, _ := time.LoadLocation("Asia/Ho_Chi_Minh")
+		now := time.Now().In(loc)
+		record.Timestamp = time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second(), now.Nanosecond(), time.UTC)
 	}
 	if record.Date == "" {
 		record.Date = record.Timestamp.Format("2006-01-02")

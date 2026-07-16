@@ -96,9 +96,20 @@ const useAdminInundation = () => {
       result = result.filter((p) => p.name?.toLowerCase().includes(q) || p.address?.toLowerCase().includes(q));
     }
     return [...result].sort((a, b) => {
+      // 1. Sort by flooding status
       if (a.report_id && !b.report_id) return -1;
       if (!a.report_id && b.report_id) return 1;
-      return a.name.localeCompare(b.name);
+
+      // 2. Sort by latest report update time for BOTH flooding and normal points
+      const timeA = a.last_report?.updated_at || a.last_report?.created_at || a.last_report?.start_time || 0;
+      const timeB = b.last_report?.updated_at || b.last_report?.created_at || b.last_report?.start_time || 0;
+      
+      if (timeA !== timeB) {
+        return timeB - timeA; // Descending (newest first)
+      }
+
+      // 3. Fallback to alphabetical sorting
+      return (a.name || '').localeCompare(b.name || '');
     });
   }, [points, filters, floodLevels]);
 

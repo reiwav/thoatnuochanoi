@@ -145,6 +145,9 @@ const StationReportCard = ({ station, type, latestReading, onReportSuccess }) =>
                                 slotProps={{
                                     input: {
                                         sx: { borderRadius: '12px', fontWeight: 600 }
+                                    },
+                                    htmlInput: {
+                                        inputMode: 'decimal'
                                     }
                                 }}
                             />

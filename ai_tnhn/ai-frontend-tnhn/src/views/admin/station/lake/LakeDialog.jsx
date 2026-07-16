@@ -34,6 +34,7 @@ const LakeDialog = ({ open, onClose, onSubmit, station, isEdit, organizations })
                                 fullWidth label="ID cũ (old_id)" type="number"
                                 value={formData.OldId}
                                 onChange={(e) => handleChange('OldId', e.target.value)}
+                                slotProps={{ htmlInput: { inputMode: 'numeric' } }}
                             />
                         </Grid>
                         <Grid item xs={12} sm={4}>
@@ -57,6 +58,7 @@ const LakeDialog = ({ open, onClose, onSubmit, station, isEdit, organizations })
                     fullWidth label="Ngưỡng cảnh báo" type="number"
                     value={formData.NguongCanhBao}
                     onChange={(e) => handleChange('NguongCanhBao', e.target.value)}
+                    slotProps={{ htmlInput: { inputMode: 'decimal', step: 'any' } }}
                 />
 
                 <Grid container spacing={2}>
@@ -66,6 +68,7 @@ const LakeDialog = ({ open, onClose, onSubmit, station, isEdit, organizations })
                             value={formData.ThuTu}
                             onChange={(e) => handleChange('ThuTu', e.target.value)}
                             helperText="Số nhỏ = ưu tiên cao"
+                            slotProps={{ htmlInput: { inputMode: 'numeric' } }}
                         />
                     </Grid>
                     {isSuperAdmin && (
@@ -74,6 +77,7 @@ const LakeDialog = ({ open, onClose, onSubmit, station, isEdit, organizations })
                                 fullWidth label="Trọng số báo cáo" type="number"
                                 value={formData.TrongSoBaoCao}
                                 onChange={(e) => handleChange('TrongSoBaoCao', e.target.value)}
+                                slotProps={{ htmlInput: { inputMode: 'decimal', step: 'any' } }}
                             />
                         </Grid>
                     )}

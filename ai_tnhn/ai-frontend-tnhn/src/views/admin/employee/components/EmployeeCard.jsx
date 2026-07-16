@@ -78,7 +78,7 @@ const EmployeeCard = ({ row, handleOpenEdit, handleDelete, roleLabel, orgName, u
             <Divider sx={{ my: 1 }} />
 
             <Grid container spacing={1.5}>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                     <Typography variant="caption" color="textSecondary" display="block">Email</Typography>
                     <Typography variant="body2" sx={{ fontWeight: 600, wordBreak: 'break-all' }}>
                         {row.email}
@@ -86,7 +86,7 @@ const EmployeeCard = ({ row, handleOpenEdit, handleDelete, roleLabel, orgName, u
                 </Grid>
                 
                 {userRole !== 'admin_org' && (
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                         <Typography variant="caption" color="textSecondary" display="block">Đơn vị / Xí nghiệp</Typography>
                         <Typography variant="body2" sx={{ fontWeight: 600 }}>
                             {orgName(row.org_id)}
@@ -94,7 +94,7 @@ const EmployeeCard = ({ row, handleOpenEdit, handleDelete, roleLabel, orgName, u
                     </Grid>
                 )}
                 
-                <Grid item xs={6}>
+                <Grid size={6}>
                     <Typography variant="caption" color="textSecondary" display="block">Trạng thái tài khoản</Typography>
                     <Chip 
                         label={row.active ? 'Hoạt động' : 'Ngừng hoạt động'} 

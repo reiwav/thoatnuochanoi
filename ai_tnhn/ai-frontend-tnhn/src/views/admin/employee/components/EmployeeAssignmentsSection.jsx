@@ -13,13 +13,23 @@ const EmployeeAssignmentsSection = ({
     lakes = [],
     rivers = []
 }) => {
+    const filterByOrg = (list) => {
+        const targetOrgId = formData.org_id;
+        if (!targetOrgId) return list;
+        return list.filter(item =>
+            item.share_all ||
+            item.org_id === targetOrgId ||
+            (Array.isArray(item.shared_org_ids) && item.shared_org_ids.includes(targetOrgId))
+        );
+    };
+
     return (
         <>
             {/* Điểm ngập được giao */}
             <MultiAssignmentSelector
                 title="Chọn điểm ngập"
                 unitLabel="điểm"
-                items={points}
+                items={filterByOrg(points)}
                 selectedIds={formData.assigned_inundation_station_ids || []}
                 onConfirm={(newIds) => handleChange('assigned_inundation_station_ids', newIds)}
                 labelField="name"
@@ -29,7 +39,7 @@ const EmployeeAssignmentsSection = ({
             <MultiAssignmentSelector
                 title="Chọn hồ"
                 unitLabel="hồ"
-                items={lakes}
+                items={filterByOrg(lakes)}
                 selectedIds={formData.assigned_lake_station_ids || []}
                 onConfirm={(newIds) => handleChange('assigned_lake_station_ids', newIds)}
                 labelField="TenTram"
@@ -39,7 +49,7 @@ const EmployeeAssignmentsSection = ({
             <MultiAssignmentSelector
                 title="Chọn sông"
                 unitLabel="sông"
-                items={rivers}
+                items={filterByOrg(rivers)}
                 selectedIds={formData.assigned_river_station_ids || []}
                 onConfirm={(newIds) => handleChange('assigned_river_station_ids', newIds)}
                 labelField="TenTram"
@@ -49,7 +59,7 @@ const EmployeeAssignmentsSection = ({
             <MultiAssignmentSelector
                 title="Chọn công trình khẩn cấp"
                 unitLabel="công trình"
-                items={constructions}
+                items={filterByOrg(constructions)}
                 selectedIds={formData.assigned_emergency_construction_ids || []}
                 onConfirm={(newIds) => handleChange('assigned_emergency_construction_ids', newIds)}
                 labelField="name"
@@ -61,7 +71,7 @@ const EmployeeAssignmentsSection = ({
                 label="Chọn trạm bơm"
                 value={formData.assigned_pumping_station_id}
                 onChange={(val) => handleChange('assigned_pumping_station_id', val)}
-                items={pumpingStations}
+                items={filterByOrg(pumpingStations)}
                 labelField="name"
             />
 
@@ -71,7 +81,7 @@ const EmployeeAssignmentsSection = ({
                 label="Chọn trạm XLNT"
                 value={formData.assigned_wastewater_station_id}
                 onChange={(val) => handleChange('assigned_wastewater_station_id', val)}
-                items={wastewaterStations}
+                items={filterByOrg(wastewaterStations)}
                 labelField="name"
             />
 
@@ -81,7 +91,7 @@ const EmployeeAssignmentsSection = ({
                 label="Chọn cửa phai"
                 value={formData.assigned_sluice_gate_id}
                 onChange={(val) => handleChange('assigned_sluice_gate_id', val)}
-                items={sluiceGates}
+                items={filterByOrg(sluiceGates)}
                 labelField="name"
             />
         </>

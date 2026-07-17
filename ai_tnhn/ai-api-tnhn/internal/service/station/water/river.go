@@ -39,12 +39,11 @@ func (s *service) CreateRiverRecord(ctx context.Context, record *models.RiverRec
 
 	record.StationName = stationName
 	if record.Timestamp.IsZero() {
-		loc, _ := time.LoadLocation("Asia/Ho_Chi_Minh")
-		now := time.Now().In(loc)
-		record.Timestamp = time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second(), now.Nanosecond(), time.UTC)
+		record.Timestamp = time.Now()
 	}
 	if record.Date == "" {
-		record.Date = record.Timestamp.Format("2006-01-02")
+		loc, _ := time.LoadLocation("Asia/Ho_Chi_Minh")
+		record.Date = record.Timestamp.In(loc).Format("2006-01-02")
 	}
 
 	err = s.riverRepo.Create(ctx, record)

@@ -4,7 +4,7 @@ import { IconClock, IconUser, IconCircleCheck, IconMessageDots, IconEngine, Icon
 import dayjs from 'dayjs';
 import PermissionGuard from 'ui-component/PermissionGuard';
 import AdminInundationActionMenu from '../AdminInundationActionMenu';
-import { getInundationImageUrl } from 'utils/imageHelper';
+import { getInundationImageUrl, getAllImagesFromReport } from 'utils/imageHelper';
 
 export const DesktopCardMetrics = ({ lastReport, isFlooded, displayColor, onOpenViewer }) => {
     const theme = useTheme();
@@ -129,25 +129,29 @@ export const DesktopCardMetrics = ({ lastReport, isFlooded, displayColor, onOpen
             </Box>
 
             {/* Image Previews */}
-            {lastReport?.images?.length > 0 && (
-                <Box sx={{ mb: 1.5 }}>
-                    <Stack direction="row" spacing={0.5} justifyContent="center" sx={{ overflow: 'hidden' }}>
-                        {lastReport.images.slice(0, 4).map((img, i) => (
-                            <Box
-                                key={i}
-                                onClick={() => onOpenViewer(lastReport.images, i)}
-                                sx={{
-                                    width: 32, height: 32, borderRadius: 1, overflow: 'hidden', cursor: 'pointer',
-                                    border: '1px solid', borderColor: 'divider',
-                                    '&:hover': { opacity: 0.8 }
-                                }}
-                            >
-                                <img src={getInundationImageUrl(img)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            </Box>
-                        ))}
-                    </Stack>
-                </Box>
-            )}
+            {(() => {
+                const allImages = getAllImagesFromReport(lastReport);
+                if (allImages.length === 0) return null;
+                return (
+                    <Box sx={{ mb: 1.5 }}>
+                        <Stack direction="row" spacing={0.5} justifyContent="center" sx={{ overflow: 'hidden' }}>
+                            {allImages.slice(0, 3).map((img, i) => (
+                                <Box
+                                    key={i}
+                                    onClick={() => onOpenViewer(allImages, i)}
+                                    sx={{
+                                        width: 32, height: 32, borderRadius: 1, overflow: 'hidden', cursor: 'pointer',
+                                        border: '1px solid', borderColor: 'divider',
+                                        '&:hover': { opacity: 0.8 }
+                                    }}
+                                >
+                                    <img src={getInundationImageUrl(img.url)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                </Box>
+                            ))}
+                        </Stack>
+                    </Box>
+                );
+            })()}
         </>
     );
 };

@@ -3,7 +3,7 @@ import { Box, Typography, Stack, Grid, Chip, IconButton, Tooltip, useTheme } fro
 import { IconClock, IconUser, IconCircleCheck, IconSend, IconClipboardCheck, IconEngine, IconChecklist } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import PermissionGuard from 'ui-component/PermissionGuard';
-import { getInundationImageUrl } from 'utils/imageHelper';
+import { getInundationImageUrl, getAllImagesFromReport } from 'utils/imageHelper';
 
 export const AdminCardMetrics = ({ report, displayColor, onOpenViewer }) => {
     const theme = useTheme();
@@ -47,25 +47,29 @@ export const AdminCardMetrics = ({ report, displayColor, onOpenViewer }) => {
             </Box>
 
             {/* Image List (Thumbnails) */}
-            {report?.images?.length > 0 && (
-                <Box>
-                    <Stack direction="row" spacing={0.5} sx={{ overflowX: 'auto', pt: 0.5, pb: 0.5, '&::-webkit-scrollbar': { height: 4, bgcolor: 'transparent' }, '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(0,0,0,0.1)', borderRadius: 10 } }}>
-                        {report.images.map((img, i) => (
-                            <Box
-                                key={i}
-                                onClick={() => onOpenViewer(report.images, i)}
-                                sx={{
-                                    width: 48, height: 48, borderRadius: 1.5, overflow: 'hidden', flexShrink: 0, cursor: 'pointer',
-                                    border: '1.5px solid', borderColor: 'divider', transition: 'all 0.2s',
-                                    '&:hover': { transform: 'scale(1.05)', borderColor: displayColor }
-                                }}
-                            >
-                                <img src={getInundationImageUrl(img)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            </Box>
-                        ))}
-                    </Stack>
-                </Box>
-            )}
+            {(() => {
+                const allImages = getAllImagesFromReport(report);
+                if (allImages.length === 0) return null;
+                return (
+                    <Box>
+                        <Stack direction="row" spacing={0.5} sx={{ overflowX: 'auto', pt: 0.5, pb: 0.5, '&::-webkit-scrollbar': { height: 4, bgcolor: 'transparent' }, '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(0,0,0,0.1)', borderRadius: 10 } }}>
+                            {allImages.slice(0, 3).map((img, i) => (
+                                <Box
+                                    key={i}
+                                    onClick={() => onOpenViewer(allImages, i)}
+                                    sx={{
+                                        width: 48, height: 48, borderRadius: 1.5, overflow: 'hidden', flexShrink: 0, cursor: 'pointer',
+                                        border: '1.5px solid', borderColor: 'divider', transition: 'all 0.2s',
+                                        '&:hover': { transform: 'scale(1.05)', borderColor: displayColor }
+                                    }}
+                                >
+                                    <img src={getInundationImageUrl(img.url)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                </Box>
+                            ))}
+                        </Stack>
+                    </Box>
+                );
+            })()}
             <Box sx={{ p: 1, bgcolor: 'grey.50', borderRadius: 3, border: '1px solid', borderColor: 'grey.100' }}>
                 <Stack direction="row" justifyContent="space-between" spacing={1}>
                     <Stack direction="row" spacing={1} alignItems="center">
@@ -119,25 +123,29 @@ export const AdminCardNormalState = ({ lastReport, displayColor, onOpenViewer })
             </Box>
 
             {/* Image List (Thumbnails) for Normal state */}
-            {lastReport?.images?.length > 0 && (
-                <Box>
-                    <Stack direction="row" spacing={0.5} sx={{ overflowX: 'auto', pt: 0.5, pb: 0.5, '&::-webkit-scrollbar': { height: 4, bgcolor: 'transparent' }, '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(0,0,0,0.1)', borderRadius: 10 } }}>
-                        {lastReport.images.map((img, i) => (
-                            <Box
-                                key={i}
-                                onClick={() => onOpenViewer(lastReport.images, i)}
-                                sx={{
-                                    width: 48, height: 48, borderRadius: 1.5, overflow: 'hidden', flexShrink: 0, cursor: 'pointer',
-                                    border: '1.5px solid', borderColor: 'divider', transition: 'all 0.2s',
-                                    '&:hover': { transform: 'scale(1.05)', borderColor: displayColor }
-                                }}
-                            >
-                                <img src={getInundationImageUrl(img)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            </Box>
-                        ))}
-                    </Stack>
-                </Box>
-            )}
+            {(() => {
+                const allImages = getAllImagesFromReport(lastReport);
+                if (allImages.length === 0) return null;
+                return (
+                    <Box>
+                        <Stack direction="row" spacing={0.5} sx={{ overflowX: 'auto', pt: 0.5, pb: 0.5, '&::-webkit-scrollbar': { height: 4, bgcolor: 'transparent' }, '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(0,0,0,0.1)', borderRadius: 10 } }}>
+                            {allImages.slice(0, 3).map((img, i) => (
+                                <Box
+                                    key={i}
+                                    onClick={() => onOpenViewer(allImages, i)}
+                                    sx={{
+                                        width: 48, height: 48, borderRadius: 1.5, overflow: 'hidden', flexShrink: 0, cursor: 'pointer',
+                                        border: '1.5px solid', borderColor: 'divider', transition: 'all 0.2s',
+                                        '&:hover': { transform: 'scale(1.05)', borderColor: displayColor }
+                                    }}
+                                >
+                                    <img src={getInundationImageUrl(img.url)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                </Box>
+                            ))}
+                        </Stack>
+                    </Box>
+                );
+            })()}
 
             <Box sx={{ p: 1, bgcolor: 'grey.50', borderRadius: 3, border: '1px solid', borderColor: 'grey.100' }}>
                 <Stack direction="row" justifyContent="space-between" spacing={1}>

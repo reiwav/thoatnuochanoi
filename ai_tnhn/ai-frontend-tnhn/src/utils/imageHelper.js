@@ -31,3 +31,13 @@ export const getInundationImageUrl = (img) => {
     // s1000 provides a good balance between quality and performance
     return `https://lh3.googleusercontent.com/d/${img}=s1000`;
 };
+
+export const getAllImagesFromReport = (report) => {
+    if (!report) return [];
+    const allImages = [];
+    if (report.images?.length > 0) report.images.forEach(img => allImages.push({ url: img, group: 'Xí nghiệp địa bàn' }));
+    if (report.survey_images?.length > 0) report.survey_images.forEach(img => allImages.push({ url: img, group: 'Khảo sát - Thiết kế' }));
+    if (report.mech_images?.length > 0) report.mech_images.forEach(img => allImages.push({ url: img, group: 'Cơ giới' }));
+    if (report.ktcl_images?.length > 0) report.ktcl_images.forEach(img => allImages.push({ url: img, group: 'Phòng KT-CL' }));
+    return allImages;
+};

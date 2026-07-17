@@ -29,6 +29,15 @@ import dayjs from 'dayjs';
 
 import stationApi from 'api/station';
 
+const parseTimestamp = (ts) => {
+    if (!ts) return dayjs();
+    if (typeof ts === 'number') {
+        if (ts < 10000000000) return dayjs.unix(ts);
+        return dayjs(ts);
+    }
+    return dayjs(ts);
+};
+
 const StationReportCard = ({ station, type, latestReading, onReportSuccess }) => {
     const oldId = station.OldId ?? station.old_id ?? station.OldID;
     const [value, setValue] = useState('');
@@ -118,7 +127,7 @@ const StationReportCard = ({ station, type, latestReading, onReportSuccess }) =>
                                     {latestReading.value}
                                 </Typography>
                                 <Typography variant="caption" color="text.secondary">
-                                    {dayjs(latestReading.timestamp).format('HH:mm DD/MM')}
+                                    {parseTimestamp(latestReading.timestamp).format('HH:mm DD/MM')}
                                 </Typography>
                             </Box>
                         ) : (
@@ -202,7 +211,7 @@ const StationReportCard = ({ station, type, latestReading, onReportSuccess }) =>
                                                 {history.map((row, idx) => (
                                                     <TableRow key={idx}>
                                                         <TableCell sx={{ fontSize: '0.8rem', py: 1 }}>
-                                                            {dayjs(row.timestamp).format('HH:mm:ss DD/MM/YYYY')}
+                                                            {parseTimestamp(row.timestamp).format('HH:mm:ss DD/MM/YYYY')}
                                                         </TableCell>
                                                         <TableCell align="right" sx={{ fontWeight: 800, color: 'primary.main', fontSize: '0.9rem', py: 1 }}>
                                                             {row.value}

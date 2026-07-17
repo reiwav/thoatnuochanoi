@@ -9,51 +9,29 @@ const useEmployeeWater = () => {
     const [latestReadings, setLatestReadings] = useState({}); // key: oldId -> value, timestamp
     const [loading, setLoading] = useState(true);
 
-    const fetchLatestReadings = async (lakeStations, riverStations) => {
+    const extractLatestReadings = (lakeStations, riverStations) => {
         const readings = {};
-        const fetchPromises = [];
 
         lakeStations.forEach(station => {
             const oldId = station.OldId ?? station.old_id ?? station.OldID;
-            if (oldId) {
-                fetchPromises.push(
-                    stationApi.lake.getHistory(oldId, { limit: 1 })
-                        .then(res => {
-                            const latest = Array.isArray(res) ? res[0] : (res?.data ? res.data[0] : null);
-                            if (latest) {
-                                readings[oldId] = {
-                                    value: latest.value,
-                                    timestamp: latest.timestamp
-                                };
-                            }
-                        })
-                        .catch(err => console.error(`Failed to fetch history for lake ${oldId}`, err))
-                );
+            if (oldId && station.latest_record) {
+                readings[oldId] = {
+                    value: station.latest_record.value,
+                    timestamp: station.latest_record.timestamp
+                };
             }
         });
 
         riverStations.forEach(station => {
             const oldId = station.OldId ?? station.old_id ?? station.OldID;
-            if (oldId) {
-                fetchPromises.push(
-                    stationApi.river.getHistory(oldId, { limit: 1 })
-                        .then(res => {
-                            const latest = Array.isArray(res) ? res[0] : (res?.data ? res.data[0] : null);
-                            if (latest) {
-                                readings[oldId] = {
-                                    value: latest.value,
-                                    timestamp: latest.timestamp
-                                };
-                            }
-                        })
-                        .catch(err => console.error(`Failed to fetch history for river ${oldId}`, err))
-                );
+            if (oldId && station.latest_record) {
+                readings[oldId] = {
+                    value: station.latest_record.value,
+                    timestamp: station.latest_record.timestamp
+                };
             }
         });
 
-        if (fetchPromises.length > 0) {
-            await Promise.all(fetchPromises);
-        }
         setLatestReadings(readings);
     };
 
@@ -71,7 +49,7 @@ const useEmployeeWater = () => {
             setLakes(lakeList);
             setRivers(riverList);
 
-            await fetchLatestReadings(lakeList, riverList);
+            extractLatestReadings(lakeList, riverList);
         } catch (error) {
             console.error('Failed to load employee assigned stations', error);
         } finally {

@@ -125,6 +125,7 @@ const AdminInundationDashboard = () => {
         onClose={() => setViewer({ ...viewer, open: false })}
         onPrev={() => setViewer((v) => ({ ...v, index: (v.index - 1 + v.images.length) % v.images.length }))}
         onNext={() => setViewer((v) => ({ ...v, index: (v.index + 1) % v.images.length }))}
+        onSelect={(idx) => setViewer((v) => ({ ...v, index: idx }))}
       />
 
       <InundationDetailDialog

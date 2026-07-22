@@ -18,7 +18,10 @@ const useRiverDialog = ({ open, isEdit, station, onClose, onSubmit }) => {
         Loai: '',
         NguongCanhBao: '',
         ThuTu: 0,
-        TrongSoBaoCao: 0
+        TrongSoBaoCao: 0,
+        data_mode: 'manual',
+        is_auto: false,
+        threshold_configs: []
     });
 
     useEffect(() => {
@@ -38,7 +41,10 @@ const useRiverDialog = ({ open, isEdit, station, onClose, onSubmit }) => {
                     Loai: station.Loai || '',
                     NguongCanhBao: station.NguongCanhBao !== undefined ? station.NguongCanhBao : '',
                     ThuTu: station.ThuTu !== undefined ? station.ThuTu : 0,
-                    TrongSoBaoCao: station.TrongSoBaoCao !== undefined ? station.TrongSoBaoCao : 0
+                    TrongSoBaoCao: station.TrongSoBaoCao !== undefined ? station.TrongSoBaoCao : 0,
+                    data_mode: station.data_mode || (station.is_auto ? 'auto' : 'manual'),
+                    is_auto: station.is_auto || false,
+                    threshold_configs: station.threshold_configs || []
                 });
             } else {
                 setFormData({
@@ -55,7 +61,10 @@ const useRiverDialog = ({ open, isEdit, station, onClose, onSubmit }) => {
                     Loai: '',
                     NguongCanhBao: '',
                     ThuTu: 0,
-                    TrongSoBaoCao: 0
+                    TrongSoBaoCao: 0,
+                    data_mode: 'manual',
+                    is_auto: false,
+                    threshold_configs: []
                 });
             }
         }

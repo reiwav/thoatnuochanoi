@@ -33,6 +33,7 @@ type Repositories struct {
 	RiverStation                  repository.RiverStation
 	HistoricalRain                repository.HistoricalRain
 	AppSetting                    repository.AppSetting
+	WaterThresholdSetting         repository.WaterThresholdSetting
 	WastewaterStation             repository.WastewaterStation
 	SluiceGate                    repository.SluiceGate
 }
@@ -64,6 +65,7 @@ func InitRepositories(db *db.Mongo, log logger.Logger) *Repositories {
 		RiverStation:                  query.NewRiverStationRepo(db.DB, "river_stations", "rvst", log),
 		HistoricalRain:                query.NewHistoricalRainRepo(db.DB, "historical_rain_records", "hrr", log),
 		AppSetting:                    query.NewAppSettingRepository(db.DB, "settings", "st", log),
+		WaterThresholdSetting:         query.NewWaterThresholdSettingRepository(db.DB, "water_threshold_settings", "wts", log),
 		WastewaterStation:             query.NewWastewaterStationRepo(db.DB, log),
 		SluiceGate:                    query.NewSluiceGateRepo(db.DB, log),
 	}

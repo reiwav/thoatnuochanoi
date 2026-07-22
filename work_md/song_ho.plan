@@ -1,0 +1,239 @@
+# Danh Sách Task & Thiết Kế Chi Tiết Quản Lý Sông & Hồ (song_ho.plan)
+
+---
+
+## 1. THIẾT KẾ CHI TIẾT STRUCT & MODEL (BACKEND GO)
+
+### 1.1. Định Nghĩa Consts & Model `WaterThresholdSetting` (`internal/models/water_setting.go`)
+Định nghĩa Type Constants chuẩn hóa cho Mùa (`SeasonType`) để liên kết tự động giữa Cấu hình Tháng chung và Ngưỡng riêng của từng Trạm Sông/Hồ:
+
+```go
+package models
+
+import (
+	"ai-api-tnhn/internal/base/model"
+	"time"
+)
+
+// SeasonType: Predefined Consts cho loại Mùa
+type SeasonType string
+
+const (
+	SeasonTypeDry   SeasonType = "mua_kho" // Mùa khô
+	SeasonTypeRainy SeasonType = "mua_mua" // Mùa mưa
+)
+
+// WaterThresholdSetting: Collection riêng lưu phiên bản cấu hình Mùa & Tháng theo Năm
+type WaterThresholdSetting struct {
+	model.BaseModel `bson:",inline"`
+	Year            int         `json:"year" bson:"year" example:"2026"`                        // Năm áp dụng (vd: 2026)
+	Version         int         `json:"version" bson:"version" example:"1"`                     // Phiên bản cấu hình (1, 2, 3...)
+	Name            string      `json:"name" bson:"name" example:"Cấu hình mùa năm 2026 (v1)"` // Tên/Mô tả phiên bản
+	Status          string      `json:"status" bson:"status" example:"new"`                    // "new" (chờ duyệt) | "active" (đang áp dụng) | "archived" (lịch sử)
+	CreatedByID     string      `json:"created_by_id" bson:"created_by_id" example:"usr_123"`   // ID người tạo phiên bản
+	CreatedByName   string      `json:"created_by_name" bson:"created_by_name" example:"Nguyễn Văn A"` // Tên người tạo
+	ActivatedByID   string      `json:"activated_by_id,omitempty" bson:"activated_by_id,omitempty"`     // ID người kích hoạt (Enable Active)
+	ActivatedByName string      `json:"activated_by_name,omitempty" bson:"activated_by_name,omitempty"` // Tên người kích hoạt
+	ActivatedTime   *time.Time  `json:"activated_time,omitempty" bson:"activated_time,omitempty"`       // Thời điểm bấm kích hoạt
+	Note            string      `json:"note,omitempty" bson:"note,omitempty"`                   // Ghi chú lý do cập nhật
+	Thresholds      []Threshold `json:"thresholds" bson:"thresholds"`                          // Danh sách các mùa & tháng
+	Ctime           time.Time   `json:"ctime" bson:"ctime"`
+	Utime           time.Time   `json:"utime" bson:"utime"`
+}
+
+// Threshold: Định nghĩa Mùa và danh sách Tháng áp dụng trong năm
+type Threshold struct {
+	Type   SeasonType `json:"type" bson:"type" example:"mua_kho"`             // "mua_kho" hoặc "mua_mua" (dùng Consts SeasonType)
+	Name   string     `json:"name" bson:"name" example:"Mùa khô"`             // Tên hiển thị: "Mùa khô", "Mùa mưa"
+	Months []int      `json:"months" bson:"months" example:"[1,2,3,4,11,12]"` // Các tháng thuộc mùa này (1-12)
+}
+```
+
+---
+
+### 1.2. File `internal/models/station.go` (Cơ Chế Khớp Tự Động Với WaterThresholdSetting)
+Mỗi Sông/Hồ lưu cấu hình ngưỡng `MinLevel` và `MaxLevel` theo `ThresholdType` (`SeasonType` consts).
+
+```go
+// StationThresholdConfig: Cấu hình ngưỡng riêng của từng Sông/Hồ theo SeasonType
+type StationThresholdConfig struct {
+	ThresholdType SeasonType `json:"threshold_type" bson:"threshold_type" example:"mua_kho"` // Khớp với Threshold.Type ("mua_kho" | "mua_mua")
+	ThresholdName string     `json:"threshold_name" bson:"threshold_name" example:"Mùa khô"` // Tên hiển thị mùa
+	MinLevel      float64    `json:"min_level" bson:"min_level" example:"1.5"`               // Ngưỡng giới hạn thấp (m)
+	MaxLevel      float64    `json:"max_level" bson:"max_level" example:"3.5"`               // Ngưỡng giới hạn cao (m)
+}
+
+type RiverStation struct {
+	model.BaseModel `bson:",inline"`
+	OldID           int                      `json:"OldId" bson:"old_id" example:"301"`
+	TenTram         string                   `json:"TenTram" bson:"ten_tram" example:"Sông Tô Lịch"`
+	TenPhuong       string                   `json:"TenPhuong" bson:"ten_phuong" example:"Láng Hạ"`
+	DiaChi          string                   `json:"DiaChi" bson:"dia_chi" example:"Đường Láng"`
+	Lat             string                   `json:"Lat" bson:"lat" example:"21.0123"`
+	Lng             string                   `json:"Lng" bson:"lng" example:"105.8123"`
+	Loai            string                   `json:"Loai" bson:"loai" example:"river"`
+	ThuTu           int                      `json:"ThuTu" bson:"thu_tu" example:"1"`
+	TrongSoBaoCao   int                      `json:"TrongSoBaoCao" bson:"trong_so_bao_cao" example:"10"`
+	ManHinh         int                      `json:"ManHinh" bson:"man_hinh" example:"1"`
+	PhuongId        int                      `json:"PhuongId" bson:"phuong_id" example:"2"`
+	Active          bool                     `json:"Active" bson:"active" example:"true"`
+	NguongCanhBao   float64                  `json:"NguongCanhBao" bson:"nguong_canh_bao" example:"3.0"`
+	OrgID           string                   `json:"org_id" bson:"org_id" example:"60f123456789"`
+	SharedOrgIDs    []string                 `json:"shared_org_ids" bson:"shared_org_ids" example:"[\"60f987654321\"]"`
+	ShareAll        bool                     `json:"share_all" bson:"share_all" example:"false"`
+	LatestRecord    *LatestWaterRecord       `json:"latest_record,omitempty" bson:"latest_record,omitempty"`
+
+	// [BỔ SUNG MỚI]
+	DataMode         string                   `json:"data_mode" bson:"data_mode" example:"auto"`                 // "auto" | "manual"
+	AutoStationID    string                   `json:"auto_station_id" bson:"auto_station_id" example:"ST_101"` // ID trạm tự động liên kết
+	IsAuto           bool                     `json:"is_auto" bson:"is_auto" example:"true"`                     // Cờ phân biệt nhanh trạm tự động
+	ThresholdConfigs []StationThresholdConfig `json:"threshold_configs" bson:"threshold_configs"`                // Ngưỡng cao/thấp cho từng mùa
+}
+
+type LakeStation struct {
+	model.BaseModel `bson:",inline"`
+	OldID           int                      `json:"OldId" bson:"old_id" example:"201"`
+	TenTram         string                   `json:"TenTram" bson:"ten_tram" example:"Hồ Hoàn Kiếm"`
+	TenPhuong       string                   `json:"TenPhuong" bson:"ten_phuong" example:"Phường Hàng Trống"`
+	DiaChi          string                   `json:"DiaChi" bson:"dia_chi" example:"Quanh hồ Hoàn Kiếm"`
+	Lat             string                   `json:"Lat" bson:"lat" example:"21.0285"`
+	Lng             string                   `json:"Lng" bson:"lng" example:"105.8542"`
+	Loai            string                   `json:"Loai" bson:"loai" example:"lake"`
+	ThuTu           int                      `json:"ThuTu" bson:"thu_tu" example:"1"`
+	TrongSoBaoCao   int                      `json:"TrongSoBaoCao" bson:"trong_so_bao_cao" example:"10"`
+	ManHinh         int                      `json:"ManHinh" bson:"man_hinh" example:"1"`
+	PhuongId        int                      `json:"PhuongId" bson:"phuong_id" example:"1"`
+	Active          bool                     `json:"Active" bson:"active" example:"true"`
+	NguongCanhBao   float64                  `json:"NguongCanhBao" bson:"nguong_canh_bao" example:"1.5"`
+	OrgID           string                   `json:"org_id" bson:"org_id" example:"60f123456789"`
+	SharedOrgIDs    []string                 `json:"shared_org_ids" bson:"shared_org_ids" example:"[\"60f987654321\"]"`
+	ShareAll        bool                     `json:"share_all" bson:"share_all" example:"false"`
+	LatestRecord    *LatestWaterRecord       `json:"latest_record,omitempty" bson:"latest_record,omitempty"`
+
+	// [BỔ SUNG MỚI]
+	DataMode         string                   `json:"data_mode" bson:"data_mode" example:"manual"`              // "auto" | "manual"
+	AutoStationID    string                   `json:"auto_station_id" bson:"auto_station_id" example:""`         // ID trạm tự động liên kết
+	IsAuto           bool                     `json:"is_auto" bson:"is_auto" example:"false"`                    // Cờ phân biệt nhanh trạm tự động
+	ThresholdConfigs []StationThresholdConfig `json:"threshold_configs" bson:"threshold_configs"`                // Ngưỡng cao/thấp cho từng mùa
+}
+```
+
+---
+
+### 1.3. CƠ CHẾ CRONJOB, TRIGGER REFRESH CACHE VÀ AUTO-BINDING HELPER
+
+#### A. Cơ chế Cronjob & Event Trigger Reload Cache:
+1. **Cronjob Tự Động (Lúc 00:00 Hàng Ngày)**:
+   - Chạy Ticker/Cronjob vào mốc **00:00:00 mỗi ngày** để tự động query DB `WaterThresholdSetting` (`Status == "active"`), reload lại In-Memory Cache của Service.
+2. **Event Trigger Real-time (Khi Gọi API Enable Active)**:
+   - Ngay khi người dùng gọi API Kích hoạt `PUT /api/v1/water-settings/:id/activate`, Service sẽ **reload lại In-Memory Cache ngay lập tức** mà không cần chờ tới 00:00.
+
+#### B. Helper Auto-Binding Calculation:
+- Viết hàm `CalculateThresholdStatus(timestamp time.Time, stationConfigs []StationThresholdConfig, value float64) (status string, min float64, max float64)`:
+  1. Lấy `WaterThresholdSetting` active từ Cache.
+  2. Trích xuất tháng của `timestamp` (tháng 1..12).
+  3. Tra trong `setting.Thresholds` xem tháng đó thuộc `SeasonType` nào (vd: `mua_kho` hoặc `mua_mua`).
+  4. Tra trong `stationConfigs` của trạm item có `ThresholdType == SeasonType`.
+  5. So sánh mực nước `value` với `min_level` & `max_level` để trả về `status` (`"normal"`, `"high"`, `"low"`), `min_level`, `max_level`.
+
+---
+
+### 1.4. File `internal/models/water.go`
+```go
+type RiverRecord struct {
+	model.BaseModel `bson:",inline"`
+	StationID       int64     `bson:"station_id" json:"station_id"`
+	StationName     string    `bson:"station_name" json:"station_name"`
+	Date            string    `bson:"date" json:"date"`           // YYYY-MM-DD
+	Timestamp       time.Time `bson:"timestamp" json:"timestamp"` // Mốc thời gian đầy đủ
+	Value           float64   `bson:"value" json:"value"`
+
+	// [BỔ SUNG MỚI]
+	Source          string  `bson:"source" json:"source" example:"manual"`                 // "auto" | "manual"
+	ThresholdStatus string  `bson:"threshold_status" json:"threshold_status" example:"high"` // "normal" | "high" | "low"
+	MinThreshold    float64 `bson:"min_threshold" json:"min_threshold" example:"1.5"`       // Ngưỡng thấp tại mốc ghi
+	MaxThreshold    float64 `bson:"max_threshold" json:"max_threshold" example:"3.5"`       // Ngưỡng cao tại mốc ghi
+}
+
+type LakeRecord struct {
+	model.BaseModel `bson:",inline"`
+	StationID       int64     `bson:"station_id" json:"station_id"`
+	StationName     string    `bson:"station_name" json:"station_name"`
+	Date            string    `bson:"date" json:"date"`           // YYYY-MM-DD
+	Timestamp       time.Time `bson:"timestamp" json:"timestamp"` // Mốc thời gian đầy đủ
+	Value           float64   `bson:"value" json:"value"`
+
+	// [BỔ SUNG MỚI]
+	Source          string  `bson:"source" json:"source" example:"manual"`                 // "auto" | "manual"
+	ThresholdStatus string  `bson:"threshold_status" json:"threshold_status" example:"high"` // "normal" | "high" | "low"
+	MinThreshold    float64 `bson:"min_threshold" json:"min_threshold" example:"1.5"`       // Ngưỡng thấp tại mốc ghi
+	MaxThreshold    float64 `bson:"max_threshold" json:"max_threshold" example:"3.5"`       // Ngưỡng cao tại mốc ghi
+}
+```
+
+---
+
+### 1.5. DTO Cho API Batch Upsert (Nhập Grid Excel)
+
+```go
+type BatchWaterRecordInput struct {
+	TargetType string            `json:"target_type"` // "river" hoặc "lake"
+	Date       string            `json:"date"`        // "YYYY-MM-DD"
+	Records    []WaterRecordItem `json:"records"`
+}
+
+type WaterRecordItem struct {
+	StationID int64     `json:"station_id"`
+	Timestamp time.Time `json:"timestamp"` // Mốc thời gian đầy đủ
+	Value     float64   `json:"value"`     // Mực nước nhập vào
+}
+```
+
+---
+
+## 2. DANH SÁCH CHECKLIST CÁC TASK THỰC THI
+
+### Phase 1: Backend Go (`ai-api-tnhn`)
+- [x] **1.1. Predefined Consts & Model WaterThresholdSetting**: Thêm type `SeasonType` consts (`SeasonTypeDry = "mua_kho"`, `SeasonTypeRainy = "mua_mua"`) và struct `WaterThresholdSetting` trong `internal/models/water_setting.go`
+- [x] **1.2. Models Station & StationThresholdConfig**: Cập nhật `StationThresholdConfig` sử dụng `SeasonType` để tự động khớp với setting trong `internal/models/station.go`
+- [x] **1.3. Models Record**: Cập nhật `RiverRecord` & `LakeRecord` (Thêm `Source`, `ThresholdStatus`, `MinThreshold`, `MaxThreshold`) trong `internal/models/water.go`
+- [x] **1.4. Cronjob, Trigger Reload Cache & Auto-Binding Helper**:
+  - **Cronjob**: Lập lịch Cronjob lúc **00:00 hàng ngày** tự động đọc DB và reload In-Memory Cache cho active setting.
+  - **Trigger Reload Cache**: Reload Cache lập tức khi thực thi API `PUT /api/v1/water-settings/:id/activate`.
+  - **Auto-Binding Helper**: Viết hàm `CalculateThresholdStatus` tự động tra tháng của `timestamp` ➔ tìm `SeasonType` ➔ khớp với `StationThresholdConfig` trạm ➔ tính `ThresholdStatus` ("normal" | "high" | "low").
+- [x] **1.5. API WaterThresholdSetting**: Endpoints CRUD `/api/v1/water-settings` (Tạo mới `Status: new`, Enable Active `Status: active`)
+- [x] **1.6. API Station Management**: Cập nhật CRUD Sông/Hồ tự động render/nhập `StationThresholdConfig` theo các mùa được định nghĩa
+- [x] **1.7. API Batch Upsert Grid**: API GET/POST `/api/v1/water/grid-data` (Tự động khớp mùa và tính `ThresholdStatus` lưu vào Record)
+
+### Phase 2: Frontend (`ai-frontend-tnhn`)
+- [x] **2.1. UI Cấu Hình Mùa & Tháng Theo Năm (`WaterThresholdSetting`)**:
+  - **Vị trí Menu**: Menu **Hệ thống** ➔ **Cấu hình ngưỡng sông hồ** (Route: `/admin/setting/water-thresholds`)
+  - **Chi tiết giao diện**:
+    - **Top Bar**: Selector lọc theo Năm (Default: năm hiện tại), Badge hiển thị phiên bản đang Active, Nút **"Tạo cấu hình mới"**.
+    - **Danh sách phiên bản (Version List Table)**: Hiển thị `Tên cấu hình`, `Năm`, `Version`, `Trạng thái` (Badge `Active` / `New` / `Archived`), `Người tạo`, `Người kích hoạt`, `Thời gian`.
+    - **Thao tác Kích hoạt (Activate Button)**: Cho bản ghi trạng thái `new`. Click ➔ Pop-up Confirm ➔ Gọi API `PUT /api/admin/settings/water-thresholds/:id/activate` (bản target ➔ `active`, bản active cũ ➔ `archived`).
+    - **Form thiết lập Mùa & Tháng**: Phân chia 12 tháng trong năm vào 2 type mùa chuẩn `Mùa khô` (`mua_kho`) & `Mùa mưa` (`mua_mua`).
+- [x] **2.2. UI Cấu Hình Chi Tiết Trạm (Tự Động Bắt Theo Active Setting)**:
+  - **Vị trí Menu**: **Mực nước** ➔ **Mực nước hồ** / **Mực nước sông** ➔ **Danh sách** (Route: `/admin/station/lake/list`, `/admin/station/river/list`) ➔ Dialog Chỉnh Sửa Trạm.
+  - **Chi tiết giao diện**:
+    - Màn hình Dialog dạng **2 cột (xs=12 md=6)** rộng rãi, không bị scroll.
+    - Cột trái: Thông tin cơ bản (Dùng `OldId` làm ID liên kết tự động).
+    - Cột phải: Toggle chọn `DataMode` (`"auto"` | `"manual"`) & Tự động render 2 khối nhập ngưỡng theo các mùa trong Active Setting (`mua_kho`, `mua_mua`).
+- [ ] **2.3. Dashboard Giám Sát Sông & Hồ (Bảng Sông Hồ V2)**:
+  - **Vị trí Menu**: **Mực nước** ➔ **Bảng sông hồ V2** (Route: `/admin/station/water/summary-v2`)
+  - **Chi tiết giao diện**:
+    - Hiển thị Badge phương thức dữ liệu: Auto 🤖 / Manual ✍️.
+    - Render màu sắc ô mực nước chuẩn xác theo `ThresholdStatus`: Normal (Mặc định/Trắng), High (Đỏ dâng cao vượt ngưỡng), Low (Cam/Vàng cạn nước dưới ngưỡng).
+- [ ] **2.4. Màn Hình Nhập Dữ Liệu Dạng Excel Grid (Dữ liệu Nhập Tay / Lịch sử)**:
+  - **Vị trí Menu**: **Mực nước** ➔ **Bảng sông hồ V2** ➔ Tab/View **Nhập dữ liệu Grid Excel**
+  - **Chi tiết giao diện**:
+    - **TH1 (Cố định)**: Cột mốc 6h30, 13h30, Hiện tại, Chênh lệch.
+    - **TH2 (Chu kỳ linh hoạt)**: Chọn bước thời gian linh hoạt (5p, 15p, 30p, 1h, 2h).
+    - Tự động bắt mùa theo tháng mốc thời gian & hiển thị màu tô ngay tại ô nhập.
+    - Nút **"Lưu dữ liệu"**: Gửi payload về API `POST /api/admin/water/grid-data/batch`.
+
+### Phase 3: Kiểm Thử & Xác Nhận (Verification)
+- [x] **3.1.** Unit test backend logic map ngưỡng mùa và API batch upsert (Đã chạy thành công 100% test cases)
+- [ ] **3.2.** Kiểm thử luồng Cấu hình Mùa theo Năm trên UI
+- [ ] **3.3.** Kiểm thử tra cứu Lịch sử phiên bản cấu hình cũ
+- [ ] **3.4.** Kiểm thử Dashboard hiển thị màu sắc chuẩn thời gian thực

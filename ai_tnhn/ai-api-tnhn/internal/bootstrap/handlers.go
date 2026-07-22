@@ -31,6 +31,7 @@ func InitRouter(cfg *config.Config, s *Services, r *Repositories, log logger.Log
 	roleHandler := handler.NewRoleHandler(s.Role, contextWith)
 	queryHandler := handler.NewQueryHandler(s.Query)
 	settingHandler := handler.NewSettingHandler(s.Setting, s.RainWorker, contextWith)
+	waterThresholdHandler := handler.NewWaterThresholdHandler(s.WaterThreshold, contextWith)
 	wastewaterHandler := handler.NewWastewaterTreatmentHandler(s.Wastewater, contextWith)
 	sluiceGateHandler := handler.NewSluiceGateHandler(s.SluiceGate, contextWith)
 	googleHandler := google.NewHandler(s.GoogleApi, s.Gemini, s.Drive, s.Water, s.Email, contextWith, cfg.GoogleDriveConfig, log, s.Weather, r.AiChatLog, s.Report)
@@ -67,5 +68,5 @@ func InitRouter(cfg *config.Config, s *Services, r *Repositories, log logger.Log
 		GetWeatherForecastHandler:      googleHandler.GetWeatherForecast,
 	}
 
-	return handlers.Create(mid, orgHandler, empHandler, stationHandler, inuHandler, waterHandler, rainHandler, googleHandler, queryHandler, emConstructionHandler, weatherHandler, contractCategoryHandler, contractHandler, pumpingStationHandler, wastewaterHandler, sluiceGateHandler, permHandler, roleHandler, settingHandler)
+	return handlers.Create(mid, orgHandler, empHandler, stationHandler, inuHandler, waterHandler, rainHandler, googleHandler, queryHandler, emConstructionHandler, weatherHandler, contractCategoryHandler, contractHandler, pumpingStationHandler, wastewaterHandler, sluiceGateHandler, permHandler, roleHandler, settingHandler, waterThresholdHandler)
 }

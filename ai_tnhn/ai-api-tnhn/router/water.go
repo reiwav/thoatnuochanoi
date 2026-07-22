@@ -16,4 +16,5 @@ func (h HandlerFuncs) WaterRoutes(api *gin.RouterGroup, mid middleware.Middlewar
 	water.GET("/river/:id/history", waterHandler.GetRiverHistory)
 	water.POST("/river/:id/report", waterHandler.ReportRiver)
 	water.GET("/summary-v2", waterHandler.GetWaterSummaryV2)
+	water.POST("/grid-data/batch", waterHandler.BatchUpsert)
 }

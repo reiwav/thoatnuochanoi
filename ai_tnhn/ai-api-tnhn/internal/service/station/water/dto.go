@@ -1,5 +1,7 @@
 package water
 
+import "time"
+
 type WaterStationStat struct {
 	Name     string  `json:"name"`
 	Level    float64 `json:"level"`
@@ -14,4 +16,29 @@ type WaterSummaryData struct {
 	LakeStations  []WaterStationStat `json:"lake_stations"`
 	RiverStations []WaterStationStat `json:"river_stations"`
 	SummaryText   string             `json:"summary_text,omitempty"`
+}
+
+type BatchWaterRecordInput struct {
+	TargetType string            `json:"target_type"` // "river" hoặc "lake"
+	Date       string            `json:"date"`        // "YYYY-MM-DD"
+	Records    []WaterRecordItem `json:"records"`
+}
+
+type WaterRecordItem struct {
+	StationID int64     `json:"station_id"`
+	Timestamp time.Time `json:"timestamp"` // Mốc thời gian đầy đủ
+	Value     float64   `json:"value"`     // Mực nước nhập vào
+}
+
+type GridRowData struct {
+	StationID        int64              `json:"station_id"`
+	StationName      string             `json:"station_name"`
+	DataMode         string             `json:"data_mode"`
+	IsAuto           bool               `json:"is_auto"`
+	ValuesByTimeSlot map[string]float64 `json:"values_by_time_slot"`
+	CurrentValue     float64            `json:"current_value"`
+	DiffValue        float64            `json:"diff_value"`
+	ThresholdStatus  string             `json:"threshold_status"`
+	MinThreshold     float64            `json:"min_threshold"`
+	MaxThreshold     float64            `json:"max_threshold"`
 }

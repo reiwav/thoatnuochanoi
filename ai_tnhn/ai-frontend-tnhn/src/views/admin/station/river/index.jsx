@@ -152,6 +152,7 @@ const StationRiverList = () => {
                                 <TableCell sx={{ fontWeight: 800, fontSize: '0.95rem' }}>Địa chỉ</TableCell>
                                 <TableCell sx={{ fontWeight: 800, fontSize: '0.95rem' }}>Xí nghiệp quản lý</TableCell>
                                 <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, fontWeight: 800, fontSize: '0.95rem' }}>Xí nghiệp phối hợp</TableCell>
+                                <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' }, fontWeight: 800, fontSize: '0.95rem' }}>Phương thức</TableCell>
                                 <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' }, fontWeight: 800, fontSize: '0.95rem' }}>
                                     <TableSortLabel
                                         active={sortOrder !== 'default'}

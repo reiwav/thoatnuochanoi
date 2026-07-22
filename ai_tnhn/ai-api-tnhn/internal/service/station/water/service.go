@@ -4,6 +4,7 @@ import (
 	"ai-api-tnhn/internal/base/logger"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/repository"
+	"ai-api-tnhn/internal/service/setting"
 	"ai-api-tnhn/internal/service/station"
 	"ai-api-tnhn/internal/service/weather"
 	"context"
@@ -21,22 +22,26 @@ type Service interface {
 
 	CreateLakeRecord(ctx context.Context, record *models.LakeRecord, user *models.User) error
 	CreateRiverRecord(ctx context.Context, record *models.RiverRecord, user *models.User) error
+
+	BatchUpsertWaterRecords(ctx context.Context, input *BatchWaterRecordInput, user *models.User) error
 }
 
 type service struct {
-	lakeRepo     repository.Lake
-	riverRepo    repository.River
-	stationSvc   station.Service
-	weatherSvc   weather.Service
-	logger       logger.Logger
+	lakeRepo          repository.Lake
+	riverRepo         repository.River
+	stationSvc        station.Service
+	weatherSvc        weather.Service
+	waterThresholdSvc setting.WaterThresholdService
+	logger            logger.Logger
 }
 
-func NewService(l logger.Logger, lake repository.Lake, river repository.River, stationSvc station.Service, weatherSvc weather.Service) Service {
+func NewService(l logger.Logger, lake repository.Lake, river repository.River, stationSvc station.Service, weatherSvc weather.Service, waterThresholdSvc setting.WaterThresholdService) Service {
 	return &service{
-		lakeRepo:   lake,
-		riverRepo:  river,
-		stationSvc: stationSvc,
-		weatherSvc: weatherSvc,
-		logger:     l,
+		lakeRepo:          lake,
+		riverRepo:         river,
+		stationSvc:        stationSvc,
+		weatherSvc:        weatherSvc,
+		waterThresholdSvc: waterThresholdSvc,
+		logger:            l,
 	}
 }

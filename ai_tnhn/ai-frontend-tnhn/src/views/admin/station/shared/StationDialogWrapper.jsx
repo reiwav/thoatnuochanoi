@@ -5,9 +5,9 @@ import {
 } from '@mui/material';
 import { IconX } from '@tabler/icons-react';
 
-const StationDialogWrapper = ({ open, onClose, onSave, title, children, loading, isEdit }) => {
+const StationDialogWrapper = ({ open, onClose, onSave, title, children, loading, isEdit, maxWidth = 'md' }) => {
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+        <Dialog open={open} onClose={onClose} maxWidth={maxWidth} fullWidth>
             <DialogTitle component="div" sx={{ fontWeight: 900, display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2, pt: 2, pb: 1 }}>
                 <Typography variant="h3" sx={{ fontWeight: 900 }}>{title}</Typography>
                 <IconButton onClick={onClose} size="small"><IconX size={24} /></IconButton>

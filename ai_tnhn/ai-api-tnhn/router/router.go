@@ -19,7 +19,7 @@ import (
 )
 
 // Create handlers
-func (h *HandlerFuncs) Create(mid middleware.Middleware, orgHandler *handler.OrganizationHandler, empHandler *handler.EmployeeHandler, stationHandler *handler.StationHandler, inuHandler *handler.InundationHandler, waterHandler *handler.WaterHandler, rainHandler *handler.RainHandler, googleHandler google.Handler, queryHandler *handler.QueryHandler, emConstructionHandler *handler.EmergencyConstructionHandler, weatherHandler *handler.WeatherHandler, contractCategoryHandler *handler.ContractCategoryHandler, contractHandler *handler.ContractHandler, pumpingHandler *handler.PumpingStationHandler, wastewaterHandler *handler.WastewaterTreatmentHandler, sluiceHandler *handler.SluiceGateHandler, permHandler *handler.PermissionHandler, roleHandler *handler.RoleHandler, settingHandler *handler.SettingHandler) *gin.Engine {
+func (h *HandlerFuncs) Create(mid middleware.Middleware, orgHandler *handler.OrganizationHandler, empHandler *handler.EmployeeHandler, stationHandler *handler.StationHandler, inuHandler *handler.InundationHandler, waterHandler *handler.WaterHandler, rainHandler *handler.RainHandler, googleHandler google.Handler, queryHandler *handler.QueryHandler, emConstructionHandler *handler.EmergencyConstructionHandler, weatherHandler *handler.WeatherHandler, contractCategoryHandler *handler.ContractCategoryHandler, contractHandler *handler.ContractHandler, pumpingHandler *handler.PumpingStationHandler, wastewaterHandler *handler.WastewaterTreatmentHandler, sluiceHandler *handler.SluiceGateHandler, permHandler *handler.PermissionHandler, roleHandler *handler.RoleHandler, settingHandler *handler.SettingHandler, waterThresholdHandler *handler.WaterThresholdHandler) *gin.Engine {
 	r := gin.Default()
 	// Swagger
 	r.GET("/swagger/*any", gs.WrapHandler(swaggerFiles.Handler))
@@ -79,6 +79,7 @@ func (h *HandlerFuncs) Create(mid middleware.Middleware, orgHandler *handler.Org
 	h.PermissionRoutes(apiAdmin, mid, permHandler)
 	h.RoleRoutes(apiAdmin, mid, roleHandler)
 	h.SettingRoutes(apiAdmin, mid, settingHandler)
+	h.WaterThresholdSettingRoutes(apiAdmin, mid, waterThresholdHandler)
 	apiAdmin.GET("/weather/rain/compare", mid.MidBasicType(), weatherHandler.GetComparisonReport)
 
 	apiAdmin.POST("/database/query", mid.MidBasicType(), h.DatabaseQueryHandler)

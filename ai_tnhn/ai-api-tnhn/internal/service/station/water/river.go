@@ -45,6 +45,16 @@ func (s *service) CreateRiverRecord(ctx context.Context, record *models.RiverRec
 		loc, _ := time.LoadLocation("Asia/Ho_Chi_Minh")
 		record.Date = record.Timestamp.In(loc).Format("2006-01-02")
 	}
+	if record.Source == "" {
+		record.Source = "manual"
+	}
+
+	if station != nil && len(station.ThresholdConfigs) > 0 && s.waterThresholdSvc != nil {
+		status, minVal, maxVal := s.waterThresholdSvc.CalculateThresholdStatus(ctx, record.Timestamp, station.ThresholdConfigs, record.Value)
+		record.ThresholdStatus = status
+		record.MinThreshold = minVal
+		record.MaxThreshold = maxVal
+	}
 
 	err = s.riverRepo.Create(ctx, record)
 	if err != nil {

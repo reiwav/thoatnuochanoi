@@ -21,6 +21,18 @@ const settingApi = {
     },
     updateWaterSourceSetting: (data) => {
         return axiosClient.put('/admin/settings/water-source', data);
+    },
+    getActiveWaterThreshold: (year) => {
+        return axiosClient.get('/admin/settings/water-thresholds/active', { params: { year } });
+    },
+    listWaterThresholds: (params) => {
+        return axiosClient.get('/admin/settings/water-thresholds', { params });
+    },
+    createWaterThreshold: (data) => {
+        return axiosClient.post('/admin/settings/water-thresholds', data);
+    },
+    activateWaterThreshold: (id) => {
+        return axiosClient.put(`/admin/settings/water-thresholds/${id}/activate`);
     }
 };
 

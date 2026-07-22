@@ -8613,11 +8613,21 @@ const docTemplate = `{
                 "created_at": {
                     "type": "integer"
                 },
+                "data_mode": {
+                    "description": "\"auto\" | \"manual\"",
+                    "type": "string",
+                    "example": "manual"
+                },
                 "deleted_at": {
                     "type": "integer"
                 },
                 "id": {
                     "type": "string"
+                },
+                "is_auto": {
+                    "description": "Flag phân biệt nhanh trạm tự động",
+                    "type": "boolean",
+                    "example": false
                 },
                 "latest_record": {
                     "$ref": "#/definitions/models.LatestWaterRecord"
@@ -8638,6 +8648,13 @@ const docTemplate = `{
                     "example": [
                         "[\"60f987654321\"]"
                     ]
+                },
+                "threshold_configs": {
+                    "description": "Ngưỡng cao/thấp cho từng mùa",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.StationThresholdConfig"
+                    }
                 },
                 "updated_at": {
                     "type": "integer"
@@ -9083,11 +9100,21 @@ const docTemplate = `{
                 "created_at": {
                     "type": "integer"
                 },
+                "data_mode": {
+                    "description": "\"auto\" | \"manual\"",
+                    "type": "string",
+                    "example": "auto"
+                },
                 "deleted_at": {
                     "type": "integer"
                 },
                 "id": {
                     "type": "string"
+                },
+                "is_auto": {
+                    "description": "Flag phân biệt nhanh trạm tự động",
+                    "type": "boolean",
+                    "example": true
                 },
                 "latest_record": {
                     "$ref": "#/definitions/models.LatestWaterRecord"
@@ -9108,6 +9135,13 @@ const docTemplate = `{
                     "example": [
                         "[\"60f987654321\"]"
                     ]
+                },
+                "threshold_configs": {
+                    "description": "Ngưỡng cao/thấp cho từng mùa",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.StationThresholdConfig"
+                    }
                 },
                 "updated_at": {
                     "type": "integer"
@@ -9158,6 +9192,17 @@ const docTemplate = `{
                     "type": "integer"
                 }
             }
+        },
+        "models.SeasonType": {
+            "type": "string",
+            "enum": [
+                "mua_kho",
+                "mua_mua"
+            ],
+            "x-enum-varnames": [
+                "SeasonTypeDry",
+                "SeasonTypeRainy"
+            ]
         },
         "models.SluiceGate": {
             "type": "object",
@@ -9281,6 +9326,31 @@ const docTemplate = `{
                 "StationAreaXa",
                 "StationAreaThiTran"
             ]
+        },
+        "models.StationThresholdConfig": {
+            "type": "object",
+            "properties": {
+                "max_level": {
+                    "type": "number",
+                    "example": 3.5
+                },
+                "min_level": {
+                    "type": "number",
+                    "example": 1.5
+                },
+                "threshold_name": {
+                    "type": "string",
+                    "example": "Mùa khô"
+                },
+                "threshold_type": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.SeasonType"
+                        }
+                    ],
+                    "example": "mua_kho"
+                }
+            }
         },
         "models.Token": {
             "type": "object",

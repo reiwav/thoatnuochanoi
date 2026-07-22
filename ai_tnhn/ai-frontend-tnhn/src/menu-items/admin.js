@@ -347,6 +347,15 @@ const adminPages = {
           breadcrumbs: false
         },
         {
+          id: 'setting:water-threshold',
+          permission: 'settings:view',
+          title: 'Cấu hình ngưỡng sông hồ',
+          type: 'item',
+          url: '/admin/setting/water-thresholds',
+          icon: icons.IconRipple,
+          breadcrumbs: false
+        },
+        {
           id: 'setting:flood-level',
           permission: 'settings:view',
           title: 'Cấu hình điểm ngập',

@@ -64,6 +64,7 @@ type Services struct {
 	Drive            googledrive.Service
 	Storage          storage.Service
 	Setting          setting.Service
+	WaterThreshold   setting.WaterThresholdService
 	Wastewater       wastewater_treatment.Service
 	SluiceGate       sluice_gate.Service
 	RainWorker       rain.Worker
@@ -110,6 +111,8 @@ func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log log
 	s.Employee = employee.NewService(repos.User, repos.Organization, repos.Role, driveService)
 	s.Station = station.NewService(repos.RainStation, repos.LakeStation, repos.RiverStation, repos.Organization)
 	s.Setting = setting.NewService(repos.AppSetting)
+	s.WaterThreshold = setting.NewWaterThresholdService(repos.WaterThresholdSetting, log)
+	s.WaterThreshold.StartCron(context.Background())
 	thoatnuocSvc := thoatnuoc.NewService(s.Setting)
 	forecastSvc := forecast.NewService()
 	s.Rain = rain.NewService(repos.Rain, repos.RainStation, thoatnuocSvc, s.Setting)
@@ -118,7 +121,7 @@ func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log log
 	rainWorker.Start(context.Background())
 
 	s.Weather = weather.NewService(repos.HistoricalRain, s.Station, thoatnuocSvc, forecastSvc, s.Setting)
-	s.Water = water.NewService(log, repos.Lake, repos.River, s.Station, s.Weather)
+	s.Water = water.NewService(log, repos.Lake, repos.River, s.Station, s.Weather, s.WaterThreshold)
 	s.Email = email.NewService(cfg.EmailConfig)
 	s.Inundation = inundation.NewService(repos.InundationReport, repos.InundationHistory, repos.InundationStation, repos.Organization, repos.User, s.Drive, s.Setting)
 	s.Employee.RegisterOnUserUpdate(func(userID string) {

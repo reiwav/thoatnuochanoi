@@ -6,15 +6,15 @@ import MultiSelectCheckboxes from 'ui-component/MultiSelectCheckboxes';
 
 const StationBaseFields = ({ formData, handleChange, organizations }) => {
     return (
-        <Stack spacing={2.5}>
+        <Stack spacing={2}>
             <TextField
-                fullWidth label="Tên trạm / Điểm" required
+                fullWidth size="small" label="Tên trạm / Điểm" required
                 value={formData.TenTram}
                 onChange={(e) => handleChange('TenTram', e.target.value)}
             />
 
             <TextField
-                fullWidth label="Địa chỉ"
+                fullWidth size="small" label="Địa chỉ"
                 value={formData.DiaChi}
                 onChange={(e) => handleChange('DiaChi', e.target.value)}
             />
@@ -22,14 +22,14 @@ const StationBaseFields = ({ formData, handleChange, organizations }) => {
             <Grid container spacing={2}>
                 <Grid item xs={12} sm={6}>
                     <TextField
-                        fullWidth label="Vĩ độ (Lat)"
+                        fullWidth size="small" label="Vĩ độ (Lat)"
                         value={formData.Lat}
                         onChange={(e) => handleChange('Lat', e.target.value)}
                     />
                 </Grid>
                 <Grid item xs={12} sm={6}>
                     <TextField
-                        fullWidth label="Kinh độ (Lng)"
+                        fullWidth size="small" label="Kinh độ (Lng)"
                         value={formData.Lng}
                         onChange={(e) => handleChange('Lng', e.target.value)}
                     />
@@ -39,6 +39,7 @@ const StationBaseFields = ({ formData, handleChange, organizations }) => {
             <TextField
                 select
                 fullWidth
+                size="small"
                 label="Đơn vị quản lý"
                 required
                 value={formData.org_id}

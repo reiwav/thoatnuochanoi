@@ -720,10 +720,18 @@ definitions:
         type: integer
       created_at:
         type: integer
+      data_mode:
+        description: '"auto" | "manual"'
+        example: manual
+        type: string
       deleted_at:
         type: integer
       id:
         type: string
+      is_auto:
+        description: Flag phân biệt nhanh trạm tự động
+        example: false
+        type: boolean
       latest_record:
         $ref: '#/definitions/models.LatestWaterRecord'
       org_id:
@@ -737,6 +745,11 @@ definitions:
         - '["60f987654321"]'
         items:
           type: string
+        type: array
+      threshold_configs:
+        description: Ngưỡng cao/thấp cho từng mùa
+        items:
+          $ref: '#/definitions/models.StationThresholdConfig'
         type: array
       updated_at:
         type: integer
@@ -1052,10 +1065,18 @@ definitions:
         type: integer
       created_at:
         type: integer
+      data_mode:
+        description: '"auto" | "manual"'
+        example: auto
+        type: string
       deleted_at:
         type: integer
       id:
         type: string
+      is_auto:
+        description: Flag phân biệt nhanh trạm tự động
+        example: true
+        type: boolean
       latest_record:
         $ref: '#/definitions/models.LatestWaterRecord'
       org_id:
@@ -1069,6 +1090,11 @@ definitions:
         - '["60f987654321"]'
         items:
           type: string
+        type: array
+      threshold_configs:
+        description: Ngưỡng cao/thấp cho từng mùa
+        items:
+          $ref: '#/definitions/models.StationThresholdConfig'
         type: array
       updated_at:
         type: integer
@@ -1105,6 +1131,14 @@ definitions:
       updated_at:
         type: integer
     type: object
+  models.SeasonType:
+    enum:
+    - mua_kho
+    - mua_mua
+    type: string
+    x-enum-varnames:
+    - SeasonTypeDry
+    - SeasonTypeRainy
   models.SluiceGate:
     properties:
       active:
@@ -1191,6 +1225,22 @@ definitions:
     - StationAreaPhuong
     - StationAreaXa
     - StationAreaThiTran
+  models.StationThresholdConfig:
+    properties:
+      max_level:
+        example: 3.5
+        type: number
+      min_level:
+        example: 1.5
+        type: number
+      threshold_name:
+        example: Mùa khô
+        type: string
+      threshold_type:
+        allOf:
+        - $ref: '#/definitions/models.SeasonType'
+        example: mua_kho
+    type: object
   models.Token:
     properties:
       created_at:

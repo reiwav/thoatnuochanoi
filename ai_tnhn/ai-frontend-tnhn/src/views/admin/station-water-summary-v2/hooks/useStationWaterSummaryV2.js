@@ -49,14 +49,20 @@ const useStationWaterSummaryV2 = () => {
             return {
                 id: station.id || String(station.old_id),
                 stt: index + 1,
-                name: station.ten_tram,
-                nameHTML: '',
-                thuTu: station.thu_tu || 0,
-                type: station.loai === 'river' ? 'Sông' : 'Hồ',
+                name: station.ten_tram || station.TenTram,
+                nameHTML: station.TenTramHTML || '',
+                thuTu: station.thu_tu || station.ThuTu || 0,
+                type: (station.loai === 'river' || station.Loai === 'river' || station.Loai === '1') ? 'Sông' : 'Hồ',
                 level: record?.value ?? 0,
                 time: formatDateTime(record?.timestamp || '-'),
                 rawTime: record?.timestamp || '-',
-                date: record?.date || ''
+                date: record?.date || '',
+                dataMode: station.data_mode || (station.is_auto ? 'auto' : 'manual'),
+                isAuto: station.is_auto || station.data_mode === 'auto',
+                thresholdStatus: record?.threshold_status || 'normal',
+                minThreshold: record?.min_threshold ?? 0,
+                maxThreshold: record?.max_threshold ?? 0,
+                thresholdConfigs: station.threshold_configs || []
             };
         });
     }, [stations]);

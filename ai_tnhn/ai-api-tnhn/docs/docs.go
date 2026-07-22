@@ -8667,13 +8667,25 @@ const docTemplate = `{
                 "date": {
                     "type": "string"
                 },
+                "max_threshold": {
+                    "type": "number"
+                },
+                "min_threshold": {
+                    "type": "number"
+                },
                 "record_id": {
+                    "type": "string"
+                },
+                "source": {
                     "type": "string"
                 },
                 "station_id": {
                     "type": "integer"
                 },
                 "station_name": {
+                    "type": "string"
+                },
+                "threshold_status": {
                     "type": "string"
                 },
                 "timestamp": {

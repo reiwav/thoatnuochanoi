@@ -71,7 +71,12 @@ const useStationWaterSummary = () => {
                 type: station.Loai === "1" ? "Sông" : "Hồ",
                 level: level,
                 time: formatDateTime(time),
-                rawTime: time
+                rawTime: time,
+                dataMode: station.data_mode || (station.is_auto ? 'auto' : 'manual'),
+                isAuto: station.is_auto || station.data_mode === 'auto',
+                thresholdStatus: wd?.threshold_status || 'normal',
+                minThreshold: wd?.min_threshold ?? 0,
+                maxThreshold: wd?.max_threshold ?? 0
             };
         });
     };

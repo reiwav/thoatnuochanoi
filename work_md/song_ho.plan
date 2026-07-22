@@ -219,11 +219,11 @@ type WaterRecordItem struct {
     - Màn hình Dialog dạng **2 cột (xs=12 md=6)** rộng rãi, không bị scroll.
     - Cột trái: Thông tin cơ bản (Dùng `OldId` làm ID liên kết tự động).
     - Cột phải: Toggle chọn `DataMode` (`"auto"` | `"manual"`) & Tự động render 2 khối nhập ngưỡng theo các mùa trong Active Setting (`mua_kho`, `mua_mua`).
-- [ ] **2.3. Dashboard Giám Sát Sông & Hồ (Bảng Sông Hồ V2)**:
-  - **Vị trí Menu**: **Mực nước** ➔ **Bảng sông hồ V2** (Route: `/admin/station/water/summary-v2`)
+- [x] **2.3. Dashboard Giám Sát Sông & Hồ (Bảng Sông Hồ V2)**:
+  - **Vị trí Menu**: **Mực nước** ➔ **Bảng sông hồ V2** (Route: `/admin/station/water/summary-v2` & `/admin/station/water/summary`)
   - **Chi tiết giao diện**:
     - Hiển thị Badge phương thức dữ liệu: Auto 🤖 / Manual ✍️.
-    - Render màu sắc ô mực nước chuẩn xác theo `ThresholdStatus`: Normal (Mặc định/Trắng), High (Đỏ dâng cao vượt ngưỡng), Low (Cam/Vàng cạn nước dưới ngưỡng).
+    - Render màu sắc ô mực nước chuẩn xác theo `ThresholdStatus`: Normal (Trắng / Chữ xanh lục), High (Đỏ dâng cao vượt ngưỡng Max + Badge 🔥 Vượt ngưỡng), Low (Vàng cạn nước dưới ngưỡng Min + Badge ⚠️ Cạn nước).
 - [ ] **2.4. Màn Hình Nhập Dữ Liệu Dạng Excel Grid (Dữ liệu Nhập Tay / Lịch sử)**:
   - **Vị trí Menu**: **Mực nước** ➔ **Bảng sông hồ V2** ➔ Tab/View **Nhập dữ liệu Grid Excel**
   - **Chi tiết giao diện**:

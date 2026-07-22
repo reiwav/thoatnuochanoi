@@ -37,10 +37,14 @@ type RainStation struct {
 type LatestWaterRecord struct {
 	RecordID    string    `json:"record_id" bson:"record_id"`
 	StationID   int64     `json:"station_id" bson:"station_id"`
-	StationName string    `json:"station_name" bson:"station_name"`
-	Value       float64   `json:"value" bson:"value"`
-	Timestamp   time.Time `json:"timestamp" bson:"timestamp"`
-	Date        string    `json:"date" bson:"date"`
+	StationName     string          `json:"station_name" bson:"station_name"`
+	Value           float64         `json:"value" bson:"value"`
+	Timestamp       time.Time       `json:"timestamp" bson:"timestamp"`
+	Date            string    `json:"date" bson:"date"`
+	Source          string    `json:"source" bson:"source"`
+	ThresholdStatus string    `json:"threshold_status" bson:"threshold_status"`
+	MinThreshold    float64   `json:"min_threshold" bson:"min_threshold"`
+	MaxThreshold    float64         `json:"max_threshold" bson:"max_threshold"`
 }
 
 type StationThresholdConfig struct {

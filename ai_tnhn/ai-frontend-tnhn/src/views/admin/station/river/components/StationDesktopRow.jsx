@@ -26,7 +26,7 @@ const StationDesktopRow = ({ row, canEdit, canDelete, handleOpenEdit, handleDele
             {row.threshold_configs && row.threshold_configs.length > 0 ? (
                 row.threshold_configs.map((th, idx) => (
                     <Typography key={idx} variant="caption" display="block" sx={{ fontWeight: 600 }}>
-                        {th.threshold_name}: {th.min_level}m - {th.max_level}m
+                        {th.threshold_name}: {th.min_level} - {th.max_level}
                     </Typography>
                 ))
             ) : (

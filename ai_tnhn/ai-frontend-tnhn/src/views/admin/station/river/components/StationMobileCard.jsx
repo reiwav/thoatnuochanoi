@@ -44,13 +44,13 @@ const StationMobileCard = ({ row, canEdit, canDelete, handleOpenEdit, handleDele
                             <Box key={idx} sx={{ display: 'flex', justifyContent: 'space-between', py: 0.2 }}>
                                 <Typography variant="caption" sx={{ fontWeight: 600 }}>{th.threshold_name}:</Typography>
                                 <Typography variant="caption" sx={{ fontWeight: 700, color: 'info.main' }}>
-                                    {th.min_level}m - {th.max_level}m
+                                    {th.min_level} - {th.max_level}
                                 </Typography>
                             </Box>
                         ))
                     ) : (
                         <Typography variant="caption" color="text.secondary">
-                            Cảnh báo: {row.NguongCanhBao ? `${row.NguongCanhBao}m` : 'Chưa thiết lập'}
+                            Cảnh báo: {row.NguongCanhBao ? `${row.NguongCanhBao}` : 'Chưa thiết lập'}
                         </Typography>
                     )}
                 </Box>

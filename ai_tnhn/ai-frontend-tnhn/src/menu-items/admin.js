@@ -124,19 +124,19 @@ const adminPages = {
       type: 'collapse',
       icon: icons.IconRipple,
       children: [
-        {
-          id: 'water:summary',
-          permission: 'water:view',
-          title: 'Bảng sông hồ',
-          type: 'item',
-          url: '/admin/station/water/summary',
-          icon: icons.IconList,
-          breadcrumbs: false
-        },
+        // {
+        //   id: 'water:summary',
+        //   permission: 'water:view',
+        //   title: 'Bảng sông hồ',
+        //   type: 'item',
+        //   url: '/admin/station/water/summary',
+        //   icon: icons.IconList,
+        //   breadcrumbs: false
+        // },
         {
           id: 'water:summary-v2',
           permission: 'water:view',
-          title: 'Bảng sông hồ V2',
+          title: 'Bảng sông hồ',
           type: 'item',
           url: '/admin/station/water/summary-v2',
           icon: icons.IconTable,

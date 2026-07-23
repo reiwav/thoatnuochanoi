@@ -19,8 +19,10 @@ const GridCellInput = React.memo(({ value, timeLabel, onChange, onBlur, placehol
     const [isEditing, setIsEditing] = useState(false);
 
     useEffect(() => {
-        setLocalValue(value || '');
-    }, [value]);
+        if (!isEditing) {
+            setLocalValue(value || '');
+        }
+    }, [value, isEditing]);
 
     const handleChange = (e) => {
         const val = e.target.value;

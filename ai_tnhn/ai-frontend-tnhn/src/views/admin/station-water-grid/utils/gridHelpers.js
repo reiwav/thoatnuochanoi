@@ -117,3 +117,109 @@ export const calculateThresholdStatus = (station, valStr, selectedDate, activeSe
     if (cfg.min_level > 0 && val < cfg.min_level) return 'low';
     return 'normal';
 };
+
+/**
+ * Export grid table data to Excel file (.xlsx)
+ */
+export const exportGridToExcel = async ({ groupedStations, gridValues, mode, flexibleSlots, stationTypeFilter, selectedDate }) => {
+    const XLSX = await import('xlsx');
+
+    const isRiver = stationTypeFilter === 'river';
+    const typeLabel = isRiver ? 'Song' : 'Ho';
+    const modeLabel = mode === 'fixed' ? 'CoDinh' : 'LinhHoat';
+    const dateStr = selectedDate.format('YYYYMMDD_HHmm');
+    const displayDateStr = selectedDate.format('DD/MM/YYYY HH:mm');
+
+    const headers = [];
+    if (mode === 'fixed') {
+        headers.push(['STT', 'Mã Trạm', 'Tên Trạm', 'Đơn vị Quản lý (Xí nghiệp)', '6h30 (m)', '13h30 (m)', 'Hiện tại (m)', 'Chênh lệch (13h30 - 6h30)']);
+    } else {
+        const slotHeaders = flexibleSlots.map(s => s.label);
+        headers.push(['STT', 'Mã Trạm', 'Tên Trạm', 'Đơn vị Quản lý (Xí nghiệp)', 'Mực nước gần nhất (m)', 'Giờ gần nhất', ...slotHeaders]);
+    }
+
+    const rows = [];
+    let stt = 1;
+
+    groupedStations.forEach(group => {
+        group.stations.forEach(st => {
+            const oldId = st.OldId || st.old_id || st.Id || st.id;
+            const key = `${st.type}_${oldId}`;
+
+            if (mode === 'fixed') {
+                const v630 = gridValues[`${key}_6h30`] ?? '';
+                const v1330 = gridValues[`${key}_13h30`] ?? '';
+                const vNow = gridValues[`${key}_now`] ?? '';
+
+                let diffVal = '';
+                if (v1330 !== '' && v630 !== '' && !isNaN(parseFloat(v1330)) && !isNaN(parseFloat(v630))) {
+                    const diff = parseFloat(v1330) - parseFloat(v630);
+                    const roundedDiff = Math.round(diff * 100) / 100;
+                    diffVal = roundedDiff > 0 ? `+${roundedDiff}` : `${roundedDiff}`;
+                }
+
+                rows.push([
+                    stt++,
+                    oldId,
+                    st.TenTram || st.ten_tram,
+                    group.orgName,
+                    v630 !== '' ? parseFloat(v630) : '',
+                    v1330 !== '' ? parseFloat(v1330) : '',
+                    vNow !== '' ? parseFloat(vNow) : '',
+                    diffVal
+                ]);
+            } else {
+                const vNow = gridValues[`${key}_now`] ?? '';
+                const nowTimeStr = gridValues[`${key}_nowTime`] ?? '';
+                const timeLabel = nowTimeStr ? dayjs(nowTimeStr).format('HH:mm') : '';
+
+                const slotVals = flexibleSlots.map(slot => {
+                    const val = gridValues[`${key}_${slot.key}`];
+                    return (val !== undefined && val !== '' && !isNaN(parseFloat(val))) ? parseFloat(val) : '';
+                });
+
+                rows.push([
+                    stt++,
+                    oldId,
+                    st.TenTram || st.ten_tram,
+                    group.orgName,
+                    vNow !== '' ? parseFloat(vNow) : '',
+                    timeLabel,
+                    ...slotVals
+                ]);
+            }
+        });
+    });
+
+    const titleText = `BẢNG THỐNG KÊ MỰC NƯỚC ${isRiver ? 'SÔNG' : 'HỒ'} - ${mode === 'fixed' ? 'CỐ ĐỊNH' : 'CHU KỲ LINH HOẠT'}`;
+    const worksheetData = [
+        [titleText],
+        [`Mốc thời gian báo cáo: ${displayDateStr}`],
+        [],
+        ...headers,
+        ...rows
+    ];
+
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+
+    const totalCols = headers[0].length;
+    worksheet['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: totalCols - 1 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: totalCols - 1 } }
+    ];
+
+    worksheet['!cols'] = [
+        { wch: 6 },  // STT
+        { wch: 10 }, // Mã Trạm
+        { wch: 28 }, // Tên Trạm
+        { wch: 32 }, // Xí nghiệp
+        { wch: 16 },
+        { wch: 16 },
+        { wch: 16 },
+        { wch: 20 }
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, `Muc_Nuoc_${typeLabel}`);
+    XLSX.writeFile(workbook, `Muc_nuoc_Grid_${typeLabel}_${modeLabel}_${dateStr}.xlsx`);
+};

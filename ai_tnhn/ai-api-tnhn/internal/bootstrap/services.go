@@ -68,6 +68,7 @@ type Services struct {
 	Wastewater       wastewater_treatment.Service
 	SluiceGate       sluice_gate.Service
 	RainWorker       rain.Worker
+	WaterWorker      water.WaterWorker
 }
 
 func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log logger.Logger) *Services {
@@ -122,6 +123,9 @@ func InitServices(cfg *config.Config, repos *Repositories, db *db.Mongo, log log
 
 	s.Weather = weather.NewService(repos.HistoricalRain, s.Station, thoatnuocSvc, forecastSvc, s.Setting)
 	s.Water = water.NewService(log, repos.Lake, repos.River, s.Station, s.Weather, s.WaterThreshold)
+	waterWorker := water.NewWaterWorker(log, repos.River, repos.Lake, s.Water, s.Station, thoatnuocSvc)
+	s.WaterWorker = waterWorker
+	waterWorker.Start(context.Background())
 	s.Email = email.NewService(cfg.EmailConfig)
 	s.Inundation = inundation.NewService(repos.InundationReport, repos.InundationHistory, repos.InundationStation, repos.Organization, repos.User, s.Drive, s.Setting)
 	s.Employee.RegisterOnUserUpdate(func(userID string) {

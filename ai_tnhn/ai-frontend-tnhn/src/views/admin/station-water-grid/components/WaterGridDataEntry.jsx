@@ -31,7 +31,8 @@ const WaterGridDataEntry = () => {
         toggleOrgEditMode,
         handleCellChange,
         saveSingleCell,
-        getCellThresholdStatus
+        getCellThresholdStatus,
+        handleExportExcel
     } = useWaterGridDataEntry();
 
     return (
@@ -79,6 +80,7 @@ const WaterGridDataEntry = () => {
                     setStepCycle={setStepCycle}
                     selectedDate={selectedDate}
                     setSelectedDate={setSelectedDate}
+                    onExportExcel={handleExportExcel}
                 />
 
                 {/* Table Component */}

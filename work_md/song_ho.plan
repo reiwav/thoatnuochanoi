@@ -204,6 +204,13 @@ type WaterRecordItem struct {
 - [x] **1.5. API WaterThresholdSetting**: Endpoints CRUD `/api/v1/water-settings` (Tạo mới `Status: new`, Enable Active `Status: active`)
 - [x] **1.6. API Station Management**: Cập nhật CRUD Sông/Hồ tự động render/nhập `StationThresholdConfig` theo các mùa được định nghĩa
 - [x] **1.7. API Batch Upsert Grid**: API GET/POST `/api/v1/water/grid-data` (Tự động khớp mùa và tính `ThresholdStatus` lưu vào Record)
+- [x] **1.8. Cronjob Water Worker (5 phút/lần đồng bộ Sông/Hồ Auto từ `thoatnuochanoi`)**:
+  - Viết `WaterWorker` trong `internal/service/station/water/worker.go`.
+  - Thiết lập Cronjob `*/5 * * * *` (chạy 5 phút/lần) tự động gọi API `GetRawWaterData` từ dịch vụ tích hợp `thoatnuochanoi`.
+  - Khớp ID trạm sông/hồ tự động (`is_auto = true` / `data_mode = "auto"`) theo `OldId` / `Id`.
+  - Kiểm tra tránh trùng lặp bản ghi theo mốc `timestamp` + `station_id`.
+  - Lưu bản ghi mới vào DB MongoDB (`RiverRecord` / `LakeRecord` với `Source = "auto"`), tự động tính toán `ThresholdStatus` dựa trên cấu hình mùa active và cập nhật `LatestRecord` cho trạm.
+  - Đăng ký và kích hoạt `WaterWorker.Start(ctx)` trong `internal/bootstrap/services.go`.
 
 ### Phase 2: Frontend (`ai-frontend-tnhn`)
 - [x] **2.1. UI Cấu Hình Mùa & Tháng Theo Năm (`WaterThresholdSetting`)**:

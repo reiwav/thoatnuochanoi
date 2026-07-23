@@ -6,7 +6,7 @@ import {
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
-import { IconRotateClockwise } from '@tabler/icons-react';
+import { IconRotateClockwise, IconFileSpreadsheet } from '@tabler/icons-react';
 import 'dayjs/locale/vi';
 
 const GridFilterToolbar = ({
@@ -15,7 +15,8 @@ const GridFilterToolbar = ({
     stepCycle,
     setStepCycle,
     selectedDate,
-    setSelectedDate
+    setSelectedDate,
+    onExportExcel
 }) => {
     return (
         <Box sx={{ mb: 2.5 }}>
@@ -100,6 +101,25 @@ const GridFilterToolbar = ({
                         </Tooltip>
                     </Stack>
                 </Stack>
+
+                {/* Export Excel Button */}
+                <Button
+                    variant="contained"
+                    color="success"
+                    size="small"
+                    startIcon={<IconFileSpreadsheet size={18} />}
+                    onClick={onExportExcel}
+                    sx={{ 
+                        height: 40, 
+                        borderRadius: '10px', 
+                        fontWeight: 700,
+                        px: 2,
+                        boxShadow: '0 4px 12px rgba(46, 125, 50, 0.25)',
+                        whiteSpace: 'nowrap'
+                    }}
+                >
+                    Tải Excel
+                </Button>
             </Stack>
         </Box>
     );

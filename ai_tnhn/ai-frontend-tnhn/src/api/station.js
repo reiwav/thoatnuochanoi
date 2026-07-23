@@ -36,6 +36,12 @@ const stationApi = {
         create: (data) => axiosClient.post('/inundation/points', data),
         update: (id, data) => axiosClient.put(`/inundation/points/${id}`, data),
         delete: (id) => axiosClient.delete(`/inundation/points/${id}`)
+    },
+    // Water Batch & Single Grid Data
+    water: {
+        batchUpsertGridData: (data) => axiosClient.post('/admin/water/grid-data/batch', data),
+        saveSingleGridData: (data) => axiosClient.post('/admin/water/grid-data/single', data),
+        getGridData: (params) => axiosClient.get('/admin/water/grid-data', { params })
     }
 };
 

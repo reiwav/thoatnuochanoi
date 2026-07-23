@@ -42,3 +42,19 @@ type GridRowData struct {
 	MinThreshold     float64            `json:"min_threshold"`
 	MaxThreshold     float64            `json:"max_threshold"`
 }
+
+type GridDataResponseItem struct {
+	StationType string    `json:"station_type"`
+	StationID   int64     `json:"station_id"`
+	Timestamp   time.Time `json:"timestamp"`
+	Value       float64   `json:"value"`
+}
+
+type SingleWaterRecordInput struct {
+	RecordID    string    `json:"record_id,omitempty"`
+	StationType string    `json:"station_type"` // "river" hoặc "lake"
+	StationID   int64     `json:"station_id"`
+	Value       float64   `json:"value"`
+	Timestamp   time.Time `json:"timestamp"`
+	Date        string    `json:"date,omitempty"`
+}

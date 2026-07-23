@@ -8,6 +8,7 @@ import (
 	"ai-api-tnhn/internal/service/station"
 	"ai-api-tnhn/internal/service/weather"
 	"context"
+	"time"
 )
 
 type Service interface {
@@ -24,6 +25,8 @@ type Service interface {
 	CreateRiverRecord(ctx context.Context, record *models.RiverRecord, user *models.User) error
 
 	BatchUpsertWaterRecords(ctx context.Context, input *BatchWaterRecordInput, user *models.User) error
+	UpsertSingleWaterRecord(ctx context.Context, input *SingleWaterRecordInput, user *models.User) error
+	GetGridDataByTimeRange(ctx context.Context, startTime, endTime time.Time, date string) ([]GridDataResponseItem, error)
 }
 
 type service struct {

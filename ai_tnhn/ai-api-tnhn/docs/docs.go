@@ -5220,6 +5220,87 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/water/grid-data": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Lấy toàn bộ dữ liệu lịch sử mực nước của sông, hồ theo khoảng thời gian (start_time, end_time) hoặc ngày (date)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Thủy văn"
+                ],
+                "summary": "Lấy lịch sử dữ liệu Grid theo khoảng thời gian hoặc ngày",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Thời gian bắt đầu (ISO8601 / RFC3339)",
+                        "name": "start_time",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Thời gian kết thúc (ISO8601 / RFC3339)",
+                        "name": "end_time",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Ngày truy vấn (YYYY-MM-DD)",
+                        "name": "date",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/web.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/water.GridDataResponseItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/water/grid-data/single": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Thêm mới hoặc cập nhật 1 chỉ số mực nước của sông/hồ theo mốc thời gian",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Thủy văn"
+                ],
+                "summary": "Thêm mới hoặc cập nhật 1 bản ghi mực nước Grid",
+                "responses": {}
+            }
+        },
         "/admin/water/lake/{id}/history": {
             "get": {
                 "security": [
@@ -9601,6 +9682,23 @@ const docTemplate = `{
                 "note": {
                     "type": "string",
                     "example": "Vận hành ổn định, công nghệ xử lý đang hoạt động tốt"
+                }
+            }
+        },
+        "water.GridDataResponseItem": {
+            "type": "object",
+            "properties": {
+                "station_id": {
+                    "type": "integer"
+                },
+                "station_type": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "number"
                 }
             }
         },

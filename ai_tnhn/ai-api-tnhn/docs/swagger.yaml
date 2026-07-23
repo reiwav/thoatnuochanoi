@@ -1415,6 +1415,17 @@ definitions:
         example: Vận hành ổn định, công nghệ xử lý đang hoạt động tốt
         type: string
     type: object
+  water.GridDataResponseItem:
+    properties:
+      station_id:
+        type: integer
+      station_type:
+        type: string
+      timestamp:
+        type: string
+      value:
+        type: number
+    type: object
   web.ErrorResponse:
     properties:
       code:
@@ -4520,6 +4531,56 @@ paths:
       summary: Nhân viên cập nhật nhận xét trạm xử lý nước thải
       tags:
       - Trạm xử lý nước thải
+  /admin/water/grid-data:
+    get:
+      description: Lấy toàn bộ dữ liệu lịch sử mực nước của sông, hồ theo khoảng thời
+        gian (start_time, end_time) hoặc ngày (date)
+      parameters:
+      - description: Thời gian bắt đầu (ISO8601 / RFC3339)
+        in: query
+        name: start_time
+        type: string
+      - description: Thời gian kết thúc (ISO8601 / RFC3339)
+        in: query
+        name: end_time
+        type: string
+      - description: Ngày truy vấn (YYYY-MM-DD)
+        in: query
+        name: date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/water.GridDataResponseItem'
+                  type: array
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Lấy lịch sử dữ liệu Grid theo khoảng thời gian hoặc ngày
+      tags:
+      - Thủy văn
+  /admin/water/grid-data/single:
+    post:
+      consumes:
+      - application/json
+      description: Thêm mới hoặc cập nhật 1 chỉ số mực nước của sông/hồ theo mốc thời
+        gian
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Thêm mới hoặc cập nhật 1 bản ghi mực nước Grid
+      tags:
+      - Thủy văn
   /admin/water/lake/{id}/history:
     get:
       description: Truy xuất dữ liệu mực nước hồ lịch sử của một trạm cụ thể

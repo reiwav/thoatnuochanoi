@@ -22,6 +22,7 @@ type Rain interface {
 type Lake interface {
 	GetByStationID(ctx context.Context, stationID int64, limit int64, date string) ([]*models.LakeRecord, error)
 	GetByDate(ctx context.Context, date string) ([]*models.LakeRecord, error)
+	GetByDateRange(ctx context.Context, startTime, endTime time.Time) ([]*models.LakeRecord, error)
 	GetLatest(ctx context.Context, stationID int64) (*models.LakeRecord, error)
 	Create(ctx context.Context, record *models.LakeRecord) error
 	Exists(ctx context.Context, stationID int64, timestamp time.Time) (bool, error)
@@ -30,6 +31,7 @@ type Lake interface {
 type River interface {
 	GetByStationID(ctx context.Context, stationID int64, limit int64, date string) ([]*models.RiverRecord, error)
 	GetByDate(ctx context.Context, date string) ([]*models.RiverRecord, error)
+	GetByDateRange(ctx context.Context, startTime, endTime time.Time) ([]*models.RiverRecord, error)
 	GetLatest(ctx context.Context, stationID int64) (*models.RiverRecord, error)
 	Create(ctx context.Context, record *models.RiverRecord) error
 	Exists(ctx context.Context, stationID int64, timestamp time.Time) (bool, error)

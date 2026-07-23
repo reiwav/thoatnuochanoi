@@ -160,7 +160,25 @@ func (p lakeRepository) GetByStationID(ctx context.Context, stationID int64, lim
 
 func (p lakeRepository) GetByDate(ctx context.Context, date string) ([]*models.LakeRecord, error) {
 	var records []*models.LakeRecord
-	cursor, err := p.Collection.Find(ctx, bson.M{"date": date})
+	opts := options.Find().SetSort(bson.M{"timestamp": 1})
+	cursor, err := p.Collection.Find(ctx, bson.M{"date": date}, opts)
+	if err != nil {
+		return nil, err
+	}
+	err = cursor.All(ctx, &records)
+	return records, err
+}
+
+func (p lakeRepository) GetByDateRange(ctx context.Context, startTime, endTime time.Time) ([]*models.LakeRecord, error) {
+	var records []*models.LakeRecord
+	filter := bson.M{
+		"timestamp": bson.M{
+			"$gte": startTime,
+			"$lte": endTime,
+		},
+	}
+	opts := options.Find().SetSort(bson.M{"timestamp": 1})
+	cursor, err := p.Collection.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -216,7 +234,25 @@ func (p riverRepository) GetByStationID(ctx context.Context, stationID int64, li
 
 func (p riverRepository) GetByDate(ctx context.Context, date string) ([]*models.RiverRecord, error) {
 	var records []*models.RiverRecord
-	cursor, err := p.Collection.Find(ctx, bson.M{"date": date})
+	opts := options.Find().SetSort(bson.M{"timestamp": 1})
+	cursor, err := p.Collection.Find(ctx, bson.M{"date": date}, opts)
+	if err != nil {
+		return nil, err
+	}
+	err = cursor.All(ctx, &records)
+	return records, err
+}
+
+func (p riverRepository) GetByDateRange(ctx context.Context, startTime, endTime time.Time) ([]*models.RiverRecord, error) {
+	var records []*models.RiverRecord
+	filter := bson.M{
+		"timestamp": bson.M{
+			"$gte": startTime,
+			"$lte": endTime,
+		},
+	}
+	opts := options.Find().SetSort(bson.M{"timestamp": 1})
+	cursor, err := p.Collection.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, err
 	}

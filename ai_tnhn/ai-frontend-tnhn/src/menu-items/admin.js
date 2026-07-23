@@ -143,6 +143,15 @@ const adminPages = {
           breadcrumbs: false
         },
         {
+          id: 'water:grid',
+          permission: 'water:update',
+          title: 'Nhập liệu Excel',
+          type: 'item',
+          url: '/admin/station/water/grid',
+          icon: icons.IconTable,
+          breadcrumbs: false
+        },
+        {
           id: 'lake',
           permission: 'water:view',
           title: 'Mực nước hồ',

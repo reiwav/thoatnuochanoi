@@ -118,6 +118,10 @@ func (s *service) GetLatestOCRText(ctx context.Context) string {
 }
 
 func (s *service) GetCityStatus(ctx context.Context) (*CityStatus, error) {
+	return s.GetCityStatusForUser(ctx, "", nil, nil, nil, nil)
+}
+
+func (s *service) GetCityStatusForUser(ctx context.Context, orgID string, assignedRain, assignedLake, assignedRiver, assignedInu []string) (*CityStatus, error) {
 	var res = &CityStatus{}
 	var mu sync.Mutex
 
@@ -128,28 +132,28 @@ func (s *service) GetCityStatus(ctx context.Context) (*CityStatus, error) {
 	g, gCtx := errgroup.WithContext(ctx)
 
 	g.Go(func() error {
-		weatherSum, _ := s.weatherSvc.GetRainSummary(gCtx, "", nil)
+		weatherSum, _ := s.weatherSvc.GetRainSummary(gCtx, orgID, assignedRain)
 		mu.Lock()
 		res.Weather = weatherSum
 		mu.Unlock()
 		return nil
 	})
 	g.Go(func() error {
-		waterSum, _ := s.waterSvc.GetWaterSummary(gCtx, "", nil)
+		waterSum, _ := s.waterSvc.GetWaterSummary(gCtx, orgID, append(assignedLake, assignedRiver...))
 		mu.Lock()
 		res.Water = waterSum
 		mu.Unlock()
 		return nil
 	})
 	g.Go(func() error {
-		inuSum, _ := s.inuSvc.GetInundationSummary(gCtx, "", true, nil)
+		inuSum, _ := s.inuSvc.GetInundationSummary(gCtx, orgID, true, assignedInu)
 		mu.Lock()
 		res.Inundation = inuSum
 		mu.Unlock()
 		return nil
 	})
 	g.Go(func() error {
-		pumpingSum, _ := s.pumpingSvc.GetPumpingStationSummary(gCtx, "", nil)
+		pumpingSum, _ := s.pumpingSvc.GetPumpingStationSummary(gCtx, orgID, nil)
 		mu.Lock()
 		res.Pumping = pumpingSum
 		mu.Unlock()
@@ -171,7 +175,7 @@ func (s *service) GetCityStatus(ctx context.Context) (*CityStatus, error) {
 	})
 	g.Go(func() error {
 		if s.wastewaterSvc != nil {
-			ww, _ := s.wastewaterSvc.ListFiltered(gCtx, "", nil)
+			ww, _ := s.wastewaterSvc.ListFiltered(gCtx, orgID, nil)
 			mu.Lock()
 			res.Wastewater = ww
 			mu.Unlock()

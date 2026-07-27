@@ -25,6 +25,7 @@ func (s *service) getPermittedWaterStations(ctx context.Context, orgID string, a
 		f.AddWhere("org_id_or_shared", "$or", []bson.M{
 			{"org_id": orgID},
 			{"shared_org_ids": orgID},
+			{"share_all": true},
 		})
 	}
 

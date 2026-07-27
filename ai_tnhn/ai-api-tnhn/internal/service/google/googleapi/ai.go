@@ -13,7 +13,18 @@ func (s *service) GenerateAIReport(ctx context.Context, reportType string, userI
 		return nil, fmt.Errorf("gemini service is not initialized")
 	}
 
-	status, err := s.GetCityStatus(ctx)
+	var status *CityStatus
+	var err error
+	if userID != "" && s.userRepo != nil {
+		u, _ := s.userRepo.GetByID(ctx, userID)
+		if u != nil && u.OrgID != "" && !u.IsCompany && u.Role != "super_admin" {
+			status, err = s.GetCityStatusForUser(ctx, u.OrgID, u.AssignedRainStationIDs, u.AssignedLakeStationIDs, u.AssignedRiverStationIDs, u.AssignedInundationStationIDs)
+		} else {
+			status, err = s.GetCityStatus(ctx)
+		}
+	} else {
+		status, err = s.GetCityStatus(ctx)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to get city status: %w", err)
 	}

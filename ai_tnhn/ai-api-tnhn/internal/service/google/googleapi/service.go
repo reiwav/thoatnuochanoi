@@ -43,6 +43,7 @@ type Service interface {
 	})
 
 	GetCityStatus(ctx context.Context) (*CityStatus, error)
+	GetCityStatusForUser(ctx context.Context, orgID string, assignedRain, assignedLake, assignedRiver, assignedInu []string) (*CityStatus, error)
 	GetLatestOCRText(ctx context.Context) string
 	GenerateAIReport(ctx context.Context, reportType string, userID string) (*ChatResponse, error)
 }
@@ -51,6 +52,7 @@ type service struct {
 	driveSvc    *drive.Service
 	gmailSvc    *gmail.Service
 	aiUsageRepo repository.AiUsage
+	userRepo    repository.User
 	inuSvc      inundation.Service
 	emailSvc    email.Service
 	weatherSvc  weather.Service
@@ -65,7 +67,7 @@ type service struct {
 	cache sync.Map
 }
 
-func NewService(conf config.GoogleDriveConfig, oauthConf config.OAuthConfig, aiUsageRepo repository.AiUsage, inuSvc inundation.Service, weatherSvc weather.Service, stationSvc station.Service, pumpingSvc pumpingstation.Service, waterSvc water.Service, wastewaterSvc wastewater_treatment.Service) (Service, error) {
+func NewService(conf config.GoogleDriveConfig, oauthConf config.OAuthConfig, aiUsageRepo repository.AiUsage, userRepo repository.User, inuSvc inundation.Service, weatherSvc weather.Service, stationSvc station.Service, pumpingSvc pumpingstation.Service, waterSvc water.Service, wastewaterSvc wastewater_treatment.Service) (Service, error) {
 	ctx := context.Background()
 	var driveSvc *drive.Service
 	var gmailSvc *gmail.Service
@@ -106,6 +108,7 @@ func NewService(conf config.GoogleDriveConfig, oauthConf config.OAuthConfig, aiU
 		driveSvc:    driveSvc,
 		gmailSvc:    gmailSvc,
 		aiUsageRepo: aiUsageRepo,
+		userRepo:    userRepo,
 		inuSvc:      inuSvc,
 		weatherSvc:  weatherSvc,
 		pumpingSvc:  pumpingSvc,

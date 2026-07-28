@@ -65,9 +65,15 @@ type service struct {
 		Chat(ctx context.Context, prompt string, history []ChatMessage, userID string, isCompany bool, logPrompt string) (*ChatResponse, error)
 	}
 	cache sync.Map
+
+	ocrEmailRepo repository.OCREmail
+	cachedEmailID uint32
+	cachedOCRText string
+	cacheMu       sync.RWMutex
+	ocrFetchMu    sync.Mutex
 }
 
-func NewService(conf config.GoogleDriveConfig, oauthConf config.OAuthConfig, aiUsageRepo repository.AiUsage, userRepo repository.User, inuSvc inundation.Service, weatherSvc weather.Service, stationSvc station.Service, pumpingSvc pumpingstation.Service, waterSvc water.Service, wastewaterSvc wastewater_treatment.Service) (Service, error) {
+func NewService(conf config.GoogleDriveConfig, oauthConf config.OAuthConfig, aiUsageRepo repository.AiUsage, userRepo repository.User, inuSvc inundation.Service, weatherSvc weather.Service, stationSvc station.Service, pumpingSvc pumpingstation.Service, waterSvc water.Service, wastewaterSvc wastewater_treatment.Service, ocrEmailRepo repository.OCREmail) (Service, error) {
 	ctx := context.Background()
 	var driveSvc *drive.Service
 	var gmailSvc *gmail.Service
@@ -104,16 +110,26 @@ func NewService(conf config.GoogleDriveConfig, oauthConf config.OAuthConfig, aiU
 		}
 	}
 
-	return &service{
-		driveSvc:    driveSvc,
-		gmailSvc:    gmailSvc,
-		aiUsageRepo: aiUsageRepo,
-		userRepo:    userRepo,
-		inuSvc:      inuSvc,
-		weatherSvc:  weatherSvc,
-		pumpingSvc:  pumpingSvc,
+	svc := &service{
+		driveSvc:      driveSvc,
+		gmailSvc:      gmailSvc,
+		aiUsageRepo:   aiUsageRepo,
+		userRepo:      userRepo,
+		inuSvc:        inuSvc,
+		weatherSvc:    weatherSvc,
+		pumpingSvc:    pumpingSvc,
 		waterSvc:      waterSvc,
 		stationSvc:    stationSvc,
 		wastewaterSvc: wastewaterSvc,
-	}, nil
+		ocrEmailRepo:  ocrEmailRepo,
+	}
+
+	// Initialize cache from DB
+	if latestRecord, err := ocrEmailRepo.GetLatest(ctx); err == nil && latestRecord != nil {
+		svc.cachedEmailID = latestRecord.EmailID
+		svc.cachedOCRText = latestRecord.OCRText
+		fmt.Printf("Startup: Loaded OCR Email Cache - EmailID: %d, Length: %d\n", svc.cachedEmailID, len(svc.cachedOCRText))
+	}
+
+	return svc, nil
 }

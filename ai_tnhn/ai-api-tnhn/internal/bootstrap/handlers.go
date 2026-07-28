@@ -4,7 +4,9 @@ import (
 	"ai-api-tnhn/config"
 	"ai-api-tnhn/handler"
 	"ai-api-tnhn/handler/google"
+	"ai-api-tnhn/handler/public"
 	"ai-api-tnhn/internal/base/logger"
+	"ai-api-tnhn/internal/service/publicapi"
 	"ai-api-tnhn/router"
 	"ai-api-tnhn/router/middleware"
 	"ai-api-tnhn/utils/web"
@@ -35,6 +37,9 @@ func InitRouter(cfg *config.Config, s *Services, r *Repositories, log logger.Log
 	wastewaterHandler := handler.NewWastewaterTreatmentHandler(s.Wastewater, contextWith)
 	sluiceGateHandler := handler.NewSluiceGateHandler(s.SluiceGate, contextWith)
 	googleHandler := google.NewHandler(s.GoogleApi, s.Gemini, s.Drive, s.Water, s.Email, contextWith, cfg.GoogleDriveConfig, log, s.Weather, r.AiChatLog, s.Report)
+
+	publicApiService := publicapi.NewService(r.LakeStation, r.RiverStation, r.RainStation, r.InundationStation, r.SluiceGate, r.WastewaterStation, r.Lake, r.River, r.Rain, r.InundationReport, r.InundationHistory)
+	publicApiHandler := public.NewHandler(publicApiService)
 
 	mid := middleware.NewMiddleware(*cfg, r.Token, r.User, r.Role, s.Permission, contextWith, log)
 	handlers := router.HandlerFuncs{
@@ -68,5 +73,5 @@ func InitRouter(cfg *config.Config, s *Services, r *Repositories, log logger.Log
 		GetWeatherForecastHandler:      googleHandler.GetWeatherForecast,
 	}
 
-	return handlers.Create(mid, orgHandler, empHandler, stationHandler, inuHandler, waterHandler, rainHandler, googleHandler, queryHandler, emConstructionHandler, weatherHandler, contractCategoryHandler, contractHandler, pumpingStationHandler, wastewaterHandler, sluiceGateHandler, permHandler, roleHandler, settingHandler, waterThresholdHandler)
+	return handlers.Create(mid, orgHandler, empHandler, stationHandler, inuHandler, waterHandler, rainHandler, googleHandler, queryHandler, emConstructionHandler, weatherHandler, contractCategoryHandler, contractHandler, pumpingStationHandler, wastewaterHandler, sluiceGateHandler, permHandler, roleHandler, settingHandler, waterThresholdHandler, publicApiHandler)
 }

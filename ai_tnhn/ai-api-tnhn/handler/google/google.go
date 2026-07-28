@@ -13,7 +13,6 @@ import (
 	"ai-api-tnhn/internal/service/weather"
 	"ai-api-tnhn/utils/web"
 	"context"
-	"sync"
 
 	"github.com/gin-gonic/gin"
 )
@@ -51,9 +50,6 @@ type handler struct {
 	reportSvc     report.Service
 	config        config.GoogleDriveConfig
 	log           logger.Logger
-	cachedOCRText string
-	cachedEmailID uint32
-	ocrMu         sync.RWMutex
 }
 
 func NewHandler(googleSvc googleapi.Service, geminiSvc gemini.Service, driveSvc googledrive.Service, waterSvc water.Service, emailSvc email.Service, contextWith web.ContextWith, conf config.GoogleDriveConfig, log logger.Logger, weatherSvc weather.Service, aiChatLogRepo repository.AiChatLog, reportSvc report.Service) Handler {
@@ -71,56 +67,13 @@ func NewHandler(googleSvc googleapi.Service, geminiSvc gemini.Service, driveSvc 
 		reportSvc:     reportSvc,
 	}
 
-	// Chạy nền khi khởi động để nạp Cache
-	go func() {
-		h.log.GetLogger().Infof("Startup: Bat dau nap cache email OCR Text doc ngay...")
-		h.getLatestOCRText(context.Background())
-	}()
+	// Chạy nền khi khởi động để nạp Cache đã được chuyển sang tầng bootstrap/service
 
 	return h
 }
 
 func (h *handler) getLatestOCRText(ctx context.Context) string {
-	if h.emailSvc == nil || h.geminiSvc == nil {
-		return ""
-	}
-
-	id, err := h.emailSvc.GetLatestWeatherEmailID(ctx)
-	if err != nil {
-		h.log.GetLogger().Warnf("Failed to get latest weather email ID: %v", err)
-		return ""
-	}
-
-	h.ocrMu.RLock()
-	if id <= h.cachedEmailID && h.cachedOCRText != "" {
-		text := h.cachedOCRText
-		h.ocrMu.RUnlock()
-		h.log.GetLogger().Infof("DynamicReport: Using cached OCR text from email ID %d", id)
-		return text
-	}
-	h.ocrMu.RUnlock()
-
-	// Download and extract if new ID or cache empty
-	h.log.GetLogger().Infof("DynamicReport: Fetching new OCR text for email ID %d", id)
-	raw, _, err := h.emailSvc.GetEmailAttachmentRawByID(ctx, id)
-	if err != nil || len(raw) == 0 {
-		h.log.GetLogger().Warnf("Failed to fetch email raw attachment: %v", err)
-		return ""
-	}
-
-	ocrText, geminiErr := h.geminiSvc.ExtractTextFromPDF(ctx, raw)
-	if geminiErr == nil && ocrText != "" {
-		h.ocrMu.Lock()
-		h.cachedEmailID = id
-		h.cachedOCRText = ocrText
-		h.ocrMu.Unlock()
-		h.log.GetLogger().Infof("DynamicReport: OCR OK, %d chars, cached with Email ID %d", len(ocrText), id)
-		return ocrText
-	} else if geminiErr != nil {
-		h.log.GetLogger().Warnf("Gemini OCR failed: %v", geminiErr)
-	}
-
-	return ""
+	return h.googleSvc.GetLatestOCRText(ctx)
 }
 
 // GetStatus godoc

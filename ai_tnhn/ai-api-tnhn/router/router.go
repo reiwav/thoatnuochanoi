@@ -3,6 +3,7 @@ package router
 import (
 	"ai-api-tnhn/handler"
 	"ai-api-tnhn/handler/google"
+	"ai-api-tnhn/handler/public"
 	"ai-api-tnhn/router/middleware"
 	"path/filepath"
 	"strings"
@@ -19,7 +20,7 @@ import (
 )
 
 // Create handlers
-func (h *HandlerFuncs) Create(mid middleware.Middleware, orgHandler *handler.OrganizationHandler, empHandler *handler.EmployeeHandler, stationHandler *handler.StationHandler, inuHandler *handler.InundationHandler, waterHandler *handler.WaterHandler, rainHandler *handler.RainHandler, googleHandler google.Handler, queryHandler *handler.QueryHandler, emConstructionHandler *handler.EmergencyConstructionHandler, weatherHandler *handler.WeatherHandler, contractCategoryHandler *handler.ContractCategoryHandler, contractHandler *handler.ContractHandler, pumpingHandler *handler.PumpingStationHandler, wastewaterHandler *handler.WastewaterTreatmentHandler, sluiceHandler *handler.SluiceGateHandler, permHandler *handler.PermissionHandler, roleHandler *handler.RoleHandler, settingHandler *handler.SettingHandler, waterThresholdHandler *handler.WaterThresholdHandler) *gin.Engine {
+func (h *HandlerFuncs) Create(mid middleware.Middleware, orgHandler *handler.OrganizationHandler, empHandler *handler.EmployeeHandler, stationHandler *handler.StationHandler, inuHandler *handler.InundationHandler, waterHandler *handler.WaterHandler, rainHandler *handler.RainHandler, googleHandler google.Handler, queryHandler *handler.QueryHandler, emConstructionHandler *handler.EmergencyConstructionHandler, weatherHandler *handler.WeatherHandler, contractCategoryHandler *handler.ContractCategoryHandler, contractHandler *handler.ContractHandler, pumpingHandler *handler.PumpingStationHandler, wastewaterHandler *handler.WastewaterTreatmentHandler, sluiceHandler *handler.SluiceGateHandler, permHandler *handler.PermissionHandler, roleHandler *handler.RoleHandler, settingHandler *handler.SettingHandler, waterThresholdHandler *handler.WaterThresholdHandler, publicHandler *public.Handler) *gin.Engine {
 	r := gin.Default()
 	// Swagger
 	r.GET("/swagger/*any", gs.WrapHandler(swaggerFiles.Handler))
@@ -83,6 +84,8 @@ func (h *HandlerFuncs) Create(mid middleware.Middleware, orgHandler *handler.Org
 	apiAdmin.GET("/weather/rain/compare", mid.MidBasicType(), weatherHandler.GetComparisonReport)
 
 	apiAdmin.POST("/database/query", mid.MidBasicType(), h.DatabaseQueryHandler)
+
+	h.PublicRoutes(api.Group("/public"), mid, publicHandler)
 
 	r.NoRoute(func(c *gin.Context) {
 		// Nếu là request API thì trả về 404 JSON

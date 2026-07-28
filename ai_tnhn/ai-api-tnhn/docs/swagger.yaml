@@ -30,6 +30,81 @@ definitions:
     required:
     - name
     type: object
+  dto.InundationHistoryItem:
+    properties:
+      depth:
+        type: number
+      time:
+        type: string
+    type: object
+  dto.PublicInundationData:
+    properties:
+      current_depth:
+        type: number
+      history:
+        items:
+          $ref: '#/definitions/dto.InundationHistoryItem'
+        type: array
+      status:
+        description: e.g., flooded, normal
+        type: string
+    type: object
+  dto.PublicRainData:
+    properties:
+      rain_1h:
+        type: number
+      rain_3h:
+        type: number
+      rain_24h:
+        type: number
+      timestamp:
+        type: string
+    type: object
+  dto.PublicSluiceGateData:
+    properties:
+      is_open:
+        type: boolean
+      open_level:
+        description: e.g., mm or percentage
+        type: number
+      timestamp:
+        type: string
+    type: object
+  dto.PublicStationMaster:
+    properties:
+      address:
+        type: string
+      id:
+        type: string
+      lat:
+        type: string
+      lng:
+        type: string
+      name:
+        type: string
+      type:
+        description: lake, river, rain, inundation, sluice_gate, wastewater
+        type: string
+    type: object
+  dto.PublicWastewaterData:
+    properties:
+      flow_rate:
+        type: number
+      quality_metrics:
+        type: string
+      timestamp:
+        type: string
+    type: object
+  dto.PublicWaterData:
+    properties:
+      current_level:
+        type: number
+      status:
+        description: e.g., safe, warning, danger
+        type: string
+      timestamp:
+        type: string
+    type: object
   dto.ReviewRequest:
     properties:
       comment:
@@ -6069,6 +6144,311 @@ paths:
       summary: Xuất lịch sử ngập lụt theo năm ra Excel
       tags:
       - Ngập lụt
+  /public/v1/inundation/{id}:
+    get:
+      parameters:
+      - description: Mã định danh đối tác
+        in: header
+        name: X-App-Id
+        required: true
+        type: string
+      - description: Unix timestamp
+        in: header
+        name: X-Timestamp
+        required: true
+        type: string
+      - description: Chữ ký RSA
+        in: header
+        name: X-Signature
+        required: true
+        type: string
+      - description: ID điểm ngập
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Ngày lấy dữ liệu (YYYY-MM-DD)
+        in: query
+        name: date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.PublicInundationData'
+                  type: array
+              type: object
+      summary: Lấy dữ liệu điểm ngập theo ID
+      tags:
+      - Public API
+  /public/v1/rain/{id}:
+    get:
+      parameters:
+      - description: Mã định danh đối tác
+        in: header
+        name: X-App-Id
+        required: true
+        type: string
+      - description: Unix timestamp
+        in: header
+        name: X-Timestamp
+        required: true
+        type: string
+      - description: Chữ ký RSA
+        in: header
+        name: X-Signature
+        required: true
+        type: string
+      - description: ID trạm
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Ngày lấy dữ liệu (YYYY-MM-DD)
+        in: query
+        name: date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.PublicRainData'
+                  type: array
+              type: object
+      summary: Lấy dữ liệu trạm mưa theo ID
+      tags:
+      - Public API
+  /public/v1/sluice-gate/{id}:
+    get:
+      parameters:
+      - description: Mã định danh đối tác
+        in: header
+        name: X-App-Id
+        required: true
+        type: string
+      - description: Unix timestamp
+        in: header
+        name: X-Timestamp
+        required: true
+        type: string
+      - description: Chữ ký RSA
+        in: header
+        name: X-Signature
+        required: true
+        type: string
+      - description: ID cửa phai
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Ngày lấy dữ liệu (YYYY-MM-DD)
+        in: query
+        name: date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.PublicSluiceGateData'
+                  type: array
+              type: object
+      summary: Lấy dữ liệu cửa phai theo ID
+      tags:
+      - Public API
+  /public/v1/stations:
+    get:
+      description: Lấy danh sách toàn bộ các trạm để đồng bộ ID. Hỗ trợ filter theo
+        loại trạm.
+      parameters:
+      - description: 'Mã định danh đối tác (ví dụ: cic_app)'
+        in: header
+        name: X-App-Id
+        required: true
+        type: string
+      - description: Unix timestamp hiện tại
+        in: header
+        name: X-Timestamp
+        required: true
+        type: string
+      - description: Chữ ký RSA điện tử mã hóa Base64
+        in: header
+        name: X-Signature
+        required: true
+        type: string
+      - description: 'Loại trạm: lake, river, rain, inundation, sluice_gate, wastewater'
+        in: query
+        name: type
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.PublicStationMaster'
+                  type: array
+              type: object
+      summary: Lấy danh sách trạm (Master Data)
+      tags:
+      - Public API
+  /public/v1/wastewater/{id}:
+    get:
+      parameters:
+      - description: Mã định danh đối tác
+        in: header
+        name: X-App-Id
+        required: true
+        type: string
+      - description: Unix timestamp
+        in: header
+        name: X-Timestamp
+        required: true
+        type: string
+      - description: Chữ ký RSA
+        in: header
+        name: X-Signature
+        required: true
+        type: string
+      - description: ID trạm XLNT
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Ngày lấy dữ liệu (YYYY-MM-DD)
+        in: query
+        name: date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.PublicWastewaterData'
+                  type: array
+              type: object
+      summary: Lấy dữ liệu trạm xử lý nước thải theo ID
+      tags:
+      - Public API
+  /public/v1/water/lake/{id}:
+    get:
+      parameters:
+      - description: Mã định danh đối tác
+        in: header
+        name: X-App-Id
+        required: true
+        type: string
+      - description: Unix timestamp
+        in: header
+        name: X-Timestamp
+        required: true
+        type: string
+      - description: Chữ ký RSA
+        in: header
+        name: X-Signature
+        required: true
+        type: string
+      - description: ID trạm
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Ngày lấy dữ liệu (YYYY-MM-DD)
+        in: query
+        name: date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.PublicWaterData'
+                  type: array
+              type: object
+      summary: Lấy dữ liệu trạm hồ theo ID
+      tags:
+      - Public API
+  /public/v1/water/river/{id}:
+    get:
+      parameters:
+      - description: Mã định danh đối tác
+        in: header
+        name: X-App-Id
+        required: true
+        type: string
+      - description: Unix timestamp
+        in: header
+        name: X-Timestamp
+        required: true
+        type: string
+      - description: Chữ ký RSA
+        in: header
+        name: X-Signature
+        required: true
+        type: string
+      - description: ID trạm
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Ngày lấy dữ liệu (YYYY-MM-DD)
+        in: query
+        name: date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.PublicWaterData'
+                  type: array
+              type: object
+      summary: Lấy dữ liệu trạm sông theo ID
+      tags:
+      - Public API
 securityDefinitions:
   BearerAuth:
     in: header

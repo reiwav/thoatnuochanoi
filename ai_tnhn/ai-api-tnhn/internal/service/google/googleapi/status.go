@@ -2,6 +2,7 @@ package googleapi
 
 import (
 	"ai-api-tnhn/utils/number"
+	"ai-api-tnhn/internal/models"
 	"context"
 	"fmt"
 	"sync"
@@ -90,27 +91,54 @@ func (s *service) GetLatestOCRText(ctx context.Context) string {
 		return ""
 	}
 
-	// 2. Kiểm tra cache theo Email ID
-	cacheKey := fmt.Sprintf("ocr_id_%d", emailID)
-	if cached, ok := s.cache.Load(cacheKey); ok {
-		if text, ok := cached.(string); ok && text != "" {
-			return text
-		}
+	// 2. Kiểm tra cache
+	s.cacheMu.RLock()
+	if emailID <= s.cachedEmailID && s.cachedOCRText != "" {
+		text := s.cachedOCRText
+		s.cacheMu.RUnlock()
+		return text
 	}
+	s.cacheMu.RUnlock()
 
-	// 3. Nếu chưa có trong cache, tải file và OCR bằng Gemini
+	// Khóa quá trình fetch OCR để tránh việc nhiều goroutine cùng fetch
+	s.ocrFetchMu.Lock()
+	defer s.ocrFetchMu.Unlock()
+
+	// Double-check cache sau khi có lock
+	s.cacheMu.RLock()
+	if emailID <= s.cachedEmailID && s.cachedOCRText != "" {
+		text := s.cachedOCRText
+		s.cacheMu.RUnlock()
+		return text
+	}
+	s.cacheMu.RUnlock()
+
+	// 3. Nếu chưa có trong cache hoặc có email mới, tải file và OCR bằng Gemini
 	raw, _, err := s.emailSvc.GetEmailAttachmentRawByID(ctx, emailID)
 	if err != nil || len(raw) == 0 {
 		return ""
 	}
 
 	ocrText, geminiErr := s.geminiSvc.ExtractTextFromPDF(ctx, raw)
-	if geminiErr != nil {
+	if geminiErr != nil || ocrText == "" {
 		return ""
 	}
 
-	// 4. Lưu lại vào cache
-	s.cache.Store(cacheKey, ocrText)
+	// 4. Cập nhật cache
+	s.cacheMu.Lock()
+	s.cachedEmailID = emailID
+	s.cachedOCRText = ocrText
+	s.cacheMu.Unlock()
+
+	// 5. Lưu vào Database
+	if s.ocrEmailRepo != nil {
+		record := &models.OCREmailRecord{
+			EmailID: emailID,
+			OCRText: ocrText,
+		}
+		_ = s.ocrEmailRepo.Save(ctx, record)
+	}
+
 	fmt.Printf("time=\"%s\" level=info msg=\"DynamicReport: OCR OK, %d chars, cached with Email ID %d\"\n",
 		time.Now().Format("2006-01-02 15:04:05"), len(ocrText), emailID)
 

@@ -20,6 +20,8 @@ type Middleware interface {
 	Authorize(permKey string) gin.HandlerFunc
 	Recovery() gin.HandlerFunc
 	TimeoutMiddleware(timeout time.Duration) gin.HandlerFunc
+	RSAPublicAuthMiddleware() gin.HandlerFunc
+	RateLimitMiddleware() gin.HandlerFunc
 }
 
 func NewMiddleware(conf config.Config,

@@ -36,6 +36,7 @@ type Repositories struct {
 	WaterThresholdSetting         repository.WaterThresholdSetting
 	WastewaterStation             repository.WastewaterStation
 	SluiceGate                    repository.SluiceGate
+	OCREmail                      repository.OCREmail
 }
 
 func InitRepositories(db *db.Mongo, log logger.Logger) *Repositories {
@@ -68,5 +69,6 @@ func InitRepositories(db *db.Mongo, log logger.Logger) *Repositories {
 		WaterThresholdSetting:         query.NewWaterThresholdSettingRepository(db.DB, "water_threshold_settings", "wts", log),
 		WastewaterStation:             query.NewWastewaterStationRepo(db.DB, log),
 		SluiceGate:                    query.NewSluiceGateRepo(db.DB, log),
+		OCREmail:                      query.NewOCREmailRepo(db.DB, "ocr_email_records", log),
 	}
 }

@@ -3,8 +3,9 @@ import { Box, Card, CardContent, Typography, Tooltip } from '@mui/material';
 import { IconCpu, IconPencil } from '@tabler/icons-react';
 
 const WaterStationCardV2 = ({ row }) => {
-    const isHigh = row.thresholdStatus === 'high';
-    const isLow = row.thresholdStatus === 'low';
+    const isNoData = !row.hasData || row.thresholdStatus === 'no_data' || row.level === null || row.level === undefined;
+    const isHigh = !isNoData && row.thresholdStatus === 'high';
+    const isLow = !isNoData && row.thresholdStatus === 'low';
 
     // Thay đổi màu sắc KHUNG theo trạng thái (Frame border & Shadow)
     let borderColor = '#2e7d32'; // Normal Green Border
@@ -12,7 +13,12 @@ const WaterStationCardV2 = ({ row }) => {
     let levelColor = '#1b5e20';
     let cardBg = '#ffffff';
 
-    if (isHigh) {
+    if (isNoData) {
+        borderColor = '#b0bec5'; // Grey Border for No Data
+        boxShadow = '0 3px 8px rgba(0, 0, 0, 0.06)';
+        levelColor = '#90a4ae';
+        cardBg = '#fafafa';
+    } else if (isHigh) {
         borderColor = '#d32f2f'; // Red Border
         boxShadow = '0 6px 18px rgba(211, 47, 47, 0.35)';
         levelColor = '#c62828';
@@ -96,7 +102,7 @@ const WaterStationCardV2 = ({ row }) => {
                             fontFamily: '"Outfit", "Roboto", "Helvetica", "Arial", sans-serif'
                         }}
                     >
-                        {row.level > 0 ? row.level.toFixed(2) : '...'}
+                        {!isNoData && row.level !== null && row.level !== undefined ? Number(row.level).toFixed(2) : '...'}
                     </Typography>
                 </Box>
 
@@ -109,13 +115,13 @@ const WaterStationCardV2 = ({ row }) => {
                     flexDirection: 'column',
                     gap: 0.25
                 }}>
-                    <Typography variant="caption" sx={{ fontWeight: 700, color: '#37474f', fontSize: '0.75rem' }}>
-                        {row.time}
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: isNoData ? '#90a4ae' : '#37474f', fontSize: '0.75rem' }}>
+                        {isNoData ? 'Chưa có dữ liệu' : row.time}
                     </Typography>
                     {(row.minThreshold > 0 || row.maxThreshold > 0) && (
-                        <Tooltip title={`Ngưỡng cạn: ${row.minThreshold}m | Ngưỡng báo động: ${row.maxThreshold}m`}>
+                        <Tooltip title={`Ngưỡng cạn: ${row.minThreshold} | Ngưỡng báo động: ${row.maxThreshold}`}>
                             <Typography variant="caption" sx={{ fontWeight: 600, color: '#78909c', fontSize: '0.68rem' }}>
-                                Ngưỡng: {row.minThreshold}m - {row.maxThreshold}m
+                                Ngưỡng: {row.minThreshold} - {row.maxThreshold}
                             </Typography>
                         </Tooltip>
                     )}

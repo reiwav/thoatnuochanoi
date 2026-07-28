@@ -147,9 +147,15 @@ func (s *service) buildDynamicPrompt(status *CityStatus, hh, dd, mm, yyyy string
 		rainIntro = status.Weather.SummaryText
 	}
 
-	waterStr := "Mực nước hệ thống đang ở mức an toàn."
-	if status.Water != nil && status.Water.SummaryText != "" {
-		waterStr = status.Water.SummaryText
+	riverStr := "Hiện tại không ghi nhận dữ liệu tại các trạm sông."
+	lakeStr := "Hiện tại không ghi nhận dữ liệu tại các trạm hồ."
+	if status.Water != nil {
+		if status.Water.RiverSummary != "" {
+			riverStr = status.Water.RiverSummary
+		}
+		if status.Water.LakeSummary != "" {
+			lakeStr = status.Water.LakeSummary
+		}
 	}
 
 	inuStr := "An toàn, không ghi nhận điểm úng ngập."
@@ -184,7 +190,7 @@ func (s *service) buildDynamicPrompt(status *CityStatus, hh, dd, mm, yyyy string
 		ocrStr = status.OCRText
 	}
 
-	return fmt.Sprintf(promt.Get("report_dynamic"), hh, dd+"/"+mm+"/"+yyyy, rainIntro, waterStr, inuStr, pumpStr, wwStr, ocrStr)
+	return fmt.Sprintf(promt.Get("report_dynamic"), hh, dd+"/"+mm+"/"+yyyy, rainIntro, riverStr, lakeStr, inuStr, pumpStr, wwStr, ocrStr)
 }
 
 func (s *service) buildFullWordPrompt(status *CityStatus, hh, dd, mm, yyyy string) string {

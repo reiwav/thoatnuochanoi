@@ -5,12 +5,43 @@ const WaterCard = ({ station }) => {
     const theme = useTheme();
     const name = station['Tên'] || station['name'] || '';
     const diaChi = station['Địa chỉ'] || station['address'] || '';
-    const giaTri = station['Giá trị'] || (station.level !== undefined ? `${station.level.toFixed(2)}` : '...');
+    const rawGiaTri = station['Giá trị'] || (station.level !== undefined ? (station.level > 0 ? station.level.toFixed(2) : '...') : '...');
+    const trangThai = station['Trạng thái'] || station['status_text'] || '';
+    const colorStatus = station['Color'] || station['color'] || station['threshold_status'] || '';
+
+    const isHigh = colorStatus === 'high' || trangThai.includes('cao') || trangThai.includes('Vượt');
+    const isLow = colorStatus === 'low' || trangThai.includes('thấp');
+    const isNoData = colorStatus === 'no_data' || trangThai.includes('Chưa có') || rawGiaTri === '...' || rawGiaTri === '0.00' || rawGiaTri === '0' || !rawGiaTri;
+
+    let giaTri = rawGiaTri;
+    if (isNoData) {
+        giaTri = '...';
+    }
+
+    let primaryColor = theme.palette.primary.main;
+    let primaryBg = theme.palette.primary.light + '20';
+    let cardBorderColor = 'divider';
+
+    if (isNoData) {
+        primaryColor = '#90a4ae';
+        primaryBg = 'rgba(144, 164, 174, 0.12)';
+    } else if (isHigh) {
+        primaryColor = '#d32f2f';
+        primaryBg = 'rgba(211, 47, 47, 0.14)';
+        cardBorderColor = 'rgba(211, 47, 47, 0.4)';
+    } else if (isLow) {
+        primaryColor = '#ed6c02';
+        primaryBg = 'rgba(237, 108, 2, 0.14)';
+        cardBorderColor = 'rgba(237, 108, 2, 0.4)';
+    } else {
+        primaryColor = '#2e7d32';
+        primaryBg = 'rgba(46, 125, 50, 0.14)';
+    }
 
     // Extract thoiGian and format it to show ONLY hours/minutes
     let rawThoiGian = station['Cập nhật'] || station['thoi_gian'] || '';
     let displayTime = '-';
-    if (rawThoiGian) {
+    if (!isNoData && rawThoiGian && rawThoiGian !== '...') {
         const match = rawThoiGian.match(/\d{2}:\d{2}/);
         if (match) {
             displayTime = match[0];
@@ -26,18 +57,16 @@ const WaterCard = ({ station }) => {
         }
     }
 
-    const primaryColor = theme.palette.primary.main;
-    const primaryBg = theme.palette.primary.light + '20'; // ~12% opacity
-
     return (
         <Box sx={{
             p: '8px 10px', borderRadius: '10px',
-            border: '1px solid', borderColor: 'divider',
-            bgcolor: 'background.paper', minWidth: 0,
+            border: '1px solid', borderColor: cardBorderColor,
+            bgcolor: isHigh ? '#fff5f5' : (isLow ? '#fffdf5' : 'background.paper'),
+            minWidth: 0,
             display: 'flex', flexDirection: 'column', gap: '4px'
         }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1 }}>
-                <Typography sx={{ fontWeight: 700, fontSize: '13px', lineHeight: 1.3, color: '#1a1a1a', flex: 1 }}>
+                <Typography sx={{ fontWeight: 700, fontSize: '13px', lineHeight: 1.3, color: isHigh ? '#c62828' : '#1a1a1a', flex: 1 }}>
                     {name}
                 </Typography>
                 {displayTime !== '-' && (

@@ -4,27 +4,31 @@ Thời điểm: %s ngày %s
 1. LƯỢNG MƯA:
 %s
 
-2. MỰC NƯỚC SÔNG, HỒ:
+2. MỰC NƯỚC SÔNG:
 %s
 
-3. HIỆN TRẠNG NGẬP:
+3. MỰC NƯỚC HỒ:
 %s
 
-4. CÔNG TÁC VẬN HÀNH TRẠM BƠM:
+4. HIỆN TRẠNG NGẬP:
 %s
 
-5. TRẠM XỬ LÝ NƯỚC THẢI:
+5. CÔNG TÁC VẬN HÀNH TRẠM BƠM:
 %s
 
-6. THÔNG TIN DỰ BÁO THỜI TIẾT:
+6. TRẠM XỬ LÝ NƯỚC THẢI:
+%s
+
+7. THÔNG TIN DỰ BÁO THỜI TIẾT:
 %s
 
 ---
 YÊU CẦU:
 - Dựa trên dữ liệu thực tế ở trên, hãy tóm tắt tình hình thoát nước thành phố.
 - BẮT BUỘC chèn mã tag hiển thị bảng vào cuối mỗi mục tương ứng (nếu có dữ liệu): [TABLE:rains] cho lượng mưa, [TABLE:rivers] cho sông, [TABLE:lakes] cho hồ, [TABLE:inundations] cho ngập, [TABLE:pumping_stations] cho trạm bơm, [TABLE:wastewater] cho trạm xử lý nước thải.
-- Phân tích và dự báo ngắn gọn dựa trên Thông tin dự báo thời tiết được cung cấp ở mục 6.
+- Phân tích và dự báo ngắn gọn dựa trên Thông tin dự báo thời tiết được cung cấp ở mục 7.
 - Kết cấu báo cáo chuyên nghiệp, súc tích.
-- BẮT BUỘC giữ nguyên đúng tên và thứ tự của các mục ở trên. KHÔNG được tự ý đổi tên (VD: không được đổi thành Tình hình ngập lụt) hoặc đảo lộn thứ tự.
-- LƯU Ý ĐẶC BIỆT 1: Tại mục 3 (HIỆN TRẠNG NGẬP), CHỈ nêu thông tin điểm ngập và tình trạng úng ngập thực tế. TUYỆT ĐỐI KHÔNG đề cập đến lượng mưa hay trạm đo mưa lân cận (vì lượng mưa đã được tổng hợp đầy đủ ở mục 1).
+- BẮT BUỘC giữ nguyên đúng tên và thứ tự của các mục ở trên (Sông là mục 2, Hồ là mục 3, Ngập là mục 4,...). KHÔNG được gộp Sông và Hồ thành 1 mục, KHÔNG được tự ý đổi tên hoặc đảo lộn thứ tự.
+- LƯU Ý ĐẶC BIỆT 1: Tại mục 4 (HIỆN TRẠNG NGẬP), CHỈ nêu thông tin điểm ngập và tình trạng úng ngập thực tế. TUYỆT ĐỐI KHÔNG đề cập đến lượng mưa hay trạm đo mưa lân cận (vì lượng mưa đã được tổng hợp đầy đủ ở mục 1).
 - LƯU Ý ĐẶC BIỆT 2: Không ghi thêm cụm từ "thuộc phạm vi phường" hay "xã", chỉ nêu tên đường.
+- LƯU Ý ĐẶC BIỆT 3: TUYỆT ĐỐI KHÔNG kèm theo đơn vị đo (như "m" hay "cm") khi nhắc đến các con số mực nước hoặc ngưỡng. Viết nguyên văn con số không có đơn vị đo (ví dụ: 380.7, 6.5).

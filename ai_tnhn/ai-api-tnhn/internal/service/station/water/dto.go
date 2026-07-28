@@ -3,12 +3,18 @@ package water
 import "time"
 
 type WaterStationStat struct {
-	Name     string  `json:"name"`
-	Level    float64 `json:"level"`
-	Label    string  `json:"label"` // E.g., "Hồ", "Sông"
-	ThoiGian string  `json:"thoi_gian"`
-	Priority int     `json:"priority"`
-	Address  string  `json:"address"`
+	Name            string  `json:"name"`
+	Level           float64 `json:"level"`
+	Label           string  `json:"label"` // E.g., "Hồ", "Sông"
+	ThoiGian        string  `json:"thoi_gian"`
+	Priority        int     `json:"priority"`
+	Address         string  `json:"address"`
+	ThresholdStatus string  `json:"threshold_status,omitempty"` // "high" | "low" | "normal" | "no_data"
+	StatusText      string  `json:"status_text,omitempty"`      // "Vượt ngưỡng cao" | "Dưới ngưỡng thấp" | "Bình thường" | "Chưa có dữ liệu"
+	IsExceeded      bool    `json:"is_exceeded"`                // true nếu vượt ngưỡng cao hoặc dưới ngưỡng thấp
+	HasData         bool    `json:"has_data"`                   // false nếu chưa có dữ liệu trong ngày
+	MinThreshold    float64 `json:"min_threshold,omitempty"`
+	MaxThreshold    float64 `json:"max_threshold,omitempty"`
 }
 
 type WaterSummaryData struct {
@@ -16,6 +22,8 @@ type WaterSummaryData struct {
 	LakeStations  []WaterStationStat `json:"lake_stations"`
 	RiverStations []WaterStationStat `json:"river_stations"`
 	SummaryText   string             `json:"summary_text,omitempty"`
+	RiverSummary  string             `json:"river_summary,omitempty"`
+	LakeSummary   string             `json:"lake_summary,omitempty"`
 }
 
 type BatchWaterRecordInput struct {

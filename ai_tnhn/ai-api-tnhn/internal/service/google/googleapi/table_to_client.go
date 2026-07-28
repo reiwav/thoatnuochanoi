@@ -59,12 +59,14 @@ func NewRainTableRow(stt int, id string, oldID int, name, address, typ string, p
 }
 
 type WaterTableRow struct {
-	STT      int    `json:"STT"`
-	Ten      string `json:"Tên"`
-	DiaChi   string `json:"Địa chỉ"`
-	GiaTri   string `json:"Giá trị"`
-	CapNhat  string `json:"Cập nhật"`
-	Priority int    `json:"priority"`
+	STT       int    `json:"STT"`
+	Ten       string `json:"Tên"`
+	DiaChi    string `json:"Địa chỉ"`
+	GiaTri    string `json:"Giá trị"`
+	CapNhat   string `json:"Cập nhật"`
+	TrangThai string `json:"Trạng thái,omitempty"`
+	Color     string `json:"color,omitempty"`
+	Priority  int    `json:"priority"`
 }
 
 type PumpTableRow struct {
@@ -134,13 +136,34 @@ func (s *service) populateWaterTable(res *ChatResponse, status *CityStatus) {
 	if len(status.Water.LakeStations) > 0 {
 		var lakes []WaterTableRow
 		for i, m := range status.Water.LakeStations {
+			giaTri := fmt.Sprintf("%.2f", m.Level)
+			capNhat := m.ThoiGian
+			stText := m.StatusText
+			col := m.ThresholdStatus
+
+			if !m.HasData || col == "no_data" {
+				giaTri = "..."
+				capNhat = "..."
+				stText = "Chưa có dữ liệu"
+				col = "no_data"
+			} else {
+				if stText == "" {
+					stText = "Bình thường"
+				}
+				if col == "" {
+					col = "normal"
+				}
+			}
+
 			lakes = append(lakes, WaterTableRow{
-				STT:      i + 1,
-				Ten:      m.Name,
-				DiaChi:   m.Address,
-				GiaTri:   fmt.Sprintf("%.2f", m.Level),
-				CapNhat:  m.ThoiGian,
-				Priority: m.Priority,
+				STT:       i + 1,
+				Ten:       m.Name,
+				DiaChi:    m.Address,
+				GiaTri:    giaTri,
+				CapNhat:   capNhat,
+				TrangThai: stText,
+				Color:     col,
+				Priority:  m.Priority,
 			})
 		}
 		res.Tables["lakes"] = lakes
@@ -148,13 +171,34 @@ func (s *service) populateWaterTable(res *ChatResponse, status *CityStatus) {
 	if len(status.Water.RiverStations) > 0 {
 		var rivers []WaterTableRow
 		for i, m := range status.Water.RiverStations {
+			giaTri := fmt.Sprintf("%.2f", m.Level)
+			capNhat := m.ThoiGian
+			stText := m.StatusText
+			col := m.ThresholdStatus
+
+			if !m.HasData || col == "no_data" {
+				giaTri = "..."
+				capNhat = "..."
+				stText = "Chưa có dữ liệu"
+				col = "no_data"
+			} else {
+				if stText == "" {
+					stText = "Bình thường"
+				}
+				if col == "" {
+					col = "normal"
+				}
+			}
+
 			rivers = append(rivers, WaterTableRow{
-				STT:      i + 1,
-				Ten:      m.Name,
-				DiaChi:   m.Address,
-				GiaTri:   fmt.Sprintf("%.2f", m.Level),
-				CapNhat:  m.ThoiGian,
-				Priority: m.Priority,
+				STT:       i + 1,
+				Ten:       m.Name,
+				DiaChi:    m.Address,
+				GiaTri:    giaTri,
+				CapNhat:   capNhat,
+				TrangThai: stText,
+				Color:     col,
+				Priority:  m.Priority,
 			})
 		}
 		res.Tables["rivers"] = rivers

@@ -73,7 +73,8 @@ func (s *service) GetWaterSummaryV2(ctx context.Context) ([]WaterStationV2, erro
 			IsAuto:   lake.IsAuto || dataMode == "auto",
 		}
 
-		if lake.LatestRecord != nil && time.Since(lake.LatestRecord.Timestamp) < 24*time.Hour {
+		todayStr := time.Now().Format("2006-01-02")
+		if lake.LatestRecord != nil && lake.LatestRecord.Timestamp.Format("2006-01-02") == todayStr {
 			st.LatestRecord = &LatestWaterRecord{
 				RecordID:        lake.LatestRecord.RecordID,
 				StationID:       lake.LatestRecord.StationID,
@@ -116,7 +117,8 @@ func (s *service) GetWaterSummaryV2(ctx context.Context) ([]WaterStationV2, erro
 			IsAuto:   river.IsAuto || dataMode == "auto",
 		}
 
-		if river.LatestRecord != nil && time.Since(river.LatestRecord.Timestamp) < 24*time.Hour {
+		todayStr := time.Now().Format("2006-01-02")
+		if river.LatestRecord != nil && river.LatestRecord.Timestamp.Format("2006-01-02") == todayStr {
 			st.LatestRecord = &LatestWaterRecord{
 				RecordID:        river.LatestRecord.RecordID,
 				StationID:       river.LatestRecord.StationID,
@@ -129,6 +131,8 @@ func (s *service) GetWaterSummaryV2(ctx context.Context) ([]WaterStationV2, erro
 				MinThreshold:    river.LatestRecord.MinThreshold,
 				MaxThreshold:    river.LatestRecord.MaxThreshold,
 			}
+		} else {
+			st.LatestRecord = nil
 		}
 		stations = append(stations, st)
 	}

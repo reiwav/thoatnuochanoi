@@ -5,6 +5,7 @@ import (
 	"ai-api-tnhn/internal/models"
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"os"
@@ -97,62 +98,74 @@ func (s *service) ExportYearlyHistory(ctx context.Context, orgID string, year in
 	index, _ := f.NewSheet(sheetName)
 	f.DeleteSheet("Sheet1")
 
-	// Calculate counts per point
-	pointCounts := make(map[string]int)
-	for _, r := range reports {
-		id := r.PointID
-		if id == "" {
-			id = r.StreetName
-		}
-		pointCounts[id]++
-	}
-
 	// Set Headers
-	headers := []string{"STT", "Điểm ngập lụt", "Đơn vị", "Quận", "Bắt đầu ngập", "Kích thước (DxRxS)", "Thời gian ngập (phút)", "Số lần ngập trong năm"}
+	headers := []string{"STT", "Điểm ngập lụt", "Đơn vị", "Quận/Địa chỉ", "Thời gian bắt đầu đợt ngập", "Thời gian cập nhật", "Người cập nhật", "Kích thước (DxRxS)", "Cấp độ ngập", "Tình trạng giao thông", "Ghi chú"}
 	for i, header := range headers {
 		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
 		f.SetCellValue(sheetName, cell, header)
 	}
 
-	// Helper to format duration
-	formatDuration := func(seconds int64) string {
-		if seconds <= 0 {
-			return "0ph"
-		}
-		h := seconds / 3600
-		m := (seconds % 3600) / 60
-		if h > 0 {
-			return fmt.Sprintf("%dh %dph", h, m)
-		}
-		return fmt.Sprintf("%dph", m)
+	// Create a style for vertically centering text in merged cells
+	centerStyle, _ := f.NewStyle(&excelize.Style{
+		Alignment: &excelize.Alignment{
+			Vertical: "center",
+		},
+	})
+
+	// Helper to format dimensions
+	formatDim := func(val string) string {
+		val = strings.ToLower(val)
+		val = strings.ReplaceAll(val, "m", "")
+		return strings.TrimSpace(val)
 	}
 
-	now := time.Now().Unix()
-	for i, r := range reports {
-		row := i + 2
-		f.SetCellValue(sheetName, "A"+strconv.Itoa(row), i+1)
-		f.SetCellValue(sheetName, "B"+strconv.Itoa(row), r.StreetName)
-		f.SetCellValue(sheetName, "C"+strconv.Itoa(row), r.OrgCode)
-		f.SetCellValue(sheetName, "D"+strconv.Itoa(row), r.Address)
-
-		startTime := time.Unix(r.CTime, 0).Format("02/01/2006 15:04:05")
-		f.SetCellValue(sheetName, "E"+strconv.Itoa(row), startTime)
-
-		dimensions := fmt.Sprintf("%sx%sx%f", r.Length, r.Width, r.Depth)
-		f.SetCellValue(sheetName, "F"+strconv.Itoa(row), dimensions)
-
-		endTime := r.EndTime
-		if endTime <= 0 {
-			endTime = now
+	rowIdx := 2
+	stt := 1
+	for _, r := range reports {
+		// Fetch histories for this report
+		histories, err := s.inundationHistoryRepo.ListByReportID(ctx, r.ID)
+		if err != nil || len(histories) == 0 {
+			continue // Skip this report if error or no histories
 		}
-		durationSeconds := endTime - r.CTime
-		f.SetCellValue(sheetName, "G"+strconv.Itoa(row), formatDuration(durationSeconds))
 
-		id := r.PointID
-		if id == "" {
-			id = r.StreetName
+		startRow := rowIdx
+		for _, h := range histories {
+			f.SetCellValue(sheetName, "A"+strconv.Itoa(rowIdx), stt)
+			f.SetCellValue(sheetName, "B"+strconv.Itoa(rowIdx), r.StreetName)
+
+			orgName := h.OrgName
+			if orgName == "" {
+				orgName = r.OrgName
+			}
+			f.SetCellValue(sheetName, "C"+strconv.Itoa(rowIdx), orgName)
+			f.SetCellValue(sheetName, "D"+strconv.Itoa(rowIdx), r.Address)
+
+			eventStartTime := time.Unix(r.CTime, 0).Format("02/01/2006 15:04:05")
+			f.SetCellValue(sheetName, "E"+strconv.Itoa(rowIdx), eventStartTime)
+
+			updateTime := time.Unix(h.CTime, 0).Format("02/01/2006 15:04:05")
+			f.SetCellValue(sheetName, "F"+strconv.Itoa(rowIdx), updateTime)
+
+			f.SetCellValue(sheetName, "G"+strconv.Itoa(rowIdx), h.UserName)
+			f.SetCellValue(sheetName, "H"+strconv.Itoa(rowIdx), fmt.Sprintf("%sx%sx%v", formatDim(h.Length), formatDim(h.Width), h.Depth))
+			f.SetCellValue(sheetName, "I"+strconv.Itoa(rowIdx), h.FloodLevelName)
+			f.SetCellValue(sheetName, "J"+strconv.Itoa(rowIdx), h.TrafficStatus)
+			f.SetCellValue(sheetName, "K"+strconv.Itoa(rowIdx), h.Note)
+
+			rowIdx++
 		}
-		f.SetCellValue(sheetName, "H"+strconv.Itoa(row), pointCounts[id])
+		
+		endRow := rowIdx - 1
+		if endRow > startRow {
+			colsToMerge := []string{"A", "B", "C", "D", "E"}
+			for _, col := range colsToMerge {
+				f.MergeCell(sheetName, col+strconv.Itoa(startRow), col+strconv.Itoa(endRow))
+			}
+		}
+		// Apply center style to merged columns
+		f.SetCellStyle(sheetName, "A"+strconv.Itoa(startRow), "E"+strconv.Itoa(endRow), centerStyle)
+
+		stt++
 	}
 
 	f.SetActiveSheet(index)

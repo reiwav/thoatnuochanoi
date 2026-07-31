@@ -99,7 +99,7 @@ func (s *service) ExportYearlyHistory(ctx context.Context, orgID string, year in
 	f.DeleteSheet("Sheet1")
 
 	// Set Headers
-	headers := []string{"STT", "Điểm ngập lụt", "Đơn vị", "Quận/Địa chỉ", "Thời gian bắt đầu đợt ngập", "Thời gian cập nhật", "Người cập nhật", "Kích thước (DxRxS)", "Cấp độ ngập", "Tình trạng giao thông", "Ghi chú"}
+	headers := []string{"STT", "Điểm ngập lụt", "Đơn vị", "Địa chỉ", "Đợt ngập (Bắt đầu - Kết thúc)", "Thời gian cập nhật", "Người cập nhật", "Kích thước (DxRxS)", "Cấp độ ngập", "Tình trạng giao thông", "Ghi chú"}
 	for i, header := range headers {
 		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
 		f.SetCellValue(sheetName, cell, header)
@@ -119,53 +119,126 @@ func (s *service) ExportYearlyHistory(ctx context.Context, orgID string, year in
 		return strings.TrimSpace(val)
 	}
 
+	// Group reports by Station
+	type StationEvents struct {
+		PointID    string
+		StreetName string
+		OrgName    string
+		Address    string
+		Events     []*models.InundationReport
+	}
+
+	var stationOrder []string
+	stationMap := make(map[string]*StationEvents)
+	var reportIDs []string
+
+	for _, r := range reports {
+		id := r.PointID
+		if id == "" {
+			id = r.StreetName
+		}
+		if _, exists := stationMap[id]; !exists {
+			stationMap[id] = &StationEvents{
+				PointID:    id,
+				StreetName: r.StreetName,
+				OrgName:    r.OrgName,
+				Address:    r.Address,
+			}
+			stationOrder = append(stationOrder, id)
+		}
+		stationMap[id].Events = append(stationMap[id].Events, r)
+		reportIDs = append(reportIDs, r.ID)
+	}
+
+	// Bulk fetch histories to avoid N+1 query problem
+	historyMap := make(map[string][]*models.InundationHistory)
+	if len(reportIDs) > 0 {
+		f := filter.NewPaginationFilter()
+		f.PerPage = 10000 // Get all histories in one go
+		f.AddWhere("inundation_or_report_id", "$or", []bson.M{
+			{"inundation_id": bson.M{"$in": reportIDs}},
+			{"report_id": bson.M{"$in": reportIDs}},
+		})
+		f.SetOrderBy("created_at")
+
+		allHistories, _, err := s.inundationHistoryRepo.List(ctx, f)
+		if err == nil {
+			for _, h := range allHistories {
+				id := h.ReportId
+				if id == "" {
+					id = h.InundationId
+				}
+				historyMap[id] = append(historyMap[id], h)
+			}
+		}
+	}
+
 	rowIdx := 2
 	stt := 1
-	for _, r := range reports {
-		// Fetch histories for this report
-		histories, err := s.inundationHistoryRepo.ListByReportID(ctx, r.ID)
-		if err != nil || len(histories) == 0 {
-			continue // Skip this report if error or no histories
-		}
+	for _, stationID := range stationOrder {
+		station := stationMap[stationID]
+		stationStartRow := rowIdx
+		hasAnyHistory := false
 
-		startRow := rowIdx
-		for _, h := range histories {
-			f.SetCellValue(sheetName, "A"+strconv.Itoa(rowIdx), stt)
-			f.SetCellValue(sheetName, "B"+strconv.Itoa(rowIdx), r.StreetName)
-
-			orgName := h.OrgName
-			if orgName == "" {
-				orgName = r.OrgName
+		for _, r := range station.Events {
+			// Fetch histories for this report from the map
+			histories := historyMap[r.ID]
+			if len(histories) == 0 {
+				continue // Skip this report if no histories
 			}
-			f.SetCellValue(sheetName, "C"+strconv.Itoa(rowIdx), orgName)
-			f.SetCellValue(sheetName, "D"+strconv.Itoa(rowIdx), r.Address)
+			hasAnyHistory = true
 
-			eventStartTime := time.Unix(r.CTime, 0).Format("02/01/2006 15:04:05")
-			f.SetCellValue(sheetName, "E"+strconv.Itoa(rowIdx), eventStartTime)
+			eventStartRow := rowIdx
+			for _, h := range histories {
+				f.SetCellValue(sheetName, "A"+strconv.Itoa(rowIdx), stt)
+				f.SetCellValue(sheetName, "B"+strconv.Itoa(rowIdx), station.StreetName)
 
-			updateTime := time.Unix(h.CTime, 0).Format("02/01/2006 15:04:05")
-			f.SetCellValue(sheetName, "F"+strconv.Itoa(rowIdx), updateTime)
+				orgName := h.OrgName
+				if orgName == "" {
+					orgName = station.OrgName
+				}
+				f.SetCellValue(sheetName, "C"+strconv.Itoa(rowIdx), orgName)
+				f.SetCellValue(sheetName, "D"+strconv.Itoa(rowIdx), station.Address)
 
-			f.SetCellValue(sheetName, "G"+strconv.Itoa(rowIdx), h.UserName)
-			f.SetCellValue(sheetName, "H"+strconv.Itoa(rowIdx), fmt.Sprintf("%sx%sx%v", formatDim(h.Length), formatDim(h.Width), h.Depth))
-			f.SetCellValue(sheetName, "I"+strconv.Itoa(rowIdx), h.FloodLevelName)
-			f.SetCellValue(sheetName, "J"+strconv.Itoa(rowIdx), h.TrafficStatus)
-			f.SetCellValue(sheetName, "K"+strconv.Itoa(rowIdx), h.Note)
+				eventStartTime := time.Unix(r.CTime, 0).Format("02/01/2006")
+				eventEndTime := "Đang ngập"
+				if r.EndTime > 0 {
+					eventEndTime = time.Unix(r.EndTime, 0).Format("02/01/2006")
+				}
+				f.SetCellValue(sheetName, "E"+strconv.Itoa(rowIdx), fmt.Sprintf("%s - %s", eventStartTime, eventEndTime))
 
-			rowIdx++
-		}
+				updateTime := time.Unix(h.CTime, 0).Format("02/01/2006 15:04:05")
+				f.SetCellValue(sheetName, "F"+strconv.Itoa(rowIdx), updateTime)
 
-		endRow := rowIdx - 1
-		if endRow > startRow {
-			colsToMerge := []string{"A", "B", "C", "D", "E"}
-			for _, col := range colsToMerge {
-				f.MergeCell(sheetName, col+strconv.Itoa(startRow), col+strconv.Itoa(endRow))
+				f.SetCellValue(sheetName, "G"+strconv.Itoa(rowIdx), h.UserName)
+				f.SetCellValue(sheetName, "H"+strconv.Itoa(rowIdx), fmt.Sprintf("%sx%sx%v", formatDim(h.Length), formatDim(h.Width), h.Depth))
+				f.SetCellValue(sheetName, "I"+strconv.Itoa(rowIdx), h.FloodLevelName)
+				f.SetCellValue(sheetName, "J"+strconv.Itoa(rowIdx), h.TrafficStatus)
+				f.SetCellValue(sheetName, "K"+strconv.Itoa(rowIdx), h.Note)
+
+				rowIdx++
+			}
+
+			eventEndRow := rowIdx - 1
+			if eventEndRow > eventStartRow {
+				// Merge Event-specific column (E: Thời gian bắt đầu đợt ngập)
+				f.MergeCell(sheetName, "E"+strconv.Itoa(eventStartRow), "E"+strconv.Itoa(eventEndRow))
+				f.SetCellStyle(sheetName, "E"+strconv.Itoa(eventStartRow), "E"+strconv.Itoa(eventEndRow), centerStyle)
 			}
 		}
-		// Apply center style to merged columns
-		f.SetCellStyle(sheetName, "A"+strconv.Itoa(startRow), "E"+strconv.Itoa(endRow), centerStyle)
 
-		stt++
+		if hasAnyHistory {
+			stationEndRow := rowIdx - 1
+			if stationEndRow > stationStartRow {
+				// Merge Station-specific columns (A, B, C, D)
+				colsToMerge := []string{"A", "B", "C", "D"}
+				for _, col := range colsToMerge {
+					f.MergeCell(sheetName, col+strconv.Itoa(stationStartRow), col+strconv.Itoa(stationEndRow))
+				}
+				f.SetCellStyle(sheetName, "A"+strconv.Itoa(stationStartRow), "D"+strconv.Itoa(stationEndRow), centerStyle)
+			}
+			stt++
+		}
 	}
 
 	f.SetActiveSheet(index)

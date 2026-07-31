@@ -7,7 +7,7 @@ import { useTheme } from '@mui/material/styles';
 import { IconArrowLeft } from '@tabler/icons-react';
 
 // project imports
-import InundationHistoryView from '../../shared/inundation/InundationHistoryView';
+import InundationPointHistoryView from '../../shared/inundation/InundationPointHistoryView';
 
 const InundationHistoryDetail = () => {
     const theme = useTheme();
@@ -34,7 +34,7 @@ const InundationHistoryDetail = () => {
                 </Stack>
 
                 {/* Using the shared responsive timeline view */}
-                <InundationHistoryView />
+                <InundationPointHistoryView />
             </Container>
         </Box>
     );

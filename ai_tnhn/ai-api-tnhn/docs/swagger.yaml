@@ -5886,6 +5886,34 @@ paths:
       summary: Kết thúc nhanh điểm ngập
       tags:
       - Ngập lụt
+  /inundation/report-history:
+    get:
+      description: Lấy toàn bộ lịch sử cập nhật của báo cáo ngập lụt
+      parameters:
+      - description: ID báo cáo
+        in: query
+        name: report_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: '#/definitions/models.InundationHistory'
+                type: array
+              total:
+                type: integer
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Lấy toàn bộ lịch sử diễn biến của một báo cáo
+      tags:
+      - Ngập lụt
   /inundation/report/{id}:
     get:
       description: Truy xuất thông tin chi tiết của một báo cáo ngập lụt theo ID

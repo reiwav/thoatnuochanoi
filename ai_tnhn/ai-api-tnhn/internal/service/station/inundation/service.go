@@ -16,6 +16,7 @@ type Service interface {
 	ReportEnterpriseSituation(ctx context.Context, user *models.User, pointID string, update dto.AddUpdateSitutionRequest, images []ImageContent) (*models.InundationReport, error)
 	ListReportsWithFilter(ctx context.Context, user *models.User, isAllowedAll bool, orgIDFilter string, f filter.Filter) ([]*models.InundationReport, int64, error)
 	GetPointHistory(ctx context.Context, pointID string, lastReportID string, size int) ([]*models.InundationHistory, int64, error)
+	GetReportHistory(ctx context.Context, reportID string) ([]*models.InundationHistory, int64, error)
 	GetReport(ctx context.Context, user *models.User, reportID string) (*models.InundationReport, error)
 	ListReportHistory(ctx context.Context, reportID string) ([]models.InundationHistory, error)
 	QuickFinishV2(ctx context.Context, user *models.User, pointID string) error

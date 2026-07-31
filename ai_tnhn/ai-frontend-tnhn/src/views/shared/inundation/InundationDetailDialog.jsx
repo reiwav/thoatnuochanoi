@@ -10,7 +10,7 @@ import dayjs from 'dayjs';
 import inundationApi from 'api/inundation';
 import { getDataArray } from 'utils/apiHelper';
 import InundationDetail from '../../employee/inundation/InundationDetail';
-import InundationHistoryView from './InundationHistoryView';
+import InundationReportHistoryView from './InundationReportHistoryView';
 import useAuthStore from 'store/useAuthStore';
 
 const InundationDetailDialog = ({ open, onClose, point }) => {
@@ -156,8 +156,8 @@ const InundationDetailDialog = ({ open, onClose, point }) => {
                     </>
                 ) : (
                     <Box sx={{ p: { xs: 1.5, md: 2 } }}>
-                        <InundationHistoryView
-                            pointId={point?.id}
+                        <InundationReportHistoryView
+                            reportId={selectedReport?.id || point?.id}
                             hideHeader={true}
                         />
                     </Box>

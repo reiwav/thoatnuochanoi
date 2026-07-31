@@ -7265,6 +7265,51 @@ const docTemplate = `{
                 }
             }
         },
+        "/inundation/report-history": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Lấy toàn bộ lịch sử cập nhật của báo cáo ngập lụt",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Ngập lụt"
+                ],
+                "summary": "Lấy toàn bộ lịch sử diễn biến của một báo cáo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID báo cáo",
+                        "name": "report_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/definitions/models.InundationHistory"
+                                    }
+                                },
+                                "total": {
+                                    "type": "integer"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/inundation/report/{id}": {
             "get": {
                 "security": [

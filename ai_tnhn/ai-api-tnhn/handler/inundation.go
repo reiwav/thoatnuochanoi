@@ -270,6 +270,40 @@ func (h *InundationHandler) GetPointHistory(c *gin.Context) {
 	})
 }
 
+// GetReportHistory godoc
+// @Summary Lấy toàn bộ lịch sử diễn biến của một báo cáo
+// @Description Lấy toàn bộ lịch sử cập nhật của báo cáo ngập lụt
+// @Tags Ngập lụt
+// @Produce json
+// @Security BearerAuth
+// @Param report_id query string true "ID báo cáo"
+// @Success 200 {object} object{data=[]models.InundationHistory,total=int}
+// @Router /inundation/report-history [get]
+func (h *InundationHandler) GetReportHistory(c *gin.Context) {
+	user, err := h.contextWith.GetUser(c)
+	if err != nil || user == nil {
+		h.SendError(c, web.Unauthorized("Vui lòng đăng nhập lại"))
+		return
+	}
+
+	reportID := c.Query("report_id")
+	if reportID == "" {
+		h.SendError(c, web.BadRequest("report_id is required"))
+		return
+	}
+
+	reports, total, err := h.service.GetReportHistory(c.Request.Context(), reportID)
+	if err != nil {
+		h.SendError(c, err)
+		return
+	}
+
+	h.SendData(c, gin.H{
+		"data":  reports,
+		"total": total,
+	})
+}
+
 // GetPointsStatus godoc
 // @Summary Lấy trạng thái tất cả các điểm ngập
 // @Description Truy xuất trạng thái hiện tại của tất cả các điểm, có thể lọc theo đơn vị

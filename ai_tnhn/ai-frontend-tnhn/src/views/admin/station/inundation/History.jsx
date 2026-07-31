@@ -9,7 +9,7 @@ import { useTheme } from '@mui/material/styles';
 // project imports
 import MainCard from 'ui-component/cards/MainCard';
 import stationApi from 'api/station';
-import InundationHistoryView from '../../../shared/inundation/InundationHistoryView';
+import InundationPointHistoryView from '../../../shared/inundation/InundationPointHistoryView';
 
 const InundationStationHistory = () => {
     const theme = useTheme();
@@ -74,7 +74,7 @@ const InundationStationHistory = () => {
 
                 {/* Injecting the shared timeline view here */}
                 <Box sx={{ bgcolor: alpha(theme.palette.grey[50], 0.5), p: 2, borderRadius: 4 }}>
-                    <InundationHistoryView pointId={selectedPoint} hideHeader={true} />
+                    <InundationPointHistoryView pointId={selectedPoint} hideHeader={true} />
                 </Box>
             </Stack>
         </MainCard>

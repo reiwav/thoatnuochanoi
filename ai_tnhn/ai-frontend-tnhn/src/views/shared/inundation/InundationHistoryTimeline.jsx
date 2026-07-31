@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import React from 'react';
 import {
     Box, Typography, Stack, Chip, Paper, CircularProgress,
     Divider, alpha, Grid, useMediaQuery, Button
@@ -9,88 +8,23 @@ import {
     IconClock, IconLayoutList
 } from '@tabler/icons-react';
 
-import inundationApi from 'api/inundation';
 import { getTrafficStatusColor } from 'utils/trafficStatusHelper';
 import { formatDateTime } from 'utils/dataHelper';
 import ImageViewer from '../../employee/inundation/components/ImageViewer';
 import { getInundationImageUrl } from 'utils/imageHelper';
 
-const InundationHistoryView = ({ pointId: propPointId, hideHeader = false }) => {
+const InundationHistoryTimeline = ({
+    history = [],
+    loading = false,
+    loadingMore = false,
+    hasMore = false,
+    onLoadMore,
+    hideHeader = false,
+    title = "Lịch sử diễn biến"
+}) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-    const [searchParams] = useSearchParams();
-    const pointId = propPointId || searchParams.get('id');
-
-    const [loading, setLoading] = useState(false);
-    const [loadingMore, setLoadingMore] = useState(false);
-    const [hasMore, setHasMore] = useState(false);
-    const [total, setTotal] = useState(0);
-    const [history, setHistory] = useState([]);
-    const [viewer, setViewer] = useState({ open: false, images: [], index: 0 });
-
-    const loadHistory = useCallback(async (lastHistoryId = null) => {
-        if (!pointId) {
-            setHistory([]);
-            setHasMore(false);
-            setTotal(0);
-            return;
-        }
-
-        const isLoadMore = !!lastHistoryId;
-        if (isLoadMore) {
-            setLoadingMore(true);
-        } else {
-            setLoading(true);
-        }
-
-        try {
-            const limit = 5;
-            const response = await inundationApi.getPointHistory(pointId, lastHistoryId, limit);
-
-            let dataArr = [];
-            let totalCount = 0;
-            if (response) {
-                dataArr = Array.isArray(response) ? response : (response.data || response.items || []);
-                totalCount = typeof response.total === 'number' ? response.total : dataArr.length;
-            }
-
-            setHistory(prev => {
-                const combined = isLoadMore ? [...prev, ...dataArr] : dataArr;
-                const merged = [];
-                const seenIds = new Set();
-                for (const item of combined) {
-                    if (!seenIds.has(item.id)) {
-                        seenIds.add(item.id);
-                        merged.push(item);
-                    }
-                }
-
-                setHasMore(merged.length < totalCount);
-                return merged;
-            });
-            setTotal(totalCount);
-        } catch (err) {
-            console.error('Failed to load history:', err);
-            if (!isLoadMore) {
-                setHistory([]);
-                setHasMore(false);
-                setTotal(0);
-            }
-        } finally {
-            setLoading(false);
-            setLoadingMore(false);
-        }
-    }, [pointId]);
-
-    useEffect(() => {
-        if (pointId) {
-            loadHistory();
-        } else {
-            setHistory([]);
-            setHasMore(false);
-            setTotal(0);
-        }
-    }, [pointId, loadHistory]);
+    const [viewer, setViewer] = React.useState({ open: false, images: [], index: 0 });
 
     const handleOpenViewer = (images, index) => {
         setViewer({ open: true, images, index });
@@ -104,21 +38,11 @@ const InundationHistoryView = ({ pointId: propPointId, hideHeader = false }) => 
         );
     }
 
-    if (!pointId) {
-        return (
-            <Box sx={{ py: 6, textAlign: 'center', bgcolor: 'grey.50', borderRadius: 4, border: '1px dashed', borderColor: 'divider' }}>
-                <Typography color="textSecondary" variant="subtitle1" sx={{ fontWeight: 600 }}>
-                    Vui lòng chọn một điểm ngập để xem lịch sử bản tin
-                </Typography>
-            </Box>
-        );
-    }
-
     if (history.length === 0) {
         return (
             <Box sx={{ py: 10, textAlign: 'center', bgcolor: 'grey.50', borderRadius: 4 }}>
                 <IconLayoutList size={48} style={{ opacity: 0.15, marginBottom: 16 }} />
-                <Typography color="textSecondary" sx={{ fontWeight: 700 }}>Chưa có dữ liệu lịch sử cho điểm ngập này</Typography>
+                <Typography color="textSecondary" sx={{ fontWeight: 700 }}>Chưa có dữ liệu lịch sử</Typography>
             </Box>
         );
     }
@@ -138,7 +62,7 @@ const InundationHistoryView = ({ pointId: propPointId, hideHeader = false }) => 
                     }}
                 >
                     <Typography variant={isMobile ? "h4" : "h3"} sx={{ fontWeight: 900, textTransform: 'uppercase' }}>
-                        Lịch sử điểm ngập
+                        {title}
                     </Typography>
                 </Paper>
             )}
@@ -166,28 +90,28 @@ const InundationHistoryView = ({ pointId: propPointId, hideHeader = false }) => 
                 {history.map((item, idx) => {
                     const trafficColor = getTrafficStatusColor(item.traffic_status);
 
-                    let title = "Cập nhật diễn biến";
+                    let itemTitle = "Cập nhật diễn biến";
                     let badgeColor = "primary";
                     let badgeLabel = "Diễn biến";
 
                     if (item.role_permission === "inundation:enterprise_report") {
-                        title = "Báo cáo XN của địa bàn";
+                        itemTitle = "Báo cáo XN của địa bàn";
                         badgeColor = "info";
                         badgeLabel = "Địa bàn";
                     } else if (item.role_permission === "inundation:report") {
-                        title = "P.KT-CL báo cáo";
+                        itemTitle = "P.KT-CL báo cáo";
                         badgeColor = "secondary";
                         badgeLabel = "P.KT-CL";
                     } else if (item.role_permission === "inundation:survey") {
-                        title = "Xí nghiệp Khảo sát thiết kế";
+                        itemTitle = "Xí nghiệp Khảo sát thiết kế";
                         badgeColor = "success";
                         badgeLabel = "Khảo sát";
                     } else if (item.role_permission === "inundation:mechanic") {
-                        title = "Xí nghiệp Cơ giới";
+                        itemTitle = "Xí nghiệp Cơ giới";
                         badgeColor = "warning";
                         badgeLabel = "Cơ giới";
                     } else if (item.role_permission === "inundation:review") {
-                        title = "Nhận xét KT-CL";
+                        itemTitle = "Nhận xét KT-CL";
                         badgeColor = "error";
                         badgeLabel = "P.KT-CL";
                     }
@@ -233,7 +157,7 @@ const InundationHistoryView = ({ pointId: propPointId, hideHeader = false }) => 
                                                     </Stack>
 
                                                     <Typography variant="h4" sx={{ fontWeight: 900, color: `${badgeColor}.dark`, fontSize: '1rem' }}>
-                                                        {title}
+                                                        {itemTitle}
                                                     </Typography>
 
                                                     <Divider sx={{ opacity: 0.5 }} />
@@ -380,10 +304,7 @@ const InundationHistoryView = ({ pointId: propPointId, hideHeader = false }) => 
                         disabled={loadingMore}
                         variant="outlined"
                         color="primary"
-                        onClick={() => {
-                            const lastItem = history[history.length - 1];
-                            loadHistory(lastItem?.id);
-                        }}
+                        onClick={onLoadMore}
                         startIcon={loadingMore ? <CircularProgress size={16} color="inherit" /> : null}
                         sx={{ fontWeight: 800, borderRadius: 2, px: 4 }}
                     >
@@ -402,4 +323,4 @@ const InundationHistoryView = ({ pointId: propPointId, hideHeader = false }) => 
     );
 };
 
-export default InundationHistoryView;
+export default InundationHistoryTimeline;

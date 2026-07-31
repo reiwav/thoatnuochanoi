@@ -154,7 +154,7 @@ func (s *service) ExportYearlyHistory(ctx context.Context, orgID string, year in
 
 			rowIdx++
 		}
-		
+
 		endRow := rowIdx - 1
 		if endRow > startRow {
 			colsToMerge := []string{"A", "B", "C", "D", "E"}
@@ -227,5 +227,20 @@ func (s *service) GetPointHistory(ctx context.Context, pointID string, lastRepor
 		total = int64(len(histories))
 	}
 
+	return histories, total, nil
+}
+
+func (s *service) GetReportHistory(ctx context.Context, reportID string) ([]*models.InundationHistory, int64, error) {
+	rf := filter.NewPaginationFilter()
+	rf.AddWhere("report_id", "report_id", reportID)
+	rf.SetOrderBy("-created_at")
+	rf.PerPage = 100 // Lấy tối đa 100 lịch sử của một report để đảm bảo lấy hết mà không cần phân trang
+
+	histories, _, err := s.inundationHistoryRepo.List(ctx, rf)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	total := int64(len(histories))
 	return histories, total, nil
 }

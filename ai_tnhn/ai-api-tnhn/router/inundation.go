@@ -30,6 +30,7 @@ func (h HandlerFuncs) InundationRoutes(api *gin.RouterGroup, mid middleware.Midd
 		group.POST("/update/:id/review", inuHandler.ReviewUpdate)
 		group.GET("/reports", inuHandler.ListReports)
 		group.GET("/history", inuHandler.GetPointHistory)
+		group.GET("/report-history", inuHandler.GetReportHistory)
 		group.GET("/points-status", inuHandler.GetPointsStatus)
 		group.GET("/points-list", inuHandler.ListPointsByOrg)
 		group.POST("/points", inuHandler.CreatePoint)

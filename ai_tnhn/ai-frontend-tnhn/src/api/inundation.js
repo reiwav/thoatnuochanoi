@@ -28,6 +28,9 @@ const inundationApi = {
         if (lastReportId) url += `&last_report_id=${lastReportId}`;
         return axiosClient.get(url);
     },
+    getReportHistory: (reportId) => {
+        return axiosClient.get(`/inundation/report-history?report_id=${reportId}`);
+    },
     correctEnterpriseReport: (pointId, formData) => {
         return axiosClient.put(`/inundation/point/${pointId}/correct`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }

@@ -88,6 +88,11 @@ const WaterStationCardV2 = ({ row }) => {
                     >
                         {row.name}
                     </Typography>
+                    <Box sx={{ minHeight: '2.2em', display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
+                        <Typography variant="caption" sx={{ color: '#546e7a', fontWeight: 600, fontSize: '0.65rem', lineHeight: 1.1, textTransform: 'uppercase' }}>
+                            {row.address}
+                        </Typography>
+                    </Box>
                 </Box>
 
                 {/* Water Level Display */}

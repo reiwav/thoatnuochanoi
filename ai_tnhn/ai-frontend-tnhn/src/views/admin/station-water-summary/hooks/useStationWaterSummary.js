@@ -67,6 +67,7 @@ const useStationWaterSummary = () => {
                 stt: index + 1,
                 name: station.TenTram,
                 nameHTML: station.TenTramHTML || '',
+                address: station.DiaChi || '',
                 thuTu: station.ThuTu || 0,
                 type: station.Loai === "1" ? "Sông" : "Hồ",
                 level: level,

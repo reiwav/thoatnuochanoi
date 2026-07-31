@@ -95,56 +95,76 @@ const useStationHistory = ({ type }) => {
         if (!history || history.length === 0) return [];
         if (type !== 'rain') return [...history].reverse();
         
-        const sorted = [...history].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-        let firstIndex = -1;
-        let lastIndex = -1;
-        for (let i = 0; i < sorted.length; i++) {
-            if (sorted[i].value > 0) {
-                if (firstIndex === -1) firstIndex = i;
-                lastIndex = i;
-            }
-        }
-        if (firstIndex === -1) return sorted;
-
-        const start = Math.max(0, firstIndex - 1);
-        const end = Math.min(sorted.length - 1, lastIndex + 1);
-        return sorted.slice(start, end + 1);
+        return [...history].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
     }, [history, type]);
 
-    const chartOptions = useMemo(() => ({
-        chart: {
-            type: 'line',
-            height: 350,
-            toolbar: { show: false },
-            zoom: { enabled: false },
-            fontFamily: theme.typography.fontFamily
-        },
-        dataLabels: { enabled: false },
-        stroke: { curve: 'smooth', width: 3 },
-        markers: {
-            size: activeData.length <= 1 ? 5 : 0,
-            strokeWidth: 2,
-            hover: { size: 6 }
-        },
-        fill: {
-            type: 'solid'
-        },
-        xaxis: {
-            type: 'datetime',
-            labels: {
-                datetimeUTC: false,
-                format: 'HH:mm'
+    const chartOptions = useMemo(() => {
+        const isRain = type === 'rain';
+        const options = {
+            chart: {
+                type: 'line',
+                height: 350,
+                toolbar: { show: false },
+                zoom: { enabled: false },
+                fontFamily: theme.typography.fontFamily
             },
-            title: { text: 'Thời gian' }
-        },
-        yaxis: {
-            title: { text: getValueLabel() }
-        },
-        tooltip: {
-            x: { format: 'dd/MM/yyyy HH:mm' }
-        },
-        colors: [theme.palette.primary.main]
-    }), [theme, type, activeData.length]);
+            dataLabels: { enabled: false },
+            stroke: { 
+                curve: isRain ? 'straight' : 'smooth', 
+                width: isRain ? 2 : 3 
+            },
+            markers: {
+                size: isRain ? 0 : (activeData.length <= 1 ? 5 : 0),
+                strokeWidth: 2,
+                hover: { size: isRain ? 5 : 6 }
+            },
+            fill: {
+                type: 'solid'
+            },
+            xaxis: {
+                type: 'datetime',
+                labels: {
+                    datetimeUTC: false,
+                    format: isRain ? 'H' : 'HH:mm'
+                },
+                title: { text: isRain ? '' : 'Thời gian' }
+            },
+            yaxis: {
+                title: { text: isRain ? '' : getValueLabel() }
+            },
+            tooltip: {
+                x: { format: 'dd/MM/yyyy HH:mm' }
+            },
+            colors: [theme.palette.primary.main]
+        };
+
+        if (isRain) {
+            const dateStr = selectedDate ? selectedDate.format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD');
+            options.xaxis.min = dayjs(dateStr).hour(7).minute(0).second(0).valueOf();
+            options.xaxis.max = dayjs(dateStr).add(1, 'day').hour(7).minute(0).second(0).valueOf();
+            options.xaxis.tickAmount = 24;
+            options.xaxis.tooltip = { enabled: false };
+            options.yaxis.min = 0;
+            options.yaxis.tickAmount = 12;
+            options.yaxis.labels = {
+                formatter: (val) => val.toFixed(0)
+            };
+            options.grid = {
+                borderColor: theme.palette.divider,
+                strokeDashArray: 0,
+                xaxis: { lines: { show: true } },
+                yaxis: { lines: { show: true } }
+            };
+            options.legend = {
+                show: true,
+                position: 'top',
+                horizontalAlign: 'center',
+                markers: { radius: 0 }
+            };
+        }
+
+        return options;
+    }, [theme, type, activeData.length, selectedDate]);
 
     const chartSeries = useMemo(() => {
         let data = activeData.map(item => ({

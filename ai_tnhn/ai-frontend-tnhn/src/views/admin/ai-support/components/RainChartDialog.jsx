@@ -29,6 +29,16 @@ const RainChartDialog = ({ open, onClose, stationName, date, data, loading }) =>
         };
     }, [rainData]);
 
+    const minTime = React.useMemo(() => {
+        // 7:00 AM of the given date
+        return dayjs(date).hour(7).minute(0).second(0).valueOf();
+    }, [date]);
+
+    const maxTime = React.useMemo(() => {
+        // 7:00 AM of the next day
+        return dayjs(date).add(1, 'day').hour(7).minute(0).second(0).valueOf();
+    }, [date]);
+
     const chartOptions = {
         chart: {
             type: 'line',
@@ -38,46 +48,56 @@ const RainChartDialog = ({ open, onClose, stationName, date, data, loading }) =>
             fontFamily: theme.typography.fontFamily
         },
         stroke: {
-            curve: 'smooth',
-            width: 3
+            curve: 'straight',
+            width: 2
         },
         markers: {
-            size: rainData.length <= 1 ? 5 : 0,
-            strokeWidth: 2,
+            size: 0,
             hover: {
-                size: 7
+                size: 5
             }
         },
         dataLabels: { enabled: false },
         xaxis: {
             type: 'datetime',
+            min: minTime,
+            max: maxTime,
+            tickAmount: 24,
             labels: {
                 datetimeUTC: false,
-                format: 'HH:mm'
+                format: 'H'
             },
-            title: { text: 'Thời gian' }
+            tooltip: { enabled: false }
         },
         yaxis: {
-            title: { text: 'Lượng mưa (mm)' },
-            min: 0
+            min: 0,
+            tickAmount: 12,
+            labels: {
+                formatter: (val) => val.toFixed(0)
+            }
         },
         tooltip: {
             x: { format: 'HH:mm dd/MM/yyyy' }
         },
         colors: [theme.palette.primary.main],
-        title: {
-            text: `Biểu đồ lượng mưa - ${stationName}`,
-            align: 'center',
-            style: { fontSize: '16px', fontWeight: 700 }
+        legend: {
+            show: true,
+            position: 'top',
+            horizontalAlign: 'center',
+            markers: {
+                radius: 0
+            }
         },
-        subtitle: {
-            text: `Ngày: ${dayjs(date).format('DD/MM/YYYY')}`,
-            align: 'center'
+        grid: {
+            borderColor: theme.palette.divider,
+            strokeDashArray: 0,
+            xaxis: { lines: { show: true } },
+            yaxis: { lines: { show: true } },
         }
     };
 
     const chartSeries = [{
-        name: 'Lượng mưa',
+        name: stationName,
         data: rainData.map(item => ({
             x: new Date(item.timestamp).getTime(),
             y: item.value || 0

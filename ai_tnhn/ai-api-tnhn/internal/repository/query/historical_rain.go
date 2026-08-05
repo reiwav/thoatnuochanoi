@@ -33,38 +33,33 @@ func (p historicalRainRepository) GetMonthlyTotals(ctx context.Context, years []
 		yearFilters = append(yearFilters, bson.M{"date": bson.M{"$regex": fmt.Sprintf("^%d-", y)}})
 	}
 
-	pipeline := mongo.Pipeline{
-		{{Key: "$match", Value: bson.M{"$or": yearFilters}}},
-		{{Key: "$project", Value: bson.M{
+	pipeline := []bson.M{
+		{"$match": bson.M{"$or": yearFilters}},
+		{"$project": bson.M{
 			"station":  1,
 			"rainfall": 1,
 			"year":     bson.M{"$toInt": bson.M{"$arrayElemAt": bson.A{bson.M{"$split": bson.A{"$date", "-"}}, 0}}},
 			"month":    bson.M{"$toInt": bson.M{"$arrayElemAt": bson.A{bson.M{"$split": bson.A{"$date", "-"}}, 1}}},
-		}}},
-		{{Key: "$group", Value: bson.M{
+		}},
+		{"$group": bson.M{
 			"_id": bson.M{
 				"station": "$station",
 				"year":    "$year",
 				"month":   "$month",
 			},
 			"total": bson.M{"$sum": "$rainfall"},
-		}}},
-		{{Key: "$project", Value: bson.M{
+		}},
+		{"$project": bson.M{
 			"_id_station": "$_id.station",
 			"_id_year":    "$_id.year",
 			"_id_month":   "$_id.month",
 			"total":       1,
-		}}},
+		}},
 	}
-
-	cursor, err := p.Collection.Aggregate(ctx, pipeline)
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(ctx)
 
 	var results []*models.MonthlyTotal
-	if err := cursor.All(ctx, &results); err != nil {
+	err := p.R_Pipe(ctx, pipeline, &results)
+	if err != nil {
 		return nil, err
 	}
 

@@ -6,9 +6,9 @@ import "time"
 type PublicStationMaster struct {
 	ID      string `json:"id"`
 	Name    string `json:"name"`
-	Address string `json:"address,omitempty"`
-	Lat     string `json:"lat,omitempty"`
-	Lng     string `json:"lng,omitempty"`
+	Address string `json:"address"`
+	Lat     string `json:"lat"`
+	Lng     string `json:"lng"`
 	Type    string `json:"type"` // lake, river, rain, inundation, sluice_gate, wastewater
 }
 
@@ -16,7 +16,7 @@ type PublicStationMaster struct {
 type PublicWaterData struct {
 	CurrentLevel float64   `json:"current_level"`
 	Timestamp    time.Time `json:"timestamp"`
-	Status       string    `json:"status,omitempty"` // e.g., safe, warning, danger
+	Status       string    `json:"status"` // e.g., safe, warning, danger
 }
 
 // PublicRainData represents rainfall data
@@ -31,23 +31,23 @@ type PublicRainData struct {
 type InundationHistoryItem struct {
 	Time   string   `json:"time"`
 	Depth  float64  `json:"depth"`
-	Length string   `json:"length,omitempty"`
-	Width  string   `json:"width,omitempty"`
-	Images []string `json:"images,omitempty"`
-	Note   string   `json:"note,omitempty"`
+	Length string   `json:"length"`
+	Width  string   `json:"width"`
+	Images []string `json:"images"`
+	Note   string   `json:"note"`
 }
 
 // PublicInundationData represents inundation (flooding) data
 type PublicInundationData struct {
 	Status       string                  `json:"status"` // e.g., flooded, normal
 	CurrentDepth float64                 `json:"current_depth"`
-	MaxDepth     float64                 `json:"max_depth,omitempty"`
-	StartTime    string                  `json:"start_time,omitempty"`
-	EndTime      string                  `json:"end_time,omitempty"`
-	Length       string                  `json:"length,omitempty"`
-	Width        string                  `json:"width,omitempty"`
-	Images       []string                `json:"images,omitempty"`
-	History      []InundationHistoryItem `json:"history,omitempty"`
+	MaxDepth     float64                 `json:"max_depth"`
+	StartTime    string                  `json:"start_time"`
+	EndTime      string                  `json:"end_time"`
+	Length       string                  `json:"length"`
+	Width        string                  `json:"width"`
+	Images       []string                `json:"images"`
+	History      []InundationHistoryItem `json:"history"`
 }
 
 // PublicSluiceGateData represents sluice gate status
@@ -60,7 +60,7 @@ type PublicSluiceGateData struct {
 // PublicWastewaterData represents wastewater treatment plant data
 type PublicWastewaterData struct {
 	FlowRate       float64   `json:"flow_rate"`
-	QualityMetrics string    `json:"quality_metrics,omitempty"`
+	QualityMetrics string    `json:"quality_metrics"`
 	Timestamp      time.Time `json:"timestamp"`
 }
 

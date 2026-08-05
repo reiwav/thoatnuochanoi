@@ -9,7 +9,6 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type waterThresholdSettingRepository struct {
@@ -35,16 +34,15 @@ func (r waterThresholdSettingRepository) GetActive(ctx context.Context, year int
 }
 
 func (r waterThresholdSettingRepository) GetLatestActive(ctx context.Context) (*models.WaterThresholdSetting, error) {
-	var m *models.WaterThresholdSetting
+	var records []*models.WaterThresholdSetting
 	filter := bson.M{
 		"status": "active",
 	}
-	opts := options.FindOne().SetSort(bson.D{{Key: "year", Value: -1}, {Key: "ctime", Value: -1}})
-	err := r.Collection.FindOne(ctx, filter, opts).Decode(&m)
-	if err == mongo.ErrNoDocuments {
-		return nil, nil
+	err := r.R_SelectAndSort(ctx, filter, bson.D{{Key: "year", Value: -1}, {Key: "ctime", Value: -1}}, 0, 1, &records)
+	if err != nil || len(records) == 0 {
+		return nil, err
 	}
-	return m, err
+	return records[0], nil
 }
 
 func (r waterThresholdSettingRepository) List(ctx context.Context, year int, status string) ([]*models.WaterThresholdSetting, error) {
@@ -56,17 +54,8 @@ func (r waterThresholdSettingRepository) List(ctx context.Context, year int, sta
 	if status != "" {
 		filter["status"] = status
 	}
-	opts := options.Find().SetSort(bson.D{{Key: "year", Value: -1}, {Key: "version", Value: -1}})
-	cursor, err := r.Collection.Find(ctx, filter, opts)
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(ctx)
-
-	if err := cursor.All(ctx, &res); err != nil {
-		return nil, err
-	}
-	return res, nil
+	err := r.R_SelectAndSort(ctx, filter, bson.D{{Key: "year", Value: -1}, {Key: "version", Value: -1}}, 0, 0, &res)
+	return res, err
 }
 
 func (r waterThresholdSettingRepository) GetByID(ctx context.Context, id string) (*models.WaterThresholdSetting, error) {
@@ -89,17 +78,16 @@ func (r waterThresholdSettingRepository) Update(ctx context.Context, setting *mo
 }
 
 func (r waterThresholdSettingRepository) GetMaxVersion(ctx context.Context, year int) (int, error) {
+	var records []*models.WaterThresholdSetting
 	filter := bson.M{"year": year}
-	opts := options.FindOne().SetSort(bson.D{{Key: "version", Value: -1}})
-	var m models.WaterThresholdSetting
-	err := r.Collection.FindOne(ctx, filter, opts).Decode(&m)
-	if err == mongo.ErrNoDocuments {
-		return 0, nil
-	}
+	err := r.R_SelectAndSort(ctx, filter, bson.D{{Key: "version", Value: -1}}, 0, 1, &records)
 	if err != nil {
 		return 0, err
 	}
-	return m.Version, nil
+	if len(records) == 0 {
+		return 0, nil
+	}
+	return records[0].Version, nil
 }
 
 func (r waterThresholdSettingRepository) ArchiveAllActive(ctx context.Context, year int) error {
@@ -107,11 +95,5 @@ func (r waterThresholdSettingRepository) ArchiveAllActive(ctx context.Context, y
 		"year":   year,
 		"status": "active",
 	}
-	update := bson.M{
-		"$set": bson.M{
-			"status": "archived",
-		},
-	}
-	_, err := r.Collection.UpdateMany(ctx, filter, update)
-	return err
+	return r.R_UpdateAll(ctx, filter, bson.M{"status": "archived"})
 }

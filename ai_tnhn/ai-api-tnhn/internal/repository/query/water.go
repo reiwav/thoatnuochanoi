@@ -10,7 +10,6 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type rainRepository struct {
@@ -23,16 +22,11 @@ func NewRainRepo(dbc *mongo.Database, name, prefix string, l logger.Logger) repo
 
 func (p rainRepository) GetByStationID(ctx context.Context, stationID int64, limit int64, date string) ([]*models.RainRecord, error) {
 	var records []*models.RainRecord
-	opts := options.Find().SetLimit(limit).SetSort(bson.M{"timestamp": -1})
 	filter := bson.M{"station_id": stationID}
 	if date != "" {
 		filter["date"] = date
 	}
-	cursor, err := p.Collection.Find(ctx, filter, opts)
-	if err != nil {
-		return nil, err
-	}
-	err = cursor.All(ctx, &records)
+	err := p.R_SelectAndSort(ctx, filter, bson.M{"timestamp": -1}, 0, limit, &records)
 	return records, err
 }
 
@@ -52,41 +46,32 @@ func (p rainRepository) GetAllByStationID(ctx context.Context, stationID int64, 
 
 func (p rainRepository) GetByDate(ctx context.Context, date string) ([]*models.RainRecord, error) {
 	var records []*models.RainRecord
-	cursor, err := p.Collection.Find(ctx, bson.M{"date": date})
-	if err != nil {
-		return nil, err
-	}
-	err = cursor.All(ctx, &records)
+	err := p.R_SelectMany(ctx, bson.M{"date": date}, &records)
 	return records, err
 }
 
 func (p rainRepository) GetByDateRange(ctx context.Context, startTime, endTime time.Time) ([]*models.RainRecord, error) {
 	var records []*models.RainRecord
-	cursor, err := p.Collection.Find(ctx, bson.M{
+	err := p.R_SelectManyWithSort(ctx, bson.M{
 		"timestamp": bson.M{
 			"$gte": startTime,
 			"$lte": endTime,
 		},
-	}, options.Find().SetSort(bson.M{"timestamp": -1}))
-	if err != nil {
-		return nil, err
-	}
-	err = cursor.All(ctx, &records)
+	}, bson.M{"timestamp": -1}, &records)
 	return records, err
 }
 
 func (p rainRepository) GetLatest(ctx context.Context, stationID int64) (*models.RainRecord, error) {
-	var m *models.RainRecord
-	opts := options.FindOne().SetSort(bson.M{"timestamp": -1})
-	err := p.Collection.FindOne(ctx, bson.M{"station_id": stationID}, opts).Decode(&m)
-	if err == mongo.ErrNoDocuments {
-		return nil, nil
+	var records []*models.RainRecord
+	err := p.R_SelectAndSort(ctx, bson.M{"station_id": stationID}, bson.M{"timestamp": -1}, 0, 1, &records)
+	if err != nil || len(records) == 0 {
+		return nil, err
 	}
-	return m, err
+	return records[0], nil
 }
 
 func (p rainRepository) Exists(ctx context.Context, stationID int64, timestamp time.Time) (bool, error) {
-	count, err := p.Collection.CountDocuments(ctx, bson.M{
+	count, err := p.R_Count(ctx, bson.M{
 		"station_id": stationID,
 		"timestamp":  timestamp,
 	})
@@ -104,30 +89,20 @@ func (p rainRepository) GetAggregateStats(ctx context.Context, filter bson.M, gr
 		groupID = "$" + groupBy
 	}
 
-	pipeline := mongo.Pipeline{
-		{{Key: "$match", Value: filter}},
-		{{Key: "$group", Value: bson.D{
-			{Key: "_id", Value: groupID},
-			{Key: "total", Value: bson.D{{Key: "$sum", Value: "$value"}}},
-			{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
-			{Key: "avg", Value: bson.D{{Key: "$avg", Value: "$value"}}},
-			{Key: "max", Value: bson.D{{Key: "$max", Value: "$value"}}},
-		}}},
-		{{Key: "$sort", Value: bson.D{{Key: "_id", Value: 1}}}},
+	pipeline := []bson.M{
+		{"$match": filter},
+		{"$group": bson.M{
+			"_id":         groupID,
+			"total_value": bson.M{"$sum": "$value"},
+			"avg_value":   bson.M{"$avg": "$value"},
+			"count":       bson.M{"$sum": 1},
+		}},
+		{"$sort": bson.M{"_id": 1}},
 	}
-
-	cursor, err := p.Collection.Aggregate(ctx, pipeline)
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(ctx)
 
 	var results []map[string]interface{}
-	if err := cursor.All(ctx, &results); err != nil {
-		return nil, err
-	}
-
-	return results, nil
+	err := p.R_Pipe(ctx, pipeline, &results)
+	return results, err
 }
 func (p rainRepository) Create(ctx context.Context, record *models.RainRecord) error {
 	return p.R_Create(ctx, record)
@@ -159,27 +134,17 @@ func (p lakeRepository) GetAllByStationID(ctx context.Context, stationID int64, 
 
 func (p lakeRepository) GetByStationID(ctx context.Context, stationID int64, limit int64, date string) ([]*models.LakeRecord, error) {
 	var records []*models.LakeRecord
-	opts := options.Find().SetLimit(limit).SetSort(bson.M{"timestamp": -1})
 	filter := bson.M{"station_id": stationID}
 	if date != "" {
 		filter["date"] = date
 	}
-	cursor, err := p.Collection.Find(ctx, filter, opts)
-	if err != nil {
-		return nil, err
-	}
-	err = cursor.All(ctx, &records)
+	err := p.R_SelectAndSort(ctx, filter, bson.M{"timestamp": -1}, 0, limit, &records)
 	return records, err
 }
 
 func (p lakeRepository) GetByDate(ctx context.Context, date string) ([]*models.LakeRecord, error) {
 	var records []*models.LakeRecord
-	opts := options.Find().SetSort(bson.D{{Key: "timestamp", Value: 1}, {Key: "_id", Value: 1}})
-	cursor, err := p.Collection.Find(ctx, bson.M{"date": date}, opts)
-	if err != nil {
-		return nil, err
-	}
-	err = cursor.All(ctx, &records)
+	err := p.R_SelectAndSort(ctx, bson.M{"date": date}, bson.D{{Key: "timestamp", Value: 1}, {Key: "_id", Value: 1}}, 0, 0, &records)
 	return records, err
 }
 
@@ -191,23 +156,17 @@ func (p lakeRepository) GetByDateRange(ctx context.Context, startTime, endTime t
 			"$lte": endTime,
 		},
 	}
-	opts := options.Find().SetSort(bson.D{{Key: "timestamp", Value: 1}, {Key: "_id", Value: 1}})
-	cursor, err := p.Collection.Find(ctx, filter, opts)
-	if err != nil {
-		return nil, err
-	}
-	err = cursor.All(ctx, &records)
+	err := p.R_SelectAndSort(ctx, filter, bson.D{{Key: "timestamp", Value: 1}, {Key: "_id", Value: 1}}, 0, 0, &records)
 	return records, err
 }
 
 func (p lakeRepository) GetLatest(ctx context.Context, stationID int64) (*models.LakeRecord, error) {
-	var m *models.LakeRecord
-	opts := options.FindOne().SetSort(bson.M{"timestamp": -1})
-	err := p.Collection.FindOne(ctx, bson.M{"station_id": stationID}, opts).Decode(&m)
-	if err == mongo.ErrNoDocuments {
-		return nil, nil
+	var records []*models.LakeRecord
+	err := p.R_SelectAndSort(ctx, bson.M{"station_id": stationID}, bson.M{"timestamp": -1}, 0, 1, &records)
+	if err != nil || len(records) == 0 {
+		return nil, err
 	}
-	return m, err
+	return records[0], nil
 }
 func (p lakeRepository) Create(ctx context.Context, record *models.LakeRecord) error {
 	return p.R_Create(ctx, record)
@@ -221,12 +180,11 @@ func (p lakeRepository) UpdateValueByID(ctx context.Context, id string, value fl
 			"updated_at": time.Now().Unix(),
 		},
 	}
-	_, err := p.Collection.UpdateOne(ctx, bson.M{"_id": id}, update)
-	return err
+	return p.R_UnsafeUpdateByID(ctx, id, update)
 }
 
 func (p lakeRepository) Exists(ctx context.Context, stationID int64, timestamp time.Time) (bool, error) {
-	count, err := p.Collection.CountDocuments(ctx, bson.M{
+	count, err := p.R_Count(ctx, bson.M{
 		"station_id": stationID,
 		"timestamp":  timestamp,
 	})
@@ -259,27 +217,17 @@ func (p riverRepository) GetAllByStationID(ctx context.Context, stationID int64,
 
 func (p riverRepository) GetByStationID(ctx context.Context, stationID int64, limit int64, date string) ([]*models.RiverRecord, error) {
 	var records []*models.RiverRecord
-	opts := options.Find().SetLimit(limit).SetSort(bson.M{"timestamp": -1})
 	filter := bson.M{"station_id": stationID}
 	if date != "" {
 		filter["date"] = date
 	}
-	cursor, err := p.Collection.Find(ctx, filter, opts)
-	if err != nil {
-		return nil, err
-	}
-	err = cursor.All(ctx, &records)
+	err := p.R_SelectAndSort(ctx, filter, bson.M{"timestamp": -1}, 0, limit, &records)
 	return records, err
 }
 
 func (p riverRepository) GetByDate(ctx context.Context, date string) ([]*models.RiverRecord, error) {
 	var records []*models.RiverRecord
-	opts := options.Find().SetSort(bson.D{{Key: "timestamp", Value: 1}, {Key: "_id", Value: 1}})
-	cursor, err := p.Collection.Find(ctx, bson.M{"date": date}, opts)
-	if err != nil {
-		return nil, err
-	}
-	err = cursor.All(ctx, &records)
+	err := p.R_SelectAndSort(ctx, bson.M{"date": date}, bson.D{{Key: "timestamp", Value: 1}, {Key: "_id", Value: 1}}, 0, 0, &records)
 	return records, err
 }
 
@@ -291,23 +239,17 @@ func (p riverRepository) GetByDateRange(ctx context.Context, startTime, endTime 
 			"$lte": endTime,
 		},
 	}
-	opts := options.Find().SetSort(bson.D{{Key: "timestamp", Value: 1}, {Key: "_id", Value: 1}})
-	cursor, err := p.Collection.Find(ctx, filter, opts)
-	if err != nil {
-		return nil, err
-	}
-	err = cursor.All(ctx, &records)
+	err := p.R_SelectAndSort(ctx, filter, bson.D{{Key: "timestamp", Value: 1}, {Key: "_id", Value: 1}}, 0, 0, &records)
 	return records, err
 }
 
 func (p riverRepository) GetLatest(ctx context.Context, stationID int64) (*models.RiverRecord, error) {
-	var m *models.RiverRecord
-	opts := options.FindOne().SetSort(bson.M{"timestamp": -1})
-	err := p.Collection.FindOne(ctx, bson.M{"station_id": stationID}, opts).Decode(&m)
-	if err == mongo.ErrNoDocuments {
-		return nil, nil
+	var records []*models.RiverRecord
+	err := p.R_SelectAndSort(ctx, bson.M{"station_id": stationID}, bson.M{"timestamp": -1}, 0, 1, &records)
+	if err != nil || len(records) == 0 {
+		return nil, err
 	}
-	return m, err
+	return records[0], nil
 }
 func (p riverRepository) Create(ctx context.Context, record *models.RiverRecord) error {
 	return p.R_Create(ctx, record)
@@ -321,12 +263,11 @@ func (p riverRepository) UpdateValueByID(ctx context.Context, id string, value f
 			"updated_at": time.Now().Unix(),
 		},
 	}
-	_, err := p.Collection.UpdateOne(ctx, bson.M{"_id": id}, update)
-	return err
+	return p.R_UnsafeUpdateByID(ctx, id, update)
 }
 
 func (p riverRepository) Exists(ctx context.Context, stationID int64, timestamp time.Time) (bool, error) {
-	count, err := p.Collection.CountDocuments(ctx, bson.M{
+	count, err := p.R_Count(ctx, bson.M{
 		"station_id": stationID,
 		"timestamp":  timestamp,
 	})

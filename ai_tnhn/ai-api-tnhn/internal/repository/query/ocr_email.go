@@ -2,44 +2,34 @@ package query
 
 import (
 	"ai-api-tnhn/internal/base/logger"
+	"ai-api-tnhn/internal/base/mgo/db"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/repository"
 	"context"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type ocrEmailRepo struct {
-	db   *mongo.Database
-	col  *mongo.Collection
-	log  logger.Logger
+	*db.Table
 }
 
-func NewOCREmailRepo(db *mongo.Database, colName string, log logger.Logger) repository.OCREmail {
+func NewOCREmailRepo(dbc *mongo.Database, colName string, log logger.Logger) repository.OCREmail {
 	return &ocrEmailRepo{
-		db:  db,
-		col: db.Collection(colName),
-		log: log,
+		Table: db.NewTable(colName, "ocr", dbc, log),
 	}
 }
 
 func (r *ocrEmailRepo) GetLatest(ctx context.Context) (*models.OCREmailRecord, error) {
-	var record models.OCREmailRecord
-	opts := options.FindOne().SetSort(bson.D{{Key: "email_id", Value: -1}})
-	err := r.col.FindOne(ctx, bson.M{}, opts).Decode(&record)
-	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			return nil, nil // Not found, return nil without error
-		}
+	var records []*models.OCREmailRecord
+	err := r.R_SelectAndSort(ctx, bson.M{}, bson.M{"email_id": -1}, 0, 1, &records)
+	if err != nil || len(records) == 0 {
 		return nil, err
 	}
-	return &record, nil
+	return records[0], nil
 }
 
 func (r *ocrEmailRepo) Save(ctx context.Context, record *models.OCREmailRecord) error {
-	record.BeforeCreate("ocr")
-	_, err := r.col.InsertOne(ctx, record)
-	return err
+	return r.R_Create(ctx, record)
 }

@@ -36,6 +36,8 @@ const OrganizationSelect = ({
 
                 // Deduplicate by ID
                 const uniqueList = Array.from(new Map(list.map(item => [item.id, item])).values());
+                // Sắp xếp theo tên (chữ cái tiếng Việt)
+                uniqueList.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'vi', { numeric: true, sensitivity: 'base' }));
                 setOrganizations(uniqueList);
             } catch (error) {
                 console.error('Failed to fetch organizations:', error);

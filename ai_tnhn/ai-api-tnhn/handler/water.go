@@ -160,27 +160,6 @@ func (h *WaterHandler) GetWaterSummaryV2(c *gin.Context) {
 	h.SendData(c, res)
 }
 
-func (h *WaterHandler) BatchUpsert(c *gin.Context) {
-	user, err := h.contextWith.GetUser(c)
-	if err != nil || user == nil {
-		h.SendError(c, web.Unauthorized("vui lòng đăng nhập lại"))
-		return
-	}
-
-	var req water.BatchWaterRecordInput
-	if err := c.ShouldBindJSON(&req); err != nil {
-		h.SendError(c, web.BadRequest("Dữ liệu không hợp lệ: "+err.Error()))
-		return
-	}
-
-	err = h.service.BatchUpsertWaterRecords(c.Request.Context(), &req, user)
-	if err != nil {
-		h.SendError(c, err)
-		return
-	}
-
-	h.SendData(c, true)
-}
 
 // GetGridData godoc
 // @Summary Lấy lịch sử dữ liệu Grid theo khoảng thời gian hoặc ngày
@@ -258,10 +237,10 @@ func (h *WaterHandler) UpsertSingleRecord(c *gin.Context) {
 		return
 	}
 
-	err = h.service.UpsertSingleWaterRecord(c.Request.Context(), &req, user)
+	recordID, err := h.service.UpsertSingleWaterRecord(c.Request.Context(), &req, user)
 	if err != nil {
 		h.SendError(c, err)
 		return
 	}
-	h.SendData(c, true)
+	h.SendData(c, map[string]string{"record_id": recordID})
 }

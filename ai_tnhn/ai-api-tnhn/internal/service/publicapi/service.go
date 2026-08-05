@@ -8,11 +8,11 @@ import (
 
 type Service interface {
 	GetStationsMasterList(ctx context.Context, stationType string) ([]dto.PublicStationMaster, error)
-	GetPublicWaterData(ctx context.Context, stationType, stationID, dateStr string) ([]dto.PublicWaterData, error)
-	GetPublicRainData(ctx context.Context, stationID, dateStr string) ([]dto.PublicRainData, error)
-	GetPublicInundationData(ctx context.Context, stationID, dateStr string) ([]dto.PublicInundationData, error)
-	GetPublicSluiceGateData(ctx context.Context, stationID, dateStr string) ([]dto.PublicSluiceGateData, error)
-	GetPublicWastewaterData(ctx context.Context, stationID, dateStr string) ([]dto.PublicWastewaterData, error)
+	GetPublicWaterData(ctx context.Context, stationType, stationID string, dateUnix int64) ([]dto.PublicWaterData, error)
+	GetPublicRainData(ctx context.Context, stationID string, dateUnix int64) ([]dto.PublicRainData, error)
+	GetPublicInundationData(ctx context.Context, stationID string, startUnix, endUnix int64) ([]dto.PublicInundationData, error)
+	GetPublicSluiceGateData(ctx context.Context, stationID string, dateUnix int64) ([]dto.PublicSluiceGateData, error)
+	GetPublicWastewaterData(ctx context.Context, stationID string, dateUnix int64) ([]dto.PublicWastewaterData, error)
 }
 
 type service struct {

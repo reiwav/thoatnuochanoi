@@ -7754,9 +7754,15 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "string",
-                        "description": "Ngày lấy dữ liệu (YYYY-MM-DD)",
-                        "name": "date",
+                        "type": "integer",
+                        "description": "Unix timestamp bắt đầu (giây), tối đa 1 năm",
+                        "name": "start_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Unix timestamp kết thúc (giây)",
+                        "name": "end_date",
                         "in": "query"
                     }
                 ],
@@ -7824,8 +7830,8 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "string",
-                        "description": "Ngày lấy dữ liệu (YYYY-MM-DD)",
+                        "type": "integer",
+                        "description": "Unix timestamp lấy dữ liệu (giây)",
                         "name": "date",
                         "in": "query"
                     }
@@ -7894,8 +7900,8 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "string",
-                        "description": "Ngày lấy dữ liệu (YYYY-MM-DD)",
+                        "type": "integer",
+                        "description": "Unix timestamp lấy dữ liệu (giây)",
                         "name": "date",
                         "in": "query"
                     }
@@ -8028,8 +8034,8 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "string",
-                        "description": "Ngày lấy dữ liệu (YYYY-MM-DD)",
+                        "type": "integer",
+                        "description": "Unix timestamp lấy dữ liệu (giây)",
                         "name": "date",
                         "in": "query"
                     }
@@ -8098,8 +8104,8 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "string",
-                        "description": "Ngày lấy dữ liệu (YYYY-MM-DD)",
+                        "type": "integer",
+                        "description": "Unix timestamp lấy dữ liệu (giây)",
                         "name": "date",
                         "in": "query"
                     }
@@ -8168,8 +8174,8 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "string",
-                        "description": "Ngày lấy dữ liệu (YYYY-MM-DD)",
+                        "type": "integer",
+                        "description": "Unix timestamp lấy dữ liệu (giây)",
                         "name": "date",
                         "in": "query"
                     }
@@ -8252,7 +8258,22 @@ const docTemplate = `{
                 "depth": {
                     "type": "number"
                 },
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "length": {
+                    "type": "string"
+                },
+                "note": {
+                    "type": "string"
+                },
                 "time": {
+                    "type": "string"
+                },
+                "width": {
                     "type": "string"
                 }
             }
@@ -8263,14 +8284,35 @@ const docTemplate = `{
                 "current_depth": {
                     "type": "number"
                 },
+                "end_time": {
+                    "type": "string"
+                },
                 "history": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/dto.InundationHistoryItem"
                     }
                 },
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "length": {
+                    "type": "string"
+                },
+                "max_depth": {
+                    "type": "number"
+                },
+                "start_time": {
+                    "type": "string"
+                },
                 "status": {
                     "description": "e.g., flooded, normal",
+                    "type": "string"
+                },
+                "width": {
                     "type": "string"
                 }
             }
@@ -10331,6 +10373,9 @@ const docTemplate = `{
         "water.GridDataResponseItem": {
             "type": "object",
             "properties": {
+                "record_id": {
+                    "type": "string"
+                },
                 "station_id": {
                     "type": "integer"
                 },

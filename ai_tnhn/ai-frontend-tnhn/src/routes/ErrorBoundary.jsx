@@ -1,4 +1,5 @@
 import { isRouteErrorResponse, useRouteError } from 'react-router-dom';
+import { useEffect } from 'react';
 
 // material-ui
 import Alert from '@mui/material/Alert';
@@ -7,6 +8,22 @@ import Alert from '@mui/material/Alert';
 
 export default function ErrorBoundary() {
   const error = useRouteError();
+
+  useEffect(() => {
+    // Automatically reload the page if it's a chunk load error / module import error
+    // This happens when a new version is deployed and the client still has old chunks cached.
+    if (error && error instanceof Error) {
+      const message = error.message.toLowerCase();
+      if (
+        message.includes('failed to fetch dynamically imported module') ||
+        message.includes('mime type') ||
+        message.includes('loading chunk') ||
+        message.includes('importing a module script failed')
+      ) {
+        window.location.reload();
+      }
+    }
+  }, [error]);
 
   if (isRouteErrorResponse(error)) {
     if (error.status === 404) {
@@ -26,5 +43,5 @@ export default function ErrorBoundary() {
     }
   }
 
-  return <Alert severity="error">Under Maintenance</Alert>;
+  return <Alert severity="error">Đã có lỗi xảy ra hoặc phiên bản mới vừa được cập nhật. Vui lòng tải lại trang (F5).</Alert>;
 }

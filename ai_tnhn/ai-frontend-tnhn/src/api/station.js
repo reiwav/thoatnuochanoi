@@ -39,7 +39,6 @@ const stationApi = {
     },
     // Water Batch & Single Grid Data
     water: {
-        batchUpsertGridData: (data) => axiosClient.post('/admin/water/grid-data/batch', data),
         saveSingleGridData: (data) => axiosClient.post('/admin/water/grid-data/single', data),
         getGridData: (params) => axiosClient.get('/admin/water/grid-data', { params })
     }

@@ -24,8 +24,7 @@ type Service interface {
 	CreateLakeRecord(ctx context.Context, record *models.LakeRecord, user *models.User) error
 	CreateRiverRecord(ctx context.Context, record *models.RiverRecord, user *models.User) error
 
-	BatchUpsertWaterRecords(ctx context.Context, input *BatchWaterRecordInput, user *models.User) error
-	UpsertSingleWaterRecord(ctx context.Context, input *SingleWaterRecordInput, user *models.User) error
+	UpsertSingleWaterRecord(ctx context.Context, input *SingleWaterRecordInput, user *models.User) (string, error)
 	GetGridDataByTimeRange(ctx context.Context, startTime, endTime time.Time, date string) ([]GridDataResponseItem, error)
 }
 

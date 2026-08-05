@@ -143,6 +143,20 @@ func NewLakeRepo(dbc *mongo.Database, name, prefix string, l logger.Logger) repo
 	return lakeRepository{db.NewTable(name, prefix, dbc, l)}
 }
 
+func (p lakeRepository) GetAllByStationID(ctx context.Context, stationID int64, startTime time.Time, endTime time.Time) ([]*models.LakeRecord, error) {
+	var records []*models.LakeRecord
+	err := p.R_SelectManyWithSort(ctx,
+		bson.M{
+			"station_id": stationID,
+			"timestamp": bson.M{
+				"$gte": startTime,
+				"$lte": endTime,
+			},
+		},
+		bson.M{"timestamp": -1}, &records)
+	return records, err
+}
+
 func (p lakeRepository) GetByStationID(ctx context.Context, stationID int64, limit int64, date string) ([]*models.LakeRecord, error) {
 	var records []*models.LakeRecord
 	opts := options.Find().SetLimit(limit).SetSort(bson.M{"timestamp": -1})
@@ -160,7 +174,7 @@ func (p lakeRepository) GetByStationID(ctx context.Context, stationID int64, lim
 
 func (p lakeRepository) GetByDate(ctx context.Context, date string) ([]*models.LakeRecord, error) {
 	var records []*models.LakeRecord
-	opts := options.Find().SetSort(bson.M{"timestamp": 1})
+	opts := options.Find().SetSort(bson.D{{Key: "timestamp", Value: 1}, {Key: "_id", Value: 1}})
 	cursor, err := p.Collection.Find(ctx, bson.M{"date": date}, opts)
 	if err != nil {
 		return nil, err
@@ -177,7 +191,7 @@ func (p lakeRepository) GetByDateRange(ctx context.Context, startTime, endTime t
 			"$lte": endTime,
 		},
 	}
-	opts := options.Find().SetSort(bson.M{"timestamp": 1})
+	opts := options.Find().SetSort(bson.D{{Key: "timestamp", Value: 1}, {Key: "_id", Value: 1}})
 	cursor, err := p.Collection.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, err
@@ -199,6 +213,18 @@ func (p lakeRepository) Create(ctx context.Context, record *models.LakeRecord) e
 	return p.R_Create(ctx, record)
 }
 
+func (p lakeRepository) UpdateValueByID(ctx context.Context, id string, value float64, source string) error {
+	update := bson.M{
+		"$set": bson.M{
+			"value":      value,
+			"source":     source,
+			"updated_at": time.Now().Unix(),
+		},
+	}
+	_, err := p.Collection.UpdateOne(ctx, bson.M{"_id": id}, update)
+	return err
+}
+
 func (p lakeRepository) Exists(ctx context.Context, stationID int64, timestamp time.Time) (bool, error) {
 	count, err := p.Collection.CountDocuments(ctx, bson.M{
 		"station_id": stationID,
@@ -215,6 +241,20 @@ type riverRepository struct {
 
 func NewRiverRepo(dbc *mongo.Database, name, prefix string, l logger.Logger) repository.River {
 	return riverRepository{db.NewTable(name, prefix, dbc, l)}
+}
+
+func (p riverRepository) GetAllByStationID(ctx context.Context, stationID int64, startTime time.Time, endTime time.Time) ([]*models.RiverRecord, error) {
+	var records []*models.RiverRecord
+	err := p.R_SelectManyWithSort(ctx,
+		bson.M{
+			"station_id": stationID,
+			"timestamp": bson.M{
+				"$gte": startTime,
+				"$lte": endTime,
+			},
+		},
+		bson.M{"timestamp": -1}, &records)
+	return records, err
 }
 
 func (p riverRepository) GetByStationID(ctx context.Context, stationID int64, limit int64, date string) ([]*models.RiverRecord, error) {
@@ -234,7 +274,7 @@ func (p riverRepository) GetByStationID(ctx context.Context, stationID int64, li
 
 func (p riverRepository) GetByDate(ctx context.Context, date string) ([]*models.RiverRecord, error) {
 	var records []*models.RiverRecord
-	opts := options.Find().SetSort(bson.M{"timestamp": 1})
+	opts := options.Find().SetSort(bson.D{{Key: "timestamp", Value: 1}, {Key: "_id", Value: 1}})
 	cursor, err := p.Collection.Find(ctx, bson.M{"date": date}, opts)
 	if err != nil {
 		return nil, err
@@ -251,7 +291,7 @@ func (p riverRepository) GetByDateRange(ctx context.Context, startTime, endTime 
 			"$lte": endTime,
 		},
 	}
-	opts := options.Find().SetSort(bson.M{"timestamp": 1})
+	opts := options.Find().SetSort(bson.D{{Key: "timestamp", Value: 1}, {Key: "_id", Value: 1}})
 	cursor, err := p.Collection.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, err
@@ -271,6 +311,18 @@ func (p riverRepository) GetLatest(ctx context.Context, stationID int64) (*model
 }
 func (p riverRepository) Create(ctx context.Context, record *models.RiverRecord) error {
 	return p.R_Create(ctx, record)
+}
+
+func (p riverRepository) UpdateValueByID(ctx context.Context, id string, value float64, source string) error {
+	update := bson.M{
+		"$set": bson.M{
+			"value":      value,
+			"source":     source,
+			"updated_at": time.Now().Unix(),
+		},
+	}
+	_, err := p.Collection.UpdateOne(ctx, bson.M{"_id": id}, update)
+	return err
 }
 
 func (p riverRepository) Exists(ctx context.Context, stationID int64, timestamp time.Time) (bool, error) {

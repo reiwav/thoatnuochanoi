@@ -166,3 +166,13 @@ func (r wastewaterStationRepository) ListReports(ctx context.Context, f filter.F
 	total, err := r.reportTable.R_SearchAndCount(ctx, f, &items)
 	return items, total, err
 }
+
+func (r wastewaterStationRepository) GetAllReports(ctx context.Context, stationID string, start, end int64) ([]*models.WastewaterStationReport, error) {
+	var records []*models.WastewaterStationReport
+	f := bson.M{
+		"station_id": stationID,
+		"timestamp":  bson.M{"$gte": start, "$lte": end},
+	}
+	err := r.reportTable.R_SelectManyWithSort(ctx, f, bson.M{"timestamp": -1}, &records)
+	return records, err
+}

@@ -45,10 +45,8 @@ const useWaterGridDataEntry = () => {
         saving,
         editingGroup,
         setEditingGroup,
-        saveSingleCell,
-        handleSaveBatch,
-        handleSaveGroup
-    } = useWaterGridSaving(gridValues, selectedDate, loadData);
+        saveSingleCell
+    } = useWaterGridSaving(gridValues, setGridValues, selectedDate, loadData);
 
     // Calculate slots for flexible mode
     const flexibleSlots = useMemo(() => {
@@ -122,8 +120,6 @@ const useWaterGridDataEntry = () => {
         handleCellChange,
         saveSingleCell,
         getCellThresholdStatus,
-        handleSaveBatch,
-        handleSaveGroup,
         handleExportExcel,
         editingGroup,
         setEditingGroup,

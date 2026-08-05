@@ -16,4 +16,5 @@ type SluiceGate interface {
 	// History
 	CreateHistory(ctx context.Context, m *models.SluiceGateHistory) error
 	ListHistory(ctx context.Context, filter filter.Filter) ([]*models.SluiceGateHistory, int64, error)
+	GetAllHistory(ctx context.Context, stationID string, start, end int64) ([]*models.SluiceGateHistory, error)
 }

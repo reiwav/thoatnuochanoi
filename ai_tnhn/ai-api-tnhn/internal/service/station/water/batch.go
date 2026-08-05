@@ -6,56 +6,9 @@ import (
 	"time"
 )
 
-func (s *service) BatchUpsertWaterRecords(ctx context.Context, input *BatchWaterRecordInput, user *models.User) error {
-	if input == nil || len(input.Records) == 0 {
-		return nil
-	}
-
-	loc, _ := time.LoadLocation("Asia/Ho_Chi_Minh")
-
-	for _, item := range input.Records {
-		if item.StationID <= 0 {
-			continue
-		}
-
-		itemTime := item.Timestamp
-		if itemTime.IsZero() {
-			itemTime = time.Now()
-		}
-
-		dateStr := itemTime.In(loc).Format("2006-01-02")
-
-		if input.TargetType == "river" {
-			record := &models.RiverRecord{
-				StationID: item.StationID,
-				Timestamp: itemTime,
-				Date:      dateStr,
-				Value:     item.Value,
-				Source:    "manual",
-			}
-			if err := s.CreateRiverRecord(ctx, record, user); err != nil {
-				s.logger.GetLogger().Errorf("[BatchUpsertWaterRecords] Failed for river station %d: %v", item.StationID, err)
-			}
-		} else {
-			record := &models.LakeRecord{
-				StationID: item.StationID,
-				Timestamp: itemTime,
-				Date:      dateStr,
-				Value:     item.Value,
-				Source:    "manual",
-			}
-			if err := s.CreateLakeRecord(ctx, record, user); err != nil {
-				s.logger.GetLogger().Errorf("[BatchUpsertWaterRecords] Failed for lake station %d: %v", item.StationID, err)
-			}
-		}
-	}
-
-	return nil
-}
-
-func (s *service) UpsertSingleWaterRecord(ctx context.Context, input *SingleWaterRecordInput, user *models.User) error {
+func (s *service) UpsertSingleWaterRecord(ctx context.Context, input *SingleWaterRecordInput, user *models.User) (string, error) {
 	if input == nil || input.StationID <= 0 {
-		return nil
+		return "", nil
 	}
 
 	itemTime := input.Timestamp
@@ -70,6 +23,11 @@ func (s *service) UpsertSingleWaterRecord(ctx context.Context, input *SingleWate
 	}
 
 	if input.StationType == "river" {
+		if input.RecordID != "" {
+			err := s.riverRepo.UpdateValueByID(ctx, input.RecordID, input.Value, "manual")
+			return input.RecordID, err
+		}
+
 		record := &models.RiverRecord{
 			StationID: input.StationID,
 			Timestamp: itemTime,
@@ -77,7 +35,16 @@ func (s *service) UpsertSingleWaterRecord(ctx context.Context, input *SingleWate
 			Value:     input.Value,
 			Source:    "manual",
 		}
-		return s.CreateRiverRecord(ctx, record, user)
+		err := s.CreateRiverRecord(ctx, record, user)
+		if err != nil {
+			return "", err
+		}
+		return record.ID, nil
+	}
+
+	if input.RecordID != "" {
+		err := s.lakeRepo.UpdateValueByID(ctx, input.RecordID, input.Value, "manual")
+		return input.RecordID, err
 	}
 
 	record := &models.LakeRecord{
@@ -87,7 +54,11 @@ func (s *service) UpsertSingleWaterRecord(ctx context.Context, input *SingleWate
 		Value:     input.Value,
 		Source:    "manual",
 	}
-	return s.CreateLakeRecord(ctx, record, user)
+	err := s.CreateLakeRecord(ctx, record, user)
+	if err != nil {
+		return "", err
+	}
+	return record.ID, nil
 }
 
 func (s *service) GetGridDataByTimeRange(ctx context.Context, startTime, endTime time.Time, date string) ([]GridDataResponseItem, error) {
@@ -104,6 +75,7 @@ func (s *service) GetGridDataByTimeRange(ctx context.Context, startTime, endTime
 	if err == nil && len(rivers) > 0 {
 		for _, r := range rivers {
 			result = append(result, GridDataResponseItem{
+				RecordID:    r.ID,
 				StationType: "river",
 				StationID:   r.StationID,
 				Timestamp:   r.Timestamp,
@@ -121,6 +93,7 @@ func (s *service) GetGridDataByTimeRange(ctx context.Context, startTime, endTime
 	if err == nil && len(lakes) > 0 {
 		for _, l := range lakes {
 			result = append(result, GridDataResponseItem{
+				RecordID:    l.ID,
 				StationType: "lake",
 				StationID:   l.StationID,
 				Timestamp:   l.Timestamp,

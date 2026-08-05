@@ -34,19 +34,43 @@ definitions:
     properties:
       depth:
         type: number
+      images:
+        items:
+          type: string
+        type: array
+      length:
+        type: string
+      note:
+        type: string
       time:
+        type: string
+      width:
         type: string
     type: object
   dto.PublicInundationData:
     properties:
       current_depth:
         type: number
+      end_time:
+        type: string
       history:
         items:
           $ref: '#/definitions/dto.InundationHistoryItem'
         type: array
+      images:
+        items:
+          type: string
+        type: array
+      length:
+        type: string
+      max_depth:
+        type: number
+      start_time:
+        type: string
       status:
         description: e.g., flooded, normal
+        type: string
+      width:
         type: string
     type: object
   dto.PublicRainData:
@@ -1492,6 +1516,8 @@ definitions:
     type: object
   water.GridDataResponseItem:
     properties:
+      record_id:
+        type: string
       station_id:
         type: integer
       station_type:
@@ -6195,10 +6221,14 @@ paths:
         name: id
         required: true
         type: string
-      - description: Ngày lấy dữ liệu (YYYY-MM-DD)
+      - description: Unix timestamp bắt đầu (giây), tối đa 1 năm
         in: query
-        name: date
-        type: string
+        name: start_date
+        type: integer
+      - description: Unix timestamp kết thúc (giây)
+        in: query
+        name: end_date
+        type: integer
       produces:
       - application/json
       responses:
@@ -6239,10 +6269,10 @@ paths:
         name: id
         required: true
         type: string
-      - description: Ngày lấy dữ liệu (YYYY-MM-DD)
+      - description: Unix timestamp lấy dữ liệu (giây)
         in: query
         name: date
-        type: string
+        type: integer
       produces:
       - application/json
       responses:
@@ -6283,10 +6313,10 @@ paths:
         name: id
         required: true
         type: string
-      - description: Ngày lấy dữ liệu (YYYY-MM-DD)
+      - description: Unix timestamp lấy dữ liệu (giây)
         in: query
         name: date
-        type: string
+        type: integer
       produces:
       - application/json
       responses:
@@ -6368,10 +6398,10 @@ paths:
         name: id
         required: true
         type: string
-      - description: Ngày lấy dữ liệu (YYYY-MM-DD)
+      - description: Unix timestamp lấy dữ liệu (giây)
         in: query
         name: date
-        type: string
+        type: integer
       produces:
       - application/json
       responses:
@@ -6412,10 +6442,10 @@ paths:
         name: id
         required: true
         type: string
-      - description: Ngày lấy dữ liệu (YYYY-MM-DD)
+      - description: Unix timestamp lấy dữ liệu (giây)
         in: query
         name: date
-        type: string
+        type: integer
       produces:
       - application/json
       responses:
@@ -6456,10 +6486,10 @@ paths:
         name: id
         required: true
         type: string
-      - description: Ngày lấy dữ liệu (YYYY-MM-DD)
+      - description: Unix timestamp lấy dữ liệu (giây)
         in: query
         name: date
-        type: string
+        type: integer
       produces:
       - application/json
       responses:

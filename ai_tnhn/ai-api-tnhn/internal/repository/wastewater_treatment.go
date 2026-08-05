@@ -19,4 +19,5 @@ type WastewaterStation interface {
 	// Reports (History)
 	CreateReport(ctx context.Context, report *models.WastewaterStationReport) (*models.WastewaterStationReport, error)
 	ListReports(ctx context.Context, filter filter.Filter) ([]*models.WastewaterStationReport, int64, error)
+	GetAllReports(ctx context.Context, stationID string, start, end int64) ([]*models.WastewaterStationReport, error)
 }

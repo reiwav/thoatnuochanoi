@@ -26,18 +26,6 @@ type WaterSummaryData struct {
 	LakeSummary   string             `json:"lake_summary,omitempty"`
 }
 
-type BatchWaterRecordInput struct {
-	TargetType string            `json:"target_type"` // "river" hoặc "lake"
-	Date       string            `json:"date"`        // "YYYY-MM-DD"
-	Records    []WaterRecordItem `json:"records"`
-}
-
-type WaterRecordItem struct {
-	StationID int64     `json:"station_id"`
-	Timestamp time.Time `json:"timestamp"` // Mốc thời gian đầy đủ
-	Value     float64   `json:"value"`     // Mực nước nhập vào
-}
-
 type GridRowData struct {
 	StationID        int64              `json:"station_id"`
 	StationName      string             `json:"station_name"`
@@ -52,6 +40,7 @@ type GridRowData struct {
 }
 
 type GridDataResponseItem struct {
+	RecordID    string    `json:"record_id,omitempty"`
 	StationType string    `json:"station_type"`
 	StationID   int64     `json:"station_id"`
 	Timestamp   time.Time `json:"timestamp"`

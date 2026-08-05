@@ -8,6 +8,7 @@ import (
 	"ai-api-tnhn/internal/repository"
 	"context"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -56,4 +57,14 @@ func (r sluiceGateRepository) ListHistory(ctx context.Context, f filter.Filter) 
 	var items []*models.SluiceGateHistory
 	total, err := r.historyTable.R_SearchAndCount(ctx, f, &items)
 	return items, total, err
+}
+
+func (r sluiceGateRepository) GetAllHistory(ctx context.Context, stationID string, start, end int64) ([]*models.SluiceGateHistory, error) {
+	var records []*models.SluiceGateHistory
+	f := bson.M{
+		"station_id": stationID,
+		"timestamp":  bson.M{"$gte": start, "$lte": end},
+	}
+	err := r.historyTable.R_SelectManyWithSort(ctx, f, bson.M{"timestamp": -1}, &records)
+	return records, err
 }

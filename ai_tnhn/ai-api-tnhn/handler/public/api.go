@@ -1,9 +1,9 @@
 package public
 
 import (
+	"ai-api-tnhn/internal/dto"
 	"ai-api-tnhn/internal/service/publicapi"
 	"ai-api-tnhn/utils/web"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,6 +17,8 @@ func NewHandler(service publicapi.Service) *Handler {
 		service: service,
 	}
 }
+
+
 
 // GetMasterStations godoc
 // @Summary Lấy danh sách trạm (Master Data)
@@ -47,13 +49,17 @@ func (h *Handler) GetMasterStations(c *gin.Context) {
 // @Param X-Timestamp header string true "Unix timestamp"
 // @Param X-Signature header string true "Chữ ký RSA"
 // @Param id path string true "ID trạm"
-// @Param date query string false "Ngày lấy dữ liệu (YYYY-MM-DD)"
+// @Param date query int false "Unix timestamp lấy dữ liệu (giây)"
 // @Success 200 {object} web.Response{data=[]dto.PublicWaterData}
 // @Router /public/v1/water/lake/{id} [get]
 func (h *Handler) GetLakeData(c *gin.Context) {
 	id := c.Param("id")
-	dateStr := c.Query("date")
-	res, err := h.service.GetPublicWaterData(c.Request.Context(), "lake", id, dateStr)
+	var query dto.PublicDateQuery
+	if err := c.ShouldBindQuery(&query); err != nil {
+		h.SendError(c, err)
+		return
+	}
+	res, err := h.service.GetPublicWaterData(c.Request.Context(), "lake", id, query.GetDate())
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -69,13 +75,17 @@ func (h *Handler) GetLakeData(c *gin.Context) {
 // @Param X-Timestamp header string true "Unix timestamp"
 // @Param X-Signature header string true "Chữ ký RSA"
 // @Param id path string true "ID trạm"
-// @Param date query string false "Ngày lấy dữ liệu (YYYY-MM-DD)"
+// @Param date query int false "Unix timestamp lấy dữ liệu (giây)"
 // @Success 200 {object} web.Response{data=[]dto.PublicWaterData}
 // @Router /public/v1/water/river/{id} [get]
 func (h *Handler) GetRiverData(c *gin.Context) {
 	id := c.Param("id")
-	dateStr := c.Query("date")
-	res, err := h.service.GetPublicWaterData(c.Request.Context(), "river", id, dateStr)
+	var query dto.PublicDateQuery
+	if err := c.ShouldBindQuery(&query); err != nil {
+		h.SendError(c, err)
+		return
+	}
+	res, err := h.service.GetPublicWaterData(c.Request.Context(), "river", id, query.GetDate())
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -91,13 +101,17 @@ func (h *Handler) GetRiverData(c *gin.Context) {
 // @Param X-Timestamp header string true "Unix timestamp"
 // @Param X-Signature header string true "Chữ ký RSA"
 // @Param id path string true "ID trạm"
-// @Param date query string false "Ngày lấy dữ liệu (YYYY-MM-DD)"
+// @Param date query int false "Unix timestamp lấy dữ liệu (giây)"
 // @Success 200 {object} web.Response{data=[]dto.PublicRainData}
 // @Router /public/v1/rain/{id} [get]
 func (h *Handler) GetRainData(c *gin.Context) {
 	id := c.Param("id")
-	dateStr := c.Query("date")
-	res, err := h.service.GetPublicRainData(c.Request.Context(), id, dateStr)
+	var query dto.PublicDateQuery
+	if err := c.ShouldBindQuery(&query); err != nil {
+		h.SendError(c, err)
+		return
+	}
+	res, err := h.service.GetPublicRainData(c.Request.Context(), id, query.GetDate())
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -113,13 +127,19 @@ func (h *Handler) GetRainData(c *gin.Context) {
 // @Param X-Timestamp header string true "Unix timestamp"
 // @Param X-Signature header string true "Chữ ký RSA"
 // @Param id path string true "ID điểm ngập"
-// @Param date query string false "Ngày lấy dữ liệu (YYYY-MM-DD)"
+// @Param start_date query int false "Unix timestamp bắt đầu (giây), tối đa 1 năm"
+// @Param end_date query int false "Unix timestamp kết thúc (giây)"
 // @Success 200 {object} web.Response{data=[]dto.PublicInundationData}
 // @Router /public/v1/inundation/{id} [get]
 func (h *Handler) GetInundationData(c *gin.Context) {
 	id := c.Param("id")
-	dateStr := c.Query("date")
-	res, err := h.service.GetPublicInundationData(c.Request.Context(), id, dateStr)
+	var query dto.PublicDateRangeQuery
+	if err := c.ShouldBindQuery(&query); err != nil {
+		h.SendError(c, err)
+		return
+	}
+	startUnix, endUnix := query.GetRange()
+	res, err := h.service.GetPublicInundationData(c.Request.Context(), id, startUnix, endUnix)
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -135,13 +155,17 @@ func (h *Handler) GetInundationData(c *gin.Context) {
 // @Param X-Timestamp header string true "Unix timestamp"
 // @Param X-Signature header string true "Chữ ký RSA"
 // @Param id path string true "ID cửa phai"
-// @Param date query string false "Ngày lấy dữ liệu (YYYY-MM-DD)"
+// @Param date query int false "Unix timestamp lấy dữ liệu (giây)"
 // @Success 200 {object} web.Response{data=[]dto.PublicSluiceGateData}
 // @Router /public/v1/sluice-gate/{id} [get]
 func (h *Handler) GetSluiceGateData(c *gin.Context) {
 	id := c.Param("id")
-	dateStr := c.Query("date")
-	res, err := h.service.GetPublicSluiceGateData(c.Request.Context(), id, dateStr)
+	var query dto.PublicDateQuery
+	if err := c.ShouldBindQuery(&query); err != nil {
+		h.SendError(c, err)
+		return
+	}
+	res, err := h.service.GetPublicSluiceGateData(c.Request.Context(), id, query.GetDate())
 	if err != nil {
 		h.SendError(c, err)
 		return
@@ -157,13 +181,17 @@ func (h *Handler) GetSluiceGateData(c *gin.Context) {
 // @Param X-Timestamp header string true "Unix timestamp"
 // @Param X-Signature header string true "Chữ ký RSA"
 // @Param id path string true "ID trạm XLNT"
-// @Param date query string false "Ngày lấy dữ liệu (YYYY-MM-DD)"
+// @Param date query int false "Unix timestamp lấy dữ liệu (giây)"
 // @Success 200 {object} web.Response{data=[]dto.PublicWastewaterData}
 // @Router /public/v1/wastewater/{id} [get]
 func (h *Handler) GetWastewaterData(c *gin.Context) {
 	id := c.Param("id")
-	dateStr := c.Query("date")
-	res, err := h.service.GetPublicWastewaterData(c.Request.Context(), id, dateStr)
+	var query dto.PublicDateQuery
+	if err := c.ShouldBindQuery(&query); err != nil {
+		h.SendError(c, err)
+		return
+	}
+	res, err := h.service.GetPublicWastewaterData(c.Request.Context(), id, query.GetDate())
 	if err != nil {
 		h.SendError(c, err)
 		return

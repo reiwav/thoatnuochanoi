@@ -87,6 +87,7 @@ export const useGridDataLoader = (selectedDate) => {
                         if (!latestMap[key] || itemTime.isAfter(latestMap[key]) || itemTime.isSame(latestMap[key])) {
                             latestMap[key] = itemTime;
                             initialValues[`${key}_now`] = item.value;
+                            initialValues[`${key}_now_id`] = item.record_id;
                             initialValues[`${key}_nowTime`] = itemTime.toISOString();
                         }
 
@@ -94,11 +95,14 @@ export const useGridDataLoader = (selectedDate) => {
 
                         if (timeStr === '06:30') {
                             initialValues[`${key}_6h30`] = item.value;
+                            initialValues[`${key}_6h30_id`] = item.record_id;
                         } else if (timeStr === '13:30') {
                             initialValues[`${key}_13h30`] = item.value;
+                            initialValues[`${key}_13h30_id`] = item.record_id;
                         }
 
                         initialValues[`${key}_0_${timeStr}`] = item.value;
+                        initialValues[`${key}_0_${timeStr}_id`] = item.record_id;
                     });
                 }
             } catch (histErr) {

@@ -5,6 +5,7 @@ import { Outlet } from 'react-router-dom';
 import MainLayout from 'layout/MainLayout';
 import ContextOutlet from 'layout/ContextOutlet';
 import Loadable from 'ui-component/Loadable';
+import ErrorBoundary from './ErrorBoundary';
 
 const EmployeePage = Loadable(lazy(() => import('views/admin/employee/index')));
 const OrganizationPage = Loadable(lazy(() => import('views/admin/organization')));
@@ -16,6 +17,7 @@ const StationRainSummary = Loadable(lazy(() => import('views/admin/station-rain-
 const StationWaterSummary = Loadable(lazy(() => import('views/admin/station-water-summary')));
 const StationWaterSummaryV2 = Loadable(lazy(() => import('views/admin/station-water-summary-v2')));
 const StationWaterGrid = Loadable(lazy(() => import('views/admin/station-water-grid')));
+const MonthlyGrid = Loadable(lazy(() => import('views/admin/station-water-grid/MonthlyGrid')));
 const StationPumpingSummary = Loadable(lazy(() => import('views/admin/station-pumping-summary')));
 const StationSluiceGateSummary = Loadable(lazy(() => import('views/admin/station-sluice-gate-summary')));
 const StationRainCompare = Loadable(lazy(() => import('views/admin/station-rain-compare')));
@@ -55,6 +57,7 @@ const UnderDevelopment = Loadable(lazy(() => import('views/pages/under-developme
 const MainRoutes = {
   path: '/',
   element: <MainLayout />,
+  errorElement: <ErrorBoundary />,
   children: [
     {
       path: '/',
@@ -77,6 +80,7 @@ const MainRoutes = {
         { path: 'station/water/summary', element: <StationWaterSummary /> },
         { path: 'station/water/summary-v2', element: <StationWaterSummaryV2 /> },
         { path: 'station/water/grid', element: <StationWaterGrid /> },
+        { path: 'station/water/monthly-grid', element: <MonthlyGrid /> },
         { path: 'station/pumping/summary', element: <StationPumpingSummary /> },
         { path: 'station/sluice-gate/summary', element: <StationSluiceGateSummary /> },
         { path: 'station/rain/compare', element: <StationRainCompare /> },

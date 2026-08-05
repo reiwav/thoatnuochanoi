@@ -6,6 +6,7 @@ import {
 } from '@mui/material';
 import PermissionGuard from 'ui-component/PermissionGuard';
 import GridCellInput from './GridCellInput';
+import useStickyTableHeader from '../hooks/useStickyTableHeader';
 
 const getCellTextColor = (status) => {
     if (status === 'high') return 'error.main'; // Red
@@ -39,27 +40,37 @@ const GridTable = ({
     handleCellChange,
     saveSingleCell
 }) => {
+    const { containerRef, theadRef, floatingRef } = useStickyTableHeader();
+
     return (
-        <TableContainer 
-            component={Paper} 
-            elevation={0} 
-            sx={{
-                overflowX: 'auto'
-            }}
-        >
-            <Table stickyHeader size="small">
-                <TableHead sx={{ bgcolor: 'grey.50' }}>
+        <>
+            {/* Floating header container - managed by useStickyTableHeader */}
+            <div ref={floatingRef} style={{ display: 'none' }} />
+
+            <TableContainer 
+                ref={containerRef}
+                component={Paper} 
+                elevation={0} 
+                sx={{
+                    overflowX: 'auto',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: '8px'
+                }}
+            >
+                <Table size="small" sx={{ minWidth: 1200, borderCollapse: 'separate', borderSpacing: 0 }}>
+                    <TableHead ref={theadRef}>
                     <TableRow>
-                        <TableCell width={50} align="center" sx={{ fontWeight: 800, fontSize: '0.9rem' }}>STT</TableCell>
-                        <TableCell width={80} align="center" sx={{ fontWeight: 800, fontSize: '0.9rem' }}>Old ID</TableCell>
-                        <TableCell width={220} sx={{ fontWeight: 800, fontSize: '0.9rem' }}>Tên trạm / Điểm đo</TableCell>
+                        <TableCell width={50} align="center" sx={{ fontWeight: 800, fontSize: '0.9rem', bgcolor: 'grey.50' }}>STT</TableCell>
+                        <TableCell width={80} align="center" sx={{ fontWeight: 800, fontSize: '0.9rem', bgcolor: 'grey.50' }}>Old ID</TableCell>
+                        <TableCell width={220} sx={{ fontWeight: 800, fontSize: '0.9rem', bgcolor: 'grey.50' }}>Tên trạm / Điểm đo</TableCell>
 
                         {mode === 'fixed' ? (
                             <>
-                                <TableCell width={120} align="center" sx={{ fontWeight: 800, fontSize: '0.9rem' }}>6h30</TableCell>
-                                <TableCell width={120} align="center" sx={{ fontWeight: 800, fontSize: '0.9rem' }}>13h30</TableCell>
-                                <TableCell width={120} align="center" sx={{ fontWeight: 800, fontSize: '0.9rem' }}>Hiện tại</TableCell>
-                                <TableCell width={120} align="center" sx={{ fontWeight: 800, fontSize: '0.9rem' }}>Chênh lệch</TableCell>
+                                <TableCell width={120} align="center" sx={{ fontWeight: 800, fontSize: '0.9rem', bgcolor: 'grey.50' }}>6h30</TableCell>
+                                <TableCell width={120} align="center" sx={{ fontWeight: 800, fontSize: '0.9rem', bgcolor: 'grey.50' }}>13h30</TableCell>
+                                <TableCell width={120} align="center" sx={{ fontWeight: 800, fontSize: '0.9rem', bgcolor: 'grey.50' }}>Hiện tại</TableCell>
+                                <TableCell width={120} align="center" sx={{ fontWeight: 800, fontSize: '0.9rem', bgcolor: 'grey.50' }}>Chênh lệch</TableCell>
                             </>
                         ) : (
                             <>
@@ -169,8 +180,11 @@ const GridTable = ({
 
                                         if (mode === 'fixed') {
                                             const v630 = gridValues[`${st.type}_${oldId}_6h30`] || '';
+                                            const id630 = gridValues[`${st.type}_${oldId}_6h30_id`] || '';
                                             const v1330 = gridValues[`${st.type}_${oldId}_13h30`] || '';
+                                            const id1330 = gridValues[`${st.type}_${oldId}_13h30_id`] || '';
                                             const vNow = gridValues[`${st.type}_${oldId}_now`] || '';
+                                            const idNow = gridValues[`${st.type}_${oldId}_now_id`] || '';
 
                                             const st630 = getCellThresholdStatus(st, '6h30', v630);
                                             const st1330 = getCellThresholdStatus(st, '13h30', v1330);
@@ -192,7 +206,7 @@ const GridTable = ({
                                                     <GridCellInput
                                                         value={v630}
                                                         onChange={(val) => handleCellChange(st.type, oldId, '6h30', val)}
-                                                        onBlur={(val) => saveSingleCell(st, '6h30', val)}
+                                                        onBlur={(val) => saveSingleCell(st, '6h30', val, id630)}
                                                         status={st630}
                                                         isGroupEditing={isGroupEditing}
                                                     />
@@ -200,7 +214,7 @@ const GridTable = ({
                                                     <GridCellInput
                                                         value={v1330}
                                                         onChange={(val) => handleCellChange(st.type, oldId, '13h30', val)}
-                                                        onBlur={(val) => saveSingleCell(st, '13h30', val)}
+                                                        onBlur={(val) => saveSingleCell(st, '13h30', val, id1330)}
                                                         status={st1330}
                                                         isGroupEditing={isGroupEditing}
                                                     />
@@ -208,7 +222,7 @@ const GridTable = ({
                                                     <GridCellInput
                                                         value={vNow}
                                                         onChange={(val) => handleCellChange(st.type, oldId, 'now', val)}
-                                                        onBlur={(val) => saveSingleCell(st, 'now', val)}
+                                                        onBlur={(val) => saveSingleCell(st, 'now', val, idNow)}
                                                         status={stNow}
                                                         isGroupEditing={isGroupEditing}
                                                     />
@@ -234,14 +248,16 @@ const GridTable = ({
                                                         value={vNow}
                                                         timeLabel={timeLabel}
                                                         onChange={(val) => handleCellChange(st.type, oldId, 'now', val)}
-                                                        onBlur={(val) => saveSingleCell(st, 'now', val)}
+                                                        onBlur={(val) => saveSingleCell(st, 'now', val, idNow)}
                                                         status={stNow}
                                                         isT0={true}
                                                         isGroupEditing={isGroupEditing}
                                                     />
 
                                                     {flexibleSlots.map(slot => {
-                                                        const val = gridValues[`${st.type}_${oldId}_${slot.key}`] || '';
+                                                        const key = `${st.type}_${oldId}_${slot.key}`;
+                                                        const val = gridValues[key] || '';
+                                                        const idVal = gridValues[`${key}_id`] || '';
                                                         const stStatus = getCellThresholdStatus(st, slot.key, val);
 
                                                         return (
@@ -249,7 +265,7 @@ const GridTable = ({
                                                                 key={slot.key}
                                                                 value={val}
                                                                 onChange={(newVal) => handleCellChange(st.type, oldId, slot.key, newVal)}
-                                                                onBlur={(finalVal) => saveSingleCell(st, slot.key, finalVal)}
+                                                                onBlur={(finalVal) => saveSingleCell(st, slot.key, finalVal, idVal)}
                                                                 status={stStatus}
                                                                 isT0={slot.isT0}
                                                                 isGroupEditing={isGroupEditing}
@@ -267,6 +283,7 @@ const GridTable = ({
                 </TableBody>
             </Table>
         </TableContainer>
+        </>
     );
 };
 

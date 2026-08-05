@@ -152,6 +152,15 @@ const adminPages = {
           breadcrumbs: false
         },
         {
+          id: 'water:monthly-grid',
+          permission: 'water:update',
+          title: 'Nhập liệu tháng',
+          type: 'item',
+          url: '/admin/station/water/monthly-grid',
+          icon: icons.IconTable,
+          breadcrumbs: false
+        },
+        {
           id: 'lake',
           permission: 'water:view',
           title: 'Mực nước hồ',

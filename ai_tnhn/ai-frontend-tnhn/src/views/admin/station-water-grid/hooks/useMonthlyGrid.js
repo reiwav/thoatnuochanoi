@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo, useEffect } from 'react';
 import dayjs from 'dayjs';
 import stationApi from 'api/station';
 import organizationApi from 'api/organization';
+import { exportMonthlyGridToExcel } from '../utils/gridHelpers';
 
 const getStationId = (s) => s?.OldId ?? s?.old_id ?? s?.Id ?? s?.id ?? '';
 
@@ -13,6 +14,7 @@ export const useMonthlyGrid = () => {
     const [selectedMonth, setSelectedMonth] = useState(dayjs());
     const [stationTypeFilter, setStationTypeFilter] = useState('lake'); // 'lake' or 'river'
     const [selectedOrgId, setSelectedOrgId] = useState(''); // '' = tất cả
+    const [exporting, setExporting] = useState(false);
 
     const loadOrgs = useCallback(async () => {
         try {
@@ -257,6 +259,24 @@ export const useMonthlyGrid = () => {
         return options;
     }, [stations, waterOrganizations]);
 
+    const handleExportExcel = useCallback(async () => {
+        try {
+            setExporting(true);
+            await exportMonthlyGridToExcel({
+                groupedStations,
+                gridData,
+                daysInMonth,
+                stationTypeFilter,
+                selectedMonth
+            });
+        } catch (error) {
+            console.error('Lỗi khi xuất excel:', error);
+            alert('Có lỗi xảy ra khi xuất file Excel');
+        } finally {
+            setExporting(false);
+        }
+    }, [groupedStations, gridData, daysInMonth, stationTypeFilter, selectedMonth]);
+
     return {
         loading,
         daysInMonth,
@@ -270,6 +290,8 @@ export const useMonthlyGrid = () => {
         setSelectedOrgId,
         orgOptions,
         saveSingleCell,
+        handleExportExcel,
+        exporting,
         riverCount,
         lakeCount
     };

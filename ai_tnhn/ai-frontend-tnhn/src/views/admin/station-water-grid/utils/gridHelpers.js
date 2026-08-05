@@ -223,3 +223,145 @@ export const exportGridToExcel = async ({ groupedStations, gridValues, mode, fle
     XLSX.utils.book_append_sheet(workbook, worksheet, `Muc_Nuoc_${typeLabel}`);
     XLSX.writeFile(workbook, `Muc_nuoc_Grid_${typeLabel}_${modeLabel}_${dateStr}.xlsx`);
 };
+
+const getThresholdStr = (st, seasonType) => {
+    const configs = st?.threshold_configs || [];
+    const cfg = configs.find(c => c.threshold_type === seasonType);
+    if (!cfg) return '';
+    if (cfg.max_level > 0 && cfg.min_level > 0) return `${cfg.min_level}-${cfg.max_level}`;
+    if (cfg.max_level > 0) return `≤ ${cfg.max_level}`;
+    if (cfg.min_level > 0) return `≥ ${cfg.min_level}`;
+    return '';
+};
+
+/**
+ * Export monthly grid table data to Excel file (.xlsx)
+ * Cấu trúc: Ngày là hàng, Trạm là cột (giống bảng trên giao diện)
+ */
+export const exportMonthlyGridToExcel = async ({ groupedStations, gridData, daysInMonth, stationTypeFilter, selectedMonth }) => {
+    const XLSX = await import('xlsx');
+
+    const isRiver = stationTypeFilter === 'river';
+    const typeLabel = isRiver ? 'Song' : 'Ho';
+    const monthStr = selectedMonth.format('MM_YYYY');
+    const displayMonthStr = selectedMonth.format('MM/YYYY');
+
+    // Flatten stations
+    const flatStations = [];
+    let stationCounter = 1;
+    groupedStations.forEach(group => {
+        group.stations.forEach(st => {
+            flatStations.push({ ...st, orgName: group.orgName, mnkcIndex: stationCounter++ });
+        });
+    });
+
+    const totalCols = flatStations.length + 1; // +1 cho cột NGÀY
+    const merges = [];
+
+    // Row 3: XN (số thứ tự xí nghiệp)
+    let orgIdx = 0;
+    const xnRow = ['XN'];
+    groupedStations.forEach(group => {
+        orgIdx++;
+        group.stations.forEach(() => {
+            xnRow.push(group.orgId === 'unassigned' ? '-' : orgIdx);
+        });
+    });
+
+    // Row 4: Tên xí nghiệp (merge ngang theo số lượng trạm)
+    const orgRow = [''];
+    let currentCol = 1;
+    groupedStations.forEach(group => {
+        orgRow.push(group.orgName);
+        for(let i = 1; i < group.stations.length; i++) {
+            orgRow.push(''); // Ô trống để merge
+        }
+        if (group.stations.length > 1) {
+            // merge ngang (r = 4 vì mảng worksheetData tính index từ 0, dòng 5 là index 4)
+            merges.push({ s: { r: 4, c: currentCol }, e: { r: 4, c: currentCol + group.stations.length - 1 } });
+        }
+        currentCol += group.stations.length;
+    });
+
+    // Row 5: Tên trạm
+    const stationRow = ['NGÀY'];
+    flatStations.forEach(st => {
+        stationRow.push(st.TenTram || st.ten_tram || '');
+    });
+
+    // Row 6: MNKC
+    const mnkcRow = ['MNKC'];
+    flatStations.forEach(st => {
+        mnkcRow.push(st.mnkcIndex);
+    });
+
+    // Row 7: MM (Mùa Mưa)
+    const mmRow = ['MM'];
+    flatStations.forEach(st => {
+        mmRow.push(getThresholdStr(st, 'mua_mua'));
+    });
+
+    // Row 8: MK (Mùa Khô)
+    const mkRow = ['MK'];
+    flatStations.forEach(st => {
+        mkRow.push(getThresholdStr(st, 'mua_kho'));
+    });
+
+    // Data rows: mỗi ngày 2 dòng (6h30 và 13h30), merge cột Ngày
+    const dataRows = [];
+    let startRow = 9; // Index bắt đầu data
+    daysInMonth.forEach(day => {
+        // Dòng 6h30
+        const row630 = [`Ngày ${day}`];
+        flatStations.forEach(st => {
+            const oldId = st.OldId || st.old_id || st.Id || st.id;
+            const val = gridData[`${st.type}_${oldId}_${day}_6h30`];
+            row630.push(val !== undefined && val !== '' ? parseFloat(val) : '');
+        });
+        dataRows.push(row630);
+
+        // Dòng 13h30
+        const row1330 = ['']; // Cột ngày trống để merge
+        flatStations.forEach(st => {
+            const oldId = st.OldId || st.old_id || st.Id || st.id;
+            const val = gridData[`${st.type}_${oldId}_${day}_13h30`];
+            row1330.push(val !== undefined && val !== '' ? parseFloat(val) : '');
+        });
+        dataRows.push(row1330);
+
+        // Merge cột ngày dọc (2 ô)
+        merges.push({ s: { r: startRow, c: 0 }, e: { r: startRow + 1, c: 0 } });
+        startRow += 2;
+    });
+
+    const titleText = `BẢNG THỐNG KÊ MỰC NƯỚC ${isRiver ? 'SÔNG' : 'HỒ'} THEO THÁNG`;
+    const worksheetData = [
+        [titleText],
+        [`Tháng: ${displayMonthStr}`],
+        [], // Row 2 (index 2) - khoảng trống
+        xnRow,      // index 3
+        orgRow,     // index 4
+        stationRow, // index 5
+        mnkcRow,    // index 6
+        mmRow,      // index 7
+        mkRow,      // index 8
+        ...dataRows // index 9+
+    ];
+
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+
+    // Merge tiêu đề
+    merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: totalCols - 1 } });
+    merges.push({ s: { r: 1, c: 0 }, e: { r: 1, c: totalCols - 1 } });
+    
+    worksheet['!merges'] = merges;
+
+    // Set column widths
+    const cols = [{ wch: 12 }]; // Cột NGÀY
+    flatStations.forEach(() => cols.push({ wch: 14 }));
+    worksheet['!cols'] = cols;
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, `Muc_Nuoc_Thang_${typeLabel}`);
+    XLSX.writeFile(workbook, `Muc_nuoc_Thang_${typeLabel}_${monthStr}.xlsx`);
+};

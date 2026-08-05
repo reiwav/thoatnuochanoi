@@ -1,10 +1,10 @@
 import React from 'react';
-import { Box, Stack, Typography, Tabs, Tab, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import { Box, Stack, Typography, Tabs, Tab, FormControl, InputLabel, Select, MenuItem, Button, CircularProgress } from '@mui/material';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import 'dayjs/locale/vi';
-import { IconRipple, IconDroplets } from '@tabler/icons-react';
+import { IconRipple, IconDroplets, IconFileSpreadsheet } from '@tabler/icons-react';
 
 import MainCard from 'ui-component/cards/MainCard';
 import { useMonthlyGrid } from './hooks/useMonthlyGrid';
@@ -24,6 +24,8 @@ const MonthlyGrid = () => {
         setSelectedOrgId,
         orgOptions,
         saveSingleCell,
+        handleExportExcel,
+        exporting,
         riverCount,
         lakeCount
     } = useMonthlyGrid();
@@ -102,6 +104,24 @@ const MonthlyGrid = () => {
                             ))}
                         </Select>
                     </FormControl>
+                    <Button
+                        variant="contained"
+                        color="success"
+                        size="small"
+                        disabled={exporting}
+                        startIcon={exporting ? <CircularProgress size={18} color="inherit" /> : <IconFileSpreadsheet size={18} />}
+                        onClick={handleExportExcel}
+                        sx={{ 
+                            height: 40, 
+                            borderRadius: '10px', 
+                            fontWeight: 700,
+                            px: 2,
+                            boxShadow: '0 4px 12px rgba(46, 125, 50, 0.25)',
+                            whiteSpace: 'nowrap'
+                        }}
+                    >
+                        {exporting ? 'Đang tải...' : 'Tải Excel'}
+                    </Button>
                     <Box sx={{ ml: 'auto' }}>
                         <Typography variant="body2" color="text.secondary" fontWeight={600}>
                             * Lưu ý: Nhập liệu 2 khung giờ 6h30 và 13h30, dữ liệu tự động lưu khi bấm ra ngoài.

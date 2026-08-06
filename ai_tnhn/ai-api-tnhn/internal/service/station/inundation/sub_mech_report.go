@@ -9,7 +9,7 @@ import (
 // ReportMech updates mechanization (Cơ giới) data for an active report by pointID
 func (s *service) ReportMech(ctx context.Context, user *models.User, pointID string, input *models.ReportMechBase, images []ImageContent) error {
 	// 1. Get or create active report
-	existing, err := s.getOrCreateActiveReport(ctx, pointID, input.MechD)
+	st, existing, err := s.getOrCreateActiveReport(ctx, pointID, input.MechD)
 	if err != nil {
 		return err
 	}
@@ -47,6 +47,10 @@ func (s *service) ReportMech(ctx context.Context, user *models.User, pointID str
 	err = s.InundationReportRepo.Update(ctx, existing)
 	if err != nil {
 		return err
+	}
+
+	if existing.IsFlooding {
+		s.touchStationLastFloodedTime(ctx, st)
 	}
 
 	if shouldResolve {

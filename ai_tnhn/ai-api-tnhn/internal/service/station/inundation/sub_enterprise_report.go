@@ -21,7 +21,7 @@ func (s *service) ReportEnterprise(ctx context.Context, user *models.User, point
 	}
 
 	// 2. Get or create active report
-	report, err := s.getOrCreateActiveReport(ctx, pointID, input.Depth)
+	st, report, err := s.getOrCreateActiveReport(ctx, pointID, input.Depth)
 	if err != nil {
 		return nil, err
 	}
@@ -60,6 +60,10 @@ func (s *service) ReportEnterprise(ctx context.Context, user *models.User, point
 	err = s.InundationReportRepo.Update(ctx, report)
 	if err != nil {
 		return nil, err
+	}
+
+	if report.IsFlooding {
+		s.touchStationLastFloodedTime(ctx, st)
 	}
 
 	// Notify SSE

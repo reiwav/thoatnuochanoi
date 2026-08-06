@@ -128,7 +128,7 @@ func (s *service) ReviewUpdate(ctx context.Context, user *models.User, updateID,
 
 func (s *service) CorrectEnterpriseSituation(ctx context.Context, user *models.User, pointID string, updatedData dto.AddUpdateSitutionRequest, images []ImageContent) error {
 	// 1. Get the parent report
-	report, err := s.getOrCreateActiveReport(ctx, pointID, updatedData.Depth)
+	_, report, err := s.getOrCreateActiveReport(ctx, pointID, updatedData.Depth)
 	if err != nil {
 		return err
 	}

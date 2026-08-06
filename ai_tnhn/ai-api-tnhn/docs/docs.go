@@ -9274,6 +9274,14 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
+                "last_flooded_report_id": {
+                    "type": "string",
+                    "example": "rep_123"
+                },
+                "last_flooded_time": {
+                    "type": "integer",
+                    "example": 1629876543
+                },
                 "last_report_id": {
                     "type": "string",
                     "example": "rep_123"

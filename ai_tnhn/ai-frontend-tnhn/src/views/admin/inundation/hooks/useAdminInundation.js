@@ -88,6 +88,47 @@ const useAdminInundation = () => {
       }
     }
 
+    if (filters.conditionFilter && filters.conditionFilter !== 'all') {
+      const now = new Date();
+      result = result.filter(p => {
+        const report = p.last_report;
+        if (!report) return false;
+
+        const cond = filters.conditionFilter;
+
+        if (cond === 'site_checked') {
+          const reportTime = report.updated_at || report.created_at || report.start_time;
+          if (!reportTime) return false;
+          const reportDate = new Date(reportTime * 1000);
+          return reportDate.toDateString() === now.toDateString();
+        }
+
+        if (cond === 'flooded_today') {
+          const createdDate = new Date(report.created_at * 1000);
+          return createdDate.toDateString() === now.toDateString();
+        }
+
+        let durationSeconds = 0;
+        if (report.status === 'active') {
+          durationSeconds = Math.floor(Date.now() / 1000) - report.created_at;
+        } else if (report.status === 'resolved') {
+          durationSeconds = report.end_time - report.created_at;
+        }
+
+        if (cond === 'flooded_1h') return durationSeconds > 3600;
+        if (cond === 'flooded_2h') return durationSeconds > 7200;
+        if (cond === 'flooded_4h') return durationSeconds > 14400;
+
+        if (cond === 'flooded_overnight') {
+          const createdDate = new Date(report.created_at * 1000);
+          const compareDate = report.status === 'active' ? now : new Date(report.end_time * 1000);
+          return createdDate.toDateString() !== compareDate.toDateString();
+        }
+
+        return true;
+      });
+    }
+
     if (filters.orgFilter !== 'all' && filters.orgFilter) {
       result = result.filter((p) => p.org_id === filters.orgFilter);
     }
@@ -103,7 +144,7 @@ const useAdminInundation = () => {
       // 2. Sort by latest report update time for BOTH flooding and normal points
       const timeA = a.last_report?.updated_at || a.last_report?.created_at || a.last_report?.start_time || 0;
       const timeB = b.last_report?.updated_at || b.last_report?.created_at || b.last_report?.start_time || 0;
-      
+
       if (timeA !== timeB) {
         return timeB - timeA; // Descending (newest first)
       }

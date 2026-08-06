@@ -4,6 +4,7 @@ import (
 	"ai-api-tnhn/internal/models"
 	"context"
 	"sort"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -187,6 +188,14 @@ func (s *service) DeletePoint(ctx context.Context, id string) error {
 	)
 
 	return nil
+}
+
+func (s *service) touchStationLastFloodedTime(ctx context.Context, station *models.InundationStation) {
+	if station == nil {
+		return
+	}
+	station.LastFloodedTime = time.Now().Unix()
+	_ = s.inundationStationRepo.Update(ctx, station)
 }
 
 func (s *service) ListPointsByOrg(ctx context.Context, orgID string) ([]models.InundationStation, error) {

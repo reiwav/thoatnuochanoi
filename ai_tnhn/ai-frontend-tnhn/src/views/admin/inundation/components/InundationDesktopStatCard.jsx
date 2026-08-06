@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Box, Typography, Card, CardContent, alpha, Stack, Divider, Collapse } from '@mui/material';
+import { Box, Typography, Card, CardContent, alpha, Stack, Divider, Collapse, Tooltip } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import WaterDropIcon from '@mui/icons-material/WaterDrop';
 import { formatDuration } from 'utils/dataHelper';
 import { SurveyInfoSection, MechInfoSection, ReviewCommentSection, ReportInfoSection, KtclInfoSection } from '../../../employee/inundation/components/TechnicalSections';
 import { DesktopCardMetrics, DesktopCardFooterActions } from './shared/DesktopCardSubComponents';
@@ -11,8 +12,11 @@ const InundationDesktopStatCard = ({ point, onAction, onOpenViewer, onOpenDetail
     const lastReport = point.last_report; // Báo cáo mới nhất (luôn có)
     const displayColor = isFlooded ? (lastReport?.flood_level_color || theme.palette.error.main) : (lastReport?.flood_level_color || theme.palette.success.main);
 
+    const floodedToday = point.last_flooded_time && (new Date(point.last_flooded_time * 1000).toDateString() === new Date().toDateString());
+
     return (
         <Card sx={{
+            position: 'relative',
             height: '100%',
             width: '100%',
             display: 'flex',
@@ -28,7 +32,8 @@ const InundationDesktopStatCard = ({ point, onAction, onOpenViewer, onOpenDetail
                 boxShadow: isFlooded ? `0 12px 32px ${displayColor}25` : '0 8px 24px rgba(0,0,0,0.1)',
             }
         }}>
-            <CardContent sx={{ p: 1.5, pb: '12px !important', textAlign: 'center', display: 'flex', flexDirection: 'column', flex: 1 }}>
+            <CardContent sx={{ p: 1.5, pb: '12px !important', textAlign: 'center', display: 'flex', flexDirection: 'column', flex: 1, position: 'relative' }}>
+                
                 <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
                     {/* Title */}
                     <Box sx={{ mb: 0.5 }}>

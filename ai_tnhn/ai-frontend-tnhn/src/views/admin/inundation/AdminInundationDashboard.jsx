@@ -106,7 +106,6 @@ const AdminInundationDashboard = () => {
       <InundationFilterBar
         filters={filters}
         setFilters={setFilters}
-        floodLevels={floodLevels}
       />
 
       <InundationPointsGrid

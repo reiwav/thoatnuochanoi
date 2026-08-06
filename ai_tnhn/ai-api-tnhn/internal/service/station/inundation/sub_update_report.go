@@ -18,7 +18,7 @@ func (s *service) ReportEnterpriseSituation(ctx context.Context, user *models.Us
 	}
 
 	// 1. Get or create active report
-	report, err := s.getOrCreateActiveReport(ctx, pointID, update.Depth)
+	st, report, err := s.getOrCreateActiveReport(ctx, pointID, update.Depth)
 	if err != nil {
 		return nil, err
 	}
@@ -43,6 +43,10 @@ func (s *service) ReportEnterpriseSituation(ctx context.Context, user *models.Us
 		return nil, err
 	}
 
+	if report.IsFlooding {
+		s.touchStationLastFloodedTime(ctx, st)
+	}
+
 	// Notify SSE
 	go s.notifyPointChange(pointID)
 
@@ -56,7 +60,7 @@ func (s *service) CorrectEnterpriseReport(ctx context.Context, user *models.User
 	}
 
 	// 1. Get active report
-	existing, err := s.getOrCreateActiveReport(ctx, pointID, report.Depth)
+	st, existing, err := s.getOrCreateActiveReport(ctx, pointID, report.Depth)
 	if err != nil {
 		return err
 	}
@@ -112,6 +116,10 @@ func (s *service) CorrectEnterpriseReport(ctx context.Context, user *models.User
 	err = s.InundationReportRepo.Update(ctx, existing)
 	if err != nil {
 		return err
+	}
+
+	if existing.IsFlooding {
+		s.touchStationLastFloodedTime(ctx, st)
 	}
 
 	if shouldResolve {

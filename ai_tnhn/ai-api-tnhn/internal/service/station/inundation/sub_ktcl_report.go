@@ -9,7 +9,7 @@ import (
 // ReportKTCL updates quality control (Kỹ thuật Chất lượng) data for an active report by pointID
 func (s *service) ReportKTCL(ctx context.Context, user *models.User, pointID string, input *models.ReportKTCLBase, images []ImageContent) error {
 	// 1. Get or create active report
-	existing, err := s.getOrCreateActiveReport(ctx, pointID, input.KtclD)
+	st, existing, err := s.getOrCreateActiveReport(ctx, pointID, input.KtclD)
 	if err != nil {
 		return err
 	}
@@ -47,6 +47,10 @@ func (s *service) ReportKTCL(ctx context.Context, user *models.User, pointID str
 	err = s.InundationReportRepo.Update(ctx, existing)
 	if err != nil {
 		return err
+	}
+
+	if existing.IsFlooding {
+		s.touchStationLastFloodedTime(ctx, st)
 	}
 
 	if shouldResolve {

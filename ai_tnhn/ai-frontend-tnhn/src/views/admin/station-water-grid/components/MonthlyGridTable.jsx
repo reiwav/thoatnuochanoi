@@ -154,6 +154,9 @@ const MonthlyGridTable = ({
                                     <Box sx={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 100, whiteSpace: 'normal', lineHeight: 1.2 }}>
                                         {st.TenTram || st.ten_tram}
                                     </Box>
+                                    <Typography variant="caption" sx={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 100, whiteSpace: 'normal', lineHeight: 1.2, color: 'text.secondary', fontSize: '0.7rem', mt: 0.5, fontWeight: 500 }}>
+                                        {st.DiaChi || st.dia_chi || st.address || ''}
+                                    </Typography>
                                 </TableCell>
                             ))}
                         </TableRow>

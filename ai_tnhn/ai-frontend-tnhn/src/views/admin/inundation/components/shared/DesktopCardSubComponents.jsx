@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Typography, Stack, Grid, IconButton, Tooltip, useTheme, alpha } from '@mui/material';
 import { IconClock, IconUser, IconCircleCheck, IconMessageDots, IconEngine, IconClipboardCheck, IconChevronUp, IconChevronDown, IconEye } from '@tabler/icons-react';
+import WaterDropIcon from '@mui/icons-material/WaterDrop';
 import dayjs from 'dayjs';
 import PermissionGuard from 'ui-component/PermissionGuard';
 import AdminInundationActionMenu from '../AdminInundationActionMenu';
@@ -171,6 +172,24 @@ export const DesktopCardFooterActions = ({ point, onOpenDetail, onAction, onOpen
                     </IconButton>
                 </span>
             </Tooltip>
+
+            {point?.last_flooded_time > 0 && (new Date(point.last_flooded_time * 1000).toDateString() === new Date().toDateString()) && !isFlooded && (
+                <Tooltip title="Từng ngập trong ngày hôm nay. Nhấn để xem diễn biến">
+                    <span>
+                        <IconButton
+                            size="small"
+                            onClick={() => onOpenDetail({ ...point, report_id: point.last_flooded_report_id })}
+                            sx={{
+                                width: 30, height: 30,
+                                bgcolor: alpha(theme.palette.error.main, 0.1),
+                                color: 'error.main'
+                            }}
+                        >
+                            <WaterDropIcon fontSize="small" />
+                        </IconButton>
+                    </span>
+                </Tooltip>
+            )}
 
             <Box sx={{ flex: 1 }} />
 

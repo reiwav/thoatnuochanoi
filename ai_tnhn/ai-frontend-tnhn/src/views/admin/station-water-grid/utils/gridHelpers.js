@@ -132,10 +132,10 @@ export const exportGridToExcel = async ({ groupedStations, gridValues, mode, fle
 
     const headers = [];
     if (mode === 'fixed') {
-        headers.push(['STT', 'Mã Trạm', 'Tên Trạm', 'Đơn vị Quản lý (Xí nghiệp)', '6h30 (m)', '13h30 (m)', 'Hiện tại (m)', 'Chênh lệch (13h30 - 6h30)']);
+        headers.push(['STT', 'Mã Trạm', 'Tên Trạm', 'Địa chỉ', 'Đơn vị Quản lý (Xí nghiệp)', '6h30 (m)', '13h30 (m)', 'Hiện tại (m)', 'Chênh lệch (13h30 - 6h30)']);
     } else {
         const slotHeaders = flexibleSlots.map(s => s.label);
-        headers.push(['STT', 'Mã Trạm', 'Tên Trạm', 'Đơn vị Quản lý (Xí nghiệp)', 'Mực nước gần nhất (m)', 'Giờ gần nhất', ...slotHeaders]);
+        headers.push(['STT', 'Mã Trạm', 'Tên Trạm', 'Địa chỉ', 'Đơn vị Quản lý (Xí nghiệp)', 'Mực nước gần nhất (m)', 'Giờ gần nhất', ...slotHeaders]);
     }
 
     const rows = [];
@@ -162,6 +162,7 @@ export const exportGridToExcel = async ({ groupedStations, gridValues, mode, fle
                     stt++,
                     oldId,
                     st.TenTram || st.ten_tram,
+                    st.DiaChi || st.dia_chi || st.address || '',
                     group.orgName,
                     v630 !== '' ? parseFloat(v630) : '',
                     v1330 !== '' ? parseFloat(v1330) : '',
@@ -182,6 +183,7 @@ export const exportGridToExcel = async ({ groupedStations, gridValues, mode, fle
                     stt++,
                     oldId,
                     st.TenTram || st.ten_tram,
+                    st.DiaChi || st.dia_chi || st.address || '',
                     group.orgName,
                     vNow !== '' ? parseFloat(vNow) : '',
                     timeLabel,
@@ -212,6 +214,7 @@ export const exportGridToExcel = async ({ groupedStations, gridValues, mode, fle
         { wch: 6 },  // STT
         { wch: 10 }, // Mã Trạm
         { wch: 28 }, // Tên Trạm
+        { wch: 32 }, // Địa chỉ
         { wch: 32 }, // Xí nghiệp
         { wch: 16 },
         { wch: 16 },
@@ -289,6 +292,12 @@ export const exportMonthlyGridToExcel = async ({ groupedStations, gridData, days
         stationRow.push(st.TenTram || st.ten_tram || '');
     });
 
+    // Row 6: Địa chỉ
+    const addressRow = ['Địa chỉ'];
+    flatStations.forEach(st => {
+        addressRow.push(st.DiaChi || st.dia_chi || st.address || '');
+    });
+
     // Row 6: MNKC
     const mnkcRow = ['MNKC'];
     flatStations.forEach(st => {
@@ -309,7 +318,7 @@ export const exportMonthlyGridToExcel = async ({ groupedStations, gridData, days
 
     // Data rows: mỗi ngày 2 dòng (6h30 và 13h30), merge cột Ngày
     const dataRows = [];
-    let startRow = 9; // Index bắt đầu data
+    let startRow = 10; // Index bắt đầu data
     daysInMonth.forEach(day => {
         // Dòng 6h30
         const row630 = [`Ngày ${day}`];
@@ -342,10 +351,11 @@ export const exportMonthlyGridToExcel = async ({ groupedStations, gridData, days
         xnRow,      // index 3
         orgRow,     // index 4
         stationRow, // index 5
-        mnkcRow,    // index 6
-        mmRow,      // index 7
-        mkRow,      // index 8
-        ...dataRows // index 9+
+        addressRow, // index 6
+        mnkcRow,    // index 7
+        mmRow,      // index 8
+        mkRow,      // index 9
+        ...dataRows // index 10+
     ];
 
     const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);

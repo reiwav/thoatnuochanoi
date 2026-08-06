@@ -7,7 +7,7 @@ import (
 )
 
 func (s *service) ReportSurvey(ctx context.Context, user *models.User, pointID string, input *models.ReportSurveyBase, images []ImageContent) error {
-	existing, err := s.getOrCreateActiveReport(ctx, pointID, input.SurveyD)
+	st, existing, err := s.getOrCreateActiveReport(ctx, pointID, input.SurveyD)
 	if err != nil {
 		return err
 	}
@@ -43,6 +43,10 @@ func (s *service) ReportSurvey(ctx context.Context, user *models.User, pointID s
 	err = s.InundationReportRepo.Update(ctx, existing)
 	if err != nil {
 		return err
+	}
+
+	if existing.IsFlooding {
+		s.touchStationLastFloodedTime(ctx, st)
 	}
 
 	if shouldResolve {

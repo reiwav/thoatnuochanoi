@@ -105,9 +105,11 @@ type RiverStation struct {
 type InundationStation struct {
 	model.BaseModel `bson:",inline"`
 	OrgID           string   `json:"org_id" bson:"org_id" example:"org_hanoi"` // Managed by this Org
-	ReportID        string   `json:"report_id" bson:"report_id" example:"rep_123"`
-	LastReportID    string   `json:"last_report_id" bson:"last_report_id" example:"rep_123"`
-	SharedOrgIDs    []string `json:"shared_org_ids" bson:"shared_org_ids" example:"org_1,org_2"`
+	ReportID            string   `json:"report_id" bson:"report_id" example:"rep_123"`
+	LastReportID        string   `json:"last_report_id" bson:"last_report_id" example:"rep_123"`
+	LastFloodedReportID string   `json:"last_flooded_report_id" bson:"last_flooded_report_id" example:"rep_123"`
+	LastFloodedTime     int64    `json:"last_flooded_time" bson:"last_flooded_time" example:"1629876543"`
+	SharedOrgIDs        []string `json:"shared_org_ids" bson:"shared_org_ids" example:"org_1,org_2"`
 	Name            string   `json:"name" bson:"name" example:"Điểm ngập Phố Huế"`
 	Address         string   `json:"address" bson:"address" example:"79 Phố Huế"`
 	Lat             string   `json:"lat" bson:"lat" example:"21.0285"`

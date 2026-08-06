@@ -742,6 +742,12 @@ definitions:
         type: integer
       id:
         type: string
+      last_flooded_report_id:
+        example: rep_123
+        type: string
+      last_flooded_time:
+        example: 1629876543
+        type: integer
       last_report_id:
         example: rep_123
         type: string

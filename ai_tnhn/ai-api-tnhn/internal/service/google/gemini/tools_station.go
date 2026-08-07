@@ -27,8 +27,6 @@ func (s *service) isCurrentRainDay(date string) bool {
 	return date == currentRainDay || date == now.Format("2006-01-02")
 }
 
-
-
 func (s *service) handleLS(ctx context.Context, c *genai.FunctionCall, o string, r, l, rv []string) (interface{}, error) {
 	t := c.Args["type"].(string)
 	log.Printf("[handleLS] type=%s, args=%v", t, c.Args)
@@ -55,7 +53,7 @@ func (s *service) handleLS(ctx context.Context, c *genai.FunctionCall, o string,
 						}
 					}
 				}
-				
+
 				displayDate := dStr
 				if hasTime {
 					displayDate = targetTime.Format("2006-01-02 15:04:05")
@@ -78,7 +76,7 @@ func (s *service) handleLS(ctx context.Context, c *genai.FunctionCall, o string,
 				// Historical date fallback (or specific time requested)
 				sts, e := s.stationSvc.ListRainStationsFiltered(ctx, o, r)
 				records, err := s.rainSvc.GetRainDataByDate(ctx, dStr)
-				
+
 				// Filter records by time if requested
 				var filteredRecords []*models.RainRecord
 				if err == nil {
@@ -135,11 +133,11 @@ func (s *service) handleLS(ctx context.Context, c *genai.FunctionCall, o string,
 				var res []googleapi.RainTableRow
 				for _, st := range sts {
 					res = append(res, googleapi.RainTableRow{
-						ID:   st.ID,
-						OldID: st.OldID,
-						Tram: st.TenTram,
+						ID:     st.ID,
+						OldID:  st.OldID,
+						Tram:   st.TenTram,
 						DiaChi: st.DiaChi,
-						Date: displayDate,
+						Date:   displayDate,
 					})
 				}
 				return res, e
@@ -151,11 +149,11 @@ func (s *service) handleLS(ctx context.Context, c *genai.FunctionCall, o string,
 		for _, st := range sts {
 			date, _ := c.Args["date"].(string)
 			res = append(res, googleapi.RainTableRow{
-				ID:    st.ID,
-				OldID: st.OldID,
-				Tram:  st.TenTram,
+				ID:     st.ID,
+				OldID:  st.OldID,
+				Tram:   st.TenTram,
 				DiaChi: st.DiaChi,
-				Date:  date,
+				Date:   date,
 			})
 		}
 		return res, e
@@ -180,13 +178,52 @@ func (s *service) handleLS(ctx context.Context, c *genai.FunctionCall, o string,
 			return nil, err
 		}
 		var res []map[string]interface{}
+		filterStatus, _ := c.Args["status"].(string)
 		for _, st := range sts {
+			if filterStatus == "field_checked" {
+				if st.LastReport == nil {
+					continue
+				}
+				loc, _ := time.LoadLocation("Asia/Ho_Chi_Minh")
+				if loc == nil {
+					loc = time.FixedZone("GMT+7", 7*60*60)
+				}
+				now := time.Now().In(loc)
+
+				var ts int64
+				if st.LastReport.MTime > 0 {
+					ts = st.LastReport.MTime
+				} else if st.LastReport.CTime > 0 {
+					ts = st.LastReport.CTime
+				}
+				if ts == 0 {
+					continue
+				}
+
+				reportTime := time.Unix(ts, 0).In(loc)
+				if now.Format("2006-01-02") != reportTime.Format("2006-01-02") {
+					continue
+				}
+			} else if filterStatus != "" && st.Status != filterStatus {
+				continue
+			}
+
+			statusToReturn := st.Status
+			if filterStatus == "field_checked" {
+				if statusToReturn == "normal" {
+					statusToReturn = "Bình thường (Đã kiểm tra)"
+				} else {
+					statusToReturn = "Đang ngập (Đã kiểm tra)"
+				}
+			}
+
 			res = append(res, map[string]interface{}{
-				"id":          st.ID,
-				"name":        st.Name,
-				"org_name":    st.OrgName,
-				"status":      st.Status, // "flooded" or "normal"
-				"street_name": st.Name,
+				"id":             st.ID,
+				"name":           st.Name,
+				"org_name":       st.OrgName,
+				"status":         statusToReturn,
+				"current_status": statusToReturn,
+				"street_name":    st.Name,
 			})
 		}
 		return res, nil

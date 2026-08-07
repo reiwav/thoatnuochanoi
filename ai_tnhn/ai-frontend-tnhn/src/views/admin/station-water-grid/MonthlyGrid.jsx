@@ -27,7 +27,9 @@ const MonthlyGrid = () => {
         handleExportExcel,
         exporting,
         riverCount,
-        lakeCount
+        lakeCount,
+        activeEditDays,
+        toggleDayEditMode
     } = useMonthlyGrid();
 
     return (
@@ -135,6 +137,9 @@ const MonthlyGrid = () => {
                     groupedStations={groupedStations}
                     gridData={gridData}
                     saveSingleCell={saveSingleCell}
+                    selectedMonth={selectedMonth}
+                    activeEditDays={activeEditDays}
+                    toggleDayEditMode={toggleDayEditMode}
                 />
             </Stack>
         </MainCard>

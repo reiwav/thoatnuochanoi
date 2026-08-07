@@ -29,6 +29,7 @@ func (s *service) getChatTools() []*genai.FunctionDeclaration {
 				"type": {Type: genai.TypeString, Description: "rain/lake/river/inundation"},
 				"date": {Type: genai.TypeString, Description: "YYYY-MM-DD. MUST extract the exact date mentioned by user (do not adjust). Optional, used to filter stations."},
 				"time": {Type: genai.TypeString, Description: "HH:mm:ss. MUST extract EXACTLY if user asks for a specific time (e.g., 0h -> 00:00:00)"},
+				"status": {Type: genai.TypeString, Description: "flooded/normal/field_checked. Optional, dùng để lọc các điểm ngập úng (inundation) theo trạng thái đang ngập (flooded), bình thường (normal) hoặc đã kiểm tra hiện trường (field_checked)."},
 			}, Required: []string{"type"}}},
 		{Name: constant.ToolRainAnalytics, Description: constant.ToolDescriptions[constant.ToolRainAnalytics],
 			Parameters: &genai.Schema{Type: genai.TypeObject, Properties: map[string]*genai.Schema{"station_id": {Type: genai.TypeInteger}, "year": {Type: genai.TypeInteger}, "month": {Type: genai.TypeInteger}, "start_date": {Type: genai.TypeString}, "end_date": {Type: genai.TypeString}, "group_by": {Type: genai.TypeString}}}},

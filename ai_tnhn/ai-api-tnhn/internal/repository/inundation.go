@@ -16,7 +16,7 @@ type InundationReport interface {
 	//UpdateStatus(ctx context.Context, id string, status string) error
 	Resolve(ctx context.Context, id string, endTime int64) error
 	Update(ctx context.Context, report *models.InundationReport) error
-	ListByYear(ctx context.Context, orgID string, year int) ([]*models.InundationReport, error)
+	ListByYear(ctx context.Context, orgID string, year int, pointIDs []string) ([]*models.InundationReport, error)
 	ListByDateRange(ctx context.Context, startDate, endDate string, pointID string) ([]*models.InundationReport, error)
 }
 

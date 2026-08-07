@@ -15,6 +15,14 @@ export const useMonthlyGrid = () => {
     const [stationTypeFilter, setStationTypeFilter] = useState('lake'); // 'lake' or 'river'
     const [selectedOrgId, setSelectedOrgId] = useState(''); // '' = tất cả
     const [exporting, setExporting] = useState(false);
+    const [activeEditDays, setActiveEditDays] = useState({});
+
+    const toggleDayEditMode = useCallback((day) => {
+        setActiveEditDays(prev => ({
+            ...prev,
+            [day]: !prev[day]
+        }));
+    }, []);
 
     const loadOrgs = useCallback(async () => {
         try {
@@ -293,6 +301,8 @@ export const useMonthlyGrid = () => {
         handleExportExcel,
         exporting,
         riverCount,
-        lakeCount
+        lakeCount,
+        activeEditDays,
+        toggleDayEditMode
     };
 };

@@ -34,7 +34,10 @@ const MonthlyGridTable = ({
     daysInMonth,
     groupedStations,
     gridData,
-    saveSingleCell
+    saveSingleCell,
+    selectedMonth,
+    activeEditDays,
+    toggleDayEditMode
 }) => {
     const { containerRef, theadRef, floatingRef } = useStickyTableHeader();
 
@@ -261,6 +264,9 @@ const MonthlyGridTable = ({
                                     flatStations={flatStations}
                                     gridData={gridData}
                                     saveSingleCell={saveSingleCell}
+                                    selectedMonth={selectedMonth}
+                                    activeEditDays={activeEditDays}
+                                    toggleDayEditMode={toggleDayEditMode}
                                 />
                             ))
                         )}

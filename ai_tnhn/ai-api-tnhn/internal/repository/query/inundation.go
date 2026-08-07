@@ -63,7 +63,7 @@ func (r *inundationRepo) Update(ctx context.Context, report *models.InundationRe
 	return r.R_Update(ctx, report)
 }
 
-func (r *inundationRepo) ListByYear(ctx context.Context, orgID string, year int) ([]*models.InundationReport, error) {
+func (r *inundationRepo) ListByYear(ctx context.Context, orgID string, year int, pointIDs []string) ([]*models.InundationReport, error) {
 	startOfYear := time.Date(year, 1, 1, 0, 0, 0, 0, time.UTC).Unix()
 	endOfYear := time.Date(year, 12, 31, 23, 59, 59, 0, time.UTC).Unix()
 
@@ -77,7 +77,14 @@ func (r *inundationRepo) ListByYear(ctx context.Context, orgID string, year int)
 	}
 
 	if orgID != "" {
-		filter["org_id"] = orgID
+		if len(pointIDs) > 0 {
+			filter["$or"] = []bson.M{
+				{"org_id": orgID},
+				{"point_id": bson.M{"$in": pointIDs}},
+			}
+		} else {
+			filter["org_id"] = orgID
+		}
 	}
 
 	var reports []*models.InundationReport

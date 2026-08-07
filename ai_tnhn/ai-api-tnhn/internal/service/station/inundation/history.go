@@ -17,7 +17,17 @@ import (
 )
 
 func (s *service) GetYearlyHistory(ctx context.Context, orgID string, year int) ([]*models.InundationReport, error) {
-	reports, err := s.InundationReportRepo.ListByYear(ctx, orgID, year)
+	var accessiblePointIDs []string
+	if orgID != "" {
+		stations, err := s.inundationStationRepo.ListByOrg(ctx, orgID)
+		if err == nil {
+			for _, st := range stations {
+				accessiblePointIDs = append(accessiblePointIDs, st.ID)
+			}
+		}
+	}
+
+	reports, err := s.InundationReportRepo.ListByYear(ctx, orgID, year, accessiblePointIDs)
 	if err != nil {
 		return nil, err
 	}

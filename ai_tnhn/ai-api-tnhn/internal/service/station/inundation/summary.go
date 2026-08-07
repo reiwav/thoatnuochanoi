@@ -27,38 +27,30 @@ func (s *service) GetInundationSummary(ctx context.Context, orgID string, isAllo
 	startOfDay := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, loc).Unix()
 	endOfDay := time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 999999999, loc).Unix()
 
-	f := filter.NewPaginationFilter()
-	f.Page = 1
-	f.PerPage = 1000
-
-	f.AddWhere("ctime_filter", "created_at", bson.M{"$lte": endOfDay})
-	f.AddWhere("has_flooded", "has_flooded", true)
-	f.AddWhere("status_or_endtime", "$or", []bson.M{
-		{"status": "active"},
-		{"end_time": bson.M{"$gte": startOfDay}},
-	})
-
-	reports, _, err := s.ListReportsWithFilter(ctx, dummyUser, isAllowedAll, orgID, f)
+	pointsStatus, err := s.GetPointsStatus(ctx, dummyUser, isAllowedAll, orgID)
 	if err != nil {
 		return nil, err
-	}
-
-	orgs, _ := s.orgRepo.GetAll(ctx)
-	orgMap := make(map[string]string)
-	for _, org := range orgs {
-		orgMap[org.ID] = org.Name
 	}
 
 	var ongoing []InundationStationStat
 	var detailStrings []string
 
-	for _, r := range reports {
+	for _, p := range pointsStatus {
+		isFloodedNow := p.ReportID != ""
+		isFloodedToday := p.LastFloodedTime >= startOfDay && p.LastFloodedTime <= endOfDay
+
+		if !isFloodedNow && !isFloodedToday {
+			continue
+		}
+
+		r := p.LastReport
+		if r == nil {
+			continue // Should have a report if flooded
+		}
+
 		streetName := r.StreetName
 		if streetName == "" {
-			point, err := s.inundationStationRepo.GetByID(ctx, r.PointID)
-			if err == nil && point != nil {
-				streetName = point.Name
-			}
+			streetName = p.Name
 		}
 
 		depthInfo := fmt.Sprintf("%v x %v x %.2f", r.Length, r.Width, r.Depth)
@@ -82,7 +74,7 @@ func (s *service) GetInundationSummary(ctx context.Context, orgID string, isAllo
 			PointID:        r.PointID,
 			ReportID:       r.ID,
 			StreetName:     streetName,
-			OrgName:        orgMap[r.OrgID],
+			OrgName:        p.OrgName,
 			Depth:          r.Depth,
 			Width:          r.Width,
 			Length:         r.Length,
@@ -151,8 +143,8 @@ func (s *service) GetInundationSummaryByDate(ctx context.Context, orgID string, 
 	f.AddWhere("ctime_filter", "created_at", bson.M{"$lte": endOfDay})
 	f.AddWhere("has_flooded", "has_flooded", true)
 	f.AddWhere("status_or_endtime", "$or", []bson.M{
-		{"status": "active"},
-		{"end_time": bson.M{"$gte": startOfDay}},
+		{"status": "active", "end_time": 0},
+		{"end_time": bson.M{"$gte": startOfDay, "$lte": endOfDay}},
 	})
 
 	reports, _, err := s.ListReportsWithFilter(ctx, dummyUser, isAllowedAll, orgID, f)
@@ -168,8 +160,14 @@ func (s *service) GetInundationSummaryByDate(ctx context.Context, orgID string, 
 
 	var ongoing []InundationStationStat
 	var detailStrings []string
+	seenPoints := make(map[string]bool)
 
 	for _, r := range reports {
+		if seenPoints[r.PointID] {
+			continue
+		}
+		seenPoints[r.PointID] = true
+
 		streetName := r.StreetName
 		if streetName == "" {
 			point, err := s.inundationStationRepo.GetByID(ctx, r.PointID)

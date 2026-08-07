@@ -7,7 +7,7 @@ const InundationCard = ({ point, onClick }) => {
     const org = point['Đơn vị quản lý'] || point['Đơn vị trực'] || point['org_name'] || '';
     const time = point['Thời gian'] || point['Giờ bắt đầu'] || point['start_time'] || '';
     const duration = point['Tổng thời gian'] || point['Thời gian ngập'] || point['duration'] || point['Duration'] || '';
-    const currentStatus = point['Trạng thái'] || point['current_status'] || point['CurrentStatus'] || '';
+    const currentStatus = point['Trạng thái'] || point['current_status'] || point['CurrentStatus'] || point['status'] || '';
     
     let dimension = point['Kích thước (DxRxS)'] || point['formatted_depth'] || point['Kích thước'] || '';
     // Clean "ngập " prefix if exists
@@ -35,14 +35,14 @@ const InundationCard = ({ point, onClick }) => {
         }
     }
 
-    const systemColor = point['color'] || point['Color'];
-    const warningColor = systemColor || theme.palette.orange?.dark || theme.palette.error.main;
-    const warningBg = systemColor ? `${systemColor}15` : (theme.palette.orange?.light || theme.palette.error.light);
-
     const isResolved = currentStatus.toLowerCase().includes('rút') || 
                        currentStatus.toLowerCase().includes('resolved') || 
                        currentStatus.toLowerCase().includes('bình thường') || 
                        currentStatus.toLowerCase().includes('tải');
+
+    const systemColor = point['color'] || point['Color'];
+    const warningColor = isResolved ? theme.palette.success.main : (systemColor || theme.palette.orange?.dark || theme.palette.error.main);
+    const warningBg = isResolved ? `${theme.palette.success.main}15` : (systemColor ? `${systemColor}15` : (theme.palette.orange?.light || theme.palette.error.light));
 
     return (
         <Box 

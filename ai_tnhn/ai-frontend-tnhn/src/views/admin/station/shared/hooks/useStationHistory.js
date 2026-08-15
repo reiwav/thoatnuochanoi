@@ -130,6 +130,7 @@ const useStationHistory = ({ type }) => {
                 title: { text: isRain ? '' : 'Thời gian' }
             },
             yaxis: {
+                min: 0,
                 title: { text: isRain ? '' : getValueLabel() }
             },
             tooltip: {

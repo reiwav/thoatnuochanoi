@@ -4,8 +4,9 @@ import { IconEdit, IconCheck } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import MonthlyGridCellInput from './MonthlyGridCellInput';
 import PermissionGuard from 'ui-component/PermissionGuard';
+import { calculateThresholdStatus, getReadOnlyCellColor, getStationId } from '../utils/gridHelpers';
 
-const MonthlyGridRow = React.memo(({ day, flatStations, gridData, saveSingleCell, selectedMonth, activeEditDays, toggleDayEditMode }) => {
+const MonthlyGridRow = React.memo(({ day, flatStations, gridData, saveSingleCell, selectedMonth, activeSetting, activeEditDays, toggleDayEditMode }) => {
     const now = dayjs();
     const isCurrentMonth = selectedMonth ? selectedMonth.isSame(now, 'month') : false;
     const isToday = isCurrentMonth && day === now.date();
@@ -52,16 +53,27 @@ const MonthlyGridRow = React.memo(({ day, flatStations, gridData, saveSingleCell
                 </Box>
             </TableCell>
             {flatStations.map(st => {
-                const oldId = st.OldId || st.old_id || st.Id || st.id;
+                const oldId = getStationId(st);
                 const val6_30 = gridData[`${st.type}_${oldId}_${day}_6h30`];
                 const id6_30 = gridData[`${st.type}_${oldId}_${day}_6h30_id`];
                 const val13 = gridData[`${st.type}_${oldId}_${day}_13h30`];
                 const id13 = gridData[`${st.type}_${oldId}_${day}_13h30_id`];
 
+                const targetDate = selectedMonth ? selectedMonth.date(day) : null;
+                const status6_30 = calculateThresholdStatus(st, val6_30, targetDate, activeSetting);
+                const status13 = calculateThresholdStatus(st, val13, targetDate, activeSetting);
+
+                const hasVal6_30 = val6_30 !== undefined && val6_30 !== null && val6_30 !== '';
+                const hasVal13 = val13 !== undefined && val13 !== null && val13 !== '';
+
                 const fallbackContent = (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, py: 0.5 }}>
-                        <Typography variant="body2" fontWeight={700} color={val6_30 !== undefined ? 'text.primary' : 'text.secondary'}>{val6_30 !== undefined ? val6_30 : '-'}</Typography>
-                        <Typography variant="body2" fontWeight={700} color={val13 !== undefined ? 'text.primary' : 'text.secondary'}>{val13 !== undefined ? val13 : '-'}</Typography>
+                        <Typography variant="body2" fontWeight={700} sx={{ color: getReadOnlyCellColor(status6_30, hasVal6_30) }}>
+                            {hasVal6_30 ? val6_30 : '-'}
+                        </Typography>
+                        <Typography variant="body2" fontWeight={700} sx={{ color: getReadOnlyCellColor(status13, hasVal13) }}>
+                            {hasVal13 ? val13 : '-'}
+                        </Typography>
                     </Box>
                 );
 
@@ -87,6 +99,8 @@ const MonthlyGridRow = React.memo(({ day, flatStations, gridData, saveSingleCell
                                     id6_30={id6_30}
                                     value13={val13}
                                     id13={id13}
+                                    selectedMonth={selectedMonth}
+                                    activeSetting={activeSetting}
                                 />
                             </PermissionGuard>
                         ) : fallbackContent}

@@ -24,6 +24,8 @@ type service struct {
 	rainStationRepo  repository.RainStation
 	lakeStationRepo  repository.LakeStation
 	riverStationRepo repository.RiverStation
+	lakeRepo         repository.Lake
+	riverRepo        repository.River
 }
 
 func NewService(
@@ -35,6 +37,8 @@ func NewService(
 	rainStationRepo repository.RainStation,
 	lakeStationRepo repository.LakeStation,
 	riverStationRepo repository.RiverStation,
+	lakeRepo repository.Lake,
+	riverRepo repository.River,
 ) Service {
 	return &service{
 		cfg:              cfg,
@@ -45,5 +49,7 @@ func NewService(
 		rainStationRepo:  rainStationRepo,
 		lakeStationRepo:  lakeStationRepo,
 		riverStationRepo: riverStationRepo,
+		lakeRepo:         lakeRepo,
+		riverRepo:        riverRepo,
 	}
 }

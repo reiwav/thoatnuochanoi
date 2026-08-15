@@ -3,6 +3,7 @@ package gemini
 import (
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/service/google/googleapi"
+	"ai-api-tnhn/utils"
 	"context"
 	"fmt"
 	"log"
@@ -15,16 +16,9 @@ import (
 // Rain day D: 7h D → 7h (D+1). Before 7AM, current rain day is yesterday.
 // At or after 7AM, current rain day is today.
 func (s *service) isCurrentRainDay(date string) bool {
-	loc, _ := time.LoadLocation("Asia/Ho_Chi_Minh")
-	now := time.Now().In(loc)
-	cutoff := time.Date(now.Year(), now.Month(), now.Day(), 7, 0, 0, 0, loc)
-	var currentRainDay string
-	if now.Before(cutoff) {
-		currentRainDay = now.AddDate(0, 0, -1).Format("2006-01-02")
-	} else {
-		currentRainDay = now.Format("2006-01-02")
-	}
-	return date == currentRainDay || date == now.Format("2006-01-02")
+	currentRainDay := utils.CurrentRainDate()
+	today := utils.TodayVietnam()
+	return date == currentRainDay || date == today
 }
 
 func (s *service) handleLS(ctx context.Context, c *genai.FunctionCall, o string, r, l, rv []string) (interface{}, error) {
@@ -36,21 +30,11 @@ func (s *service) handleLS(ctx context.Context, c *genai.FunctionCall, o string,
 			if dStr, ok := c.Args["date"].(string); ok && dStr != "" {
 				var targetTime time.Time
 				var hasTime bool
-				loc, _ := time.LoadLocation("Asia/Ho_Chi_Minh")
 				if tStr, ok := c.Args["time"].(string); ok && tStr != "" {
-					if tt, err := time.ParseInLocation("2006-01-02 15:04:05", dStr+" "+tStr, loc); err == nil {
+					if tt, err := utils.ParseVietnamTime(dStr + " " + tStr); err == nil {
 						targetTime = tt
 						hasTime = true
-						// If time is before 7:00 AM, the rain cycle belongs to the previous day
-						if targetTime.Hour() < 7 {
-							dStr = targetTime.AddDate(0, 0, -1).Format("2006-01-02")
-						}
-					} else if tt, err := time.ParseInLocation("2006-01-02 15:04", dStr+" "+tStr, loc); err == nil {
-						targetTime = tt
-						hasTime = true
-						if targetTime.Hour() < 7 {
-							dStr = targetTime.AddDate(0, 0, -1).Format("2006-01-02")
-						}
+						dStr = utils.GetRainDate(targetTime)
 					}
 				}
 
@@ -81,7 +65,7 @@ func (s *service) handleLS(ctx context.Context, c *genai.FunctionCall, o string,
 				var filteredRecords []*models.RainRecord
 				if err == nil {
 					for _, rec := range records {
-						if !hasTime || !rec.Timestamp.In(loc).After(targetTime) {
+						if !hasTime || !utils.ToVietnam(rec.Timestamp).After(targetTime) {
 							filteredRecords = append(filteredRecords, rec)
 						}
 					}
@@ -184,11 +168,7 @@ func (s *service) handleLS(ctx context.Context, c *genai.FunctionCall, o string,
 				if st.LastReport == nil {
 					continue
 				}
-				loc, _ := time.LoadLocation("Asia/Ho_Chi_Minh")
-				if loc == nil {
-					loc = time.FixedZone("GMT+7", 7*60*60)
-				}
-				now := time.Now().In(loc)
+				now := utils.NowVietnam()
 
 				var ts int64
 				if st.LastReport.MTime > 0 {
@@ -200,8 +180,8 @@ func (s *service) handleLS(ctx context.Context, c *genai.FunctionCall, o string,
 					continue
 				}
 
-				reportTime := time.Unix(ts, 0).In(loc)
-				if now.Format("2006-01-02") != reportTime.Format("2006-01-02") {
+				reportTime := time.Unix(ts, 0).In(utils.VietnamLocation)
+				if utils.FormatDate(now) != utils.FormatDate(reportTime) {
 					continue
 				}
 			} else if filterStatus != "" && st.Status != filterStatus {

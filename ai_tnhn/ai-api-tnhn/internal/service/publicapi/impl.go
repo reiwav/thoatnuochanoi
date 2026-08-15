@@ -3,6 +3,7 @@ package publicapi
 import (
 	"ai-api-tnhn/internal/dto"
 	"ai-api-tnhn/internal/models"
+	"ai-api-tnhn/utils"
 	"context"
 	"time"
 
@@ -83,10 +84,9 @@ func (s *service) GetStationsMasterList(ctx context.Context, stationType string)
 }
 
 func parseTimeRange(dateUnix int64, isRain bool) (time.Time, time.Time) {
-	loc, _ := time.LoadLocation("Asia/Ho_Chi_Minh")
-	t := time.Unix(dateUnix, 0).In(loc)
+	t := time.Unix(dateUnix, 0).In(utils.VietnamLocation)
 
-	t = time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, loc)
+	t = time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, utils.VietnamLocation)
 
 	if isRain {
 		// Rain logic: 07:00 yesterday to 07:00 today

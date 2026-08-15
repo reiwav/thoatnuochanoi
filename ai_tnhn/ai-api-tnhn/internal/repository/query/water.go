@@ -120,15 +120,18 @@ func NewLakeRepo(dbc *mongo.Database, name, prefix string, l logger.Logger) repo
 
 func (p lakeRepository) GetAllByStationID(ctx context.Context, stationID int64, startTime time.Time, endTime time.Time) ([]*models.LakeRecord, error) {
 	var records []*models.LakeRecord
-	err := p.R_SelectManyWithSort(ctx,
-		bson.M{
-			"station_id": stationID,
-			"timestamp": bson.M{
-				"$gte": startTime,
-				"$lte": endTime,
-			},
-		},
-		bson.M{"timestamp": -1}, &records)
+	filter := bson.M{"station_id": stationID}
+	if !startTime.IsZero() || !endTime.IsZero() {
+		tsFilter := bson.M{}
+		if !startTime.IsZero() {
+			tsFilter["$gte"] = startTime
+		}
+		if !endTime.IsZero() {
+			tsFilter["$lte"] = endTime
+		}
+		filter["timestamp"] = tsFilter
+	}
+	err := p.R_SelectManyWithSort(ctx, filter, bson.M{"timestamp": -1}, &records)
 	return records, err
 }
 
@@ -168,6 +171,7 @@ func (p lakeRepository) GetLatest(ctx context.Context, stationID int64) (*models
 	}
 	return records[0], nil
 }
+
 func (p lakeRepository) Create(ctx context.Context, record *models.LakeRecord) error {
 	return p.R_Create(ctx, record)
 }
@@ -203,15 +207,18 @@ func NewRiverRepo(dbc *mongo.Database, name, prefix string, l logger.Logger) rep
 
 func (p riverRepository) GetAllByStationID(ctx context.Context, stationID int64, startTime time.Time, endTime time.Time) ([]*models.RiverRecord, error) {
 	var records []*models.RiverRecord
-	err := p.R_SelectManyWithSort(ctx,
-		bson.M{
-			"station_id": stationID,
-			"timestamp": bson.M{
-				"$gte": startTime,
-				"$lte": endTime,
-			},
-		},
-		bson.M{"timestamp": -1}, &records)
+	filter := bson.M{"station_id": stationID}
+	if !startTime.IsZero() || !endTime.IsZero() {
+		tsFilter := bson.M{}
+		if !startTime.IsZero() {
+			tsFilter["$gte"] = startTime
+		}
+		if !endTime.IsZero() {
+			tsFilter["$lte"] = endTime
+		}
+		filter["timestamp"] = tsFilter
+	}
+	err := p.R_SelectManyWithSort(ctx, filter, bson.M{"timestamp": -1}, &records)
 	return records, err
 }
 

@@ -15,6 +15,7 @@ const MonthlyGrid = () => {
         loading,
         daysInMonth,
         groupedStations,
+        activeSetting,
         gridData,
         selectedMonth,
         setSelectedMonth,
@@ -135,6 +136,7 @@ const MonthlyGrid = () => {
                     loading={loading}
                     daysInMonth={daysInMonth}
                     groupedStations={groupedStations}
+                    activeSetting={activeSetting}
                     gridData={gridData}
                     saveSingleCell={saveSingleCell}
                     selectedMonth={selectedMonth}

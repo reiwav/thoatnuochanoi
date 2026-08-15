@@ -62,6 +62,8 @@ type WaterDataResponse struct {
 		} `json:"tram"`
 		Data []struct {
 			TramId       string  `json:"TramId"`
+			ThuongLuu_7  float64 `json:"ThuongLuu_7"`
+			ThuongLuu_13 float64 `json:"ThuongLuu_13"`
 			ThuongLuu_HT float64 `json:"ThuongLuu_HT"`
 			ThoiGian_HT  string  `json:"ThoiGian_HT"`
 			Loai         int     `json:"Loai"`

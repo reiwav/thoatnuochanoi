@@ -3,6 +3,7 @@ package handler
 import (
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/service/station/rain"
+	"ai-api-tnhn/utils"
 	"ai-api-tnhn/utils/web"
 	"strconv"
 	"time"
@@ -41,15 +42,10 @@ func (h *RainHandler) GetRainHistory(c *gin.Context) {
 	var hasTime bool
 
 	if len(dateStr) > 10 { // Expected format: YYYY-MM-DD HH:mm:ss
-		loc, _ := time.LoadLocation("Asia/Ho_Chi_Minh")
-		if tt, err := time.ParseInLocation("2006-01-02 15:04:05", dateStr, loc); err == nil {
+		if tt, err := utils.ParseVietnamTime(dateStr); err == nil {
 			targetTime = tt
 			hasTime = true
-			if targetTime.Hour() < 7 {
-				dateStr = targetTime.AddDate(0, 0, -1).Format("2006-01-02")
-			} else {
-				dateStr = targetTime.Format("2006-01-02")
-			}
+			dateStr = utils.GetRainDate(targetTime)
 		} else {
 			dateStr = dateStr[:10] // Fallback to just date
 		}
@@ -60,9 +56,8 @@ func (h *RainHandler) GetRainHistory(c *gin.Context) {
 
 	if hasTime {
 		var filtered []models.RainRecord
-		loc, _ := time.LoadLocation("Asia/Ho_Chi_Minh")
 		for _, r := range res {
-			if !r.Timestamp.In(loc).After(targetTime) {
+			if !utils.ToVietnam(r.Timestamp).After(targetTime) {
 				filtered = append(filtered, r)
 			}
 		}

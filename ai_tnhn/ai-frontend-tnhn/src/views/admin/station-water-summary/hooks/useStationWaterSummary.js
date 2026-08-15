@@ -7,6 +7,8 @@ const useStationWaterSummary = () => {
     const [waterData, setWaterData] = useState([]);
     const [tabValue, setTabValue] = useState(0);
 
+    const [stationInfoMap, setStationInfoMap] = useState(new Map());
+
     const loadData = async () => {
         setLoading(true);
         try {
@@ -26,6 +28,22 @@ const useStationWaterSummary = () => {
     };
 
     useEffect(() => {
+        const fetchStationInfo = async () => {
+            try {
+                const v2Data = await axiosClient.get('/admin/water/summary-v2');
+                if (Array.isArray(v2Data)) {
+                    const map = new Map();
+                    v2Data.forEach(st => {
+                        if (st.old_id) map.set(String(st.old_id), st);
+                        if (st.ten_tram) map.set(st.ten_tram.trim().toLowerCase(), st);
+                    });
+                    setStationInfoMap(map);
+                }
+            } catch (err) {
+                console.error('Lỗi tải thông tin trạm V2:', err);
+            }
+        };
+        fetchStationInfo();
         loadData();
         const interval = setInterval(loadData, 6000); // 6 seconds
         return () => clearInterval(interval);
@@ -61,20 +79,21 @@ const useStationWaterSummary = () => {
             const wd = dataMap.get(station.Id);
             const level = wd?.ThuongLuu_HT ?? 0;
             const time = wd?.ThoiGian_HT || '-';
+            const info = stationInfoMap.get(String(station.Id)) || stationInfoMap.get(station.TenTram?.trim().toLowerCase()) || {};
 
             return {
                 id: station.Id,
                 stt: index + 1,
                 name: station.TenTram,
                 nameHTML: station.TenTramHTML || '',
-                address: station.DiaChi || '',
+                address: station.DiaChi || info.dia_chi || info.DiaChi || '',
                 thuTu: station.ThuTu || 0,
                 type: station.Loai === "1" ? "Sông" : "Hồ",
                 level: level,
                 time: formatDateTime(time),
                 rawTime: time,
-                dataMode: station.data_mode || (station.is_auto ? 'auto' : 'manual'),
-                isAuto: station.is_auto || station.data_mode === 'auto',
+                dataMode: station.data_mode || info.data_mode || (station.is_auto || info.is_auto ? 'auto' : 'manual'),
+                isAuto: station.is_auto || info.is_auto || station.data_mode === 'auto' || info.data_mode === 'auto',
                 thresholdStatus: wd?.threshold_status || 'normal',
                 minThreshold: wd?.min_threshold ?? 0,
                 maxThreshold: wd?.max_threshold ?? 0

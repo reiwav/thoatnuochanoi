@@ -5,6 +5,7 @@ import (
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/repository"
 	"ai-api-tnhn/internal/service/setting"
+	"ai-api-tnhn/utils"
 	"context"
 	"sync"
 	"time"
@@ -39,27 +40,16 @@ func NewService(rainRepo repository.Rain, rainStationRepo repository.RainStation
 // Rain day D runs from 7:00 AM D to 7:00 AM (D+1).
 // For example, rain day "2026-02-18" = 7h 18/02 → 7h 19/02.
 func rainDayRange(date string) (start, end time.Time) {
-	loc, _ := time.LoadLocation("Asia/Ho_Chi_Minh")
-	timeObj, _ := time.ParseInLocation("2006-01-02", date, loc)
+	timeObj, _ := time.ParseInLocation("2006-01-02", date, utils.VietnamLocation)
 	// Rain day D: from 7:00 AM of day D to 7:00 AM of day (D+1)
-	start = time.Date(timeObj.Year(), timeObj.Month(), timeObj.Day(), 7, 0, 0, 0, loc)
+	start = time.Date(timeObj.Year(), timeObj.Month(), timeObj.Day(), 7, 0, 0, 0, utils.VietnamLocation)
 	end = start.AddDate(0, 0, 1)
 	return
 }
 
 // currentRainDay returns the "rain day" date string for the current moment.
-// Before 7:00 AM, the current rain day is yesterday (cycle 7h yesterday → 7h today).
-// At or after 7:00 AM, the current rain day is today (cycle 7h today → 7h tomorrow).
 func currentRainDay() string {
-	loc, _ := time.LoadLocation("Asia/Ho_Chi_Minh")
-	now := time.Now().In(loc)
-	cutoff := time.Date(now.Year(), now.Month(), now.Day(), 7, 0, 0, 0, loc)
-	if now.Before(cutoff) {
-		// Before 7:00 AM → belongs to yesterday's rain day (7h yesterday → 7h today)
-		return now.AddDate(0, 0, -1).Format("2006-01-02")
-	}
-	// At or after 7:00 AM → belongs to today's rain day (7h today → 7h tomorrow)
-	return now.Format("2006-01-02")
+	return utils.CurrentRainDate()
 }
 
 func (s *service) GetRainDataByStation(ctx context.Context, stationID int64, date string) ([]models.RainRecord, error) {
@@ -95,10 +85,8 @@ func (s *service) GetRainDataByStation(ctx context.Context, stationID int64, dat
 		}
 	}
 
-	loc, _ := time.LoadLocation("Asia/Ho_Chi_Minh")
-
 	for i, item := range res {
-		item.Timestamp = item.Timestamp.In(loc)
+		item.Timestamp = utils.ToVietnam(item.Timestamp)
 		res[i] = item
 	}
 	return res, nil

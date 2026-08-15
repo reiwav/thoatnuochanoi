@@ -1,21 +1,34 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import dayjs from 'dayjs';
 import stationApi from 'api/station';
+import settingApi from 'api/setting';
 import organizationApi from 'api/organization';
-import { exportMonthlyGridToExcel } from '../utils/gridHelpers';
-
-const getStationId = (s) => s?.OldId ?? s?.old_id ?? s?.Id ?? s?.id ?? '';
+import { exportMonthlyGridToExcel, getStationId } from '../utils/gridHelpers';
 
 export const useMonthlyGrid = () => {
     const [waterOrganizations, setWaterOrganizations] = useState([]);
     const [loading, setLoading] = useState(false);
     const [stations, setStations] = useState([]);
+    const [activeSetting, setActiveSetting] = useState(null);
     const [gridData, setGridData] = useState({}); // format: { stationId_day_timeSlot: value }
     const [selectedMonth, setSelectedMonth] = useState(dayjs());
     const [stationTypeFilter, setStationTypeFilter] = useState('lake'); // 'lake' or 'river'
     const [selectedOrgId, setSelectedOrgId] = useState(''); // '' = tất cả
     const [exporting, setExporting] = useState(false);
     const [activeEditDays, setActiveEditDays] = useState({});
+
+    // Load active setting for threshold calculations
+    useEffect(() => {
+        const fetchSetting = async () => {
+            try {
+                const res = await settingApi.getActiveWaterThreshold(selectedMonth.year());
+                setActiveSetting(res?.data || res);
+            } catch (err) {
+                console.error('Failed to load active water threshold setting in monthly grid:', err);
+            }
+        };
+        if (selectedMonth) fetchSetting();
+    }, [selectedMonth]);
 
     const toggleDayEditMode = useCallback((day) => {
         setActiveEditDays(prev => ({
@@ -289,6 +302,7 @@ export const useMonthlyGrid = () => {
         loading,
         daysInMonth,
         groupedStations,
+        activeSetting,
         gridData,
         selectedMonth,
         setSelectedMonth,

@@ -11,6 +11,7 @@ type Service interface {
 	// Rain Station
 	CreateRainStation(ctx context.Context, input *models.RainStation) (*models.RainStation, error)
 	GetRainStation(ctx context.Context, id string) (*models.RainStation, error)
+	GetRainStationByOldID(ctx context.Context, oldID int) (*models.RainStation, error)
 	UpdateRainStation(ctx context.Context, id string, input *models.RainStation) error
 	DeleteRainStation(ctx context.Context, id string) error
 	ListRainStations(ctx context.Context, filter filter.Filter) ([]*models.RainStation, int64, error)

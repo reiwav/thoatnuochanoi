@@ -3,6 +3,7 @@ package gemini
 import (
 	"ai-api-tnhn/internal/constant"
 	"ai-api-tnhn/internal/service/station/inundation"
+	"ai-api-tnhn/utils"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -333,22 +334,13 @@ func extractDates(v interface{}) []string {
 				}
 			}
 		case time.Time:
-			loc, err := time.LoadLocation("Asia/Ho_Chi_Minh")
-			if err != nil {
-				loc = time.FixedZone("GMT+7", 7*60*60)
-			}
-			dStr := val.In(loc).Format("2006-01-02")
+			dStr := utils.FormatDate(val)
 			if !seen[dStr] {
 				seen[dStr] = true
 				dates = append(dates, dStr)
 			}
 		case primitive.DateTime:
-			loc, err := time.LoadLocation("Asia/Ho_Chi_Minh")
-			if err != nil {
-				loc = time.FixedZone("GMT+7", 7*60*60)
-			}
-			t := val.Time().In(loc)
-			dStr := t.Format("2006-01-02")
+			dStr := utils.FormatDate(val.Time())
 			if !seen[dStr] {
 				seen[dStr] = true
 				dates = append(dates, dStr)
@@ -466,11 +458,7 @@ func formatUnixTimestamp(val interface{}) interface{} {
 	}
 	// Check if it looks like a reasonable unix timestamp (e.g. year 2020 to 2035)
 	if timestamp >= 1577836800 && timestamp <= 2051222400 {
-		loc, err := time.LoadLocation("Asia/Ho_Chi_Minh")
-		if err != nil {
-			loc = time.FixedZone("GMT+7", 7*60*60)
-		}
-		return time.Unix(timestamp, 0).In(loc).Format("02-01-2006 15:04:05")
+		return time.Unix(timestamp, 0).In(utils.VietnamLocation).Format("02-01-2006 15:04:05")
 	}
 	return val
 }
@@ -504,10 +492,7 @@ func (s *service) formatInundationReportsForFrontend(ctx context.Context, res []
 		}
 	}
 
-	loc, _ := time.LoadLocation("Asia/Ho_Chi_Minh")
-	if loc == nil {
-		loc = time.FixedZone("GMT+7", 7*60*60)
-	}
+	loc := utils.VietnamLocation
 
 	// Group reports by point_id or street_name (if point_id is missing/empty)
 	type groupInfo struct {
@@ -717,13 +702,8 @@ func (s *service) handleInundationHistoryByRange(ctx context.Context, startDateS
 		return nil, fmt.Errorf("ngày kết thúc không hợp lệ (định dạng đúng: YYYY-MM-DD)")
 	}
 
-	loc, _ := time.LoadLocation("Asia/Ho_Chi_Minh")
-	if loc == nil {
-		loc = time.FixedZone("GMT+7", 7*60*60)
-	}
-
-	startOfDay := time.Date(tStart.Year(), tStart.Month(), tStart.Day(), 0, 0, 0, 0, loc).Unix()
-	endOfDay := time.Date(tEnd.Year(), tEnd.Month(), tEnd.Day(), 23, 59, 59, 999999999, loc).Unix()
+	startOfDay := time.Date(tStart.Year(), tStart.Month(), tStart.Day(), 0, 0, 0, 0, utils.VietnamLocation).Unix()
+	endOfDay := time.Date(tEnd.Year(), tEnd.Month(), tEnd.Day(), 23, 59, 59, 999999999, utils.VietnamLocation).Unix()
 
 	filterVal := bson.M{
 		"has_flooded": true,
@@ -838,7 +818,7 @@ func (s *service) handleInundationHistoryByRange(ctx context.Context, startDateS
 		doc["org_name"] = orgName
 
 		if g.mostRecentTime > 0 {
-			doc["start_time"] = time.Unix(g.mostRecentTime, 0).In(loc).Format("15:04 02/01/2006")
+			doc["start_time"] = time.Unix(g.mostRecentTime, 0).In(utils.VietnamLocation).Format("15:04 02/01/2006")
 		}
 
 		count := len(g.reports)

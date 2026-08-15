@@ -58,11 +58,15 @@ func (s *service) GetRawWaterData(ctx context.Context) (*WaterDataResponse, erro
 				timeStr := lake.LatestRecord.Timestamp.Format("2006-01-02 15:04:05")
 				resp.Content.Data = append(resp.Content.Data, struct {
 					TramId       string  `json:"TramId"`
+					ThuongLuu_7  float64 `json:"ThuongLuu_7"`
+					ThuongLuu_13 float64 `json:"ThuongLuu_13"`
 					ThuongLuu_HT float64 `json:"ThuongLuu_HT"`
 					ThoiGian_HT  string  `json:"ThoiGian_HT"`
 					Loai         int     `json:"Loai"`
 				}{
 					TramId:       fmt.Sprintf("%d", lake.OldID),
+					ThuongLuu_7:  lake.LatestRecord.Value,
+					ThuongLuu_13: lake.LatestRecord.Value,
 					ThuongLuu_HT: lake.LatestRecord.Value,
 					ThoiGian_HT:  timeStr,
 					Loai:         2,
@@ -92,11 +96,15 @@ func (s *service) GetRawWaterData(ctx context.Context) (*WaterDataResponse, erro
 				timeStr := river.LatestRecord.Timestamp.Format("2006-01-02 15:04:05")
 				resp.Content.Data = append(resp.Content.Data, struct {
 					TramId       string  `json:"TramId"`
+					ThuongLuu_7  float64 `json:"ThuongLuu_7"`
+					ThuongLuu_13 float64 `json:"ThuongLuu_13"`
 					ThuongLuu_HT float64 `json:"ThuongLuu_HT"`
 					ThoiGian_HT  string  `json:"ThoiGian_HT"`
 					Loai         int     `json:"Loai"`
 				}{
 					TramId:       fmt.Sprintf("%d", river.OldID),
+					ThuongLuu_7:  river.LatestRecord.Value,
+					ThuongLuu_13: river.LatestRecord.Value,
 					ThuongLuu_HT: river.LatestRecord.Value,
 					ThoiGian_HT:  timeStr,
 					Loai:         1,

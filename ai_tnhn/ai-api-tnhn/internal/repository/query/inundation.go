@@ -6,6 +6,7 @@ import (
 	"ai-api-tnhn/internal/base/mgo/filter"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/repository"
+	"ai-api-tnhn/utils"
 	"context"
 	"time"
 
@@ -93,22 +94,17 @@ func (r *inundationRepo) ListByYear(ctx context.Context, orgID string, year int,
 }
 
 func (r *inundationRepo) ListByDateRange(ctx context.Context, startDate, endDate string, pointID string) ([]*models.InundationReport, error) {
-	loc, err := time.LoadLocation("Asia/Ho_Chi_Minh")
-	if err != nil {
-		loc = time.FixedZone("GMT+7", 7*60*60)
-	}
-
-	tStart, err := time.ParseInLocation("2006-01-02", startDate, loc)
+	tStart, err := time.ParseInLocation("2006-01-02", startDate, utils.VietnamLocation)
 	if err != nil {
 		return nil, err
 	}
-	tEnd, err := time.ParseInLocation("2006-01-02", endDate, loc)
+	tEnd, err := time.ParseInLocation("2006-01-02", endDate, utils.VietnamLocation)
 	if err != nil {
 		return nil, err
 	}
 
-	startUnix := time.Date(tStart.Year(), tStart.Month(), tStart.Day(), 0, 0, 0, 0, loc).Unix()
-	endUnix := time.Date(tEnd.Year(), tEnd.Month(), tEnd.Day(), 23, 59, 59, 999999999, loc).Unix()
+	startUnix := time.Date(tStart.Year(), tStart.Month(), tStart.Day(), 0, 0, 0, 0, utils.VietnamLocation).Unix()
+	endUnix := time.Date(tEnd.Year(), tEnd.Month(), tEnd.Day(), 23, 59, 59, 999999999, utils.VietnamLocation).Unix()
 
 	filter := bson.M{
 		"created_at": bson.M{

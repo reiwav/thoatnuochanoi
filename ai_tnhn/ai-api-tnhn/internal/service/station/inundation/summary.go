@@ -3,6 +3,7 @@ package inundation
 import (
 	"ai-api-tnhn/internal/base/mgo/filter"
 	"ai-api-tnhn/internal/models"
+	"ai-api-tnhn/utils"
 	"context"
 	"fmt"
 	"sort"
@@ -19,13 +20,9 @@ func (s *service) GetInundationSummary(ctx context.Context, orgID string, isAllo
 		IsEmployee:                   !isAllowedAll && len(assignedInuIDs) > 0,
 	}
 
-	loc, _ := time.LoadLocation("Asia/Ho_Chi_Minh")
-	if loc == nil {
-		loc = time.Local
-	}
-	t := time.Now().In(loc)
-	startOfDay := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, loc).Unix()
-	endOfDay := time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 999999999, loc).Unix()
+	t := utils.NowVietnam()
+	startOfDay := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, utils.VietnamLocation).Unix()
+	endOfDay := time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 999999999, utils.VietnamLocation).Unix()
 
 	pointsStatus, err := s.GetPointsStatus(ctx, dummyUser, isAllowedAll, orgID)
 	if err != nil {
@@ -67,7 +64,7 @@ func (s *service) GetInundationSummary(ctx context.Context, orgID string, isAllo
 
 		statusText := fmt.Sprintf("Đang %s", levelName)
 		if r.EndTime > 0 && r.EndTime <= endOfDay {
-			statusText = fmt.Sprintf("Đã rút lúc %s", time.Unix(r.EndTime, 0).In(loc).Format("15:04"))
+			statusText = fmt.Sprintf("Đã rút lúc %s", utils.FormatTime(time.Unix(r.EndTime, 0)))
 		}
 
 		stat := InundationStationStat{
@@ -79,7 +76,7 @@ func (s *service) GetInundationSummary(ctx context.Context, orgID string, isAllo
 			Width:          r.Width,
 			Length:         r.Length,
 			FormattedDepth: depthInfo,
-			StartTime:      time.Unix(r.CTime, 0).In(loc).Format("15:04 02/01/2006"),
+			StartTime:      time.Unix(r.CTime, 0).In(utils.VietnamLocation).Format("15:04 02/01/2006"),
 			Duration:       formatDuration(r.CTime, r.EndTime),
 			Description:    r.Description,
 			Color:          r.FloodLevelColor,
@@ -122,12 +119,8 @@ func (s *service) GetInundationSummaryByDate(ctx context.Context, orgID string, 
 	}
 
 	// Calculate start and end of that day (Unix timestamps in Vietnam local timezone)
-	loc, _ := time.LoadLocation("Asia/Ho_Chi_Minh")
-	if loc == nil {
-		loc = time.Local
-	}
-	startOfDay := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, loc).Unix()
-	endOfDay := time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 999999999, loc).Unix()
+	startOfDay := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, utils.VietnamLocation).Unix()
+	endOfDay := time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 999999999, utils.VietnamLocation).Unix()
 
 	dummyUser := &models.User{
 		OrgID:                        orgID,
@@ -190,7 +183,7 @@ func (s *service) GetInundationSummaryByDate(ctx context.Context, orgID string, 
 
 		statusText := fmt.Sprintf("Đang %s", levelName)
 		if r.EndTime > 0 && r.EndTime <= endOfDay {
-			statusText = fmt.Sprintf("Đã rút lúc %s", time.Unix(r.EndTime, 0).In(loc).Format("15:04"))
+			statusText = fmt.Sprintf("Đã rút lúc %s", utils.FormatTime(time.Unix(r.EndTime, 0)))
 		}
 
 		stat := InundationStationStat{
@@ -202,7 +195,7 @@ func (s *service) GetInundationSummaryByDate(ctx context.Context, orgID string, 
 			Width:          r.Width,
 			Length:         r.Length,
 			FormattedDepth: depthInfo,
-			StartTime:      time.Unix(r.CTime, 0).In(loc).Format("15:04 02/01/2006"),
+			StartTime:      time.Unix(r.CTime, 0).In(utils.VietnamLocation).Format("15:04 02/01/2006"),
 			Duration:       formatDuration(r.CTime, r.EndTime),
 			Description:    r.Description,
 			Color:          r.FloodLevelColor,
@@ -214,7 +207,7 @@ func (s *service) GetInundationSummaryByDate(ctx context.Context, orgID string, 
 		statusDetail := fmt.Sprintf("Đang %s", levelName)
 		var detailStr string
 		if r.EndTime > 0 && r.EndTime <= endOfDay {
-			statusDetail = fmt.Sprintf("đã rút lúc %s", time.Unix(r.EndTime, 0).In(loc).Format("15:04"))
+			statusDetail = fmt.Sprintf("đã rút lúc %s", utils.FormatTime(time.Unix(r.EndTime, 0)))
 			detailStr = fmt.Sprintf("%s (%s)", streetName, statusDetail)
 		} else {
 			detailStr = fmt.Sprintf("%s (%s) (%s, %s)", streetName, statusDetail, levelName, depthInfo)

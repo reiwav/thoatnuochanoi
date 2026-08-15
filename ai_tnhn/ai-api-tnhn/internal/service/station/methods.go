@@ -12,12 +12,32 @@ import (
 
 // Rain Station Implementation
 func (s *service) CreateRainStation(ctx context.Context, input *models.RainStation) (*models.RainStation, error) {
+	if input.OldID > 0 {
+		existing, err := s.GetRainStationByOldID(ctx, input.OldID)
+		if err == nil && existing != nil {
+			return nil, web.BadRequest("Mã trạm (OldID) đã tồn tại")
+		}
+	}
 	return s.rainRepo.Create(ctx, input)
 }
 func (s *service) GetRainStation(ctx context.Context, id string) (*models.RainStation, error) {
 	return s.rainRepo.GetByID(ctx, id)
 }
+func (s *service) GetRainStationByOldID(ctx context.Context, oldID int) (*models.RainStation, error) {
+	var station *models.RainStation
+	err := s.rainRepo.R_SelectOne(ctx, bson.M{"old_id": oldID}, &station)
+	if err == mongo.ErrNoDocuments {
+		return nil, nil
+	}
+	return station, err
+}
 func (s *service) UpdateRainStation(ctx context.Context, id string, input *models.RainStation) error {
+	if input.OldID > 0 {
+		existing, err := s.GetRainStationByOldID(ctx, input.OldID)
+		if err == nil && existing != nil && existing.ID != id {
+			return web.BadRequest("Mã trạm (OldID) đã được sử dụng bởi trạm khác")
+		}
+	}
 	return s.rainRepo.Update(ctx, id, input)
 }
 func (s *service) DeleteRainStation(ctx context.Context, id string) error {
@@ -29,12 +49,11 @@ func (s *service) ListRainStations(ctx context.Context, filter filter.Filter) ([
 
 // Lake Station Implementation
 func (s *service) CreateLakeStation(ctx context.Context, input *models.LakeStation) (*models.LakeStation, error) {
-	if input.OldID <= 0 {
-		return nil, web.BadRequest("Mã trạm (OldID) không hợp lệ")
-	}
-	existing, err := s.GetLakeStationByOldID(ctx, input.OldID)
-	if err == nil && existing != nil {
-		return nil, web.BadRequest("Mã trạm (OldID) đã tồn tại")
+	if input.OldID > 0 {
+		existing, err := s.GetLakeStationByOldID(ctx, input.OldID)
+		if err == nil && existing != nil {
+			return nil, web.BadRequest("Mã trạm (OldID) đã tồn tại")
+		}
 	}
 	return s.lakeRepo.Create(ctx, input)
 }
@@ -50,12 +69,11 @@ func (s *service) GetLakeStationByOldID(ctx context.Context, oldID int) (*models
 	return station, err
 }
 func (s *service) UpdateLakeStation(ctx context.Context, id string, input *models.LakeStation) error {
-	if input.OldID <= 0 {
-		return web.BadRequest("Mã trạm (OldID) không hợp lệ")
-	}
-	existing, err := s.GetLakeStationByOldID(ctx, input.OldID)
-	if err == nil && existing != nil && existing.ID != id {
-		return web.BadRequest("Mã trạm (OldID) đã được sử dụng bởi trạm khác")
+	if input.OldID > 0 {
+		existing, err := s.GetLakeStationByOldID(ctx, input.OldID)
+		if err == nil && existing != nil && existing.ID != id {
+			return web.BadRequest("Mã trạm (OldID) đã được sử dụng bởi trạm khác")
+		}
 	}
 	return s.lakeRepo.Update(ctx, id, input)
 }
@@ -68,12 +86,11 @@ func (s *service) ListLakeStations(ctx context.Context, filter filter.Filter) ([
 
 // River Station Implementation
 func (s *service) CreateRiverStation(ctx context.Context, input *models.RiverStation) (*models.RiverStation, error) {
-	if input.OldID <= 0 {
-		return nil, web.BadRequest("Mã trạm (OldID) không hợp lệ")
-	}
-	existing, err := s.GetRiverStationByOldID(ctx, input.OldID)
-	if err == nil && existing != nil {
-		return nil, web.BadRequest("Mã trạm (OldID) đã tồn tại")
+	if input.OldID > 0 {
+		existing, err := s.GetRiverStationByOldID(ctx, input.OldID)
+		if err == nil && existing != nil {
+			return nil, web.BadRequest("Mã trạm (OldID) đã tồn tại")
+		}
 	}
 	return s.riverRepo.Create(ctx, input)
 }
@@ -89,12 +106,11 @@ func (s *service) GetRiverStationByOldID(ctx context.Context, oldID int) (*model
 	return station, err
 }
 func (s *service) UpdateRiverStation(ctx context.Context, id string, input *models.RiverStation) error {
-	if input.OldID <= 0 {
-		return web.BadRequest("Mã trạm (OldID) không hợp lệ")
-	}
-	existing, err := s.GetRiverStationByOldID(ctx, input.OldID)
-	if err == nil && existing != nil && existing.ID != id {
-		return web.BadRequest("Mã trạm (OldID) đã được sử dụng bởi trạm khác")
+	if input.OldID > 0 {
+		existing, err := s.GetRiverStationByOldID(ctx, input.OldID)
+		if err == nil && existing != nil && existing.ID != id {
+			return web.BadRequest("Mã trạm (OldID) đã được sử dụng bởi trạm khác")
+		}
 	}
 	return s.riverRepo.Update(ctx, id, input)
 }

@@ -127,7 +127,7 @@ const adminPages = {
         // {
         //   id: 'water:summary',
         //   permission: 'water:view',
-        //   title: 'Bảng sông hồ',
+        //   title: 'Bảng sông hồ V1',
         //   type: 'item',
         //   url: '/admin/station/water/summary',
         //   icon: icons.IconList,
@@ -136,7 +136,7 @@ const adminPages = {
         {
           id: 'water:summary-v2',
           permission: 'water:view',
-          title: 'Bảng sông hồ',
+          title: 'Bảng sông hồ V2',
           type: 'item',
           url: '/admin/station/water/summary-v2',
           icon: icons.IconTable,

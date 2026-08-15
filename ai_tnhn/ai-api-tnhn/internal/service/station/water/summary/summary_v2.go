@@ -1,39 +1,13 @@
-package water
+package summary
 
 import (
 	"ai-api-tnhn/internal/base/mgo/filter"
+	"ai-api-tnhn/internal/service/station/water/dto"
 	"context"
 	"time"
 )
 
-// LatestWaterRecord giữ nguyên cấu trúc của LakeRecord / RiverRecord trong DB
-type LatestWaterRecord struct {
-	RecordID        string    `json:"record_id"`
-	StationID       int64     `json:"station_id"`
-	StationName     string    `json:"station_name"`
-	Value           float64   `json:"value"`
-	Timestamp       time.Time `json:"timestamp"`
-	Date            string    `json:"date"`
-	Source          string    `json:"source"`
-	ThresholdStatus string    `json:"threshold_status"`
-	MinThreshold    float64   `json:"min_threshold"`
-	MaxThreshold    float64   `json:"max_threshold"`
-}
-
-// WaterStationV2 trả về thông tin trạm kèm bản ghi mực nước mới nhất từ DB
-type WaterStationV2 struct {
-	ID           string             `json:"id"`
-	OldID        int                `json:"old_id"`
-	TenTram      string             `json:"ten_tram"`
-	DiaChi       string             `json:"dia_chi,omitempty"`
-	ThuTu        int                `json:"thu_tu"`
-	Loai         string             `json:"loai"` // "lake" hoặc "river"
-	DataMode     string             `json:"data_mode"`
-	IsAuto       bool               `json:"is_auto"`
-	LatestRecord *LatestWaterRecord `json:"latest_record"`
-}
-
-func (s *service) GetWaterSummaryV2(ctx context.Context) ([]WaterStationV2, error) {
+func (s *service) GetWaterSummaryV2(ctx context.Context) ([]dto.WaterStationV2, error) {
 	f := filter.NewBasicFilter()
 	f.AddWhere("active", "active", true)
 
@@ -47,13 +21,10 @@ func (s *service) GetWaterSummaryV2(ctx context.Context) ([]WaterStationV2, erro
 		return nil, err
 	}
 
-	var stations []WaterStationV2
+	var stations []dto.WaterStationV2
 
 	// Lake Stations
 	for _, lake := range lakeStations {
-		if lake.OldID <= 0 {
-			continue
-		}
 		dataMode := lake.DataMode
 		if dataMode == "" {
 			if lake.IsAuto {
@@ -62,7 +33,7 @@ func (s *service) GetWaterSummaryV2(ctx context.Context) ([]WaterStationV2, erro
 				dataMode = "manual"
 			}
 		}
-		st := WaterStationV2{
+		st := dto.WaterStationV2{
 			ID:       lake.ID,
 			OldID:    lake.OldID,
 			TenTram:  lake.TenTram,
@@ -75,7 +46,7 @@ func (s *service) GetWaterSummaryV2(ctx context.Context) ([]WaterStationV2, erro
 
 		todayStr := time.Now().Format("2006-01-02")
 		if lake.LatestRecord != nil && lake.LatestRecord.Timestamp.Format("2006-01-02") == todayStr {
-			st.LatestRecord = &LatestWaterRecord{
+			st.LatestRecord = &dto.LatestWaterRecord{
 				RecordID:        lake.LatestRecord.RecordID,
 				StationID:       lake.LatestRecord.StationID,
 				StationName:     lake.LatestRecord.StationName,
@@ -95,9 +66,6 @@ func (s *service) GetWaterSummaryV2(ctx context.Context) ([]WaterStationV2, erro
 
 	// River Stations
 	for _, river := range riverStations {
-		if river.OldID <= 0 {
-			continue
-		}
 		dataMode := river.DataMode
 		if dataMode == "" {
 			if river.IsAuto {
@@ -106,7 +74,7 @@ func (s *service) GetWaterSummaryV2(ctx context.Context) ([]WaterStationV2, erro
 				dataMode = "manual"
 			}
 		}
-		st := WaterStationV2{
+		st := dto.WaterStationV2{
 			ID:       river.ID,
 			OldID:    river.OldID,
 			TenTram:  river.TenTram,
@@ -119,7 +87,7 @@ func (s *service) GetWaterSummaryV2(ctx context.Context) ([]WaterStationV2, erro
 
 		todayStr := time.Now().Format("2006-01-02")
 		if river.LatestRecord != nil && river.LatestRecord.Timestamp.Format("2006-01-02") == todayStr {
-			st.LatestRecord = &LatestWaterRecord{
+			st.LatestRecord = &dto.LatestWaterRecord{
 				RecordID:        river.LatestRecord.RecordID,
 				StationID:       river.LatestRecord.StationID,
 				StationName:     river.LatestRecord.StationName,

@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import dayjs from 'dayjs';
 import stationApi from 'api/station';
-import { getSlotTimestamp } from '../utils/gridHelpers';
+import { getSlotTimestamp, getStationId } from '../utils/gridHelpers';
 
 export const useWaterGridSaving = (gridValues, setGridValues, selectedDate, loadData) => {
     const [saving, setSaving] = useState(false);
@@ -11,14 +11,14 @@ export const useWaterGridSaving = (gridValues, setGridValues, selectedDate, load
     const saveSingleCell = useCallback(async (st, slotKey, value, recordId = "") => {
         if (value === '' || value === undefined || value === null || isNaN(parseFloat(value))) return;
         const numVal = parseFloat(value);
-        const oldId = st.OldId || st.old_id || st.Id || st.id;
+        const oldId = getStationId(st);
         const dateStr = selectedDate.format('YYYY-MM-DD');
         const timestamp = getSlotTimestamp(slotKey, selectedDate);
 
         try {
             const res = await stationApi.water.saveSingleGridData({
                 station_type: st.type,
-                station_id: oldId,
+                station_id: Number(oldId),
                 value: numVal,
                 timestamp: timestamp.toISOString(),
                 date: dateStr,

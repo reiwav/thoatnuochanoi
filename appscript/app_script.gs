@@ -28,7 +28,7 @@ function doPost(e) {
 
     // 1. Thay thế các placeholder văn bản đơn giản
     const replacements = [
-      'dd', 'mm', 'yyyy', 'hh', 'noidung', 'time_mua', 
+      'dd', 'mm', 'yyyy', 'hh', 'noidung', 'time_mua', 'time_truoc_mua',
       'so_luong_ung_ngap', 'chi_tiet_cac_diem', 'mo_ta_ung_ngap',
       'hien_trang_mua', 'noi_dung_tram_bom', 'danh_sach_tram_bom'
     ];
@@ -37,13 +37,46 @@ function doPost(e) {
       body.replaceText('\\{' + key + '\\}', value);
     });
 
-    // 2. Vẽ các bảng 2 cột
+    // 2. Vẽ các bảng 2 cột cho Báo cáo chính
     renderSimpleTable(body, '{table1_mua_phuong}', data.table1_mua_phuong);
     renderSimpleTable(body, '{table2_mua_phuong}', data.table2_mua_phuong);
     renderSimpleTable(body, '{table1_mua_xa}', data.table1_mua_xa);
     renderSimpleTable(body, '{table2_mua_xa}', data.table2_mua_xa);
     renderSimpleTable(body, '{table_song}', data.table_song);
     renderSimpleTable(body, '{table_ho}', data.table_ho);
+
+    // 3. Vẽ các bảng Phụ lục nếu template có sẵn placeholder
+    let foundAppendixPlaceholder = false;
+    const appendixKeys = [
+      '{phu_luc_table1_mua_phuong}', '{phu_luc_table2_mua_phuong}',
+      '{phu_luc_table1_mua_xa}', '{phu_luc_table2_mua_xa}',
+      '{phu_luc_table_song}', '{phu_luc_table_ho}',
+      '{phu_luc_table1_song}', '{phu_luc_table2_song}',
+      '{phu_luc_table1_ho}', '{phu_luc_table2_ho}'
+    ];
+
+    appendixKeys.forEach(k => {
+      if (body.findText(k.replace(/[{}]/g, '\\$&'))) {
+        foundAppendixPlaceholder = true;
+      }
+    });
+
+    renderSimpleTable(body, '{phu_luc_table1_mua_phuong}', data.phu_luc_table1_mua_phuong);
+    renderSimpleTable(body, '{phu_luc_table2_mua_phuong}', data.phu_luc_table2_mua_phuong);
+    renderSimpleTable(body, '{phu_luc_table1_mua_xa}', data.phu_luc_table1_mua_xa);
+    renderSimpleTable(body, '{phu_luc_table2_mua_xa}', data.phu_luc_table2_mua_xa);
+    renderWaterTable(body, '{phu_luc_table_song}', data.phu_luc_table_song);
+    renderWaterTable(body, '{phu_luc_table_ho}', data.phu_luc_table_ho);
+    renderSimpleTable(body, '{phu_luc_table1_song}', data.phu_luc_table1_song);
+    renderSimpleTable(body, '{phu_luc_table2_song}', data.phu_luc_table2_song);
+    renderSimpleTable(body, '{phu_luc_table1_ho}', data.phu_luc_table1_ho);
+    renderSimpleTable(body, '{phu_luc_table2_ho}', data.phu_luc_table2_ho);
+
+
+    // 4. Nếu chưa có placeholder phụ lục trong template, tự động chèn phần PHỤ LỤC ở cuối document
+    if (!foundAppendixPlaceholder) {
+      renderAppendixSection(body, data);
+    }
 
     doc.saveAndClose();
 
@@ -63,12 +96,114 @@ function doPost(e) {
 }
 
 /**
- * Tìm placeholder bằng findText, navigate lên parent để xác định context, vẽ table tại chỗ
+ * Tự động tạo phần PHỤ LỤC ở cuối văn bản với đầy đủ tất cả trạm mưa, sông, hồ
+ */
+function renderAppendixSection(body, data) {
+  body.appendPageBreak();
+  const heading = body.appendParagraph("PHỤ LỤC: BẢNG THỐNG KÊ CHI TIẾT TẤT CẢ CÁC TRẠM");
+  heading.setHeading(DocumentApp.ParagraphHeading.HEADING1);
+  heading.setBold(true);
+  heading.setFontSize(14);
+  heading.setSpacingBefore(12);
+  heading.setSpacingAfter(12);
+
+  // 1. Phụ lục Mưa (Phường & Xã)
+  if ((data.phu_luc_table1_mua_phuong && data.phu_luc_table1_mua_phuong.length > 0) ||
+      (data.phu_luc_table1_mua_xa && data.phu_luc_table1_mua_xa.length > 0)) {
+    const pRain = body.appendParagraph("1. Thống kê lượng mưa tất cả các trạm");
+    pRain.setHeading(DocumentApp.ParagraphHeading.HEADING2);
+    pRain.setBold(true);
+    pRain.setFontSize(13);
+    pRain.setSpacingBefore(10);
+    pRain.setSpacingAfter(6);
+
+    if (data.phu_luc_table1_mua_phuong && data.phu_luc_table1_mua_phuong.length > 0) {
+      const pTitle = body.appendParagraph("a) Trạm đo mưa khu vực Phường:");
+      pTitle.setBold(true);
+      appendTwoSideTables(body, data.phu_luc_table1_mua_phuong, data.phu_luc_table2_mua_phuong);
+    }
+
+    if (data.phu_luc_table1_mua_xa && data.phu_luc_table1_mua_xa.length > 0) {
+      const xTitle = body.appendParagraph("b) Trạm đo mưa khu vực Xã:");
+      xTitle.setBold(true);
+      appendTwoSideTables(body, data.phu_luc_table1_mua_xa, data.phu_luc_table2_mua_xa);
+    }
+  }
+
+  // 2. Phụ lục Sông
+  if (data.phu_luc_table_song && data.phu_luc_table_song.length > 0) {
+    const pRiver = body.appendParagraph("2. Thống kê mực nước tất cả các trạm Sông");
+    pRiver.setHeading(DocumentApp.ParagraphHeading.HEADING2);
+    pRiver.setBold(true);
+    pRiver.setFontSize(13);
+    pRiver.setSpacingBefore(10);
+    pRiver.setSpacingAfter(6);
+
+    if (data.phu_luc_table1_song && data.phu_luc_table2_song) {
+      appendTwoSideTables(body, data.phu_luc_table1_song, data.phu_luc_table2_song);
+    } else {
+      const table = body.appendTable(data.phu_luc_table_song);
+      applyAppendixWaterTableStyle(table, data.phu_luc_table_song.length);
+    }
+  }
+
+  // 3. Phụ lục Hồ
+  if (data.phu_luc_table_ho && data.phu_luc_table_ho.length > 0) {
+    const pLake = body.appendParagraph("3. Thống kê mực nước tất cả các trạm Hồ");
+    pLake.setHeading(DocumentApp.ParagraphHeading.HEADING2);
+    pLake.setBold(true);
+    pLake.setFontSize(13);
+    pLake.setSpacingBefore(10);
+    pLake.setSpacingAfter(6);
+
+    if (data.phu_luc_table1_ho && data.phu_luc_table2_ho) {
+      appendTwoSideTables(body, data.phu_luc_table1_ho, data.phu_luc_table2_ho);
+    } else {
+      const table = body.appendTable(data.phu_luc_table_ho);
+      applyAppendixWaterTableStyle(table, data.phu_luc_table_ho.length);
+    }
+  }
+}
+
+/**
+ * Tự động chèn 2 bảng song song trong ô outer table không viền (dành cho bảng 2 cột gốc)
+ */
+function appendTwoSideTables(body, data1, data2) {
+  if (!data1 || data1.length === 0) return;
+  if (!data2 || data2.length <= 1) {
+    const t = body.appendTable(data1);
+    applyTwoColumnStyle(t, data1.length);
+    return;
+  }
+
+  const outerTable = body.appendTable([['', '']]);
+  outerTable.setBorderWidth(0);
+  
+  const cell1 = outerTable.getRow(0).getCell(0);
+  const cell2 = outerTable.getRow(0).getCell(1);
+
+  if (cell1.getNumChildren() > 0 && cell1.getChild(0).getType() === DocumentApp.ElementType.PARAGRAPH) {
+    cell1.removeChild(cell1.getChild(0));
+  }
+  if (cell2.getNumChildren() > 0 && cell2.getChild(0).getType() === DocumentApp.ElementType.PARAGRAPH) {
+    cell2.removeChild(cell2.getChild(0));
+  }
+
+  const t1 = cell1.appendTable(data1);
+  applyTwoColumnStyle(t1, data1.length);
+
+  const t2 = cell2.appendTable(data2);
+  applyTwoColumnStyle(t2, data2.length);
+}
+
+
+
+/**
+ * Tìm placeholder bằng findText cho các bảng 2 cột thông thường
  */
 function renderSimpleTable(body, placeholder, dataArray) {
   if (!dataArray || dataArray.length === 0) return;
 
-  // Escape regex cho findText
   const regex = placeholder.replace(/[{}]/g, '\\$&');
   const rangeElement = body.findText(regex);
   if (!rangeElement) return;
@@ -81,7 +216,7 @@ function renderSimpleTable(body, placeholder, dataArray) {
   if (container.getType() === DocumentApp.ElementType.TABLE_CELL) {
     const cell = container;
     cell.removeChild(paragraph);
-    table = cell.appendTable(dataArray); // Vẽ đúng 2 cột gốc
+    table = cell.appendTable(dataArray);
     
     if (cell.getNumChildren() > 1) {
       const first = cell.getChild(0);
@@ -101,15 +236,50 @@ function renderSimpleTable(body, placeholder, dataArray) {
 }
 
 /**
- * Áp dụng style cho bảng con (chữ 13pt, padding 3, viền đen)
+ * Tìm placeholder bằng findText cho bảng Sông / Hồ Phụ lục
+ */
+function renderWaterTable(body, placeholder, dataArray) {
+  if (!dataArray || dataArray.length === 0) return;
+
+  const regex = placeholder.replace(/[{}]/g, '\\$&');
+  const rangeElement = body.findText(regex);
+  if (!rangeElement) return;
+
+  const element = rangeElement.getElement();
+  const paragraph = element.getParent();
+  const container = paragraph.getParent();
+
+  let table;
+  if (container.getType() === DocumentApp.ElementType.TABLE_CELL) {
+    const cell = container;
+    cell.removeChild(paragraph);
+    table = cell.appendTable(dataArray);
+    
+    if (cell.getNumChildren() > 1) {
+      const first = cell.getChild(0);
+      if (first.getType() === DocumentApp.ElementType.PARAGRAPH && first.getText().trim() === "") {
+        cell.removeChild(first);
+      }
+    }
+  } else if (container.getType() === DocumentApp.ElementType.BODY_SECTION) {
+    const childIndex = body.getChildIndex(paragraph);
+    table = body.insertTable(childIndex + 1, dataArray);
+    paragraph.removeFromParent();
+  }
+
+  if (table) {
+    applyAppendixWaterTableStyle(table, dataArray.length);
+  }
+}
+
+/**
+ * GỐC 100%: Áp dụng style cho tất cả bảng 2 cột (chữ 13pt, padding 3, viền đen)
  */
 function applyTwoColumnStyle(table, numRows) {
-  // Set alignment về LEFT để tránh table tự giãn 100% chiều rộng cell cha
   const tableAttr = {};
   tableAttr[DocumentApp.Attribute.HORIZONTAL_ALIGNMENT] = DocumentApp.HorizontalAlignment.LEFT;
   table.setAttributes(tableAttr);
 
-  // Style cho từng ô: chữ to 13pt, có padding theo yêu cầu user
   const cellStyle = {};
   cellStyle[DocumentApp.Attribute.BORDER_COLOR] = '#000000';
   cellStyle[DocumentApp.Attribute.BORDER_WIDTH] = 1;
@@ -119,15 +289,12 @@ function applyTwoColumnStyle(table, numRows) {
   cellStyle[DocumentApp.Attribute.PADDING_LEFT] = 3;
   cellStyle[DocumentApp.Attribute.PADDING_RIGHT] = 3;
 
-  const colWidths = [120, 80]; // Tên (110) | Lượng mưa (80)
-
   for (let i = 0; i < numRows; i++) {
     const row = table.getRow(i);
     for (let j = 0; j < row.getNumCells(); j++) {
       const cell = row.getCell(j);
       cell.setAttributes(cellStyle);
       
-      // Chỉnh giãn dòng của Paragraph bên trong Cell
       for (let k = 0; k < cell.getNumChildren(); k++) {
         const child = cell.getChild(k);
         if (child.getType() === DocumentApp.ElementType.PARAGRAPH) {
@@ -135,7 +302,76 @@ function applyTwoColumnStyle(table, numRows) {
         }
       }
 
-      // Dùng setWidth trực tiếp trên Cell (ép phê hơn setColumnWidth trong bảng lồng)
+      if (i === 0) {
+        cell.editAsText().setBold(true);
+        cell.setBackgroundColor('#f3f3f3');
+      }
+    }
+  }
+}
+
+/**
+ * CHỈ RIÊNG BẢNG SÔNG / HỒ PHỤ LỤC (3-4 CỘT)
+ */
+function applyAppendixWaterTableStyle(table, numRows) {
+  const isNested = table.getParent() && table.getParent().getType() === DocumentApp.ElementType.TABLE_CELL;
+
+  const tableAttr = {};
+  tableAttr[DocumentApp.Attribute.HORIZONTAL_ALIGNMENT] = DocumentApp.HorizontalAlignment.LEFT;
+  table.setAttributes(tableAttr);
+
+  if (numRows <= 0) return;
+
+  const cols = table.getRow(0).getNumCells();
+  let colWidths = [198, 90, 90, 90];
+  let fontSize = 11;
+
+  if (isNested) {
+    if (cols >= 4) {
+      colWidths = [90, 44, 44, 48];
+      fontSize = 9.5;
+    } else if (cols === 3) {
+      colWidths = [108, 60, 60];
+      fontSize = 10.5;
+    }
+  } else {
+    if (cols >= 4) {
+      colWidths = [198, 90, 90, 90];
+      fontSize = 11;
+    } else if (cols === 3) {
+      colWidths = [228, 120, 120];
+      fontSize = 12;
+    }
+  }
+
+  const cellStyle = {};
+  cellStyle[DocumentApp.Attribute.BORDER_COLOR] = '#000000';
+  cellStyle[DocumentApp.Attribute.BORDER_WIDTH] = 1;
+  cellStyle[DocumentApp.Attribute.FONT_SIZE] = fontSize;
+  cellStyle[DocumentApp.Attribute.PADDING_TOP] = 3;
+  cellStyle[DocumentApp.Attribute.PADDING_BOTTOM] = 3;
+  cellStyle[DocumentApp.Attribute.PADDING_LEFT] = 3;
+  cellStyle[DocumentApp.Attribute.PADDING_RIGHT] = 3;
+
+  for (let i = 0; i < numRows; i++) {
+    const row = table.getRow(i);
+    for (let j = 0; j < row.getNumCells(); j++) {
+      const cell = row.getCell(j);
+      cell.setAttributes(cellStyle);
+      
+      for (let k = 0; k < cell.getNumChildren(); k++) {
+        const child = cell.getChild(k);
+        if (child.getType() === DocumentApp.ElementType.PARAGRAPH) {
+          const p = child.asParagraph();
+          p.setSpacingAfter(0).setLineSpacing(1.15);
+          if (j > 0) {
+            p.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+          } else {
+            p.setAlignment(DocumentApp.HorizontalAlignment.LEFT);
+          }
+        }
+      }
+
       if (j < colWidths.length) {
         cell.setWidth(colWidths[j]);
       }

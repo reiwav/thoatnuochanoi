@@ -65,6 +65,10 @@ func ensureCollections(ctx context.Context, db *mongo.Database) error {
 
 func ensureIndexes(ctx context.Context, db *mongo.Database) error {
 	partialFilter := bson.D{{Key: "deleted_at", Value: 0}}
+	partialFilterOldID := bson.D{
+		{Key: "deleted_at", Value: 0},
+		{Key: "old_id", Value: bson.M{"$gt": 0}},
+	}
 
 	indexMap := map[string][]mongo.IndexModel{
 		"users": {
@@ -90,17 +94,17 @@ func ensureIndexes(ctx context.Context, db *mongo.Database) error {
 		},
 		"rain_stations": {
 			{Keys: bson.D{{Key: "code", Value: 1}}, Options: options.Index().SetUnique(true).SetPartialFilterExpression(partialFilter)},
-			{Keys: bson.D{{Key: "old_id", Value: 1}}, Options: options.Index().SetUnique(true).SetPartialFilterExpression(partialFilter)},
+			{Keys: bson.D{{Key: "old_id", Value: 1}}, Options: options.Index().SetUnique(true).SetPartialFilterExpression(partialFilterOldID)},
 			{Keys: bson.D{{Key: "org_id", Value: 1}}},
 		},
 		"lake_stations": {
 			{Keys: bson.D{{Key: "code", Value: 1}}, Options: options.Index().SetUnique(true).SetPartialFilterExpression(partialFilter)},
-			{Keys: bson.D{{Key: "old_id", Value: 1}}, Options: options.Index().SetUnique(true).SetPartialFilterExpression(partialFilter)},
+			{Keys: bson.D{{Key: "old_id", Value: 1}}, Options: options.Index().SetUnique(true).SetPartialFilterExpression(partialFilterOldID)},
 			{Keys: bson.D{{Key: "org_id", Value: 1}}},
 		},
 		"river_stations": {
 			{Keys: bson.D{{Key: "code", Value: 1}}, Options: options.Index().SetUnique(true).SetPartialFilterExpression(partialFilter)},
-			{Keys: bson.D{{Key: "old_id", Value: 1}}, Options: options.Index().SetUnique(true).SetPartialFilterExpression(partialFilter)},
+			{Keys: bson.D{{Key: "old_id", Value: 1}}, Options: options.Index().SetUnique(true).SetPartialFilterExpression(partialFilterOldID)},
 			{Keys: bson.D{{Key: "org_id", Value: 1}}},
 		},
 		"rain_records": {

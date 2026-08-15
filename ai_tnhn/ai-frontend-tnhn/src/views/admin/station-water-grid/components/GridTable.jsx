@@ -7,12 +7,7 @@ import {
 import PermissionGuard from 'ui-component/PermissionGuard';
 import GridCellInput from './GridCellInput';
 import useStickyTableHeader from '../hooks/useStickyTableHeader';
-
-const getCellTextColor = (status) => {
-    if (status === 'high') return 'error.main'; // Red
-    if (status === 'low') return 'warning.dark'; // Orange
-    return 'inherit'; // Normal text color
-};
+import { getStationId } from '../utils/gridHelpers';
 
 const toRoman = (num) => {
     const romanMap = [
@@ -176,7 +171,7 @@ const GridTable = ({
                                         </TableRow>
 
                                         {group.stations.map((st, idx) => {
-                                            const oldId = st.OldId || st.old_id || st.Id || st.id;
+                                            const oldId = getStationId(st);
 
                                             if (mode === 'fixed') {
                                                 const v630 = gridValues[`${st.type}_${oldId}_6h30`] || '';

@@ -79,7 +79,7 @@ export const useGridDataLoader = (selectedDate) => {
                     records.forEach(item => {
                         const stType = item.station_type;
                         const stId = item.station_id;
-                        if (!stType || !stId || !item.timestamp) return;
+                        if (!stType || stId === undefined || stId === null || !item.timestamp) return;
 
                         const key = `${stType}_${stId}`;
                         const itemTime = dayjs(item.timestamp);
@@ -91,12 +91,14 @@ export const useGridDataLoader = (selectedDate) => {
                             initialValues[`${key}_nowTime`] = itemTime.toISOString();
                         }
 
+                        const hour = itemTime.hour();
+                        const minute = itemTime.minute();
                         const timeStr = itemTime.format('HH:mm');
 
-                        if (timeStr === '06:30') {
+                        if (hour === 6 && minute === 30) {
                             initialValues[`${key}_6h30`] = item.value;
                             initialValues[`${key}_6h30_id`] = item.record_id;
-                        } else if (timeStr === '13:30') {
+                        } else if (hour === 13 && minute === 30) {
                             initialValues[`${key}_13h30`] = item.value;
                             initialValues[`${key}_13h30_id`] = item.record_id;
                         }
@@ -109,10 +111,7 @@ export const useGridDataLoader = (selectedDate) => {
                 console.error('Failed to load grid history records:', histErr);
             }
 
-            setGridValues(prev => ({
-                ...initialValues,
-                ...prev
-            }));
+            setGridValues(prev => (isSilent ? { ...initialValues, ...prev } : initialValues));
         } catch (err) {
             console.error('Failed to load stations for Grid Data Entry:', err);
         } finally {

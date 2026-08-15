@@ -7,6 +7,7 @@ import (
 	"ai-api-tnhn/internal/repository"
 	"ai-api-tnhn/internal/service/setting"
 	"ai-api-tnhn/internal/service/station"
+	"ai-api-tnhn/utils"
 	"context"
 	"fmt"
 	"time"
@@ -54,13 +55,8 @@ func (w *worker) Start(ctx context.Context) {
 	// Initial sync on startup
 	go w.sync(ctx)
 
-	loc, err := time.LoadLocation("Asia/Ho_Chi_Minh")
-	if err != nil {
-		loc = time.FixedZone("GMT+7", 7*60*60)
-	}
-
-	c := cron.New(cron.WithLocation(loc))
-	_, err = c.AddFunc("1 7 * * *", func() {
+	c := cron.New(cron.WithLocation(utils.VietnamLocation))
+	_, err := c.AddFunc("1 7 * * *", func() {
 		w.sync(ctx)
 	})
 	if err != nil {

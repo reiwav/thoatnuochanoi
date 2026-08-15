@@ -33,6 +33,7 @@ const MonthlyGridTable = ({
     loading,
     daysInMonth,
     groupedStations,
+    activeSetting,
     gridData,
     saveSingleCell,
     selectedMonth,
@@ -265,6 +266,7 @@ const MonthlyGridTable = ({
                                     gridData={gridData}
                                     saveSingleCell={saveSingleCell}
                                     selectedMonth={selectedMonth}
+                                    activeSetting={activeSetting}
                                     activeEditDays={activeEditDays}
                                     toggleDayEditMode={toggleDayEditMode}
                                 />

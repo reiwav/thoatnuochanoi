@@ -1,5 +1,8 @@
 package constant
 
+// ModelAIVersion is the Gemini model used for every AI call in the system.
+const ModelAIVersion = "gemini-2.5-flash"
+
 const (
 	// Standard Tools
 	ToolGoogleStatus               = "get_google_status"
@@ -13,6 +16,7 @@ const (
 	ToolWeatherForecast            = "get_weather_forecast"
 	ToolLiveWaterSummary           = "get_live_water_summary"
 	ToolLiveInundationSummary      = "get_live_inundation_summary"
+	ToolInundationHistoryByRange   = "get_inundation_history_by_range"
 	ToolLivePumpingSummary         = "get_live_pumping_summary"
 	ToolLiveSluiceGateSummary      = "get_live_sluice_gate_summary"
 	ToolRainSummaryByWard          = "get_rain_summary_by_ward"

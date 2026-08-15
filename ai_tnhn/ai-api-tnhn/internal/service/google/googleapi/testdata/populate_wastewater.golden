@@ -1,0 +1,28 @@
+{
+  "wastewater": [
+    {
+      "STT": 1,
+      "Tên": "NM Yên Sở",
+      "Báo cáo": "Vận hành ổn định, nước đầu ra trong",
+      "Thời gian": "13:13 25/02/2026"
+    },
+    {
+      "STT": 2,
+      "Tên": "NM Bảy Mẫu",
+      "Báo cáo": "Bình thường",
+      "Thời gian": "13:23 25/02/2026"
+    },
+    {
+      "STT": 3,
+      "Tên": "NM Kim Liên",
+      "Báo cáo": "Bình thường",
+      "Thời gian": "-"
+    },
+    {
+      "STT": 4,
+      "Tên": "NM Trúc Bạch",
+      "Báo cáo": "Bình thường",
+      "Thời gian": "-"
+    }
+  ]
+}

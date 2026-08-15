@@ -1,0 +1,20 @@
+[
+  {
+    "Tên cửa phai": "Cửa phai Thanh Liệt",
+    "Mở": 2,
+    "Đóng": 1,
+    "Tổng số cửa": 3,
+    "Cập nhật": "11:25 07/03/2026",
+    "Ghi chú": "Mở 2 cửa tiêu nước",
+    "priority": 1
+  },
+  {
+    "Tên cửa phai": "Cửa phai Hồ Tây A",
+    "Mở": 0,
+    "Đóng": 5,
+    "Tổng số cửa": 5,
+    "Cập nhật": "08:10 07/03/2026",
+    "Ghi chú": "",
+    "priority": 0
+  }
+]

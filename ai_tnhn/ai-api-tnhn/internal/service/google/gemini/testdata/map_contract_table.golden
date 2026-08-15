@@ -1,0 +1,11 @@
+{
+  "contracts": {
+    "contracts": [
+      {
+        "code": "HD-01",
+        "value": 1500000
+      }
+    ]
+  },
+  "empty_key_ignored": {}
+}

@@ -1,0 +1,44 @@
+{
+  "pumping_stations": [
+    {
+      "Tên trạm bơm": "Trạm bơm Yên Sở",
+      "Vận hành": 2,
+      "Không VH": 1,
+      "Bảo dưỡng": 1,
+      "Mất tín hiệu": 0,
+      "Tổng số bơm": 4,
+      "Cập nhật": "11:20 07/03/2026",
+      "priority": 1
+    },
+    {
+      "Tên trạm bơm": "Trạm bơm Đồng Bông 1",
+      "Vận hành": 0,
+      "Không VH": 0,
+      "Bảo dưỡng": 0,
+      "Mất tín hiệu": 3,
+      "Tổng số bơm": 3,
+      "Cập nhật": "09:00 07/03/2026",
+      "priority": 2
+    },
+    {
+      "Tên trạm bơm": "Trạm bơm Cổ Nhuế",
+      "Vận hành": 0,
+      "Không VH": 0,
+      "Bảo dưỡng": 0,
+      "Mất tín hiệu": 0,
+      "Tổng số bơm": 0,
+      "Cập nhật": "",
+      "priority": 0
+    },
+    {
+      "Tên trạm bơm": "Trạm bơm Bắc Thăng Long",
+      "Vận hành": 0,
+      "Không VH": 2,
+      "Bảo dưỡng": 0,
+      "Mất tín hiệu": 0,
+      "Tổng số bơm": 2,
+      "Cập nhật": "10:00 07/03/2026",
+      "priority": 1
+    }
+  ]
+}

@@ -1,0 +1,140 @@
+[
+  {
+    "tool": "get_live_rain_summary",
+    "key": "rains"
+  },
+  {
+    "tool": "get_rain_data_by_date",
+    "key": "rains"
+  },
+  {
+    "tool": "get_rain_analytics",
+    "key": "rains"
+  },
+  {
+    "tool": "get_rain_summary_by_ward",
+    "key": "rains"
+  },
+  {
+    "tool": "get_live_water_summary",
+    "key": "water_summary"
+  },
+  {
+    "tool": "get_lake_data_by_date",
+    "key": "lakes"
+  },
+  {
+    "tool": "get_river_data_by_date",
+    "key": "rivers"
+  },
+  {
+    "tool": "get_live_inundation_summary",
+    "key": "inundations"
+  },
+  {
+    "tool": "get_inundation_history_by_range",
+    "key": "inundations"
+  },
+  {
+    "tool": "get_live_pumping_summary",
+    "key": "pumping_summary"
+  },
+  {
+    "tool": "get_live_sluice_gate_summary",
+    "key": "sluice_gates"
+  },
+  {
+    "tool": "get_weather_forecast",
+    "key": "weather_forecasts"
+  },
+  {
+    "tool": "list_stations",
+    "args": {
+      "type": "rain"
+    },
+    "key": "rains"
+  },
+  {
+    "tool": "list_stations",
+    "args": {
+      "type": "inundation"
+    },
+    "key": "inundations"
+  },
+  {
+    "tool": "list_stations",
+    "args": {
+      "type": "lake"
+    },
+    "key": "waters"
+  },
+  {
+    "tool": "list_stations",
+    "args": {
+      "type": "river"
+    },
+    "key": "waters"
+  },
+  {
+    "tool": "list_stations",
+    "key": "stations"
+  },
+  {
+    "tool": "list_stations_by_type",
+    "args": {
+      "type": "rain"
+    },
+    "key": "rains"
+  },
+  {
+    "tool": "list_stations_by_type",
+    "args": {
+      "type": "lake"
+    },
+    "key": "waters"
+  },
+  {
+    "tool": "get_unfinished_emergency_work_history",
+    "key": "emergencies"
+  },
+  {
+    "tool": "list_emergency_reports",
+    "key": "emergencies"
+  },
+  {
+    "tool": "get_recent_emergency_reports",
+    "key": "emergencies"
+  },
+  {
+    "tool": "get_contract_summary",
+    "key": "contracts"
+  },
+  {
+    "tool": "get_expiring_contracts",
+    "key": "contracts"
+  },
+  {
+    "tool": "get_expired_contracts",
+    "key": "contracts"
+  },
+  {
+    "tool": "get_contract_stages_due_soon",
+    "key": "contracts"
+  },
+  {
+    "tool": "get_contract_stages_passed",
+    "key": "contracts"
+  },
+  {
+    "tool": "search_contracts",
+    "key": "contracts"
+  },
+  {
+    "tool": "get_google_status",
+    "key": "get_google_status"
+  },
+  {
+    "tool": "some_unmapped_tool",
+    "key": "some_unmapped_tool"
+  }
+]

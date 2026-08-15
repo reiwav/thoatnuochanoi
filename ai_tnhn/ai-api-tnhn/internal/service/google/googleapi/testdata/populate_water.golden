@@ -1,0 +1,56 @@
+{
+  "lakes": [
+    {
+      "STT": 1,
+      "Tên": "Hồ Bảy Mẫu",
+      "Địa chỉ": "Thống Nhất",
+      "Giá trị": "5.25",
+      "Cập nhật": "10:30",
+      "Trạng thái": "Vượt ngưỡng cao",
+      "color": "high",
+      "priority": 1
+    },
+    {
+      "STT": 2,
+      "Tên": "Hồ Thiền Quang",
+      "Địa chỉ": "Trần Nhân Tông",
+      "Giá trị": "...",
+      "Cập nhật": "...",
+      "Trạng thái": "Chưa có dữ liệu",
+      "color": "no_data",
+      "priority": 2
+    },
+    {
+      "STT": 3,
+      "Tên": "Hồ Tây",
+      "Địa chỉ": "Tây Hồ",
+      "Giá trị": "3.00",
+      "Cập nhật": "11:00",
+      "Trạng thái": "Bình thường",
+      "color": "normal",
+      "priority": 3
+    }
+  ],
+  "rivers": [
+    {
+      "STT": 1,
+      "Tên": "Sông Tô Lịch",
+      "Địa chỉ": "Cầu Giấy",
+      "Giá trị": "...",
+      "Cập nhật": "...",
+      "Trạng thái": "Chưa có dữ liệu",
+      "color": "no_data",
+      "priority": 1
+    },
+    {
+      "STT": 2,
+      "Tên": "Sông Nhuệ",
+      "Địa chỉ": "Hà Đông",
+      "Giá trị": "1.50",
+      "Cập nhật": "10:50",
+      "Trạng thái": "Dưới ngưỡng thấp",
+      "color": "low",
+      "priority": 2
+    }
+  ]
+}

@@ -1,0 +1,237 @@
+{
+  "text": "Dưới đây là thông tin chi tiết:",
+  "tables": {
+    "inundations": [
+      {
+        "STT": 1,
+        "Tên điểm ngập": "Phan Bội Châu",
+        "Đơn vị quản lý": "Xí nghiệp thoát nước số 1",
+        "Thời gian": "08:15 07/03/2026",
+        "Kích thước (DxRxS)": "100 x 50 x 0.25",
+        "Trạng thái": "Đang ngập",
+        "color": "#FF0000",
+        "point_id": "p1",
+        "report_id": "rp1"
+      },
+      {
+        "STT": 2,
+        "Tên điểm ngập": "Nguyễn Khuyến",
+        "Đơn vị quản lý": "Xí nghiệp thoát nước số 2",
+        "Thời gian": "09:00 07/03/2026",
+        "Kích thước (DxRxS)": " x  x 0.00",
+        "Trạng thái": "Đã rút",
+        "color": "",
+        "point_id": "p2",
+        "report_id": "rp2"
+      }
+    ],
+    "lakes": [
+      {
+        "STT": 1,
+        "Tên": "Hồ Bảy Mẫu",
+        "Địa chỉ": "Thống Nhất",
+        "Giá trị": "5.25",
+        "Cập nhật": "10:30",
+        "Trạng thái": "Vượt ngưỡng cao",
+        "color": "high",
+        "priority": 1
+      },
+      {
+        "STT": 2,
+        "Tên": "Hồ Thiền Quang",
+        "Địa chỉ": "Trần Nhân Tông",
+        "Giá trị": "...",
+        "Cập nhật": "...",
+        "Trạng thái": "Chưa có dữ liệu",
+        "color": "no_data",
+        "priority": 2
+      },
+      {
+        "STT": 3,
+        "Tên": "Hồ Tây",
+        "Địa chỉ": "Tây Hồ",
+        "Giá trị": "3.00",
+        "Cập nhật": "11:00",
+        "Trạng thái": "Bình thường",
+        "color": "normal",
+        "priority": 3
+      }
+    ],
+    "pumping_stations": [
+      {
+        "Tên trạm bơm": "Trạm bơm Yên Sở",
+        "Vận hành": 2,
+        "Không VH": 1,
+        "Bảo dưỡng": 1,
+        "Mất tín hiệu": 0,
+        "Tổng số bơm": 4,
+        "Cập nhật": "11:20 07/03/2026",
+        "priority": 1
+      },
+      {
+        "Tên trạm bơm": "Trạm bơm Đồng Bông 1",
+        "Vận hành": 0,
+        "Không VH": 0,
+        "Bảo dưỡng": 0,
+        "Mất tín hiệu": 3,
+        "Tổng số bơm": 3,
+        "Cập nhật": "09:00 07/03/2026",
+        "priority": 2
+      },
+      {
+        "Tên trạm bơm": "Trạm bơm Cổ Nhuế",
+        "Vận hành": 0,
+        "Không VH": 0,
+        "Bảo dưỡng": 0,
+        "Mất tín hiệu": 0,
+        "Tổng số bơm": 0,
+        "Cập nhật": "",
+        "priority": 0
+      },
+      {
+        "Tên trạm bơm": "Trạm bơm Bắc Thăng Long",
+        "Vận hành": 0,
+        "Không VH": 2,
+        "Bảo dưỡng": 0,
+        "Mất tín hiệu": 0,
+        "Tổng số bơm": 2,
+        "Cập nhật": "10:00 07/03/2026",
+        "priority": 1
+      }
+    ],
+    "rains": [
+      {
+        "STT": 1,
+        "Trạm": "Trạm Đông Anh",
+        "Địa chỉ": "Đông Anh",
+        "Lượng mưa": "30.0",
+        "Thời gian": "06:00",
+        "Trạng thái": "✅ Đã tạnh",
+        "type": "xa",
+        "priority": 5,
+        "total_rain": 30,
+        "id": "r2",
+        "old_id": 102,
+        "is_raining": false
+      },
+      {
+        "STT": 2,
+        "Trạm": "Trạm Sóc Sơn",
+        "Địa chỉ": "Sóc Sơn",
+        "Lượng mưa": "5.0",
+        "Thời gian": "05:00 - 07:30",
+        "Trạng thái": "✅ Đã tạnh",
+        "type": "xa",
+        "priority": 5,
+        "total_rain": 5,
+        "id": "r5",
+        "old_id": 105,
+        "is_raining": false
+      },
+      {
+        "STT": 3,
+        "Trạm": "Trạm Cầu Giấy",
+        "Địa chỉ": "Cầu Giấy",
+        "Lượng mưa": "22.0",
+        "Thời gian": "",
+        "Trạng thái": "🌧️ Đang mưa",
+        "type": "phuong",
+        "priority": 3,
+        "total_rain": 22,
+        "id": "r4",
+        "old_id": 104,
+        "is_raining": true
+      },
+      {
+        "STT": 4,
+        "Trạm": "Trạm Ba Đình",
+        "Địa chỉ": "Ba Đình",
+        "Lượng mưa": "10.5",
+        "Thời gian": "09:00",
+        "Trạng thái": "✅ Đã tạnh",
+        "type": "phuong",
+        "priority": 3,
+        "total_rain": 10.5,
+        "id": "r3",
+        "old_id": 103,
+        "is_raining": false
+      },
+      {
+        "STT": 5,
+        "Trạm": "Trạm Hoàn Kiếm",
+        "Địa chỉ": "Hoàn Kiếm",
+        "Lượng mưa": "10.5",
+        "Thời gian": "07:00 - 08:00",
+        "Trạng thái": "🌧️ Đang mưa",
+        "type": "phuong",
+        "priority": 1,
+        "total_rain": 10.5,
+        "id": "r1",
+        "old_id": 101,
+        "is_raining": true
+      },
+      {
+        "STT": 6,
+        "Trạm": "Trạm Tây Hồ",
+        "Địa chỉ": "Tây Hồ",
+        "Lượng mưa": "1.0",
+        "Thời gian": "04:00 - 04:30",
+        "Trạng thái": "✅ Đã tạnh",
+        "type": "Phường Tây Hồ",
+        "priority": 2,
+        "total_rain": 1,
+        "id": "r6",
+        "old_id": 106,
+        "is_raining": false
+      }
+    ],
+    "rivers": [
+      {
+        "STT": 1,
+        "Tên": "Sông Tô Lịch",
+        "Địa chỉ": "Cầu Giấy",
+        "Giá trị": "...",
+        "Cập nhật": "...",
+        "Trạng thái": "Chưa có dữ liệu",
+        "color": "no_data",
+        "priority": 1
+      },
+      {
+        "STT": 2,
+        "Tên": "Sông Nhuệ",
+        "Địa chỉ": "Hà Đông",
+        "Giá trị": "1.50",
+        "Cập nhật": "10:50",
+        "Trạng thái": "Dưới ngưỡng thấp",
+        "color": "low",
+        "priority": 2
+      }
+    ],
+    "wastewater": [
+      {
+        "STT": 1,
+        "Tên": "NM Yên Sở",
+        "Báo cáo": "Vận hành ổn định, nước đầu ra trong",
+        "Thời gian": "13:13 25/02/2026"
+      },
+      {
+        "STT": 2,
+        "Tên": "NM Bảy Mẫu",
+        "Báo cáo": "Bình thường",
+        "Thời gian": "13:23 25/02/2026"
+      },
+      {
+        "STT": 3,
+        "Tên": "NM Kim Liên",
+        "Báo cáo": "Bình thường",
+        "Thời gian": "-"
+      },
+      {
+        "STT": 4,
+        "Tên": "NM Trúc Bạch",
+        "Báo cáo": "Bình thường",
+        "Thời gian": "-"
+      }
+    ]
+  }
+}

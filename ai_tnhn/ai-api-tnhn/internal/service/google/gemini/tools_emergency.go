@@ -12,7 +12,9 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func (s *service) handleCT(ctx context.Context, c *genai.FunctionCall, uID string) (interface{}, error) {
+// handleEmergencyTool serves the emergency-construction tool family: progress
+// reporting plus the various history and listing queries.
+func (s *service) handleEmergencyTool(ctx context.Context, c *genai.FunctionCall, uID string) (interface{}, error) {
 	switch c.Name {
 	case constant.ToolReportEmergencyProgress:
 		p := &models.EmergencyConstructionProgress{ConstructionID: c.Args["construction_id"].(string), ReportDate: time.Now().Unix(), WorkDone: c.Args["work_done"].(string), ProgressPercentage: int(c.Args["progress_percentage"].(float64)), Issues: c.Args["issues"].(string), IsCompleted: c.Args["is_completed"].(bool), ReportedBy: uID}

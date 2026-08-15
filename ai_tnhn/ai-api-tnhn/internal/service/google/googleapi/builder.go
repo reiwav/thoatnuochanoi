@@ -1,10 +1,12 @@
 package googleapi
 
 import (
-	"ai-api-tnhn/internal/service/google/gemini/promt"
 	"fmt"
 	"strings"
 	"time"
+
+	"ai-api-tnhn/internal/service/google/gemini/promt"
+	"ai-api-tnhn/utils"
 )
 
 func (s *service) buildActiveRainPrompt(status *CityStatus, hh, dd, mm, yyyy string) string {
@@ -113,7 +115,7 @@ func (s *service) buildViberPrompt(status *CityStatus, hh, dd, mm, yyyy string) 
 	}
 
 	if status.Pumping != nil {
-		ict := time.FixedZone("ICT", 7*3600)
+		ict := utils.VietnamLocation
 		now := time.Now().In(ict)
 		startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, ict).Unix()
 
@@ -226,7 +228,7 @@ func (s *service) buildFullWordPrompt(status *CityStatus, hh, dd, mm, yyyy strin
 	pumpDetails := "Không có trạm bơm nào vận hành."
 	if status.Pumping != nil {
 		var list []string
-		ict := time.FixedZone("ICT", 7*3600)
+		ict := utils.VietnamLocation
 		for _, st := range status.Pumping.Stations {
 			if st.OperatingCount > 0 {
 				tStr := ""

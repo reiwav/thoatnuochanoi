@@ -2,7 +2,7 @@ package email
 
 import (
 	"ai-api-tnhn/config"
-	"ai-api-tnhn/constant"
+	"ai-api-tnhn/internal/constant"
 	"context"
 	"fmt"
 	"strings"

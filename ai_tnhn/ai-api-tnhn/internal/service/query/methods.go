@@ -10,23 +10,12 @@ import (
 )
 
 func (s *service) Query(ctx context.Context, collectionName string, filter map[string]interface{}, limit int64) ([]map[string]interface{}, error) {
-	restrictedCollections := map[string]bool{
-		"tokens":            true,
-		"users":             true,
-		"settings":          true,
-		"role_permissions":  true,
-		"permissions":       true,
-		"roles":             true,
-		"ai_usage_records":  true,
-		"ai_chat_logs":      true,
-	}
-
 	if restrictedCollections[collectionName] {
 		return nil, fmt.Errorf("truy cập vào bộ sưu tập '%s' bị từ chối vì lý do bảo mật", collectionName)
 	}
 
-	if limit <= 0 || limit > 100 {
-		limit = 100
+	if limit <= 0 || limit > maxDynamicQueryLimit {
+		limit = maxDynamicQueryLimit
 	}
 
 	coll := s.db.Collection(collectionName)
@@ -35,10 +24,7 @@ func (s *service) Query(ctx context.Context, collectionName string, filter map[s
 	for k, v := range filter {
 		bsonFilter[k] = v
 	}
-
-	if collectionName == "inundation_reports" {
-		bsonFilter["has_flooded"] = true
-	}
+	enforceInundationFilter(collectionName, bsonFilter)
 
 	opts := options.Find().SetLimit(limit)
 	cursor, err := coll.Find(ctx, bsonFilter, opts)
@@ -52,26 +38,11 @@ func (s *service) Query(ctx context.Context, collectionName string, filter map[s
 		return nil, fmt.Errorf("lỗi khi giải mã kết quả: %w", err)
 	}
 
-	for i := range results {
-		delete(results[i], "password")
-		delete(results[i], "token")
-	}
-
+	stripSensitiveFields(results)
 	return results, nil
 }
 
 func (s *service) Aggregate(ctx context.Context, collectionName string, pipeline interface{}) ([]map[string]interface{}, error) {
-	restrictedCollections := map[string]bool{
-		"tokens":            true,
-		"users":             true,
-		"settings":          true,
-		"role_permissions":  true,
-		"permissions":       true,
-		"roles":             true,
-		"ai_usage_records":  true,
-		"ai_chat_logs":      true,
-	}
-
 	if restrictedCollections[collectionName] {
 		return nil, fmt.Errorf("truy cập vào bộ sưu tập '%s' bị từ chối vì lý do bảo mật", collectionName)
 	}
@@ -104,10 +75,6 @@ func (s *service) Aggregate(ctx context.Context, collectionName string, pipeline
 		return nil, fmt.Errorf("lỗi khi giải mã kết quả aggregation: %w", err)
 	}
 
-	for i := range results {
-		delete(results[i], "password")
-		delete(results[i], "token")
-	}
-
+	stripSensitiveFields(results)
 	return results, nil
 }

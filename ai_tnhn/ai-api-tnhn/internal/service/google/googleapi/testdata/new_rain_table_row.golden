@@ -1,0 +1,91 @@
+[
+  {
+    "case": "start_and_end_differ",
+    "row": {
+      "STT": 1,
+      "Trạm": "Trạm A",
+      "Địa chỉ": "Địa chỉ A",
+      "Lượng mưa": "12.3",
+      "Thời gian": "07:00 - 08:00",
+      "Trạng thái": "🌧️ Đang mưa",
+      "type": "phuong",
+      "priority": 1,
+      "total_rain": 12.34,
+      "id": "r1",
+      "old_id": 101,
+      "is_raining": true,
+      "date": "2026-03-07"
+    }
+  },
+  {
+    "case": "start_equals_end",
+    "row": {
+      "STT": 2,
+      "Trạm": "Trạm B",
+      "Địa chỉ": "Địa chỉ B",
+      "Lượng mưa": "30.0",
+      "Thời gian": "06:00",
+      "Trạng thái": "✅ Đã tạnh",
+      "type": "xa",
+      "priority": 5,
+      "total_rain": 30,
+      "id": "r2",
+      "old_id": 102,
+      "is_raining": false,
+      "date": "2026-03-07"
+    }
+  },
+  {
+    "case": "end_only",
+    "row": {
+      "STT": 3,
+      "Trạm": "Trạm C",
+      "Địa chỉ": "Địa chỉ C",
+      "Lượng mưa": "0.0",
+      "Thời gian": "09:00",
+      "Trạng thái": "✅ Đã tạnh",
+      "type": "phuong",
+      "priority": 3,
+      "total_rain": 0,
+      "id": "r3",
+      "old_id": 103,
+      "is_raining": false,
+      "date": "2026-03-07"
+    }
+  },
+  {
+    "case": "start_only",
+    "row": {
+      "STT": 4,
+      "Trạm": "Trạm D",
+      "Địa chỉ": "Địa chỉ D",
+      "Lượng mưa": "22.0",
+      "Thời gian": "",
+      "Trạng thái": "🌧️ Đang mưa",
+      "type": "phuong",
+      "priority": 3,
+      "total_rain": 22,
+      "id": "r4",
+      "old_id": 104,
+      "is_raining": true,
+      "date": "2026-03-07"
+    }
+  },
+  {
+    "case": "no_times",
+    "row": {
+      "STT": 5,
+      "Trạm": "Trạm E",
+      "Địa chỉ": "Địa chỉ E",
+      "Lượng mưa": "0.1",
+      "Thời gian": "",
+      "Trạng thái": "✅ Đã tạnh",
+      "type": "xa",
+      "priority": 0,
+      "total_rain": 0.05,
+      "id": "r5",
+      "old_id": 105,
+      "is_raining": false
+    }
+  }
+]

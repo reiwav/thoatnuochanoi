@@ -1,0 +1,88 @@
+{
+  "rains": [
+    {
+      "STT": 1,
+      "Trạm": "Trạm Đông Anh",
+      "Địa chỉ": "Đông Anh",
+      "Lượng mưa": "30.0",
+      "Thời gian": "06:00",
+      "Trạng thái": "✅ Đã tạnh",
+      "type": "xa",
+      "priority": 5,
+      "total_rain": 30,
+      "id": "r2",
+      "old_id": 102,
+      "is_raining": false
+    },
+    {
+      "STT": 2,
+      "Trạm": "Trạm Sóc Sơn",
+      "Địa chỉ": "Sóc Sơn",
+      "Lượng mưa": "5.0",
+      "Thời gian": "05:00 - 07:30",
+      "Trạng thái": "✅ Đã tạnh",
+      "type": "xa",
+      "priority": 5,
+      "total_rain": 5,
+      "id": "r5",
+      "old_id": 105,
+      "is_raining": false
+    },
+    {
+      "STT": 3,
+      "Trạm": "Trạm Cầu Giấy",
+      "Địa chỉ": "Cầu Giấy",
+      "Lượng mưa": "22.0",
+      "Thời gian": "",
+      "Trạng thái": "🌧️ Đang mưa",
+      "type": "phuong",
+      "priority": 3,
+      "total_rain": 22,
+      "id": "r4",
+      "old_id": 104,
+      "is_raining": true
+    },
+    {
+      "STT": 4,
+      "Trạm": "Trạm Ba Đình",
+      "Địa chỉ": "Ba Đình",
+      "Lượng mưa": "10.5",
+      "Thời gian": "09:00",
+      "Trạng thái": "✅ Đã tạnh",
+      "type": "phuong",
+      "priority": 3,
+      "total_rain": 10.5,
+      "id": "r3",
+      "old_id": 103,
+      "is_raining": false
+    },
+    {
+      "STT": 5,
+      "Trạm": "Trạm Hoàn Kiếm",
+      "Địa chỉ": "Hoàn Kiếm",
+      "Lượng mưa": "10.5",
+      "Thời gian": "07:00 - 08:00",
+      "Trạng thái": "🌧️ Đang mưa",
+      "type": "phuong",
+      "priority": 1,
+      "total_rain": 10.5,
+      "id": "r1",
+      "old_id": 101,
+      "is_raining": true
+    },
+    {
+      "STT": 6,
+      "Trạm": "Trạm Tây Hồ",
+      "Địa chỉ": "Tây Hồ",
+      "Lượng mưa": "1.0",
+      "Thời gian": "04:00 - 04:30",
+      "Trạng thái": "✅ Đã tạnh",
+      "type": "Phường Tây Hồ",
+      "priority": 2,
+      "total_rain": 1,
+      "id": "r6",
+      "old_id": 106,
+      "is_raining": false
+    }
+  ]
+}

@@ -7,8 +7,8 @@ import (
 	"ai-api-tnhn/internal/service/station"
 	"ai-api-tnhn/internal/service/station/inundation"
 	pumpingstation "ai-api-tnhn/internal/service/station/pumping_station"
-	"ai-api-tnhn/internal/service/station/water"
 	"ai-api-tnhn/internal/service/station/wastewater_treatment"
+	"ai-api-tnhn/internal/service/station/water"
 	"ai-api-tnhn/internal/service/weather"
 	"context"
 	"fmt"
@@ -25,6 +25,14 @@ type ChatResponse struct {
 	Tables map[string]interface{} `json:"tables,omitempty"`
 }
 
+// GeminiChatter is the slice of the Gemini service that googleapi depends on.
+// It is declared here (rather than importing the gemini package) because gemini
+// already imports googleapi; inverting the dependency would create a cycle.
+type GeminiChatter interface {
+	ExtractTextFromPDF(ctx context.Context, pdfBytes []byte) (string, error)
+	Chat(ctx context.Context, prompt string, history []ChatMessage, userID string, isCompany bool, logPrompt string) (*ChatResponse, error)
+}
+
 type Service interface {
 	GetStatus(ctx context.Context) (*GoogleStatus, error)
 	GetRainSummary(ctx context.Context, orgID string, assignedIDs []string) (*weather.RainSummaryData, error)
@@ -37,10 +45,7 @@ type Service interface {
 	ReadEmailByTitle(ctx context.Context, title string) (*email.EmailDetail, error)
 	ReadEmailByID(ctx context.Context, id uint32) (*email.EmailDetail, error)
 	SetEmailService(svc email.Service)
-	SetGeminiService(svc interface {
-		ExtractTextFromPDF(ctx context.Context, pdfBytes []byte) (string, error)
-		Chat(ctx context.Context, prompt string, history []ChatMessage, userID string, isCompany bool, logPrompt string) (*ChatResponse, error)
-	})
+	SetGeminiService(svc GeminiChatter)
 
 	GetCityStatus(ctx context.Context) (*CityStatus, error)
 	GetCityStatusForUser(ctx context.Context, orgID string, assignedRain, assignedLake, assignedRiver, assignedInu []string) (*CityStatus, error)
@@ -49,24 +54,20 @@ type Service interface {
 }
 
 type service struct {
-	driveSvc    *drive.Service
-	gmailSvc    *gmail.Service
-	aiUsageRepo repository.AiUsage
-	userRepo    repository.User
-	inuSvc      inundation.Service
-	emailSvc    email.Service
-	weatherSvc  weather.Service
-	stationSvc  station.Service
-	pumpingSvc  pumpingstation.Service
+	driveSvc      *drive.Service
+	gmailSvc      *gmail.Service
+	aiUsageRepo   repository.AiUsage
+	userRepo      repository.User
+	inuSvc        inundation.Service
+	emailSvc      email.Service
+	weatherSvc    weather.Service
+	stationSvc    station.Service
+	pumpingSvc    pumpingstation.Service
 	waterSvc      water.Service
 	wastewaterSvc wastewater_treatment.Service
-	geminiSvc     interface {
-		ExtractTextFromPDF(ctx context.Context, pdfBytes []byte) (string, error)
-		Chat(ctx context.Context, prompt string, history []ChatMessage, userID string, isCompany bool, logPrompt string) (*ChatResponse, error)
-	}
-	cache sync.Map
+	geminiSvc     GeminiChatter
 
-	ocrEmailRepo repository.OCREmail
+	ocrEmailRepo  repository.OCREmail
 	cachedEmailID uint32
 	cachedOCRText string
 	cacheMu       sync.RWMutex
@@ -83,8 +84,8 @@ func NewService(conf config.GoogleDriveConfig, oauthConf config.OAuthConfig, aiU
 		oauthConfig := &oauth2.Config{
 			ClientID:     oauthConf.ClientID,
 			ClientSecret: oauthConf.ClientSecret,
-			Endpoint: oauth2.Endpoint{TokenURL: "https://oauth2.googleapis.com/token"},
-			Scopes:   []string{drive.DriveReadonlyScope, gmail.GmailReadonlyScope},
+			Endpoint:     oauth2.Endpoint{TokenURL: "https://oauth2.googleapis.com/token"},
+			Scopes:       []string{drive.DriveReadonlyScope, gmail.GmailReadonlyScope},
 		}
 		token := &oauth2.Token{RefreshToken: conf.GoogleRefreshToken}
 		client := oauthConfig.Client(ctx, token)

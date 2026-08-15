@@ -1,0 +1,187 @@
+{
+  "default_passthrough": {
+    "inundations": [
+      {
+        "street_name": "Phan Bội Châu"
+      }
+    ]
+  },
+  "empty_key_ignored": {},
+  "pumping_summary_with_wastewater": {
+    "pumping_stations": [
+      {
+        "Tên trạm bơm": "Trạm bơm Yên Sở",
+        "Vận hành": 2,
+        "Không VH": 1,
+        "Bảo dưỡng": 1,
+        "Mất tín hiệu": 0,
+        "Tổng số bơm": 4,
+        "Cập nhật": "11:20 07/03/2026",
+        "priority": 1
+      },
+      {
+        "Tên trạm bơm": "Trạm bơm Đồng Bông 1",
+        "Vận hành": 0,
+        "Không VH": 0,
+        "Bảo dưỡng": 0,
+        "Mất tín hiệu": 3,
+        "Tổng số bơm": 3,
+        "Cập nhật": "09:00 07/03/2026",
+        "priority": 2
+      },
+      {
+        "Tên trạm bơm": "Trạm bơm Cổ Nhuế",
+        "Vận hành": 0,
+        "Không VH": 0,
+        "Bảo dưỡng": 0,
+        "Mất tín hiệu": 0,
+        "Tổng số bơm": 0,
+        "Cập nhật": "",
+        "priority": 0
+      },
+      {
+        "Tên trạm bơm": "Trạm bơm Bắc Thăng Long",
+        "Vận hành": 0,
+        "Không VH": 2,
+        "Bảo dưỡng": 0,
+        "Mất tín hiệu": 0,
+        "Tổng số bơm": 2,
+        "Cập nhật": "10:00 07/03/2026",
+        "priority": 1
+      }
+    ],
+    "wastewater_stations": [
+      {
+        "name": "NM Yên Sở",
+        "note": "ổn định"
+      }
+    ]
+  },
+  "pumping_summary_wrong_shape": {},
+  "rains_fallback": {
+    "rains": [
+      {
+        "rain": 1.5,
+        "station": "A"
+      }
+    ]
+  },
+  "rains_typed": {
+    "rains": [
+      {
+        "STT": 1,
+        "Trạm": "Trạm Hoàn Kiếm",
+        "Địa chỉ": "Hoàn Kiếm",
+        "Lượng mưa": "10.5",
+        "Thời gian": "07:00 - 08:00",
+        "Trạng thái": "🌧️ Đang mưa",
+        "type": "phuong",
+        "priority": 1,
+        "total_rain": 10.5,
+        "id": "r1",
+        "old_id": 101,
+        "is_raining": true,
+        "date": "2026-03-07"
+      },
+      {
+        "STT": 2,
+        "Trạm": "Trạm Đông Anh",
+        "Địa chỉ": "Đông Anh",
+        "Lượng mưa": "30.0",
+        "Thời gian": "06:00",
+        "Trạng thái": "✅ Đã tạnh",
+        "type": "xa",
+        "priority": 5,
+        "total_rain": 30,
+        "id": "r2",
+        "old_id": 102,
+        "is_raining": false,
+        "date": "2026-03-07"
+      },
+      {
+        "STT": 3,
+        "Trạm": "Trạm Ba Đình",
+        "Địa chỉ": "Ba Đình",
+        "Lượng mưa": "0.0",
+        "Thời gian": "09:00",
+        "Trạng thái": "✅ Đã tạnh",
+        "type": "phuong",
+        "priority": 3,
+        "total_rain": 0,
+        "id": "r3",
+        "old_id": 103,
+        "is_raining": false,
+        "date": "2026-03-07"
+      }
+    ]
+  },
+  "sluice_gates": {
+    "sluice_gates": [
+      {
+        "Tên cửa phai": "Cửa phai Thanh Liệt",
+        "Mở": 2,
+        "Đóng": 1,
+        "Tổng số cửa": 3,
+        "Cập nhật": "11:25 07/03/2026",
+        "Ghi chú": "Mở 2 cửa tiêu nước",
+        "priority": 1
+      },
+      {
+        "Tên cửa phai": "Cửa phai Hồ Tây A",
+        "Mở": 0,
+        "Đóng": 5,
+        "Tổng số cửa": 5,
+        "Cập nhật": "08:10 07/03/2026",
+        "Ghi chú": "",
+        "priority": 0
+      }
+    ]
+  },
+  "water_summary_fallback": {
+    "waters": {
+      "raw": "value"
+    }
+  },
+  "water_summary_typed": {
+    "lakes": [
+      {
+        "name": "Hồ Bảy Mẫu",
+        "level": 5.25,
+        "label": "Hồ",
+        "thoi_gian": "10:30",
+        "priority": 1,
+        "address": "Thống Nhất",
+        "threshold_status": "high",
+        "status_text": "Vượt ngưỡng cao",
+        "is_exceeded": true,
+        "has_data": true,
+        "max_threshold": 5
+      },
+      {
+        "name": "Hồ Thiền Quang",
+        "level": 0,
+        "label": "Hồ",
+        "thoi_gian": "-",
+        "priority": 2,
+        "address": "Trần Nhân Tông",
+        "is_exceeded": false,
+        "has_data": false
+      }
+    ],
+    "rivers": [
+      {
+        "name": "Sông Tô Lịch",
+        "level": 2.1,
+        "label": "Sông",
+        "thoi_gian": "10:45",
+        "priority": 1,
+        "address": "Cầu Giấy",
+        "threshold_status": "low",
+        "status_text": "Dưới ngưỡng thấp",
+        "is_exceeded": true,
+        "has_data": true,
+        "min_threshold": 3
+      }
+    ]
+  }
+}

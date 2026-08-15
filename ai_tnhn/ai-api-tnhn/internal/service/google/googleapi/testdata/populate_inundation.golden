@@ -1,0 +1,26 @@
+{
+  "inundations": [
+    {
+      "STT": 1,
+      "Tên điểm ngập": "Phan Bội Châu",
+      "Đơn vị quản lý": "Xí nghiệp thoát nước số 1",
+      "Thời gian": "08:15 07/03/2026",
+      "Kích thước (DxRxS)": "100 x 50 x 0.25",
+      "Trạng thái": "Đang ngập",
+      "color": "#FF0000",
+      "point_id": "p1",
+      "report_id": "rp1"
+    },
+    {
+      "STT": 2,
+      "Tên điểm ngập": "Nguyễn Khuyến",
+      "Đơn vị quản lý": "Xí nghiệp thoát nước số 2",
+      "Thời gian": "09:00 07/03/2026",
+      "Kích thước (DxRxS)": " x  x 0.00",
+      "Trạng thái": "Đã rút",
+      "color": "",
+      "point_id": "p2",
+      "report_id": "rp2"
+    }
+  ]
+}

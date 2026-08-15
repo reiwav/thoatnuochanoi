@@ -15,13 +15,23 @@ import (
 )
 
 func (s *service) handleToolCall(ctx context.Context, c *genai.FunctionCall, scope dataScope) (interface{}, error) {
+	args := callArgs(c)
+
 	switch c.Name {
 	case constant.ToolGoogleStatus:
 		return s.googleApiSvc.GetStatus(ctx)
 	case constant.ToolReadEmailByTitle:
-		return s.googleApiSvc.ReadEmailByTitle(ctx, c.Args["title"].(string))
+		title, err := requireStr(args, "title")
+		if err != nil {
+			return nil, err
+		}
+		return s.googleApiSvc.ReadEmailByTitle(ctx, title)
 	case constant.ToolReadEmailByID:
-		return s.googleApiSvc.ReadEmailByID(ctx, uint32(c.Args["id"].(float64)))
+		id, err := requireInt(args, "id")
+		if err != nil {
+			return nil, err
+		}
+		return s.googleApiSvc.ReadEmailByID(ctx, uint32(id))
 	case constant.ToolLiveRainSummary:
 		return s.googleApiSvc.GetRainSummary(ctx, scope.OrgID, scope.RainIDs)
 	case constant.ToolLiveWaterSummary:
@@ -43,13 +53,20 @@ func (s *service) handleToolCall(ctx context.Context, c *genai.FunctionCall, sco
 	case constant.ToolWeatherForecast:
 		return s.weatherSvc.GetForecast(ctx)
 	case constant.ToolRainSummaryByWard:
-		return s.stationDataSvc.GetRainSummaryByWard(ctx, int(c.Args["year"].(float64)), int(c.Args["month"].(float64)), c.Args["start_date"].(string), c.Args["end_date"].(string))
+		// None of these are declared Required, so all four must tolerate absence.
+		// The station service treats a zero year/month and empty dates as
+		// "unfiltered", which is the previous behaviour when the model sent them.
+		return s.stationDataSvc.GetRainSummaryByWard(ctx,
+			intOr(args, "year", 0),
+			intOr(args, "month", 0),
+			strOr(args, "start_date", ""),
+			strOr(args, "end_date", ""))
 	case constant.ToolLiveInundationSummary:
-		return s.handleInundationSummary(ctx, c.Args, scope)
+		return s.handleInundationSummary(ctx, args, scope)
 	case constant.ToolInundationHistoryByRange:
-		startDateVal, _ := c.Args["start_date"].(string)
-		endDateVal, _ := c.Args["end_date"].(string)
-		orgNameVal, _ := c.Args["org_name"].(string)
+		startDateVal := strOr(args, "start_date", "")
+		endDateVal := strOr(args, "end_date", "")
+		orgNameVal := strOr(args, "org_name", "")
 		return s.handleInundationHistoryByRange(ctx, startDateVal, endDateVal, orgNameVal)
 	case constant.ToolLivePumpingSummary:
 		p, err := s.pumpingSvc.GetPumpingStationSummary(ctx, scope.OrgID, scope.PumpingIDs)
@@ -66,36 +83,46 @@ func (s *service) handleToolCall(ctx context.Context, c *genai.FunctionCall, sco
 	case constant.ToolEmergencyList, constant.ToolEmergencyHistory, constant.ToolUnfinishedEmergencyHistory, constant.ToolRecentEmergencyReports, constant.ToolReportEmergencyProgress:
 		return s.handleEmergencyTool(ctx, c, scope.UserID)
 	case constant.ToolDatabaseQuery:
-		return s.handleDatabaseQuery(ctx, c.Args)
+		return s.handleDatabaseQuery(ctx, args)
 	case constant.ToolDatabaseAggregate:
-		return s.handleDatabaseAggregate(ctx, c.Args)
+		return s.handleDatabaseAggregate(ctx, args)
 	default:
 		return nil, fmt.Errorf("unknown tool: %s", c.Name)
 	}
 }
 
+// defaultContractHorizonDays is the look-ahead used when the model asks about
+// upcoming contract deadlines without naming a window.
+const defaultContractHorizonDays = 30
+
 func (s *service) handleContractToolCall(ctx context.Context, c *genai.FunctionCall) (interface{}, error) {
+	args := callArgs(c)
+
+	// A non-positive horizon is meaningless, so it falls back to the default.
+	horizonDays := func() int {
+		if d, ok := argInt(args, "days"); ok && d > 0 {
+			return d
+		}
+		return defaultContractHorizonDays
+	}
+
 	switch c.Name {
 	case constant.ToolContractSummary:
 		return s.contractSvc.GetContractSummary(ctx)
 	case constant.ToolExpiringContracts:
-		days := 30
-		if d, ok := c.Args["days"].(float64); ok && d > 0 {
-			days = int(d)
-		}
-		return s.contractSvc.GetExpiringSoon(ctx, days)
+		return s.contractSvc.GetExpiringSoon(ctx, horizonDays())
 	case constant.ToolExpiredContracts:
 		return s.contractSvc.GetExpired(ctx)
 	case constant.ToolContractStagesSoon:
-		days := 30
-		if d, ok := c.Args["days"].(float64); ok && d > 0 {
-			days = int(d)
-		}
-		return s.contractSvc.GetStagesDueSoon(ctx, days)
+		return s.contractSvc.GetStagesDueSoon(ctx, horizonDays())
 	case constant.ToolContractStagesPassed:
 		return s.contractSvc.GetStagesPassed(ctx)
 	case constant.ToolSearchContracts:
-		return s.contractSvc.SearchContracts(ctx, c.Args["keyword"].(string))
+		keyword, err := requireStr(args, "keyword")
+		if err != nil {
+			return nil, err
+		}
+		return s.contractSvc.SearchContracts(ctx, keyword)
 	default:
 		return nil, fmt.Errorf("unknown tool: %s", c.Name)
 	}

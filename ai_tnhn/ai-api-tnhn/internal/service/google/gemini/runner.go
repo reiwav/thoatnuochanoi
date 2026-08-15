@@ -12,6 +12,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"unicode/utf8"
@@ -70,7 +72,7 @@ func (s *service) runChat(ctx context.Context, cs chatSession, augmentedPrompt s
 		g, gCtx := errgroup.WithContext(ctx)
 		for _, c := range calls {
 			g.Go(func() error {
-				res, toolErr := cs.dispatch(gCtx, c)
+				res, toolErr := safeDispatch(gCtx, cs.dispatch, c)
 
 				mu.Lock()
 				defer mu.Unlock()
@@ -109,6 +111,27 @@ func (s *service) runChat(ctx context.Context, cs chatSession, augmentedPrompt s
 		Text:   answerText(resp, len(tables) > 0),
 		Tables: tables,
 	}, nil
+}
+
+// safeDispatch runs a tool call and converts a panic into an ordinary error.
+//
+// Tool handlers work on model-supplied arguments, and they run inside errgroup
+// goroutines. An unrecovered panic there would kill the whole process rather
+// than fail one request, so it is contained and reported back to the model,
+// which can then correct its arguments or explain the failure.
+func safeDispatch(
+	ctx context.Context,
+	dispatch func(context.Context, *genai.FunctionCall) (interface{}, error),
+	c *genai.FunctionCall,
+) (res interface{}, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("[Chat] PANIC in tool %s: %v\n%s", c.Name, r, debug.Stack())
+			res = nil
+			err = fmt.Errorf("công cụ '%s' gặp lỗi nội bộ, không thể lấy dữ liệu", c.Name)
+		}
+	}()
+	return dispatch(ctx, c)
 }
 
 // functionCalls extracts the tool calls from a response, if any.

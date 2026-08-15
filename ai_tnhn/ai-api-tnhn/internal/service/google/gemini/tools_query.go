@@ -21,24 +21,30 @@ import (
 // handleDatabaseQuery runs a find against a collection the model names.
 // Collection-level access rules are enforced by the query service.
 func (s *service) handleDatabaseQuery(ctx context.Context, args map[string]interface{}) (interface{}, error) {
-	collectionVal := args["collection"].(string)
-	filterVal, _ := args["filter"].(map[string]interface{})
+	collectionVal, err := requireStr(args, "collection")
+	if err != nil {
+		return nil, err
+	}
+	filterVal, _ := argMap(args, "filter")
 	log.Printf("[ToolDatabaseQuery] collection=%s, filter=%+v", collectionVal, filterVal)
 
 	if collectionVal == constant.CollRainRecords {
 		s.ensureRainDataLoaded(ctx, filterVal)
 	}
 
-	res, err := s.querySvc.Query(ctx, collectionVal, filterVal, 0)
-	if err == nil {
+	res, queryErr := s.querySvc.Query(ctx, collectionVal, filterVal, 0)
+	if queryErr == nil {
 		formatTimestampsInResult(res)
 	}
-	return res, err
+	return res, queryErr
 }
 
 // handleDatabaseAggregate runs an aggregation pipeline the model supplies.
 func (s *service) handleDatabaseAggregate(ctx context.Context, args map[string]interface{}) (interface{}, error) {
-	collectionVal := args["collection"].(string)
+	collectionVal, err := requireStr(args, "collection")
+	if err != nil {
+		return nil, err
+	}
 	log.Printf("[ToolDatabaseAggregate] collection=%s, pipeline=%+v", collectionVal, args["pipeline"])
 
 	pipeline, err := decodePipeline(args["pipeline"])

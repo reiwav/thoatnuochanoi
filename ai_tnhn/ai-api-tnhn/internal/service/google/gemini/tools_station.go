@@ -26,7 +26,10 @@ func (s *service) isCurrentRainDay(date string) bool {
 
 // handleListStations routes the list_stations tool to a per-type handler.
 func (s *service) handleListStations(ctx context.Context, c *genai.FunctionCall, scope dataScope) (interface{}, error) {
-	stationType := c.Args["type"].(string)
+	stationType, err := requireStr(callArgs(c), "type")
+	if err != nil {
+		return nil, err
+	}
 	log.Printf("[handleListStations] type=%s, args=%v", stationType, c.Args)
 
 	switch stationType {

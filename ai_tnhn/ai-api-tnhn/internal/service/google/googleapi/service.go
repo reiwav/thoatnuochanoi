@@ -58,6 +58,7 @@ type service struct {
 	gmailSvc      *gmail.Service
 	aiUsageRepo   repository.AiUsage
 	userRepo      repository.User
+	roleRepo      repository.Role
 	inuSvc        inundation.Service
 	emailSvc      email.Service
 	weatherSvc    weather.Service
@@ -74,7 +75,7 @@ type service struct {
 	ocrFetchMu    sync.Mutex
 }
 
-func NewService(conf config.GoogleDriveConfig, oauthConf config.OAuthConfig, aiUsageRepo repository.AiUsage, userRepo repository.User, inuSvc inundation.Service, weatherSvc weather.Service, stationSvc station.Service, pumpingSvc pumpingstation.Service, waterSvc water.Service, wastewaterSvc wastewater_treatment.Service, ocrEmailRepo repository.OCREmail) (Service, error) {
+func NewService(conf config.GoogleDriveConfig, oauthConf config.OAuthConfig, aiUsageRepo repository.AiUsage, userRepo repository.User, roleRepo repository.Role, inuSvc inundation.Service, weatherSvc weather.Service, stationSvc station.Service, pumpingSvc pumpingstation.Service, waterSvc water.Service, wastewaterSvc wastewater_treatment.Service, ocrEmailRepo repository.OCREmail) (Service, error) {
 	ctx := context.Background()
 	var driveSvc *drive.Service
 	var gmailSvc *gmail.Service
@@ -116,6 +117,7 @@ func NewService(conf config.GoogleDriveConfig, oauthConf config.OAuthConfig, aiU
 		gmailSvc:      gmailSvc,
 		aiUsageRepo:   aiUsageRepo,
 		userRepo:      userRepo,
+		roleRepo:      roleRepo,
 		inuSvc:        inuSvc,
 		weatherSvc:    weatherSvc,
 		pumpingSvc:    pumpingSvc,

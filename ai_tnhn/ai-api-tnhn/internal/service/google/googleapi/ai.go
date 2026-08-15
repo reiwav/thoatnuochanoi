@@ -8,23 +8,70 @@ import (
 	"time"
 )
 
+// reportScope is how much of the system a generated report may cover.
+type reportScope struct {
+	// CityWide means the report is not restricted to one organisation.
+	CityWide      bool
+	OrgID         string
+	RainIDs       []string
+	LakeIDs       []string
+	RiverIDs      []string
+	InundationIDs []string
+}
+
+// resolveReportScope decides the widest scope a user may see in a report.
+//
+// Only company-wide roles and super admins get the whole city; anyone else is
+// confined to their organisation and assigned stations. This mirrors
+// gemini.resolveScope so a report and a chat answer agree for the same user.
+func (s *service) resolveReportScope(ctx context.Context, userID string) reportScope {
+	if userID == "" || s.userRepo == nil {
+		return reportScope{CityWide: true}
+	}
+
+	u, _ := s.userRepo.GetByID(ctx, userID)
+	if u == nil {
+		return reportScope{CityWide: true}
+	}
+
+	// User.IsCompany and User.IsEmployee are bson:"-", so a user loaded straight
+	// from the repository always has them false. They are derived from the role
+	// record, exactly as auth and the request middleware do.
+	if s.roleRepo != nil {
+		if roleData, _ := s.roleRepo.GetByCode(ctx, u.Role); roleData != nil {
+			u.IsEmployee = roleData.IsEmployee
+			u.IsCompany = roleData.IsCompany
+		}
+	}
+
+	if u.IsCompany || u.Role == constant.ROLE_SUPER_ADMIN || u.OrgID == "" {
+		return reportScope{CityWide: true}
+	}
+
+	return reportScope{
+		OrgID:         u.OrgID,
+		RainIDs:       u.AssignedRainStationIDs,
+		LakeIDs:       u.AssignedLakeStationIDs,
+		RiverIDs:      u.AssignedRiverStationIDs,
+		InundationIDs: u.AssignedInundationStationIDs,
+	}
+}
+
+// statusForUser gathers the city status at the widest scope the user may see.
+func (s *service) statusForUser(ctx context.Context, userID string) (*CityStatus, error) {
+	scope := s.resolveReportScope(ctx, userID)
+	if scope.CityWide {
+		return s.GetCityStatus(ctx)
+	}
+	return s.GetCityStatusForUser(ctx, scope.OrgID, scope.RainIDs, scope.LakeIDs, scope.RiverIDs, scope.InundationIDs)
+}
+
 func (s *service) GenerateAIReport(ctx context.Context, reportType string, userID string) (*ChatResponse, error) {
 	if s.geminiSvc == nil {
 		return nil, fmt.Errorf("gemini service is not initialized")
 	}
 
-	var status *CityStatus
-	var err error
-	if userID != "" && s.userRepo != nil {
-		u, _ := s.userRepo.GetByID(ctx, userID)
-		if u != nil && u.OrgID != "" && !u.IsCompany && u.Role != "super_admin" {
-			status, err = s.GetCityStatusForUser(ctx, u.OrgID, u.AssignedRainStationIDs, u.AssignedLakeStationIDs, u.AssignedRiverStationIDs, u.AssignedInundationStationIDs)
-		} else {
-			status, err = s.GetCityStatus(ctx)
-		}
-	} else {
-		status, err = s.GetCityStatus(ctx)
-	}
+	status, err := s.statusForUser(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get city status: %w", err)
 	}

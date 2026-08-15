@@ -1,8 +1,8 @@
 package router
 
 import (
-	"ai-api-tnhn/constant"
 	"ai-api-tnhn/handler"
+	"ai-api-tnhn/internal/constant"
 	"ai-api-tnhn/router/middleware"
 
 	"github.com/gin-gonic/gin"

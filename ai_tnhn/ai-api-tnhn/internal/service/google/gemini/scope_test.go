@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"testing"
 
+	"ai-api-tnhn/internal/constant"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/repository"
 )
@@ -49,16 +50,15 @@ func TestResolveScope(t *testing.T) {
 			},
 		},
 		{
-			// Documents the pre-B1 state: the stored role is snake_case, so the
-			// "Super Admin"/"Manager" literals never match and a super_admin who
-			// is not flagged is_company stays org-scoped. Task B1 flips this.
-			name: "TODO(B1) snake_case super_admin does NOT yet grant city-wide",
+			// super_admin grants city-wide access on the role alone, without
+			// depending on the is_company flag being set on the role record.
+			name: "super_admin gets city-wide scope and org is cleared",
 			user: &models.User{
-				OrgID: "org-1", Role: "super_admin",
+				OrgID: "org-1", Role: constant.ROLE_SUPER_ADMIN,
 			},
 			isCompany: false,
 			want: dataScope{
-				OrgID: "org-1", IsAllowedAll: false,
+				OrgID: "", IsAllowedAll: true,
 				UserID: "u-1",
 			},
 		},
@@ -128,14 +128,42 @@ func TestResolveScope(t *testing.T) {
 	}
 }
 
-// TestResolveScopeLegacyDisplayRoles pins the two literals that are still in
-// place before Task B1, so the B1 commit shows exactly what changes.
-func TestResolveScopeLegacyDisplayRoles(t *testing.T) {
-	for _, role := range []string{"Super Admin", "Manager"} {
+// TestResolveScopeIgnoresDisplayRoles guards against reintroducing display-name
+// role checks. Roles are stored snake_case, so these values can only ever come
+// from a hardcoded string and must not grant access.
+func TestResolveScopeIgnoresDisplayRoles(t *testing.T) {
+	for _, role := range []string{"Super Admin", "Manager", "super admin", "SUPER_ADMIN"} {
 		s := newScopeService(&models.User{OrgID: "org-1", Role: role}, nil)
 		got := s.resolveScope(context.Background(), "u-1", false)
-		if !got.IsAllowedAll {
-			t.Errorf("role %q should currently grant IsAllowedAll", role)
+		if got.IsAllowedAll {
+			t.Errorf("role %q must not grant IsAllowedAll; only %q does", role, constant.ROLE_SUPER_ADMIN)
+		}
+		if got.OrgID != "org-1" {
+			t.Errorf("role %q should stay org-scoped, got OrgID %q", role, got.OrgID)
+		}
+	}
+}
+
+// TestResolveScopeInvariant guards the coupling between the two fields that
+// widen access. The org-scoped tools (rain, water, pumping, system overview)
+// read OrgID while the inundation tools read IsAllowedAll, so a scope that is
+// city-wide by one measure and org-confined by the other would answer the same
+// question differently depending on which tool the model picked.
+func TestResolveScopeInvariant(t *testing.T) {
+	users := []*models.User{
+		{OrgID: "org-1", Role: constant.ROLE_SUPER_ADMIN},
+		{OrgID: "org-1", Role: "chu_tich_cty"},
+		{OrgID: "org-1", Role: "giam_doc_xi_nghiep"},
+		{OrgID: "", Role: "cong_nhan_cty"},
+	}
+	for _, u := range users {
+		for _, isCompany := range []bool{true, false} {
+			s := newScopeService(u, nil)
+			got := s.resolveScope(context.Background(), "u-1", isCompany)
+			if got.IsAllowedAll && got.OrgID != "" {
+				t.Errorf("role=%q isCompany=%v: IsAllowedAll with OrgID %q still set",
+					u.Role, isCompany, got.OrgID)
+			}
 		}
 	}
 }

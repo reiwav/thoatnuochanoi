@@ -1,10 +1,12 @@
 package google
 
 import (
-	"ai-api-tnhn/internal/models"
-	"ai-api-tnhn/utils/web"
 	"fmt"
 	"time"
+
+	"ai-api-tnhn/internal/constant"
+	"ai-api-tnhn/internal/models"
+	"ai-api-tnhn/utils/web"
 
 	"github.com/gin-gonic/gin"
 )
@@ -23,7 +25,7 @@ func (h *handler) GetInundationSummary(c *gin.Context) {
 	if token.IsCompany {
 		orgID = ""
 	}
-	isAllowedAll := token.IsCompany || token.Role == "Super Admin" || token.Role == "Manager"
+	isAllowedAll := token.IsCompany || token.Role == constant.ROLE_SUPER_ADMIN
 	summary, err := h.googleSvc.GetInundationSummary(c.Request.Context(), orgID, isAllowedAll, nil)
 	web.AssertNil(err)
 

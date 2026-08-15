@@ -2,6 +2,8 @@ package gemini
 
 import (
 	"context"
+
+	"ai-api-tnhn/internal/constant"
 )
 
 // dataScope is the resolved data-visibility envelope for one chat request.
@@ -46,8 +48,18 @@ func (s *service) resolveScope(ctx context.Context, userID string, isCompany boo
 		return scope
 	}
 
+	// Company-wide roles and super admins see everything; everyone else is
+	// scoped by org and assignment. Same form as
+	// internal/service/station/inundation/helper.go, which is the repo-wide
+	// version of this check.
+	scope.IsAllowedAll = isCompany || u.Role == constant.ROLE_SUPER_ADMIN
+
+	// Clearing OrgID is what actually widens the org-scoped tools (rain, water,
+	// pumping, system overview); the inundation tools read IsAllowedAll instead.
+	// Both must move together or a caller would be city-wide for one and
+	// org-confined for the other.
 	scope.OrgID = u.OrgID
-	if isCompany {
+	if scope.IsAllowedAll {
 		scope.OrgID = ""
 	}
 
@@ -62,13 +74,6 @@ func (s *service) resolveScope(ctx context.Context, userID string, isCompany boo
 	if u.AssignedSluiceGateID != "" {
 		scope.SluiceGateIDs = []string{u.AssignedSluiceGateID}
 	}
-
-	// TODO(B1): these two role literals never match a stored role. handler/auth.go
-	// normalises roles to snake_case ("super_admin", "giam_doc_xi_nghiep", ...),
-	// so the effective rule today is just isCompany. Task B1 replaces them with
-	// constant.ROLE_SUPER_ADMIN to match internal/service/station/inundation/
-	// helper.go:194, which is the repo-wide form of this check.
-	scope.IsAllowedAll = isCompany || u.Role == "Super Admin" || u.Role == "Manager"
 
 	return scope
 }

@@ -17,10 +17,10 @@ DEPLOY_DIR="$BASE_DIR/deploy/$TIMESTAMP"
 echo "Creating deployment directory at $DEPLOY_DIR"
 mkdir -p "$DEPLOY_DIR"
 
-# 1. Build the Go API for Linux
+# 1. Build the Go API for Linux (Chống dịch ngược & tối ưu)
 echo "Building API for Linux (amd64)..."
 cd "$BASE_DIR/ai_tnhn/ai-api-tnhn"
-GOOS=linux GOARCH=amd64 go build -o "$DEPLOY_DIR/thoatnuochanoi_amd64" main.go
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o "$DEPLOY_DIR/thoatnuochanoi_amd64" main.go
 echo "API build complete."
 
 # 2. Build the Frontend

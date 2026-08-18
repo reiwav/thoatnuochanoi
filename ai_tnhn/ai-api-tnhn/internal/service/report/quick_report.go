@@ -56,14 +56,6 @@ func (s *service) GenerateQuickReportV3(ctx context.Context, userID string) (*Qu
 		soLuongUngNgap = city.Inundation.ActivePoints
 	}
 
-	phuong1, phuong2 := splitTable(rainTables.PhuongDataRaw)
-	xa1, xa2 := splitTable(rainTables.XaDataRaw)
-
-	phuLucPhuong1, phuLucPhuong2 := splitTable(rainTables.AllPhuongDataRaw)
-	phuLucXa1, phuLucXa2 := splitTable(rainTables.AllXaDataRaw)
-	phuLucRiver1, phuLucRiver2 := splitTable(waterTables.AllRiverDataRaw)
-	phuLucLake1, phuLucLake2 := splitTable(waterTables.AllLakeDataRaw)
-
 	hienTrangMua := "không còn mưa"
 	if city.Weather != nil && city.Weather.RainyStations > 0 {
 		hienTrangMua = "tiếp tục có mưa"
@@ -76,16 +68,11 @@ func (s *service) GenerateQuickReportV3(ctx context.Context, userID string) (*Qu
 		"hien_trang_mua": hienTrangMua, "noi_dung_tram_bom": pumpingData.NoiDungTramBom,
 		"danh_sach_tram_bom": pumpingData.DanhSachTramBom,
 
-		// Báo cáo chính
-		"table1_mua_phuong":  phuong1, "table2_mua_phuong": phuong2, "table1_mua_xa": xa1, "table2_mua_xa": xa2,
-		"table_song": waterTables.RiverDataRaw, "table_ho": waterTables.LakeDataRaw,
-
-		// Phụ lục (Toàn bộ các trạm)
-		"phu_luc_table1_mua_phuong": phuLucPhuong1, "phu_luc_table2_mua_phuong": phuLucPhuong2,
-		"phu_luc_table1_mua_xa":     phuLucXa1, "phu_luc_table2_mua_xa": phuLucXa2,
-		"phu_luc_table_song":        waterTables.AllRiverDataRaw, "phu_luc_table_ho": waterTables.AllLakeDataRaw,
-		"phu_luc_table1_song":       phuLucRiver1, "phu_luc_table2_song": phuLucRiver2,
-		"phu_luc_table1_ho":         phuLucLake1, "phu_luc_table2_ho": phuLucLake2,
+		// Phụ lục
+		"phu_luc_table_mua_phuong": rainTables.AllPhuongDataRaw,
+		"phu_luc_table_mua_xa":     rainTables.AllXaDataRaw,
+		"phu_luc_table_song":       waterTables.AllRiverDataRaw,
+		"phu_luc_table_ho":         waterTables.AllLakeDataRaw,
 	}
 
 	targetFilename := fmt.Sprintf("Bao cao mua ngay %s-%s-%s thoi diem %s.docx", dd, mm, yyyy, shortHour)

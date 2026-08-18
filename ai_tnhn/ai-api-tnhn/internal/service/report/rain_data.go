@@ -19,10 +19,10 @@ type rainReportTables struct {
 }
 
 func (s *service) buildRainStationTables(ctx context.Context, city *googleapi.CityStatus) rainReportTables {
-	phuongDataRaw := [][]string{{"Phường", "Lượng mưa (mm)"}}
-	xaDataRaw := [][]string{{"Xã", "Lượng mưa (mm)"}}
-	allPhuongDataRaw := [][]string{{"Phường", "Lượng mưa (mm)"}}
-	allXaDataRaw := [][]string{{"Xã", "Lượng mưa (mm)"}}
+	phuongDataRaw := [][]string{{"STT", "Phường", "Đo tại", "Lượng mưa (mm)", "Biểu đồ mưa"}}
+	xaDataRaw := [][]string{{"STT", "Xã", "Đo tại", "Lượng mưa (mm)", "Biểu đồ mưa"}}
+	allPhuongDataRaw := [][]string{{"STT", "Phường", "Đo tại", "Lượng mưa (mm)", "Biểu đồ mưa"}}
+	allXaDataRaw := [][]string{{"STT", "Xã", "Đo tại", "Lượng mưa (mm)", "Biểu đồ mưa"}}
 
 	var rainStations []*models.RainStation
 	_ = s.rainStationRepo.R_SelectManyWithSort(ctx, bson.M{}, bson.M{"trong_so_bao_cao": 1}, &rainStations)
@@ -62,12 +62,46 @@ func (s *service) buildRainStationTables(ctx context.Context, city *googleapi.Ci
 			return xas[i].rs.TrongSoBaoCao < xas[j].rs.TrongSoBaoCao
 		})
 
-		// Phụ lục: Thống kê toàn bộ các trạm Phường và Xã
+		// Phụ lục: Thống kê các trạm Phường và Xã có mưa (rain > 0)
+		sttPhuLuc := 0
 		for _, p := range phuongs {
-			allPhuongDataRaw = append(allPhuongDataRaw, []string{p.rs.TenTram, fmt.Sprintf("%.1f", p.rain)})
+			if p.rain <= 0 {
+				continue
+			}
+			sttPhuLuc++
+			phuong := p.rs.TenPhuong
+			if phuong == "" {
+				phuong = p.rs.TenTram
+			}
+			diaChi := p.rs.DiaChi
+			if diaChi == "" {
+				diaChi = "Chưa cập nhật"
+			}
+			bieuDoText := ""
+			if sttPhuLuc == 1 {
+				bieuDoText = "(Dự kiến đưa vào)"
+			}
+			allPhuongDataRaw = append(allPhuongDataRaw, []string{fmt.Sprintf("%d", sttPhuLuc), phuong, diaChi, fmt.Sprintf("%.1f", p.rain), bieuDoText})
 		}
+		sttPhuLuc = 0
 		for _, x := range xas {
-			allXaDataRaw = append(allXaDataRaw, []string{x.rs.TenTram, fmt.Sprintf("%.1f", x.rain)})
+			if x.rain <= 0 {
+				continue
+			}
+			sttPhuLuc++
+			xa := x.rs.TenPhuong
+			if xa == "" {
+				xa = x.rs.TenTram
+			}
+			diaChi := x.rs.DiaChi
+			if diaChi == "" {
+				diaChi = "Chưa cập nhật"
+			}
+			bieuDoText := ""
+			if sttPhuLuc == 1 {
+				bieuDoText = "(Dự kiến đưa vào)"
+			}
+			allXaDataRaw = append(allXaDataRaw, []string{fmt.Sprintf("%d", sttPhuLuc), xa, diaChi, fmt.Sprintf("%.1f", x.rain), bieuDoText})
 		}
 
 		// Báo cáo chính: Giữ nguyên top 10 Phường và top 10 Xã
@@ -80,11 +114,37 @@ func (s *service) buildRainStationTables(ctx context.Context, city *googleapi.Ci
 			xasReport = xasReport[:10]
 		}
 
-		for _, p := range phuongsReport {
-			phuongDataRaw = append(phuongDataRaw, []string{p.rs.TenTram, fmt.Sprintf("%.1f", p.rain)})
+		for i, p := range phuongsReport {
+			stt := fmt.Sprintf("%d", i+1)
+			phuong := p.rs.TenPhuong
+			if phuong == "" {
+				phuong = p.rs.TenTram
+			}
+			diaChi := p.rs.DiaChi
+			if diaChi == "" {
+				diaChi = "Chưa cập nhật"
+			}
+			bieuDoText := ""
+			if i == 0 {
+				bieuDoText = "(Dự kiến đưa vào)"
+			}
+			phuongDataRaw = append(phuongDataRaw, []string{stt, phuong, diaChi, fmt.Sprintf("%.1f", p.rain), bieuDoText})
 		}
-		for _, x := range xasReport {
-			xaDataRaw = append(xaDataRaw, []string{x.rs.TenTram, fmt.Sprintf("%.1f", x.rain)})
+		for i, x := range xasReport {
+			stt := fmt.Sprintf("%d", i+1)
+			xa := x.rs.TenPhuong
+			if xa == "" {
+				xa = x.rs.TenTram
+			}
+			diaChi := x.rs.DiaChi
+			if diaChi == "" {
+				diaChi = "Chưa cập nhật"
+			}
+			bieuDoText := ""
+			if i == 0 {
+				bieuDoText = "(Dự kiến đưa vào)"
+			}
+			xaDataRaw = append(xaDataRaw, []string{stt, xa, diaChi, fmt.Sprintf("%.1f", x.rain), bieuDoText})
 		}
 	}
 

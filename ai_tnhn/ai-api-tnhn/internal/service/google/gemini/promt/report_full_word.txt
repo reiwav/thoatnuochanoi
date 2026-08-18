@@ -33,9 +33,9 @@ QUY TẮC PHẦN TRẠM BƠM (pump_summary):
 
 QUY TẮC PHẦN MƯA (rain_summary):
 - ĐOẠN VĂN DUY NHẤT, NGẮN GỌN. KHÔNG đưa dự báo dài hạn (như 10 ngày tới).
-- Đánh giá mức độ mưa: 1-4 điểm là "mưa vùng", 5-10 điểm là "mưa rải rác trên diện rộng", >10 điểm là "mưa trên diện rộng".
-- Nếu bản tin có hình thế thời tiết (không khí lạnh, áp thấp...): "Hiện tại, trên địa bàn thành phố đang xuất hiện [mức độ mưa], nguyên nhân do ảnh hưởng của [tên hình thế thời tiết]."
-- Nếu không có hình thế: "Hiện tại, trên địa bàn thành phố đang xuất hiện [mức độ mưa]."
-- Kết thúc đoạn bằng câu: "Mưa dông xảy ra với lượng mưa đo được đến thời điểm %s ngày %s/%s/%s cụ thể như sau:"
+- Đánh giá mức độ mưa: Nếu 0 điểm đo có mưa thì ghi "không có mưa" hoặc "không mưa", 1-4 điểm là "mưa vùng", 5-10 điểm là "mưa rải rác trên diện rộng", >10 điểm là "mưa trên diện rộng".
+- Nếu bản tin có hình thế thời tiết (không khí lạnh, áp thấp...): "Hiện tại, trên địa bàn thành phố đang [không mưa/xuất hiện mức độ mưa], nguyên nhân do ảnh hưởng của [tên hình thế thời tiết]."
+- Nếu không có hình thế: "Hiện tại, trên địa bàn thành phố đang [không mưa/xuất hiện mức độ mưa]."
+- TUYỆT ĐỐI KHÔNG thêm câu kết thúc về lượng mưa hay chi tiết phụ lục (ví dụ: KHÔNG viết câu "Mưa dông xảy ra với lượng mưa đo được..." hay "chi tiết tại phụ lục...").
 
 CHỈ TRẢ VỀ JSON, KHÔNG GIẢI THÍCH GÌ THÊM.

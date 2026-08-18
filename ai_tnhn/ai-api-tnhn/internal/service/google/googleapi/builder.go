@@ -23,9 +23,9 @@ func (s *service) buildActiveRainPrompt(status *CityStatus, hh, dd, mm, yyyy str
 	}
 
 	if soDiemMua == 0 && hasRain {
-		return fmt.Sprintf(promt.Get("report_rain_stopped"), status.OCRText, hh, dd, mm, yyyy)
+		return fmt.Sprintf(promt.Get("report_rain_stopped"), status.OCRText)
 	} else if soDiemMua == 0 {
-		return fmt.Sprintf(promt.Get("report_no_rain"), status.OCRText, hh, dd, mm, yyyy)
+		return fmt.Sprintf(promt.Get("report_no_rain"), status.OCRText)
 	}
 	return fmt.Sprintf(promt.Get("report_active_rain"), status.OCRText, soDiemMua, hh, dd, mm, yyyy)
 }
@@ -254,6 +254,5 @@ func (s *service) buildFullWordPrompt(status *CityStatus, hh, dd, mm, yyyy strin
 		rainyStations, maxRain,
 		inuCount, inuDetails,
 		pumpDetails,
-		hh, dd, mm, yyyy,
 	)
 }

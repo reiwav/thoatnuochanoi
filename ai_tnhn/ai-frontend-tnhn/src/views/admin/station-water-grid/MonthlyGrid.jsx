@@ -30,7 +30,8 @@ const MonthlyGrid = () => {
         riverCount,
         lakeCount,
         activeEditDays,
-        toggleDayEditMode
+        toggleDayEditMode,
+        loadingGrid
     } = useMonthlyGrid();
 
     return (
@@ -133,7 +134,7 @@ const MonthlyGrid = () => {
                 </Box>
 
                 <MonthlyGridTable 
-                    loading={loading}
+                    loading={loading || loadingGrid}
                     daysInMonth={daysInMonth}
                     groupedStations={groupedStations}
                     activeSetting={activeSetting}

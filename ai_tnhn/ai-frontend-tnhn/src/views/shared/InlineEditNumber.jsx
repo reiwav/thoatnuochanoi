@@ -15,6 +15,7 @@ const InlineEditNumber = ({
 }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [localValue, setLocalValue] = useState(value !== undefined && value !== null ? String(value) : '');
+    const [initialValue, setInitialValue] = useState('');
 
     useEffect(() => {
         if (!isEditing) {
@@ -22,10 +23,14 @@ const InlineEditNumber = ({
         }
     }, [value, isEditing]);
 
+    const handleStartEditing = () => {
+        setIsEditing(true);
+        setInitialValue(value !== undefined && value !== null ? String(value) : '');
+    };
+
     const handleBlur = () => {
         setIsEditing(false);
-        const originalStr = value !== undefined && value !== null ? String(value) : '';
-        if (localValue !== originalStr) {
+        if (localValue !== initialValue) {
             onSave(localValue);
         }
     };
@@ -34,7 +39,7 @@ const InlineEditNumber = ({
         if (e.key === 'Enter') {
             e.target.blur();
         } else if (e.key === 'Escape') {
-            setLocalValue(value !== undefined && value !== null ? String(value) : '');
+            setLocalValue(initialValue);
             setIsEditing(false);
         }
     };
@@ -91,7 +96,7 @@ const InlineEditNumber = ({
 
     return (
         <Box
-            onClick={() => setIsEditing(true)}
+            onClick={handleStartEditing}
             title={`Sửa ${placeholder || 'giá trị'}`}
             sx={{
                 display: 'inline-flex',

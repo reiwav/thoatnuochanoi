@@ -8,6 +8,7 @@ import { exportMonthlyGridToExcel, getStationId } from '../utils/gridHelpers';
 export const useMonthlyGrid = () => {
     const [waterOrganizations, setWaterOrganizations] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [loadingGrid, setLoadingGrid] = useState(false);
     const [stations, setStations] = useState([]);
     const [activeSetting, setActiveSetting] = useState(null);
     const [gridData, setGridData] = useState({}); // format: { stationId_day_timeSlot: value }
@@ -94,6 +95,7 @@ export const useMonthlyGrid = () => {
     const loadGridData = useCallback(async () => {
         if (!selectedMonth) return;
         try {
+            setLoadingGrid(true);
             const startOfMonth = selectedMonth.startOf('month').toISOString();
             const endOfMonth = selectedMonth.endOf('month').toISOString();
             
@@ -127,6 +129,8 @@ export const useMonthlyGrid = () => {
         } catch (error) {
             console.error('Lỗi lấy dữ liệu lưới tháng:', error);
             alert('Không thể tải dữ liệu mực nước');
+        } finally {
+            setLoadingGrid(false);
         }
     }, [selectedMonth]);
 
@@ -317,6 +321,7 @@ export const useMonthlyGrid = () => {
         riverCount,
         lakeCount,
         activeEditDays,
-        toggleDayEditMode
+        toggleDayEditMode,
+        loadingGrid
     };
 };

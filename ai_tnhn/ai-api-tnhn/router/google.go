@@ -15,6 +15,7 @@ func (h HandlerFuncs) GoogleRoutes(api *gin.RouterGroup, mid middleware.Middlewa
 		google.GET("/rain-summary", googleHandler.GetRainSummary)
 		google.GET("/rain-summary-text", googleHandler.GetRainSummaryText)
 		google.GET("/water-summary", googleHandler.GetWaterSummary)
+		google.GET("/water-report-details", googleHandler.GetWaterReportDetails)
 		google.GET("/inundation-summary", googleHandler.GetInundationSummary)
 		google.POST("/chat", googleHandler.Chat)
 		google.GET("/chat/history", googleHandler.GetChatHistory)

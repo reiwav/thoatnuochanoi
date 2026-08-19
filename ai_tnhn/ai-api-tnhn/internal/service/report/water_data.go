@@ -3,8 +3,10 @@ package report
 import (
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/internal/service/google/googleapi"
+	"ai-api-tnhn/internal/utils"
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -58,31 +60,141 @@ func (s *service) buildWaterStationTables(
 	timeHeader := fmt.Sprintf("Thời điểm %s (m)", nowInLoc.Format("15h04"))
 	lakeDataRaw := [][]string{{"STT", "Điểm đo", "Tại", "Trước mưa (m)", timeHeader}}
 	riverDataRaw := [][]string{{"STT", "Điểm đo", "Tại", "Trước mưa (m)", timeHeader}}
+	allRiverDataRaw := [][]string{{"STT", "Điểm đo", "Tại", "Trước mưa (m)", timeHeader}}
+	allLakeDataRaw := [][]string{{"STT", "Điểm đo", "Tại", "Trước mưa (m)", timeHeader}}
 
-	// 1. Lấy và Map dữ liệu trạm Sông (Trọng số > 0, lấy 5 trạm cho báo cáo chính)
-	var rivers []*models.RiverStation
-	_ = s.riverStationRepo.R_SelectManyWithSort(ctx, bson.M{"trong_so_bao_cao": bson.M{"$gt": 0}}, bson.M{"trong_so_bao_cao": -1}, &rivers)
-	if len(rivers) > 5 {
-		rivers = rivers[:5]
+	res, err := s.GetWaterReportDataCore(ctx, city, rainStartTime, nowInLoc, loc)
+	if err == nil && res != nil {
+		// All rivers
+		for i, r := range res.Rivers {
+			allRiverDataRaw = append(allRiverDataRaw, []string{
+				fmt.Sprintf("%d", i+1),
+				r.StationName,
+				r.Address,
+				r.BeforeRainValue,
+				r.CurrentValue,
+			})
+		}
+		// All lakes
+		for i, l := range res.Lakes {
+			allLakeDataRaw = append(allLakeDataRaw, []string{
+				fmt.Sprintf("%d", i+1),
+				l.StationName,
+				l.Address,
+				l.BeforeRainValue,
+				l.CurrentValue,
+			})
+		}
+
+		// Top 5 Rivers
+		topRivers := append([]WaterReportDetail(nil), res.Rivers...)
+		sort.SliceStable(topRivers, func(i, j int) bool {
+			return topRivers[i].Priority > topRivers[j].Priority
+		})
+		count := 0
+		for _, r := range topRivers {
+			if r.Priority > 0 {
+				count++
+				riverDataRaw = append(riverDataRaw, []string{
+					fmt.Sprintf("%d", count),
+					r.StationName,
+					r.Address,
+					r.BeforeRainValue,
+					r.CurrentValue,
+				})
+				if count >= 5 {
+					break
+				}
+			}
+		}
+
+		// Top 5 Lakes
+		topLakes := append([]WaterReportDetail(nil), res.Lakes...)
+		sort.SliceStable(topLakes, func(i, j int) bool {
+			return topLakes[i].Priority > topLakes[j].Priority
+		})
+		count = 0
+		for _, l := range topLakes {
+			if l.Priority > 0 {
+				count++
+				lakeDataRaw = append(lakeDataRaw, []string{
+					fmt.Sprintf("%d", count),
+					l.StationName,
+					l.Address,
+					l.BeforeRainValue,
+					l.CurrentValue,
+				})
+				if count >= 5 {
+					break
+				}
+			}
+		}
 	}
 
-	// 2. Lấy và Map dữ liệu trạm Hồ (Trọng số > 0, lấy 5 trạm cho báo cáo chính)
-	var lakes []*models.LakeStation
-	_ = s.lakeStationRepo.R_SelectManyWithSort(ctx, bson.M{"trong_so_bao_cao": bson.M{"$gt": 0}}, bson.M{"trong_so_bao_cao": -1}, &lakes)
-	if len(lakes) > 5 {
-		lakes = lakes[:5]
+	return waterReportTables{
+		RiverDataRaw:    riverDataRaw,
+		LakeDataRaw:     lakeDataRaw,
+		AllRiverDataRaw: allRiverDataRaw,
+		AllLakeDataRaw:  allLakeDataRaw,
+	}
+}
+
+func (s *service) GetWaterReportDetails(ctx context.Context) (*WaterReportDetailResponse, error) {
+	city, err := s.googleSvc.GetCityStatus(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	// Phụ lục: Lấy TẤT CẢ trạm Sông và Hồ
+	nowInLoc := time.Now().In(time.Local) // Adjust location appropriately
+	loc, _ := time.LoadLocation("Asia/Ho_Chi_Minh")
+	if loc != nil {
+		nowInLoc = time.Now().In(loc)
+	}
+
+	var rainStartTime time.Time
+	if city.Weather != nil && !city.Weather.StartTimeFull.IsZero() {
+		rainStartTime = city.Weather.StartTimeFull.In(loc)
+	} else {
+		rainStartTime = time.Date(nowInLoc.Year(), nowInLoc.Month(), nowInLoc.Day(), 7, 0, 0, 0, loc)
+	}
+
+	return s.GetWaterReportDataCore(ctx, city, rainStartTime, nowInLoc, loc)
+}
+
+func (s *service) GetWaterReportDataCore(
+	ctx context.Context,
+	city *googleapi.CityStatus,
+	rainStartTime time.Time,
+	nowInLoc time.Time,
+	loc *time.Location,
+) (*WaterReportDetailResponse, error) {
+	actualRainStartTime := rainStartTime
+	if city.Weather != nil && len(city.Weather.Measurements) > 0 {
+		var earliestRain time.Time
+		for _, m := range city.Weather.Measurements {
+			if (m.TotalRain > 0 || m.SessionRain > 0) && !m.StartTimeFull.IsZero() {
+				if earliestRain.IsZero() || m.StartTimeFull.Before(earliestRain) {
+					earliestRain = m.StartTimeFull
+				}
+			}
+		}
+		if !earliestRain.IsZero() {
+			actualRainStartTime = earliestRain.In(loc)
+		}
+	}
+
+	rainDateStr := utils.GetRainDate(actualRainStartTime)
+	parsedRainDate, _ := time.ParseInLocation("2006-01-02", rainDateStr, loc)
+	rainStartOfDay := time.Date(parsedRainDate.Year(), parsedRainDate.Month(), parsedRainDate.Day(), 0, 0, 0, 0, loc)
+	todayStartOfDay := time.Date(nowInLoc.Year(), nowInLoc.Month(), nowInLoc.Day(), 0, 0, 0, 0, loc)
+	beforeRainEnd := actualRainStartTime.Add(-1 * time.Second)
+	todayStr := nowInLoc.Format("2006-01-02")
+
 	var allRivers []*models.RiverStation
 	_ = s.riverStationRepo.R_SelectManyWithSort(ctx, bson.M{}, bson.M{"ten_tram": 1}, &allRivers)
 
 	var allLakes []*models.LakeStation
 	_ = s.lakeStationRepo.R_SelectManyWithSort(ctx, bson.M{}, bson.M{"ten_tram": 1}, &allLakes)
-
-
-	allRiverDataRaw := [][]string{{"STT", "Điểm đo", "Tại", "Trước mưa (m)", timeHeader}}
-	allLakeDataRaw := [][]string{{"STT", "Điểm đo", "Tại", "Trước mưa (m)", timeHeader}}
 
 	wMap7 := make(map[int]float64)
 	wMap13 := make(map[int]float64)
@@ -98,72 +210,8 @@ func (s *service) buildWaterStationTables(
 		}
 	}
 
-	todayStr := nowInLoc.Format("2006-01-02")
-	startOfDay := time.Date(nowInLoc.Year(), nowInLoc.Month(), nowInLoc.Day(), 0, 0, 0, 0, loc)
-
-	getRiverWaterBeforeRain := func(oldID int) float64 {
-		if s.riverRepo != nil && oldID > 0 {
-			recs, err := s.riverRepo.GetAllByStationID(ctx, int64(oldID), startOfDay, rainStartTime)
-			if err == nil && len(recs) > 0 && recs[0].Value > 0 {
-				return recs[0].Value
-			}
-		}
-		if val, ok := wMap7[oldID]; ok && val > 0 {
-			return val
-		}
-		if val, ok := wMap13[oldID]; ok && val > 0 {
-			return val
-		}
-		return 0
-	}
-
-	getLakeWaterBeforeRain := func(oldID int) float64 {
-		if s.lakeRepo != nil && oldID > 0 {
-			recs, err := s.lakeRepo.GetAllByStationID(ctx, int64(oldID), startOfDay, rainStartTime)
-			if err == nil && len(recs) > 0 && recs[0].Value > 0 {
-				return recs[0].Value
-			}
-		}
-		if val, ok := wMap7[oldID]; ok && val > 0 {
-			return val
-		}
-		if val, ok := wMap13[oldID]; ok && val > 0 {
-			return val
-		}
-		return 0
-	}
-
-	getRiverWaterCurrent := func(oldID int) float64 {
-		if s.riverRepo != nil && oldID > 0 {
-			if latest, err := s.riverRepo.GetLatest(ctx, int64(oldID)); err == nil && latest != nil && latest.Value > 0 {
-				if latest.Date == todayStr || latest.Timestamp.After(startOfDay) {
-					return latest.Value
-				}
-			}
-		}
-		if val, ok := wMapHT[oldID]; ok && val > 0 {
-			return val
-		}
-		return 0
-	}
-
-	getLakeWaterCurrent := func(oldID int) float64 {
-		if s.lakeRepo != nil && oldID > 0 {
-			if latest, err := s.lakeRepo.GetLatest(ctx, int64(oldID)); err == nil && latest != nil && latest.Value > 0 {
-				if latest.Date == todayStr || latest.Timestamp.After(startOfDay) {
-					return latest.Value
-				}
-			}
-		}
-		if val, ok := wMapHT[oldID]; ok && val > 0 {
-			return val
-		}
-		return 0
-	}
-
 	addrMap := make(map[int]string)
 	nameAddrMap := make(map[string]string)
-
 	for _, r := range allRivers {
 		if r != nil && r.DiaChi != "" {
 			addrMap[r.OldID] = r.DiaChi
@@ -176,19 +224,6 @@ func (s *service) buildWaterStationTables(
 			nameAddrMap[l.TenTram] = l.DiaChi
 		}
 	}
-	for _, r := range rivers {
-		if r != nil && r.DiaChi != "" {
-			addrMap[r.OldID] = r.DiaChi
-			nameAddrMap[r.TenTram] = r.DiaChi
-		}
-	}
-	for _, l := range lakes {
-		if l != nil && l.DiaChi != "" {
-			addrMap[l.OldID] = l.DiaChi
-			nameAddrMap[l.TenTram] = l.DiaChi
-		}
-	}
-
 	getStationAddrRaw := func(oldID int, name string) string {
 		if addr, ok := addrMap[oldID]; ok && addr != "" {
 			return addr
@@ -199,138 +234,116 @@ func (s *service) buildWaterStationTables(
 		return "Chưa cập nhật"
 	}
 
-	// Báo cáo chính
-	if len(rivers) > 0 {
-		for i, r := range rivers {
-			rawBefore := getRiverWaterBeforeRain(r.OldID)
-			valBefore := formatWaterVal(rawBefore)
-			valHT := formatWaterVal(getRiverWaterCurrent(r.OldID))
-			addr := r.DiaChi
-			if addr == "" {
-				addr = getStationAddrRaw(r.OldID, r.TenTram)
-			}
-			stt := fmt.Sprintf("%d", i+1)
-			riverDataRaw = append(riverDataRaw, []string{stt, r.TenTram, addr, valBefore, valHT})
+	response := &WaterReportDetailResponse{
+		ReportTime: nowInLoc.Format("15:04 02/01/2006"),
+		RainTime:   actualRainStartTime.Format("15:04 02/01/2006"),
+		Rivers:     []WaterReportDetail{},
+		Lakes:      []WaterReportDetail{},
+	}
+
+	for _, r := range allRivers {
+		if r == nil {
+			continue
 		}
-	} else if city.RawWater != nil {
-		count := 0
-		for _, t := range city.RawWater.Content.Tram {
-			if t.Loai == "1" {
-				idInt := 0
-				fmt.Sscanf(t.Id, "%d", &idInt)
-				rawBefore := getRiverWaterBeforeRain(idInt)
-				valBefore := formatWaterVal(rawBefore)
-				valHT := formatWaterVal(getRiverWaterCurrent(idInt))
-				addr := getStationAddrRaw(idInt, t.TenTram)
-				stt := fmt.Sprintf("%d", count+1)
-				riverDataRaw = append(riverDataRaw, []string{stt, t.TenTram, addr, valBefore, valHT})
-				count++
-				if count >= 5 {
-					break
+		detail := WaterReportDetail{
+			StationName: r.TenTram,
+			Address:     getStationAddrRaw(r.OldID, r.TenTram),
+			Type:        "river",
+			OldID:       r.OldID,
+			Priority:    r.TrongSoBaoCao,
+		}
+
+		// Before Rain
+		if s.riverRepo != nil && r.OldID > 0 {
+			rec, err := s.riverRepo.GetLatestBefore(ctx, int64(r.OldID), rainStartOfDay, beforeRainEnd)
+			if err == nil && rec != nil {
+				detail.RawBeforeRain = rec.Value
+				detail.BeforeRainTime = rec.Timestamp.In(loc).Format("15:04 02/01")
+			}
+		}
+		if detail.RawBeforeRain <= 0 {
+			if val, ok := wMap7[r.OldID]; ok && val > 0 {
+				detail.RawBeforeRain = val
+				detail.BeforeRainTime = "07:00"
+			} else if val, ok := wMap13[r.OldID]; ok && val > 0 {
+				detail.RawBeforeRain = val
+				detail.BeforeRainTime = "13:00"
+			}
+		}
+		detail.BeforeRainValue = formatWaterVal(detail.RawBeforeRain)
+
+		// Current
+		if s.riverRepo != nil && r.OldID > 0 {
+			if latest, err := s.riverRepo.GetLatest(ctx, int64(r.OldID)); err == nil && latest != nil && latest.Value > 0 {
+				if latest.Date == todayStr || latest.Timestamp.After(todayStartOfDay) {
+					detail.RawCurrent = latest.Value
+					detail.CurrentTime = latest.Timestamp.In(loc).Format("15:04 02/01")
 				}
 			}
 		}
+		if detail.RawCurrent <= 0 {
+			if val, ok := wMapHT[r.OldID]; ok && val > 0 {
+				detail.RawCurrent = val
+				detail.CurrentTime = "HT"
+			}
+		}
+		detail.CurrentValue = formatWaterVal(detail.RawCurrent)
+		detail.Difference = formatWaterDiff(detail.RawBeforeRain, detail.RawCurrent)
+
+		response.Rivers = append(response.Rivers, detail)
 	}
 
-	if len(lakes) > 0 {
-		for i, l := range lakes {
-			rawBefore := getLakeWaterBeforeRain(l.OldID)
-			valBefore := formatWaterVal(rawBefore)
-			valHT := formatWaterVal(getLakeWaterCurrent(l.OldID))
-			addr := l.DiaChi
-			if addr == "" {
-				addr = getStationAddrRaw(l.OldID, l.TenTram)
-			}
-			stt := fmt.Sprintf("%d", i+1)
-			lakeDataRaw = append(lakeDataRaw, []string{stt, l.TenTram, addr, valBefore, valHT})
+	for _, l := range allLakes {
+		if l == nil {
+			continue
 		}
-	} else if city.RawWater != nil {
-		count := 0
-		for _, t := range city.RawWater.Content.Tram {
-			if t.Loai == "2" {
-				idInt := 0
-				fmt.Sscanf(t.Id, "%d", &idInt)
-				rawBefore := getLakeWaterBeforeRain(idInt)
-				valBefore := formatWaterVal(rawBefore)
-				valHT := formatWaterVal(getLakeWaterCurrent(idInt))
-				addr := getStationAddrRaw(idInt, t.TenTram)
-				stt := fmt.Sprintf("%d", count+1)
-				lakeDataRaw = append(lakeDataRaw, []string{stt, t.TenTram, addr, valBefore, valHT})
-				count++
-				if count >= 5 {
-					break
+		detail := WaterReportDetail{
+			StationName: l.TenTram,
+			Address:     getStationAddrRaw(l.OldID, l.TenTram),
+			Type:        "lake",
+			OldID:       l.OldID,
+			Priority:    l.TrongSoBaoCao,
+		}
+
+		// Before Rain
+		if s.lakeRepo != nil && l.OldID > 0 {
+			rec, err := s.lakeRepo.GetLatestBefore(ctx, int64(l.OldID), rainStartOfDay, beforeRainEnd)
+			if err == nil && rec != nil {
+				detail.RawBeforeRain = rec.Value
+				detail.BeforeRainTime = rec.Timestamp.In(loc).Format("15:04 02/01")
+			}
+		}
+		if detail.RawBeforeRain <= 0 {
+			if val, ok := wMap7[l.OldID]; ok && val > 0 {
+				detail.RawBeforeRain = val
+				detail.BeforeRainTime = "07:00"
+			} else if val, ok := wMap13[l.OldID]; ok && val > 0 {
+				detail.RawBeforeRain = val
+				detail.BeforeRainTime = "13:00"
+			}
+		}
+		detail.BeforeRainValue = formatWaterVal(detail.RawBeforeRain)
+
+		// Current
+		if s.lakeRepo != nil && l.OldID > 0 {
+			if latest, err := s.lakeRepo.GetLatest(ctx, int64(l.OldID)); err == nil && latest != nil && latest.Value > 0 {
+				if latest.Date == todayStr || latest.Timestamp.After(todayStartOfDay) {
+					detail.RawCurrent = latest.Value
+					detail.CurrentTime = latest.Timestamp.In(loc).Format("15:04 02/01")
 				}
 			}
 		}
+		if detail.RawCurrent <= 0 {
+			if val, ok := wMapHT[l.OldID]; ok && val > 0 {
+				detail.RawCurrent = val
+				detail.CurrentTime = "HT"
+			}
+		}
+		detail.CurrentValue = formatWaterVal(detail.RawCurrent)
+		detail.Difference = formatWaterDiff(detail.RawBeforeRain, detail.RawCurrent)
+
+		response.Lakes = append(response.Lakes, detail)
 	}
 
-	// Phụ lục: Thống kê toàn bộ các trạm Sông và Hồ
-	if len(allRivers) > 0 {
-		for i, r := range allRivers {
-			rawBefore := getRiverWaterBeforeRain(r.OldID)
-			rawHT := getRiverWaterCurrent(r.OldID)
-			valBefore := formatWaterVal(rawBefore)
-			valHT := formatWaterVal(rawHT)
-			addr := r.DiaChi
-			if addr == "" {
-				addr = getStationAddrRaw(r.OldID, r.TenTram)
-			}
-			stt := fmt.Sprintf("%d", i+1)
-			allRiverDataRaw = append(allRiverDataRaw, []string{stt, r.TenTram, addr, valBefore, valHT})
-		}
-	} else if city.RawWater != nil {
-		count := 0
-		for _, t := range city.RawWater.Content.Tram {
-			if t.Loai == "1" {
-				idInt := 0
-				fmt.Sscanf(t.Id, "%d", &idInt)
-				rawBefore := getRiverWaterBeforeRain(idInt)
-				rawHT := getRiverWaterCurrent(idInt)
-				valBefore := formatWaterVal(rawBefore)
-				valHT := formatWaterVal(rawHT)
-				addr := getStationAddrRaw(idInt, t.TenTram)
-				stt := fmt.Sprintf("%d", count+1)
-				allRiverDataRaw = append(allRiverDataRaw, []string{stt, t.TenTram, addr, valBefore, valHT})
-				count++
-			}
-		}
-	}
-
-	if len(allLakes) > 0 {
-		for i, l := range allLakes {
-			rawBefore := getLakeWaterBeforeRain(l.OldID)
-			rawHT := getLakeWaterCurrent(l.OldID)
-			valBefore := formatWaterVal(rawBefore)
-			valHT := formatWaterVal(rawHT)
-			addr := l.DiaChi
-			if addr == "" {
-				addr = getStationAddrRaw(l.OldID, l.TenTram)
-			}
-			stt := fmt.Sprintf("%d", i+1)
-			allLakeDataRaw = append(allLakeDataRaw, []string{stt, l.TenTram, addr, valBefore, valHT})
-		}
-	} else if city.RawWater != nil {
-		count := 0
-		for _, t := range city.RawWater.Content.Tram {
-			if t.Loai == "2" {
-				idInt := 0
-				fmt.Sscanf(t.Id, "%d", &idInt)
-				rawBefore := getLakeWaterBeforeRain(idInt)
-				rawHT := getLakeWaterCurrent(idInt)
-				valBefore := formatWaterVal(rawBefore)
-				valHT := formatWaterVal(rawHT)
-				addr := getStationAddrRaw(idInt, t.TenTram)
-				stt := fmt.Sprintf("%d", count+1)
-				allLakeDataRaw = append(allLakeDataRaw, []string{stt, t.TenTram, addr, valBefore, valHT})
-				count++
-			}
-		}
-	}
-
-	return waterReportTables{
-		RiverDataRaw:    riverDataRaw,
-		LakeDataRaw:     lakeDataRaw,
-		AllRiverDataRaw: allRiverDataRaw,
-		AllLakeDataRaw:  allLakeDataRaw,
-	}
+	return response, nil
 }

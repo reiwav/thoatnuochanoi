@@ -143,6 +143,15 @@ const adminPages = {
           breadcrumbs: false
         },
         {
+          id: 'water:report-detail',
+          permission: 'water:view',
+          title: 'Dữ liệu trước mưa',
+          type: 'item',
+          url: '/admin/station/water/report-detail',
+          icon: icons.IconTable,
+          breadcrumbs: false
+        },
+        {
           id: 'water:grid',
           permission: 'water:update',
           title: 'Nhập liệu Excel',

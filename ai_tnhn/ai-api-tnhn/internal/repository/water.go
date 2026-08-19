@@ -25,6 +25,7 @@ type Lake interface {
 	GetByDate(ctx context.Context, date string) ([]*models.LakeRecord, error)
 	GetByDateRange(ctx context.Context, startTime, endTime time.Time) ([]*models.LakeRecord, error)
 	GetLatest(ctx context.Context, stationID int64) (*models.LakeRecord, error)
+	GetLatestBefore(ctx context.Context, stationID int64, startTime time.Time, beforeTime time.Time) (*models.LakeRecord, error)
 	Create(ctx context.Context, record *models.LakeRecord) error
 	UpdateValueByID(ctx context.Context, id string, value float64, source string) error
 	Exists(ctx context.Context, stationID int64, timestamp time.Time) (bool, error)
@@ -36,6 +37,7 @@ type River interface {
 	GetByDate(ctx context.Context, date string) ([]*models.RiverRecord, error)
 	GetByDateRange(ctx context.Context, startTime, endTime time.Time) ([]*models.RiverRecord, error)
 	GetLatest(ctx context.Context, stationID int64) (*models.RiverRecord, error)
+	GetLatestBefore(ctx context.Context, stationID int64, startTime time.Time, beforeTime time.Time) (*models.RiverRecord, error)
 	Create(ctx context.Context, record *models.RiverRecord) error
 	UpdateValueByID(ctx context.Context, id string, value float64, source string) error
 	Exists(ctx context.Context, stationID int64, timestamp time.Time) (bool, error)

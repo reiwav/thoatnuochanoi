@@ -55,3 +55,22 @@ func (h *handler) GenerateAIDynamicReport(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"status": "success", "data": result})
 }
+
+// GetWaterReportDetails godoc
+// @Summary Lấy chi tiết số liệu báo cáo Sông/Hồ
+// @Description Lấy bảng chi tiết so sánh mực nước trước mưa và hiện tại
+// @Tags Tiện ích
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} web.Response{data=object}
+// @Router /admin/google/water-report-details [get]
+func (h *handler) GetWaterReportDetails(c *gin.Context) {
+	result, err := h.reportSvc.GetWaterReportDetails(c.Request.Context())
+	if err != nil {
+		h.log.GetLogger().Errorf("[GetWaterReportDetails] Error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "success", "data": result})
+}

@@ -20,6 +20,7 @@ const StationWaterGrid = Loadable(lazy(() => import('views/admin/station-water-g
 const MonthlyGrid = Loadable(lazy(() => import('views/admin/station-water-grid/MonthlyGrid')));
 const StationPumpingSummary = Loadable(lazy(() => import('views/admin/station-pumping-summary')));
 const StationSluiceGateSummary = Loadable(lazy(() => import('views/admin/station-sluice-gate-summary')));
+const StationWaterReportDetail = Loadable(lazy(() => import('views/admin/station-water-report-detail')));
 const StationRainCompare = Loadable(lazy(() => import('views/admin/station-rain-compare')));
 const StationRiverList = Loadable(lazy(() => import('views/admin/station/river')));
 const StationLakeList = Loadable(lazy(() => import('views/admin/station/lake')));
@@ -83,6 +84,7 @@ const MainRoutes = {
         { path: 'station/water/monthly-grid', element: <MonthlyGrid /> },
         { path: 'station/pumping/summary', element: <StationPumpingSummary /> },
         { path: 'station/sluice-gate/summary', element: <StationSluiceGateSummary /> },
+        { path: 'station/water/report-detail', element: <StationWaterReportDetail /> },
         { path: 'station/rain/compare', element: <StationRainCompare /> },
         { path: 'station/rain/list', element: <StationRainList /> },
         { path: 'station/rain/history', element: <StationHistory type="rain" /> },

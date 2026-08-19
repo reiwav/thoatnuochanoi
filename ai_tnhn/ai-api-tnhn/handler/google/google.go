@@ -35,6 +35,7 @@ type Handler interface {
 	GenerateQuickReportText(c *gin.Context)
 	GenerateAIDynamicReport(c *gin.Context)
 	GetStatus(c *gin.Context)
+	GetWaterReportDetails(c *gin.Context)
 }
 
 type handler struct {

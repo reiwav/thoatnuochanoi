@@ -172,6 +172,23 @@ func (p lakeRepository) GetLatest(ctx context.Context, stationID int64) (*models
 	return records[0], nil
 }
 
+func (p lakeRepository) GetLatestBefore(ctx context.Context, stationID int64, startTime time.Time, beforeTime time.Time) (*models.LakeRecord, error) {
+	var records []*models.LakeRecord
+	filter := bson.M{
+		"station_id": stationID,
+		"timestamp": bson.M{
+			"$gte": startTime,
+			"$lte": beforeTime,
+		},
+		"value":      bson.M{"$gt": 0},
+	}
+	err := p.R_SelectAndSort(ctx, filter, bson.M{"timestamp": -1}, 0, 1, &records)
+	if err != nil || len(records) == 0 {
+		return nil, err
+	}
+	return records[0], nil
+}
+
 func (p lakeRepository) Create(ctx context.Context, record *models.LakeRecord) error {
 	return p.R_Create(ctx, record)
 }
@@ -258,6 +275,24 @@ func (p riverRepository) GetLatest(ctx context.Context, stationID int64) (*model
 	}
 	return records[0], nil
 }
+
+func (p riverRepository) GetLatestBefore(ctx context.Context, stationID int64, startTime time.Time, beforeTime time.Time) (*models.RiverRecord, error) {
+	var records []*models.RiverRecord
+	filter := bson.M{
+		"station_id": stationID,
+		"timestamp": bson.M{
+			"$gte": startTime,
+			"$lte": beforeTime,
+		},
+		"value":      bson.M{"$gt": 0},
+	}
+	err := p.R_SelectAndSort(ctx, filter, bson.M{"timestamp": -1}, 0, 1, &records)
+	if err != nil || len(records) == 0 {
+		return nil, err
+	}
+	return records[0], nil
+}
+
 func (p riverRepository) Create(ctx context.Context, record *models.RiverRecord) error {
 	return p.R_Create(ctx, record)
 }

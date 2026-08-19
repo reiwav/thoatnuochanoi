@@ -2327,6 +2327,43 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/google/water-report-details": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Lấy bảng chi tiết so sánh mực nước trước mưa và hiện tại",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tiện ích"
+                ],
+                "summary": "Lấy chi tiết số liệu báo cáo Sông/Hồ",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/web.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/admin/google/water-summary": {
             "get": {
                 "security": [

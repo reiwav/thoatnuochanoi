@@ -1,0 +1,148 @@
+import React, { useState } from 'react';
+import {
+    Box,
+    CircularProgress,
+    Typography,
+    Container,
+    Tabs,
+    Tab,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Paper,
+    IconButton
+} from '@mui/material';
+import { IconRefresh } from '@tabler/icons-react';
+import MainCard from 'ui-component/cards/MainCard';
+import useWaterReportDetail from './hooks/useWaterReportDetail';
+
+const WaterDetailTable = ({ data, reportTime, rainTime, title }) => {
+    return (
+        <Box>
+            <Box sx={{ mb: 2 }}>
+                <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                    Thời điểm báo cáo: {reportTime || '---'}
+                </Typography>
+                <Typography variant="body1" sx={{ fontWeight: 600, color: 'error.main' }}>
+                    Thời điểm bắt đầu mưa: {rainTime || '---'}
+                </Typography>
+            </Box>
+            <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}>
+                <Table sx={{ minWidth: 650 }} aria-label={`${title} table`}>
+                    <TableHead>
+                        <TableRow sx={{ backgroundColor: 'primary.light' }}>
+                            <TableCell sx={{ fontWeight: 700 }}>Tên Trạm</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }}>Địa chỉ</TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 700 }}>Thời gian<br/>trước mưa</TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 700 }}>Mực nước<br/>trước mưa (m)</TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 700 }}>Thời gian<br/>hiện tại</TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 700 }}>Mực nước<br/>hiện tại (m)</TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 700 }}>Chênh lệch (m)</TableCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {data.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={7} align="center">
+                                    Không có dữ liệu
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            data.map((row, index) => (
+                                <TableRow key={index} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                                    <TableCell component="th" scope="row" sx={{ fontWeight: 500 }}>
+                                        {row.station_name}
+                                    </TableCell>
+                                    <TableCell>{row.address}</TableCell>
+                                    <TableCell align="center">{row.before_rain_time}</TableCell>
+                                    <TableCell align="center">{row.before_rain_value}</TableCell>
+                                    <TableCell align="center">{row.current_time}</TableCell>
+                                    <TableCell align="center" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                                        {row.current_value}
+                                    </TableCell>
+                                    <TableCell align="center" sx={{ 
+                                        fontWeight: 600, 
+                                        color: row.raw_current - row.raw_before_rain > 0 ? 'error.main' : (row.raw_current - row.raw_before_rain < 0 ? 'success.main' : 'inherit')
+                                    }}>
+                                        {row.difference}
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        )}
+                    </TableBody>
+                </Table>
+            </TableContainer>
+        </Box>
+    );
+};
+
+const StationWaterReportDetail = () => {
+    const { loading, data, refresh } = useWaterReportDetail();
+    const [tabValue, setTabValue] = useState(0);
+
+    const handleTabChange = (event, newValue) => {
+        setTabValue(newValue);
+    };
+
+    if (loading) {
+        return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+                <CircularProgress />
+            </Box>
+        );
+    }
+
+    return (
+        <Container maxWidth="xl" sx={{ mt: 3, pb: 4 }}>
+            <MainCard
+                title={
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="h3" sx={{ fontWeight: 800 }}>Dữ liệu trước mưa</Typography>
+                        <IconButton onClick={refresh} size="medium" color="primary">
+                            <IconRefresh size={22} />
+                        </IconButton>
+                    </Box>
+                }
+            >
+                <Tabs
+                    value={tabValue}
+                    onChange={handleTabChange}
+                    indicatorColor="primary"
+                    textColor="primary"
+                    sx={{
+                        mb: 3,
+                        borderBottom: '1px solid',
+                        borderColor: 'divider',
+                        '& .MuiTab-root': { fontWeight: 700, fontSize: '1rem', py: 1.5 }
+                    }}
+                >
+                    <Tab label={`Mực nước Sông (${data.rivers?.length || 0})`} />
+                    <Tab label={`Mực nước Hồ (${data.lakes?.length || 0})`} />
+                </Tabs>
+
+                {tabValue === 0 && (
+                    <WaterDetailTable 
+                        data={data.rivers || []} 
+                        reportTime={data.report_time} 
+                        rainTime={data.rain_time} 
+                        title="Sông" 
+                    />
+                )}
+                
+                {tabValue === 1 && (
+                    <WaterDetailTable 
+                        data={data.lakes || []} 
+                        reportTime={data.report_time} 
+                        rainTime={data.rain_time} 
+                        title="Hồ" 
+                    />
+                )}
+            </MainCard>
+        </Container>
+    );
+};
+
+export default StationWaterReportDetail;

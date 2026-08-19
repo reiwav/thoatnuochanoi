@@ -2927,6 +2927,26 @@ paths:
       summary: Lấy trạng thái tích hợp Google API
       tags:
       - Tiện ích
+  /admin/google/water-report-details:
+    get:
+      description: Lấy bảng chi tiết so sánh mực nước trước mưa và hiện tại
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/web.Response'
+            - properties:
+                data:
+                  type: object
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Lấy chi tiết số liệu báo cáo Sông/Hồ
+      tags:
+      - Tiện ích
   /admin/google/water-summary:
     get:
       description: Truy xuất dữ liệu mực nước có cấu trúc để AI xử lý

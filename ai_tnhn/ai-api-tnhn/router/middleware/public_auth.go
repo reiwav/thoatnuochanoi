@@ -26,7 +26,7 @@ func (m *mid) RSAPublicAuthMiddleware() gin.HandlerFunc {
 		signature := c.GetHeader("X-Signature")
 
 		if appID == "" || timestampStr == "" || signature == "" {
-			m.SendError(c, web.Unauthorized("Thiếu thông tin xác thực (X-App-Id, X-Timestamp, X-Signature)"))
+			m.SendErrorForce(c, web.Unauthorized("Thiếu thông tin xác thực (X-App-Id, X-Timestamp, X-Signature)"), http.StatusUnauthorized)
 			c.Abort()
 			return
 		}
@@ -34,14 +34,14 @@ func (m *mid) RSAPublicAuthMiddleware() gin.HandlerFunc {
 		// Check timestamp (prevent replay attack, +/- 5 mins)
 		ts, err := strconv.ParseInt(timestampStr, 10, 64)
 		if err != nil {
-			m.SendError(c, web.Unauthorized("X-Timestamp không hợp lệ"))
+			m.SendErrorForce(c, web.Unauthorized("X-Timestamp không hợp lệ"), http.StatusUnauthorized)
 			c.Abort()
 			return
 		}
 		reqTime := time.Unix(ts, 0)
 		now := time.Now()
 		if reqTime.Before(now.Add(-5*time.Minute)) || reqTime.After(now.Add(5*time.Minute)) {
-			m.SendError(c, web.Unauthorized("Request quá hạn (Timestamp không hợp lệ)"))
+			m.SendErrorForce(c, web.Unauthorized("Request quá hạn (Timestamp không hợp lệ)"), http.StatusUnauthorized)
 			c.Abort()
 			return
 		}
@@ -49,7 +49,7 @@ func (m *mid) RSAPublicAuthMiddleware() gin.HandlerFunc {
 		// Find Client Key
 		clientInfo, exists := constant.PublicClients[appID]
 		if !exists {
-			m.SendError(c, web.Unauthorized("App ID không tồn tại"))
+			m.SendErrorForce(c, web.Unauthorized("App ID không tồn tại"), http.StatusUnauthorized)
 			c.Abort()
 			return
 		}
@@ -59,7 +59,7 @@ func (m *mid) RSAPublicAuthMiddleware() gin.HandlerFunc {
 
 		// Verify signature
 		if !verifyRSASignature(clientInfo.PublicKey, payload, signature) {
-			m.SendError(c, web.Unauthorized("Chữ ký không hợp lệ"))
+			m.SendErrorForce(c, web.Unauthorized("Chữ ký không hợp lệ"), http.StatusUnauthorized)
 			c.Abort()
 			return
 		}

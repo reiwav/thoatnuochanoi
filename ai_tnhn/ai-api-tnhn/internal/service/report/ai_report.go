@@ -80,16 +80,16 @@ func (s *service) parseAIReportSummary(ctx context.Context, userID string, city 
 		err := json.Unmarshal([]byte(cleanJSON), &aiData)
 		if err == nil {
 			if aiData.RainSummary != "" {
-				noidung = aiData.RainSummary
+				noidung = strings.TrimSpace(aiData.RainSummary)
 			}
 			if aiData.InuSummary != "" {
-				motaUngNgap = aiData.InuSummary
+				motaUngNgap = strings.TrimSpace(aiData.InuSummary)
 			}
 			if aiData.InuDetails != "" {
-				chiTietCacDiem = aiData.InuDetails
+				chiTietCacDiem = strings.TrimSpace(aiData.InuDetails)
 			}
 			if aiData.PumpSummary != "" {
-				noiDungTramBom = aiData.PumpSummary
+				noiDungTramBom = strings.TrimSpace(aiData.PumpSummary)
 			}
 
 			// Fallback: If AI returned empty details or "no points" but we actually have active points

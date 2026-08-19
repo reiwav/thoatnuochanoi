@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"ai-api-tnhn/internal/constant"
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
@@ -8,82 +9,176 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/pem"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"os"
 	"testing"
+	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
-func generateTestRSAKeys() (privateKey *rsa.PrivateKey, publicKeyStr string, err error) {
-	privateKey, err = rsa.GenerateKey(rand.Reader, 2048)
+func TestRSAVerificationWithCustomerKeys(t *testing.T) {
+	pubKeyBytes, err := os.ReadFile("../../logs/hsdc-key-2026-08-18.public.pem")
 	if err != nil {
-		return nil, "", err
+		t.Fatalf("Failed to read public key: %v", err)
+	}
+	pubKeyStr := string(pubKeyBytes)
+
+	privKeyBytes, err := os.ReadFile("../../logs/hsdc-key-2026-08-18.private.pem")
+	if err != nil {
+		t.Fatalf("Failed to read private key: %v", err)
 	}
 
-	pubKeyBytes, err := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
-	if err != nil {
-		return nil, "", err
+	block, _ := pem.Decode(privKeyBytes)
+	if block == nil {
+		t.Fatalf("Failed to decode private key PEM")
 	}
 
-	pubKeyPEM := pem.EncodeToMemory(&pem.Block{
-		Type:  "PUBLIC KEY",
-		Bytes: pubKeyBytes,
-	})
+	privKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		t.Fatalf("Failed to parse PKCS1 private key: %v", err)
+	}
 
-	return privateKey, string(pubKeyPEM), nil
-}
+	appID := "hsdc-api-2026"
+	timestampStr := "1787125996"
+	path := "/api/public/v1/stations"
+	payload := appID + timestampStr + path
 
-func createTestSignature(privateKey *rsa.PrivateKey, payload string) (string, error) {
 	hashed := sha256.Sum256([]byte(payload))
-	signature, err := rsa.SignPKCS1v15(rand.Reader, privateKey, crypto.SHA256, hashed[:])
+	sig, err := rsa.SignPKCS1v15(rand.Reader, privKey, crypto.SHA256, hashed[:])
 	if err != nil {
-		return "", err
+		t.Fatalf("Failed to sign payload: %v", err)
 	}
-	return base64.StdEncoding.EncodeToString(signature), nil
+	sigBase64 := base64.StdEncoding.EncodeToString(sig)
+
+	// Test with verifyRSASignature
+	isValid := verifyRSASignature(pubKeyStr, payload, sigBase64)
+	if !isValid {
+		t.Errorf("Signature verification failed with customer keys!")
+	} else {
+		t.Logf("Signature verification SUCCESSFUL!")
+	}
+
+	// Also verify that constant.PublicClients[appID] has this exact public key
+	clientInfo, exists := constant.PublicClients[appID]
+	if !exists {
+		t.Errorf("AppID %s not found in PublicClients", appID)
+	} else {
+		isValidConst := verifyRSASignature(clientInfo.PublicKey, payload, sigBase64)
+		if !isValidConst {
+			t.Errorf("Signature verification with constant.PublicClients failed!")
+		} else {
+			t.Logf("Signature verification with constant.PublicClients SUCCESSFUL!")
+		}
+	}
 }
 
-func TestVerifyRSASignature(t *testing.T) {
-	// 1. Setup keys
-	privKey, pubKeyStr, err := generateTestRSAKeys()
-	if err != nil {
-		t.Fatalf("Failed to generate test keys: %v", err)
+func TestRSAPublicAuthMiddlewareHTTP(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	m := &mid{}
+
+	router := gin.New()
+	v1 := router.Group("/api/public/v1")
+	v1.Use(m.RSAPublicAuthMiddleware())
+	v1.GET("/stations", func(c *gin.Context) {
+		c.JSON(200, gin.H{"code": 200, "message": "Success"})
+	})
+	v1.GET("/sluice-gate/:id", func(c *gin.Context) {
+		c.JSON(200, gin.H{"code": 200, "message": "Success", "id": c.Param("id")})
+	})
+
+	privKeyBytes, _ := os.ReadFile("../../logs/hsdc-key-2026-08-18.private.pem")
+	block, _ := pem.Decode(privKeyBytes)
+	privKey, _ := x509.ParsePKCS1PrivateKey(block.Bytes)
+
+	signRequest := func(appID, path string, ts int64) string {
+		payload := appID + fmt.Sprintf("%d", ts) + path
+		hashed := sha256.Sum256([]byte(payload))
+		sig, _ := rsa.SignPKCS1v15(rand.Reader, privKey, crypto.SHA256, hashed[:])
+		return base64.StdEncoding.EncodeToString(sig)
 	}
 
-	// 2. Define test data
-	payload := "cic_app1700000000/api/public/v1/water/lake/lake_123"
-	
-	// 3. Create valid signature
-	validSignature, err := createTestSignature(privKey, payload)
-	if err != nil {
-		t.Fatalf("Failed to create signature: %v", err)
+	appID := "hsdc-api-2026"
+	now := time.Now().Unix()
+
+	// 1. Valid request to /api/public/v1/stations
+	{
+		path := "/api/public/v1/stations"
+		sig := signRequest(appID, path, now)
+
+		req, _ := http.NewRequest("GET", path, nil)
+		req.Header.Set("X-App-Id", appID)
+		req.Header.Set("X-Timestamp", fmt.Sprintf("%d", now))
+		req.Header.Set("X-Signature", sig)
+
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		if w.Code != 200 {
+			t.Errorf("Expected 200 OK, got %d: %s", w.Code, w.Body.String())
+		} else {
+			t.Logf("Valid request: 200 OK")
+		}
 	}
 
-	t.Run("Valid Signature", func(t *testing.T) {
-		isValid := verifyRSASignature(pubKeyStr, payload, validSignature)
-		if !isValid {
-			t.Errorf("Expected signature to be valid, but got invalid")
-		}
-	})
+	// 2. Valid request to /api/public/v1/sluice-gate/sg_001
+	{
+		path := "/api/public/v1/sluice-gate/sg_001"
+		sig := signRequest(appID, path, now)
 
-	t.Run("Invalid Payload (tampered data)", func(t *testing.T) {
-		tamperedPayload := "cic_app1700000000/api/public/v1/water/lake/lake_999"
-		isValid := verifyRSASignature(pubKeyStr, tamperedPayload, validSignature)
-		if isValid {
-			t.Errorf("Expected signature to be invalid for tampered payload, but got valid")
-		}
-	})
+		req, _ := http.NewRequest("GET", path, nil)
+		req.Header.Set("X-App-Id", appID)
+		req.Header.Set("X-Timestamp", fmt.Sprintf("%d", now))
+		req.Header.Set("X-Signature", sig)
 
-	t.Run("Invalid Signature format", func(t *testing.T) {
-		isValid := verifyRSASignature(pubKeyStr, payload, "invalid_base64_string_!!!")
-		if isValid {
-			t.Errorf("Expected signature to be invalid for bad base64 format")
-		}
-	})
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
 
-	t.Run("Wrong Public Key", func(t *testing.T) {
-		// Generate another pair of keys
-		_, wrongPubKeyStr, _ := generateTestRSAKeys()
-		
-		isValid := verifyRSASignature(wrongPubKeyStr, payload, validSignature)
-		if isValid {
-			t.Errorf("Expected signature to be invalid for wrong public key")
+		if w.Code != 200 {
+			t.Errorf("Expected 200 OK, got %d: %s", w.Code, w.Body.String())
+		} else {
+			t.Logf("Valid Sluice Gate request: 200 OK")
 		}
-	})
+	}
+
+	// 3. Expired Timestamp (> 5 min)
+	{
+		path := "/api/public/v1/stations"
+		oldTs := now - 600 // 10 mins ago
+		sig := signRequest(appID, path, oldTs)
+
+		req, _ := http.NewRequest("GET", path, nil)
+		req.Header.Set("X-App-Id", appID)
+		req.Header.Set("X-Timestamp", fmt.Sprintf("%d", oldTs))
+		req.Header.Set("X-Signature", sig)
+
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		if w.Code != 401 {
+			t.Errorf("Expected 401 Unauthorized for expired timestamp, got %d", w.Code)
+		} else {
+			t.Logf("Expired timestamp correctly returned 401")
+		}
+	}
+
+	// 4. Invalid Signature
+	{
+		path := "/api/public/v1/stations"
+		req, _ := http.NewRequest("GET", path, nil)
+		req.Header.Set("X-App-Id", appID)
+		req.Header.Set("X-Timestamp", fmt.Sprintf("%d", now))
+		req.Header.Set("X-Signature", "invalid-signature")
+
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		if w.Code != 401 {
+			t.Errorf("Expected 401 Unauthorized for invalid signature, got %d", w.Code)
+		} else {
+			t.Logf("Invalid signature correctly returned 401")
+		}
+	}
 }

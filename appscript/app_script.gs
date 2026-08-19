@@ -267,10 +267,16 @@ function applyTwoColumnStyle(table, numRows) {
     if (cols >= 5) {
       colWidths = [25, 50, 60, 45, 45]; // Total 225
       fontSize = 9.5;
+    } else if (cols === 4) {
+      colWidths = [30, 60, 75, 60]; // Total 225
+      fontSize = 9.5;
     }
   } else {
     if (cols >= 5) {
       colWidths = [40, 100, 130, 94, 94]; // Total ~458
+      fontSize = 11;
+    } else if (cols === 4) {
+      colWidths = [40, 120, 178, 120]; // Total ~458
       fontSize = 11;
     }
   }
@@ -299,9 +305,9 @@ function applyTwoColumnStyle(table, numRows) {
         if (child.getType() === DocumentApp.ElementType.PARAGRAPH) {
           const p = child.asParagraph();
           p.setSpacingAfter(0).setLineSpacing(1.15);
-          if (cols >= 5 && j >= 3) {
+          if (cols >= 5 && (j >= 3 || j === 0)) {
             p.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
-          } else if (cols >= 5 && j === 0) {
+          } else if (cols === 4 && (j >= 3 || j === 0)) {
             p.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
           }
         }

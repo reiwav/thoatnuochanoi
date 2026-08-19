@@ -1,6 +1,7 @@
 package publicapi
 
 import (
+	"ai-api-tnhn/internal/base/mgo/filter"
 	"ai-api-tnhn/internal/dto"
 	"ai-api-tnhn/internal/models"
 	"ai-api-tnhn/utils"
@@ -78,7 +79,35 @@ func (s *service) GetStationsMasterList(ctx context.Context, stationType string)
 		}
 	}
 
-	// Add sluice_gate and wastewater here if needed
+	if stationType == "" || stationType == "sluice_gate" {
+		f := filter.NewBasicFilter().AddWhere("active", "active", true)
+		gates, _, err := s.sluiceGateRepo.List(ctx, f)
+		if err == nil {
+			for _, st := range gates {
+				results = append(results, dto.PublicStationMaster{
+					ID:      st.ID,
+					Name:    st.Name,
+					Address: st.Address,
+					Type:    "sluice_gate",
+				})
+			}
+		}
+	}
+
+	if stationType == "" || stationType == "wastewater" {
+		f := filter.NewBasicFilter().AddWhere("active", "active", true)
+		wws, _, err := s.wastewaterRepo.List(ctx, f)
+		if err == nil {
+			for _, st := range wws {
+				results = append(results, dto.PublicStationMaster{
+					ID:      st.ID,
+					Name:    st.Name,
+					Address: st.Address,
+					Type:    "wastewater",
+				})
+			}
+		}
+	}
 
 	return results, nil
 }

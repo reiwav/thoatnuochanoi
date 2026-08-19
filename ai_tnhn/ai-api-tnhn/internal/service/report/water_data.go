@@ -75,10 +75,10 @@ func (s *service) buildWaterStationTables(
 
 	// Phụ lục: Lấy TẤT CẢ trạm Sông và Hồ
 	var allRivers []*models.RiverStation
-	_ = s.riverStationRepo.R_SelectManyWithSort(ctx, bson.M{}, bson.M{"trong_so_bao_cao": -1}, &allRivers)
+	_ = s.riverStationRepo.R_SelectManyWithSort(ctx, bson.M{}, bson.M{"ten_tram": 1}, &allRivers)
 
 	var allLakes []*models.LakeStation
-	_ = s.lakeStationRepo.R_SelectManyWithSort(ctx, bson.M{}, bson.M{"trong_so_bao_cao": -1}, &allLakes)
+	_ = s.lakeStationRepo.R_SelectManyWithSort(ctx, bson.M{}, bson.M{"ten_tram": 1}, &allLakes)
 
 
 	allRiverDataRaw := [][]string{{"STT", "Điểm đo", "Tại", "Trước mưa (m)", timeHeader}}

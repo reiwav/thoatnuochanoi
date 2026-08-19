@@ -4,10 +4,43 @@ import (
 	"ai-api-tnhn/internal/dto"
 	"ai-api-tnhn/internal/models"
 	"context"
+	"fmt"
+	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
+
+func normalizeImageURL(img string) string {
+	if img == "" {
+		return ""
+	}
+	if strings.HasPrefix(img, "http://") || strings.HasPrefix(img, "https://") {
+		return img
+	}
+	if strings.HasPrefix(img, "local:") {
+		path := strings.TrimPrefix(img, "local:")
+		if !strings.HasPrefix(path, "/") {
+			path = "/" + path
+		}
+		return "/api/storage/file" + path
+	}
+	if strings.HasPrefix(img, "/api/storage/file/") || strings.HasPrefix(img, "/storage/") {
+		return img
+	}
+	// Google Drive file ID
+	return fmt.Sprintf("https://lh3.googleusercontent.com/d/%s=s1000", img)
+}
+
+func normalizeImageList(images []string) []string {
+	res := make([]string, 0, len(images))
+	for _, img := range images {
+		if norm := normalizeImageURL(img); norm != "" {
+			res = append(res, norm)
+		}
+	}
+	return res
+}
 
 func (s *service) GetPublicInundationData(ctx context.Context, stationID string, startUnix, endUnix int64) ([]dto.PublicInundationData, error) {
 	maxSeconds := int64(365 * 24 * 3600)
@@ -58,7 +91,7 @@ func (s *service) GetPublicInundationData(ctx context.Context, stationID string,
 			EndTime:      endTime,
 			Length:       report.MaxLength,
 			Width:        report.MaxWidth,
-			Images:       report.Images,
+			Images:       normalizeImageList(report.Images),
 			History:      []dto.InundationHistoryItem{},
 		}
 
@@ -68,7 +101,7 @@ func (s *service) GetPublicInundationData(ctx context.Context, stationID string,
 				Depth:  r.Depth,
 				Length: r.Length,
 				Width:  r.Width,
-				Images: r.Images,
+				Images: normalizeImageList(r.Images),
 				Note:   r.Note,
 			})
 		}

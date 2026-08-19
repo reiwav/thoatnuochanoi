@@ -11,16 +11,16 @@ const HistorySkeleton = ({ isPumping, rowCount = 5 }) => {
                     {isPumping && (
                         <>
                             <TableCell align="center">
-                                <Skeleton variant="rounded" width={40} height={24} sx={{ mx: 'auto', borderRadius: 1.5 }} />
+                                <Skeleton variant="rounded" width={52} height={34} sx={{ mx: 'auto', borderRadius: 2 }} />
                             </TableCell>
                             <TableCell align="center">
-                                <Skeleton variant="rounded" width={40} height={24} sx={{ mx: 'auto', borderRadius: 1.5 }} />
+                                <Skeleton variant="rounded" width={52} height={34} sx={{ mx: 'auto', borderRadius: 2 }} />
                             </TableCell>
                             <TableCell align="center">
-                                <Skeleton variant="rounded" width={40} height={24} sx={{ mx: 'auto', borderRadius: 1.5 }} />
+                                <Skeleton variant="rounded" width={52} height={34} sx={{ mx: 'auto', borderRadius: 2 }} />
                             </TableCell>
                             <TableCell align="center">
-                                <Skeleton variant="rounded" width={40} height={24} sx={{ mx: 'auto', borderRadius: 1.5 }} />
+                                <Skeleton variant="rounded" width={52} height={34} sx={{ mx: 'auto', borderRadius: 2 }} />
                             </TableCell>
                         </>
                     )}

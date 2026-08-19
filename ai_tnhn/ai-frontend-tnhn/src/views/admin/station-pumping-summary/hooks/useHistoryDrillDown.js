@@ -17,14 +17,27 @@ const useHistoryDrillDown = ({ station }) => {
                 : wastewaterTreatmentApi.getHistory(station.id, { page, per_page: perPage }));
             
             if (res && res.data) {
-                setHistory(res.data);
-                setTotal(res.total || 0);
+                if (Array.isArray(res.data)) {
+                    setHistory(res.data);
+                    setTotal(res.total ?? res.data.length);
+                } else if (res.data.data && Array.isArray(res.data.data)) {
+                    setHistory(res.data.data);
+                    setTotal(res.data.total ?? res.data.data.length);
+                } else {
+                    setHistory([]);
+                    setTotal(0);
+                }
             } else if (Array.isArray(res)) {
                 setHistory(res);
                 setTotal(res.length);
+            } else {
+                setHistory([]);
+                setTotal(0);
             }
         } catch (error) {
             console.error('Failed to fetch history', error);
+            setHistory([]);
+            setTotal(0);
         } finally {
             setLoading(false);
         }
@@ -42,7 +55,8 @@ const useHistoryDrillDown = ({ station }) => {
         page,
         setPage,
         loading,
-        perPage
+        perPage,
+        refetch: fetchHistory
     };
 };
 

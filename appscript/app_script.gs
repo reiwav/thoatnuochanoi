@@ -381,10 +381,10 @@ function applyAppendixWaterTableStyle(table, numRows) {
         if (child.getType() === DocumentApp.ElementType.PARAGRAPH) {
           const p = child.asParagraph();
           p.setSpacingAfter(0).setLineSpacing(1.15);
-          if (j > 0) {
-            p.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
-          } else {
+          if (j === 1 || j === 2) {
             p.setAlignment(DocumentApp.HorizontalAlignment.LEFT);
+          } else {
+            p.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
           }
         }
       }

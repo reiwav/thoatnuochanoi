@@ -63,12 +63,6 @@ function doPost(e) {
       renderAppendixSection(body, data);
     }
 
-    // In dấu hiệu version ra cuối doc
-    const versionNote = body.appendParagraph("Script: " + SCRIPT_VERSION);
-    versionNote.setFontSize(8);
-    versionNote.setForegroundColor('#999999');
-    versionNote.setItalic(true);
-
     doc.saveAndClose();
 
     return ContentService.createTextOutput(JSON.stringify({
@@ -306,6 +300,19 @@ function applyTwoColumnStyle(table, numRows) {
   cellStyle[DocumentApp.Attribute.PADDING_LEFT] = 3;
   cellStyle[DocumentApp.Attribute.PADDING_RIGHT] = 3;
 
+  const headerCellStyle = Object.assign({}, cellStyle);
+  headerCellStyle[DocumentApp.Attribute.BACKGROUND_COLOR] = '#f3f3f3';
+
+  const pStyleLeft = {};
+  pStyleLeft[DocumentApp.Attribute.HORIZONTAL_ALIGNMENT] = DocumentApp.HorizontalAlignment.LEFT;
+  pStyleLeft[DocumentApp.Attribute.SPACING_AFTER] = 0;
+  pStyleLeft[DocumentApp.Attribute.LINE_SPACING] = 1.15;
+
+  const pStyleCenter = {};
+  pStyleCenter[DocumentApp.Attribute.HORIZONTAL_ALIGNMENT] = DocumentApp.HorizontalAlignment.CENTER;
+  pStyleCenter[DocumentApp.Attribute.SPACING_AFTER] = 0;
+  pStyleCenter[DocumentApp.Attribute.LINE_SPACING] = 1.15;
+
   // Xác định căn lề cho từng cột (chỉ dùng ở paragraph, KHÔNG dùng ở cell)
   const colAligns = [];
   for (let j = 0; j < cols; j++) {
@@ -320,24 +327,24 @@ function applyTwoColumnStyle(table, numRows) {
 
   for (let i = 0; i < numRows; i++) {
     const row = table.getRow(i);
-    for (let j = 0; j < row.getNumCells(); j++) {
+    for (let j = 0; j < cols; j++) {
       const cell = row.getCell(j);
-      cell.setAttributes(cellStyle);
-
-      // Header luôn CENTER, data theo cấu hình
-      const pAlign = (i === 0) ? DocumentApp.HorizontalAlignment.CENTER
-        : (j < colAligns.length ? colAligns[j] : DocumentApp.HorizontalAlignment.LEFT);
-
-      for (let k = 0; k < cell.getNumChildren(); k++) {
-        const child = cell.getChild(k);
-        if (child.getType() === DocumentApp.ElementType.PARAGRAPH) {
-          child.asParagraph().setAlignment(pAlign).setSpacingAfter(0).setLineSpacing(1.15);
-        }
+      
+      if (i === 0) {
+        cell.setAttributes(headerCellStyle);
+        cell.editAsText().setBold(true);
+      } else {
+        cell.setAttributes(cellStyle);
       }
 
-      if (i === 0) {
-        cell.editAsText().setBold(true);
-        cell.setBackgroundColor('#f3f3f3');
+      const pStyle = (i === 0 || colAligns[j] === DocumentApp.HorizontalAlignment.CENTER) ? pStyleCenter : pStyleLeft;
+
+      const numChildren = cell.getNumChildren();
+      for (let k = 0; k < numChildren; k++) {
+        const child = cell.getChild(k);
+        if (child.getType() === DocumentApp.ElementType.PARAGRAPH) {
+          child.setAttributes(pStyle);
+        }
       }
     }
   }
@@ -400,6 +407,21 @@ function applyAppendixWaterTableStyle(table, numRows) {
   cellStyle[DocumentApp.Attribute.PADDING_LEFT] = 4;
   cellStyle[DocumentApp.Attribute.PADDING_RIGHT] = 4;
 
+  const headerCellStyle = Object.assign({}, cellStyle);
+  headerCellStyle[DocumentApp.Attribute.BACKGROUND_COLOR] = '#f3f3f3';
+
+  const pStyleLeft = {};
+  pStyleLeft[DocumentApp.Attribute.HORIZONTAL_ALIGNMENT] = DocumentApp.HorizontalAlignment.LEFT;
+  pStyleLeft[DocumentApp.Attribute.SPACING_AFTER] = 0;
+  pStyleLeft[DocumentApp.Attribute.SPACING_BEFORE] = 0;
+  pStyleLeft[DocumentApp.Attribute.LINE_SPACING] = 1.15;
+
+  const pStyleCenter = {};
+  pStyleCenter[DocumentApp.Attribute.HORIZONTAL_ALIGNMENT] = DocumentApp.HorizontalAlignment.CENTER;
+  pStyleCenter[DocumentApp.Attribute.SPACING_AFTER] = 0;
+  pStyleCenter[DocumentApp.Attribute.SPACING_BEFORE] = 0;
+  pStyleCenter[DocumentApp.Attribute.LINE_SPACING] = 1.15;
+
   // QUY TẮC CĂN LỀ:
   // - Nếu bảng 5 cột: Cột 0 (STT) căn GIỮA, Cột 1, 2 (Điểm đo, Tại) căn TRÁI, Cột 3, 4 (Số liệu) căn GIỮA
   // - Nếu bảng 4 cột (không có STT): Cột 0, 1 căn TRÁI, Cột 2, 3 căn GIỮA
@@ -424,29 +446,24 @@ function applyAppendixWaterTableStyle(table, numRows) {
 
   for (let i = 0; i < numRows; i++) {
     const row = table.getRow(i);
-    for (let j = 0; j < row.getNumCells(); j++) {
+    for (let j = 0; j < cols; j++) {
       const cell = row.getCell(j);
-      cell.setAttributes(cellStyle);
-
-      // Dòng 0 (Header) luôn căn GIỮA, từ dòng 1 trở đi theo colAligns
-      const targetAlign = (i === 0) 
-        ? DocumentApp.HorizontalAlignment.CENTER 
-        : (colAligns[j] || DocumentApp.HorizontalAlignment.LEFT);
-
-      for (let k = 0; k < cell.getNumChildren(); k++) {
-        const child = cell.getChild(k);
-        if (child.getType() === DocumentApp.ElementType.PARAGRAPH) {
-          const p = child.asParagraph();
-          p.setAlignment(targetAlign);
-          p.setSpacingAfter(0);
-          p.setSpacingBefore(0);
-          p.setLineSpacing(1.15);
-        }
+      
+      if (i === 0) {
+        cell.setAttributes(headerCellStyle);
+        cell.editAsText().setBold(true);
+      } else {
+        cell.setAttributes(cellStyle);
       }
 
-      if (i === 0) {
-        cell.editAsText().setBold(true);
-        cell.setBackgroundColor('#f3f3f3');
+      const pStyle = (i === 0 || colAligns[j] === DocumentApp.HorizontalAlignment.CENTER) ? pStyleCenter : pStyleLeft;
+
+      const numChildren = cell.getNumChildren();
+      for (let k = 0; k < numChildren; k++) {
+        const child = cell.getChild(k);
+        if (child.getType() === DocumentApp.ElementType.PARAGRAPH) {
+          child.setAttributes(pStyle);
+        }
       }
     }
   }

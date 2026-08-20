@@ -84,7 +84,9 @@ func (h *WaterHandler) ReportLake(c *gin.Context) {
 	}
 
 	var req struct {
-		Value float64 `json:"value"`
+		Value     float64   `json:"value"`
+		Timestamp time.Time `json:"timestamp"`
+		Note      string    `json:"note"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		h.SendError(c, web.BadRequest(err.Error()))
@@ -94,6 +96,8 @@ func (h *WaterHandler) ReportLake(c *gin.Context) {
 	record := &models.LakeRecord{
 		StationID: stationID,
 		Value:     req.Value,
+		Timestamp: req.Timestamp,
+		Note:      req.Note,
 	}
 
 	err = h.service.CreateLakeRecord(c.Request.Context(), record, user)
@@ -123,7 +127,9 @@ func (h *WaterHandler) ReportRiver(c *gin.Context) {
 	}
 
 	var req struct {
-		Value float64 `json:"value"`
+		Value     float64   `json:"value"`
+		Timestamp time.Time `json:"timestamp"`
+		Note      string    `json:"note"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		h.SendError(c, web.BadRequest(err.Error()))
@@ -133,6 +139,8 @@ func (h *WaterHandler) ReportRiver(c *gin.Context) {
 	record := &models.RiverRecord{
 		StationID: stationID,
 		Value:     req.Value,
+		Timestamp: req.Timestamp,
+		Note:      req.Note,
 	}
 
 	err = h.service.CreateRiverRecord(c.Request.Context(), record, user)

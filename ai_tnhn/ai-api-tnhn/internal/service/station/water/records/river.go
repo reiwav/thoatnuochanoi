@@ -5,6 +5,7 @@ import (
 	"ai-api-tnhn/utils"
 	"ai-api-tnhn/utils/web"
 	"context"
+	"time"
 )
 
 func (s *service) GetRiverDataByStation(ctx context.Context, stationID int64, limit int64, date string) ([]*models.RiverRecord, error) {
@@ -41,6 +42,11 @@ func (s *service) CreateRiverRecord(ctx context.Context, record *models.RiverRec
 	if record.Timestamp.IsZero() {
 		record.Timestamp = utils.NowVietnam()
 	}
+
+	// Đảm bảo second và millisecond bằng 0
+	t := record.Timestamp
+	record.Timestamp = time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), 0, 0, t.Location())
+
 	if record.Date == "" {
 		record.Date = utils.FormatDate(record.Timestamp)
 	}

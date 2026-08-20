@@ -25,6 +25,7 @@ type LakeRecord struct {
 	ThresholdStatus string    `bson:"threshold_status" json:"threshold_status" example:"high"` // "normal" | "high" | "low"
 	MinThreshold    float64   `bson:"min_threshold" json:"min_threshold" example:"1.5"`       // Ngưỡng thấp tại mốc ghi
 	MaxThreshold    float64   `bson:"max_threshold" json:"max_threshold" example:"3.5"`       // Ngưỡng cao tại mốc ghi
+	Note            string    `bson:"note" json:"note"`                                       // Ghi chú
 }
 
 type RiverRecord struct {
@@ -38,4 +39,5 @@ type RiverRecord struct {
 	ThresholdStatus string    `bson:"threshold_status" json:"threshold_status" example:"high"` // "normal" | "high" | "low"
 	MinThreshold    float64   `bson:"min_threshold" json:"min_threshold" example:"1.5"`       // Ngưỡng thấp tại mốc ghi
 	MaxThreshold    float64   `bson:"max_threshold" json:"max_threshold" example:"3.5"`       // Ngưỡng cao tại mốc ghi
+	Note            string    `bson:"note" json:"note"`                                       // Ghi chú
 }

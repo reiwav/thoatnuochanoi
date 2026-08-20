@@ -1,3 +1,5 @@
+const SCRIPT_VERSION = "v4.0 - 2026-08-20 09:12";
+
 function doPost(e) {
   try {
     const requestData = JSON.parse(e.postData.contents);
@@ -61,13 +63,20 @@ function doPost(e) {
       renderAppendixSection(body, data);
     }
 
+    // In dấu hiệu version ra cuối doc
+    const versionNote = body.appendParagraph("Script: " + SCRIPT_VERSION);
+    versionNote.setFontSize(8);
+    versionNote.setForegroundColor('#999999');
+    versionNote.setItalic(true);
+
     doc.saveAndClose();
 
     return ContentService.createTextOutput(JSON.stringify({
       status: "success",
       file_id: docId,
       file_url: "https://docs.google.com/document/d/" + docId + "/edit",
-      message: "Report generation successful"
+      message: "Report generation successful",
+      script_version: SCRIPT_VERSION
     })).setMimeType(ContentService.MimeType.JSON);
 
   } catch (err) {
@@ -281,6 +290,13 @@ function applyTwoColumnStyle(table, numRows) {
     }
   }
 
+  // Set column widths once for the table
+  for (let j = 0; j < cols; j++) {
+    if (j < colWidths.length) {
+      table.setColumnWidth(j, colWidths[j]);
+    }
+  }
+
   const cellStyle = {};
   cellStyle[DocumentApp.Attribute.BORDER_COLOR] = '#000000';
   cellStyle[DocumentApp.Attribute.BORDER_WIDTH] = 1;
@@ -290,26 +306,32 @@ function applyTwoColumnStyle(table, numRows) {
   cellStyle[DocumentApp.Attribute.PADDING_LEFT] = 3;
   cellStyle[DocumentApp.Attribute.PADDING_RIGHT] = 3;
 
+  // Xác định căn lề cho từng cột (chỉ dùng ở paragraph, KHÔNG dùng ở cell)
+  const colAligns = [];
+  for (let j = 0; j < cols; j++) {
+    if (cols >= 5 && (j >= 3 || j === 0)) {
+      colAligns.push(DocumentApp.HorizontalAlignment.CENTER);
+    } else if (cols === 4 && (j >= 3 || j === 0)) {
+      colAligns.push(DocumentApp.HorizontalAlignment.CENTER);
+    } else {
+      colAligns.push(DocumentApp.HorizontalAlignment.LEFT);
+    }
+  }
+
   for (let i = 0; i < numRows; i++) {
     const row = table.getRow(i);
     for (let j = 0; j < row.getNumCells(); j++) {
       const cell = row.getCell(j);
       cell.setAttributes(cellStyle);
-      
-      if (colWidths.length > j) {
-        cell.setWidth(colWidths[j]);
-      }
-      
+
+      // Header luôn CENTER, data theo cấu hình
+      const pAlign = (i === 0) ? DocumentApp.HorizontalAlignment.CENTER
+        : (j < colAligns.length ? colAligns[j] : DocumentApp.HorizontalAlignment.LEFT);
+
       for (let k = 0; k < cell.getNumChildren(); k++) {
         const child = cell.getChild(k);
         if (child.getType() === DocumentApp.ElementType.PARAGRAPH) {
-          const p = child.asParagraph();
-          p.setSpacingAfter(0).setLineSpacing(1.15);
-          if (cols >= 5 && (j >= 3 || j === 0)) {
-            p.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
-          } else if (cols === 4 && (j >= 3 || j === 0)) {
-            p.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
-          }
+          child.asParagraph().setAlignment(pAlign).setSpacingAfter(0).setLineSpacing(1.15);
         }
       }
 
@@ -322,7 +344,7 @@ function applyTwoColumnStyle(table, numRows) {
 }
 
 /**
- * CHỈ RIÊNG BẢNG SÔNG / HỒ PHỤ LỤC (3-4 CỘT)
+ * ĐỊNH DẠNG BẢNG SÔNG / HỒ (Căn giữa STT và số liệu, căn trái Tên trạm / Vị trí)
  */
 function applyAppendixWaterTableStyle(table, numRows) {
   const isNested = table.getParent() && table.getParent().getType() === DocumentApp.ElementType.TABLE_CELL;
@@ -334,12 +356,13 @@ function applyAppendixWaterTableStyle(table, numRows) {
   if (numRows <= 0) return;
 
   const cols = table.getRow(0).getNumCells();
-  let colWidths = [198, 90, 90, 90];
+  let colWidths = [];
   let fontSize = 11;
 
+  // Xác định độ rộng cột theo số lượng cột thực tế
   if (isNested) {
-    if (cols >= 5) {
-      colWidths = [25, 50, 60, 45, 45]; // Total 225
+    if (cols === 5) {
+      colWidths = [25, 65, 65, 35, 35];
       fontSize = 9.5;
     } else if (cols === 4) {
       colWidths = [90, 44, 44, 48];
@@ -349,8 +372,9 @@ function applyAppendixWaterTableStyle(table, numRows) {
       fontSize = 10.5;
     }
   } else {
-    if (cols >= 5) {
-      colWidths = [40, 100, 130, 94, 94]; // Total ~458
+    if (cols === 5) {
+      // 5 cột: STT | Điểm đo | Tại | Trước mưa | Thời điểm
+      colWidths = [35, 125, 125, 85, 88]; 
       fontSize = 11;
     } else if (cols === 4) {
       colWidths = [198, 90, 90, 90];
@@ -361,36 +385,63 @@ function applyAppendixWaterTableStyle(table, numRows) {
     }
   }
 
+  for (let j = 0; j < cols; j++) {
+    if (j < colWidths.length) {
+      table.setColumnWidth(j, colWidths[j]);
+    }
+  }
+
   const cellStyle = {};
   cellStyle[DocumentApp.Attribute.BORDER_COLOR] = '#000000';
   cellStyle[DocumentApp.Attribute.BORDER_WIDTH] = 1;
   cellStyle[DocumentApp.Attribute.FONT_SIZE] = fontSize;
   cellStyle[DocumentApp.Attribute.PADDING_TOP] = 3;
   cellStyle[DocumentApp.Attribute.PADDING_BOTTOM] = 3;
-  cellStyle[DocumentApp.Attribute.PADDING_LEFT] = 3;
-  cellStyle[DocumentApp.Attribute.PADDING_RIGHT] = 3;
+  cellStyle[DocumentApp.Attribute.PADDING_LEFT] = 4;
+  cellStyle[DocumentApp.Attribute.PADDING_RIGHT] = 4;
+
+  // QUY TẮC CĂN LỀ:
+  // - Nếu bảng 5 cột: Cột 0 (STT) căn GIỮA, Cột 1, 2 (Điểm đo, Tại) căn TRÁI, Cột 3, 4 (Số liệu) căn GIỮA
+  // - Nếu bảng 4 cột (không có STT): Cột 0, 1 căn TRÁI, Cột 2, 3 căn GIỮA
+  const colAligns = [];
+  for (let j = 0; j < cols; j++) {
+    if (cols === 5) {
+      if (j === 1 || j === 2) {
+        colAligns.push(DocumentApp.HorizontalAlignment.LEFT);
+      } else {
+        colAligns.push(DocumentApp.HorizontalAlignment.CENTER);
+      }
+    } else if (cols === 4) {
+      if (j === 0 || j === 1) {
+        colAligns.push(DocumentApp.HorizontalAlignment.LEFT);
+      } else {
+        colAligns.push(DocumentApp.HorizontalAlignment.CENTER);
+      }
+    } else {
+      colAligns.push(j === 0 ? DocumentApp.HorizontalAlignment.LEFT : DocumentApp.HorizontalAlignment.CENTER);
+    }
+  }
 
   for (let i = 0; i < numRows; i++) {
     const row = table.getRow(i);
     for (let j = 0; j < row.getNumCells(); j++) {
       const cell = row.getCell(j);
       cell.setAttributes(cellStyle);
-      
+
+      // Dòng 0 (Header) luôn căn GIỮA, từ dòng 1 trở đi theo colAligns
+      const targetAlign = (i === 0) 
+        ? DocumentApp.HorizontalAlignment.CENTER 
+        : (colAligns[j] || DocumentApp.HorizontalAlignment.LEFT);
+
       for (let k = 0; k < cell.getNumChildren(); k++) {
         const child = cell.getChild(k);
         if (child.getType() === DocumentApp.ElementType.PARAGRAPH) {
           const p = child.asParagraph();
-          p.setSpacingAfter(0).setLineSpacing(1.15);
-          if (j === 1 || j === 2) {
-            p.setAlignment(DocumentApp.HorizontalAlignment.LEFT);
-          } else {
-            p.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
-          }
+          p.setAlignment(targetAlign);
+          p.setSpacingAfter(0);
+          p.setSpacingBefore(0);
+          p.setLineSpacing(1.15);
         }
-      }
-
-      if (j < colWidths.length) {
-        cell.setWidth(colWidths[j]);
       }
 
       if (i === 0) {

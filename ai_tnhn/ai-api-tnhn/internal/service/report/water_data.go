@@ -234,6 +234,24 @@ func (s *service) GetWaterReportDataCore(
 		return "Chưa cập nhật"
 	}
 
+	riverRecordsByStation := make(map[int64][]*models.RiverRecord)
+	if s.riverRepo != nil {
+		if records, err := s.riverRepo.GetByDateRange(ctx, rainStartOfDay, nowInLoc); err == nil {
+			for _, rec := range records {
+				riverRecordsByStation[rec.StationID] = append(riverRecordsByStation[rec.StationID], rec)
+			}
+		}
+	}
+
+	lakeRecordsByStation := make(map[int64][]*models.LakeRecord)
+	if s.lakeRepo != nil {
+		if records, err := s.lakeRepo.GetByDateRange(ctx, rainStartOfDay, nowInLoc); err == nil {
+			for _, rec := range records {
+				lakeRecordsByStation[rec.StationID] = append(lakeRecordsByStation[rec.StationID], rec)
+			}
+		}
+	}
+
 	response := &WaterReportDetailResponse{
 		ReportTime: nowInLoc.Format("15:04 02/01/2006"),
 		RainTime:   actualRainStartTime.Format("15:04 02/01/2006"),
@@ -254,11 +272,18 @@ func (s *service) GetWaterReportDataCore(
 		}
 
 		// Before Rain
-		if s.riverRepo != nil && r.OldID > 0 {
-			rec, err := s.riverRepo.GetLatestBefore(ctx, int64(r.OldID), rainStartOfDay, beforeRainEnd)
-			if err == nil && rec != nil {
-				detail.RawBeforeRain = rec.Value
-				detail.BeforeRainTime = rec.Timestamp.In(loc).Format("15:04 02/01")
+		if r.OldID > 0 {
+			var latestBefore *models.RiverRecord
+			for _, rec := range riverRecordsByStation[int64(r.OldID)] {
+				if !rec.Timestamp.After(beforeRainEnd) {
+					if latestBefore == nil || rec.Timestamp.After(latestBefore.Timestamp) {
+						latestBefore = rec
+					}
+				}
+			}
+			if latestBefore != nil {
+				detail.RawBeforeRain = latestBefore.Value
+				detail.BeforeRainTime = latestBefore.Timestamp.In(loc).Format("15:04 02/01")
 			}
 		}
 		if detail.RawBeforeRain <= 0 {
@@ -273,12 +298,18 @@ func (s *service) GetWaterReportDataCore(
 		detail.BeforeRainValue = formatWaterVal(detail.RawBeforeRain)
 
 		// Current
-		if s.riverRepo != nil && r.OldID > 0 {
-			if latest, err := s.riverRepo.GetLatest(ctx, int64(r.OldID)); err == nil && latest != nil && latest.Value > 0 {
-				if latest.Date == todayStr || latest.Timestamp.After(todayStartOfDay) {
-					detail.RawCurrent = latest.Value
-					detail.CurrentTime = latest.Timestamp.In(loc).Format("15:04 02/01")
+		if r.OldID > 0 {
+			var latestCurrent *models.RiverRecord
+			for _, rec := range riverRecordsByStation[int64(r.OldID)] {
+				if rec.Date == todayStr || rec.Timestamp.After(todayStartOfDay) {
+					if latestCurrent == nil || rec.Timestamp.After(latestCurrent.Timestamp) {
+						latestCurrent = rec
+					}
 				}
+			}
+			if latestCurrent != nil && latestCurrent.Value > 0 {
+				detail.RawCurrent = latestCurrent.Value
+				detail.CurrentTime = latestCurrent.Timestamp.In(loc).Format("15:04 02/01")
 			}
 		}
 		if detail.RawCurrent <= 0 {
@@ -306,11 +337,18 @@ func (s *service) GetWaterReportDataCore(
 		}
 
 		// Before Rain
-		if s.lakeRepo != nil && l.OldID > 0 {
-			rec, err := s.lakeRepo.GetLatestBefore(ctx, int64(l.OldID), rainStartOfDay, beforeRainEnd)
-			if err == nil && rec != nil {
-				detail.RawBeforeRain = rec.Value
-				detail.BeforeRainTime = rec.Timestamp.In(loc).Format("15:04 02/01")
+		if l.OldID > 0 {
+			var latestBefore *models.LakeRecord
+			for _, rec := range lakeRecordsByStation[int64(l.OldID)] {
+				if !rec.Timestamp.After(beforeRainEnd) {
+					if latestBefore == nil || rec.Timestamp.After(latestBefore.Timestamp) {
+						latestBefore = rec
+					}
+				}
+			}
+			if latestBefore != nil {
+				detail.RawBeforeRain = latestBefore.Value
+				detail.BeforeRainTime = latestBefore.Timestamp.In(loc).Format("15:04 02/01")
 			}
 		}
 		if detail.RawBeforeRain <= 0 {
@@ -325,12 +363,18 @@ func (s *service) GetWaterReportDataCore(
 		detail.BeforeRainValue = formatWaterVal(detail.RawBeforeRain)
 
 		// Current
-		if s.lakeRepo != nil && l.OldID > 0 {
-			if latest, err := s.lakeRepo.GetLatest(ctx, int64(l.OldID)); err == nil && latest != nil && latest.Value > 0 {
-				if latest.Date == todayStr || latest.Timestamp.After(todayStartOfDay) {
-					detail.RawCurrent = latest.Value
-					detail.CurrentTime = latest.Timestamp.In(loc).Format("15:04 02/01")
+		if l.OldID > 0 {
+			var latestCurrent *models.LakeRecord
+			for _, rec := range lakeRecordsByStation[int64(l.OldID)] {
+				if rec.Date == todayStr || rec.Timestamp.After(todayStartOfDay) {
+					if latestCurrent == nil || rec.Timestamp.After(latestCurrent.Timestamp) {
+						latestCurrent = rec
+					}
 				}
+			}
+			if latestCurrent != nil && latestCurrent.Value > 0 {
+				detail.RawCurrent = latestCurrent.Value
+				detail.CurrentTime = latestCurrent.Timestamp.In(loc).Format("15:04 02/01")
 			}
 		}
 		if detail.RawCurrent <= 0 {

@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { LocalizationProvider, DateTimePicker } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import {
     Box,
     CircularProgress,
@@ -13,13 +15,13 @@ import {
     TableHead,
     TableRow,
     Paper,
-    IconButton
+    Button
 } from '@mui/material';
-import { IconRefresh } from '@tabler/icons-react';
+import { IconSearch } from '@tabler/icons-react';
 import MainCard from 'ui-component/cards/MainCard';
 import useWaterReportDetail from './hooks/useWaterReportDetail';
 
-const WaterDetailTable = ({ data, reportTime, rainTime, title }) => {
+const WaterDetailTable = ({ data, reportTime, rainTime, title, loading }) => {
     return (
         <Box>
             <Box sx={{ mb: 2 }}>
@@ -44,7 +46,13 @@ const WaterDetailTable = ({ data, reportTime, rainTime, title }) => {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {data.length === 0 ? (
+                        {loading ? (
+                            <TableRow>
+                                <TableCell colSpan={7} align="center" sx={{ py: 5 }}>
+                                    <CircularProgress />
+                                </TableCell>
+                            </TableRow>
+                        ) : data.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={7} align="center">
                                     Không có dữ liệu
@@ -80,20 +88,12 @@ const WaterDetailTable = ({ data, reportTime, rainTime, title }) => {
 };
 
 const StationWaterReportDetail = () => {
-    const { loading, data, refresh } = useWaterReportDetail();
+    const { loading, data, refresh, selectedTime, setSelectedTime } = useWaterReportDetail();
     const [tabValue, setTabValue] = useState(0);
 
     const handleTabChange = (event, newValue) => {
         setTabValue(newValue);
     };
-
-    if (loading) {
-        return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-                <CircularProgress />
-            </Box>
-        );
-    }
 
     return (
         <Container maxWidth="xl" sx={{ mt: 3, pb: 4 }}>
@@ -101,9 +101,27 @@ const StationWaterReportDetail = () => {
                 title={
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Typography variant="h3" sx={{ fontWeight: 800 }}>Dữ liệu trước mưa</Typography>
-                        <IconButton onClick={refresh} size="medium" color="primary">
-                            <IconRefresh size={22} />
-                        </IconButton>
+                        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                <DateTimePicker
+                                    label="Thời điểm trước mưa"
+                                    value={selectedTime}
+                                    onChange={(newValue) => setSelectedTime(newValue)}
+                                    format="DD/MM/YYYY HH:mm"
+                                    ampm={false}
+                                    slotProps={{ textField: { size: 'small', sx: { width: 220 } } }}
+                                />
+                            </LocalizationProvider>
+                            <Button 
+                                variant="contained" 
+                                color="primary" 
+                                disabled={loading}
+                                startIcon={loading ? <CircularProgress size={18} color="inherit" /> : <IconSearch size={18} />} 
+                                onClick={() => refresh(selectedTime ? selectedTime.unix() : null)}
+                            >
+                                Tìm kiếm
+                            </Button>
+                        </Box>
                     </Box>
                 }
             >
@@ -129,6 +147,7 @@ const StationWaterReportDetail = () => {
                         reportTime={data.report_time} 
                         rainTime={data.rain_time} 
                         title="Sông" 
+                        loading={loading}
                     />
                 )}
                 
@@ -138,6 +157,7 @@ const StationWaterReportDetail = () => {
                         reportTime={data.report_time} 
                         rainTime={data.rain_time} 
                         title="Hồ" 
+                        loading={loading}
                     />
                 )}
             </MainCard>

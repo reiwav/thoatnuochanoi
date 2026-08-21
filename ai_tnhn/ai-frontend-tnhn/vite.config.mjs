@@ -18,11 +18,21 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       chunkSizeWarningLimit: 1600,
-      sourcemap: mode === 'production' ? false : true,
-      minify: mode === 'production' ? true : false
-    },
-    esbuild: {
-      drop: mode === 'production' && env.VITE_APP_STATUS !== 'dev' ? ['console', 'debugger'] : []
+      sourcemap: false,
+      minify: mode === 'production' ? 'terser' : false,
+      terserOptions: mode === 'production' ? {
+        compress: {
+          drop_console: env.VITE_APP_STATUS !== 'dev',
+          drop_debugger: true,
+          passes: 2
+        },
+        mangle: {
+          toplevel: true
+        },
+        format: {
+          comments: false
+        }
+      } : undefined
     },
     preview: {
       open: true,
@@ -33,20 +43,6 @@ export default defineConfig(({ mode }) => {
     },
     resolve: {
       alias: {
-        // { find: '', replacement: path.resolve(__dirname, 'src') },
-        // {
-        //   find: /^~(.+)/,
-        //   replacement: path.join(process.cwd(), 'node_modules/$1')
-        // },
-        // {
-        //   find: /^src(.+)/,
-        //   replacement: path.join(process.cwd(), 'src/$1')
-        // }
-        // {
-        //   find: 'assets',
-        //   replacement: path.join(process.cwd(), 'src/assets')
-        // },
-        
         '@tabler/icons-react': '@tabler/icons-react/dist/esm/icons/index.mjs'
       }
     },
@@ -54,3 +50,4 @@ export default defineConfig(({ mode }) => {
     plugins: [react(), jsconfigPaths()]
   };
 });
+

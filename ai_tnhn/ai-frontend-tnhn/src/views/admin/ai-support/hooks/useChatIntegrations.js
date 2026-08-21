@@ -24,6 +24,7 @@ export const useChatIntegrations = ({ setMessages, setLoading, shouldScrollToBot
     const [showStats, setShowStats] = useState(false);
     const [reportDate, setReportDate] = useState(new Date().toISOString().split('T')[0]);
     const [openReportDialog, setOpenReportDialog] = useState(false);
+    const [openQuickReportTimeDialog, setOpenQuickReportTimeDialog] = useState(false);
     const [exporting, setExporting] = useState(false);
 
     // Rain Chart State
@@ -232,12 +233,13 @@ export const useChatIntegrations = ({ setMessages, setLoading, shouldScrollToBot
         }
     }, [setMessages, setLoading, shouldScrollToBottom]);
 
-    const handleQuickReport = useCallback(async () => {
+    const handleQuickReport = useCallback(async (customTime = null) => {
         const text = 'Tạo báo cáo nhanh (Word/Google Docs)';
         setMessages(prev => [...prev, { id: Date.now(), role: 'user', text, timestamp: new Date() }]);
         setLoading(true);
         try {
-            const res = await axiosClient.post('/admin/google/quick-report');
+            const payload = customTime ? { customTime } : {};
+            const res = await axiosClient.post('/admin/google/quick-report', payload);
             if (res && res.report_url) {
                 setMessages(prev => [...prev, {
                     id: Date.now() + 1,
@@ -390,6 +392,8 @@ export const useChatIntegrations = ({ setMessages, setLoading, shouldScrollToBot
         setReportDate,
         openReportDialog,
         setOpenReportDialog,
+        openQuickReportTimeDialog,
+        setOpenQuickReportTimeDialog,
         exporting,
         rainChart,
         setRainChart,

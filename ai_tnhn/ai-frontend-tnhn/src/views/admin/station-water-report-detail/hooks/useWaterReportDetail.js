@@ -3,7 +3,8 @@ import reportApi from 'api/report';
 import toast from 'react-hot-toast';
 
 const useWaterReportDetail = () => {
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
+    const [selectedTime, setSelectedTime] = useState(null);
     const [data, setData] = useState({
         report_time: '',
         rain_time: '',
@@ -11,10 +12,10 @@ const useWaterReportDetail = () => {
         lakes: []
     });
 
-    const fetchData = async () => {
+    const fetchData = async (customTime = null) => {
         setLoading(true);
         try {
-            const res = await reportApi.getWaterReportDetails();
+            const res = await reportApi.getWaterReportDetails(customTime);
             if (res) {
                 setData(res);
             }
@@ -26,14 +27,14 @@ const useWaterReportDetail = () => {
         }
     };
 
-    useEffect(() => {
-        fetchData();
-    }, []);
+
 
     return {
         loading,
         data,
-        refresh: fetchData
+        refresh: fetchData,
+        selectedTime,
+        setSelectedTime
     };
 };
 

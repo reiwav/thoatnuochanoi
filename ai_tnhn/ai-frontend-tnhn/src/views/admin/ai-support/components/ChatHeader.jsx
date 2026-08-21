@@ -20,7 +20,7 @@ const ChatHeader = ({
     hasPermission,
     handleQuickReportText,
     handleAIDynamicReport,
-    handleQuickReport,
+    openQuickReportTimeDialog,
     openReportDialog
 }) => {
     const theme = useTheme();
@@ -107,7 +107,7 @@ const ChatHeader = ({
                                 }}
                                 size="small"
                                 startIcon={<IconBolt size={18} color="#0084FF" />}
-                                onClick={handleQuickReport}
+                                onClick={openQuickReportTimeDialog}
                             >
                                 BC nhanh (Word)
                             </Button>
@@ -167,7 +167,7 @@ const ChatHeader = ({
                                 </MenuItem>
                             </PermissionGuard>
                             <PermissionGuard permission="ai:post-rain">
-                                <MenuItem onClick={() => { handleQuickReport(); handleMenuClose(); }}>
+                                <MenuItem onClick={() => { openQuickReportTimeDialog(); handleMenuClose(); }}>
                                     <ListItemIcon><IconBolt size={20} color="#0084FF" /></ListItemIcon>
                                     <ListItemText 
                                         primary={

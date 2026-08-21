@@ -49,8 +49,7 @@ const useDevToolsDetector = () => {
         // Allow debugging in non-production environments or when status is 'dev'
         if (import.meta.env.MODE !== 'production' || import.meta.env.VITE_APP_STATUS === 'dev') return;
 
-        // Prevent right click
-        const handleContextMenu = (e) => e.preventDefault();
+
 
         // Prevent common shortcuts
         const handleKeyDown = (e) => {
@@ -65,11 +64,11 @@ const useDevToolsDetector = () => {
             }
         };
 
-        window.addEventListener('contextmenu', handleContextMenu);
+
         window.addEventListener('keydown', handleKeyDown);
 
         return () => {
-            window.removeEventListener('contextmenu', handleContextMenu);
+
             window.removeEventListener('keydown', handleKeyDown);
         };
     }, []);

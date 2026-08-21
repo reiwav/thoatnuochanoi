@@ -23,16 +23,17 @@ if (import.meta.env.MODE === 'production') {
     ['call']());
   }, 1000);
 
-  // Prevent right click
-  document.addEventListener('contextmenu', (e) => e.preventDefault());
+  // Prevent iframe embedding (Clickjacking protection)
+  if (window.self !== window.top) {
+    window.top.location = window.self.location;
+  }
 
-  // Prevent text selection
-  document.addEventListener('selectstart', (e) => e.preventDefault());
-  document.addEventListener('dragstart', (e) => e.preventDefault());
-
-  // Apply CSS to prevent text selection body-wide
-  document.body.style.userSelect = 'none';
-  document.body.style.webkitUserSelect = 'none';
+  // Allow text selection but prevent image dragging
+  document.addEventListener('dragstart', (e) => {
+    if (e.target.nodeName === 'IMG') {
+      e.preventDefault();
+    }
+  });
 
   // Prevent F12 and DevTools shortcuts
   document.addEventListener('keydown', (e) => {

@@ -56,6 +56,7 @@ func (s *service) buildWaterStationTables(
 	rainStartTime time.Time,
 	nowInLoc time.Time,
 	loc *time.Location,
+	customTime *time.Time,
 ) waterReportTables {
 	timeHeader := fmt.Sprintf("Thời điểm %s (m)", nowInLoc.Format("15h04"))
 	lakeDataRaw := [][]string{{"STT", "Điểm đo", "Tại", "Trước mưa (m)", timeHeader}}
@@ -63,7 +64,7 @@ func (s *service) buildWaterStationTables(
 	allRiverDataRaw := [][]string{{"STT", "Điểm đo", "Tại", "Trước mưa (m)", timeHeader}}
 	allLakeDataRaw := [][]string{{"STT", "Điểm đo", "Tại", "Trước mưa (m)", timeHeader}}
 
-	res, err := s.GetWaterReportDataCore(ctx, city, rainStartTime, nowInLoc, loc)
+	res, err := s.GetWaterReportDataCore(ctx, city, rainStartTime, nowInLoc, loc, customTime)
 	if err == nil && res != nil {
 		// All rivers
 		for i, r := range res.Rivers {
@@ -139,7 +140,7 @@ func (s *service) buildWaterStationTables(
 	}
 }
 
-func (s *service) GetWaterReportDetails(ctx context.Context) (*WaterReportDetailResponse, error) {
+func (s *service) GetWaterReportDetails(ctx context.Context, customTime *time.Time) (*WaterReportDetailResponse, error) {
 	city, err := s.googleSvc.GetCityStatus(ctx)
 	if err != nil {
 		return nil, err
@@ -158,7 +159,7 @@ func (s *service) GetWaterReportDetails(ctx context.Context) (*WaterReportDetail
 		rainStartTime = time.Date(nowInLoc.Year(), nowInLoc.Month(), nowInLoc.Day(), 7, 0, 0, 0, loc)
 	}
 
-	return s.GetWaterReportDataCore(ctx, city, rainStartTime, nowInLoc, loc)
+	return s.GetWaterReportDataCore(ctx, city, rainStartTime, nowInLoc, loc, customTime)
 }
 
 func (s *service) GetWaterReportDataCore(
@@ -167,9 +168,12 @@ func (s *service) GetWaterReportDataCore(
 	rainStartTime time.Time,
 	nowInLoc time.Time,
 	loc *time.Location,
+	customTime *time.Time,
 ) (*WaterReportDetailResponse, error) {
 	actualRainStartTime := rainStartTime
-	if city.Weather != nil && len(city.Weather.Measurements) > 0 {
+	if customTime != nil {
+		actualRainStartTime = customTime.In(loc)
+	} else if city.Weather != nil && len(city.Weather.Measurements) > 0 {
 		var earliestRain time.Time
 		for _, m := range city.Weather.Measurements {
 			if (m.TotalRain > 0 || m.SessionRain > 0) && !m.StartTimeFull.IsZero() {

@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func (s *service) GenerateQuickReportV3(ctx context.Context, userID string) (*QuickReportResult, error) {
+func (s *service) GenerateQuickReportV3(ctx context.Context, userID string, customTime *time.Time) (*QuickReportResult, error) {
 	if s.driveSvc == nil {
 		return nil, fmt.Errorf("Google Drive service not initialized")
 	}
@@ -35,7 +35,7 @@ func (s *service) GenerateQuickReportV3(ctx context.Context, userID string) (*Qu
 	}
 
 	// 1. Build Water tables (River and Lake)
-	waterTables := s.buildWaterStationTables(ctx, city, rainStartTime, nowInLoc, loc)
+	waterTables := s.buildWaterStationTables(ctx, city, rainStartTime, nowInLoc, loc, customTime)
 
 	// 2. Build Rain tables (Phuong and Xa)
 	rainTables := s.buildRainStationTables(ctx, city)

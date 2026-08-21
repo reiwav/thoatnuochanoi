@@ -7,13 +7,14 @@ import (
 	"ai-api-tnhn/internal/service/google/googleapi"
 	"ai-api-tnhn/internal/service/google/googledrive"
 	"context"
+	"time"
 )
 
 type Service interface {
-	GenerateQuickReportV3(ctx context.Context, userID string) (*QuickReportResult, error)
+	GenerateQuickReportV3(ctx context.Context, userID string, customTime *time.Time) (*QuickReportResult, error)
 	GenerateQuickReportText(ctx context.Context, userID string) (*googleapi.ChatResponse, error)
 	GenerateAIDynamicReport(ctx context.Context, userID string) (*googleapi.ChatResponse, error)
-	GetWaterReportDetails(ctx context.Context) (*WaterReportDetailResponse, error)
+	GetWaterReportDetails(ctx context.Context, customTime *time.Time) (*WaterReportDetailResponse, error)
 }
 
 type service struct {

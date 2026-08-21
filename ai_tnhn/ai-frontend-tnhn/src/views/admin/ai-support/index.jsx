@@ -11,6 +11,7 @@ import RainChartDialog from './components/RainChartDialog';
 import InundationDetailDialog from '../../shared/inundation/InundationDetailDialog';
 import InundationHistoryDialog from '../../shared/inundation/InundationHistoryDialog';
 import ConstructionReportDialog from './components/ConstructionReportDialog';
+import QuickReportTimeDialog from './components/QuickReportTimeDialog';
 
 // custom hook
 import useAiSupport from './hooks/useAiSupport';
@@ -34,6 +35,8 @@ const AiSupport = () => {
         setReportDate,
         openReportDialog,
         setOpenReportDialog,
+        openQuickReportTimeDialog,
+        setOpenQuickReportTimeDialog,
         exporting,
         showScrollBottom,
         rainChart,
@@ -89,7 +92,7 @@ const AiSupport = () => {
                 hasPermission={hasPermission}
                 handleQuickReportText={handleQuickReportText}
                 handleAIDynamicReport={handleAIDynamicReport}
-                handleQuickReport={handleQuickReport}
+                openQuickReportTimeDialog={() => setOpenQuickReportTimeDialog(true)}
                 openReportDialog={() => setOpenReportDialog(true)}
                 sx={{ bgcolor: 'white' }}
             />
@@ -193,6 +196,11 @@ const AiSupport = () => {
             </SwipeableDrawer>
 
             {/* Report Dialog */}
+            <QuickReportTimeDialog
+                open={openQuickReportTimeDialog}
+                onClose={() => setOpenQuickReportTimeDialog(false)}
+                onSubmit={(timeStr) => handleQuickReport(timeStr)}
+            />
             <ConstructionReportDialog
                 open={openReportDialog}
                 onClose={() => setOpenReportDialog(false)}

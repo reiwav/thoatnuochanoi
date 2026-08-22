@@ -4,9 +4,20 @@ import (
 	"ai-api-tnhn/config"
 	"ai-api-tnhn/internal/base/logger"
 	"ai-api-tnhn/internal/bootstrap"
+	"fmt"
+
+	"ai-api-tnhn/pkg/machineid"
+
+	"os"
 
 	"github.com/joho/godotenv"
 )
+
+// AllowedMachineIDs danh sách các Machine ID được phép chạy ứng dụng
+var AllowedMachineIDs = []string{
+	"94BD-D81C-1028-8DCD", // Máy Mac (Local Dev)
+	"7968-E9E2-7CED-976D", // Máy chủ Linux VPS (Production)
+}
 
 // @title API Hệ thống
 // @version 1.0
@@ -27,6 +38,15 @@ import (
 // @name Authorization
 
 func main() {
+	// 0. Kiểm tra bản quyền theo Machine ID
+	valid, _, err := machineid.Validate(AllowedMachineIDs...)
+	if err != nil || !valid {
+		fmt.Println("==================================================")
+
+		fmt.Println("==================================================")
+		os.Exit(1)
+	}
+
 	_ = godotenv.Load()
 	cfg := config.LoadEnv()
 	log := logger.NewLogger(cfg.LoggerConfig)

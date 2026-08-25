@@ -200,20 +200,6 @@ func (s *service) GetWaterReportDataCore(
 	var allLakes []*models.LakeStation
 	_ = s.lakeStationRepo.R_SelectManyWithSort(ctx, bson.M{}, bson.M{"ten_tram": 1}, &allLakes)
 
-	wMap7 := make(map[int]float64)
-	wMap13 := make(map[int]float64)
-	wMapHT := make(map[int]float64)
-
-	if city.RawWater != nil {
-		for _, d := range city.RawWater.Content.Data {
-			idInt := 0
-			fmt.Sscanf(d.TramId, "%d", &idInt)
-			wMap7[idInt] = d.ThuongLuu_7
-			wMap13[idInt] = d.ThuongLuu_13
-			wMapHT[idInt] = d.ThuongLuu_HT
-		}
-	}
-
 	addrMap := make(map[int]string)
 	nameAddrMap := make(map[string]string)
 	for _, r := range allRivers {
@@ -290,15 +276,6 @@ func (s *service) GetWaterReportDataCore(
 				detail.BeforeRainTime = latestBefore.Timestamp.In(loc).Format("15:04 02/01")
 			}
 		}
-		if detail.RawBeforeRain <= 0 {
-			if val, ok := wMap7[r.OldID]; ok && val > 0 {
-				detail.RawBeforeRain = val
-				detail.BeforeRainTime = "07:00"
-			} else if val, ok := wMap13[r.OldID]; ok && val > 0 {
-				detail.RawBeforeRain = val
-				detail.BeforeRainTime = "13:00"
-			}
-		}
 		detail.BeforeRainValue = formatWaterVal(detail.RawBeforeRain)
 
 		// Current
@@ -314,12 +291,6 @@ func (s *service) GetWaterReportDataCore(
 			if latestCurrent != nil && latestCurrent.Value > 0 {
 				detail.RawCurrent = latestCurrent.Value
 				detail.CurrentTime = latestCurrent.Timestamp.In(loc).Format("15:04 02/01")
-			}
-		}
-		if detail.RawCurrent <= 0 {
-			if val, ok := wMapHT[r.OldID]; ok && val > 0 {
-				detail.RawCurrent = val
-				detail.CurrentTime = "HT"
 			}
 		}
 		detail.CurrentValue = formatWaterVal(detail.RawCurrent)
@@ -355,15 +326,6 @@ func (s *service) GetWaterReportDataCore(
 				detail.BeforeRainTime = latestBefore.Timestamp.In(loc).Format("15:04 02/01")
 			}
 		}
-		if detail.RawBeforeRain <= 0 {
-			if val, ok := wMap7[l.OldID]; ok && val > 0 {
-				detail.RawBeforeRain = val
-				detail.BeforeRainTime = "07:00"
-			} else if val, ok := wMap13[l.OldID]; ok && val > 0 {
-				detail.RawBeforeRain = val
-				detail.BeforeRainTime = "13:00"
-			}
-		}
 		detail.BeforeRainValue = formatWaterVal(detail.RawBeforeRain)
 
 		// Current
@@ -379,12 +341,6 @@ func (s *service) GetWaterReportDataCore(
 			if latestCurrent != nil && latestCurrent.Value > 0 {
 				detail.RawCurrent = latestCurrent.Value
 				detail.CurrentTime = latestCurrent.Timestamp.In(loc).Format("15:04 02/01")
-			}
-		}
-		if detail.RawCurrent <= 0 {
-			if val, ok := wMapHT[l.OldID]; ok && val > 0 {
-				detail.RawCurrent = val
-				detail.CurrentTime = "HT"
 			}
 		}
 		detail.CurrentValue = formatWaterVal(detail.RawCurrent)

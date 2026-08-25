@@ -17,7 +17,7 @@ func NewPumpingStationHistoryRequest() *PumpingStationHistoryRequest {
 	req := &PumpingStationHistoryRequest{
 		PaginationFilter: *filter.NewPaginationFilter(),
 	}
-	req.SetOrderBy("-priority")
+	req.SetOrderBy("-timestamp")
 	return req
 }
 

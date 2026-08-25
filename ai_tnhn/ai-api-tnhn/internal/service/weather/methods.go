@@ -36,6 +36,8 @@ func (s *service) GetRawWaterData(ctx context.Context) (*WaterDataResponse, erro
 		resp := &WaterDataResponse{}
 		resp.Code = 200
 
+		todayStr := time.Now().Format("2006-01-02")
+
 		// Add lake stations
 		for _, lake := range lakeStations {
 			if !lake.Active || lake.OldID <= 0 {
@@ -54,7 +56,7 @@ func (s *service) GetRawWaterData(ctx context.Context) (*WaterDataResponse, erro
 				ThuTu:   lake.ThuTu,
 			})
 
-			if lake.LatestRecord != nil {
+			if lake.LatestRecord != nil && lake.LatestRecord.Timestamp.Format("2006-01-02") == todayStr {
 				timeStr := lake.LatestRecord.Timestamp.Format("2006-01-02 15:04:05")
 				resp.Content.Data = append(resp.Content.Data, struct {
 					TramId       string  `json:"TramId"`
@@ -92,7 +94,7 @@ func (s *service) GetRawWaterData(ctx context.Context) (*WaterDataResponse, erro
 				ThuTu:   river.ThuTu,
 			})
 
-			if river.LatestRecord != nil {
+			if river.LatestRecord != nil && river.LatestRecord.Timestamp.Format("2006-01-02") == todayStr {
 				timeStr := river.LatestRecord.Timestamp.Format("2006-01-02 15:04:05")
 				resp.Content.Data = append(resp.Content.Data, struct {
 					TramId       string  `json:"TramId"`
